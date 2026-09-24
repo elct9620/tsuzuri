@@ -69,6 +69,7 @@ const en = {
     prepare: "Preparing components",
     convert: "Converting",
     load: "Loading the model",
+    detect: "Finding split sentences",
     transcribe: "Transcribing",
     translate: "Translating",
     firstLoad: "{{phase}} (slower the first time)",

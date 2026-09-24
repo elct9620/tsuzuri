@@ -20,6 +20,7 @@ use crate::project::{self, CurrentProject};
 use crate::timing::{PhaseTiming, Phases};
 use crate::transcript::Segment;
 
+mod batching;
 mod model;
 
 use model::{BatchRequest, TranslationModel};
@@ -145,8 +146,12 @@ async fn translate_once_ready<R: Runtime>(
     phases: &mut Phases,
 ) -> Result<Vec<Segment>, Failure> {
     wait_until_ready(client, base_url, ready_timeout, has_exited).await?;
+    let model = TranslationModel::new(base_url);
+    enter(app, phases, "detect");
+    let split_sentences =
+        find_split_sentences(&model, job, |percent| report(app, "detect", Some(percent))).await;
     enter(app, phases, "translate");
-    translate_segments(&TranslationModel::new(base_url), job, |percent| {
+    translate_segments(&model, job, &split_sentences, |percent| {
         report(app, "translate", Some(percent))
     })
     .await
@@ -184,15 +189,49 @@ async fn wait_until_ready(
     }
 }
 
-/// Translates the Segments Batch by Batch, each carrying the last lines translated before it.
+/// Asks the Model for Split Sentences window by window; a window it cannot answer is skipped.
+async fn find_split_sentences(
+    model: &TranslationModel,
+    job: &TranslationJob<'_>,
+    on_progress: impl Fn(u8),
+) -> Vec<Vec<usize>> {
+    let windows = batching::windows(job.segments.len(), job.batching.size);
+    let mut split_sentences = Vec::new();
+    for (done, window) in windows.iter().enumerate() {
+        let lines: Vec<(usize, &str)> = window
+            .clone()
+            .map(|index| (index, job.segments[index].text.as_str()))
+            .collect();
+        match model
+            .find_split_sentences(job.languages.source, &lines)
+            .await
+        {
+            Ok(found) => {
+                for sentence in found {
+                    if !split_sentences.contains(&sentence) {
+                        split_sentences.push(sentence);
+                    }
+                }
+            }
+            Err(failure) => log::warn!("skipped a window looking for split sentences: {failure:?}"),
+        }
+        on_progress(((done + 1) * 100 / windows.len()) as u8);
+    }
+    split_sentences
+}
+
+/// Translates the Segments Batch by Batch, keeping each Split Sentence in one Batch,
+/// each Batch carrying the last lines translated before it.
 async fn translate_segments(
     model: &TranslationModel,
     job: &TranslationJob<'_>,
+    split_sentences: &[Vec<usize>],
     on_progress: impl Fn(u8),
 ) -> Result<Vec<Segment>, Failure> {
     let mut translated: Vec<Segment> = Vec::with_capacity(job.segments.len());
     let mut done_pairs: Vec<(String, String)> = Vec::new();
-    for batch in job.segments.chunks(job.batching.size) {
+    for range in batching::batches(job.segments.len(), job.batching.size, split_sentences) {
+        let batch = &job.segments[range];
         let first = translated.len();
         let reference_start = done_pairs
             .len()
@@ -307,11 +346,13 @@ mod tests {
     }
 
     /// A llama-server that answers `/health` as not ready `loading` times first,
-    /// then answers each Batch through `answer` and keeps every request it was sent.
+    /// then answers each Batch through `answer` and each window looked at for Split Sentences
+    /// through `split`, keeping every request it was sent.
     struct FakeLlama {
         server: FakeHttp,
         log: Arc<Mutex<Vec<String>>>,
         requests: Arc<Mutex<Vec<serde_json::Value>>>,
+        windows: Arc<Mutex<Vec<Lines>>>,
     }
 
     type Lines = Vec<(usize, String)>;
@@ -321,9 +362,22 @@ mod tests {
             loading: usize,
             answer: impl Fn(Lines) -> Lines + Send + Sync + 'static,
         ) -> FakeLlama {
+            FakeLlama::serve_with(loading, answer, |_| json!({"clusters": []}).to_string())
+        }
+
+        fn serve_with(
+            loading: usize,
+            answer: impl Fn(Lines) -> Lines + Send + Sync + 'static,
+            split: impl Fn(Lines) -> String + Send + Sync + 'static,
+        ) -> FakeLlama {
             let log = Arc::new(Mutex::new(Vec::new()));
             let requests = Arc::new(Mutex::new(Vec::new()));
-            let (seen, sent) = (Arc::clone(&log), Arc::clone(&requests));
+            let windows = Arc::new(Mutex::new(Vec::new()));
+            let (seen, sent, looked) = (
+                Arc::clone(&log),
+                Arc::clone(&requests),
+                Arc::clone(&windows),
+            );
             let health_checks = Mutex::new(0);
             let server = FakeHttp::serve(move |request| {
                 if request.path == "/health" {
@@ -341,6 +395,11 @@ mod tests {
                 }
                 seen.lock().unwrap().push("chat".to_string());
                 let body: serde_json::Value = serde_json::from_slice(&request.body).unwrap();
+                if body["response_format"]["json_schema"]["name"] == "continuation_clusters" {
+                    let window = batch_lines(&body);
+                    looked.lock().unwrap().push(window.clone());
+                    return completion(&split(window));
+                }
                 let translations: Vec<_> = answer(batch_lines(&body))
                     .into_iter()
                     .map(|(index, text)| json!({"index": index, "text": text}))
@@ -352,17 +411,27 @@ mod tests {
                 server,
                 log,
                 requests,
+                windows,
             }
         }
 
         /// Answers each line as its text prefixed with `EN:`.
         fn echo(loading: usize) -> FakeLlama {
-            FakeLlama::serve(loading, |lines| {
-                lines
-                    .into_iter()
-                    .map(|(index, text)| (index, format!("EN:{text}")))
-                    .collect()
-            })
+            FakeLlama::serve(loading, echo_lines)
+        }
+
+        /// Echoes each line, and answers every window with `split` as its Split Sentences.
+        fn echo_finding(split: impl Fn(Lines) -> String + Send + Sync + 'static) -> FakeLlama {
+            FakeLlama::serve_with(0, echo_lines, split)
+        }
+
+        fn batch_sizes(&self) -> Vec<usize> {
+            self.requests
+                .lock()
+                .unwrap()
+                .iter()
+                .map(|body| batch_lines(body).len())
+                .collect()
         }
 
         fn model(&self) -> TranslationModel {
@@ -377,6 +446,29 @@ mod tests {
                 .map(|body| body["messages"][1]["content"].as_str().unwrap().to_string())
                 .collect()
         }
+    }
+
+    fn echo_lines(lines: Lines) -> Lines {
+        lines
+            .into_iter()
+            .map(|(index, text)| (index, format!("EN:{text}")))
+            .collect()
+    }
+
+    /// Detects, then translates, as a job does once llama-server is ready.
+    async fn translate_through(llama: &FakeLlama, job: &TranslationJob<'_>) -> Vec<Segment> {
+        let app = mock_app();
+        translate_once_ready(
+            app.handle(),
+            &reqwest::Client::new(),
+            &llama.server.base_url,
+            Duration::from_secs(5),
+            || false,
+            job,
+            &mut Phases::start("translate", "load"),
+        )
+        .await
+        .unwrap()
     }
 
     /// The Batch a request carries: the JSON on the last line of its user message.
@@ -412,7 +504,7 @@ mod tests {
             segment(1_000, 2_000, "今天天氣很好"),
         ];
 
-        let translated = translate_segments(&llama.model(), &job(&segments), |_| {})
+        let translated = translate_segments(&llama.model(), &job(&segments), &[], |_| {})
             .await
             .unwrap();
 
@@ -449,6 +541,7 @@ mod tests {
                 languages,
                 ..job(&segments)
             },
+            &[],
             |_| {},
         )
         .await
@@ -513,18 +606,88 @@ mod tests {
         let llama = FakeLlama::echo(0);
         let segments = three_segments();
 
-        translate_segments(&llama.model(), &in_batches_of_two(&segments), |_| {})
+        translate_segments(&llama.model(), &in_batches_of_two(&segments), &[], |_| {})
             .await
             .unwrap();
 
-        let sizes: Vec<usize> = llama
-            .requests
+        assert_eq!(llama.batch_sizes(), vec![2, 1]);
+    }
+
+    // @behavior TL-020
+    #[tokio::test]
+    async fn keeps_a_split_sentence_in_one_batch() {
+        let llama = FakeLlama::echo_finding(|window| {
+            let sentences: Vec<[usize; 2]> = window
+                .iter()
+                .any(|(index, _)| *index == 2)
+                .then_some([1, 2])
+                .into_iter()
+                .collect();
+            json!({"clusters": sentences}).to_string()
+        });
+        let segments = three_segments();
+
+        translate_through(&llama, &in_batches_of_two(&segments)).await;
+
+        assert_eq!(llama.batch_sizes(), vec![1, 2]);
+    }
+
+    fn five_segments() -> Vec<Segment> {
+        (0..5)
+            .map(|index| segment(index * 1_000, (index + 1) * 1_000, &format!("第{index}句")))
+            .collect()
+    }
+
+    // @behavior TL-021
+    #[tokio::test]
+    async fn batches_an_overlong_split_sentence_as_usual() {
+        let llama = FakeLlama::echo_finding(|_| json!({"clusters": [[0, 1, 2, 3, 4]]}).to_string());
+        let segments = five_segments();
+
+        translate_through(&llama, &in_batches_of_two(&segments)).await;
+
+        assert_eq!(llama.batch_sizes(), vec![2, 2, 1]);
+    }
+
+    // @behavior TL-022
+    #[tokio::test]
+    async fn looks_for_split_sentences_in_overlapping_windows() {
+        let llama = FakeLlama::echo(0);
+        let segments = five_segments();
+
+        translate_through(
+            &llama,
+            &TranslationJob {
+                batching: Batching {
+                    size: 4,
+                    reference_lines: 2,
+                },
+                ..job(&segments)
+            },
+        )
+        .await;
+
+        let shown: Vec<Vec<usize>> = llama
+            .windows
             .lock()
             .unwrap()
             .iter()
-            .map(|body| batch_lines(body).len())
+            .map(|window| window.iter().map(|(index, _)| *index).collect())
             .collect();
-        assert_eq!(sizes, vec![2, 1]);
+        assert_eq!(shown, vec![vec![0, 1, 2, 3], vec![2, 3, 4]]);
+    }
+
+    // @behavior TL-023
+    #[tokio::test]
+    async fn translates_on_when_a_window_cannot_be_read() {
+        let llama = FakeLlama::echo_finding(|_| "not json".to_string());
+        let segments = three_segments();
+
+        let translated = translate_through(&llama, &job(&segments)).await;
+
+        assert!(translated
+            .iter()
+            .all(|segment| segment.translation.is_some()));
     }
 
     // @behavior TL-018
@@ -539,7 +702,7 @@ mod tests {
         });
         let segments = three_segments();
 
-        let translated = translate_segments(&llama.model(), &job(&segments), |_| {})
+        let translated = translate_segments(&llama.model(), &job(&segments), &[], |_| {})
             .await
             .unwrap();
 
@@ -559,7 +722,7 @@ mod tests {
         let llama = FakeLlama::echo(0);
         let segments = three_segments();
 
-        translate_segments(&llama.model(), &in_batches_of_two(&segments), |_| {})
+        translate_segments(&llama.model(), &in_batches_of_two(&segments), &[], |_| {})
             .await
             .unwrap();
 
@@ -581,9 +744,10 @@ mod tests {
             .unwrap();
         let (generation, transcript) = project.snapshot().unwrap();
 
-        let translated = translate_segments(&llama.model(), &job(&transcript.segments), |_| {})
-            .await
-            .unwrap();
+        let translated =
+            translate_segments(&llama.model(), &job(&transcript.segments), &[], |_| {})
+                .await
+                .unwrap();
         project.write_translations(generation, to_english(), translated);
 
         let view = project.view().unwrap();
@@ -608,7 +772,7 @@ mod tests {
         )
         .await
         .unwrap();
-        translate_segments(&llama.model(), &job(&segments), |_| {})
+        translate_segments(&llama.model(), &job(&segments), &[], |_| {})
             .await
             .unwrap();
 
@@ -722,7 +886,7 @@ mod tests {
         .unwrap();
 
         let names: Vec<_> = phases.finish().iter().map(|timing| timing.phase).collect();
-        assert_eq!(names, vec!["load", "translate"]);
+        assert_eq!(names, vec!["load", "detect", "translate"]);
     }
 
     /// Runs a real llama-server:

@@ -10,7 +10,7 @@ use serde::Deserialize;
 use serde_json::json;
 
 use crate::failure::Failure;
-use crate::language::LanguagePair;
+use crate::language::{Language, LanguagePair};
 
 /// The translation Model behind llama-server's OpenAI-compatible API.
 pub struct TranslationModel {
@@ -27,6 +27,11 @@ pub struct BatchRequest<'a> {
 #[derive(Deserialize)]
 struct BatchAnswer {
     translations: Vec<TranslatedLine>,
+}
+
+#[derive(Deserialize)]
+struct SplitSentencesAnswer {
+    clusters: Vec<Vec<usize>>,
 }
 
 #[derive(Deserialize)]
@@ -53,7 +58,7 @@ impl TranslationModel {
             .answer(
                 instruction(batch.languages),
                 user_message(batch),
-                "subtitle_translation",
+                TRANSLATING,
                 translation_schema(),
             )
             .await?;
@@ -64,11 +69,37 @@ impl TranslationModel {
             .collect())
     }
 
+    /// Runs of consecutive indices the Model reads as one sentence cut apart, two lines or more each.
+    pub async fn find_split_sentences(
+        &self,
+        source: Language,
+        lines: &[(usize, &str)],
+    ) -> Result<Vec<Vec<usize>>, Failure> {
+        let answer: SplitSentencesAnswer = self
+            .answer(
+                split_sentence_instruction(source),
+                format!("Subtitle lines:\n{}", lines_json(lines)),
+                FINDING_SPLIT_SENTENCES,
+                split_sentence_schema(),
+            )
+            .await?;
+        Ok(answer
+            .clusters
+            .into_iter()
+            .map(|mut sentence| {
+                sentence.sort_unstable();
+                sentence.dedup();
+                sentence
+            })
+            .filter(|sentence| sentence.len() >= 2)
+            .collect())
+    }
+
     async fn answer<T: for<'de> Deserialize<'de>>(
         &self,
         system: String,
         user: String,
-        name: &str,
+        task: Task,
         schema: serde_json::Value,
     ) -> Result<T, Failure> {
         let request = CreateChatCompletionRequestArgs::default()
@@ -77,10 +108,10 @@ impl TranslationModel {
                 ChatCompletionRequestSystemMessage::from(system).into(),
                 ChatCompletionRequestUserMessage::from(user).into(),
             ])
-            .temperature(0.2_f32)
+            .temperature(task.temperature)
             .response_format(ResponseFormat::JsonSchema {
                 json_schema: ResponseFormatJsonSchema {
-                    name: name.to_string(),
+                    name: task.name.to_string(),
                     schema,
                     strict: Some(true),
                     description: None,
@@ -107,6 +138,22 @@ impl TranslationModel {
         })
     }
 }
+
+/// What one kind of request asks of the Model: the schema's name, and how freely it may answer.
+struct Task {
+    name: &'static str,
+    temperature: f32,
+}
+
+const TRANSLATING: Task = Task {
+    name: "subtitle_translation",
+    temperature: 0.2,
+};
+/// Judging where sentences continue wants the same answer every time.
+const FINDING_SPLIT_SENTENCES: Task = Task {
+    name: "continuation_clusters",
+    temperature: 0.0,
+};
 
 fn request_failure(error: async_openai::error::OpenAIError) -> Failure {
     Failure::LlamaRequest {
@@ -143,16 +190,53 @@ fn user_message(batch: &BatchRequest<'_>) -> String {
             lines.join("\n")
         ));
     }
-    let payload: Vec<_> = batch
-        .lines
+    parts.push(format!(
+        "Translate the following subtitle lines:\n{}",
+        lines_json(&batch.lines)
+    ));
+    parts.join("\n\n")
+}
+
+/// The lines as one line of JSON, each with its index.
+fn lines_json(lines: &[(usize, &str)]) -> String {
+    let payload: Vec<_> = lines
         .iter()
         .map(|(index, text)| json!({"index": index, "text": text}))
         .collect();
-    parts.push(format!(
-        "Translate the following subtitle lines:\n{}",
-        serde_json::Value::from(payload)
-    ));
-    parts.join("\n\n")
+    serde_json::Value::from(payload).to_string()
+}
+
+fn split_sentence_instruction(source: Language) -> String {
+    format!(
+        "You identify {source} subtitle lines whose original sentence was split
+across multiple consecutive entries by an automatic transcription/subtitling tool.
+
+Given an ordered list of subtitle lines, each with an index, find groups of 2 or more
+CONSECUTIVE indices that together form a single continuous sentence or thought - where
+reading any one line alone, without its neighbors, would be grammatically incomplete or
+confusing on its own.
+
+Most lines are self-contained complete thoughts and should NOT be grouped, even if they
+lack ending punctuation - that is normal for this kind of transcript. Only report
+genuine continuations, where a line clearly depends on a neighbor to make sense.
+
+Respond only with the JSON object matching the required schema.",
+        source = source.name(),
+    )
+}
+
+fn split_sentence_schema() -> serde_json::Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "clusters": {
+                "type": "array",
+                "items": {"type": "array", "items": {"type": "integer"}},
+            },
+        },
+        "required": ["clusters"],
+        "additionalProperties": false,
+    })
 }
 
 fn translation_schema() -> serde_json::Value {

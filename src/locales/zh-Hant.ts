@@ -69,6 +69,7 @@ const zhHant: typeof en = {
     prepare: "準備元件",
     convert: "轉檔",
     load: "載入模型",
+    detect: "找出被切開的句子",
     transcribe: "轉錄",
     translate: "翻譯",
     firstLoad: "{{phase}}（第一次使用會比較久）",

@@ -39,7 +39,7 @@ pub enum SegmentField {
 }
 
 #[derive(Debug, Default)]
-struct Held {
+struct HeldProject {
     /// Counts replacements, so a job that outlives its Project can tell.
     generation: u64,
     project: Option<Project>,
@@ -47,7 +47,7 @@ struct Held {
 
 /// The one Project every screen reads from and writes to; Rust holds it so no screen keeps its own copy.
 #[derive(Debug, Default)]
-pub struct CurrentProject(Mutex<Held>);
+pub struct CurrentProject(Mutex<HeldProject>);
 
 impl CurrentProject {
     pub fn replace(&self, project: Project) {
@@ -71,7 +71,7 @@ impl CurrentProject {
     }
 
     /// Writes each Segment's translation by position, unless the Project was replaced since `generation`.
-    pub fn translated(&self, generation: u64, segments: Vec<Segment>) {
+    pub fn write_translations(&self, generation: u64, segments: Vec<Segment>) {
         let mut held = self.lock();
         if held.generation != generation {
             return;
@@ -107,7 +107,7 @@ impl CurrentProject {
         Ok(project.transcript.to_srt(content))
     }
 
-    fn lock(&self) -> std::sync::MutexGuard<'_, Held> {
+    fn lock(&self) -> std::sync::MutexGuard<'_, HeldProject> {
         self.0
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
@@ -267,7 +267,7 @@ mod tests {
             },
         });
 
-        current.translated(generation, vec![segment("大家好", Some("Hello"))]);
+        current.write_translations(generation, vec![segment("大家好", Some("Hello"))]);
 
         assert_eq!(segments(&current), vec![segment("另一份", None)]);
     }

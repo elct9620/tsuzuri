@@ -9,12 +9,12 @@ use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-struct Recorded {
+struct RecordedProcess {
     pid: u32,
     name: String,
 }
 
-struct Running {
+struct RunningProcess {
     child: CommandChild,
     name: String,
 }
@@ -22,7 +22,7 @@ struct Running {
 /// Every Component process this launch started. The record on disk mirrors it so a crash leaves the PIDs behind for [`reap_strays`].
 #[derive(Clone)]
 pub struct Processes {
-    running: Arc<Mutex<HashMap<u32, Running>>>,
+    running: Arc<Mutex<HashMap<u32, RunningProcess>>>,
     record: PathBuf,
 }
 
@@ -50,7 +50,7 @@ impl Processes {
         let name = executable_name(&program.to_string_lossy());
         self.running.lock().unwrap().insert(
             pid,
-            Running {
+            RunningProcess {
                 child,
                 name: name.clone(),
             },
@@ -75,7 +75,7 @@ impl Processes {
     }
 
     pub fn kill_all(&self) {
-        let running: Vec<Running> = self
+        let running: Vec<RunningProcess> = self
             .running
             .lock()
             .unwrap()
@@ -94,12 +94,12 @@ impl Processes {
     }
 
     fn write_record(&self) {
-        let recorded: Vec<Recorded> = self
+        let recorded: Vec<RecordedProcess> = self
             .running
             .lock()
             .unwrap()
             .iter()
-            .map(|(pid, running)| Recorded {
+            .map(|(pid, running)| RecordedProcess {
                 pid: *pid,
                 name: running.name.clone(),
             })
@@ -147,9 +147,9 @@ pub fn reap_strays(record: &Path) {
     let Ok(bytes) = std::fs::read(record) else {
         return;
     };
-    let recorded: Vec<Recorded> = serde_json::from_slice(&bytes).unwrap_or_default();
+    let recorded: Vec<RecordedProcess> = serde_json::from_slice(&bytes).unwrap_or_default();
     for stray in recorded {
-        if running_name(stray.pid).is_some_and(|name| name == stray.name) {
+        if find_running_name(stray.pid).is_some_and(|name| name == stray.name) {
             kill_tree(stray.pid);
         }
     }
@@ -157,7 +157,7 @@ pub fn reap_strays(record: &Path) {
 }
 
 #[cfg(windows)]
-fn hidden(program: &str) -> std::process::Command {
+fn hidden_command(program: &str) -> std::process::Command {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
     let mut command = std::process::Command::new(program);
@@ -166,8 +166,8 @@ fn hidden(program: &str) -> std::process::Command {
 }
 
 #[cfg(windows)]
-fn running_name(pid: u32) -> Option<String> {
-    let output = hidden("tasklist")
+fn find_running_name(pid: u32) -> Option<String> {
+    let output = hidden_command("tasklist")
         .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
         .output()
         .ok()?;
@@ -178,13 +178,13 @@ fn running_name(pid: u32) -> Option<String> {
 
 #[cfg(windows)]
 fn kill_tree(pid: u32) {
-    let _ = hidden("taskkill")
+    let _ = hidden_command("taskkill")
         .args(["/PID", &pid.to_string(), "/T", "/F"])
         .status();
 }
 
 #[cfg(unix)]
-fn running_name(pid: u32) -> Option<String> {
+fn find_running_name(pid: u32) -> Option<String> {
     let output = std::process::Command::new("ps")
         .args(["-p", &pid.to_string(), "-o", "comm="])
         .output()
@@ -223,7 +223,7 @@ mod tests {
     }
 
     fn is_running(pid: u32) -> bool {
-        running_name(pid).is_some()
+        find_running_name(pid).is_some()
     }
 
     fn wait_until_gone(pid: u32) -> bool {
@@ -243,7 +243,7 @@ mod tests {
 
     fn record(dir: &TempDir, pid: u32, name: &str) -> PathBuf {
         let record = dir.path().join("processes.json");
-        let recorded = vec![Recorded {
+        let recorded = vec![RecordedProcess {
             pid,
             name: name.to_string(),
         }];
@@ -262,13 +262,13 @@ mod tests {
             .spawn(app.handle(), &sleep_path(), &["30".to_string()])
             .unwrap();
 
-        let recorded: Vec<Recorded> =
+        let recorded: Vec<RecordedProcess> =
             serde_json::from_slice(&std::fs::read(dir.path().join("processes.json")).unwrap())
                 .unwrap();
         processes.kill_all();
         assert_eq!(
             recorded,
-            vec![Recorded {
+            vec![RecordedProcess {
                 pid,
                 name: "sleep".to_string()
             }]

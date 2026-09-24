@@ -159,7 +159,7 @@ mod tests {
         }
     }
 
-    fn translated(start_ms: u64, end_ms: u64, text: &str, translation: &str) -> Segment {
+    fn translated_segment(start_ms: u64, end_ms: u64, text: &str, translation: &str) -> Segment {
         Segment {
             translation: Some(translation.to_string()),
             ..segment(start_ms, end_ms, text)
@@ -243,7 +243,7 @@ mod tests {
     #[test]
     fn writes_each_translation_in_place_of_the_text() {
         let transcript = Transcript {
-            segments: vec![translated(1_000, 2_500, "你好", "Hello")],
+            segments: vec![translated_segment(1_000, 2_500, "你好", "Hello")],
         };
 
         assert_eq!(
@@ -257,7 +257,7 @@ mod tests {
     fn writes_the_original_above_its_translation() {
         let transcript = Transcript {
             segments: vec![
-                translated(1_000, 2_500, "你好", "Hello"),
+                translated_segment(1_000, 2_500, "你好", "Hello"),
                 segment(62_003, 3_600_000, "世界"),
             ],
         };
@@ -272,7 +272,7 @@ mod tests {
     #[test]
     fn writes_a_cleared_translation_as_no_translation() {
         let transcript = Transcript {
-            segments: vec![translated(1_000, 2_500, "你好", " \n")],
+            segments: vec![translated_segment(1_000, 2_500, "你好", " \n")],
         };
 
         assert_eq!(

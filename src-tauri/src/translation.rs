@@ -99,7 +99,7 @@ pub async fn run_translate<R: Runtime>(
     )
     .await;
     processes.kill(pid);
-    project.translated(generation, result?);
+    project.write_translations(generation, result?);
     project::announce(app);
     Ok(Translation {
         phases: phases.finish(),
@@ -346,7 +346,7 @@ mod tests {
         )
         .await
         .unwrap();
-        project.translated(generation, translated);
+        project.write_translations(generation, translated);
 
         let view = project.view().unwrap();
         let segment = &view.segments()[0];

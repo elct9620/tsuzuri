@@ -9,6 +9,7 @@ The one Project Rust holds as the single source of truth: what makes it, what ch
 - `src-tauri/src/translation.rs`
 - `src/controllers/project_controller.test.ts`
 - `src/controllers/tabs_controller.test.ts`
+- `src/controllers/transcript_controller.test.ts`
 
 ## `PJ-001` Opening an SRT file as the Project
 
@@ -97,3 +98,27 @@ The one Project Rust holds as the single source of truth: what makes it, what ch
 | Given | a Project with a Translation Glossary |
 | When | an SRT file is opened as a new Project |
 | Then | the new Project holds no Translation Glossary |
+
+## `PJ-012` Naming an export by its Languages
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project transcribed from `/talks/lecture.mp4` in `zh-TW` and translated into `en` |
+| When | the default path of each export is asked for |
+| Then | the original is `/talks/lecture.zh-TW.srt`, the translation `/talks/lecture.en.srt` and the bilingual `/talks/lecture.zh-TW.en.srt` |
+
+## `PJ-013` Naming an export beside the SRT file it came from
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project opened from `/subs/interview.zh-TW.srt` and translated into `ja` |
+| When | the default path of the translation export is asked for |
+| Then | it is `/subs/interview.ja.srt` |
+
+## `PJ-014` Offering the default path when exporting
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose translation export defaults to `/talks/lecture.en.srt` |
+| When | the translation is exported from the toolbar |
+| Then | the save dialog opens at `/talks/lecture.en.srt` |

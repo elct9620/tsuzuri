@@ -86,6 +86,14 @@ Write the Project to a file as SRT carrying the `original` text, the `translatio
 pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<(), Failure> {}
 ```
 
+## `export_path`
+
+Where an export of the Project is saved by default: beside the media or SRT file it came from, named with the Language codes of the text it carries.
+
+```rust
+pub fn export_path(app: AppHandle, content: SrtContent) -> Result<PathBuf, Failure> {}
+```
+
 ## `load_glossary`
 
 Read a CSV file with a `source,target` header into the Project's Translation Glossary, replacing the one it had.

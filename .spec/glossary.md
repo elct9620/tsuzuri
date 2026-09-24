@@ -38,6 +38,10 @@ The list built into the app that pins each Component: release tag, download URLs
 
 A weights file an engine loads, always passed by absolute path. The user points at a local file or downloads one into the Model Directory; the Manifest never lists Models.
 
+### Model Slot
+
+Which job a Model is chosen for: transcription (whisper-cli) or translation (llama-server). Each slot holds one Model path.
+
 ### Model Directory
 
 The folder under app data where Tsuzuri keeps the Models it downloads.

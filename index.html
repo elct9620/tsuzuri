@@ -23,13 +23,19 @@
         </ul>
       </section>
 
-      <section class="panel" aria-labelledby="models-title">
+      <section class="panel" aria-labelledby="models-title" data-controller="models">
         <h2 id="models-title">模型</h2>
         <dl class="models">
           <dt>轉錄</dt>
-          <dd>尚未指定</dd>
+          <dd>
+            <span data-models-target="status" data-slot="transcription">尚未指定</span>
+            <button type="button" data-slot="transcription" data-action="models#choose">指定檔案</button>
+          </dd>
           <dt>翻譯</dt>
-          <dd>尚未指定</dd>
+          <dd>
+            <span data-models-target="status" data-slot="translation">尚未指定</span>
+            <button type="button" data-slot="translation" data-action="models#choose">指定檔案</button>
+          </dd>
         </dl>
       </section>
 

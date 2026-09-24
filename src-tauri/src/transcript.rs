@@ -8,6 +8,19 @@ pub struct Segment {
     pub start_ms: u64,
     pub end_ms: u64,
     pub text: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub translation: Option<String>,
+}
+
+/// Which text an SRT's cues carry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SrtContent {
+    Original,
+    /// A Segment not yet translated keeps its original text, so no cue is left empty.
+    Translation,
+    /// The original above the translation in the same cue.
+    Bilingual,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -43,7 +56,7 @@ impl Transcript {
         Ok(Transcript { segments })
     }
 
-    pub fn to_srt(&self) -> String {
+    pub fn to_srt(&self, content: SrtContent) -> String {
         self.segments
             .iter()
             .enumerate()
@@ -53,7 +66,7 @@ impl Transcript {
                     index + 1,
                     format_timestamp(segment.start_ms),
                     format_timestamp(segment.end_ms),
-                    cue_text(&segment.text)
+                    cue_text(segment, content)
                 )
             })
             .collect::<Vec<_>>()
@@ -61,8 +74,23 @@ impl Transcript {
     }
 }
 
+fn cue_text(segment: &Segment, content: SrtContent) -> String {
+    // A translation edited down to nothing is no translation, so the cue keeps its original text.
+    let translation = segment
+        .translation
+        .as_deref()
+        .filter(|translation| !translation.trim().is_empty());
+    match (content, translation) {
+        (SrtContent::Translation, Some(translation)) => cue_lines(translation),
+        (SrtContent::Bilingual, Some(translation)) => {
+            format!("{}\n{}", cue_lines(&segment.text), cue_lines(translation))
+        }
+        _ => cue_lines(&segment.text),
+    }
+}
+
 /// A blank line ends a cue in SRT, so text edited to contain one is written without it.
-fn cue_text(text: &str) -> String {
+fn cue_lines(text: &str) -> String {
     text.lines()
         .map(str::trim_end)
         .filter(|line| !line.is_empty())
@@ -79,8 +107,8 @@ pub fn open_srt(path: PathBuf) -> Result<Vec<Segment>, String> {
 }
 
 #[tauri::command]
-pub fn save_srt(path: PathBuf, segments: Vec<Segment>) -> Result<(), String> {
-    std::fs::write(path, Transcript { segments }.to_srt()).map_err(|error| error.to_string())
+pub fn save_srt(path: PathBuf, segments: Vec<Segment>, content: SrtContent) -> Result<(), String> {
+    std::fs::write(path, Transcript { segments }.to_srt(content)).map_err(|error| error.to_string())
 }
 
 fn parse_cue(cue: usize, block: &str) -> Result<Segment, SrtError> {
@@ -101,6 +129,7 @@ fn parse_cue(cue: usize, block: &str) -> Result<Segment, SrtError> {
         start_ms,
         end_ms,
         text,
+        translation: None,
     })
 }
 
@@ -140,6 +169,14 @@ mod tests {
             start_ms,
             end_ms,
             text: text.to_string(),
+            translation: None,
+        }
+    }
+
+    fn translated(start_ms: u64, end_ms: u64, text: &str, translation: &str) -> Segment {
+        Segment {
+            translation: Some(translation.to_string()),
+            ..segment(start_ms, end_ms, text)
         }
     }
 
@@ -198,7 +235,7 @@ mod tests {
             ],
         };
 
-        assert_eq!(transcript.to_srt(), TWO_CUES);
+        assert_eq!(transcript.to_srt(SrtContent::Original), TWO_CUES);
     }
 
     // @behavior TR-006
@@ -211,8 +248,50 @@ mod tests {
             ],
         };
 
-        let reread = Transcript::from_srt(&transcript.to_srt()).unwrap();
+        let reread = Transcript::from_srt(&transcript.to_srt(SrtContent::Original)).unwrap();
 
         assert_eq!(reread.segments.len(), 2);
+    }
+
+    // @behavior TR-007
+    #[test]
+    fn writes_each_translation_in_place_of_the_text() {
+        let transcript = Transcript {
+            segments: vec![translated(1_000, 2_500, "你好", "Hello")],
+        };
+
+        assert_eq!(
+            transcript.to_srt(SrtContent::Translation),
+            "1\n00:00:01,000 --> 00:00:02,500\nHello\n"
+        );
+    }
+
+    // @behavior TR-008
+    #[test]
+    fn writes_the_original_above_its_translation() {
+        let transcript = Transcript {
+            segments: vec![
+                translated(1_000, 2_500, "你好", "Hello"),
+                segment(62_003, 3_600_000, "世界"),
+            ],
+        };
+
+        assert_eq!(
+            transcript.to_srt(SrtContent::Bilingual),
+            "1\n00:00:01,000 --> 00:00:02,500\n你好\nHello\n\n2\n00:01:02,003 --> 01:00:00,000\n世界\n"
+        );
+    }
+
+    // @behavior TR-008
+    #[test]
+    fn writes_a_cleared_translation_as_no_translation() {
+        let transcript = Transcript {
+            segments: vec![translated(1_000, 2_500, "你好", " \n")],
+        };
+
+        assert_eq!(
+            transcript.to_srt(SrtContent::Bilingual),
+            transcript.to_srt(SrtContent::Original)
+        );
     }
 }

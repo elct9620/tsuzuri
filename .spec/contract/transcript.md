@@ -22,7 +22,7 @@ impl Transcript {
 
 ## `Transcript::to_srt`
 
-Write a Transcript as SRT text.
+Write a Transcript as SRT text carrying the original, the translation, or both as a Bilingual SRT.
 
 | Attribute | Value |
 | --- | --- |
@@ -30,6 +30,6 @@ Write a Transcript as SRT text.
 
 ```rust
 impl Transcript {
-    pub fn to_srt(&self) -> String {}
+    pub fn to_srt(&self, content: SrtContent) -> String {}
 }
 ```

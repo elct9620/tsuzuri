@@ -64,8 +64,8 @@ pub async fn translate(app: AppHandle, segments: Vec<Segment>, target: String) -
 
 ## `save_srt`
 
-Write Segments to a file as SRT.
+Write Segments to a file as SRT carrying the `original` text, the `translation`, or both as a `bilingual` SRT.
 
 ```rust
-pub fn save_srt(path: PathBuf, segments: Vec<Segment>) -> Result<(), String> {}
+pub fn save_srt(path: PathBuf, segments: Vec<Segment>, content: SrtContent) -> Result<(), String> {}
 ```

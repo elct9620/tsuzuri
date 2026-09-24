@@ -24,14 +24,6 @@ const HEALTH_POLL: Duration = Duration::from_millis(500);
 /// Each request carries one subtitle line, so a small context keeps the KV cache inside 4 GB of VRAM.
 const CONTEXT_SIZE: &str = "4096";
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct TranslatedSegment {
-    start_ms: u64,
-    end_ms: u64,
-    text: String,
-    translation: String,
-}
-
 /// What to translate: the Segments and the language they are translated into.
 pub struct TranslationJob<'a> {
     pub segments: &'a [Segment],
@@ -40,7 +32,7 @@ pub struct TranslationJob<'a> {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Translation {
-    segments: Vec<TranslatedSegment>,
+    segments: Vec<Segment>,
     phases: Vec<PhaseTiming>,
 }
 
@@ -111,7 +103,7 @@ async fn translate_once_ready<R: Runtime>(
     has_exited: impl Fn() -> bool,
     job: &TranslationJob<'_>,
     phases: &mut Phases,
-) -> Result<Vec<TranslatedSegment>, String> {
+) -> Result<Vec<Segment>, String> {
     wait_until_ready(client, base_url, ready_timeout, has_exited).await?;
     enter(app, phases, "translate");
     translate_segments(client, base_url, job.segments, job.target, |percent| {
@@ -161,7 +153,7 @@ async fn translate_segments(
     segments: &[Segment],
     target: &str,
     on_progress: impl Fn(u8),
-) -> Result<Vec<TranslatedSegment>, String> {
+) -> Result<Vec<Segment>, String> {
     let instruction = format!(
         "You translate subtitles into {target}. Reply with only the translation of the user's line, without quotes or notes."
     );
@@ -190,11 +182,9 @@ async fn translate_segments(
             .ok_or("llama-server answered without a translation")?
             .trim()
             .to_string();
-        translated.push(TranslatedSegment {
-            start_ms: segment.start_ms,
-            end_ms: segment.end_ms,
-            text: segment.text.clone(),
-            translation,
+        translated.push(Segment {
+            translation: Some(translation),
+            ..segment.clone()
         });
         on_progress(((index + 1) * 100 / segments.len()) as u8);
     }
@@ -241,6 +231,7 @@ mod tests {
             start_ms,
             end_ms,
             text: text.to_string(),
+            translation: None,
         }
     }
 
@@ -311,17 +302,13 @@ mod tests {
         assert_eq!(
             translated,
             vec![
-                TranslatedSegment {
-                    start_ms: 0,
-                    end_ms: 1_000,
-                    text: "大家好".to_string(),
-                    translation: "EN:大家好".to_string()
+                Segment {
+                    translation: Some("EN:大家好".to_string()),
+                    ..segment(0, 1_000, "大家好")
                 },
-                TranslatedSegment {
-                    start_ms: 1_000,
-                    end_ms: 2_000,
-                    text: "今天天氣很好".to_string(),
-                    translation: "EN:今天天氣很好".to_string()
+                Segment {
+                    translation: Some("EN:今天天氣很好".to_string()),
+                    ..segment(1_000, 2_000, "今天天氣很好")
                 },
             ]
         );
@@ -496,7 +483,11 @@ mod tests {
         .unwrap();
 
         for segment in &translated.segments {
-            println!("{} -> {}", segment.text, segment.translation);
+            println!(
+                "{} -> {}",
+                segment.text,
+                segment.translation.as_deref().unwrap_or_default()
+            );
         }
         println!("phases {:?}", translated.phases);
         assert_eq!(translated.segments.len(), 2);

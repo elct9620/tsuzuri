@@ -26,8 +26,9 @@ describe("TranscriptController", () => {
       <section data-controller="transcript" data-action="transcribe:loaded@window->transcript#show translate:loaded@window->transcript#show">
         <p data-transcript-target="empty">尚無內容</p>
         <div data-transcript-target="actions" hidden>
-          <button id="save-original" data-action="transcript#saveOriginal">另存原文</button>
-          <button id="save-translation" data-transcript-target="saveTranslation" data-action="transcript#saveTranslation" hidden>另存譯文</button>
+          <button id="save-original" data-action="transcript#save" data-transcript-content-param="original">另存原文</button>
+          <button id="save-translation" data-transcript-target="translated" data-action="transcript#save" data-transcript-content-param="translation" hidden>另存譯文</button>
+          <button id="save-bilingual" data-transcript-target="translated" data-action="transcript#save" data-transcript-content-param="bilingual" hidden>另存雙語</button>
         </div>
         <ol data-transcript-target="list"></ol>
       </section>
@@ -78,7 +79,7 @@ describe("TranscriptController", () => {
   });
 
   // @behavior ED-001
-  it("saves the edited text of a segment", async () => {
+  it("saves the edited text as the original", async () => {
     load("transcribe:loaded", [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }]);
     document.querySelector<HTMLTextAreaElement>("textarea.text")!.value =
       "逐字稿";
@@ -89,11 +90,37 @@ describe("TranscriptController", () => {
     expect(saved).toEqual({
       path: "/subtitles/out.srt",
       segments: [{ start_ms: 0, end_ms: 1000, text: "逐字稿" }],
+      content: "original",
     });
   });
 
   // @behavior ED-002
-  it("saves the translations in place of the original text", async () => {
+  it("saves the edited translation as the translation", async () => {
+    load("translate:loaded", [
+      {
+        start_ms: 0,
+        end_ms: 1000,
+        text: "大家好",
+        translation: "Hello everyone",
+      },
+    ]);
+    document.querySelector<HTMLTextAreaElement>("textarea.translation")!.value =
+      "Hi all";
+
+    document.querySelector<HTMLButtonElement>("#save-translation")!.click();
+    await settle();
+
+    expect(saved).toEqual({
+      path: "/subtitles/out.srt",
+      segments: [
+        { start_ms: 0, end_ms: 1000, text: "大家好", translation: "Hi all" },
+      ],
+      content: "translation",
+    });
+  });
+
+  // @behavior ED-003
+  it("saves both the text and the translation as bilingual", async () => {
     load("translate:loaded", [
       {
         start_ms: 0,
@@ -103,12 +130,20 @@ describe("TranscriptController", () => {
       },
     ]);
 
-    document.querySelector<HTMLButtonElement>("#save-translation")!.click();
+    document.querySelector<HTMLButtonElement>("#save-bilingual")!.click();
     await settle();
 
     expect(saved).toEqual({
       path: "/subtitles/out.srt",
-      segments: [{ start_ms: 0, end_ms: 1000, text: "Hello everyone" }],
+      segments: [
+        {
+          start_ms: 0,
+          end_ms: 1000,
+          text: "大家好",
+          translation: "Hello everyone",
+        },
+      ],
+      content: "bilingual",
     });
   });
 });

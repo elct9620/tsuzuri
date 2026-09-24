@@ -53,3 +53,19 @@ Reading and writing a Transcript as SRT, the one format every Mode shares: whisp
 | Given | a Segment whose text contains a blank line |
 | When | the Transcript is written as SRT and read back |
 | Then | it reads back as the same number of Segments |
+
+## `TR-007` Writing the translation as SRT
+
+| Step | Statement |
+| --- | --- |
+| Given | a Transcript whose Segments carry translations |
+| When | the translation is written as SRT |
+| Then | each cue carries its Segment's translation in place of the original text |
+
+## `TR-008` Writing a Bilingual SRT
+
+| Step | Statement |
+| --- | --- |
+| Given | a Transcript of one translated Segment and one without a translation |
+| When | it is written as a Bilingual SRT |
+| Then | the first cue carries the original above the translation and the second the original alone |

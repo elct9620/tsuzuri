@@ -12,11 +12,15 @@ The words this project keeps, and the ones it turns down in their place.
 
 ### Segment
 
-One piece of speech with a start time, an end time and its text. The unit every mode reads and writes.
+One piece of speech with a start time, an end time and its text, and its translation once translated. The unit every mode reads and writes.
 
 ### Transcript
 
 The ordered Segments of one media file. Transcribe produces it, Translate consumes it, and SRT is how it is stored on disk.
+
+### Bilingual SRT
+
+An SRT whose every cue carries the original text above its translation, so any player shows both languages without support of its own. A Segment without a translation is written with its original text alone.
 
 ### Mode
 

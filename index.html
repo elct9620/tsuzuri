@@ -223,16 +223,30 @@
         <h2 id="transcript-title">字幕</h2>
         <p class="empty" data-transcript-target="empty">尚無內容</p>
         <div class="actions" data-transcript-target="actions" hidden>
-          <button type="button" data-action="transcript#saveOriginal">
+          <button
+            type="button"
+            data-action="transcript#save"
+            data-transcript-content-param="original"
+          >
             另存原文 SRT
           </button>
           <button
             type="button"
-            data-transcript-target="saveTranslation"
-            data-action="transcript#saveTranslation"
+            data-transcript-target="translated"
+            data-action="transcript#save"
+            data-transcript-content-param="translation"
             hidden
           >
             另存譯文 SRT
+          </button>
+          <button
+            type="button"
+            data-transcript-target="translated"
+            data-action="transcript#save"
+            data-transcript-content-param="bilingual"
+            hidden
+          >
+            另存雙語 SRT
           </button>
         </div>
         <ol class="segments" data-transcript-target="list"></ol>

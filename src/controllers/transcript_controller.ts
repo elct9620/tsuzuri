@@ -25,13 +25,17 @@ function editor(className: string, value: string): HTMLTextAreaElement {
   return field;
 }
 
+/** Which text the saved SRT's cues carry; the backend writes each one. */
+type SrtContent = "original" | "translation" | "bilingual";
+
 export default class TranscriptController extends Controller {
-  static targets = ["list", "empty", "actions", "saveTranslation"];
+  static targets = ["list", "empty", "actions", "translated"];
 
   declare readonly listTarget: HTMLOListElement;
   declare readonly emptyTarget: HTMLElement;
   declare readonly actionsTarget: HTMLElement;
-  declare readonly saveTranslationTarget: HTMLButtonElement;
+  /** Actions that need a translation, hidden until the Transcript has one. */
+  declare readonly translatedTargets: HTMLElement[];
 
   private segments: Segment[] = [];
 
@@ -53,31 +57,28 @@ export default class TranscriptController extends Controller {
     );
     this.emptyTarget.hidden = this.segments.length > 0;
     this.actionsTarget.hidden = this.segments.length === 0;
-    this.saveTranslationTarget.hidden = !hasTranslation;
+    for (const action of this.translatedTargets)
+      action.hidden = !hasTranslation;
   }
 
-  async saveOriginal(): Promise<void> {
-    await this.save("text");
-  }
-
-  async saveTranslation(): Promise<void> {
-    await this.save("translation");
-  }
-
-  private async save(field: "text" | "translation"): Promise<void> {
+  async save({ params }: { params: { content: SrtContent } }): Promise<void> {
     const path = await save({
       filters: [{ name: "SRT", extensions: ["srt"] }],
     });
     if (path === null) return;
 
     const items = [...this.listTarget.children];
-    const segments = this.segments.map((segment, index) => ({
-      start_ms: segment.start_ms,
-      end_ms: segment.end_ms,
-      text:
-        items[index].querySelector<HTMLTextAreaElement>(`textarea.${field}`)
-          ?.value ?? "",
-    }));
-    await invoke("save_srt", { path, segments });
+    const segments = this.segments.map((segment, index) => {
+      const field = (name: string) =>
+        items[index].querySelector<HTMLTextAreaElement>(`textarea.${name}`)
+          ?.value;
+      return {
+        start_ms: segment.start_ms,
+        end_ms: segment.end_ms,
+        text: field("text") ?? "",
+        translation: field("translation"),
+      };
+    });
+    await invoke("save_srt", { path, segments, content: params.content });
   }
 }

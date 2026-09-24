@@ -294,7 +294,7 @@ pub async fn choose_component(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_support::{captured_logs, TempDir};
+    use crate::test_support::TempDir;
 
     fn tool() -> Component {
         component("tool", "tool", "--version", "brew install tool")
@@ -411,6 +411,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn logs_where_a_component_was_found_and_how_long_it_took() {
+        use crate::test_support::captured_logs;
         let dir = TempDir::new("cp-log");
         let installed = script(&dir.path().join("bin"), "tool", 0);
         let mut resolver = resolver(&dir);

@@ -94,6 +94,7 @@ pub async fn run_transcribe<R: Runtime>(
     let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
     app.state::<CurrentProject>().replace(Project {
         media: Some(input.to_path_buf()),
+        opened_srt: None,
         transcript: Transcript::from_srt(&srt)?,
         language: job.language,
         translation_language: None,

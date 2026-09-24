@@ -100,6 +100,7 @@ mod tests {
         let current = CurrentProject::default();
         current.replace(Project {
             media: None,
+            opened_srt: None,
             transcript: Transcript {
                 segments: Vec::new(),
             },

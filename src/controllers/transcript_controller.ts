@@ -82,6 +82,9 @@ export default class TranscriptController extends Controller {
   }): Promise<void> {
     (currentTarget as HTMLElement).closest("details")?.removeAttribute("open");
     const path = await save({
+      defaultPath: await invoke<string>("export_path", {
+        content: params.content,
+      }),
       filters: [{ name: "SRT", extensions: ["srt"] }],
     });
     if (path === null) return;

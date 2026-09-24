@@ -380,6 +380,7 @@ mod tests {
     fn project_of(segments: Vec<Segment>) -> Project {
         Project {
             media: None,
+            opened_srt: None,
             language: Language::TraditionalChinese,
             translation_language: None,
             translation_glossary: None,

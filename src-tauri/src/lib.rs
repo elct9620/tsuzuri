@@ -49,6 +49,7 @@ pub fn run() {
             pipeline::transcribe,
             project::current_project,
             project::edit_segment,
+            project::export_path,
             project::open_srt,
             project::save_srt,
             translation::save_translation_settings,

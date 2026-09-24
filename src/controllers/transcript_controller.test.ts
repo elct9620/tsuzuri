@@ -69,6 +69,7 @@ describe("TranscriptController", () => {
       (command, args) => {
         calls.push({ command, args });
         if (command === "current_project") return project;
+        if (command === "export_path") return "/talks/lecture.en.srt";
         if (command === "plugin:dialog|save") return "/subtitles/out.srt";
       },
       { shouldMockEvents: true },
@@ -157,6 +158,19 @@ describe("TranscriptController", () => {
     expect(sent("save_srt")).toEqual({
       path: "/subtitles/out.srt",
       content: "bilingual",
+    });
+  });
+
+  // @behavior PJ-014
+  it("opens the save dialog at the default path of the export", async () => {
+    await hold(translated);
+
+    document.querySelector<HTMLButtonElement>("#save-translation")!.click();
+    await settle();
+
+    expect(sent("export_path")).toEqual({ content: "translation" });
+    expect(sent("plugin:dialog|save")).toMatchObject({
+      options: { defaultPath: "/talks/lecture.en.srt" },
     });
   });
 });

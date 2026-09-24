@@ -19,6 +19,21 @@ pub struct LanguagePair {
 }
 
 impl Language {
+    pub const ALL: [Language; 3] = [
+        Language::TraditionalChinese,
+        Language::English,
+        Language::Japanese,
+    ];
+
+    /// The code the webview sends, and export file names carry.
+    pub fn code(self) -> &'static str {
+        match self {
+            Language::TraditionalChinese => "zh-TW",
+            Language::English => "en",
+            Language::Japanese => "ja",
+        }
+    }
+
     /// The name a Model is told the language by.
     pub fn name(self) -> &'static str {
         match self {

@@ -14,10 +14,50 @@ use crate::translation_glossary::{TranslationGlossary, TranslationGlossaryView};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Project {
     pub media: Option<PathBuf>,
+    /// The SRT file the Project was opened from, when it was.
+    pub opened_srt: Option<PathBuf>,
     pub transcript: Transcript,
     pub language: Language,
     pub translation_language: Option<Language>,
     pub translation_glossary: Option<TranslationGlossary>,
+}
+
+impl Project {
+    /// Beside the file the Project came from, named after it with the Language codes of `content`.
+    pub fn export_path(&self, content: SrtContent) -> PathBuf {
+        let source = self
+            .media
+            .as_deref()
+            .or(self.opened_srt.as_deref())
+            .unwrap_or(Path::new("subtitles"));
+        let mut name = base_name(source);
+        let languages = match content {
+            SrtContent::Original => vec![Some(self.language)],
+            SrtContent::Translation => vec![self.translation_language],
+            SrtContent::Bilingual => vec![Some(self.language), self.translation_language],
+        };
+        for language in languages.into_iter().flatten() {
+            name.push('.');
+            name.push_str(language.code());
+        }
+        name.push_str(".srt");
+        source.with_file_name(name)
+    }
+}
+
+/// The file's name without its extension or a Language code before it, so `talk.zh-TW.srt` gives `talk`.
+fn base_name(source: &Path) -> String {
+    let stem = Path::new(source.file_stem().unwrap_or_default());
+    let has_code_suffix = stem
+        .extension()
+        .and_then(|code| code.to_str())
+        .is_some_and(|code| Language::ALL.iter().any(|language| language.code() == code));
+    let base = if has_code_suffix {
+        stem.file_stem().unwrap_or_default()
+    } else {
+        stem.as_os_str()
+    };
+    base.to_string_lossy().into_owned()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -155,6 +195,12 @@ impl CurrentProject {
         Ok(())
     }
 
+    pub fn export_path(&self, content: SrtContent) -> Result<PathBuf, Failure> {
+        let held = self.lock();
+        let project = held.project.as_ref().ok_or(Failure::NoProject)?;
+        Ok(project.export_path(content))
+    }
+
     pub fn to_srt(&self, content: SrtContent) -> Result<String, Failure> {
         let held = self.lock();
         let project = held.project.as_ref().ok_or(Failure::NoProject)?;
@@ -177,6 +223,7 @@ fn open(path: PathBuf) -> Result<Project, Failure> {
     let srt = std::fs::read_to_string(&path)?;
     Ok(Project {
         media: None,
+        opened_srt: Some(path),
         transcript: Transcript::from_srt(&srt)?,
         language: Language::TraditionalChinese,
         translation_language: None,
@@ -209,6 +256,11 @@ pub fn edit_segment(
 }
 
 #[tauri::command]
+pub fn export_path(app: AppHandle, content: SrtContent) -> Result<PathBuf, Failure> {
+    app.state::<CurrentProject>().export_path(content)
+}
+
+#[tauri::command]
 pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<(), Failure> {
     let srt = app.state::<CurrentProject>().to_srt(content)?;
     Ok(std::fs::write(path, srt)?)
@@ -233,6 +285,7 @@ mod tests {
         let current = CurrentProject::default();
         current.replace(Project {
             media: None,
+            opened_srt: None,
             language: Language::TraditionalChinese,
             translation_language: None,
             translation_glossary: None,
@@ -279,6 +332,76 @@ mod tests {
         current.replace(open(srt).unwrap());
 
         assert_eq!(current.view().unwrap().translation_glossary(), None);
+    }
+
+    fn translated_project(
+        media: Option<&str>,
+        opened_srt: Option<&str>,
+        language: Language,
+        translation_language: Language,
+    ) -> Project {
+        Project {
+            media: media.map(PathBuf::from),
+            opened_srt: opened_srt.map(PathBuf::from),
+            transcript: Transcript {
+                segments: vec![segment("大家好", Some("Hello"))],
+            },
+            language,
+            translation_language: Some(translation_language),
+            translation_glossary: None,
+        }
+    }
+
+    // @behavior PJ-012
+    #[test]
+    fn names_an_export_by_its_languages() {
+        let project = translated_project(
+            Some("/talks/lecture.mp4"),
+            None,
+            Language::TraditionalChinese,
+            Language::English,
+        );
+
+        let paths = [
+            SrtContent::Original,
+            SrtContent::Translation,
+            SrtContent::Bilingual,
+        ]
+        .map(|content| project.export_path(content));
+
+        assert_eq!(
+            paths,
+            [
+                PathBuf::from("/talks/lecture.zh-TW.srt"),
+                PathBuf::from("/talks/lecture.en.srt"),
+                PathBuf::from("/talks/lecture.zh-TW.en.srt"),
+            ]
+        );
+    }
+
+    // @behavior PJ-013
+    #[test]
+    fn names_an_export_beside_the_srt_file_it_came_from() {
+        let dir = TempDir::new("pj-export");
+        let srt = dir.path().join("interview.zh-TW.srt");
+        std::fs::write(&srt, "1\n00:00:00,000 --> 00:00:01,000\n你好\n").unwrap();
+        let current = CurrentProject::default();
+        current.replace(open(srt).unwrap());
+        let (generation, _) = current.snapshot().unwrap();
+
+        current.write_translations(
+            generation,
+            LanguagePair {
+                source: Language::TraditionalChinese,
+                target: Language::Japanese,
+            },
+            vec![segment("你好", Some("こんにちは"))],
+        );
+
+        assert_eq!(
+            current.export_path(SrtContent::Translation).unwrap(),
+            dir.path().join("interview.ja.srt")
+        );
     }
 
     // @behavior PJ-003
@@ -341,6 +464,7 @@ mod tests {
         let (generation, _) = current.snapshot().unwrap();
         current.replace(Project {
             media: None,
+            opened_srt: None,
             language: Language::TraditionalChinese,
             translation_language: None,
             translation_glossary: None,

@@ -3,6 +3,7 @@ name = "tsuzuri"
 version = "0.1.0"
 description = "Local transcription, subtitle editing and translation"
 authors = ["Aotokitsuruya <contact@aotoki.me>"]
+license = "Apache-2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -25,7 +26,7 @@ tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 reqwest = { version = "0.13", features = ["stream", "json"] }
 sha2 = "0.10"
-zip = "8.6.0"
+zip = { version = "8.6.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 tar = "0.4.46"
 flate2 = "1.1.10"
 futures-util = "0.3.34"

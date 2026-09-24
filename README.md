@@ -31,4 +31,8 @@ TSUZURI_E2E_LLAMA=<llama-server> TSUZURI_E2E_TRANSLATION_MODEL=<gguf> \
   cargo test -- --ignored --nocapture
 ```
 
-This project uses FFmpeg under the LGPL, run as a separate process: downloaded from BtbN's builds on Windows, built by `scripts/vendor.sh` on macOS.
+## License
+
+Copyright 2026 ZhengXian Qiu. Licensed under the [Apache License 2.0](LICENSE).
+
+Tsuzuri ships no third-party executable. It runs [FFmpeg](https://ffmpeg.org) (LGPLv2.1), [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (MIT) and [llama.cpp](https://github.com/ggml-org/llama.cpp) (MIT) as separate programs, downloaded from their upstream releases at runtime or built into `vendor/` for development by `scripts/vendor.sh`. Rust dependencies are limited to the licenses allowed in `src-tauri/deny.toml`.

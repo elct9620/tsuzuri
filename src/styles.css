@@ -157,6 +157,10 @@ footer {
   color: #767670;
 }
 
+footer p {
+  margin: 0 0 4px;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     color: #ececea;

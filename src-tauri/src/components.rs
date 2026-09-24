@@ -328,6 +328,15 @@ mod tests {
         builder.into_inner().unwrap().finish().unwrap()
     }
 
+    fn deflated_zip(path: &str, contents: &[u8]) -> Vec<u8> {
+        use std::io::Write;
+        let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+        let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        writer.start_file(path, options).unwrap();
+        writer.write_all(contents).unwrap();
+        writer.finish().unwrap().into_inner()
+    }
+
     fn sha256(bytes: &[u8]) -> String {
         format!("{:x}", Sha256::digest(bytes))
     }
@@ -368,6 +377,24 @@ mod tests {
             .unwrap();
 
         assert!(locations.executable(&entry).is_file());
+    }
+
+    // @behavior CP-001
+    #[tokio::test]
+    async fn installs_from_a_deflated_zip_archive() {
+        let dir = TempDir::new("cp-zip");
+        let archive = deflated_zip("Release/tool.exe", &[b'x'; 4096]);
+        let server = ArchiveServer::serve(archive.clone());
+        let mut entry = tool_entry(&server.url, sha256(&archive));
+        if let Source::Download { archives, executable, .. } = &mut entry.source {
+            archives[0].format = ArchiveFormat::Zip;
+            *executable = "Release/tool.exe".to_string();
+        }
+        let locations = locations(&dir);
+
+        install(&entry, &locations, &reqwest::Client::new(), &|_, _| {}).await.unwrap();
+
+        assert_eq!(std::fs::read(locations.executable(&entry)).unwrap(), vec![b'x'; 4096]);
     }
 
     // @behavior CP-002

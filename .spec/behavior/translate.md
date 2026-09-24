@@ -265,3 +265,35 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a ready llama-server that answers a translation request with an HTTP error |
 | When | a Transcript is translated |
 | Then | the translation fails and no Segment carries its original text as a translation |
+
+## `TL-034` Translating dialogue without its Speaker Label
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server, Speaker Labels turned on and a Segment `co: 你好` |
+| When | it is translated |
+| Then | the Model is sent `你好` and the translation starts with `co: ` |
+
+## `TL-035` Leaving a clock time in the dialogue
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server, Speaker Labels turned on and a Segment `12:30 出發` |
+| When | it is translated |
+| Then | the Model is sent `12:30 出發` |
+
+## `TL-036` Dropping Speaker Labels when the lines change
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that answers two labelled lines of one Segment as one line |
+| When | it is translated with Speaker Labels turned on |
+| Then | the translation carries no Speaker Label |
+
+## `TL-037` Sending Speaker Labels only when turned on
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server, Speaker Labels turned off and a Segment `co: 你好` |
+| When | it is translated |
+| Then | the Model is sent `co: 你好` |

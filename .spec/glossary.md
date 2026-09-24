@@ -74,6 +74,10 @@ The Segments one request asks the Model to translate, each sent with its positio
 
 Consecutive Segments the Model reports as one sentence cut apart by transcription. A Split Sentence is kept inside one Batch, which may grow past the Batch size for it, unless the merged run exceeds twice the Batch size.
 
+### Speaker Label
+
+The `name:` or `name：` before a line of dialogue, up to twenty characters with no digits-only name, such as `co:`. When the user turns them on, translation sends only the dialogue and puts each label back in front of its line.
+
 ### Model Slot
 
 Which job a Model is chosen for: transcription (whisper-cli) or translation (llama-server). Each slot holds one Model path.

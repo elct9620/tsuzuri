@@ -31,17 +31,7 @@ impl Drop for TempDir {
 
 pub struct Request {
     pub path: String,
-    pub headers: Vec<(String, String)>,
     pub body: Vec<u8>,
-}
-
-impl Request {
-    pub fn header(&self, name: &str) -> Option<&str> {
-        self.headers
-            .iter()
-            .find(|(key, _)| key.eq_ignore_ascii_case(name))
-            .map(|(_, value)| value.as_str())
-    }
 }
 
 pub struct Response {
@@ -89,11 +79,7 @@ impl FakeHttp {
                     .unwrap_or(0usize);
                 let mut body = vec![0; length];
                 let _ = reader.read_exact(&mut body);
-                let response = handler(&Request {
-                    path,
-                    headers,
-                    body,
-                });
+                let response = handler(&Request { path, body });
                 let head = format!(
                     "HTTP/1.1 {} X\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
                     response.status,

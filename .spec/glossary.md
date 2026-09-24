@@ -24,15 +24,11 @@ What the user asks Tsuzuri to do with one input: Transcribe (media to Transcript
 
 ### Component
 
-An upstream executable Tsuzuri runs as a child process: ffmpeg, whisper.cpp (`whisper-cli`) or llama.cpp (`llama-server`). Tsuzuri takes the first of: the path the user chose, one found by Detection, one downloaded as the Manifest pins. Failing all three, the user is told how to install it.
+An upstream executable Tsuzuri runs as a child process: ffmpeg, whisper.cpp (`whisper-cli`) or llama.cpp (`llama-server`). Tsuzuri takes the first of: the path the user chose, one found by Detection, the Bundled Variant. Failing all three, the user is told how to install it.
 
 #### Rejected
 
-- `Sidecar` - Tauri's sidecar means a binary bundled into the installer; Components are downloaded at runtime and launched by absolute path.
-
-### Manifest
-
-The list built into the app that says, for each platform, how every Component is downloaded: its release tag, archive URLs, SHA256 and the executable's path after extraction; upgrading means editing these. A Component upstream publishes no prebuilt executable for on a platform is external there, and its entry carries how to install it instead.
+- `Sidecar` - Tauri's sidecar is one binary per target triple; a Variant is a directory that can carry its own libraries, so it is bundled as a resource and launched by absolute path.
 
 ### Detection
 
@@ -40,19 +36,23 @@ Looking for a Component already on the computer: `vendor/` in debug builds, then
 
 ### Vendored Component
 
-A Component `scripts/vendor.sh` builds from the source the Build Manifest pins into `vendor/`, one Variant per Component, for development and for CI. Only debug builds look there; a release build never refers to `vendor/` and ships no Component.
+A Component `scripts/vendor.sh` builds from the source the Build Manifest pins into `vendor/`, one Variant per Component, for development and for CI. Only debug builds look there; a release build never refers to `vendor/` and finds Components among its Bundled Variants instead.
 
 ### Build Manifest
 
-`components.json`: for each Component, the upstream source version and SHA256 Tsuzuri builds from, and the Variants built on each platform. It pins what is built, not what the app downloads, which is the Manifest's.
+`components.json`: for each Component, the upstream source version and SHA256 Tsuzuri builds from, and the Variants built on each platform.
 
 ### Variant
 
 One build of a Component for a kind of hardware: `cpu`, `openblas`, `vulkan` or `metal` for whisper.cpp and llama.cpp, and a single `audio` build for ffmpeg.
 
+### Bundled Variant
+
+The one Variant per Component the installer carries in its resources: `vulkan` on Windows and Linux, `metal` on macOS, `audio` for ffmpeg. Other Variants are chosen by the user until the app selects among them itself.
+
 ### Model
 
-A weights file an engine loads, always passed by absolute path. The user points at a file already on disk; Tsuzuri neither downloads Models nor lists them in the Manifest.
+A weights file an engine loads, always passed by absolute path. The user points at a file already on disk; Tsuzuri never downloads Models.
 
 ### Model Slot
 

@@ -26,7 +26,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             components::choose_component,
             components::component_statuses,
-            components::install_components,
             models::model_settings,
             models::choose_model,
             pipeline::transcribe,

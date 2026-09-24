@@ -24,7 +24,7 @@ pub fn choose_model(app: AppHandle, slot: ModelSlot, path: PathBuf) -> Result<Mo
 
 ## `component_statuses`
 
-Whether each Component the Manifest lists for this platform is ready to run.
+Whether each Component is ready to run, and where it was found.
 
 ```rust
 pub fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {}
@@ -36,14 +36,6 @@ Remember an executable for one Component and answer the statuses afterwards.
 
 ```rust
 pub fn choose_component(app: AppHandle, name: String, path: PathBuf) -> Result<Vec<ComponentStatus>, String> {}
-```
-
-## `install_components`
-
-Download every Component that is neither chosen nor detected and has a prebuilt executable for this platform, one after another, emitting `component-progress` events while archives download, and answer the statuses afterwards.
-
-```rust
-pub async fn install_components(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {}
 ```
 
 ## `transcribe`

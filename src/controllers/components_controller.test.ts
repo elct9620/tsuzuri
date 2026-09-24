@@ -1,6 +1,5 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
-import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import ComponentsController from "./components_controller";
@@ -37,38 +36,26 @@ describe("ComponentsController", () => {
     clearMocks();
   });
 
-  // @behavior CP-006
-  it("shows the downloaded percentage of a component", async () => {
-    await mountWith({
-      component_statuses: () => [{ name: "llama", ready: false, path: null, origin: null, hint: null }],
-      install_components: () => new Promise(() => {}),
-    });
-
-    await emit("component-progress", { name: "llama", downloaded: 50, total: 200 });
-    await settle();
-
-    expect(statusOf("llama")).toBe("下載中 25%");
-  });
-
-  // @behavior CP-008
-  it("says a failed download resumes on the next launch", async () => {
-    await mountWith({
-      component_statuses: () => [{ name: "llama", ready: false, path: null, origin: null, hint: null }],
-      install_components: () => Promise.reject("network down"),
-    });
-
-    expect(statusOf("llama")).toContain("重新開啟 App 會續傳");
-  });
-
   // @behavior CP-007
   it("shows a component whose executable is in place as ready", async () => {
     await mountWith({
       component_statuses: () => [
-        { name: "llama", ready: true, path: "/components/llama-server", origin: "downloaded", hint: null },
+        { name: "llama", ready: true, path: "/components/llama/bin/llama-server", origin: "bundled", hint: null },
       ],
     });
 
-    expect(statusOf("llama")).toBe("已下載：/components/llama-server");
+    expect(statusOf("llama")).toBe("內建：/components/llama/bin/llama-server");
+  });
+
+  // @behavior CP-014
+  it("says why a component is not ready", async () => {
+    await mountWith({
+      component_statuses: () => [
+        { name: "llama", ready: false, path: null, origin: null, hint: "the bundled llama-server does not run" },
+      ],
+    });
+
+    expect(statusOf("llama")).toBe("未就緒（the bundled llama-server does not run）");
   });
 
   // @behavior CP-013

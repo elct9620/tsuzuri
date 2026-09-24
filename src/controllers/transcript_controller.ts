@@ -38,9 +38,11 @@ function item(segment: Segment, index: number): HTMLLIElement {
   const li = document.createElement("li");
   const time = document.createElement("time");
   time.textContent = `${formatTime(segment.start_ms)} → ${formatTime(segment.end_ms)}`;
-  li.append(time, editor(index, "text", segment.text));
+  const editors = document.createElement("div");
+  editors.append(editor(index, "text", segment.text));
   if (segment.translation !== undefined)
-    li.append(editor(index, "translation", segment.translation));
+    editors.append(editor(index, "translation", segment.translation));
+  li.append(time, editors);
   return li;
 }
 

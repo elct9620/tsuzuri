@@ -11,6 +11,7 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TSC="$ROOT/node_modules/.bin/tsc"
+PRETTIER="$ROOT/node_modules/.bin/prettier"
 
 file="$(jq -r '.tool_response.filePath // .tool_input.file_path // empty')"
 [ -n "$file" ] || exit 0
@@ -21,6 +22,10 @@ case "$file" in
 "$ROOT"/*) ;;
 *) exit 0 ;;
 esac
+
+# .prettierignore limits Prettier to the frontend; --ignore-unknown skips the
+# extensions it has no parser for
+[ -x "$PRETTIER" ] && (cd "$ROOT" && "$PRETTIER" --ignore-unknown --write "$file" >/dev/null 2>&1)
 
 case "$file" in
 *.rs)

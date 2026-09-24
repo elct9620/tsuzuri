@@ -1,0 +1,7 @@
+# Prettier formats the frontend only; the specification, documents and
+# workflows keep the forms their own tools give them.
+/*
+!/src/
+!/index.html
+!/vite.config.ts
+!/tsconfig.json

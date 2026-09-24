@@ -89,8 +89,6 @@ describe("TabsController", () => {
             <input type="checkbox" data-translate-target="summary">
             <input type="number" value="100" data-translate-target="summaryWords">
             <span data-translate-target="glossary"></span>
-            <button data-translate-target="chooseGlossary"></button>
-            <button data-translate-target="clearGlossary"></button>
             <button id="translate" data-translate-target="start" data-action="translate#translate">開始翻譯</button>
             <p data-translate-target="status"></p>
           </section>

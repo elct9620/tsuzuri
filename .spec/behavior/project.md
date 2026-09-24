@@ -92,6 +92,62 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | `ep01.ja.srt` is opened |
 | Then | the Current Resource is `ep01`, showing its `ja` translation |
 
+## `PJ-024` Reading the Primary Language from the Project Config
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory whose `tsuzuri.config.json` records `ja` |
+| When | it is opened in `zh-TW` |
+| Then | the Project is in `ja` |
+
+## `PJ-025` Recording a new Primary Language in the Project Config
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` without a Project Config |
+| When | its Primary Language is changed to `ja` |
+| Then | `tsuzuri.config.json` records `ja` |
+
+## `PJ-026` Pairing subtitles again under a new Primary Language
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` holding `ep01.ja.srt` and no `ep01.srt` |
+| When | its Primary Language is changed to `ja` |
+| Then | `ep01` holds the Segments of `ep01.ja.srt` as its original |
+
+## `PJ-027` Recording the translation Language in the Project Config
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project without a Project Config |
+| When | its Current Resource is translated into `en` |
+| Then | `tsuzuri.config.json` records `en` as the translation Language |
+
+## `PJ-028` Writing an edited original back to its file
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource read from `ep01.srt` |
+| When | the text of a Segment is edited |
+| Then | `ep01.srt` carries the edited text |
+
+## `PJ-029` Writing an edited translation back to its file
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing its translation from `ep01.en.srt` |
+| When | the translation of a Segment is edited |
+| Then | `ep01.en.srt` carries the edited translation |
+
+## `PJ-030` Leaving untranslated Segments out of a translation file
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of two Segments showing `en`, only the first translated |
+| When | the translation of the first is edited |
+| Then | `ep01.en.srt` holds one cue |
+
 ## `PJ-008` Saying why an SRT file could not be opened
 
 | Step | Statement |
@@ -161,7 +217,7 @@ The directory Rust holds open as the single source of truth: which files make it
 | Step | Statement |
 | --- | --- |
 | Given | a Project with a Translation Glossary |
-| When | another directory is opened as the Project |
+| When | a directory without `glossary.csv` is opened as the Project |
 | Then | the new Project holds no Translation Glossary |
 
 ## `PJ-012` Naming an export by the Resource and its Languages

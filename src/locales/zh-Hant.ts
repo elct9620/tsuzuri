@@ -38,8 +38,6 @@ const zhHant: typeof en = {
     glossary: "詞彙表",
     glossaryNone: "未指定",
     glossaryLoaded: "{{file}}（{{count}} 筆）",
-    chooseGlossary: "指定",
-    clearGlossary: "清除",
     start: "開始翻譯",
     done: "完成",
   },

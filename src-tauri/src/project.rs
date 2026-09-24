@@ -6,6 +6,7 @@ use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::failure::Failure;
 use crate::language::Language;
+use crate::project_config::ProjectConfig;
 use crate::resource::{self, Resource};
 use crate::transcript::{Segment, SrtContent, Transcript};
 use crate::translation_glossary::{TranslationGlossary, TranslationGlossaryView};
@@ -32,15 +33,20 @@ pub struct CurrentResource {
 }
 
 impl Project {
-    /// The directory's Resources in `language`, with the first of them current.
+    /// The directory's Resources in the Primary Language its Project Config records, else in
+    /// `language`, with the first of them current. A `glossary.csv` it cannot read is left out
+    /// here and reported when a translation reads it again.
     pub fn open(directory: PathBuf, language: Language) -> Result<Project, Failure> {
-        let resources = resource::resources_in(&directory, language)?;
+        let config = ProjectConfig::load(&directory)?;
+        let language = config.language.unwrap_or(language);
         let mut project = Project {
+            resources: resource::resources_in(&directory, language)?,
+            translation_glossary: TranslationGlossary::from_directory(&directory)
+                .ok()
+                .flatten(),
             directory,
             language,
-            translation_language: None,
-            translation_glossary: None,
-            resources,
+            translation_language: config.translation_language,
             current: None,
         };
         if let Some(first) = project.resources.first().map(|found| found.name.clone()) {
@@ -78,6 +84,70 @@ impl Project {
         Ok(())
     }
 
+    /// Pairs the directory's subtitles again as in `language`, keeping the Current Resource
+    /// when it is still one, and records `language` in the Project Config.
+    pub fn set_language(&mut self, language: Language) -> Result<(), Failure> {
+        ProjectConfig {
+            language: Some(language),
+            translation_language: self.translation_language,
+        }
+        .save(&self.directory)?;
+        self.language = language;
+        self.resources = resource::resources_in(&self.directory, language)?;
+        let name = self
+            .current
+            .as_ref()
+            .map(|current| current.name.clone())
+            .filter(|name| self.resource(name).is_ok())
+            .or(self.resources.first().map(|first| first.name.clone()));
+        match name {
+            Some(name) => self.select(&name),
+            None => {
+                self.current = None;
+                Ok(())
+            }
+        }
+    }
+
+    /// Writes the Current Resource's subtitle that `field` belongs to back to the directory:
+    /// the original, or the translation shown, which holds only the Segments translated.
+    fn write_back(&mut self, field: SegmentField) -> Result<(), Failure> {
+        let current = self.current()?;
+        let (content, srt) = match (field, current.translation) {
+            (SegmentField::Text, _) => (
+                SrtContent::Original,
+                current.transcript.to_srt(SrtContent::Original),
+            ),
+            (SegmentField::Translation, Some(_)) => (
+                SrtContent::Translation,
+                translation_only(&current.transcript).to_srt(SrtContent::Original),
+            ),
+            (SegmentField::Translation, None) => return Ok(()),
+        };
+        let resource = self.resource(&current.name)?;
+        let path = match (content, current.translation) {
+            (SrtContent::Translation, Some(language)) => {
+                resource.translation_path(language).map(Path::to_path_buf)
+            }
+            _ => resource.subtitle.clone(),
+        };
+        let path = match path {
+            Some(path) => path,
+            None => self.export_path(content)?,
+        };
+        std::fs::write(path, srt)?;
+        self.resources = resource::resources_in(&self.directory, self.language)?;
+        Ok(())
+    }
+
+    fn save_config(&self) -> Result<(), Failure> {
+        Ok(ProjectConfig {
+            language: Some(self.language),
+            translation_language: self.translation_language,
+        }
+        .save(&self.directory)?)
+    }
+
     /// In the directory, named after the Current Resource with the Language codes `content`
     /// carries beyond the Primary Language alone.
     pub fn export_path(&self, content: SrtContent) -> Result<PathBuf, Failure> {
@@ -109,6 +179,24 @@ impl Project {
 
     fn current_mut(&mut self) -> Result<&mut CurrentResource, Failure> {
         self.current.as_mut().ok_or(Failure::NoResource)
+    }
+}
+
+/// The translated Segments alone, each with its translation as its text.
+fn translation_only(transcript: &Transcript) -> Transcript {
+    Transcript {
+        segments: transcript
+            .segments
+            .iter()
+            .filter_map(|segment| {
+                let translation = segment.translation.as_deref()?;
+                (!translation.trim().is_empty()).then(|| Segment {
+                    text: translation.to_string(),
+                    translation: None,
+                    ..segment.clone()
+                })
+            })
+            .collect(),
     }
 }
 
@@ -298,6 +386,9 @@ impl CurrentProject {
     pub fn write_translations(&self, generation: u64, target: Language, segments: Vec<Segment>) {
         self.write_if_current(generation, |project| {
             project.translation_language = Some(target);
+            if let Err(failure) = project.save_config() {
+                log::warn!("could not record the translation Language: {failure:?}");
+            }
             if let Some(current) = project.current.as_mut() {
                 current.translation = Some(target);
                 for (segment, translated) in current.transcript.segments.iter_mut().zip(segments) {
@@ -307,23 +398,22 @@ impl CurrentProject {
         });
     }
 
-    /// Replaces the Project's Translation Glossary, or removes it with `None`.
-    pub fn set_translation_glossary(
-        &self,
-        glossary: Option<TranslationGlossary>,
-    ) -> Result<(), Failure> {
+    /// Reads the directory's `glossary.csv` again into the Project, for a translation to use.
+    pub fn reload_translation_glossary(&self) -> Result<Option<TranslationGlossary>, Failure> {
         self.update_project(|project| {
-            project.translation_glossary = glossary;
-            Ok(())
+            project.translation_glossary = TranslationGlossary::from_directory(&project.directory)?;
+            Ok(project.translation_glossary.clone())
         })
     }
 
-    /// The Project's Translation Glossary, for a translation to use.
-    pub fn translation_glossary(&self) -> Option<TranslationGlossary> {
-        self.lock()
-            .project
-            .as_ref()
-            .and_then(|project| project.translation_glossary.clone())
+    pub fn set_language(&self, language: Language) -> Result<(), Failure> {
+        let mut held = self.lock();
+        held.project
+            .as_mut()
+            .ok_or(Failure::NoProject)?
+            .set_language(language)?;
+        held.generation += 1;
+        Ok(())
     }
 
     pub fn edit(&self, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {
@@ -340,7 +430,7 @@ impl CurrentProject {
                 SegmentField::Text => segment.text = value,
                 SegmentField::Translation => segment.translation = Some(value),
             }
-            Ok(())
+            project.write_back(field)
         })
     }
 
@@ -445,6 +535,13 @@ pub fn show_translation(app: AppHandle, language: Option<Language>) -> Result<()
 }
 
 #[tauri::command]
+pub fn set_primary_language(app: AppHandle, language: Language) -> Result<(), Failure> {
+    app.state::<CurrentProject>().set_language(language)?;
+    announce(&app);
+    Ok(())
+}
+
+#[tauri::command]
 pub fn current_project(app: AppHandle) -> Option<ProjectView> {
     app.state::<CurrentProject>().view()
 }
@@ -475,6 +572,7 @@ pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<()
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::project_config::ProjectConfig;
     use crate::test_support::{project_of, TempDir};
 
     fn segment(text: &str, translation: Option<&str>) -> Segment {
@@ -672,22 +770,131 @@ mod tests {
     // @behavior PJ-011
     #[test]
     fn starts_a_new_project_without_a_translation_glossary() {
-        let dir = directory_of(
+        let with_glossary = directory_of(
             "pj-glossary",
-            &[("names.csv", "source,target\n阿福,Alfred\n")],
+            &[("glossary.csv", "source,target\n阿福,Alfred\n")],
         );
-        let current = current_project_of(vec![segment("大家好", None)]);
-        current
-            .set_translation_glossary(Some(
-                TranslationGlossary::from_csv(&dir.path().join("names.csv")).unwrap(),
-            ))
-            .unwrap();
+        let without_glossary = directory_of("pj-no-glossary", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&with_glossary);
 
         current.replace(
-            Project::open(dir.path().to_path_buf(), Language::TraditionalChinese).unwrap(),
+            Project::open(
+                without_glossary.path().to_path_buf(),
+                Language::TraditionalChinese,
+            )
+            .unwrap(),
         );
 
         assert_eq!(current.view().unwrap().translation_glossary(), None);
+    }
+
+    // @behavior PJ-024
+    #[test]
+    fn reads_the_primary_language_from_the_project_config() {
+        let dir = directory_of(
+            "pj-config-read",
+            &[("tsuzuri.config.json", r#"{"language":"ja"}"#)],
+        );
+
+        let current = project_in(&dir);
+
+        assert_eq!(current.view().unwrap().language(), Language::Japanese);
+    }
+
+    fn config_of(dir: &TempDir) -> ProjectConfig {
+        ProjectConfig::load(dir.path()).unwrap()
+    }
+
+    // @behavior PJ-025
+    #[test]
+    fn records_a_new_primary_language_in_the_project_config() {
+        let dir = directory_of("pj-config-write", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+
+        current.set_language(Language::Japanese).unwrap();
+
+        assert_eq!(config_of(&dir).language, Some(Language::Japanese));
+    }
+
+    // @behavior PJ-026
+    #[test]
+    fn pairs_subtitles_again_under_a_new_primary_language() {
+        let dir = directory_of("pj-config-pair", &[("ep01.ja.srt", &cue("こんにちは"))]);
+        let current = project_in(&dir);
+
+        current.set_language(Language::Japanese).unwrap();
+
+        assert_eq!(texts(&current), vec!["こんにちは".to_string()]);
+    }
+
+    // @behavior PJ-027
+    #[test]
+    fn records_the_translation_language_in_the_project_config() {
+        let dir = directory_of("pj-config-translation", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        let (generation, _, _) = current.snapshot().unwrap();
+
+        current.write_translations(
+            generation,
+            Language::English,
+            vec![segment("你好", Some("Hello"))],
+        );
+
+        assert_eq!(
+            config_of(&dir).translation_language,
+            Some(Language::English)
+        );
+    }
+
+    fn file_text(dir: &TempDir, name: &str) -> String {
+        std::fs::read_to_string(dir.path().join(name)).unwrap()
+    }
+
+    // @behavior PJ-028
+    #[test]
+    fn writes_an_edited_original_back_to_its_file() {
+        let dir = directory_of("pj-write-original", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Text, "大家好".to_string())
+            .unwrap();
+
+        assert_eq!(file_text(&dir, "ep01.srt"), cue("大家好"));
+    }
+
+    // @behavior PJ-029
+    #[test]
+    fn writes_an_edited_translation_back_to_its_file() {
+        let dir = directory_of(
+            "pj-write-translation",
+            &[("ep01.srt", &cue("你好")), ("ep01.en.srt", &cue("Hello"))],
+        );
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+
+        assert_eq!(file_text(&dir, "ep01.en.srt"), cue("Hi"));
+    }
+
+    // @behavior PJ-030
+    #[test]
+    fn leaves_untranslated_segments_out_of_a_translation_file() {
+        let original =
+            "1\n00:00:00,000 --> 00:00:01,000\n你好\n\n2\n00:00:01,000 --> 00:00:02,000\n世界\n";
+        let dir = directory_of(
+            "pj-write-untranslated",
+            &[("ep01.srt", original), ("ep01.en.srt", &cue("Hello"))],
+        );
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+
+        assert_eq!(file_text(&dir, "ep01.en.srt"), cue("Hi"));
     }
 
     // @behavior PJ-012
@@ -721,7 +928,14 @@ mod tests {
     // @behavior PJ-003
     #[test]
     fn holds_edits_to_text_and_translation() {
-        let current = current_project_of(vec![segment("竹子搞", Some("Bamboo"))]);
+        let dir = directory_of(
+            "pj-edit",
+            &[
+                ("ep01.srt", &cue("竹子搞")),
+                ("ep01.en.srt", &cue("Bamboo")),
+            ],
+        );
+        let current = project_in(&dir);
 
         current
             .edit(0, SegmentField::Text, "逐字稿".to_string())
@@ -739,14 +953,15 @@ mod tests {
     // @behavior PJ-004
     #[test]
     fn writes_the_current_resource_as_edited() {
-        let current = current_project_of(vec![segment("竹子搞", None)]);
+        let dir = directory_of("pj-export-edited", &[("ep01.srt", &cue("竹子搞"))]);
+        let current = project_in(&dir);
         current
             .edit(0, SegmentField::Text, "逐字稿".to_string())
             .unwrap();
 
         let srt = current.to_srt(SrtContent::Original).unwrap();
 
-        assert_eq!(srt, "1\n00:00:00,000 --> 00:00:01,000\n逐字稿\n");
+        assert_eq!(srt, cue("逐字稿"));
     }
 
     // @behavior PJ-005

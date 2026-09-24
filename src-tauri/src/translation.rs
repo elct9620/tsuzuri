@@ -90,7 +90,7 @@ pub async fn run_translate<R: Runtime>(
     let model = model_settings.ready_path(ModelSlot::Translation)?;
     let project = app.state::<CurrentProject>();
     let (generation, transcript, source) = project.snapshot()?;
-    let glossary = project.translation_glossary();
+    let glossary = project.reload_translation_glossary()?;
     let job = TranslationJob {
         segments: &transcript.segments,
         languages: LanguagePair {
@@ -1291,8 +1291,11 @@ mod tests {
     #[tokio::test]
     async fn translates_the_project_as_edited() {
         let llama = FakeLlama::with_echo(0);
+        let dir = TempDir::new("tl-edited");
         let project = CurrentProject::default();
-        project.replace(project_of(vec![segment(0, 1_000, "竹子搞")]));
+        let mut edited = project_of(vec![segment(0, 1_000, "竹子搞")]);
+        edited.directory = dir.path().to_path_buf();
+        project.replace(edited);
         project
             .edit(0, SegmentField::Text, "逐字稿".to_string())
             .unwrap();
@@ -1372,6 +1375,33 @@ mod tests {
 
         assert!(result.is_err());
         assert!(!record.exists());
+    }
+
+    // @behavior TL-039
+    #[tokio::test]
+    async fn refuses_to_translate_with_a_glossary_without_its_header() {
+        let dir = TempDir::new("tl-glossary-header");
+        std::fs::write(dir.path().join("glossary.csv"), "蝙蝠俠,Batman\n").unwrap();
+        let mut settings = ModelSettings::default();
+        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        let app = mock_app();
+        let processes = Processes::new(dir.path().join("processes.json"));
+        let mut project = project_of(vec![segment(0, 1_000, "蝙蝠俠")]);
+        project.directory = dir.path().to_path_buf();
+        app.state::<CurrentProject>().replace(project);
+
+        let result = run_translate(
+            app.handle(),
+            &processes,
+            Path::new("/bin/sleep"),
+            &settings,
+            &plan_for(Language::English),
+            Duration::from_secs(1),
+            Phases::start("translate", "prepare"),
+        )
+        .await;
+
+        assert_eq!(result.map(|_| ()), Err(Failure::GlossaryWithoutHeader));
     }
 
     // @behavior TL-004

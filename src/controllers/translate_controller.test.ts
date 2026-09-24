@@ -53,8 +53,6 @@ describe("TranslateController", () => {
         <input type="checkbox" data-translate-target="summary">
         <input type="number" value="100" data-translate-target="summaryWords">
         <span data-translate-target="glossary"></span>
-        <button data-translate-target="chooseGlossary" data-action="translate#chooseGlossary" disabled>指定</button>
-        <button data-translate-target="clearGlossary" data-action="translate#clearGlossary" disabled>清除</button>
         <button data-translate-target="start" data-action="translate#translate" disabled>開始翻譯</button>
         <p data-translate-target="status"></p>
       </div>
@@ -128,20 +126,15 @@ describe("TranslateController", () => {
   });
 
   // @behavior TL-042
-  it("names the loaded Translation Glossary and can clear it", async () => {
-    await holdProject("zh-TW", { file: "/terms/names.csv", term_count: 12 });
-    const clear = document.querySelector<HTMLButtonElement>(
-      '[data-translate-target="clearGlossary"]',
-    )!;
-
-    clear.click();
-    await settle();
+  it("names the Project's glossary.csv and its terms", async () => {
+    await holdProject("zh-TW", {
+      file: "/talks/glossary.csv",
+      term_count: 12,
+    });
 
     expect(
       document.querySelector('[data-translate-target="glossary"]')!.textContent,
-    ).toBe("names.csv（12 筆）");
-    expect(clear.disabled).toBe(false);
-    expect(commands).toContain("clear_glossary");
+    ).toBe("glossary.csv（12 筆）");
   });
 
   function check(target: string): void {

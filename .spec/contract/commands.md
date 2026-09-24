@@ -78,6 +78,14 @@ Show the Current Resource's translation in this Language, or none.
 pub fn show_translation(app: AppHandle, language: Option<Language>) -> Result<(), Failure> {}
 ```
 
+## `set_primary_language`
+
+Make this the Project's Primary Language, record it in the Project Config, and pair the directory's subtitles again as in it.
+
+```rust
+pub fn set_primary_language(app: AppHandle, language: Language) -> Result<(), Failure> {}
+```
+
 ## `current_project`
 
 The Project's directory, Languages, Resources and Translation Glossary, with the Current Resource's Segments, or none before one is opened.
@@ -88,7 +96,7 @@ pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
 
 ## `edit_segment`
 
-Replace the `text` or the `translation` of one Segment of the Current Resource, by its position.
+Replace the `text` or the `translation` of one Segment of the Current Resource, by its position, and write the subtitle it belongs to back to the directory.
 
 ```rust
 pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}
@@ -116,22 +124,6 @@ Where an export of the Current Resource is saved by default: in the Project's di
 
 ```rust
 pub fn export_path(app: AppHandle, content: SrtContent) -> Result<PathBuf, Failure> {}
-```
-
-## `load_glossary`
-
-Read a CSV file with a `source,target` header into the Project's Translation Glossary, replacing the one it had.
-
-```rust
-pub fn load_glossary(app: AppHandle, path: PathBuf) -> Result<(), Failure> {}
-```
-
-## `clear_glossary`
-
-Remove the Project's Translation Glossary, so translation runs without one.
-
-```rust
-pub fn clear_glossary(app: AppHandle) -> Result<(), Failure> {}
 ```
 
 ## `translation_settings`

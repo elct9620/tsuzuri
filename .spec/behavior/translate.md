@@ -301,21 +301,21 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | When | it is translated |
 | Then | the Model is sent `co: 你好` |
 
-## `TL-038` Loading a Translation Glossary into the Project
+## `TL-038` Reading the Translation Glossary with the Project
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project and a CSV file with a `source,target` header and two rows |
-| When | it is loaded as the Translation Glossary |
-| Then | the Project holds the file and its two terms |
+| Given | a directory whose `glossary.csv` has a `source,target` header and two rows |
+| When | it is opened as the Project |
+| Then | the Project holds `glossary.csv` and its two terms |
 
-## `TL-039` Refusing a Translation Glossary without its header
+## `TL-039` Refusing to translate with a Translation Glossary without its header
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project and a CSV file whose header is not `source,target` |
-| When | it is loaded as the Translation Glossary |
-| Then | it is refused and the Project keeps the Translation Glossary it had |
+| Given | a Project whose `glossary.csv` has a header other than `source,target` |
+| When | its Current Resource is translated |
+| Then | the translation fails saying the header is missing |
 
 ## `TL-040` Sending only the terms a request uses
 
@@ -333,21 +333,21 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | When | a Transcript is translated |
 | Then | the line is asked for again naming `Batman`, and keeps `Bat-Man` as its best imperfect translation |
 
-## `TL-042` Showing the loaded Translation Glossary
+## `TL-042` Showing the Project's Translation Glossary
 
 | Step | Statement |
 | --- | --- |
-| Given | the Translate Mode panel and a Project with a Translation Glossary of twelve terms from `names.csv` |
+| Given | the Translate Mode panel and a Project whose `glossary.csv` holds twelve terms |
 | When | the panel is shown |
-| Then | it names `names.csv` with twelve terms and can clear it |
+| Then | it names `glossary.csv` with twelve terms |
 
-## `TL-043` Clearing the Translation Glossary
+## `TL-043` Reading the Translation Glossary again before translating
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project with a Translation Glossary |
-| When | the Translation Glossary is cleared |
-| Then | the Project holds none |
+| Given | a Project whose `glossary.csv` was written after it was opened |
+| When | its Current Resource is translated |
+| Then | the Project holds the terms of that `glossary.csv` |
 
 ## `TL-044` Carrying the Rolling Summary into the next Batch
 

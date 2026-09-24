@@ -1,7 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
-import { open } from "@tauri-apps/plugin-dialog";
 
 import { failureMessage } from "../failure";
 import { t } from "../i18n";
@@ -56,8 +55,6 @@ export default class TranslateController extends Controller {
     "bar",
     "start",
     "glossary",
-    "chooseGlossary",
-    "clearGlossary",
   ];
 
   declare readonly statusTarget: HTMLElement;
@@ -71,10 +68,8 @@ export default class TranslateController extends Controller {
   declare readonly barTarget: HTMLProgressElement;
   declare readonly hasBarTarget: boolean;
   declare readonly startTarget: HTMLButtonElement;
-  /** Names the Project's Translation Glossary, with its two actions beside it. */
+  /** Names the Project's `glossary.csv` and how many terms it holds. */
   declare readonly glossaryTarget: HTMLElement;
-  declare readonly chooseGlossaryTarget: HTMLButtonElement;
-  declare readonly clearGlossaryTarget: HTMLButtonElement;
 
   private unlisteners: UnlistenFn[] = [];
   private isRunning = false;
@@ -113,33 +108,6 @@ export default class TranslateController extends Controller {
     }
   }
 
-  async chooseGlossary(): Promise<void> {
-    const path = await open({
-      multiple: false,
-      directory: false,
-      filters: [{ name: "CSV", extensions: ["csv"] }],
-    });
-    if (path === null) return;
-    await this.runGlossaryCommand("load_glossary", { path });
-  }
-
-  async clearGlossary(): Promise<void> {
-    await this.runGlossaryCommand("clear_glossary", {});
-  }
-
-  private async runGlossaryCommand(
-    command: string,
-    args: Record<string, unknown>,
-  ): Promise<void> {
-    try {
-      await invoke(command, args);
-    } catch (error) {
-      this.statusTarget.textContent = t("work.failed", {
-        reason: failureMessage(error),
-      });
-    }
-  }
-
   private options(): TranslationOptions {
     return {
       has_speaker_labels: this.speakerLabelsTarget.checked,
@@ -155,8 +123,6 @@ export default class TranslateController extends Controller {
     if (project !== null) this.sourceTarget.value = project.language;
     const glossary = project?.translation_glossary ?? null;
     this.glossaryTarget.textContent = glossaryLabel(glossary);
-    this.chooseGlossaryTarget.disabled = project === null;
-    this.clearGlossaryTarget.disabled = glossary === null;
   }
 
   private bar(): HTMLProgressElement | undefined {

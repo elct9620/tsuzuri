@@ -37,8 +37,6 @@ const en = {
     glossary: "Glossary",
     glossaryNone: "None",
     glossaryLoaded: "{{file}} ({{count}} terms)",
-    chooseGlossary: "Choose",
-    clearGlossary: "Clear",
     start: "Translate",
     done: "Done",
   },

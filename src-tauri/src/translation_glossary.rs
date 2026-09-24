@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
 
 use crate::failure::Failure;
-use crate::project::{self, CurrentProject};
+
+const GLOSSARY_FILE: &str = "glossary.csv";
 
 /// The user's terms, such as names and titles, whose target a translation must use.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -50,6 +50,15 @@ impl TranslationGlossary {
         })
     }
 
+    /// The Project's `glossary.csv`, or none when the directory has no such file.
+    pub fn from_directory(directory: &Path) -> Result<Option<TranslationGlossary>, Failure> {
+        let path = directory.join(GLOSSARY_FILE);
+        match path.try_exists()? {
+            true => Ok(Some(TranslationGlossary::from_csv(&path)?)),
+            false => Ok(None),
+        }
+    }
+
     pub fn terms(&self) -> &[(String, String)] {
         &self.terms
     }
@@ -68,104 +77,82 @@ fn malformed_glossary(error: csv::Error) -> Failure {
     }
 }
 
-/// Reads `path` into the Project's Translation Glossary; a file that cannot be read leaves the one it had.
-fn load_glossary_into(project: &CurrentProject, path: &Path) -> Result<(), Failure> {
-    project.set_translation_glossary(Some(TranslationGlossary::from_csv(path)?))
-}
-
-#[tauri::command]
-pub fn load_glossary(app: AppHandle, path: PathBuf) -> Result<(), Failure> {
-    load_glossary_into(&app.state::<CurrentProject>(), &path)?;
-    project::announce(&app);
-    Ok(())
-}
-
-#[tauri::command]
-pub fn clear_glossary(app: AppHandle) -> Result<(), Failure> {
-    app.state::<CurrentProject>()
-        .set_translation_glossary(None)?;
-    project::announce(&app);
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_support::{project_of, TempDir};
+    use crate::language::Language;
+    use crate::project::{CurrentProject, Project};
+    use crate::test_support::TempDir;
 
-    fn current_project() -> CurrentProject {
+    fn project_in(dir: &TempDir) -> CurrentProject {
         let current = CurrentProject::default();
-        current.replace(project_of(Vec::new()));
+        current.replace(
+            Project::open(dir.path().to_path_buf(), Language::TraditionalChinese).unwrap(),
+        );
         current
     }
 
-    fn csv_file(dir: &TempDir, name: &str, text: &str) -> PathBuf {
-        let path = dir.path().join(name);
-        std::fs::write(&path, text).unwrap();
-        path
-    }
-
-    fn glossary_view(current: &CurrentProject) -> Option<TranslationGlossaryView> {
-        current.view().unwrap().translation_glossary().cloned()
+    fn write_glossary(dir: &TempDir, text: &str) {
+        std::fs::write(dir.path().join(GLOSSARY_FILE), text).unwrap();
     }
 
     // @behavior TL-038
     #[test]
-    fn loads_a_translation_glossary_into_the_project() {
-        let dir = TempDir::new("gl-load");
-        let names = csv_file(
+    fn reads_the_translation_glossary_with_the_project() {
+        let dir = TempDir::new("gl-open");
+        write_glossary(
             &dir,
-            "names.csv",
             "\u{feff}source,target\n蝙蝠俠,Batman\n\"諾蘭\",\"Nolan, Christopher\"\n",
         );
-        let current = current_project();
 
-        load_glossary_into(&current, &names).unwrap();
+        let current = project_in(&dir);
 
         assert_eq!(
-            current.translation_glossary().unwrap().terms(),
-            [
-                ("蝙蝠俠".to_string(), "Batman".to_string()),
-                ("諾蘭".to_string(), "Nolan, Christopher".to_string()),
-            ]
-        );
-        assert_eq!(
-            glossary_view(&current),
+            current.view().unwrap().translation_glossary().cloned(),
             Some(TranslationGlossaryView {
-                file: names,
+                file: dir.path().join(GLOSSARY_FILE),
                 term_count: 2
             })
         );
     }
 
-    // @behavior TL-039
+    #[test]
+    fn reads_both_sides_of_each_term() {
+        let dir = TempDir::new("gl-terms");
+        write_glossary(&dir, "source,target\n\"諾蘭\",\"Nolan, Christopher\"\n");
+
+        let glossary = TranslationGlossary::from_directory(dir.path())
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            glossary.terms(),
+            [("諾蘭".to_string(), "Nolan, Christopher".to_string())]
+        );
+    }
+
     #[test]
     fn refuses_a_translation_glossary_without_its_header() {
         let dir = TempDir::new("gl-header");
-        let names = csv_file(&dir, "names.csv", "source,target\n蝙蝠俠,Batman\n");
-        let headless = csv_file(&dir, "headless.csv", "蝙蝠俠,Batman\n");
-        let current = current_project();
-        load_glossary_into(&current, &names).unwrap();
+        write_glossary(&dir, "蝙蝠俠,Batman\n");
 
-        let result = load_glossary_into(&current, &headless);
+        let result = TranslationGlossary::from_directory(dir.path());
 
         assert_eq!(result, Err(Failure::GlossaryWithoutHeader));
-        assert_eq!(glossary_view(&current).map(|view| view.file), Some(names));
     }
 
     // @behavior TL-043
     #[test]
-    fn clears_the_translation_glossary() {
-        let dir = TempDir::new("gl-clear");
-        let current = current_project();
-        load_glossary_into(
-            &current,
-            &csv_file(&dir, "names.csv", "source,target\n阿福,Alfred\n"),
-        )
-        .unwrap();
+    fn reads_the_translation_glossary_again_before_translating() {
+        let dir = TempDir::new("gl-reload");
+        let current = project_in(&dir);
+        write_glossary(&dir, "source,target\n阿福,Alfred\n");
 
-        current.set_translation_glossary(None).unwrap();
+        let glossary = current.reload_translation_glossary().unwrap();
 
-        assert_eq!(glossary_view(&current), None);
+        assert_eq!(
+            glossary.map(|glossary| glossary.terms().to_vec()),
+            Some(vec![("阿福".to_string(), "Alfred".to_string())])
+        );
     }
 }

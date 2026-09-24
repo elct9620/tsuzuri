@@ -5,6 +5,7 @@ pub mod models;
 pub mod pipeline;
 pub mod processes;
 pub mod project;
+pub mod project_config;
 pub mod resource;
 pub mod timing;
 pub mod transcript;
@@ -55,12 +56,11 @@ pub fn run() {
             project::open_srt,
             project::save_srt,
             project::select_resource,
+            project::set_primary_language,
             project::show_translation,
             translation::save_translation_settings,
             translation::translate,
             translation::translation_settings,
-            translation_glossary::clear_glossary,
-            translation_glossary::load_glossary
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

@@ -1,6 +1,6 @@
 name: Build a Component
 description: >-
-  Leaves vendor/<component> holding one Variant built by scripts/vendor.sh, restored
+  Leaves vendor/<component>/<variant> holding one Variant built by scripts/vendor.sh, restored
   from the cache when its pin and the build script are unchanged, and proven to run.
 
 inputs:
@@ -44,7 +44,7 @@ runs:
     - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: cache
       with:
-        path: vendor/${{ inputs.component }}
+        path: vendor/${{ inputs.component }}/${{ inputs.variant }}
         key: ${{ steps.key.outputs.key }}
 
     # The smoke test needs the shared libraries OpenBLAS and Vulkan builds load, even on a cache hit.
@@ -85,23 +85,25 @@ runs:
     - name: Check the executable runs
       if: inputs.platform != 'windows'
       shell: bash
-      run: '"vendor/$COMPONENT/bin/$PROGRAM" "$VERSION_FLAG"'
+      run: '"vendor/$COMPONENT/$VARIANT/bin/$PROGRAM" "$VERSION_FLAG"'
       env:
         COMPONENT: ${{ inputs.component }}
+        VARIANT: ${{ inputs.variant }}
         PROGRAM: ${{ inputs.program }}
         VERSION_FLAG: ${{ inputs.version-flag }}
     # Outside MSYS2, so a DLL missing from the bundle fails here rather than on a user's machine.
     - name: Check the executable runs on its own on Windows
       if: inputs.platform == 'windows'
       shell: pwsh
-      run: '& "vendor/$env:COMPONENT/bin/$env:PROGRAM.exe" $env:VERSION_FLAG'
+      run: '& "vendor/$env:COMPONENT/$env:VARIANT/bin/$env:PROGRAM.exe" $env:VERSION_FLAG'
       env:
         COMPONENT: ${{ inputs.component }}
+        VARIANT: ${{ inputs.variant }}
         PROGRAM: ${{ inputs.program }}
         VERSION_FLAG: ${{ inputs.version-flag }}
 
     - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       if: steps.cache.outputs.cache-hit != 'true'
       with:
-        path: vendor/${{ inputs.component }}
+        path: vendor/${{ inputs.component }}/${{ inputs.variant }}
         key: ${{ steps.key.outputs.key }}

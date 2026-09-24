@@ -51,6 +51,7 @@ describe("ComponentsController", () => {
           ready: true,
           path: "/components/llama/bin/llama-server",
           origin: "bundled",
+          variant: null,
           problem: null,
           install: null,
         },
@@ -58,6 +59,27 @@ describe("ComponentsController", () => {
     });
 
     expect(statusOf("llama")).toBe("內建：/components/llama/bin/llama-server");
+  });
+
+  // @behavior CP-019
+  it("names the variant a bundled component was selected as", async () => {
+    await mountWith({
+      component_statuses: () => [
+        {
+          name: "llama",
+          ready: true,
+          path: "/components/llama/vulkan/bin/llama-server",
+          origin: "bundled",
+          variant: "vulkan",
+          problem: null,
+          install: null,
+        },
+      ],
+    });
+
+    expect(statusOf("llama")).toBe(
+      "內建（vulkan）：/components/llama/vulkan/bin/llama-server",
+    );
   });
 
   // @behavior CP-014
@@ -69,6 +91,7 @@ describe("ComponentsController", () => {
           ready: false,
           path: null,
           origin: null,
+          variant: null,
           problem: "does-not-run",
           install: null,
         },
@@ -89,6 +112,7 @@ describe("ComponentsController", () => {
           ready: false,
           path: null,
           origin: null,
+          variant: null,
           problem: "not-installed",
           install: "brew install llama.cpp",
         },
@@ -109,6 +133,7 @@ describe("ComponentsController", () => {
           ready: true,
           path: "/usr/bin/llama-server",
           origin: "detected",
+          variant: null,
           problem: null,
           install: null,
         },

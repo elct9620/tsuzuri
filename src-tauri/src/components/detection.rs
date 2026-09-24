@@ -18,20 +18,26 @@ pub fn search_dirs() -> Vec<PathBuf> {
     unique
 }
 
-/// `vendor/<component>/bin` of this checkout; compiled into debug builds only, so a release never refers to it.
+/// `vendor/<component>/<variant>/bin` of this checkout; compiled into debug builds only, so a release never refers to it.
 #[cfg(debug_assertions)]
 fn vendor_dirs() -> Vec<PathBuf> {
     let vendor = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join("vendor");
-    std::fs::read_dir(vendor)
-        .map(|entries| {
-            entries
-                .flatten()
-                .map(|entry| entry.path().join("bin"))
-                .collect()
-        })
-        .unwrap_or_default()
+    subdirs(&vendor)
+        .iter()
+        .flat_map(|component| subdirs(component))
+        .map(|variant| variant.join("bin"))
+        .collect()
+}
+
+#[cfg(debug_assertions)]
+fn subdirs(dir: &Path) -> Vec<PathBuf> {
+    let mut dirs: Vec<PathBuf> = std::fs::read_dir(dir)
+        .map(|entries| entries.flatten().map(|entry| entry.path()).collect())
+        .unwrap_or_default();
+    dirs.sort();
+    dirs
 }
 
 #[cfg(not(debug_assertions))]

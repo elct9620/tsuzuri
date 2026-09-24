@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Builds the Vendored Components from the source components.json pins into
-# vendor/<name>/, one Variant each: the one named, or the first components.json
-# lists for this platform.
+# vendor/<name>/<variant>/, the layout the installer gives its Bundled Variants:
+# the Variant named, or the first components.json lists for this platform.
 #
 #   scripts/vendor.sh [whisper|llama|ffmpeg|all] [variant]
 #
-# A component whose vendor/<name>/VERSION already matches its pin and Variant is
+# A Variant whose vendor/<name>/<variant>/VERSION already matches its pin is
 # skipped, so CI can cache vendor/ and run this unconditionally.
 set -euo pipefail
 
@@ -88,18 +88,19 @@ fetch_source() {
 }
 
 build() {
-  local name="$1" variant version stamp src="$VENDOR/.build/$1" staged="$VENDOR/.build/$1-out"
+  local name="$1" variant version target src="$VENDOR/.build/$1" staged="$VENDOR/.build/$1-out"
   variant="$(variant_for "$name" "${2:-}")"
   version="$(pinned "$name" version)"
-  stamp="$version $variant"
-  if up_to_date "$name" "$stamp"; then echo "vendor: $name $stamp up to date"; return; fi
+  target="$name/$variant"
+  if up_to_date "$target" "$version"; then echo "vendor: $target $version up to date"; return; fi
   fetch_source "$name" "$src"
-  # Staged first, so a failed build leaves the previous vendor/<name> usable.
+  # Staged first, so a failed build leaves the previous vendor/<name>/<variant> usable.
   rm -rf "$staged" && mkdir -p "$staged/bin"
   "compile_$name" "$src" "$variant" "$staged/bin"
-  echo "$stamp" > "$staged/VERSION"
-  rm -rf "${VENDOR:?}/$name" && mv "$staged" "$VENDOR/$name"
-  echo "vendor: $name $stamp built"
+  echo "$version" > "$staged/VERSION"
+  mkdir -p "$VENDOR/$name"
+  rm -rf "${VENDOR:?}/$target" && mv "$staged" "$VENDOR/$target"
+  echo "vendor: $target $version built"
 }
 
 # whisper.cpp and llama.cpp share ggml, so a Variant selects the same ggml backend in both.

@@ -12,6 +12,15 @@ use crate::failure::Failure;
 
 const BUNDLED_DIR: &str = "components";
 const CHOICES_FILE: &str = "components.json";
+/// The Build Manifest, read for the order Auto-Selection tries each Component's Variants in.
+const BUILD_MANIFEST: &str = include_str!("../../components.json");
+
+#[cfg(target_os = "macos")]
+const PLATFORM: &str = "macos";
+#[cfg(target_os = "linux")]
+const PLATFORM: &str = "linux";
+#[cfg(windows)]
+const PLATFORM: &str = "windows";
 
 /// An executable Tsuzuri runs as a child process.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -23,6 +32,23 @@ pub struct Component {
     pub version_flag: String,
     /// The command that installs it, where the platform has one package manager to name.
     pub install: Option<String>,
+    /// The Variants this platform may bundle, in the order Auto-Selection tries them.
+    pub variants: Vec<String>,
+}
+
+/// The Variants the Build Manifest lists for `name` on this platform.
+fn variants_of(name: &str) -> Vec<String> {
+    let manifest: serde_json::Value =
+        serde_json::from_str(BUILD_MANIFEST).expect("components.json is valid JSON");
+    manifest[name]["variants"][PLATFORM]
+        .as_array()
+        .map(|variants| {
+            variants
+                .iter()
+                .filter_map(|variant| variant.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 fn component(name: &str, program: &str, version_flag: &str, install: Option<&str>) -> Component {
@@ -31,6 +57,7 @@ fn component(name: &str, program: &str, version_flag: &str, install: Option<&str
         program: program.to_string(),
         version_flag: version_flag.to_string(),
         install: install.map(str::to_string),
+        variants: variants_of(name),
     }
 }
 
@@ -87,6 +114,8 @@ pub struct ComponentStatus {
     ready: bool,
     path: Option<PathBuf>,
     origin: Option<Origin>,
+    /// The Bundled Variant Auto-Selection took, when that is where it was found.
+    variant: Option<String>,
     problem: Option<Problem>,
     install: Option<String>,
 }
@@ -121,9 +150,9 @@ impl Choices {
     }
 }
 
-/// Finds each Component in order: the user's choice, Detection, then the Bundled Variant.
+/// Finds each Component in order: the user's choice, Detection, then the Bundled Variant Auto-Selection takes.
 pub struct Resolver {
-    /// Where the installer puts the Bundled Variants, one `<name>/bin` per Component.
+    /// Where the installer puts the Bundled Variants, one `<name>/<variant>/bin` each.
     pub bundled: PathBuf,
     pub choices: Choices,
     pub search_dirs: Vec<PathBuf>,
@@ -161,11 +190,12 @@ impl Resolver {
     }
 
     fn resolve(&self, component: &Component) -> ComponentStatus {
-        let found = |path: PathBuf, origin| ComponentStatus {
+        let found = |path: PathBuf, origin, variant: Option<&String>| ComponentStatus {
             name: component.name.clone(),
             ready: true,
             path: Some(path),
             origin: Some(origin),
+            variant: variant.cloned(),
             problem: None,
             install: None,
         };
@@ -174,6 +204,7 @@ impl Resolver {
             ready: false,
             path: None,
             origin: None,
+            variant: None,
             problem: Some(problem),
             install: component.install.clone(),
         };
@@ -182,32 +213,43 @@ impl Resolver {
             .path_by_name(&component.name)
             .filter(|path| path.is_file())
         {
-            return found(chosen.to_path_buf(), Origin::Chosen);
+            return found(chosen.to_path_buf(), Origin::Chosen, None);
         }
         if let Some(detected) = detection::detect(
             &component.program,
             &component.version_flag,
             &self.search_dirs,
         ) {
-            return found(detected, Origin::Detected);
+            return found(detected, Origin::Detected, None);
         }
-        let bundled = self.bundled_executable(component);
-        if !bundled.is_file() {
+        let bundled: Vec<(&String, PathBuf)> = component
+            .variants
+            .iter()
+            .map(|variant| (variant, self.bundled_executable(component, variant)))
+            .filter(|(_, path)| path.is_file())
+            .collect();
+        if bundled.is_empty() {
             return missing(Problem::NotInstalled);
         }
-        if detection::probe(&bundled, &component.version_flag) {
-            found(bundled, Origin::Bundled)
-        } else {
-            missing(Problem::DoesNotRun)
+        match bundled
+            .into_iter()
+            .find(|(_, path)| detection::probe(path, &component.version_flag))
+        {
+            Some((variant, path)) => found(path, Origin::Bundled, Some(variant)),
+            None => missing(Problem::DoesNotRun),
         }
     }
 
-    fn bundled_executable(&self, component: &Component) -> PathBuf {
-        self.bundled.join(&component.name).join("bin").join(format!(
-            "{}{}",
-            component.program,
-            std::env::consts::EXE_SUFFIX
-        ))
+    fn bundled_executable(&self, component: &Component, variant: &str) -> PathBuf {
+        self.bundled
+            .join(&component.name)
+            .join(variant)
+            .join("bin")
+            .join(format!(
+                "{}{}",
+                component.program,
+                std::env::consts::EXE_SUFFIX
+            ))
     }
 }
 
@@ -281,8 +323,12 @@ mod tests {
     use super::*;
     use crate::test_support::TempDir;
 
+    /// A Component whose Build Manifest lists two Variants, tried `first` then `second`.
     fn tool() -> Component {
-        component("tool", "tool", "--version", Some("brew install tool"))
+        Component {
+            variants: vec!["first".to_string(), "second".to_string()],
+            ..component("tool", "tool", "--version", Some("brew install tool"))
+        }
     }
 
     /// A resolver with no choices, no Detection directories and no Bundled Variants, so nothing is found.
@@ -343,7 +389,7 @@ mod tests {
     fn detects_an_installed_executable_that_runs() {
         let dir = TempDir::new("cp-detect");
         let installed = script(&dir.path().join("bin"), "tool", 0);
-        script(&dir.path().join("components/tool/bin"), "tool", 0);
+        script(&dir.path().join("components/tool/first/bin"), "tool", 0);
         let mut resolver = resolver(&dir);
         resolver.search_dirs = vec![dir.path().join("empty"), dir.path().join("bin")];
 
@@ -375,14 +421,40 @@ mod tests {
     #[test]
     fn uses_the_bundled_variant() {
         let dir = TempDir::new("cp-bundled");
-        let bundled = script(&dir.path().join("components/tool/bin"), "tool", 0);
+        let bundled = script(&dir.path().join("components/tool/first/bin"), "tool", 0);
 
         let status = resolver(&dir).find(&tool());
 
         assert_eq!(
-            (status.path, status.origin),
-            (Some(bundled), Some(Origin::Bundled))
+            (status.path, status.origin, status.variant.as_deref()),
+            (Some(bundled), Some(Origin::Bundled), Some("first"))
         );
+    }
+
+    // @behavior CP-017
+    #[cfg(unix)]
+    #[test]
+    fn passes_over_a_bundled_variant_that_does_not_run() {
+        let dir = TempDir::new("cp-bundled-next");
+        script(&dir.path().join("components/tool/first/bin"), "tool", 127);
+        let second = script(&dir.path().join("components/tool/second/bin"), "tool", 0);
+
+        let status = resolver(&dir).find(&tool());
+
+        assert_eq!(status.path, Some(second));
+    }
+
+    // @behavior CP-018
+    #[cfg(unix)]
+    #[test]
+    fn tries_bundled_variants_in_the_build_manifests_order() {
+        let dir = TempDir::new("cp-bundled-order");
+        script(&dir.path().join("components/tool/second/bin"), "tool", 0);
+        let first = script(&dir.path().join("components/tool/first/bin"), "tool", 0);
+
+        let status = resolver(&dir).find(&tool());
+
+        assert_eq!(status.path, Some(first));
     }
 
     // @behavior CP-014
@@ -390,7 +462,8 @@ mod tests {
     #[test]
     fn reports_a_bundled_variant_that_does_not_run() {
         let dir = TempDir::new("cp-bundled-broken");
-        script(&dir.path().join("components/tool/bin"), "tool", 127);
+        script(&dir.path().join("components/tool/first/bin"), "tool", 127);
+        script(&dir.path().join("components/tool/second/bin"), "tool", 127);
 
         let status = resolver(&dir).find(&tool());
 

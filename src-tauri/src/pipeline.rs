@@ -424,12 +424,17 @@ mod tests {
     async fn transcribes_real_media_with_vendored_components() {
         let model = PathBuf::from(std::env::var("TSUZURI_E2E_MODEL").unwrap());
         let media = PathBuf::from(std::env::var("TSUZURI_E2E_MEDIA").unwrap());
-        let vendor = Path::new(env!("CARGO_MANIFEST_DIR")).join("../vendor");
-        let dir = TempDir::new("tx-e2e");
-        let tools = Tools {
-            ffmpeg: vendor.join("ffmpeg/bin/ffmpeg"),
-            whisper: vendor.join("whisper/bin/whisper-cli"),
+        // vendor/ is laid out as the installer lays out its Bundled Variants.
+        let vendor = Resolver {
+            bundled: Path::new(env!("CARGO_MANIFEST_DIR")).join("../vendor"),
+            choices: components::Choices::default(),
+            search_dirs: Vec::new(),
         };
+        let [ffmpeg, whisper] = components::find_ready_executables(vendor, ["ffmpeg", "whisper"])
+            .await
+            .unwrap();
+        let dir = TempDir::new("tx-e2e");
+        let tools = Tools { ffmpeg, whisper };
         let mut settings = ModelSettings::default();
         settings.choose(ModelSlot::Transcription, model);
         let app = mock_builder()

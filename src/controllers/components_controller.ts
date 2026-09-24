@@ -9,6 +9,7 @@ interface ComponentStatus {
   ready: boolean;
   path: string | null;
   origin: "chosen" | "detected" | "bundled" | null;
+  variant: string | null;
   problem: "not-installed" | "does-not-run" | null;
   /** The command that installs it, where the platform has one to name. */
   install: string | null;
@@ -18,12 +19,15 @@ function statusMessage({
   ready,
   path,
   origin,
+  variant,
   problem,
   install,
 }: ComponentStatus): string {
   if (ready && path)
     return t("components.found", {
-      origin: t(`components.${origin ?? "ready"}`),
+      origin: variant
+        ? t("components.bundledVariant", { variant })
+        : t(`components.${origin ?? "ready"}`),
       path,
     });
   if (problem === "does-not-run") return t("components.doesNotRun");

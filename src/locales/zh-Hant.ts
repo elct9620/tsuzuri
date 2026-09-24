@@ -53,6 +53,7 @@ const zhHant: typeof en = {
     chosen: "指定",
     detected: "偵測到",
     bundled: "內建",
+    bundledVariant: "內建（{{variant}}）",
     ready: "已就緒",
     found: "{{origin}}：{{path}}",
     doesNotRun: "未就緒（內建的版本無法執行，可能缺少驅動程式或系統函式庫）",

@@ -52,6 +52,7 @@ const en = {
     chosen: "Chosen",
     detected: "Detected",
     bundled: "Bundled",
+    bundledVariant: "Bundled ({{variant}})",
     ready: "Ready",
     found: "{{origin}}: {{path}}",
     doesNotRun:

@@ -14,11 +14,13 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # check code against .spec/
 ```
 
-On macOS, build the Components upstream ships no prebuilt executable for (whisper-cli, ffmpeg) into `vendor/` first; it needs cmake and make:
+Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else downloads the upstream build pinned for the platform. Nothing prebuilt exists for whisper-cli and ffmpeg on macOS, nor for ffmpeg on Linux; for development, build them into `vendor/`, which debug builds look in first. It needs cmake and make:
 
 ```bash
 scripts/vendor.sh
 ```
+
+On Linux the prebuilt whisper.cpp and llama.cpp (Vulkan) load `libgomp1` and `libvulkan1` from the system.
 
 The frontend is plain TypeScript with [Stimulus](https://stimulus.hotwired.dev/) controllers under `src/controllers/`.
 

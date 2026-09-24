@@ -57,7 +57,9 @@ build_whisper() {
 build_ffmpeg() {
   if up_to_date ffmpeg "$FFMPEG_VERSION"; then echo "vendor: ffmpeg $FFMPEG_VERSION up to date"; return; fi
   require make curl shasum
-  local src="$VENDOR/.build/ffmpeg" out="$VENDOR/ffmpeg"
+  local src="$VENDOR/.build/ffmpeg" out="$VENDOR/ffmpeg" asm=()
+  # x86 assembly needs nasm; an audio-only build decodes fast enough without it.
+  if [[ "$(uname -m)" == "x86_64" ]] && ! command -v nasm >/dev/null; then asm=(--disable-x86asm); fi
   fetch_source "https://ffmpeg.org/releases/ffmpeg-$FFMPEG_VERSION.tar.xz" "$FFMPEG_SHA256" "$src"
   # LGPL, audio only: read the audio track of common video/audio containers and
   # write the 16 kHz mono PCM WAV whisper-cli expects. Nothing is autodetected,
@@ -73,7 +75,8 @@ build_ffmpeg() {
     --enable-parser=aac,mpegaudio,opus,vorbis,flac \
     --enable-encoder=pcm_s16le --enable-muxer=wav \
     --enable-filter=aresample,aformat,anull \
-    --enable-swresample)
+    --enable-swresample \
+    ${asm[@]+"${asm[@]}"})
   make -C "$src" -j "$JOBS"
   rm -rf "$out" && mkdir -p "$out/bin"
   cp "$src/ffmpeg" "$out/bin/"

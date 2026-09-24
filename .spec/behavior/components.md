@@ -111,3 +111,11 @@ Getting every Component the running platform needs ready before a Mode runs: the
 | Given | the components panel |
 | When | an executable is chosen for a Component |
 | Then | its status shows the chosen path |
+
+## `CP-014` Reporting a downloaded Component that does not run
+
+| Step | Statement |
+| --- | --- |
+| Given | a downloaded Component whose executable fails its version flag, as when a system library it needs is missing |
+| When | its status is read |
+| Then | it reads as not ready and says the executable does not run |

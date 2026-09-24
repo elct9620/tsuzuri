@@ -70,7 +70,7 @@ fn download(tag: &str, archives: Vec<Archive>, executable: &str) -> Source {
     }
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(not(all(target_os = "windows", target_arch = "x86_64")))]
 fn external(install_hint: &str) -> Source {
     Source::External {
         install_hint: install_hint.to_string(),
@@ -146,5 +146,47 @@ pub fn manifest() -> Vec<Entry> {
             vec![archive(llama_url, llama_sha256, ArchiveFormat::TarGz)],
             llama_executable,
         )),
+    ]
+}
+
+/// The Components this build needs, in the order a Mode runs them.
+/// The prebuilt executables load `libgomp.so.1`, and llama.cpp's Vulkan build `libvulkan.so.1`, from the system.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub fn manifest() -> Vec<Entry> {
+    use ArchiveFormat::TarGz;
+    vec![
+        ffmpeg(external("sudo apt install ffmpeg, or nix profile install nixpkgs#ffmpeg")),
+        whisper(download(
+            "b5130",
+            vec![archive(
+                "https://github.com/ggml-org/whisper.cpp/releases/download/b5130/whisper-bin-ubuntu-x64.tar.gz",
+                "53e7fd8b5764edad916b8848dd0af6abb1ff1d3b86c899e79c78652412536c32",
+                TarGz,
+            )],
+            "whisper-bin-ubuntu-x64/whisper-cli",
+        )),
+        llama(download(
+            "b11149",
+            vec![archive(
+                "https://github.com/ggml-org/llama.cpp/releases/download/b11149/llama-b11149-bin-ubuntu-vulkan-x64.tar.gz",
+                "d93606c124863e26750f0fa02daba8ae73aa39395507534fcbb57f5e7bbe7b55",
+                TarGz,
+            )],
+            "llama-b11149/llama-server",
+        )),
+    ]
+}
+
+/// Platforms with no prebuilt Components pinned: everything is found by Detection or chosen by the user.
+#[cfg(not(any(
+    all(target_os = "windows", target_arch = "x86_64"),
+    target_os = "macos",
+    all(target_os = "linux", target_arch = "x86_64"),
+)))]
+pub fn manifest() -> Vec<Entry> {
+    vec![
+        ffmpeg(external("install ffmpeg with your package manager")),
+        whisper(external("install whisper.cpp with your package manager")),
+        llama(external("install llama.cpp with your package manager")),
     ]
 }

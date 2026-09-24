@@ -74,7 +74,8 @@ pub fn detect(program: &str, version_flag: &str, dirs: &[PathBuf]) -> Option<Pat
         .find(|candidate| candidate.is_file() && runs(candidate, version_flag))
 }
 
-fn runs(executable: &Path, version_flag: &str) -> bool {
+/// Whether the executable starts and answers its version flag with success.
+pub fn runs(executable: &Path, version_flag: &str) -> bool {
     let mut command = Command::new(executable);
     command
         .arg(version_flag)

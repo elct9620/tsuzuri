@@ -116,7 +116,21 @@ impl Resolver {
         }
         match &entry.source {
             Source::Download { .. } if self.is_installed(entry) => {
-                found(self.downloaded_executable(entry), Origin::Downloaded)
+                let executable = self.downloaded_executable(entry);
+                if detection::runs(&executable, &entry.version_flag) {
+                    found(executable, Origin::Downloaded)
+                } else {
+                    ComponentStatus {
+                        name: entry.name.clone(),
+                        ready: false,
+                        path: None,
+                        origin: None,
+                        hint: Some(format!(
+                            "{} was downloaded but does not run; a system library it needs may be missing",
+                            entry.program
+                        )),
+                    }
+                }
             }
             source => ComponentStatus {
                 name: entry.name.clone(),
@@ -514,6 +528,7 @@ mod tests {
     }
 
     // @behavior CP-002
+    #[cfg(unix)]
     #[tokio::test]
     async fn skips_a_component_already_installed_from_its_pinned_archives() {
         let dir = TempDir::new("cp-skip");
@@ -643,5 +658,24 @@ mod tests {
             .unwrap();
 
         assert!(server.ranges().is_empty());
+    }
+
+    // @behavior CP-014
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn reports_a_downloaded_component_that_does_not_run() {
+        let dir = TempDir::new("cp-does-not-run");
+        let archive = tar_gz("pkg/bin/tool", b"#!/bin/sh\nexit 127\n");
+        let server = ArchiveServer::serve(archive.clone());
+        let entry = tool_entry(&server.url, sha256(&archive));
+        let resolver = resolver(&dir);
+        install(&entry, &resolver, &reqwest::Client::new(), &|_, _| {})
+            .await
+            .unwrap();
+
+        let status = resolver.status(&entry);
+
+        assert!(!status.ready);
+        assert!(status.hint.unwrap().contains("does not run"));
     }
 }

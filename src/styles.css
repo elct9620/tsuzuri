@@ -118,12 +118,33 @@ h2 {
   color: #767670;
 }
 
-.segments p {
-  margin: 0;
+.segments textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 2px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+
+.segments textarea:hover,
+.segments textarea:focus {
+  border-color: #c8c8c0;
 }
 
 .segments .translation {
   color: #3d5a80;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .empty {

@@ -61,3 +61,11 @@ Run the Translate Mode on Segments into the target language, emitting `pipeline-
 ```rust
 pub async fn translate(app: AppHandle, segments: Vec<Segment>, target: String) -> Result<Vec<TranslatedSegment>, String> {}
 ```
+
+## `save_srt`
+
+Write Segments to a file as SRT.
+
+```rust
+pub fn save_srt(path: PathBuf, segments: Vec<Segment>) -> Result<(), String> {}
+```

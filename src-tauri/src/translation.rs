@@ -1,4 +1,6 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(test)]
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -13,7 +15,7 @@ use crate::components::{self, Locations};
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::pipeline::report;
 use crate::processes::Processes;
-use crate::transcript::{Segment, Transcript};
+use crate::transcript::Segment;
 
 /// How long llama-server may take to load its Model before translation gives up.
 const READY_TIMEOUT: Duration = Duration::from_secs(180);
@@ -164,14 +166,6 @@ async fn translate_segments(
         on_progress(((index + 1) * 100 / segments.len()) as u8);
     }
     Ok(translated)
-}
-
-#[tauri::command]
-pub fn open_srt(path: PathBuf) -> Result<Vec<Segment>, String> {
-    let srt = std::fs::read_to_string(&path).map_err(|error| error.to_string())?;
-    Transcript::from_srt(&srt)
-        .map(|transcript| transcript.segments)
-        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -409,7 +403,10 @@ mod tests {
         let dir = TempDir::new("tl-e2e");
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
-        let segments = [segment(0, 1_000, "大家好"), segment(1_000, 3_000, "今天天氣很好")];
+        let segments = [
+            segment(0, 1_000, "大家好"),
+            segment(1_000, 3_000, "今天天氣很好"),
+        ];
 
         let translated = run_translate(
             app.handle(),

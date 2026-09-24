@@ -1,4 +1,5 @@
 use std::fmt;
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
@@ -52,12 +53,34 @@ impl Transcript {
                     index + 1,
                     format_timestamp(segment.start_ms),
                     format_timestamp(segment.end_ms),
-                    segment.text
+                    cue_text(&segment.text)
                 )
             })
             .collect::<Vec<_>>()
             .join("\n")
     }
+}
+
+/// A blank line ends a cue in SRT, so text edited to contain one is written without it.
+fn cue_text(text: &str) -> String {
+    text.lines()
+        .map(str::trim_end)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[tauri::command]
+pub fn open_srt(path: PathBuf) -> Result<Vec<Segment>, String> {
+    let srt = std::fs::read_to_string(&path).map_err(|error| error.to_string())?;
+    Transcript::from_srt(&srt)
+        .map(|transcript| transcript.segments)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn save_srt(path: PathBuf, segments: Vec<Segment>) -> Result<(), String> {
+    std::fs::write(path, Transcript { segments }.to_srt()).map_err(|error| error.to_string())
 }
 
 fn parse_cue(cue: usize, block: &str) -> Result<Segment, SrtError> {
@@ -176,5 +199,20 @@ mod tests {
         };
 
         assert_eq!(transcript.to_srt(), TWO_CUES);
+    }
+
+    // @behavior TR-006
+    #[test]
+    fn writes_text_with_a_blank_line_as_one_cue() {
+        let transcript = Transcript {
+            segments: vec![
+                segment(0, 1_000, "第一行\n\n第二行"),
+                segment(1_000, 2_000, "下一段"),
+            ],
+        };
+
+        let reread = Transcript::from_srt(&transcript.to_srt()).unwrap();
+
+        assert_eq!(reread.segments.len(), 2);
     }
 }

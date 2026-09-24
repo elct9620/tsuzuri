@@ -45,3 +45,11 @@ Reading and writing a Transcript as SRT, the one format every Mode shares: whisp
 | Given | a Transcript of two Segments |
 | When | it is written as SRT |
 | Then | the output numbers the cues from 1 with `HH:MM:SS,mmm` timings and a blank line between cues |
+
+## `TR-006` Writing edited text that contains a blank line
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment whose text contains a blank line |
+| When | the Transcript is written as SRT and read back |
+| Then | it reads back as the same number of Segments |

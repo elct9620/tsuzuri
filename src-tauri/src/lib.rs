@@ -29,7 +29,8 @@ pub fn run() {
             models::model_settings,
             models::choose_model,
             pipeline::transcribe,
-            translation::open_srt,
+            transcript::open_srt,
+            transcript::save_srt,
             translation::translate
         ])
         .build(tauri::generate_context!())

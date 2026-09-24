@@ -75,6 +75,10 @@
       <section class="panel" aria-labelledby="transcript-title" data-controller="transcript" data-action="transcribe:loaded@window->transcript#show translate:loaded@window->transcript#show">
         <h2 id="transcript-title">字幕</h2>
         <p class="empty" data-transcript-target="empty">尚無內容</p>
+        <div class="actions" data-transcript-target="actions" hidden>
+          <button type="button" data-action="transcript#saveOriginal">另存原文 SRT</button>
+          <button type="button" data-transcript-target="saveTranslation" data-action="transcript#saveTranslation" hidden>另存譯文 SRT</button>
+        </div>
         <ol class="segments" data-transcript-target="list"></ol>
       </section>
 

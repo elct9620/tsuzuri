@@ -240,114 +240,125 @@
         data-tabs-target="panel"
         hidden
       >
-        <dl
-          class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-4 [&>dt]:font-semibold"
-        >
-          <dt data-i18n="settings.components"></dt>
-          <dd data-controller="components">
-            <ul
-              class="flex flex-col gap-1 [&_button]:ml-2 [&_button]:rounded-md [&_button]:border [&_button]:border-stone-300 [&_button]:px-2 [&_button]:hover:bg-stone-200 dark:[&_button]:border-stone-600 dark:[&_button]:hover:bg-stone-800"
-            >
-              <li>
-                ffmpeg
+        <div class="flex flex-col gap-4">
+          <fieldset class="fieldset text-sm" data-controller="components">
+            <legend
+              class="fieldset-legend"
+              data-i18n="settings.components"
+            ></legend>
+            <ul class="list rounded-box border border-base-300">
+              <li class="list-row items-center">
+                <span class="w-28 font-medium">ffmpeg</span>
                 <span
-                  class="break-all text-stone-500 dark:text-stone-400"
+                  class="break-all text-base-content/70"
                   data-components-target="status"
                   data-component="ffmpeg"
                   data-i18n="settings.checking"
                 ></span>
                 <button
                   type="button"
+                  class="btn btn-sm"
                   data-component="ffmpeg"
                   data-action="components#choose"
                   data-i18n="settings.choose"
                 ></button>
               </li>
-              <li>
-                whisper.cpp
+              <li class="list-row items-center">
+                <span class="w-28 font-medium">whisper.cpp</span>
                 <span
-                  class="break-all text-stone-500 dark:text-stone-400"
+                  class="break-all text-base-content/70"
                   data-components-target="status"
                   data-component="whisper"
                   data-i18n="settings.checking"
                 ></span>
                 <button
                   type="button"
+                  class="btn btn-sm"
                   data-component="whisper"
                   data-action="components#choose"
                   data-i18n="settings.choose"
                 ></button>
               </li>
-              <li>
-                llama.cpp
+              <li class="list-row items-center">
+                <span class="w-28 font-medium">llama.cpp</span>
                 <span
-                  class="break-all text-stone-500 dark:text-stone-400"
+                  class="break-all text-base-content/70"
                   data-components-target="status"
                   data-component="llama"
                   data-i18n="settings.checking"
                 ></span>
                 <button
                   type="button"
+                  class="btn btn-sm"
                   data-component="llama"
                   data-action="components#choose"
                   data-i18n="settings.choose"
                 ></button>
               </li>
             </ul>
-          </dd>
+          </fieldset>
 
-          <dt data-i18n="settings.models"></dt>
-          <dd data-controller="models">
-            <dl
-              class="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 [&_button]:ml-2 [&_button]:rounded-md [&_button]:border [&_button]:border-stone-300 [&_button]:px-2 [&_button]:hover:bg-stone-200 dark:[&_button]:border-stone-600 dark:[&_button]:hover:bg-stone-800"
-            >
-              <dt data-i18n="slots.transcription"></dt>
-              <dd>
+          <fieldset class="fieldset text-sm" data-controller="models">
+            <legend
+              class="fieldset-legend"
+              data-i18n="settings.models"
+            ></legend>
+            <ul class="list rounded-box border border-base-300">
+              <li class="list-row items-center">
                 <span
-                  class="break-all text-stone-500 dark:text-stone-400 [&.missing]:text-red-700 dark:[&.missing]:text-red-400"
+                  class="w-28 font-medium"
+                  data-i18n="slots.transcription"
+                ></span>
+                <span
+                  class="break-all text-base-content/70 [&.missing]:text-error"
                   data-models-target="status"
                   data-slot="transcription"
                   data-i18n="models.notChosen"
                 ></span>
                 <button
                   type="button"
+                  class="btn btn-sm"
                   data-slot="transcription"
                   data-action="models#choose"
                   data-i18n="settings.chooseFile"
                 ></button>
-              </dd>
-              <dt data-i18n="slots.translation"></dt>
-              <dd>
+              </li>
+              <li class="list-row items-center">
                 <span
-                  class="break-all text-stone-500 dark:text-stone-400 [&.missing]:text-red-700 dark:[&.missing]:text-red-400"
+                  class="w-28 font-medium"
+                  data-i18n="slots.translation"
+                ></span>
+                <span
+                  class="break-all text-base-content/70 [&.missing]:text-error"
                   data-models-target="status"
                   data-slot="translation"
                   data-i18n="models.notChosen"
                 ></span>
                 <button
                   type="button"
+                  class="btn btn-sm"
                   data-slot="translation"
                   data-action="models#choose"
                   data-i18n="settings.chooseFile"
                 ></button>
-              </dd>
-            </dl>
-          </dd>
+              </li>
+            </ul>
+          </fieldset>
 
-          <dt data-i18n="settings.about"></dt>
-          <dd
-            class="flex flex-col gap-1 text-sm text-stone-600 dark:text-stone-400"
-          >
-            <p data-i18n="settings.license"></p>
-            <p>
-              This software uses code of FFmpeg licensed under the LGPLv2.1.
-              Transcription uses whisper.cpp and translation uses llama.cpp,
-              both under the MIT License. Each is bundled with Tsuzuri and runs
-              as a separate program, which an executable you choose or have
-              installed can replace.
-            </p>
-          </dd>
-        </dl>
+          <fieldset class="fieldset text-sm">
+            <legend class="fieldset-legend" data-i18n="settings.about"></legend>
+            <div class="flex flex-col gap-1 text-base-content/70">
+              <p data-i18n="settings.license"></p>
+              <p>
+                This software uses code of FFmpeg licensed under the LGPLv2.1.
+                Transcription uses whisper.cpp and translation uses llama.cpp,
+                both under the MIT License. Each is bundled with Tsuzuri and
+                runs as a separate program, which an executable you choose or
+                have installed can replace.
+              </p>
+            </div>
+          </fieldset>
+        </div>
       </section>
     </main>
   </body>

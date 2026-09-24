@@ -16,7 +16,7 @@ use crate::language::{Language, LanguagePair};
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::pipeline::{enter, report};
 use crate::processes::Processes;
-use crate::project::{self, CurrentProject};
+use crate::project::{self, CurrentProject, TranslationSource};
 use crate::timing::{PhaseTiming, Phases};
 use crate::transcript::Segment;
 
@@ -89,12 +89,12 @@ pub async fn run_translate<R: Runtime>(
 ) -> Result<Translation, Failure> {
     let model = model_settings.ready_path(ModelSlot::Translation)?;
     let project = app.state::<CurrentProject>();
-    let (generation, transcript, source) = project.snapshot()?;
+    let source = project.snapshot()?;
     let glossary = project.reload_translation_glossary()?;
     let job = TranslationJob {
-        segments: &transcript.segments,
+        segments: &source.transcript.segments,
         languages: LanguagePair {
-            source,
+            source: source.language,
             target: plan.target,
         },
         settings: plan.settings,
@@ -138,44 +138,63 @@ pub async fn run_translate<R: Runtime>(
         }
     });
 
-    let client = reqwest::Client::new();
     let base_url = format!("http://127.0.0.1:{port}");
     let result = translate_once_ready(
         app,
-        &client,
         &base_url,
         ready_timeout,
         || exited.load(Ordering::SeqCst),
         &job,
         &mut phases,
+        batch_display(app, &source, plan.target),
     )
     .await;
     processes.kill(pid);
-    project.write_translations(generation, plan.target, result?);
+    project.write_translations(&source, plan.target, result?)?;
     project::announce(app);
     Ok(Translation {
         phases: phases.finish(),
     })
 }
 
-/// Waits for llama-server to load its Model, then translates every Segment in the translate Phase.
+/// Shows the Segments translated into `target` so far on the Resource `source` was taken from,
+/// and tells the webview, so each Batch appears as it finishes.
+fn batch_display<'a, R: Runtime>(
+    app: &'a AppHandle<R>,
+    source: &'a TranslationSource,
+    target: Language,
+) -> impl Fn(&[Segment]) + 'a {
+    move |translated_segments| {
+        app.state::<CurrentProject>()
+            .show_translations(source, target, translated_segments);
+        project::announce(app);
+    }
+}
+
+/// Waits for llama-server to load its Model, then translates every Segment in the translate Phase,
+/// handing `on_batch` the Segments translated so far after each Batch.
 async fn translate_once_ready<R: Runtime>(
     app: &AppHandle<R>,
-    client: &reqwest::Client,
     base_url: &str,
     ready_timeout: Duration,
     has_exited: impl Fn() -> bool,
     job: &TranslationJob<'_>,
     phases: &mut Phases,
+    on_batch: impl Fn(&[Segment]),
 ) -> Result<Vec<Segment>, Failure> {
-    wait_until_ready(client, base_url, ready_timeout, has_exited).await?;
+    wait_until_ready(&reqwest::Client::new(), base_url, ready_timeout, has_exited).await?;
     let model = TranslationModel::new(base_url);
     enter(app, phases, "detect");
     let split_sentences =
         find_split_sentences(&model, job, |percent| report(app, "detect", Some(percent))).await;
     enter(app, phases, "translate");
-    translate_segments(&model, job, &split_sentences, |percent| {
-        report(app, "translate", Some(percent))
+    translate_segments(&model, job, &split_sentences, |translated_segments| {
+        report(
+            app,
+            "translate",
+            Some((translated_segments.len() * 100 / job.segments.len()) as u8),
+        );
+        on_batch(translated_segments);
     })
     .await
 }
@@ -274,7 +293,7 @@ async fn translate_segments(
     model: &TranslationModel,
     job: &TranslationJob<'_>,
     split_sentences: &[Vec<usize>],
-    on_progress: impl Fn(u8),
+    on_batch: impl Fn(&[Segment]),
 ) -> Result<Vec<Segment>, Failure> {
     let labelled_texts: Vec<LabelledText> = job
         .segments
@@ -309,7 +328,7 @@ async fn translate_segments(
             let batch_pairs = &translated_pairs[translated_pairs.len() - range.len()..];
             summary = rewrite_summary(model, job.languages, summary, batch_pairs, word_limit).await;
         }
-        on_progress((translated_segments.len() * 100 / job.segments.len()) as u8);
+        on_batch(&translated_segments);
     }
     Ok(translated_segments)
 }
@@ -359,7 +378,10 @@ pub fn save_translation_settings(
 mod tests {
     use serde_json::json;
 
+    use std::sync::Mutex;
+
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+    use tauri::Listener;
 
     use super::*;
     use crate::project::SegmentField;
@@ -392,12 +414,12 @@ mod tests {
         let app = mock_app();
         translate_once_ready(
             app.handle(),
-            &reqwest::Client::new(),
             llama.base_url(),
             Duration::from_secs(5),
             || false,
             job,
             &mut Phases::start("translate", "load"),
+            |_| {},
         )
         .await
         .unwrap()
@@ -1287,6 +1309,46 @@ mod tests {
         assert!(llama.review_requests.lock().unwrap().is_empty());
     }
 
+    // @behavior TL-058
+    #[tokio::test]
+    async fn shows_each_batch_as_it_is_translated() {
+        let llama = FakeLlama::with_echo(0);
+        let dir = TempDir::new("tl-stream");
+        let app = mock_app();
+        let mut project = project_of(three_segments());
+        project.directory = dir.path().to_path_buf();
+        app.state::<CurrentProject>().replace(project);
+        let source = app.state::<CurrentProject>().snapshot().unwrap();
+        let shown = Arc::new(Mutex::new(Vec::new()));
+        app.listen_any("project-changed", {
+            let shown = Arc::clone(&shown);
+            let handle = app.handle().clone();
+            move |_| {
+                let view = handle.state::<CurrentProject>().view().unwrap();
+                let count = view
+                    .segments()
+                    .iter()
+                    .filter(|segment| segment.translation.is_some())
+                    .count();
+                shown.lock().unwrap().push(count);
+            }
+        });
+
+        translate_once_ready(
+            app.handle(),
+            llama.base_url(),
+            Duration::from_secs(5),
+            || false,
+            &job_in_batches_of_two(&source.transcript.segments),
+            &mut Phases::start("translate", "load"),
+            batch_display(app.handle(), &source, Language::Japanese),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(*shown.lock().unwrap(), vec![2, 3]);
+    }
+
     // @behavior TL-010
     #[tokio::test]
     async fn translates_the_project_as_edited() {
@@ -1299,13 +1361,19 @@ mod tests {
         project
             .edit(0, SegmentField::Text, "逐字稿".to_string())
             .unwrap();
-        let (generation, transcript, _) = project.snapshot().unwrap();
+        let source = project.snapshot().unwrap();
 
-        let translated_segments =
-            translate_segments(&llama.model(), &job(&transcript.segments), &[], |_| {})
-                .await
-                .unwrap();
-        project.write_translations(generation, Language::Japanese, translated_segments);
+        let translated_segments = translate_segments(
+            &llama.model(),
+            &job(&source.transcript.segments),
+            &[],
+            |_| {},
+        )
+        .await
+        .unwrap();
+        project
+            .write_translations(&source, Language::Japanese, translated_segments)
+            .unwrap();
 
         let view = project.view().unwrap();
         let segment = &view.segments()[0];
@@ -1464,12 +1532,12 @@ mod tests {
 
         translate_once_ready(
             app.handle(),
-            &reqwest::Client::new(),
             llama.base_url(),
             Duration::from_secs(5),
             || false,
             &job(&segments),
             &mut phases,
+            |_| {},
         )
         .await
         .unwrap();
@@ -1492,11 +1560,13 @@ mod tests {
         let dir = TempDir::new("tl-e2e");
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
-        app.state::<CurrentProject>().replace(project_of(vec![
+        let mut project = project_of(vec![
             segment(0, 1_000, "co: 大家好"),
             segment(1_000, 3_000, "今天天氣很好"),
             segment(3_000, 5_000, "但我不想出門"),
-        ]));
+        ]);
+        project.directory = dir.path().to_path_buf();
+        app.state::<CurrentProject>().replace(project);
 
         let translated_segments = run_translate(
             app.handle(),

@@ -148,6 +148,22 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | the translation of the first is edited |
 | Then | `ep01.en.srt` holds one cue |
 
+## `PJ-031` Writing the translation beside its original
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Current Resource `ep01` is two Segments |
+| When | its translation into `en` is written |
+| Then | `ep01.en.srt` holds both translations |
+
+## `PJ-032` Writing the translation of a Resource no longer current
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation of `ep01` during which `ep02` was selected |
+| When | its translation into `en` is written |
+| Then | `ep01.en.srt` holds the translations and `ep02` shows none of them |
+
 ## `PJ-008` Saying why an SRT file could not be opened
 
 | Step | Statement |

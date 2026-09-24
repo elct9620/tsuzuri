@@ -267,6 +267,18 @@ pub enum SegmentField {
     Translation,
 }
 
+/// What a translation needs from the Project when it starts.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TranslationSource {
+    pub generation: u64,
+    pub directory: PathBuf,
+    /// The Resource being translated.
+    pub name: String,
+    pub transcript: Transcript,
+    /// The Primary Language it is translated from.
+    pub language: Language,
+}
+
 /// What a transcription needs from the Project when it starts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TranscriptionTarget {
@@ -346,19 +358,21 @@ impl CurrentProject {
         })
     }
 
-    /// The Current Resource's Transcript as it stands, with the generation to hand back to
-    /// [`CurrentProject::write_translations`], and the Primary Language it is in.
-    pub fn snapshot(&self) -> Result<(u64, Transcript, Language), Failure> {
+    /// What a translation of the Current Resource starts from, to hand back to
+    /// [`CurrentProject::show_translations`] and [`CurrentProject::write_translations`].
+    pub fn snapshot(&self) -> Result<TranslationSource, Failure> {
         let held = self.lock();
         let project = held.project.as_ref().ok_or(Failure::NoProject)?;
-        Ok((
-            held.generation,
-            project.current()?.transcript.clone(),
-            project.language,
-        ))
+        let current = project.current()?;
+        Ok(TranslationSource {
+            generation: held.generation,
+            directory: project.directory.clone(),
+            name: current.name.clone(),
+            transcript: current.transcript.clone(),
+            language: project.language,
+        })
     }
 
-    /// The Current Resource's media file and the Language to transcribe it in.
     /// The Current Resource's media file, the Language to transcribe it in and the subtitle to
     /// write, refused when that subtitle exists unless `overwrite`.
     pub fn transcription_target(&self, overwrite: bool) -> Result<TranscriptionTarget, Failure> {
@@ -412,21 +426,52 @@ impl CurrentProject {
         });
     }
 
-    /// Writes each Segment's translation into `target` by position and records `target` as the
-    /// Project's translation Language, unless another Resource became current since `generation`.
-    pub fn write_translations(&self, generation: u64, target: Language, segments: Vec<Segment>) {
-        self.write_if_current(generation, |project| {
+    /// Shows the translations into `target` finished so far, by position, and none after them,
+    /// unless another Resource became current since `source` was taken.
+    pub fn show_translations(
+        &self,
+        source: &TranslationSource,
+        target: Language,
+        translated_segments: &[Segment],
+    ) {
+        self.write_if_current(source.generation, |project| {
+            if let Some(current) = project.current.as_mut() {
+                current.translation = Some(target);
+                for (index, segment) in current.transcript.segments.iter_mut().enumerate() {
+                    segment.translation = translated_segments
+                        .get(index)
+                        .and_then(|translated_segment| translated_segment.translation.clone());
+                }
+            }
+        });
+    }
+
+    /// Writes the translations into `target` to the Resource's translation file, whichever
+    /// Resource is current now, and, while it is still current, shows them and records `target`
+    /// as the Project's translation Language.
+    pub fn write_translations(
+        &self,
+        source: &TranslationSource,
+        target: Language,
+        segments: Vec<Segment>,
+    ) -> Result<(), Failure> {
+        let path = source
+            .directory
+            .join(format!("{}.{}.srt", source.name, target.code()));
+        let translation = Transcript { segments };
+        std::fs::write(
+            path,
+            translation_only(&translation).to_srt(SrtContent::Original),
+        )?;
+        self.refresh_resources(&source.directory)?;
+        self.show_translations(source, target, &translation.segments);
+        self.write_if_current(source.generation, |project| {
             project.translation_language = Some(target);
             if let Err(failure) = project.save_config() {
                 log::warn!("could not record the translation Language: {failure:?}");
             }
-            if let Some(current) = project.current.as_mut() {
-                current.translation = Some(target);
-                for (segment, translated) in current.transcript.segments.iter_mut().zip(segments) {
-                    segment.translation = translated.translation;
-                }
-            }
         });
+        Ok(())
     }
 
     /// Reads the directory's `glossary.csv` again into the Project, for a translation to use.
@@ -863,13 +908,15 @@ mod tests {
     fn records_the_translation_language_in_the_project_config() {
         let dir = directory_of("pj-config-translation", &[("ep01.srt", &cue("你好"))]);
         let current = project_in(&dir);
-        let (generation, _, _) = current.snapshot().unwrap();
+        let source = current.snapshot().unwrap();
 
-        current.write_translations(
-            generation,
-            Language::English,
-            vec![segment("你好", Some("Hello"))],
-        );
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("你好", Some("Hello"))],
+            )
+            .unwrap();
 
         assert_eq!(
             config_of(&dir).translation_language,
@@ -932,11 +979,11 @@ mod tests {
     #[test]
     fn names_an_export_by_the_resource_and_its_languages() {
         let current = current_project_of(vec![segment("大家好", None)]);
-        let (generation, _, _) = current.snapshot().unwrap();
-        current.write_translations(
-            generation,
+        let source = current.snapshot().unwrap();
+        current.show_translations(
+            &source,
             Language::English,
-            vec![segment("大家好", Some("Hello"))],
+            &[segment("大家好", Some("Hello"))],
         );
 
         let paths = [
@@ -953,6 +1000,59 @@ mod tests {
                 PathBuf::from("/talks/lecture.en.srt"),
                 PathBuf::from("/talks/lecture.zh-TW.en.srt"),
             ]
+        );
+    }
+
+    // @behavior PJ-031
+    #[test]
+    fn writes_the_translation_beside_its_original() {
+        let original =
+            "1\n00:00:00,000 --> 00:00:01,000\n你好\n\n2\n00:00:01,000 --> 00:00:02,000\n世界\n";
+        let dir = directory_of("tl-write-file", &[("ep01.srt", original)]);
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+        let translation: Vec<Segment> = source
+            .transcript
+            .segments
+            .iter()
+            .map(|segment| Segment {
+                translation: Some(format!("EN:{}", segment.text)),
+                ..segment.clone()
+            })
+            .collect();
+
+        current
+            .write_translations(&source, Language::English, translation)
+            .unwrap();
+
+        assert_eq!(
+            file_text(&dir, "ep01.en.srt"),
+            "1\n00:00:00,000 --> 00:00:01,000\nEN:你好\n\n2\n00:00:01,000 --> 00:00:02,000\nEN:世界\n"
+        );
+    }
+
+    // @behavior PJ-032
+    #[test]
+    fn writes_the_translation_of_a_resource_no_longer_current() {
+        let dir = directory_of(
+            "tl-write-other",
+            &[("ep01.srt", &cue("你好")), ("ep02.srt", &cue("再見"))],
+        );
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+        current.select("ep02").unwrap();
+
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("你好", Some("Hello"))],
+            )
+            .unwrap();
+
+        assert_eq!(
+            (file_text(&dir, "ep01.en.srt"), segments(&current)),
+            (cue("Hello"), vec![segment("再見", None)])
         );
     }
 
@@ -1027,15 +1127,18 @@ mod tests {
     // @behavior PJ-006
     #[test]
     fn leaves_a_replaced_project_untouched_by_a_late_translation() {
-        let current = current_project_of(vec![segment("大家好", None)]);
-        let (generation, _, _) = current.snapshot().unwrap();
+        let dir = directory_of("pj-replaced", &[("ep01.srt", &cue("大家好"))]);
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
         current.replace(project_of(vec![segment("另一份", None)]));
 
-        current.write_translations(
-            generation,
-            Language::English,
-            vec![segment("大家好", Some("Hello"))],
-        );
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("大家好", Some("Hello"))],
+            )
+            .unwrap();
 
         assert_eq!(segments(&current), vec![segment("另一份", None)]);
     }
@@ -1043,14 +1146,20 @@ mod tests {
     // @behavior PJ-010
     #[test]
     fn records_the_language_of_a_translation() {
-        let current = current_project_of(vec![segment("こんにちは", None)]);
-        let (generation, _, _) = current.snapshot().unwrap();
-
-        current.write_translations(
-            generation,
-            Language::English,
-            vec![segment("こんにちは", Some("Hello"))],
+        let dir = directory_of(
+            "pj-translation-language",
+            &[("ep01.srt", &cue("こんにちは"))],
         );
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("こんにちは", Some("Hello"))],
+            )
+            .unwrap();
 
         let view = current.view().unwrap();
         assert_eq!(

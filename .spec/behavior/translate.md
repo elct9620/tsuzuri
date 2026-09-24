@@ -460,3 +460,11 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | the Translate Mode panel and a Project in `ja` whose source Language is changed to `en` |
 | When | translating is started |
 | Then | the Project is translated from `en` |
+
+## `TL-058` Showing each Batch as it is translated
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and a Project whose Current Resource is three Segments in Batches of two |
+| When | it is translated |
+| Then | a change is announced after each Batch, holding two translations and then three |

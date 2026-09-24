@@ -129,3 +129,27 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | the Transcribe Mode panel set to translate once transcribed |
 | When | a media file is transcribed in `en` |
 | Then | the Project is translated from `en` |
+
+## `TL-017` Translating in Batches
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and a Transcript of three Segments |
+| When | it is translated in Batches of two |
+| Then | two requests are sent, carrying two Segments and then one |
+
+## `TL-018` Matching translations by index
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that answers a Batch's translations in reverse order |
+| When | a Transcript is translated |
+| Then | each Segment carries the translation answered for its index |
+
+## `TL-019` Carrying the previous Batch as reference
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and a Transcript of two Batches |
+| When | it is translated |
+| Then | the second request carries the last lines of the first with their translations |

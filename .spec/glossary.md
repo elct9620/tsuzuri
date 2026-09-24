@@ -66,6 +66,10 @@ Taking the first Bundled Variant, in the Build Manifest's order for the platform
 
 A weights file an engine loads, always passed by absolute path. The user points at a file already on disk; Tsuzuri never downloads Models.
 
+### Batch
+
+The Segments one request asks the Model to translate, each sent with its position as an index so every translation in the answer is matched back by index rather than by order.
+
 ### Model Slot
 
 Which job a Model is chosen for: transcription (whisper-cli) or translation (llama-server). Each slot holds one Model path.

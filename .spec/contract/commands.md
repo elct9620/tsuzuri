@@ -40,10 +40,10 @@ pub async fn choose_component(app: AppHandle, name: String, path: PathBuf) -> Re
 
 ## `transcribe`
 
-Run the Transcribe Mode on one media file, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The media file and its Transcript become the Project; the answer is how long the audio is and the seconds each Phase took.
+Run the Transcribe Mode on one media file in the given Language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The media file, its Transcript and its Language become the Project; the answer is how long the audio is and the seconds each Phase took.
 
 ```rust
-pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, Failure> {}
+pub async fn transcribe(app: AppHandle, path: PathBuf, language: Language) -> Result<Transcription, Failure> {}
 ```
 
 ## `open_srt`

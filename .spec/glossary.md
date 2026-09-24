@@ -24,7 +24,7 @@ An SRT whose every cue carries the original text above its translation, so any p
 
 ### Project
 
-The work on one input that Rust holds as the single source of truth: the media file, when there is one, and its Transcript with the translations and edits. Transcribing a media file or opening an SRT file replaces it; translating, editing and exporting work on it. For now only one exists, in memory.
+The work on one input that Rust holds as the single source of truth: the media file, when there is one, and its Transcript with the translations and edits, and the Language the Transcript is in. Transcribing a media file or opening an SRT file replaces it; translating, editing and exporting work on it. For now only one exists, in memory.
 
 ### Mode
 

@@ -120,3 +120,19 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | Given | the transcribe panel |
 | When | a transcription fails |
 | Then | the transcribe panel stays shown with the reason |
+
+## `TX-015` Transcribing in the chosen Language
+
+| Step | Statement |
+| --- | --- |
+| Given | a media file and the transcription Language `ja` |
+| When | it is transcribed |
+| Then | whisper-cli is asked for Japanese and the Project's Transcript is in `ja` |
+
+## `TX-016` Transcribing in the selected Language
+
+| Step | Statement |
+| --- | --- |
+| Given | the Transcribe Mode panel with a Language selected |
+| When | a media file is transcribed |
+| Then | it is transcribed in the selected Language |

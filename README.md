@@ -59,14 +59,14 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # check code against .spec/
 ```
 
-Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else the one bundled with the installer. Development builds bundle nothing; build the Components into `vendor/`, which debug builds look in first. `scripts/vendor.sh` builds whisper-cli, llama-server and ffmpeg from the source [`components.json`](components.json) pins, each as the first Variant it lists for the platform unless one is named. It needs cmake, make and jq; Linux OpenBLAS and Vulkan builds also need pkg-config, libopenblas-dev, libvulkan-dev, glslc and spirv-headers, and Windows builds run in MSYS2 UCRT64:
+Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else the one bundled with the installer. Development builds bundle nothing; build the Components into `vendor/<component>/<variant>/`, which debug builds look in first. `scripts/vendor.sh` builds whisper-cli, llama-server and ffmpeg from the source [`components.json`](components.json) pins, each as the first Variant it lists for the platform unless one is named. It needs cmake, make and jq; Linux OpenBLAS and Vulkan builds also need pkg-config, libopenblas-dev, libvulkan-dev, glslc and spirv-headers, and Windows builds run in MSYS2 UCRT64:
 
 ```bash
 scripts/vendor.sh               # every Component
 scripts/vendor.sh whisper cpu   # one Component, one Variant
 ```
 
-Packaging merges `src-tauri/tauri.bundle.conf.json`, which bundles `vendor/` into the installer. CI builds the first Variant listed for each platform the same way, caching each by its pin, before it runs `pnpm tauri build --config src-tauri/tauri.bundle.conf.json`.
+Packaging merges `src-tauri/tauri.bundle.conf.json`, which bundles `vendor/` into the installer; the app takes the first bundled Variant that runs, in the order `components.json` lists them. CI builds the first Variant listed for each platform the same way, caching each by its pin, before it runs `pnpm tauri build --config src-tauri/tauri.bundle.conf.json`.
 
 The frontend is plain TypeScript with [Stimulus](https://stimulus.hotwired.dev/) controllers under `src/controllers/`. The design is in [docs/design.md](docs/design.md).
 

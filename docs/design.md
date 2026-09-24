@@ -46,7 +46,7 @@ Tsuzuri（綴り）在本機把影片與音訊轉成字幕，並提供翻譯與�
 | 1 字幕資料 | 🚧 | TR-001～008：讀寫 SRT，寫出譯文與雙語 SRT。尚缺說話者標籤、讀入雙語 SRT 時拆成原文與譯文 |
 | 2 專案 | 🚧 | PJ-001～009：Rust 記憶體中的一個專案，轉錄或從 SRT 建立時取代，翻譯、編輯、匯出都讀寫它。尚缺存檔與開啟、最近的專案、專案設定、補上媒體檔 |
 | 3 行程 | ✅ | PR-001～004；OB-001～003：元件輸出與各 Phase 耗時寫入 log。Windows 的 `taskkill` 路徑只在 CI 編譯過 |
-| 4 元件 | 🚧 | CP-005、007、009～011、013～016：尋找順序、偵測（不佔用視窗）、內建預設變體。尚缺自動選擇變體、隨版本附上 ffmpeg 原始程式碼 |
+| 4 元件 | 🚧 | CP-005、007、009～011、013～019：尋找順序、偵測（不佔用視窗）、依 Build Manifest 順序自動選擇能執行的內建變體並顯示在設定頁。尚缺安裝檔內建全部變體、隨版本附上 ffmpeg 原始程式碼 |
 | 5 模型 | ✅ | MD-001～005 |
 | 6 工作流程 | 📋 | 目前三種模式寫死在程式裡 |
 | 7 轉錄模組 | 🚧 | TX-001～014：分 Phase 回報進度與耗時，可勾選完成後翻譯，成功後切到編輯。尚缺語言選擇、轉檔百分比、取消 |
@@ -57,7 +57,7 @@ Tsuzuri（綴り）在本機把影片與音訊轉成字幕，並提供翻譯與�
 | 12 首次設定引導 | 📋 | |
 | 13 建置與釋出 | 🚧 | CI 檢查、元件建置、內建元件的三平台打包完成；尚缺 release-please、自動更新、預先編譯的 Metal shader |
 
-✅ 完成、🚧 進行中、📋 未開始。章節依實作的相依關係排列，對照 `2406bb0`。
+✅ 完成、🚧 進行中、📋 未開始。章節依實作的相依關係排列，對照 `6c3c31e`。
 
 ### 0.4 平台與變體
 
@@ -206,7 +206,7 @@ SRT 是 Transcript 交換的唯一格式：whisper-cli 輸出它、使用者提�
 | llama.cpp | CPU、OpenBLAS、Vulkan；macOS 用 Metal | 與 whisper.cpp 一致 |
 | ffmpeg | 純音訊的 LGPL 版 | 只需要解出音軌，範圍小、授權單純 |
 
-App 不在執行時下載元件。自動選擇上線前，每個平台只內建 Build Manifest 列的第一個變體，其他變體與 CUDA 版由使用者依 12.2 指定；上線後內建全部變體，選擇結果顯示在首次設定引導與設定頁，可以手動改。
+App 不在執行時下載元件。內建變體放在 `components/<元件>/<變體>/`，App 照 Build Manifest 列出的順序逐一嘗試，採用第一個能執行的變體；選擇結果顯示在設定頁，可以手動改。目前安裝檔只內建第一個變體，其他變體與 CUDA 版由使用者依 12.2 指定。
 
 ### 4.3 自行編譯
 
@@ -216,7 +216,7 @@ App 不在執行時下載元件。自動選擇上線前，每個平台只內建 
 | Linux | GitHub Actions 的 Linux runner，使用系統的 OpenBLAS、Vulkan 函式庫 |
 | macOS | GitHub Actions 的 macOS runner，靜態連結 |
 
-原始程式碼的版本、SHA256 與各平台的變體記在 `components.json`（Build Manifest），CI 與開發機跑同一支 `scripts/vendor.sh`。ffmpeg 的 `configure` 在 Windows 需要 MSYS2，所以 Windows 全部在那裡編譯。開發時的 debug build 會先偵測 `vendor/`；打包時合併 `tauri.bundle.conf.json`，把 `vendor/` 放進安裝檔的 resources。
+原始程式碼的版本、SHA256 與各平台的變體記在 `components.json`（Build Manifest），CI 與開發機跑同一支 `scripts/vendor.sh`。ffmpeg 的 `configure` 在 Windows 需要 MSYS2，所以 Windows 全部在那裡編譯。`vendor/` 與安裝檔同樣是 `<元件>/<變體>/` 的結構，開發時的 debug build 會先偵測它；打包時合併 `tauri.bundle.conf.json`，把 `vendor/` 放進安裝檔的 resources。
 
 ### 4.4 授權
 

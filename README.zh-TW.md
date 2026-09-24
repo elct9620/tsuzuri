@@ -59,14 +59,14 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # 對照 .spec/ 檢查程式碼
 ```
 
-Tsuzuri 依序使用：在 App 指定的執行檔、偵測到的已安裝版本（Homebrew、Nix、`PATH`）、安裝檔內建的版本。開發時的建置不內建元件，請先編譯到 `vendor/`，debug build 會優先使用。`scripts/vendor.sh` 依 [`components.json`](components.json) 釘住的原始程式碼編譯 whisper-cli、llama-server 與 ffmpeg，沒有指定變體時使用該平台列出的第一個。需要 cmake、make 與 jq；Linux 的 OpenBLAS、Vulkan 版還需要 pkg-config、libopenblas-dev、libvulkan-dev、glslc 與 spirv-headers，Windows 則在 MSYS2 UCRT64 裡編譯：
+Tsuzuri 依序使用：在 App 指定的執行檔、偵測到的已安裝版本（Homebrew、Nix、`PATH`）、安裝檔內建的版本。開發時的建置不內建元件，請先編譯到 `vendor/<元件>/<變體>/`，debug build 會優先使用。`scripts/vendor.sh` 依 [`components.json`](components.json) 釘住的原始程式碼編譯 whisper-cli、llama-server 與 ffmpeg，沒有指定變體時使用該平台列出的第一個。需要 cmake、make 與 jq；Linux 的 OpenBLAS、Vulkan 版還需要 pkg-config、libopenblas-dev、libvulkan-dev、glslc 與 spirv-headers，Windows 則在 MSYS2 UCRT64 裡編譯：
 
 ```bash
 scripts/vendor.sh               # 全部元件
 scripts/vendor.sh whisper cpu   # 單一元件、單一變體
 ```
 
-打包時合併 `src-tauri/tauri.bundle.conf.json`，把 `vendor/` 放進安裝檔。CI 以同樣方式編譯各平台列出的第一個變體，並依釘版分別快取，再執行 `pnpm tauri build --config src-tauri/tauri.bundle.conf.json`。
+打包時合併 `src-tauri/tauri.bundle.conf.json`，把 `vendor/` 放進安裝檔；App 依 `components.json` 列出的順序，使用第一個能執行的內建變體。CI 以同樣方式編譯各平台列出的第一個變體，並依釘版分別快取，再執行 `pnpm tauri build --config src-tauri/tauri.bundle.conf.json`。
 
 前端是純 TypeScript，Stimulus controller 放在 `src/controllers/`。設計請見 [docs/design.md](docs/design.md)。
 

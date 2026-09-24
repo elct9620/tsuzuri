@@ -1,0 +1,76 @@
+name: Components
+
+# Builds every Variant components.json lists, for packaging to pick up.
+# A cache hit skips the build, so only a changed pin or build script costs a rebuild.
+on:
+  push:
+    branches: [main]
+    paths:
+      - components.json
+      - scripts/vendor.sh
+      - .github/workflows/components.yml
+      - .github/actions/build-component/**
+  pull_request:
+    paths:
+      - components.json
+      - scripts/vendor.sh
+      - .github/workflows/components.yml
+      - .github/actions/build-component/**
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+# Named outright: when another workflow calls this one, github.workflow names the caller.
+concurrency:
+  group: components-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      builds: ${{ steps.plan.outputs.builds }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The executable and its version flag are those the app's Manifest probes with.
+      - name: List one build per Component, Variant and platform
+        id: plan
+        run: |
+          builds="$(jq -c '
+            {macos: "macos-latest", linux: "ubuntu-latest", windows: "windows-latest"} as $runners
+            | {whisper: ["whisper-cli", "--version"], llama: ["llama-server", "--version"], ffmpeg: ["ffmpeg", "-version"]} as $probes
+            | [to_entries[] | .key as $component | .value.variants | to_entries[]
+               | .key as $platform | .value[]
+               | {component: $component, variant: ., platform: $platform, runner: $runners[$platform],
+                  program: $probes[$component][0], version_flag: $probes[$component][1]}]
+            ' components.json)"
+          echo "builds=$builds" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: plan
+    name: ${{ matrix.component }} ${{ matrix.variant }} (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.builds) }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/build-component
+        with:
+          component: ${{ matrix.component }}
+          variant: ${{ matrix.variant }}
+          platform: ${{ matrix.platform }}
+          program: ${{ matrix.program }}
+          version-flag: ${{ matrix.version_flag }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: component-${{ matrix.platform }}-${{ matrix.component }}-${{ matrix.variant }}
+          path: vendor/${{ matrix.component }}
+          if-no-files-found: error

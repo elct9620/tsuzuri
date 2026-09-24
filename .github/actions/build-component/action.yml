@@ -1,0 +1,107 @@
+name: Build a Component
+description: >-
+  Leaves vendor/<component> holding one Variant built by scripts/vendor.sh, restored
+  from the cache when its pin and the build script are unchanged, and proven to run.
+
+inputs:
+  component:
+    description: The Component's name in components.json.
+    required: true
+  variant:
+    description: A Variant components.json lists for this platform.
+    required: true
+  platform:
+    description: macos, linux or windows, as components.json names them.
+    required: true
+  program:
+    description: The executable's file name without extension.
+    required: true
+  version-flag:
+    description: A flag the executable answers with success.
+    required: true
+
+outputs:
+  cache-hit:
+    description: Whether the build was restored from the cache instead of built.
+    value: ${{ steps.cache.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    # The key follows this Component's own pin and the build script,
+    # so bumping one Component rebuilds only that one.
+    - name: Compute the cache key
+      id: key
+      shell: bash
+      run: |
+        pin="$(jq -c --arg name "$COMPONENT" '.[$name]' components.json | sha256sum | cut -c1-16)"
+        script="$(sha256sum scripts/vendor.sh | cut -c1-16)"
+        echo "key=component-$PLATFORM-$COMPONENT-$VARIANT-$pin-$script" >> "$GITHUB_OUTPUT"
+      env:
+        COMPONENT: ${{ inputs.component }}
+        VARIANT: ${{ inputs.variant }}
+        PLATFORM: ${{ inputs.platform }}
+    - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      id: cache
+      with:
+        path: vendor/${{ inputs.component }}
+        key: ${{ steps.key.outputs.key }}
+
+    # The smoke test needs the shared libraries OpenBLAS and Vulkan builds load, even on a cache hit.
+    - name: Install Linux build dependencies
+      if: inputs.platform == 'linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake jq nasm pkg-config libopenblas-dev libvulkan-dev glslc spirv-headers
+    - name: Build
+      if: inputs.platform != 'windows' && steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: scripts/vendor.sh "$COMPONENT" "$VARIANT"
+      env:
+        COMPONENT: ${{ inputs.component }}
+        VARIANT: ${{ inputs.variant }}
+
+    # ffmpeg's configure needs a POSIX environment on Windows, and UCRT64 also provides
+    # OpenBLAS and the Vulkan SDK, so every Windows build runs there.
+    - name: Install Windows build dependencies
+      if: inputs.platform == 'windows' && steps.cache.outputs.cache-hit != 'true'
+      uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
+      with:
+        msystem: UCRT64
+        release: false
+        install: make diffutils curl
+        pacboy: >-
+          toolchain:p cmake:p ninja:p pkgconf:p jq:p nasm:p
+          openblas:p vulkan-devel:p shaderc:p spirv-headers:p
+    - name: Build on Windows
+      if: inputs.platform == 'windows' && steps.cache.outputs.cache-hit != 'true'
+      shell: msys2 {0}
+      run: scripts/vendor.sh "$COMPONENT" "$VARIANT"
+      env:
+        COMPONENT: ${{ inputs.component }}
+        VARIANT: ${{ inputs.variant }}
+
+    - name: Check the executable runs
+      if: inputs.platform != 'windows'
+      shell: bash
+      run: '"vendor/$COMPONENT/bin/$PROGRAM" "$VERSION_FLAG"'
+      env:
+        COMPONENT: ${{ inputs.component }}
+        PROGRAM: ${{ inputs.program }}
+        VERSION_FLAG: ${{ inputs.version-flag }}
+    # Outside MSYS2, so a DLL missing from the bundle fails here rather than on a user's machine.
+    - name: Check the executable runs on its own on Windows
+      if: inputs.platform == 'windows'
+      shell: pwsh
+      run: '& "vendor/$env:COMPONENT/bin/$env:PROGRAM.exe" $env:VERSION_FLAG'
+      env:
+        COMPONENT: ${{ inputs.component }}
+        PROGRAM: ${{ inputs.program }}
+        VERSION_FLAG: ${{ inputs.version-flag }}
+
+    - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: steps.cache.outputs.cache-hit != 'true'
+      with:
+        path: vendor/${{ inputs.component }}
+        key: ${{ steps.key.outputs.key }}

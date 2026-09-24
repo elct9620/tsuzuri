@@ -1,0 +1,155 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  spec:
+    runs-on: ubuntu-latest
+    env:
+      # Pinned by hand: nothing watches a release asset fetched over curl.
+      # The digest is pinned alongside the tag because an asset can be replaced.
+      SUMI_VERSION: 0.1.0-preview10
+      SUMI_SHA256: 8a5749dd80e9ae46e5005f2d14bcd2e69b3fa9537a606df0da97e55300a67efb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install sumi
+        run: |
+          curl -sSL -o "$RUNNER_TEMP/sumi.tar.gz" \
+            "https://github.com/elct9620/sumitsubo/releases/download/v$SUMI_VERSION/sumi-$SUMI_VERSION-linux-x86_64.tar.gz"
+          echo "$SUMI_SHA256  $RUNNER_TEMP/sumi.tar.gz" | sha256sum -c -
+          tar xzf "$RUNNER_TEMP/sumi.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Check the source against the specification
+        run: sumi verify
+      - name: Check the specification is written the way a reference line is
+        run: sumi fmt --check
+
+  licenses:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_DENY_VERSION: 0.20.2
+      CARGO_DENY_SHA256: 9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install cargo-deny
+        run: |
+          name="cargo-deny-$CARGO_DENY_VERSION-x86_64-unknown-linux-musl"
+          curl -sSL -o "$RUNNER_TEMP/cargo-deny.tar.gz" \
+            "https://github.com/EmbarkStudios/cargo-deny/releases/download/$CARGO_DENY_VERSION/$name.tar.gz"
+          echo "$CARGO_DENY_SHA256  $RUNNER_TEMP/cargo-deny.tar.gz" | sha256sum -c -
+          tar xzf "$RUNNER_TEMP/cargo-deny.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/$name" >> "$GITHUB_PATH"
+      - name: Check dependency licenses
+        working-directory: src-tauri
+        run: cargo deny --all-features check licenses
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - name: Type-check and build
+        run: pnpm build
+
+  rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --component clippy,rustfmt && rustup default stable
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: rust-${{ runner.os }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: rust-${{ runner.os }}-
+      # generate_context! embeds the frontend, which only has to exist for these checks.
+      - name: Provide an empty frontend
+        run: mkdir -p ../dist
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+
+  build:
+    needs: [spec, licenses, frontend, rust]
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: build-${{ runner.os }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: build-${{ runner.os }}-
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm tauri build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tsuzuri-${{ runner.os }}
+          path: |
+            src-tauri/target/release/bundle/
+            src-tauri/target/release/tsuzuri.exe
+          if-no-files-found: error

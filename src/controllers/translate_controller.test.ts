@@ -39,10 +39,19 @@ describe("TranslateController", () => {
     commands = [];
     document.body.innerHTML = `
       <div data-controller="translate">
+        <select data-translate-target="source">
+          <option value="zh-TW">繁體中文</option>
+          <option value="en">English</option>
+          <option value="ja">日本語</option>
+        </select>
         <select data-translate-target="language">
           <option value="en">English</option>
           <option value="ja" selected>日本語</option>
         </select>
+        <input type="checkbox" data-translate-target="speakerLabels">
+        <input type="checkbox" data-translate-target="selfReview">
+        <input type="checkbox" data-translate-target="summary">
+        <input type="number" value="100" data-translate-target="summaryWords">
         <span data-translate-target="glossary"></span>
         <button data-translate-target="chooseGlossary" data-action="translate#chooseGlossary" disabled>指定</button>
         <button data-translate-target="clearGlossary" data-action="translate#clearGlossary" disabled>清除</button>
@@ -133,5 +142,46 @@ describe("TranslateController", () => {
     ).toBe("names.csv（12 筆）");
     expect(clear.disabled).toBe(false);
     expect(commands).toContain("clear_glossary");
+  });
+
+  function check(target: string): void {
+    document.querySelector<HTMLInputElement>(
+      `[data-translate-target="${target}"]`,
+    )!.checked = true;
+  }
+
+  // @behavior TL-056
+  it("translates with the options the panel offers", async () => {
+    await holdProject();
+    check("speakerLabels");
+    check("selfReview");
+    check("summary");
+    document.querySelector<HTMLInputElement>(
+      '[data-translate-target="summaryWords"]',
+    )!.value = "80";
+
+    start().click();
+    await settle();
+
+    expect(translateArgs).toMatchObject({
+      options: {
+        has_speaker_labels: true,
+        has_self_review: true,
+        summary_word_limit: 80,
+      },
+    });
+  });
+
+  // @behavior TL-057
+  it("translates from another source Language", async () => {
+    await holdProject("ja");
+    document.querySelector<HTMLSelectElement>(
+      '[data-translate-target="source"]',
+    )!.value = "en";
+
+    start().click();
+    await settle();
+
+    expect(translateArgs).toMatchObject({ source: "en" });
   });
 });

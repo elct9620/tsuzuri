@@ -29,7 +29,11 @@ const en = {
     translatePhases: "Translate: {{phases}}",
   },
   translate: {
-    source: "Source: this Project's Transcript",
+    source: "From",
+    speakerLabels: "Speaker labels",
+    selfReview: "Self-review",
+    rollingSummary: "Rolling summary",
+    words: "words",
     glossary: "Glossary",
     glossaryNone: "None",
     glossaryLoaded: "{{file}} ({{count}} terms)",
@@ -44,6 +48,10 @@ const en = {
   settings: {
     components: "Components",
     models: "Models",
+    translation: "Translation",
+    batchSize: "Lines per batch",
+    retries: "Retries before splitting",
+    referenceLines: "Reference lines",
     about: "About",
     choose: "Choose",
     chooseFile: "Choose a file",

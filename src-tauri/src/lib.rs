@@ -51,7 +51,9 @@ pub fn run() {
             project::edit_segment,
             project::open_srt,
             project::save_srt,
+            translation::save_translation_settings,
             translation::translate,
+            translation::translation_settings,
             translation_glossary::clear_glossary,
             translation_glossary::load_glossary
         ])

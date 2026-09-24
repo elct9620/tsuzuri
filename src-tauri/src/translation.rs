@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::async_runtime;
 use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_shell::process::CommandEvent;
@@ -25,9 +25,11 @@ mod batching;
 mod fake_llama;
 mod model;
 mod repair;
+mod settings;
 mod speaker_labels;
 
 use model::TranslationModel;
+pub use settings::TranslationSettings;
 use speaker_labels::LabelledText;
 
 /// How long llama-server may take to load its Model before translation gives up.
@@ -38,25 +40,21 @@ const CONTEXT_SIZE: &str = "4096";
 /// Subtitles need no reasoning, and a thinking Model spends most of each request on it.
 const CHAT_TEMPLATE_KWARGS: &str = r#"{"enable_thinking":false}"#;
 
-/// How a translation is batched and repaired.
-#[derive(Debug, Clone, Copy)]
-struct TranslationSettings {
-    /// Segments per Batch.
-    batch_size: usize,
-    /// Translated lines around a request that it carries as reference.
-    reference_lines: usize,
-    /// Requests for the same lines before a failing group is split in half.
-    retries: usize,
+/// The choices the Translate panel offers for one translation.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(default)]
+pub struct TranslationOptions {
+    has_speaker_labels: bool,
+    has_self_review: bool,
+    /// The Rolling Summary's word limit, or none to keep no summary.
+    summary_word_limit: Option<usize>,
 }
 
-impl Default for TranslationSettings {
-    fn default() -> TranslationSettings {
-        TranslationSettings {
-            batch_size: 8,
-            reference_lines: 2,
-            retries: 3,
-        }
-    }
+/// Everything a translation is asked to do besides the Project it reads.
+pub struct TranslationPlan {
+    pub languages: LanguagePair,
+    pub options: TranslationOptions,
+    pub settings: TranslationSettings,
 }
 
 /// What to translate: the Segments, the Languages they go between, and how.
@@ -83,22 +81,22 @@ pub async fn run_translate<R: Runtime>(
     app: &AppHandle<R>,
     processes: &Processes,
     llama: &Path,
-    settings: &ModelSettings,
-    languages: LanguagePair,
+    model_settings: &ModelSettings,
+    plan: &TranslationPlan,
     ready_timeout: Duration,
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
-    let model = settings.ready_path(ModelSlot::Translation)?;
+    let model = model_settings.ready_path(ModelSlot::Translation)?;
     let project = app.state::<CurrentProject>();
     let (generation, transcript) = project.snapshot()?;
     let glossary = project.translation_glossary();
     let job = TranslationJob {
         segments: &transcript.segments,
-        languages,
-        settings: TranslationSettings::default(),
-        has_speaker_labels: false,
-        has_self_review: false,
-        summary_word_limit: None,
+        languages: plan.languages,
+        settings: plan.settings,
+        has_speaker_labels: plan.options.has_speaker_labels,
+        has_self_review: plan.options.has_self_review,
+        summary_word_limit: plan.options.summary_word_limit,
         glossary_terms: glossary.as_ref().map_or(&[], |glossary| glossary.terms()),
     };
     let port = free_port()?;
@@ -149,7 +147,7 @@ pub async fn run_translate<R: Runtime>(
     )
     .await;
     processes.kill(pid);
-    project.write_translations(generation, languages, result?);
+    project.write_translations(generation, plan.languages, result?);
     project::announce(app);
     Ok(Translation {
         phases: phases.finish(),
@@ -317,22 +315,41 @@ pub async fn translate(
     app: AppHandle,
     source: Language,
     target: Language,
+    options: TranslationOptions,
 ) -> Result<Translation, Failure> {
     let phases = Phases::start("translate", "prepare");
     report(&app, "prepare", None);
     let [llama] = components::find_ready_executables(Resolver::from_app(&app)?, ["llama"]).await?;
-    let settings = models::load_settings(&app)?;
+    let model_settings = models::load_settings(&app)?;
+    let plan = TranslationPlan {
+        languages: LanguagePair { source, target },
+        options,
+        settings: TranslationSettings::load(&models::settings_dir(&app)?)?,
+    };
     let processes = app.state::<Processes>().inner().clone();
     run_translate(
         &app,
         &processes,
         &llama,
-        &settings,
-        LanguagePair { source, target },
+        &model_settings,
+        &plan,
         READY_TIMEOUT,
         phases,
     )
     .await
+}
+
+#[tauri::command]
+pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failure> {
+    Ok(TranslationSettings::load(&models::settings_dir(&app)?)?)
+}
+
+#[tauri::command]
+pub fn save_translation_settings(
+    app: AppHandle,
+    settings: TranslationSettings,
+) -> Result<TranslationSettings, Failure> {
+    Ok(settings.save(&models::settings_dir(&app)?)?)
 }
 
 #[cfg(test)]
@@ -1330,6 +1347,15 @@ mod tests {
         assert!(first_ready < first_chat);
     }
 
+    /// A plan to translate between `languages` with the default options and settings.
+    fn plan_for(languages: LanguagePair) -> TranslationPlan {
+        TranslationPlan {
+            languages,
+            options: TranslationOptions::default(),
+            settings: TranslationSettings::default(),
+        }
+    }
+
     // @behavior TL-003
     #[tokio::test]
     async fn refuses_without_a_translation_model() {
@@ -1346,7 +1372,7 @@ mod tests {
             &processes,
             Path::new("/bin/sleep"),
             &ModelSettings::default(),
-            japanese_pair(),
+            &plan_for(japanese_pair()),
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -1387,7 +1413,7 @@ mod tests {
             &processes,
             &llama,
             &settings,
-            japanese_pair(),
+            &plan_for(japanese_pair()),
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -1449,8 +1475,9 @@ mod tests {
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         app.state::<CurrentProject>().replace(project_of(vec![
-            segment(0, 1_000, "大家好"),
+            segment(0, 1_000, "co: 大家好"),
             segment(1_000, 3_000, "今天天氣很好"),
+            segment(3_000, 5_000, "但我不想出門"),
         ]));
 
         let translated_segments = run_translate(
@@ -1458,7 +1485,14 @@ mod tests {
             &processes,
             &llama,
             &settings,
-            english_pair(),
+            &TranslationPlan {
+                options: TranslationOptions {
+                    has_speaker_labels: true,
+                    has_self_review: true,
+                    summary_word_limit: Some(50),
+                },
+                ..plan_for(english_pair())
+            },
             READY_TIMEOUT,
             Phases::start("translate", "prepare"),
         )

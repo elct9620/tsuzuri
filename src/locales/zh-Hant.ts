@@ -30,7 +30,11 @@ const zhHant: typeof en = {
     translatePhases: "翻譯：{{phases}}",
   },
   translate: {
-    source: "來源：本專案的 Transcript",
+    source: "來源",
+    speakerLabels: "說話者標籤",
+    selfReview: "自我審查",
+    rollingSummary: "滾動摘要",
+    words: "字",
     glossary: "詞彙表",
     glossaryNone: "未指定",
     glossaryLoaded: "{{file}}（{{count}} 筆）",
@@ -45,6 +49,10 @@ const zhHant: typeof en = {
   settings: {
     components: "元件",
     models: "模型",
+    translation: "翻譯",
+    batchSize: "每批句數",
+    retries: "拆半前重試次數",
+    referenceLines: "參考前後句數",
     about: "關於",
     choose: "指定",
     chooseFile: "指定檔案",

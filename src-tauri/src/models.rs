@@ -108,7 +108,8 @@ impl ModelSettings {
     }
 }
 
-fn settings_dir(app: &AppHandle) -> Result<PathBuf, Failure> {
+/// Where settings saved across launches live.
+pub fn settings_dir(app: &AppHandle) -> Result<PathBuf, Failure> {
     Ok(app.path().app_config_dir()?)
 }
 

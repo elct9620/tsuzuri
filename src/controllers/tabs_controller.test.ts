@@ -82,7 +82,15 @@ describe("TabsController", () => {
             <p data-transcribe-target="status"></p>
           </section>
           <section data-tab="translate" data-tabs-target="panel" data-controller="translate" hidden>
+            <select data-translate-target="source"><option value="zh-TW">繁體中文</option></select>
             <select data-translate-target="language"><option value="en">English</option></select>
+            <input type="checkbox" data-translate-target="speakerLabels">
+            <input type="checkbox" data-translate-target="selfReview">
+            <input type="checkbox" data-translate-target="summary">
+            <input type="number" value="100" data-translate-target="summaryWords">
+            <span data-translate-target="glossary"></span>
+            <button data-translate-target="chooseGlossary"></button>
+            <button data-translate-target="clearGlossary"></button>
             <button id="translate" data-translate-target="start" data-action="translate#translate">開始翻譯</button>
             <p data-translate-target="status"></p>
           </section>

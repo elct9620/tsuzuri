@@ -271,7 +271,10 @@ pub enum SegmentField {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TranscriptionTarget {
     pub generation: u64,
+    pub directory: PathBuf,
     pub media: PathBuf,
+    /// Where the Resource's original subtitle is written.
+    pub subtitle: PathBuf,
     pub language: Language,
 }
 
@@ -356,19 +359,37 @@ impl CurrentProject {
     }
 
     /// The Current Resource's media file and the Language to transcribe it in.
-    pub fn transcription_target(&self) -> Result<TranscriptionTarget, Failure> {
+    /// The Current Resource's media file, the Language to transcribe it in and the subtitle to
+    /// write, refused when that subtitle exists unless `overwrite`.
+    pub fn transcription_target(&self, overwrite: bool) -> Result<TranscriptionTarget, Failure> {
         let held = self.lock();
         let project = held.project.as_ref().ok_or(Failure::NoProject)?;
-        let media = project
-            .resource(&project.current()?.name)?
-            .media
-            .clone()
-            .ok_or(Failure::NoMedia)?;
+        let resource = project.resource(&project.current()?.name)?;
+        let media = resource.media.clone().ok_or(Failure::NoMedia)?;
+        let subtitle = match &resource.subtitle {
+            Some(path) if !overwrite => return Err(Failure::SubtitleExists { path: path.clone() }),
+            Some(path) => path.clone(),
+            None => project.export_path(SrtContent::Original)?,
+        };
         Ok(TranscriptionTarget {
             generation: held.generation,
+            directory: project.directory.clone(),
             media,
+            subtitle,
             language: project.language,
         })
+    }
+
+    /// Pairs the directory's files again after one was written, if it is still the Project's.
+    pub fn refresh_resources(&self, directory: &Path) -> Result<(), Failure> {
+        let mut held = self.lock();
+        match held.project.as_mut() {
+            Some(project) if project.directory == directory => {
+                project.resources = resource::resources_in(directory, project.language)?;
+                Ok(())
+            }
+            _ => Ok(()),
+        }
     }
 
     /// Makes `transcript` the Current Resource's, unless another became current since `generation`.
@@ -377,6 +398,16 @@ impl CurrentProject {
             if let Some(current) = project.current.as_mut() {
                 current.transcript = transcript;
                 current.translation = None;
+            }
+        });
+    }
+
+    /// Adds a Segment just transcribed to the Current Resource, unless another became current
+    /// since `generation`.
+    pub fn push_segment(&self, generation: u64, segment: Segment) {
+        self.write_if_current(generation, |project| {
+            if let Some(current) = project.current.as_mut() {
+                current.transcript.segments.push(segment);
             }
         });
     }
@@ -990,7 +1021,7 @@ mod tests {
     fn refuses_to_transcribe_a_resource_without_media() {
         let current = current_project_of(vec![]);
 
-        assert_eq!(current.transcription_target(), Err(Failure::NoMedia));
+        assert_eq!(current.transcription_target(false), Err(Failure::NoMedia));
     }
 
     // @behavior PJ-006

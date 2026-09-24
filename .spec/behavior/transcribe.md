@@ -136,3 +136,35 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | Given | the Transcribe Mode panel with a Language selected |
 | When | a media file is transcribed |
 | Then | it is transcribed in the selected Language |
+
+## `TX-017` Showing each Segment as whisper-cli prints it
+
+| Step | Statement |
+| --- | --- |
+| Given | whisper-cli that prints one Segment and has not exited |
+| When | the Current Resource is being transcribed |
+| Then | the Project holds that Segment |
+
+## `TX-018` Writing the transcription beside its media file
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `ep01.mp4` alone |
+| When | it is transcribed |
+| Then | `ep01.srt` holds the Segments of the SRT whisper-cli wrote |
+
+## `TX-019` Refusing to overwrite a subtitle unless asked
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `ep01.mp4` and `ep01.srt` |
+| When | it is transcribed without asking to overwrite |
+| Then | the transcription fails saying `ep01.srt` exists, before any Step runs |
+
+## `TX-020` Overwriting a subtitle when asked
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `ep01.mp4` and `ep01.srt` |
+| When | it is transcribed asking to overwrite |
+| Then | `ep01.srt` holds the Segments of the SRT whisper-cli wrote |

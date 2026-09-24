@@ -40,10 +40,10 @@ pub async fn choose_component(app: AppHandle, name: String, path: PathBuf) -> Re
 
 ## `transcribe`
 
-Run the Transcribe Mode on the Current Resource's media file in the Primary Language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The Transcript becomes the Resource's while it is still the Current Resource; the answer is how long the audio is and the seconds each Phase took.
+Run the Transcribe Mode on the Current Resource's media file in the Primary Language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes and `project-changed` as each Segment arrives. The Resource's original subtitle is written from what whisper-cli wrote, refused when it exists unless `overwrite`; the answer is how long the audio is and the seconds each Phase took.
 
 ```rust
-pub async fn transcribe(app: AppHandle) -> Result<Transcription, Failure> {}
+pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription, Failure> {}
 ```
 
 ## `open_project`

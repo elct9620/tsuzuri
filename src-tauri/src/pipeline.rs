@@ -13,7 +13,7 @@ use crate::models::{self, ModelSettings, ModelSlot};
 use crate::processes::Processes;
 use crate::project::{self, CurrentProject, TranscriptionTarget};
 use crate::timing::{PhaseTiming, Phases};
-use crate::transcript::Transcript;
+use crate::transcript::{parse_timestamp, Segment, Transcript};
 
 /// 16-bit mono PCM at 16 kHz, the only input whisper-cli is given.
 const WAV_BYTES_PER_SECOND: u64 = 16_000 * 2;
@@ -62,12 +62,16 @@ pub async fn run_transcribe<R: Runtime>(
         &tools.ffmpeg,
         &conversion_args(input, &wav),
         |_| {},
+        |_| {},
     )
     .await?;
     let audio_bytes = std::fs::metadata(&wav)?.len();
 
     enter(app, &mut phases, "load");
     let started = Instant::now();
+    let project = app.state::<CurrentProject>();
+    project.write_transcript(job.generation, Transcript::default());
+    project::announce(app);
     run_step(
         app,
         processes,
@@ -81,13 +85,21 @@ pub async fn run_transcribe<R: Runtime>(
                 report(app, "transcribe", Some(percent));
             }
         },
+        |line| {
+            if let Some(segment) = whisper_segment(line) {
+                project.push_segment(job.generation, segment);
+                project::announce(app);
+            }
+        },
     )
     .await?;
     let transcribe_seconds = started.elapsed().as_secs_f64();
 
     let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
-    app.state::<CurrentProject>()
-        .write_transcript(job.generation, Transcript::from_srt(&srt)?);
+    let transcript = Transcript::from_srt(&srt)?;
+    std::fs::write(&job.subtitle, &srt)?;
+    project.refresh_resources(&job.directory)?;
+    project.write_transcript(job.generation, transcript);
     project::announce(app);
     Ok(Transcription {
         audio_seconds: audio_bytes.saturating_sub(WAV_HEADER_BYTES) as f64
@@ -128,6 +140,19 @@ fn transcription_args(
 /// whisper-cli prints this on stderr once its Model is loaded and it starts on the audio.
 const WHISPER_PROCESSING: &str = "main: processing";
 
+/// whisper-cli prints each Segment on stdout as it is transcribed:
+/// `[00:00:00.000 --> 00:00:02.000]  text`.
+fn whisper_segment(line: &str) -> Option<Segment> {
+    let (times, text) = line.trim().strip_prefix('[')?.split_once(']')?;
+    let (start, end) = times.split_once("-->")?;
+    Some(Segment {
+        start_ms: parse_timestamp(start.trim())?,
+        end_ms: parse_timestamp(end.trim())?,
+        text: text.trim().to_string(),
+        translation: None,
+    })
+}
+
 /// whisper-cli `-pp` prints `whisper_print_progress_callback: progress = 42%` on stderr.
 fn whisper_progress(line: &str) -> Option<u8> {
     line.split_once("progress =")?
@@ -157,6 +182,7 @@ async fn run_step<R: Runtime>(
     program: &Path,
     args: &[String],
     mut on_stderr_line: impl FnMut(&str),
+    mut on_stdout_line: impl FnMut(&str),
 ) -> Result<(), Failure> {
     let failed = |detail: String| Failure::StepFailed {
         step: step.to_string(),
@@ -174,6 +200,9 @@ async fn run_step<R: Runtime>(
                     stderr_tail.pop_front();
                 }
             }
+            CommandEvent::Stdout(bytes) => {
+                on_stdout_line(String::from_utf8_lossy(&bytes).trim_end())
+            }
             CommandEvent::Error(error) => return Err(failed(error)),
             CommandEvent::Terminated(payload) if payload.code == Some(0) => return Ok(()),
             CommandEvent::Terminated(_) => return Err(failed(Vec::from(stderr_tail).join("\n"))),
@@ -186,8 +215,10 @@ async fn run_step<R: Runtime>(
 }
 
 #[tauri::command]
-pub async fn transcribe(app: AppHandle) -> Result<Transcription, Failure> {
-    let job = app.state::<CurrentProject>().transcription_target()?;
+pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription, Failure> {
+    let job = app
+        .state::<CurrentProject>()
+        .transcription_target(overwrite)?;
     let phases = Phases::start("transcribe", "prepare");
     report(&app, "prepare", None);
     let [ffmpeg, whisper] =
@@ -231,6 +262,8 @@ mod tests {
             "#!/bin/sh\ntouch '{0}'\necho \"$@\" > '{0}.args'\nwhile [ $# -gt 0 ]; do case \"$1\" in -of) of=\"$2\"; shift;; esac; shift; done\n\
              echo 'whisper_model_load: model size = 1 MB' >&2\n\
              echo \"main: processing '$of.wav' (32000 samples, 2.0 sec)\" >&2\n\
+             echo '[00:00:00.000 --> 00:00:01.000]  大家好'\n\
+             while [ -e '{0}.hold' ]; do sleep 0.02; done\n\
              echo 'whisper_print_progress_callback: progress = 50%' >&2\n\
              echo 'whisper_print_progress_callback: progress = 100%' >&2\n\
              printf '1\\n00:00:00,000 --> 00:00:01,000\\n大家好\\n\\n2\\n00:00:01,000 --> 00:00:02,000\\n今天天氣很好\\n' > \"$of.srt\"\n",
@@ -276,11 +309,19 @@ mod tests {
 
         /// Opens a Project of `lecture.mp4` in `language` and takes what transcribing it needs.
         fn target_in(&self, language: Language) -> TranscriptionTarget {
+            self.open_in(language);
+            self.project().transcription_target(false).unwrap()
+        }
+
+        fn open_in(&self, language: Language) {
             let media = self.project_dir().join("lecture.mp4");
             std::fs::write(&media, b"media").unwrap();
             self.project()
                 .replace(Project::open(self.project_dir(), language).unwrap());
-            self.project().transcription_target().unwrap()
+        }
+
+        fn subtitle_text(&self) -> String {
+            std::fs::read_to_string(self.project_dir().join("lecture.srt")).unwrap()
         }
 
         fn project_dir(&self) -> PathBuf {
@@ -377,6 +418,75 @@ mod tests {
             .map(|segment| segment.text.clone())
             .collect();
         assert_eq!(texts, vec!["另一份"]);
+    }
+
+    const WHISPER_SRT: &str =
+        "1\n00:00:00,000 --> 00:00:01,000\n大家好\n\n2\n00:00:01,000 --> 00:00:02,000\n今天天氣很好\n";
+
+    // @behavior TX-017
+    #[tokio::test]
+    async fn shows_each_segment_as_whisper_prints_it() {
+        let fixture = Fixture::new("tx-stream", TWO_SECOND_WAV);
+        let target = fixture.target_in(Language::TraditionalChinese);
+        let hold = fixture.whisper_started.with_extension("hold");
+        std::fs::write(&hold, b"").unwrap();
+        let watch = async {
+            for _ in 0..250 {
+                let count = fixture.project().view().unwrap().segments().len();
+                if count == 1 {
+                    std::fs::remove_file(&hold).unwrap();
+                    return true;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+            }
+            std::fs::remove_file(&hold).unwrap();
+            false
+        };
+
+        let (result, saw_one_segment) = tokio::join!(fixture.run(&target), watch);
+
+        result.unwrap();
+        assert!(saw_one_segment, "no Segment arrived while whisper-cli ran");
+    }
+
+    // @behavior TX-018
+    #[tokio::test]
+    async fn writes_the_transcription_beside_its_media_file() {
+        let fixture = Fixture::new("tx-write", TWO_SECOND_WAV);
+
+        fixture.transcribe().await.unwrap();
+
+        assert_eq!(fixture.subtitle_text(), WHISPER_SRT);
+    }
+
+    // @behavior TX-019
+    #[tokio::test]
+    async fn refuses_to_overwrite_a_subtitle_unless_asked() {
+        let fixture = Fixture::new("tx-refuse", TWO_SECOND_WAV);
+        std::fs::write(fixture.project_dir().join("lecture.srt"), "").unwrap();
+        fixture.open_in(Language::TraditionalChinese);
+
+        let refused = fixture.project().transcription_target(false);
+
+        assert_eq!(
+            refused.map(|_| ()),
+            Err(Failure::SubtitleExists {
+                path: fixture.project_dir().join("lecture.srt")
+            })
+        );
+    }
+
+    // @behavior TX-020
+    #[tokio::test]
+    async fn overwrites_a_subtitle_when_asked() {
+        let fixture = Fixture::new("tx-overwrite", TWO_SECOND_WAV);
+        std::fs::write(fixture.project_dir().join("lecture.srt"), "").unwrap();
+        fixture.open_in(Language::TraditionalChinese);
+        let target = fixture.project().transcription_target(true).unwrap();
+
+        fixture.run(&target).await.unwrap();
+
+        assert_eq!(fixture.subtitle_text(), WHISPER_SRT);
     }
 
     // @behavior TX-002
@@ -496,7 +606,7 @@ mod tests {
             .select(&media.file_stem().unwrap().to_string_lossy())
             .unwrap();
         project.replace(opened);
-        let target = project.transcription_target().unwrap();
+        let target = project.transcription_target(true).unwrap();
 
         let transcription = run_transcribe(
             app.handle(),

@@ -34,6 +34,10 @@ pub enum Failure {
     NoResource,
     /// Transcribing a Current Resource that has no media file.
     NoMedia,
+    /// Transcribing over an original subtitle the user did not ask to overwrite.
+    SubtitleExists {
+        path: PathBuf,
+    },
     ComponentNotReady {
         component: String,
     },

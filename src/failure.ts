@@ -11,6 +11,7 @@ export type Failure =
   | { code: "no-project" }
   | { code: "no-resource" }
   | { code: "no-media" }
+  | { code: "subtitle-exists"; path: string }
   | { code: "component-not-ready"; component: string }
   | { code: "step-failed"; step: string; detail: string }
   | { code: "llama-exited" }
@@ -44,6 +45,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.noResource");
     case "no-media":
       return t("failures.noMedia");
+    case "subtitle-exists":
+      return t("failures.subtitleExists", { path: error.path });
     case "component-not-ready":
       return t("failures.componentNotReady", { component: error.component });
     case "step-failed":

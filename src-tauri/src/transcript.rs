@@ -120,7 +120,7 @@ fn parse_cue(cue: usize, block: &str) -> Result<Segment, SrtError> {
 }
 
 /// Reads `HH:MM:SS,mmm`; a `.` before the milliseconds is accepted since some tools write WebVTT-style times into SRT.
-fn parse_timestamp(value: &str) -> Option<u64> {
+pub(crate) fn parse_timestamp(value: &str) -> Option<u64> {
     let (clock, millis) = value.split_once([',', '.'])?;
     let mut parts = clock.split(':');
     let hours: u64 = parts.next()?.parse().ok()?;

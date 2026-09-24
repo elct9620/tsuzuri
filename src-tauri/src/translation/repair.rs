@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use super::model::{AnswerError, BatchRequest, TranslationModel};
-use super::TranslationSettings;
+use super::TranslationJob;
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 
@@ -13,23 +13,23 @@ const PRECEDING_LINES: usize = 2;
 /// keeps its best imperfect translation, or else its original text.
 pub async fn translate_batch(
     model: &TranslationModel,
-    languages: LanguagePair,
+    job: &TranslationJob<'_>,
     lines: &[(usize, &str)],
-    prior: &[(String, String)],
-    glossary_terms: &[(String, String)],
-    settings: &TranslationSettings,
+    earlier_pairs: &[(String, String)],
+    summary: Option<&str>,
 ) -> Result<HashMap<usize, String>, Failure> {
     let mut repair = BatchRepair {
         model,
-        languages,
+        job,
         lines,
-        prior,
-        glossary_terms,
-        settings,
+        earlier_pairs,
+        summary,
         accepted_translations: HashMap::new(),
         imperfect_translations: HashMap::new(),
     };
-    let reference = &prior[prior.len().saturating_sub(settings.reference_lines)..];
+    let reference = &earlier_pairs[earlier_pairs
+        .len()
+        .saturating_sub(job.settings.reference_lines)..];
     let failing_reasons = repair.attempt(lines, reference.to_vec(), None).await?;
     let mut groups: Vec<Vec<(usize, &str)>> = vec![lines
         .iter()
@@ -62,11 +62,10 @@ pub async fn translate_batch(
 
 struct BatchRepair<'a> {
     model: &'a TranslationModel,
-    languages: LanguagePair,
+    job: &'a TranslationJob<'a>,
     lines: &'a [(usize, &'a str)],
-    prior: &'a [(String, String)],
-    glossary_terms: &'a [(String, String)],
-    settings: &'a TranslationSettings,
+    earlier_pairs: &'a [(String, String)],
+    summary: Option<&'a str>,
     accepted_translations: HashMap<usize, String>,
     /// The latest translation of a line that is valid but imperfect, kept in case nothing better comes.
     imperfect_translations: HashMap<usize, String>,
@@ -82,14 +81,15 @@ impl BatchRepair<'_> {
         preceding: Option<String>,
     ) -> Result<BTreeMap<usize, String>, Failure> {
         let wanted_indices: HashSet<usize> = group.iter().map(|(index, _)| *index).collect();
-        let used_terms = used_terms(self.glossary_terms, group);
+        let used_terms = used_terms(self.job.glossary_terms, group);
         let mut correction = None;
         let mut reasons = BTreeMap::new();
-        for _ in 0..self.settings.retries {
+        for _ in 0..self.job.settings.retries {
             let answer = self
                 .model
                 .translate_batch(&BatchRequest {
-                    languages: self.languages,
+                    languages: self.job.languages,
+                    summary: self.summary,
                     lines: group.to_vec(),
                     reference: &reference,
                     preceding: preceding.clone(),
@@ -113,7 +113,7 @@ impl BatchRepair<'_> {
                 }
                 Err(AnswerError::FailedRequest(failure)) => return Err(failure),
             };
-            let verdicts = judge(&translations, group, self.languages, &used_terms);
+            let verdicts = judge(&translations, group, self.job.languages, &used_terms);
             reasons = self.unresolved_reasons(group, "missing from response");
             for (index, verdict) in verdicts {
                 match verdict {
@@ -175,7 +175,7 @@ impl BatchRepair<'_> {
     /// Up to the reference line count of accepted lines on each side of `group`, falling back to
     /// the lines translated before this Batch when too few precede it.
     fn surrounding_lines(&self, group: &[(usize, &str)]) -> Vec<(String, String)> {
-        let window = self.settings.reference_lines;
+        let window = self.job.settings.reference_lines;
         let (first, last) = self.bounds(group);
         let accepted_pair = |(index, text): &(usize, &str)| {
             self.accepted_translations
@@ -190,7 +190,8 @@ impl BatchRepair<'_> {
             .collect();
         before.reverse();
         let needed = window - before.len();
-        let mut reference: Vec<_> = self.prior[self.prior.len().saturating_sub(needed)..].to_vec();
+        let mut reference: Vec<_> =
+            self.earlier_pairs[self.earlier_pairs.len().saturating_sub(needed)..].to_vec();
         reference.extend(before);
         reference.extend(
             self.lines[last + 1..]
@@ -210,7 +211,7 @@ impl BatchRepair<'_> {
                 .map(|(_, text)| *text)
                 .collect()
         } else {
-            self.prior[self.prior.len().saturating_sub(PRECEDING_LINES)..]
+            self.earlier_pairs[self.earlier_pairs.len().saturating_sub(PRECEDING_LINES)..]
                 .iter()
                 .map(|(source, _)| source.as_str())
                 .collect()

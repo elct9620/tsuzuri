@@ -23,6 +23,8 @@ pub struct BatchRequest<'a> {
     pub languages: LanguagePair,
     pub lines: Vec<(usize, &'a str)>,
     pub reference: &'a [(String, String)],
+    /// The Rolling Summary so far, when one is kept.
+    pub summary: Option<&'a str>,
     pub preceding: Option<String>,
     /// The Translation Glossary's terms the lines use.
     pub glossary_terms: &'a [(String, String)],
@@ -48,6 +50,11 @@ impl From<AnswerError> for Failure {
 #[derive(Deserialize)]
 struct BatchAnswer {
     translations: Vec<TranslatedLine>,
+}
+
+#[derive(Deserialize)]
+struct SummaryAnswer {
+    summary: String,
 }
 
 #[derive(Deserialize)]
@@ -116,6 +123,34 @@ impl TranslationModel {
             .collect())
     }
 
+    /// The Rolling Summary rewritten from the previous one and the lines just translated,
+    /// kept under `word_limit` words.
+    pub async fn rewrite_summary(
+        &self,
+        languages: LanguagePair,
+        previous_summary: Option<&str>,
+        batch_pairs: &[(String, String)],
+        word_limit: usize,
+    ) -> Result<String, AnswerError> {
+        let mut parts = Vec::new();
+        if let Some(previous_summary) = previous_summary {
+            parts.push(format!("Previous summary:\n{previous_summary}"));
+        }
+        parts.push(format!(
+            "Newly translated lines from this batch:\n{}",
+            pair_lines(batch_pairs)
+        ));
+        let answer: SummaryAnswer = self
+            .answer(
+                summary_instruction(languages, word_limit),
+                parts.join("\n\n"),
+                SUMMARY_TASK,
+                summary_schema(),
+            )
+            .await?;
+        Ok(answer.summary.trim().to_string())
+    }
+
     async fn answer<T: for<'de> Deserialize<'de>>(
         &self,
         system: String,
@@ -167,6 +202,11 @@ const TRANSLATION_TASK: Task = Task {
     name: "subtitle_translation",
     temperature: 0.2,
 };
+/// A summary should say the same of the same lines every time.
+const SUMMARY_TASK: Task = Task {
+    name: "rolling_summary",
+    temperature: 0.0,
+};
 /// Judging where sentences continue wants the same answer every time.
 const SPLIT_SENTENCE_TASK: Task = Task {
     name: "continuation_clusters",
@@ -198,20 +238,20 @@ Rules:
 /// The Batch's lines go last, as one line of JSON, after whatever the Model should read first.
 fn user_message(batch: &BatchRequest<'_>) -> String {
     let mut parts = Vec::new();
+    if let Some(summary) = batch.summary {
+        parts.push(format!(
+            "Running summary of the file so far (for consistency only, not to be translated):\n{summary}"
+        ));
+    }
     if let Some(preceding) = &batch.preceding {
         parts.push(format!(
             "Note: the original-language text below immediately precedes the lines you are about to translate, and their sentence may continue from it. Use it only to understand grammar and meaning - do not translate it or include it in your output:\n{preceding}"
         ));
     }
     if !batch.reference.is_empty() {
-        let lines: Vec<String> = batch
-            .reference
-            .iter()
-            .map(|(source, translation)| format!("- {source} => {translation}"))
-            .collect();
         parts.push(format!(
             "Reference context (already translated, for consistency only, do not re-translate these):\n{}",
-            lines.join("\n")
+            pair_lines(batch.reference)
         ));
     }
     if !batch.glossary_terms.is_empty() {
@@ -242,6 +282,43 @@ fn lines_json(lines: &[(usize, &str)]) -> String {
         .map(|(index, text)| json!({"index": index, "text": text}))
         .collect();
     serde_json::Value::from(payload).to_string()
+}
+
+/// Each source line with its translation, one `- source => translation` per line.
+fn pair_lines(pairs: &[(String, String)]) -> String {
+    pairs
+        .iter()
+        .map(|(source, translation)| format!("- {source} => {translation}"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn summary_instruction(languages: LanguagePair, word_limit: usize) -> String {
+    format!(
+        "You maintain a running summary that helps a {source}-to-{target}
+subtitle translator stay consistent across a long file, beyond what a short local context
+window can hold.
+
+Given the previous summary (if any, otherwise this is the first batch) and the lines
+just translated, write an updated summary covering only what later batches need for
+consistency: recurring proper nouns and the {target} term already established for
+each, the overall tone/register, and the ongoing topic. Do not summarize the plot
+beat-by-beat, and do not restate anything a per-term glossary would already cover.
+
+Keep the result under {word_limit} words. Respond only with the JSON object matching the
+required schema.",
+        source = languages.source.name(),
+        target = languages.target.name(),
+    )
+}
+
+fn summary_schema() -> serde_json::Value {
+    json!({
+        "type": "object",
+        "properties": {"summary": {"type": "string"}},
+        "required": ["summary"],
+        "additionalProperties": false,
+    })
 }
 
 fn split_sentence_instruction(source: Language) -> String {

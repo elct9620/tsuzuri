@@ -10,13 +10,15 @@ use crate::test_support::{FakeHttp, Response};
 pub type Lines = Vec<(usize, String)>;
 
 /// A llama-server that answers `/health` as not ready `loading_checks` times first, then answers
-/// the n-th translation request through `translate` and each window looked at for Split
-/// Sentences through `split`, keeping every request it was sent.
+/// the n-th translation request through `translate`, each window looked at for Split Sentences
+/// through `split` and the n-th Rolling Summary request through `summarize`, keeping every
+/// request it was sent.
 pub struct FakeLlama {
     server: FakeHttp,
     pub log: Arc<Mutex<Vec<String>>>,
     pub requests: Arc<Mutex<Vec<serde_json::Value>>>,
     pub windows: Arc<Mutex<Vec<Lines>>>,
+    pub summary_requests: Arc<Mutex<Vec<serde_json::Value>>>,
 }
 
 impl FakeLlama {
@@ -24,14 +26,17 @@ impl FakeLlama {
         loading_checks: usize,
         translate: impl Fn(usize, Lines) -> Response + Send + Sync + 'static,
         split: impl Fn(Lines) -> String + Send + Sync + 'static,
+        summarize: impl Fn(usize) -> Response + Send + Sync + 'static,
     ) -> FakeLlama {
         let log = Arc::new(Mutex::new(Vec::new()));
         let requests = Arc::new(Mutex::new(Vec::new()));
         let windows = Arc::new(Mutex::new(Vec::new()));
-        let (log_sink, request_sink, window_sink) = (
+        let summary_requests = Arc::new(Mutex::new(Vec::new()));
+        let (log_sink, request_sink, window_sink, summary_sink) = (
             Arc::clone(&log),
             Arc::clone(&requests),
             Arc::clone(&windows),
+            Arc::clone(&summary_requests),
         );
         let health_checks = Mutex::new(0);
         let translation_requests = AtomicUsize::new(0);
@@ -51,19 +56,30 @@ impl FakeLlama {
             }
             log_sink.lock().unwrap().push("chat".to_string());
             let body: serde_json::Value = serde_json::from_slice(&request.body).unwrap();
-            let lines = batch_lines(&body);
-            if body["response_format"]["json_schema"]["name"] == "continuation_clusters" {
-                window_sink.lock().unwrap().push(lines.clone());
-                return completion(&split(lines));
+            match body["response_format"]["json_schema"]["name"].as_str() {
+                Some("continuation_clusters") => {
+                    let lines = batch_lines(&body);
+                    window_sink.lock().unwrap().push(lines.clone());
+                    completion(&split(lines))
+                }
+                Some("rolling_summary") => {
+                    let mut sink = summary_sink.lock().unwrap();
+                    sink.push(body);
+                    summarize(sink.len() - 1)
+                }
+                _ => {
+                    let lines = batch_lines(&body);
+                    request_sink.lock().unwrap().push(body);
+                    translate(translation_requests.fetch_add(1, Ordering::SeqCst), lines)
+                }
             }
-            request_sink.lock().unwrap().push(body);
-            translate(translation_requests.fetch_add(1, Ordering::SeqCst), lines)
         });
         FakeLlama {
             server,
             log,
             requests,
             windows,
+            summary_requests,
         }
     }
 
@@ -73,6 +89,7 @@ impl FakeLlama {
             loading_checks,
             |_, lines| translations(echo_lines(lines)),
             no_split_sentences,
+            numbered_summary,
         )
     }
 
@@ -80,7 +97,12 @@ impl FakeLlama {
     pub fn with_split_sentences(
         split: impl Fn(Lines) -> String + Send + Sync + 'static,
     ) -> FakeLlama {
-        FakeLlama::serve(0, |_, lines| translations(echo_lines(lines)), split)
+        FakeLlama::serve(
+            0,
+            |_, lines| translations(echo_lines(lines)),
+            split,
+            numbered_summary,
+        )
     }
 
     /// Answers every translation request with the lines `answer` gives back.
@@ -89,6 +111,7 @@ impl FakeLlama {
             0,
             move |_, lines| translations(answer(lines)),
             no_split_sentences,
+            numbered_summary,
         )
     }
 
@@ -96,7 +119,19 @@ impl FakeLlama {
     pub fn with_answer_per_request(
         answer: impl Fn(usize, Lines) -> Response + Send + Sync + 'static,
     ) -> FakeLlama {
-        FakeLlama::serve(0, answer, no_split_sentences)
+        FakeLlama::serve(0, answer, no_split_sentences, numbered_summary)
+    }
+
+    /// Echoes each line, and answers the n-th Rolling Summary request with what `summarize` gives back.
+    pub fn with_summaries(
+        summarize: impl Fn(usize) -> Response + Send + Sync + 'static,
+    ) -> FakeLlama {
+        FakeLlama::serve(
+            0,
+            |_, lines| translations(echo_lines(lines)),
+            no_split_sentences,
+            summarize,
+        )
     }
 
     pub fn base_url(&self) -> &str {
@@ -124,6 +159,11 @@ impl FakeLlama {
             .map(|body| body["messages"][1]["content"].as_str().unwrap().to_string())
             .collect()
     }
+}
+
+/// The n-th Rolling Summary, counting from 0: `summary <n>`.
+pub fn numbered_summary(request: usize) -> Response {
+    completion(&json!({"summary": format!("summary {request}")}).to_string())
 }
 
 fn no_split_sentences(_: Lines) -> String {

@@ -66,6 +66,8 @@ struct TranslationJob<'a> {
     settings: TranslationSettings,
     /// The Translation Glossary's terms, empty when none is loaded.
     glossary_terms: &'a [(String, String)],
+    /// The Rolling Summary's word limit, or none when it is off.
+    summary_word_limit: Option<usize>,
     /// Whether Speaker Labels are kept out of what the Model is sent.
     has_speaker_labels: bool,
 }
@@ -93,6 +95,7 @@ pub async fn run_translate<R: Runtime>(
         languages,
         settings: TranslationSettings::default(),
         has_speaker_labels: false,
+        summary_word_limit: None,
         glossary_terms: glossary.as_ref().map_or(&[], |glossary| glossary.terms()),
     };
     let port = free_port()?;
@@ -235,6 +238,31 @@ async fn find_split_sentences(
     split_sentences
 }
 
+/// The Rolling Summary rewritten with a Batch's lines, or the previous one when the Model cannot answer.
+async fn rewrite_summary(
+    model: &TranslationModel,
+    languages: LanguagePair,
+    previous_summary: Option<String>,
+    batch_pairs: &[(String, String)],
+    word_limit: usize,
+) -> Option<String> {
+    match model
+        .rewrite_summary(
+            languages,
+            previous_summary.as_deref(),
+            batch_pairs,
+            word_limit,
+        )
+        .await
+    {
+        Ok(summary) => Some(summary),
+        Err(failure) => {
+            log::warn!("kept the previous rolling summary: {failure:?}");
+            previous_summary
+        }
+    }
+}
+
 /// Translates the Segments Batch by Batch, keeping each Split Sentence in one Batch,
 /// each Batch carrying the last lines translated before it.
 async fn translate_segments(
@@ -253,20 +281,15 @@ async fn translate_segments(
         .collect();
     let mut translated_segments: Vec<Segment> = Vec::with_capacity(job.segments.len());
     let mut translated_pairs: Vec<(String, String)> = Vec::new();
+    let mut summary: Option<String> = None;
     for range in batching::batches(job.segments.len(), job.settings.batch_size, split_sentences) {
         let lines: Vec<(usize, &str)> = range
             .clone()
             .map(|index| (index, labelled_texts[index].dialogue.as_str()))
             .collect();
-        let answer = repair::translate_batch(
-            model,
-            job.languages,
-            &lines,
-            &translated_pairs,
-            job.glossary_terms,
-            &job.settings,
-        )
-        .await?;
+        let answer =
+            repair::translate_batch(model, job, &lines, &translated_pairs, summary.as_deref())
+                .await?;
         for (index, dialogue) in lines {
             let translation = answer.get(&index).ok_or_else(|| Failure::LlamaRequest {
                 detail: format!("answered without line {index}"),
@@ -276,6 +299,10 @@ async fn translate_segments(
                 translation: Some(labelled_texts[index].reattach(translation)),
                 ..job.segments[index].clone()
             });
+        }
+        if let Some(word_limit) = job.summary_word_limit {
+            let batch_pairs = &translated_pairs[translated_pairs.len() - range.len()..];
+            summary = rewrite_summary(model, job.languages, summary, batch_pairs, word_limit).await;
         }
         on_progress((translated_segments.len() * 100 / job.segments.len()) as u8);
     }
@@ -316,7 +343,7 @@ mod tests {
     use crate::test_support::Response;
     use crate::test_support::TempDir;
     use crate::transcript::Transcript;
-    use fake_llama::{completion, echo_lines, translations, FakeLlama, Lines};
+    use fake_llama::{completion, echo_lines, numbered_summary, translations, FakeLlama, Lines};
 
     fn segment(start_ms: u64, end_ms: u64, text: &str) -> Segment {
         Segment {
@@ -367,6 +394,7 @@ mod tests {
             languages: japanese_pair(),
             settings: TranslationSettings::default(),
             has_speaker_labels: false,
+            summary_word_limit: None,
             glossary_terms: &[],
         }
     }
@@ -1019,6 +1047,91 @@ mod tests {
             translations_of(&translated_segments),
             vec!["Bat-Man is here"]
         );
+    }
+
+    /// Translates `segments` one per Batch, keeping a Rolling Summary of at most 50 words.
+    async fn translate_with_summary(llama: &FakeLlama, segments: &[Segment]) {
+        translate_segments(
+            &llama.model(),
+            &TranslationJob {
+                settings: TranslationSettings {
+                    batch_size: 1,
+                    ..TranslationSettings::default()
+                },
+                summary_word_limit: Some(50),
+                ..job(segments)
+            },
+            &[],
+            |_| {},
+        )
+        .await
+        .unwrap();
+    }
+
+    // @behavior TL-044
+    #[tokio::test]
+    async fn carries_the_rolling_summary_into_the_next_batch() {
+        let llama = FakeLlama::with_summaries(numbered_summary);
+
+        translate_with_summary(&llama, &three_segments()[..2]).await;
+
+        let second = &llama.user_messages()[1];
+        assert!(
+            second.contains("Running summary of the file so far") && second.contains("summary 0"),
+            "{second}"
+        );
+    }
+
+    // @behavior TL-045
+    #[tokio::test]
+    async fn rewrites_the_rolling_summary_after_each_batch() {
+        let llama = FakeLlama::with_summaries(numbered_summary);
+
+        translate_with_summary(&llama, &three_segments()[..2]).await;
+
+        let requests = llama.summary_requests.lock().unwrap();
+        let (instruction, lines) = (
+            requests[1]["messages"][0]["content"].as_str().unwrap(),
+            requests[1]["messages"][1]["content"].as_str().unwrap(),
+        );
+        assert!(instruction.contains("under 50 words"), "{instruction}");
+        assert!(
+            lines.contains("Previous summary:\nsummary 0")
+                && lines.contains("- 今天天氣很好 => EN:今天天氣很好"),
+            "{lines}"
+        );
+    }
+
+    // @behavior TL-046
+    #[tokio::test]
+    async fn keeps_the_rolling_summary_when_a_rewrite_fails() {
+        let llama = FakeLlama::with_summaries(|request| match request {
+            1 => completion("not json"),
+            _ => numbered_summary(request),
+        });
+
+        translate_with_summary(&llama, &three_segments()).await;
+
+        let third = &llama.user_messages()[2];
+        assert!(third.contains("summary 0"), "{third}");
+    }
+
+    // @behavior TL-047
+    #[tokio::test]
+    async fn sends_no_summary_requests_when_the_rolling_summary_is_off() {
+        let llama = FakeLlama::with_echo(0);
+        let segments = three_segments();
+
+        translate_segments(
+            &llama.model(),
+            &job_in_batches_of_two(&segments),
+            &[],
+            |_| {},
+        )
+        .await
+        .unwrap();
+
+        assert!(llama.summary_requests.lock().unwrap().is_empty());
     }
 
     // @behavior TL-010

@@ -52,8 +52,8 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 
 | Step | Statement |
 | --- | --- |
-| Given | a Transcript of two Segments |
-| When | it is loaded into the transcript panel |
+| Given | a Project of two Segments |
+| When | the transcript panel shows it |
 | Then | the panel lists both Segments with their start and end times |
 
 ## `TX-007` Showing progress while transcribing
@@ -102,4 +102,4 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | --- | --- |
 | Given | the transcribe panel with translating afterwards chosen |
 | When | a media file is transcribed |
-| Then | its Segments are translated into the selected language, making it the Transcribe and Translate Mode |
+| Then | the Project is translated into the selected language, making it the Transcribe and Translate Mode |

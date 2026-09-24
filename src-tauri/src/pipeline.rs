@@ -10,8 +10,9 @@ use crate::components::{self, Resolver};
 use crate::failure::Failure;
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::processes::Processes;
+use crate::project::{self, CurrentProject, Project};
 use crate::timing::{PhaseTiming, Phases};
-use crate::transcript::{Segment, Transcript};
+use crate::transcript::Transcript;
 
 /// 16-bit mono PCM at 16 kHz, the only input whisper-cli is given.
 const WAV_BYTES_PER_SECOND: u64 = 16_000 * 2;
@@ -27,7 +28,6 @@ struct PipelineProgress {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Transcription {
-    segments: Vec<Segment>,
     audio_seconds: f64,
     transcribe_seconds: f64,
     phases: Vec<PhaseTiming>,
@@ -84,9 +84,12 @@ pub async fn run_transcribe<R: Runtime>(
     let transcribe_seconds = started.elapsed().as_secs_f64();
 
     let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
-    let transcript = Transcript::from_srt(&srt)?;
+    app.state::<CurrentProject>().replace(Project {
+        media: Some(input.to_path_buf()),
+        transcript: Transcript::from_srt(&srt)?,
+    });
+    project::announce(app);
     Ok(Transcription {
-        segments: transcript.segments,
         audio_seconds: audio_bytes.saturating_sub(WAV_HEADER_BYTES) as f64
             / WAV_BYTES_PER_SECOND as f64,
         transcribe_seconds,
@@ -248,6 +251,7 @@ mod tests {
             settings.choose(ModelSlot::Transcription, dir.file("breeze.bin"));
             let app = mock_builder()
                 .plugin(tauri_plugin_shell::init())
+                .manage(CurrentProject::default())
                 .build(mock_context(noop_assets()))
                 .unwrap();
             Fixture {
@@ -257,6 +261,14 @@ mod tests {
                 settings,
                 whisper_started,
             }
+        }
+
+        fn project(&self) -> tauri::State<'_, CurrentProject> {
+            self.app.state::<CurrentProject>()
+        }
+
+        fn media(&self) -> PathBuf {
+            self.dir.path().join("lecture.mp4")
         }
 
         async fn transcribe(&self) -> Result<Transcription, Failure> {
@@ -296,14 +308,31 @@ mod tests {
     async fn answers_the_segments_whisper_wrote() {
         let fixture = Fixture::new("tx-transcribe", TWO_SECOND_WAV);
 
-        let transcription = fixture.transcribe().await.unwrap();
+        fixture.transcribe().await.unwrap();
 
-        let texts: Vec<&str> = transcription
-            .segments
+        let texts: Vec<String> = fixture
+            .project()
+            .view()
+            .unwrap()
+            .segments()
             .iter()
-            .map(|segment| segment.text.as_str())
+            .map(|segment| segment.text.clone())
             .collect();
         assert_eq!(texts, vec!["大家好", "今天天氣很好"]);
+    }
+
+    // @behavior PJ-002
+    #[tokio::test]
+    async fn makes_the_transcribed_media_the_project() {
+        let fixture = Fixture::new("pj-transcribe", TWO_SECOND_WAV);
+
+        fixture.transcribe().await.unwrap();
+
+        let view = fixture.project().view().unwrap();
+        assert_eq!(
+            (view.media(), view.segments().len()),
+            (Some(fixture.media().as_path()), 2)
+        );
     }
 
     // @behavior TX-002
@@ -404,9 +433,11 @@ mod tests {
         settings.choose(ModelSlot::Transcription, model);
         let app = mock_builder()
             .plugin(tauri_plugin_shell::init())
+            .manage(CurrentProject::default())
             .build(mock_context(noop_assets()))
             .unwrap();
         let processes = Processes::new(dir.path().join("processes.json"));
+        let project = app.state::<CurrentProject>();
 
         let transcription = run_transcribe(
             app.handle(),
@@ -422,12 +453,12 @@ mod tests {
 
         println!(
             "{} segments, audio {:.1}s, transcribe {:.1}s, RTF {:.2}, phases {:?}",
-            transcription.segments.len(),
+            project.view().unwrap().segments().len(),
             transcription.audio_seconds,
             transcription.transcribe_seconds,
             transcription.transcribe_seconds / transcription.audio_seconds,
             transcription.phases
         );
-        assert!(!transcription.segments.is_empty());
+        assert!(!project.view().unwrap().segments().is_empty());
     }
 }

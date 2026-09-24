@@ -7,11 +7,9 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { describeFailure } from "../failure";
 import { t } from "../i18n";
 import { describePhases, followProgress, type PhaseTiming } from "../progress";
-import type { Segment } from "./transcript_controller";
-import { translateSegments } from "./translate_controller";
+import { translateProject } from "./translate_controller";
 
 export interface Transcription {
-  segments: Segment[];
   audio_seconds: number;
   transcribe_seconds: number;
   phases: PhaseTiming[];
@@ -91,16 +89,8 @@ export default class TranscribeController extends Controller {
           phases: describePhases(transcription.phases),
         }),
       ];
-      this.dispatch("loaded", { target: window, detail: transcription });
       if (this.hasTranslateTarget && this.translateTarget.checked) {
-        const translation = await translateSegments(
-          transcription.segments,
-          this.languageTarget.value,
-        );
-        this.dispatch("loaded", {
-          target: window,
-          detail: { segments: translation.segments },
-        });
+        const translation = await translateProject(this.languageTarget.value);
         lines.push(
           t("transcribe.translatePhases", {
             phases: describePhases(translation.phases),

@@ -1,36 +1,50 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { ProjectView } from "../project";
 import TranslateController from "./translate_controller";
 
 describe("TranslateController", () => {
   let application: Application;
   let translateArgs: unknown;
-  let openSrt: () => unknown;
+  let project: ProjectView | null;
 
-  const segments = [{ start_ms: 0, end_ms: 1000, text: "大家好" }];
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const start = () =>
+    document.querySelector<HTMLButtonElement>(
+      '[data-translate-target="start"]',
+    )!;
+
+  async function holdProject(): Promise<void> {
+    project = {
+      media: null,
+      segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
+    };
+    await emit("project-changed");
+    await settle();
+  }
 
   beforeEach(async () => {
-    openSrt = () => segments;
+    project = null;
+    translateArgs = undefined;
     document.body.innerHTML = `
       <div data-controller="translate">
         <select data-translate-target="language">
           <option value="English">English</option>
           <option value="Japanese" selected>日本語</option>
         </select>
-        <button data-action="translate#choose">選擇 SRT</button>
+        <button data-translate-target="start" data-action="translate#translate" disabled>開始翻譯</button>
         <p data-translate-target="status"></p>
       </div>
     `;
     mockIPC(
       (command, args) => {
-        if (command === "plugin:dialog|open") return "/subtitles/lecture.srt";
-        if (command === "open_srt") return openSrt();
+        if (command === "current_project") return project;
         if (command === "translate") {
           translateArgs = args;
           return {
-            segments: [{ ...segments[0], translation: "皆さん、こんにちは" }],
             phases: [
               { phase: "prepare", seconds: 0.01 },
               { phase: "load", seconds: 2.17 },
@@ -43,7 +57,7 @@ describe("TranslateController", () => {
     );
     application = Application.start();
     application.register("translate", TranslateController);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await settle();
   });
 
   afterEach(() => {
@@ -52,34 +66,33 @@ describe("TranslateController", () => {
   });
 
   // @behavior TL-005
-  it("translates the chosen SRT file into the selected language", async () => {
-    document.querySelector("button")!.click();
-    await new Promise((resolve) => setTimeout(resolve, 10));
+  it("translates the Project into the selected language", async () => {
+    await holdProject();
 
-    expect(translateArgs).toEqual({ segments, target: "Japanese" });
+    start().click();
+    await settle();
+
+    expect(translateArgs).toEqual({ target: "Japanese" });
   });
 
   // @behavior TL-008
   it("lists how long each Phase took once translated", async () => {
-    document.querySelector("button")!.click();
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await holdProject();
+
+    start().click();
+    await settle();
 
     expect(
       document.querySelector('[data-translate-target="status"]')!.textContent,
     ).toBe("完成\n準備元件 0.0 秒 · 載入模型 2.2 秒 · 翻譯 0.6 秒");
   });
 
-  // @behavior TL-009
-  it("says which cue kept the SRT file from being read", async () => {
-    openSrt = () => {
-      throw { code: "malformed-srt", cue: 2 };
-    };
+  // @behavior TL-011
+  it("waits for a Project before translating can start", async () => {
+    const before = start().disabled;
 
-    document.querySelector<HTMLButtonElement>("button")!.click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await holdProject();
 
-    expect(
-      document.querySelector('[data-translate-target="status"]')!.textContent,
-    ).toBe("失敗：SRT 第 2 段無法讀取");
+    expect([before, start().disabled]).toEqual([true, false]);
   });
 });

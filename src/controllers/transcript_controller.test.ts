@@ -1,17 +1,22 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { ProjectView } from "../project";
 import TranscriptController from "./transcript_controller";
 
 describe("TranscriptController", () => {
   let application: Application;
-  let saved: unknown;
+  let project: ProjectView | null;
+  let calls: { command: string; args: unknown }[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-  function load(event: string, segments: unknown[]): void {
-    window.dispatchEvent(new CustomEvent(event, { detail: { segments } }));
+  async function hold(next: ProjectView): Promise<void> {
+    project = next;
+    await emit("project-changed");
+    await settle();
   }
 
   function fields(): string[] {
@@ -20,10 +25,33 @@ describe("TranscriptController", () => {
     ].map((field) => field.value);
   }
 
+  function edit(selector: string, value: string): void {
+    const field = document.querySelector<HTMLTextAreaElement>(selector)!;
+    field.value = value;
+    field.dispatchEvent(new Event("change"));
+  }
+
+  function sent(command: string): unknown {
+    return calls.find((call) => call.command === command)?.args;
+  }
+
+  const translated: ProjectView = {
+    media: null,
+    segments: [
+      {
+        start_ms: 0,
+        end_ms: 1000,
+        text: "大家好",
+        translation: "Hello everyone",
+      },
+    ],
+  };
+
   beforeEach(async () => {
-    saved = undefined;
+    project = null;
+    calls = [];
     document.body.innerHTML = `
-      <section data-controller="transcript" data-action="transcribe:loaded@window->transcript#show translate:loaded@window->transcript#show">
+      <section data-controller="transcript">
         <p data-transcript-target="empty">尚無內容</p>
         <details open>
           <summary>匯出</summary>
@@ -34,10 +62,14 @@ describe("TranscriptController", () => {
         <ol data-transcript-target="list"></ol>
       </section>
     `;
-    mockIPC((command, args) => {
-      if (command === "plugin:dialog|save") return "/subtitles/out.srt";
-      if (command === "save_srt") saved = args;
-    });
+    mockIPC(
+      (command, args) => {
+        calls.push({ command, args });
+        if (command === "current_project") return project;
+        if (command === "plugin:dialog|save") return "/subtitles/out.srt";
+      },
+      { shouldMockEvents: true },
+    );
     application = Application.start();
     application.register("transcript", TranscriptController);
     await settle();
@@ -49,11 +81,14 @@ describe("TranscriptController", () => {
   });
 
   // @behavior TX-006
-  it("lists each segment with its start and end time", () => {
-    load("transcribe:loaded", [
-      { start_ms: 0, end_ms: 1000, text: "大家好" },
-      { start_ms: 62_003, end_ms: 64_500, text: "今天天氣很好" },
-    ]);
+  it("lists each segment of the Project with its start and end time", async () => {
+    await hold({
+      media: "/media/lecture.mp4",
+      segments: [
+        { start_ms: 0, end_ms: 1000, text: "大家好" },
+        { start_ms: 62_003, end_ms: 64_500, text: "今天天氣很好" },
+      ],
+    });
 
     const times = [...document.querySelectorAll("li time")].map(
       (time) => time.textContent,
@@ -66,84 +101,52 @@ describe("TranscriptController", () => {
   });
 
   // @behavior TL-006
-  it("shows each translation under its segment", () => {
-    load("translate:loaded", [
-      {
-        start_ms: 0,
-        end_ms: 1000,
-        text: "大家好",
-        translation: "Hello everyone",
-      },
-    ]);
+  it("shows each translation under its segment", async () => {
+    await hold(translated);
 
     expect(fields()).toEqual(["大家好", "Hello everyone"]);
   });
 
   // @behavior ED-001
-  it("saves the edited text as the original", async () => {
-    load("transcribe:loaded", [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }]);
-    document.querySelector<HTMLTextAreaElement>("textarea.text")!.value =
-      "逐字稿";
+  it("writes an edited text to the Project", async () => {
+    await hold({
+      media: null,
+      segments: [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }],
+    });
 
-    document.querySelector<HTMLButtonElement>("#save-original")!.click();
+    edit("textarea.text", "逐字稿");
     await settle();
 
-    expect(saved).toEqual({
-      path: "/subtitles/out.srt",
-      segments: [{ start_ms: 0, end_ms: 1000, text: "逐字稿" }],
-      content: "original",
+    expect(sent("edit_segment")).toEqual({
+      index: 0,
+      field: "text",
+      value: "逐字稿",
     });
   });
 
   // @behavior ED-002
-  it("saves the edited translation as the translation", async () => {
-    load("translate:loaded", [
-      {
-        start_ms: 0,
-        end_ms: 1000,
-        text: "大家好",
-        translation: "Hello everyone",
-      },
-    ]);
-    document.querySelector<HTMLTextAreaElement>("textarea.translation")!.value =
-      "Hi all";
+  it("writes an edited translation to the Project", async () => {
+    await hold(translated);
 
-    document.querySelector<HTMLButtonElement>("#save-translation")!.click();
+    edit("textarea.translation", "Hi all");
     await settle();
 
-    expect(saved).toEqual({
-      path: "/subtitles/out.srt",
-      segments: [
-        { start_ms: 0, end_ms: 1000, text: "大家好", translation: "Hi all" },
-      ],
-      content: "translation",
+    expect(sent("edit_segment")).toEqual({
+      index: 0,
+      field: "translation",
+      value: "Hi all",
     });
   });
 
   // @behavior ED-003
-  it("saves both the text and the translation as bilingual", async () => {
-    load("translate:loaded", [
-      {
-        start_ms: 0,
-        end_ms: 1000,
-        text: "大家好",
-        translation: "Hello everyone",
-      },
-    ]);
+  it("exports the Project as a bilingual SRT", async () => {
+    await hold(translated);
 
     document.querySelector<HTMLButtonElement>("#save-bilingual")!.click();
     await settle();
 
-    expect(saved).toEqual({
+    expect(sent("save_srt")).toEqual({
       path: "/subtitles/out.srt",
-      segments: [
-        {
-          start_ms: 0,
-          end_ms: 1000,
-          text: "大家好",
-          translation: "Hello everyone",
-        },
-      ],
       content: "bilingual",
     });
   });

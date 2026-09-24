@@ -1,31 +1,31 @@
 # Editing
 
-Correcting a Transcript in the transcript panel and saving it as SRT - the original text, or the translation or a Bilingual SRT when there is one.
+Correcting the Project in the transcript panel, where every edit is written to Rust, and exporting it as SRT - the original text, or the translation or a Bilingual SRT when there is one.
 
 ## Includes
 
 - `src/controllers/transcript_controller.test.ts`
 
-## `ED-001` Saving an edited Segment
+## `ED-001` Writing an edited text to the Project
 
 | Step | Statement |
 | --- | --- |
-| Given | a Transcript in the panel whose Segment text was edited |
-| When | the original is saved as SRT |
-| Then | the Segment is saved as the original with the edited text |
+| Given | a Project in the panel |
+| When | a Segment's text is edited |
+| Then | the edit is written to the Project by the Segment's position |
 
-## `ED-002` Saving the translation
-
-| Step | Statement |
-| --- | --- |
-| Given | a translated Transcript in the panel whose translation was edited |
-| When | the translation is saved as SRT |
-| Then | the Segment is saved as the translation with the edited translation |
-
-## `ED-003` Saving a Bilingual SRT
+## `ED-002` Writing an edited translation to the Project
 
 | Step | Statement |
 | --- | --- |
-| Given | a translated Transcript in the panel |
-| When | it is saved as a Bilingual SRT |
-| Then | the Segments are saved as bilingual with both their text and translation |
+| Given | a translated Project in the panel |
+| When | a Segment's translation is edited |
+| Then | the edit is written to the Project as its translation |
+
+## `ED-003` Exporting the Project
+
+| Step | Statement |
+| --- | --- |
+| Given | a translated Project in the panel |
+| When | it is exported as a Bilingual SRT |
+| Then | the Project is saved as bilingual to the chosen file |

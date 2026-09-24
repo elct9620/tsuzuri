@@ -1,6 +1,6 @@
 # Commands
 
-The Tauri commands the webview invokes. The frontend depends on these names and arguments, so each is kept to one implementation. A command that fails answers a Failure, never text.
+The Tauri commands the webview invokes. The frontend depends on these names and arguments, so each is kept to one implementation. A command that fails answers a Failure, never text. A command that changes the Project emits `project-changed`, and the webview asks `current_project` for what it now holds.
 
 ## Includes
 
@@ -40,7 +40,7 @@ pub async fn choose_component(app: AppHandle, name: String, path: PathBuf) -> Re
 
 ## `transcribe`
 
-Run the Transcribe Mode on one media file, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes, and answer the Transcript with the seconds each Phase took.
+Run the Transcribe Mode on one media file, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The media file and its Transcript become the Project; the answer is how long the audio is and the seconds each Phase took.
 
 ```rust
 pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, Failure> {}
@@ -48,24 +48,40 @@ pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, 
 
 ## `open_srt`
 
-Read an SRT file into Segments.
+Read an SRT file into a new Project with no media file.
 
 ```rust
-pub fn open_srt(path: PathBuf) -> Result<Vec<Segment>, Failure> {}
+pub fn open_srt(app: AppHandle, path: PathBuf) -> Result<(), Failure> {}
+```
+
+## `current_project`
+
+The Project's media file and Segments, or none before one is made.
+
+```rust
+pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
+```
+
+## `edit_segment`
+
+Replace the `text` or the `translation` of one Segment of the Project, by its position.
+
+```rust
+pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}
 ```
 
 ## `translate`
 
-Run the Translate Mode on Segments into the target language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes, and answer the Segments with their translations and the seconds each Phase took.
+Run the Translate Mode on the Project into the target language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The translations are written into the Project; the answer is the seconds each Phase took.
 
 ```rust
-pub async fn translate(app: AppHandle, segments: Vec<Segment>, target: String) -> Result<Translation, Failure> {}
+pub async fn translate(app: AppHandle, target: String) -> Result<Translation, Failure> {}
 ```
 
 ## `save_srt`
 
-Write Segments to a file as SRT carrying the `original` text, the `translation`, or both as a `bilingual` SRT.
+Write the Project to a file as SRT carrying the `original` text, the `translation`, or both as a `bilingual` SRT.
 
 ```rust
-pub fn save_srt(path: PathBuf, segments: Vec<Segment>, content: SrtContent) -> Result<(), Failure> {}
+pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<(), Failure> {}
 ```

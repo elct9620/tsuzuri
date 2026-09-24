@@ -40,20 +40,20 @@ The Translate Mode: a Transcript - read from an existing SRT, or just produced b
 | When | translation gives up waiting |
 | Then | the llama-server process is no longer running |
 
-## `TL-005` Translating an existing SRT file
+## `TL-005` Translating the Project
 
 | Step | Statement |
 | --- | --- |
-| Given | the Translate Mode panel |
-| When | an SRT file is chosen |
-| Then | its Segments are translated into the selected language |
+| Given | the Translate Mode panel and a Project |
+| When | translating is started |
+| Then | the Project is translated into the selected language |
 
 ## `TL-006` Showing a translation beside its Segment
 
 | Step | Statement |
 | --- | --- |
-| Given | a translated Transcript |
-| When | it is loaded into the transcript panel |
+| Given | a translated Project |
+| When | the transcript panel shows it |
 | Then | each Segment shows its translation under its text |
 
 ## `TL-007` Answering how long each Phase took
@@ -72,10 +72,18 @@ The Translate Mode: a Transcript - read from an existing SRT, or just produced b
 | When | the translation finishes |
 | Then | the translate panel lists each Phase with its seconds |
 
-## `TL-009` Saying why an SRT file could not be read
+## `TL-010` Translating the Project as edited
 
 | Step | Statement |
 | --- | --- |
-| Given | the Translate Mode panel |
-| When | an SRT file whose second cue is malformed is chosen |
-| Then | the panel says the file could not be read at its second cue |
+| Given | a ready llama-server and a Project whose Segment text was edited |
+| When | the Project is translated |
+| Then | the edited text is translated and its translation is written into the Project |
+
+## `TL-011` Waiting for a Project before translating
+
+| Step | Statement |
+| --- | --- |
+| Given | the Translate Mode panel and no Project |
+| When | the panel is shown |
+| Then | translating cannot be started until a Project is made |

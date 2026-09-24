@@ -2,6 +2,8 @@ import type en from "./en";
 
 const zhHant: typeof en = {
   toolbar: {
+    open: "開啟 ▾",
+    fromSrt: "從 SRT 建立",
     export: "匯出 ▾",
     original: "原文 SRT",
     translation: "譯文 SRT",
@@ -27,7 +29,8 @@ const zhHant: typeof en = {
     translatePhases: "翻譯：{{phases}}",
   },
   translate: {
-    choose: "選擇 SRT 字幕檔",
+    source: "來源：本專案的 Transcript",
+    start: "開始翻譯",
     done: "完成",
   },
   edit: {

@@ -23,6 +23,8 @@ pub enum Failure {
     ModelMissing {
         path: PathBuf,
     },
+    /// Translating, editing or saving asked for before a Project was made.
+    NoProject,
     ComponentNotReady {
         component: String,
     },

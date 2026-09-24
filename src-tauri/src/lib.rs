@@ -3,6 +3,7 @@ pub mod failure;
 pub mod models;
 pub mod pipeline;
 pub mod processes;
+pub mod project;
 pub mod timing;
 pub mod transcript;
 pub mod translation;
@@ -14,6 +15,7 @@ use tauri::{Manager, RunEvent};
 use tauri_plugin_log::{RotationStrategy, TimezoneStrategy};
 
 use processes::Processes;
+use project::CurrentProject;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -34,6 +36,7 @@ pub fn run() {
             let record = app.path().app_data_dir()?.join("processes.json");
             processes::reap_strays(&record);
             app.manage(Processes::new(record));
+            app.manage(CurrentProject::default());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -42,8 +45,10 @@ pub fn run() {
             models::model_settings,
             models::choose_model,
             pipeline::transcribe,
-            transcript::open_srt,
-            transcript::save_srt,
+            project::current_project,
+            project::edit_segment,
+            project::open_srt,
+            project::save_srt,
             translation::translate
         ])
         .build(tauri::generate_context!())

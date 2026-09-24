@@ -16,6 +16,7 @@ use crate::failure::Failure;
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::pipeline::{enter, report};
 use crate::processes::Processes;
+use crate::project::{self, CurrentProject};
 use crate::timing::{PhaseTiming, Phases};
 use crate::transcript::Segment;
 
@@ -26,14 +27,13 @@ const HEALTH_POLL: Duration = Duration::from_millis(500);
 const CONTEXT_SIZE: &str = "4096";
 
 /// What to translate: the Segments and the language they are translated into.
-pub struct TranslationJob<'a> {
-    pub segments: &'a [Segment],
-    pub target: &'a str,
+struct TranslationJob<'a> {
+    segments: &'a [Segment],
+    target: &'a str,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Translation {
-    segments: Vec<Segment>,
     phases: Vec<PhaseTiming>,
 }
 
@@ -42,11 +42,17 @@ pub async fn run_translate<R: Runtime>(
     processes: &Processes,
     llama: &Path,
     settings: &ModelSettings,
-    job: &TranslationJob<'_>,
+    target: &str,
     ready_timeout: Duration,
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
     let model = settings.require(ModelSlot::Translation)?;
+    let project = app.state::<CurrentProject>();
+    let (generation, transcript) = project.snapshot()?;
+    let job = TranslationJob {
+        segments: &transcript.segments,
+        target,
+    };
     let port = free_port()?;
     let args = [
         "-m".to_string(),
@@ -88,13 +94,14 @@ pub async fn run_translate<R: Runtime>(
         &base_url,
         ready_timeout,
         || exited.load(Ordering::SeqCst),
-        job,
+        &job,
         &mut phases,
     )
     .await;
     processes.kill(pid);
+    project.translated(generation, result?);
+    project::announce(app);
     Ok(Translation {
-        segments: result?,
         phases: phases.finish(),
     })
 }
@@ -194,11 +201,7 @@ async fn translate_segments(
 }
 
 #[tauri::command]
-pub async fn translate(
-    app: AppHandle,
-    segments: Vec<Segment>,
-    target: String,
-) -> Result<Translation, Failure> {
+pub async fn translate(app: AppHandle, target: String) -> Result<Translation, Failure> {
     let phases = Phases::start("translate", "prepare");
     report(&app, "prepare", None);
     let [llama] = components::ready_executables(Resolver::of(&app)?, ["llama"]).await?;
@@ -209,10 +212,7 @@ pub async fn translate(
         &processes,
         &llama,
         &settings,
-        &TranslationJob {
-            segments: &segments,
-            target: &target,
-        },
+        &target,
         READY_TIMEOUT,
         phases,
     )
@@ -226,7 +226,9 @@ mod tests {
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
 
     use super::*;
+    use crate::project::{Project, SegmentField};
     use crate::test_support::{FakeHttp, Response, TempDir};
+    use crate::transcript::Transcript;
 
     fn segment(start_ms: u64, end_ms: u64, text: &str) -> Segment {
         Segment {
@@ -234,6 +236,13 @@ mod tests {
             end_ms,
             text: text.to_string(),
             translation: None,
+        }
+    }
+
+    fn project_of(segments: Vec<Segment>) -> Project {
+        Project {
+            media: None,
+            transcript: Transcript { segments },
         }
     }
 
@@ -249,6 +258,7 @@ mod tests {
     fn mock_app() -> tauri::App<MockRuntime> {
         mock_builder()
             .plugin(tauri_plugin_shell::init())
+            .manage(CurrentProject::default())
             .build(mock_context(noop_assets()))
             .unwrap()
     }
@@ -316,6 +326,36 @@ mod tests {
         );
     }
 
+    // @behavior TL-010
+    #[tokio::test]
+    async fn translates_the_project_as_edited() {
+        let (server, _) = fake_llama(0);
+        let project = CurrentProject::default();
+        project.replace(project_of(vec![segment(0, 1_000, "竹子搞")]));
+        project
+            .edit(0, SegmentField::Text, "逐字稿".to_string())
+            .unwrap();
+        let (generation, transcript) = project.snapshot().unwrap();
+
+        let translated = translate_segments(
+            &reqwest::Client::new(),
+            &server.base_url,
+            &transcript.segments,
+            "English",
+            |_| {},
+        )
+        .await
+        .unwrap();
+        project.translated(generation, translated);
+
+        let view = project.view().unwrap();
+        let segment = &view.segments()[0];
+        assert_eq!(
+            (segment.text.as_str(), segment.translation.as_deref()),
+            ("逐字稿", Some("EN:逐字稿"))
+        );
+    }
+
     // @behavior TL-002
     #[tokio::test]
     async fn sends_no_segment_before_the_model_is_loaded() {
@@ -352,15 +392,15 @@ mod tests {
         let record = dir.path().join("processes.json");
         let processes = Processes::new(record.clone());
 
+        app.state::<CurrentProject>()
+            .replace(project_of(vec![segment(0, 1_000, "大家好")]));
+
         let result = run_translate(
             app.handle(),
             &processes,
             Path::new("/bin/sleep"),
             &ModelSettings::default(),
-            &TranslationJob {
-                segments: &[segment(0, 1_000, "大家好")],
-                target: "English",
-            },
+            "English",
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -393,15 +433,15 @@ mod tests {
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
 
+        app.state::<CurrentProject>()
+            .replace(project_of(vec![segment(0, 1_000, "大家好")]));
+
         let result = run_translate(
             app.handle(),
             &processes,
             &llama,
             &settings,
-            &TranslationJob {
-                segments: &[segment(0, 1_000, "大家好")],
-                target: "English",
-            },
+            "English",
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -464,27 +504,30 @@ mod tests {
         let dir = TempDir::new("tl-e2e");
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
-        let segments = [
+        app.state::<CurrentProject>().replace(project_of(vec![
             segment(0, 1_000, "大家好"),
             segment(1_000, 3_000, "今天天氣很好"),
-        ];
+        ]));
 
         let translated = run_translate(
             app.handle(),
             &processes,
             &llama,
             &settings,
-            &TranslationJob {
-                segments: &segments,
-                target: "English",
-            },
+            "English",
             READY_TIMEOUT,
             Phases::start("translate", "prepare"),
         )
         .await
         .unwrap();
 
-        for segment in &translated.segments {
+        let segments = app
+            .state::<CurrentProject>()
+            .view()
+            .unwrap()
+            .segments()
+            .to_vec();
+        for segment in &segments {
             println!(
                 "{} -> {}",
                 segment.text,
@@ -492,6 +535,6 @@ mod tests {
             );
         }
         println!("phases {:?}", translated.phases);
-        assert_eq!(translated.segments.len(), 2);
+        assert!(segments.iter().all(|segment| segment.translation.is_some()));
     }
 }

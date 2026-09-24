@@ -1,6 +1,8 @@
 /** The interface text in English, which every other language falls back to. */
 const en = {
   toolbar: {
+    open: "Open ▾",
+    fromSrt: "From an SRT file",
     export: "Export ▾",
     original: "Original SRT",
     translation: "Translated SRT",
@@ -26,7 +28,8 @@ const en = {
     translatePhases: "Translate: {{phases}}",
   },
   translate: {
-    choose: "Choose an SRT file",
+    source: "Source: this Project's Transcript",
+    start: "Translate",
     done: "Done",
   },
   edit: {

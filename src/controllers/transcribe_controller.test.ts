@@ -32,7 +32,7 @@ describe("TranscribeController", () => {
         if (command === "transcribe") return transcription;
         if (command === "translate") {
           translated = args;
-          return { segments: [], phases: [] };
+          return { phases: [] };
         }
       },
       { shouldMockEvents: true },
@@ -80,7 +80,6 @@ describe("TranscribeController", () => {
   // @behavior TX-011
   it("lists how long each Phase took once transcribed", async () => {
     transcription = Promise.resolve({
-      segments: [],
       audio_seconds: 5,
       transcribe_seconds: 2.7,
       phases: [
@@ -99,10 +98,8 @@ describe("TranscribeController", () => {
   });
 
   // @behavior TX-012
-  it("translates the Segments once transcribed when asked to", async () => {
-    const segments = [{ start_ms: 0, end_ms: 1000, text: "大家好" }];
+  it("translates the Project once transcribed when asked to", async () => {
     transcription = Promise.resolve({
-      segments,
       audio_seconds: 1,
       transcribe_seconds: 1,
       phases: [],
@@ -113,6 +110,6 @@ describe("TranscribeController", () => {
 
     await controller().transcribe("/media/lecture.mp4");
 
-    expect(translated).toEqual({ segments, target: "Japanese" });
+    expect(translated).toEqual({ target: "Japanese" });
   });
 });

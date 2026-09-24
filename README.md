@@ -22,4 +22,13 @@ scripts/vendor.sh
 
 The frontend is plain TypeScript with [Stimulus](https://stimulus.hotwired.dev/) controllers under `src/controllers/`.
 
-This project uses FFmpeg under the LGPL, downloaded at runtime and run as a separate process.
+Two ignored tests run the real engines end to end:
+
+```bash
+cd src-tauri
+TSUZURI_E2E_MODEL=<ggml whisper model> TSUZURI_E2E_MEDIA=<video or audio> \
+TSUZURI_E2E_LLAMA=<llama-server> TSUZURI_E2E_TRANSLATION_MODEL=<gguf> \
+  cargo test -- --ignored --nocapture
+```
+
+This project uses FFmpeg under the LGPL, run as a separate process: downloaded from BtbN's builds on Windows, built by `scripts/vendor.sh` on macOS.

@@ -185,3 +185,83 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a ready llama-server that answers the search for Split Sentences with malformed JSON |
 | When | a Transcript is translated |
 | Then | every Segment still carries its translation |
+
+## `TL-024` Retrying a line the Model left out
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that leaves line 1 out of its first answer |
+| When | a Transcript is translated |
+| Then | line 1 is asked for again with a correction naming it, and every Segment carries its translation |
+
+## `TL-025` Retrying a translation shared by different lines
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that first answers two different lines with the same translation |
+| When | a Transcript is translated |
+| Then | both lines are asked for again |
+
+## `TL-026` Retrying a translation that kept the source text
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that first answers a line into English with Chinese left in it |
+| When | a Transcript is translated into English |
+| Then | the line is asked for again |
+
+## `TL-027` Retrying a placeholder
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that first answers a line with `[inaudible]` |
+| When | a Transcript is translated |
+| Then | the line is asked for again |
+
+## `TL-028` Keeping the original text of a line that cannot be repaired
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that always leaves line 1 out |
+| When | a Transcript is translated |
+| Then | line 1 carries its original text as its translation and the other lines their translations |
+
+## `TL-029` Keeping the best imperfect translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that always drops the negation of a Chinese line |
+| When | a Transcript is translated into English |
+| Then | the line carries that translation rather than its original text |
+
+## `TL-030` Splitting a Batch that keeps failing
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that leaves every line out of a request for more than two lines |
+| When | a Batch of four is translated |
+| Then | the lines are asked for again in halves of two, and every Segment carries its translation |
+
+## `TL-031` Retrying an answer that is not JSON
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server whose first answer is not JSON |
+| When | a Transcript is translated |
+| Then | the Batch is asked for again and every Segment carries its translation |
+
+## `TL-032` Showing the preceding lines when repairing
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that leaves line 1 out of its first answer |
+| When | a Transcript is translated |
+| Then | the request that repairs line 1 carries the original text of line 0 before it |
+
+## `TL-033` Stopping when llama-server fails a request
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that answers a translation request with an HTTP error |
+| When | a Transcript is translated |
+| Then | the translation fails and no Segment carries its original text as a translation |

@@ -2,6 +2,7 @@ pub mod components;
 pub mod models;
 pub mod pipeline;
 pub mod processes;
+pub mod timing;
 pub mod transcript;
 pub mod translation;
 
@@ -9,12 +10,22 @@ pub mod translation;
 mod test_support;
 
 use tauri::{Manager, RunEvent};
+use tauri_plugin_log::{RotationStrategy, TimezoneStrategy};
 
 use processes::Processes;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(log::LevelFilter::Info)
+                .timezone_strategy(TimezoneStrategy::UseLocal)
+                // Room for several whole runs, so the slow one is still there when someone looks.
+                .max_file_size(1_000_000)
+                .rotation_strategy(RotationStrategy::KeepSome(5))
+                .build(),
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {

@@ -48,16 +48,19 @@ impl Processes {
             .map_err(|error| error.to_string())?;
         let pid = child.pid();
         let name = executable_name(&program.to_string_lossy());
-        self.running
-            .lock()
-            .unwrap()
-            .insert(pid, Running { child, name });
+        self.running.lock().unwrap().insert(
+            pid,
+            Running {
+                child,
+                name: name.clone(),
+            },
+        );
         self.write_record();
 
         let (forward, received) = async_runtime::channel(64);
         let processes = self.clone();
         async_runtime::spawn(async move {
-            forward_in_order(events, forward).await;
+            forward_in_order(&name, events, forward).await;
             processes.forget(pid);
         });
         Ok((received, pid))
@@ -110,15 +113,22 @@ impl Processes {
     }
 }
 
-/// The file name of an executable without its directory, as both `ps` and `tasklist` report it.
-/// Forwards the plugin's events with the exit status last. The plugin sends it as soon as the process exits,
-/// possibly ahead of lines its reader threads have yet to send, and its channel closes once they have.
-async fn forward_in_order(mut events: Receiver<CommandEvent>, forward: Sender<CommandEvent>) {
+/// Forwards the plugin's events with the exit status last, logging each line of output under `name`.
+/// The plugin sends the exit status as soon as the process exits, possibly ahead of lines its reader threads
+/// have yet to send, and its channel closes once they have.
+async fn forward_in_order(
+    name: &str,
+    mut events: Receiver<CommandEvent>,
+    forward: Sender<CommandEvent>,
+) {
     let mut exit = None;
     while let Some(event) = events.recv().await {
         match event {
             CommandEvent::Terminated(_) => exit = Some(event),
             event => {
+                if let CommandEvent::Stdout(line) | CommandEvent::Stderr(line) = &event {
+                    log::info!("{name}: {}", String::from_utf8_lossy(line).trim_end());
+                }
                 let _ = forward.send(event).await;
             }
         }
@@ -128,6 +138,7 @@ async fn forward_in_order(mut events: Receiver<CommandEvent>, forward: Sender<Co
     }
 }
 
+/// The file name of an executable without its directory, as both `ps` and `tasklist` report it.
 fn executable_name(path: &str) -> String {
     path.rsplit(['/', '\\']).next().unwrap_or(path).to_string()
 }
@@ -198,7 +209,7 @@ mod tests {
     use tauri_plugin_shell::process::TerminatedPayload;
 
     use super::*;
-    use crate::test_support::TempDir;
+    use crate::test_support::{captured_logs, TempDir};
 
     fn mock_app() -> tauri::App<tauri::test::MockRuntime> {
         mock_builder()
@@ -326,7 +337,7 @@ mod tests {
             sender.send(line("100%")).await.unwrap();
         });
 
-        async_runtime::block_on(forward_in_order(events, forward));
+        async_runtime::block_on(forward_in_order("whisper-cli", events, forward));
 
         let mut order = Vec::new();
         while let Some(event) = received.blocking_recv() {
@@ -337,5 +348,24 @@ mod tests {
             });
         }
         assert_eq!(order, vec!["50%", "100%", "exit"]);
+    }
+
+    // @behavior OB-003
+    #[test]
+    fn logs_each_output_line_under_the_executable_name() {
+        let (sender, events) = async_runtime::channel(8);
+        let (forward, _received) = async_runtime::channel(8);
+        async_runtime::block_on(async move {
+            sender
+                .send(CommandEvent::Stderr(b"load time = 1384 ms\n".to_vec()))
+                .await
+                .unwrap();
+        });
+
+        let logs = captured_logs(|| {
+            async_runtime::block_on(forward_in_order("whisper-cli", events, forward))
+        });
+
+        assert_eq!(logs, vec!["whisper-cli: load time = 1384 ms"]);
     }
 }

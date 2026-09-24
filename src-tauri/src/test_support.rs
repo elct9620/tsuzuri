@@ -93,3 +93,36 @@ impl FakeHttp {
         FakeHttp { base_url }
     }
 }
+
+thread_local! {
+    static LOGGED: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Keeps each log line on the thread that wrote it, so tests running in parallel read only their own.
+struct CaptureLogger;
+
+impl log::Log for CaptureLogger {
+    fn enabled(&self, _: &log::Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &log::Record) {
+        LOGGED.with(|lines| lines.borrow_mut().push(record.args().to_string()));
+    }
+
+    fn flush(&self) {}
+}
+
+static CAPTURE_LOGGER: CaptureLogger = CaptureLogger;
+
+/// The log lines `run` writes on the calling thread.
+pub fn captured_logs(run: impl FnOnce()) -> Vec<String> {
+    static INSTALL: std::sync::Once = std::sync::Once::new();
+    INSTALL.call_once(|| {
+        log::set_logger(&CAPTURE_LOGGER).unwrap();
+        log::set_max_level(log::LevelFilter::Trace);
+    });
+    LOGGED.with(|lines| lines.borrow_mut().clear());
+    run();
+    LOGGED.with(|lines| lines.take())
+}

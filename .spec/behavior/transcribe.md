@@ -62,7 +62,7 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | --- | --- |
 | Given | a media file being transcribed |
 | When | a progress event arrives |
-| Then | the transcribe panel shows the Step and its percentage |
+| Then | the transcribe panel shows the Phase and its percentage |
 
 ## `TX-008` Telling the Model load apart from transcribing
 
@@ -79,3 +79,19 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | Given | a media file, ready Components and a chosen transcription Model |
 | When | it is transcribed |
 | Then | the result holds the prepare, convert, load and transcribe Phases with their seconds, in that order |
+
+## `TX-010` Showing a Phase that has no percentage
+
+| Step | Statement |
+| --- | --- |
+| Given | a media file being transcribed |
+| When | a load progress event without a percentage arrives |
+| Then | the transcribe panel shows a progress bar with no value |
+
+## `TX-011` Showing how long each Phase took
+
+| Step | Statement |
+| --- | --- |
+| Given | a media file being transcribed |
+| When | the transcription finishes |
+| Then | the transcribe panel lists each Phase with its seconds |

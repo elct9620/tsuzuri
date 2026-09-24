@@ -4,7 +4,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { open } from "@tauri-apps/plugin-dialog";
 
-import { listenProgress } from "../progress";
+import { describePhases, followProgress, type PhaseTiming } from "../progress";
 import type { Segment } from "./transcript_controller";
 import { translateSegments } from "./translate_controller";
 
@@ -12,6 +12,7 @@ export interface Transcription {
   segments: Segment[];
   audio_seconds: number;
   transcribe_seconds: number;
+  phases: PhaseTiming[];
 }
 
 const MEDIA_EXTENSIONS = [
@@ -28,11 +29,13 @@ const MEDIA_EXTENSIONS = [
 ];
 
 export default class TranscribeController extends Controller {
-  static targets = ["status", "language"];
+  static targets = ["status", "language", "bar"];
   static values = { translate: Boolean };
 
   declare readonly statusTarget: HTMLElement;
   declare readonly languageTarget: HTMLSelectElement;
+  declare readonly barTarget: HTMLProgressElement;
+  declare readonly hasBarTarget: boolean;
   declare readonly translateValue: boolean;
 
   private unlisteners: UnlistenFn[] = [];
@@ -40,9 +43,7 @@ export default class TranscribeController extends Controller {
 
   async connect(): Promise<void> {
     this.unlisteners.push(
-      await listenProgress((line) => {
-        if (this.running) this.statusTarget.textContent = line;
-      }),
+      await followProgress(this.statusTarget, this.bar(), () => this.running),
       await getCurrentWebview().onDragDropEvent(({ payload }) => {
         if (
           payload.type === "drop" &&
@@ -77,24 +78,33 @@ export default class TranscribeController extends Controller {
       const transcription = await invoke<Transcription>("transcribe", { path });
       const factor =
         transcription.transcribe_seconds / transcription.audio_seconds;
-      const summary = `音檔 ${transcription.audio_seconds.toFixed(1)} 秒，轉錄 ${transcription.transcribe_seconds.toFixed(1)} 秒（RTF ${factor.toFixed(2)}）`;
+      const lines = [
+        `完成：音檔 ${transcription.audio_seconds.toFixed(1)} 秒，轉錄 ${transcription.transcribe_seconds.toFixed(1)} 秒（RTF ${factor.toFixed(2)}）`,
+        `轉錄：${describePhases(transcription.phases)}`,
+      ];
       this.dispatch("loaded", { target: window, detail: transcription });
       if (this.translateValue) {
-        const translated = await translateSegments(
+        const translation = await translateSegments(
           transcription.segments,
           this.languageTarget.value,
         );
         this.dispatch("loaded", {
           target: window,
-          detail: { segments: translated },
+          detail: { segments: translation.segments },
         });
+        lines.push(`翻譯：${describePhases(translation.phases)}`);
       }
-      this.statusTarget.textContent = `完成：${summary}`;
+      this.statusTarget.textContent = lines.join("\n");
     } catch (error) {
       this.statusTarget.textContent = `失敗：${String(error)}`;
     } finally {
       this.running = false;
+      this.bar()?.setAttribute("hidden", "");
     }
+  }
+
+  private bar(): HTMLProgressElement | undefined {
+    return this.hasBarTarget ? this.barTarget : undefined;
   }
 
   private isHidden(): boolean {

@@ -3,37 +3,38 @@ import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 
-import { listenProgress } from "../progress";
+import { describePhases, followProgress, type PhaseTiming } from "../progress";
 import type { Segment } from "./transcript_controller";
 
-interface Translation {
+export interface Translation {
   segments: Segment[];
+  phases: PhaseTiming[];
 }
 
-export async function translateSegments(
+export function translateSegments(
   segments: Segment[],
   target: string,
-): Promise<Segment[]> {
-  const translation = await invoke<Translation>("translate", {
-    segments,
-    target,
-  });
-  return translation.segments;
+): Promise<Translation> {
+  return invoke<Translation>("translate", { segments, target });
 }
 
 export default class TranslateController extends Controller {
-  static targets = ["status", "language"];
+  static targets = ["status", "language", "bar"];
 
   declare readonly statusTarget: HTMLElement;
   declare readonly languageTarget: HTMLSelectElement;
+  declare readonly barTarget: HTMLProgressElement;
+  declare readonly hasBarTarget: boolean;
 
   private unlisten?: UnlistenFn;
   private running = false;
 
   async connect(): Promise<void> {
-    this.unlisten = await listenProgress((line) => {
-      if (this.running) this.statusTarget.textContent = line;
-    });
+    this.unlisten = await followProgress(
+      this.statusTarget,
+      this.bar(),
+      () => this.running,
+    );
   }
 
   disconnect(): void {
@@ -56,19 +57,24 @@ export default class TranslateController extends Controller {
     try {
       const segments = await invoke<Segment[]>("open_srt", { path });
       this.dispatch("loaded", { target: window, detail: { segments } });
-      const translated = await translateSegments(
+      const translation = await translateSegments(
         segments,
         this.languageTarget.value,
       );
       this.dispatch("loaded", {
         target: window,
-        detail: { segments: translated },
+        detail: { segments: translation.segments },
       });
-      this.statusTarget.textContent = "完成";
+      this.statusTarget.textContent = `完成\n${describePhases(translation.phases)}`;
     } catch (error) {
       this.statusTarget.textContent = `失敗：${String(error)}`;
     } finally {
       this.running = false;
+      this.bar()?.setAttribute("hidden", "");
     }
+  }
+
+  private bar(): HTMLProgressElement | undefined {
+    return this.hasBarTarget ? this.barTarget : undefined;
   }
 }

@@ -29,7 +29,11 @@ describe("TranslateController", () => {
           translateArgs = args;
           return {
             segments: [{ ...segments[0], translation: "皆さん、こんにちは" }],
-            phases: [],
+            phases: [
+              { phase: "prepare", seconds: 0.01 },
+              { phase: "load", seconds: 2.17 },
+              { phase: "translate", seconds: 0.61 },
+            ],
           };
         }
       },
@@ -51,5 +55,15 @@ describe("TranslateController", () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     expect(translateArgs).toEqual({ segments, target: "Japanese" });
+  });
+
+  // @behavior TL-008
+  it("lists how long each Phase took once translated", async () => {
+    document.querySelector("button")!.click();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(
+      document.querySelector('[data-translate-target="status"]')!.textContent,
+    ).toBe("完成\n準備元件 0.0 秒 · 載入模型 2.2 秒 · 翻譯 0.6 秒");
   });
 });

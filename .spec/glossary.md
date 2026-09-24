@@ -24,7 +24,7 @@ What the user asks Tsuzuri to do with one input: Transcribe (media to Transcript
 
 ### Component
 
-An upstream executable Tsuzuri runs as a child process: ffmpeg, whisper.cpp (`whisper-cli`) or llama.cpp (`llama-server`). The Manifest says, per platform, whether it is downloaded or local.
+An upstream executable Tsuzuri runs as a child process: ffmpeg, whisper.cpp (`whisper-cli`) or llama.cpp (`llama-server`). The Manifest says, per platform, whether it is downloaded or vendored.
 
 #### Rejected
 
@@ -32,11 +32,11 @@ An upstream executable Tsuzuri runs as a child process: ffmpeg, whisper.cpp (`wh
 
 ### Manifest
 
-The list built into the app that says, for each platform, how every Component is obtained. A downloaded Component pins its release tag, archive URLs, SHA256 and the executable's path after extraction; upgrading means editing these. A local Component is one upstream publishes no prebuilt executable for on that platform, so the user points at one already installed.
+The list built into the app that says, for each platform, how every Component is obtained. A downloaded Component pins its release tag, archive URLs, SHA256 and the executable's path after extraction; upgrading means editing these. A Vendored Component instead names its executable under `vendor/`.
 
-### Local Component
+### Vendored Component
 
-A Component the Manifest marks local for the running platform - on macOS, whisper-cli and ffmpeg - whose executable path the user chooses, the way a Model is chosen.
+A Component upstream publishes no prebuilt executable for on a platform, so `scripts/vendor.sh` builds it from the pinned upstream source into `vendor/`. Prebuilt downloads come first; vendoring covers the gaps - on macOS, whisper-cli and ffmpeg - and is what CI runs when it has to build.
 
 ### Model
 

@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Vendored Components built by scripts/vendor.sh
+vendor/

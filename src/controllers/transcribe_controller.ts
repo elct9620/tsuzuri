@@ -29,13 +29,22 @@ const MEDIA_EXTENSIONS = [
 ];
 
 export default class TranscribeController extends Controller {
-  static targets = ["status", "translate", "language", "bar"];
+  static targets = [
+    "status",
+    "language",
+    "translate",
+    "translationLanguage",
+    "bar",
+  ];
 
   declare readonly statusTarget: HTMLElement;
   /** Whether to translate the Transcript once transcribed. */
   declare readonly translateTarget: HTMLInputElement;
   declare readonly hasTranslateTarget: boolean;
+  /** The Language spoken in the media file. */
   declare readonly languageTarget: HTMLSelectElement;
+  /** The Language to translate into once transcribed. */
+  declare readonly translationLanguageTarget: HTMLSelectElement;
   declare readonly barTarget: HTMLProgressElement;
   declare readonly hasBarTarget: boolean;
 
@@ -76,7 +85,10 @@ export default class TranscribeController extends Controller {
     this.isRunning = true;
     this.statusTarget.textContent = t("work.preparing");
     try {
-      const transcription = await invoke<Transcription>("transcribe", { path });
+      const transcription = await invoke<Transcription>("transcribe", {
+        path,
+        language: this.languageTarget.value,
+      });
       const factor =
         transcription.transcribe_seconds / transcription.audio_seconds;
       const lines = [
@@ -90,7 +102,9 @@ export default class TranscribeController extends Controller {
         }),
       ];
       if (this.hasTranslateTarget && this.translateTarget.checked) {
-        const translation = await translateProject(this.languageTarget.value);
+        const translation = await translateProject(
+          this.translationLanguageTarget.value,
+        );
         lines.push(
           t("transcribe.translatePhases", {
             phases: phasesSummary(translation.phases),

@@ -22,6 +22,7 @@ const en = {
   transcribe: {
     drop: "Drop a video or audio file here, or",
     choose: "Choose a file",
+    language: "Language",
     translateAfter: "Translate once transcribed",
     done: "Done: {{audio}} s of audio transcribed in {{seconds}} s (RTF {{factor}})",
     transcribePhases: "Transcribe: {{phases}}",

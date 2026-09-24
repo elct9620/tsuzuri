@@ -124,6 +124,17 @@
         <fieldset
           class="fieldset gap-3 rounded-box text-sm border border-base-300 p-4"
         >
+          <label class="flex items-center gap-2"
+            ><span data-i18n="transcribe.language"></span>
+            <select
+              class="select select-sm w-auto"
+              data-transcribe-target="language"
+            >
+              <option value="zh-TW" selected>繁體中文</option>
+              <option value="en">English</option>
+              <option value="ja">日本語</option>
+            </select>
+          </label>
           <label class="flex items-center gap-2">
             <input
               type="checkbox"
@@ -136,7 +147,7 @@
             ><span data-i18n="work.into"></span>
             <select
               class="select select-sm w-auto"
-              data-transcribe-target="language"
+              data-transcribe-target="translationLanguage"
             >
               <option value="en" selected>English</option>
               <option value="ja">日本語</option>

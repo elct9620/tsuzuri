@@ -5,24 +5,31 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::failure::Failure;
+use crate::language::Language;
 use crate::transcript::{Segment, SrtContent, Transcript};
 
-/// The work on one input: the media file, when there is one, and its Transcript.
+/// The work on one input: the media file, when there is one, its Transcript and the Language it is in.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Project {
     pub media: Option<PathBuf>,
     pub transcript: Transcript,
+    pub language: Language,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ProjectView {
     media: Option<PathBuf>,
     segments: Vec<Segment>,
+    language: Language,
 }
 
 impl ProjectView {
     pub fn media(&self) -> Option<&Path> {
         self.media.as_deref()
+    }
+
+    pub fn language(&self) -> Language {
+        self.language
     }
 
     pub fn segments(&self) -> &[Segment] {
@@ -60,6 +67,7 @@ impl CurrentProject {
         self.lock().project.as_ref().map(|project| ProjectView {
             media: project.media.clone(),
             segments: project.transcript.segments.clone(),
+            language: project.language,
         })
     }
 
@@ -124,6 +132,7 @@ fn open(path: PathBuf) -> Result<Project, Failure> {
     Ok(Project {
         media: None,
         transcript: Transcript::from_srt(&srt)?,
+        language: Language::TraditionalChinese,
     })
 }
 
@@ -175,6 +184,7 @@ mod tests {
         let current = CurrentProject::default();
         current.replace(Project {
             media: None,
+            language: Language::TraditionalChinese,
             transcript: Transcript { segments },
         });
         current
@@ -262,6 +272,7 @@ mod tests {
         let (generation, _) = current.snapshot().unwrap();
         current.replace(Project {
             media: None,
+            language: Language::TraditionalChinese,
             transcript: Transcript {
                 segments: vec![segment("另一份", None)],
             },

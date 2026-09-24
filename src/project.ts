@@ -12,6 +12,8 @@ export interface Segment {
 export interface ProjectView {
   media: string | null;
   segments: Segment[];
+  /** The Language code the Transcript is in. */
+  language: string;
 }
 
 /** Calls `show` with the Project Rust holds now and again each time it changes. */

@@ -23,6 +23,7 @@ const zhHant: typeof en = {
   transcribe: {
     drop: "拖入影片或音訊，或",
     choose: "選擇檔案",
+    language: "語言",
     translateAfter: "完成後翻譯",
     done: "完成：音檔 {{audio}} 秒，轉錄 {{seconds}} 秒（RTF {{factor}}）",
     transcribePhases: "轉錄：{{phases}}",

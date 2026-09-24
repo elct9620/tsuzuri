@@ -8,6 +8,7 @@ use tauri_plugin_shell::process::CommandEvent;
 
 use crate::components::{self, Resolver};
 use crate::failure::Failure;
+use crate::language::Language;
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::processes::Processes;
 use crate::project::{self, CurrentProject, Project};
@@ -33,6 +34,12 @@ pub struct Transcription {
     phases: Vec<PhaseTiming>,
 }
 
+/// What to transcribe: the media file and the Language spoken in it.
+pub struct TranscriptionJob<'a> {
+    pub input: &'a Path,
+    pub language: Language,
+}
+
 pub struct Tools {
     pub ffmpeg: PathBuf,
     pub whisper: PathBuf,
@@ -43,10 +50,11 @@ pub async fn run_transcribe<R: Runtime>(
     processes: &Processes,
     tools: &Tools,
     settings: &ModelSettings,
-    input: &Path,
+    job: &TranscriptionJob<'_>,
     work: &Path,
     mut phases: Phases,
 ) -> Result<Transcription, Failure> {
+    let input = job.input;
     let model = settings.ready_path(ModelSlot::Transcription)?;
     std::fs::create_dir_all(work)?;
     let wav = work.join("audio.wav");
@@ -71,7 +79,7 @@ pub async fn run_transcribe<R: Runtime>(
         processes,
         "transcribe",
         &tools.whisper,
-        &transcription_args(model, &wav, &srt_prefix),
+        &transcription_args(model, job.language, &wav, &srt_prefix),
         |line| {
             if line.starts_with(WHISPER_PROCESSING) {
                 enter(app, &mut phases, "transcribe");
@@ -87,6 +95,7 @@ pub async fn run_transcribe<R: Runtime>(
     app.state::<CurrentProject>().replace(Project {
         media: Some(input.to_path_buf()),
         transcript: Transcript::from_srt(&srt)?,
+        language: job.language,
     });
     project::announce(app);
     Ok(Transcription {
@@ -105,12 +114,17 @@ fn conversion_args(input: &Path, wav: &Path) -> Vec<String> {
     args
 }
 
-fn transcription_args(model: &Path, wav: &Path, srt_prefix: &Path) -> Vec<String> {
+fn transcription_args(
+    model: &Path,
+    language: Language,
+    wav: &Path,
+    srt_prefix: &Path,
+) -> Vec<String> {
     vec![
         "-m".to_string(),
         model.to_string_lossy().into_owned(),
         "-l".to_string(),
-        "zh".to_string(),
+        language.whisper_code().to_string(),
         "-osrt".to_string(),
         "-pp".to_string(),
         "-f".to_string(),
@@ -181,7 +195,11 @@ async fn run_step<R: Runtime>(
 }
 
 #[tauri::command]
-pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, Failure> {
+pub async fn transcribe(
+    app: AppHandle,
+    path: PathBuf,
+    language: Language,
+) -> Result<Transcription, Failure> {
     let phases = Phases::start("transcribe", "prepare");
     report(&app, "prepare", None);
     let [ffmpeg, whisper] =
@@ -199,7 +217,11 @@ pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, 
         .join(started_at.to_string());
     let processes = app.state::<Processes>().inner().clone();
 
-    let result = run_transcribe(&app, &processes, &tools, &settings, &path, &work, phases).await;
+    let job = TranscriptionJob {
+        input: &path,
+        language,
+    };
+    let result = run_transcribe(&app, &processes, &tools, &settings, &job, &work, phases).await;
     let _ = std::fs::remove_dir_all(&work);
     result
 }
@@ -222,7 +244,7 @@ mod tests {
 
     fn whisper_script(started_marker: &Path) -> String {
         format!(
-            "#!/bin/sh\ntouch '{}'\nwhile [ $# -gt 0 ]; do case \"$1\" in -of) of=\"$2\"; shift;; esac; shift; done\n\
+            "#!/bin/sh\ntouch '{0}'\necho \"$@\" > '{0}.args'\nwhile [ $# -gt 0 ]; do case \"$1\" in -of) of=\"$2\"; shift;; esac; shift; done\n\
              echo 'whisper_model_load: model size = 1 MB' >&2\n\
              echo \"main: processing '$of.wav' (32000 samples, 2.0 sec)\" >&2\n\
              echo 'whisper_print_progress_callback: progress = 50%' >&2\n\
@@ -273,6 +295,10 @@ mod tests {
         }
 
         async fn transcribe(&self) -> Result<Transcription, Failure> {
+            self.transcribe_in(Language::TraditionalChinese).await
+        }
+
+        async fn transcribe_in(&self, language: Language) -> Result<Transcription, Failure> {
             let processes = Processes::new(self.dir.path().join("processes.json"));
             let input = self.dir.file("lecture.mp4");
             run_transcribe(
@@ -280,7 +306,10 @@ mod tests {
                 &processes,
                 &self.tools,
                 &self.settings,
-                &input,
+                &TranscriptionJob {
+                    input: &input,
+                    language,
+                },
                 &self.dir.path().join("work"),
                 Phases::start("transcribe", "prepare"),
             )
@@ -320,6 +349,21 @@ mod tests {
             .map(|segment| segment.text.clone())
             .collect();
         assert_eq!(texts, vec!["大家好", "今天天氣很好"]);
+    }
+
+    // @behavior TX-015
+    #[tokio::test]
+    async fn transcribes_in_the_chosen_language() {
+        let fixture = Fixture::new("tx-language", TWO_SECOND_WAV);
+
+        fixture.transcribe_in(Language::Japanese).await.unwrap();
+
+        let args = std::fs::read_to_string(fixture.whisper_started.with_extension("args")).unwrap();
+        assert!(args.contains("-l ja "), "whisper-cli ran with {args}");
+        assert_eq!(
+            fixture.project().view().unwrap().language(),
+            Language::Japanese
+        );
     }
 
     // @behavior PJ-002
@@ -450,7 +494,10 @@ mod tests {
             &processes,
             &tools,
             &settings,
-            &media,
+            &TranscriptionJob {
+                input: &media,
+                language: Language::TraditionalChinese,
+            },
             &dir.path().join("work"),
             Phases::start("transcribe", "prepare"),
         )

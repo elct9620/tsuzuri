@@ -9,14 +9,19 @@ describe("TranscribeController", () => {
   let application: Application;
   let transcription: Promise<unknown>;
   let translated: unknown;
+  let transcribed: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
   beforeEach(async () => {
     document.body.innerHTML = `
       <div data-controller="transcribe">
-        <input type="checkbox" data-transcribe-target="translate">
         <select data-transcribe-target="language">
+          <option value="zh-TW">繁體中文</option>
+          <option value="en" selected>English</option>
+        </select>
+        <input type="checkbox" data-transcribe-target="translate">
+        <select data-transcribe-target="translationLanguage">
           <option value="en">English</option>
           <option value="ja" selected>日本語</option>
         </select>
@@ -29,7 +34,10 @@ describe("TranscribeController", () => {
     translated = undefined;
     mockIPC(
       (command, args) => {
-        if (command === "transcribe") return transcription;
+        if (command === "transcribe") {
+          transcribed = args;
+          return transcription;
+        }
         if (command === "translate") {
           translated = args;
           return { phases: [] };
@@ -111,5 +119,21 @@ describe("TranscribeController", () => {
     await controller().transcribe("/media/lecture.mp4");
 
     expect(translated).toEqual({ target: "ja" });
+  });
+
+  // @behavior TX-016
+  it("transcribes in the selected Language", async () => {
+    transcription = Promise.resolve({
+      audio_seconds: 1,
+      transcribe_seconds: 1,
+      phases: [],
+    });
+
+    await controller().transcribe("/media/lecture.mp4");
+
+    expect(transcribed).toEqual({
+      path: "/media/lecture.mp4",
+      language: "en",
+    });
   });
 });

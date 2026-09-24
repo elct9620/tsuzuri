@@ -78,6 +78,7 @@ describe("TabsController", () => {
         <main data-controller="tabs project" data-action="transcribe:finished->tabs#showEdit translate:finished->tabs#showEdit project:opened->tabs#showTranslate">
           <button id="open" data-action="project#openSrt">從 SRT 建立</button>
           <section data-tab="transcribe" data-tabs-target="panel" data-controller="transcribe">
+            <select data-transcribe-target="language"><option value="zh-TW">繁體中文</option></select>
             <p data-transcribe-target="status"></p>
           </section>
           <section data-tab="translate" data-tabs-target="panel" data-controller="translate" hidden>

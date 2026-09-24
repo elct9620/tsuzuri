@@ -20,4 +20,13 @@ impl Language {
             Language::Japanese => "Japanese",
         }
     }
+
+    /// The code whisper-cli's `-l` takes.
+    pub fn whisper_code(self) -> &'static str {
+        match self {
+            Language::TraditionalChinese => "zh",
+            Language::English => "en",
+            Language::Japanese => "ja",
+        }
+    }
 }

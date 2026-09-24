@@ -20,6 +20,7 @@ describe("TranslateController", () => {
   async function holdProject(): Promise<void> {
     project = {
       media: null,
+      language: "zh-TW",
       segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
     };
     await emit("project-changed");

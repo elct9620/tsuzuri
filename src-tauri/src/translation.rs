@@ -244,6 +244,7 @@ mod tests {
     fn project_of(segments: Vec<Segment>) -> Project {
         Project {
             media: None,
+            language: Language::TraditionalChinese,
             transcript: Transcript { segments },
         }
     }

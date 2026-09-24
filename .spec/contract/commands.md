@@ -24,18 +24,18 @@ pub fn choose_model(app: AppHandle, slot: ModelSlot, path: PathBuf) -> Result<Mo
 
 ## `component_statuses`
 
-Whether each Component is ready to run, and where it was found.
+Whether each Component is ready to run, and where it was found. Finding them runs executables, so it runs off the main thread and the window keeps drawing meanwhile.
 
 ```rust
-pub fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {}
+pub async fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {}
 ```
 
 ## `choose_component`
 
-Remember an executable for one Component and answer the statuses afterwards.
+Remember an executable for one Component and answer the statuses afterwards, found off the main thread like `component_statuses`.
 
 ```rust
-pub fn choose_component(app: AppHandle, name: String, path: PathBuf) -> Result<Vec<ComponentStatus>, String> {}
+pub async fn choose_component(app: AppHandle, name: String, path: PathBuf) -> Result<Vec<ComponentStatus>, String> {}
 ```
 
 ## `transcribe`

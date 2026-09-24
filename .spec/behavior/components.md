@@ -71,3 +71,11 @@ Finding every Component the running platform needs before a Mode runs: the path 
 | Given | no executable chosen, none found by Detection, and a Bundled Variant that answers its version flag |
 | When | its status is read |
 | Then | it reads as ready at the bundled path |
+
+## `CP-016` Logging how long finding a Component took
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component found by Detection |
+| When | its status is found |
+| Then | the log holds a line naming the Component, where it was found and the seconds it took |

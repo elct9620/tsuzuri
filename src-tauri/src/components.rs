@@ -3,9 +3,10 @@ pub mod detection;
 use std::collections::HashMap;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use tauri::{async_runtime, AppHandle, Manager};
 
 const BUNDLED_DIR: &str = "components";
 const CHOICES_FILE: &str = "components.json";
@@ -147,7 +148,27 @@ impl Resolver {
         })
     }
 
+    /// Finds where `component` is, logging where it was found and how long finding it took.
     pub fn status(&self, component: &Component) -> ComponentStatus {
+        let started = Instant::now();
+        let status = self.find(component);
+        let seconds = started.elapsed().as_secs_f64();
+        match (&status.path, status.origin) {
+            (Some(path), Some(origin)) => log::info!(
+                "components: {} found ({origin:?}) at {} in {seconds:.2}s",
+                component.name,
+                path.display()
+            ),
+            _ => log::info!(
+                "components: {} not ready after {seconds:.2}s: {}",
+                component.name,
+                status.hint.as_deref().unwrap_or_default()
+            ),
+        }
+        status
+    }
+
+    fn find(&self, component: &Component) -> ComponentStatus {
         let found = |path: PathBuf, origin| ComponentStatus {
             name: component.name.clone(),
             ready: true,
@@ -221,13 +242,20 @@ fn statuses(resolver: &Resolver) -> Vec<ComponentStatus> {
         .collect()
 }
 
-#[tauri::command]
-pub fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {
-    Ok(statuses(&Resolver::of(&app)?))
+/// Finds every Component on the blocking pool, since finding one runs it.
+async fn statuses_off_the_main_thread(resolver: Resolver) -> Result<Vec<ComponentStatus>, String> {
+    async_runtime::spawn_blocking(move || statuses(&resolver))
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
-pub fn choose_component(
+pub async fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {
+    statuses_off_the_main_thread(Resolver::of(&app)?).await
+}
+
+#[tauri::command]
+pub async fn choose_component(
     app: AppHandle,
     name: String,
     path: PathBuf,
@@ -242,13 +270,13 @@ pub fn choose_component(
         .choices
         .save(&config)
         .map_err(|error| error.to_string())?;
-    Ok(statuses(&resolver))
+    statuses_off_the_main_thread(resolver).await
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_support::TempDir;
+    use crate::test_support::{captured_logs, TempDir};
 
     fn tool() -> Component {
         component("tool", "tool", "--version", "brew install tool")
@@ -359,5 +387,27 @@ mod tests {
 
         assert!(!status.ready);
         assert!(status.hint.unwrap().contains("does not run"));
+    }
+
+    // @behavior CP-016
+    #[cfg(unix)]
+    #[test]
+    fn logs_where_a_component_was_found_and_how_long_it_took() {
+        let dir = TempDir::new("cp-log");
+        let installed = script(&dir.path().join("bin"), "tool", 0);
+        let mut resolver = resolver(&dir);
+        resolver.search_dirs = vec![dir.path().join("bin")];
+
+        let logs = captured_logs(|| {
+            resolver.status(&tool());
+        });
+
+        let expected = format!(
+            "components: tool found (Detected) at {} in ",
+            installed.display()
+        );
+        assert_eq!(logs.len(), 1);
+        assert!(logs[0].starts_with(&expected), "{}", logs[0]);
+        assert!(logs[0].ends_with('s'));
     }
 }

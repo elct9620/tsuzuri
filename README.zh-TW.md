@@ -57,11 +57,14 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # 對照 .spec/ 檢查程式碼
 ```
 
-Tsuzuri 依序使用：在 App 指定的執行檔、偵測到的已安裝版本（Homebrew、Nix、`PATH`）、為該平台釘版的上游預編譯版。macOS 沒有 whisper-cli 與 ffmpeg 的預編譯版，Linux 沒有 ffmpeg 的預編譯版；開發時請先編譯到 `vendor/`，debug build 會優先使用。需要 cmake 與 make：
+Tsuzuri 依序使用：在 App 指定的執行檔、偵測到的已安裝版本（Homebrew、Nix、`PATH`）、為該平台釘版的上游預編譯版。macOS 沒有 whisper-cli 與 ffmpeg 的預編譯版，Linux 沒有 ffmpeg 的預編譯版；開發時請先編譯到 `vendor/`，debug build 會優先使用。`scripts/vendor.sh` 依 [`components.json`](components.json) 釘住的原始程式碼編譯 whisper-cli、llama-server 與 ffmpeg，沒有指定變體時使用該平台列出的第一個。需要 cmake、make 與 jq；Linux 的 OpenBLAS、Vulkan 版還需要 pkg-config、libopenblas-dev、libvulkan-dev、glslc 與 spirv-headers，Windows 則在 MSYS2 UCRT64 裡編譯：
 
 ```bash
-scripts/vendor.sh
+scripts/vendor.sh               # 全部元件
+scripts/vendor.sh whisper cpu   # 單一元件、單一變體
 ```
+
+CI 在 `.github/workflows/components.yml` 以同樣方式編譯全部變體，並依釘版分別快取。
 
 前端是純 TypeScript，Stimulus controller 放在 `src/controllers/`。設計請見 [docs/design.md](docs/design.md)。
 

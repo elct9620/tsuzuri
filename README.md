@@ -57,11 +57,14 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # check code against .spec/
 ```
 
-Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else downloads the upstream build pinned for the platform. Nothing prebuilt exists for whisper-cli and ffmpeg on macOS, nor for ffmpeg on Linux; for development, build them into `vendor/`, which debug builds look in first. It needs cmake and make:
+Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else downloads the upstream build pinned for the platform. Nothing prebuilt exists for whisper-cli and ffmpeg on macOS, nor for ffmpeg on Linux; for development, build them into `vendor/`, which debug builds look in first. `scripts/vendor.sh` builds whisper-cli, llama-server and ffmpeg from the source [`components.json`](components.json) pins, each as the first Variant it lists for the platform unless one is named. It needs cmake, make and jq; Linux OpenBLAS and Vulkan builds also need pkg-config, libopenblas-dev, libvulkan-dev, glslc and spirv-headers, and Windows builds run in MSYS2 UCRT64:
 
 ```bash
-scripts/vendor.sh
+scripts/vendor.sh               # every Component
+scripts/vendor.sh whisper cpu   # one Component, one Variant
 ```
+
+CI builds every Variant the same way in `.github/workflows/components.yml`, caching each by its pin.
 
 The frontend is plain TypeScript with [Stimulus](https://stimulus.hotwired.dev/) controllers under `src/controllers/`. The design is in [docs/design.md](docs/design.md).
 

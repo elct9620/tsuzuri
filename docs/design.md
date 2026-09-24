@@ -45,16 +45,16 @@ Tsuzuri（綴り）在本機把影片與音訊轉成字幕，並提供翻譯與�
 |---|---|---|
 | 1 字幕資料 | 🚧 | TR-001～006。尚缺說話者標籤 |
 | 2 行程 | ✅ | PR-001～004；Windows 的 `taskkill` 路徑只在 CI 編譯過 |
-| 3 元件 | 🚧 | CP-001～014：尋找順序、下載、偵測。尚缺內建變體、自行編譯、隨版本附上 ffmpeg 原始程式碼 |
+| 3 元件 | 🚧 | CP-001～014：尋找順序、下載、偵測；CI 依 Build Manifest 編譯全部變體。尚缺放進安裝檔、自動選擇變體、隨版本附上 ffmpeg 原始程式碼 |
 | 4 模型 | ✅ | MD-001～005 |
 | 5 工作流程 | 📋 | 目前三種模式寫死在程式裡 |
 | 6 轉錄模組 | 🚧 | TX-001～007。尚缺語言選擇、細緻進度、取消 |
 | 7 翻譯模組 | 🚧 | TL-001～006：逐段翻譯。尚缺分批、翻譯詞彙表、滾動摘要、自我修復、可調整的 context |
 | 8 字幕校對與儲存 | 🚧 | ED-001～002：編輯文字、另存 SRT。尚缺影片預覽、時間軸對齊、說話者、自動儲存 |
 | 9 首次設定引導 | 📋 | |
-| 10 建置與釋出 | 🚧 | CI 檢查與三平台打包完成；尚缺 release-please、自動更新 |
+| 10 建置與釋出 | 🚧 | CI 檢查、三平台打包、元件建置完成；尚缺 release-please、自動更新 |
 
-✅ 完成、🚧 進行中、📋 未開始。章節依實作的相依關係排列，對照 `71eed5f`。
+✅ 完成、🚧 進行中、📋 未開始。章節依實作的相依關係排列，對照 `c86c0d0`。
 
 ### 0.4 平台與變體
 
@@ -152,11 +152,11 @@ SRT 是 Transcript 在磁碟上的唯一格式：whisper-cli 輸出它、使用�
 
 | 平台 | 編譯環境 |
 |---|---|
-| Windows | GitHub Actions 的 Windows runner 原生編譯 |
-| Linux | GitHub Actions 的 Linux runner |
-| macOS | GitHub Actions 的 macOS runner |
+| Windows | GitHub Actions 的 Windows runner，在 MSYS2 UCRT64 編譯，附上執行需要的 DLL |
+| Linux | GitHub Actions 的 Linux runner，使用系統的 OpenBLAS、Vulkan 函式庫 |
+| macOS | GitHub Actions 的 macOS runner，靜態連結 |
 
-原始程式碼的版本與 SHA256 釘在 `scripts/vendor.sh`，CI 與開發機跑同一支腳本。開發時的 debug build 會先偵測 `vendor/`，release build 不引用它。
+原始程式碼的版本、SHA256 與各平台的變體記在 `components.json`（Build Manifest），CI 與開發機跑同一支 `scripts/vendor.sh`。ffmpeg 的 `configure` 在 Windows 需要 MSYS2，所以 Windows 全部在那裡編譯。開發時的 debug build 會先偵測 `vendor/`，release build 不引用它。
 
 ### 3.4 授權
 
@@ -373,9 +373,15 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
                    │ 全部通過，且是 push main 或手動觸發
                    ▼
               build × 3 平台 ─▶ 上傳產物
+
+  改動 Build Manifest 或建置腳本、手動觸發、被釋出流程呼叫
+     ─▶ components × 元件、變體、平台（build-component action）
+             │ cache 命中就跳過編譯
+             ▼
+          確認能回應版本參數 ─▶ 上傳元件產物
 ```
 
-action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版本與 lockfile 為 key，存檔前移除會重新編譯的產物。
+action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版本與 lockfile 為 key，存檔前移除會重新編譯的產物。元件 cache 以該元件的釘版與建置腳本為 key，只重編改到的元件。
 
 ### 10.2 產物與授權聲明
 
@@ -415,7 +421,7 @@ updater 用自己的金鑰簽章，跟作業系統要求的程式碼簽章無關
 | Windows 專屬程式碼沒有自動測試 | 殘留行程清理可能失效 | Windows 實機測試；補 Windows 測試 |
 | CSP 關閉 | 少一層防護 | 設定 CSP 後確認介面正常 |
 | Vulkan、OpenBLAS 變體實際多快 | 自動選擇順序可能要調整 | 在不同硬體上量 RTF |
-| Linux 系統函式庫 | 缺 libgomp1、libvulkan1 時跑不起來 | `.deb` 宣告相依 |
+| Linux 系統函式庫 | 缺 libgomp1、libopenblas0、libvulkan1 時跑不起來 | `.deb` 宣告相依 |
 | 殘留行程只比對名稱 | PID 重用時可能誤殺同名行程 | 評估是否加上啟動時間比對 |
 | macOS 產物只有 linker 產生的 ad-hoc 簽章，且不完整 | 下載後顯示「已損毀」，沒有「強制打開」可選，只能用 `xattr` 移除隔離標記 | 打包時以 `signingIdentity: "-"` 完整 ad-hoc 簽章後，確認出現「強制打開」 |
 | updater 私鑰遺失 | 已安裝的版本無法再自動更新 | 在 CI 以外另存私鑰備份 |

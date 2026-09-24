@@ -15,7 +15,9 @@ describe("TranscriptController", () => {
   }
 
   function fields(): string[] {
-    return [...document.querySelectorAll<HTMLTextAreaElement>("li textarea")].map((field) => field.value);
+    return [
+      ...document.querySelectorAll<HTMLTextAreaElement>("li textarea"),
+    ].map((field) => field.value);
   }
 
   beforeEach(async () => {
@@ -51,14 +53,26 @@ describe("TranscriptController", () => {
       { start_ms: 62_003, end_ms: 64_500, text: "今天天氣很好" },
     ]);
 
-    const times = [...document.querySelectorAll("li time")].map((time) => time.textContent);
-    expect(times).toEqual(["00:00:00.000 → 00:00:01.000", "00:01:02.003 → 00:01:04.500"]);
+    const times = [...document.querySelectorAll("li time")].map(
+      (time) => time.textContent,
+    );
+    expect(times).toEqual([
+      "00:00:00.000 → 00:00:01.000",
+      "00:01:02.003 → 00:01:04.500",
+    ]);
     expect(fields()).toEqual(["大家好", "今天天氣很好"]);
   });
 
   // @behavior TL-006
   it("shows each translation under its segment", () => {
-    load("translate:loaded", [{ start_ms: 0, end_ms: 1000, text: "大家好", translation: "Hello everyone" }]);
+    load("translate:loaded", [
+      {
+        start_ms: 0,
+        end_ms: 1000,
+        text: "大家好",
+        translation: "Hello everyone",
+      },
+    ]);
 
     expect(fields()).toEqual(["大家好", "Hello everyone"]);
   });
@@ -66,21 +80,35 @@ describe("TranscriptController", () => {
   // @behavior ED-001
   it("saves the edited text of a segment", async () => {
     load("transcribe:loaded", [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }]);
-    document.querySelector<HTMLTextAreaElement>("textarea.text")!.value = "逐字稿";
+    document.querySelector<HTMLTextAreaElement>("textarea.text")!.value =
+      "逐字稿";
 
     document.querySelector<HTMLButtonElement>("#save-original")!.click();
     await settle();
 
-    expect(saved).toEqual({ path: "/subtitles/out.srt", segments: [{ start_ms: 0, end_ms: 1000, text: "逐字稿" }] });
+    expect(saved).toEqual({
+      path: "/subtitles/out.srt",
+      segments: [{ start_ms: 0, end_ms: 1000, text: "逐字稿" }],
+    });
   });
 
   // @behavior ED-002
   it("saves the translations in place of the original text", async () => {
-    load("translate:loaded", [{ start_ms: 0, end_ms: 1000, text: "大家好", translation: "Hello everyone" }]);
+    load("translate:loaded", [
+      {
+        start_ms: 0,
+        end_ms: 1000,
+        text: "大家好",
+        translation: "Hello everyone",
+      },
+    ]);
 
     document.querySelector<HTMLButtonElement>("#save-translation")!.click();
     await settle();
 
-    expect(saved).toEqual({ path: "/subtitles/out.srt", segments: [{ start_ms: 0, end_ms: 1000, text: "Hello everyone" }] });
+    expect(saved).toEqual({
+      path: "/subtitles/out.srt",
+      segments: [{ start_ms: 0, end_ms: 1000, text: "Hello everyone" }],
+    });
   });
 });

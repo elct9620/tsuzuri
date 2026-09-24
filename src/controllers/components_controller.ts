@@ -30,7 +30,9 @@ export default class ComponentsController extends Controller {
     const path = await open({ multiple: false, directory: false });
     if (!name || path === null) return;
 
-    this.render(await invoke<ComponentStatus[]>("choose_component", { name, path }));
+    this.render(
+      await invoke<ComponentStatus[]>("choose_component", { name, path }),
+    );
   }
 
   private render(statuses: ComponentStatus[]): void {
@@ -38,11 +40,17 @@ export default class ComponentsController extends Controller {
       const status = this.statusFor(name);
       if (!status) continue;
       status.textContent =
-        ready && path ? `${ORIGIN_LABELS[origin ?? ""] ?? "已就緒"}：${path}` : hint ? `未就緒（${hint}）` : "未就緒";
+        ready && path
+          ? `${ORIGIN_LABELS[origin ?? ""] ?? "已就緒"}：${path}`
+          : hint
+            ? `未就緒（${hint}）`
+            : "未就緒";
     }
   }
 
   private statusFor(name: string): HTMLElement | undefined {
-    return this.statusTargets.find((status) => status.dataset.component === name);
+    return this.statusTargets.find(
+      (status) => status.dataset.component === name,
+    );
   }
 }

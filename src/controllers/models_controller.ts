@@ -34,13 +34,20 @@ export default class ModelsController extends Controller {
     });
     if (path === null) return;
 
-    this.render(await invoke<ModelSettingsView>("choose_model", { slot, path }));
+    this.render(
+      await invoke<ModelSettingsView>("choose_model", { slot, path }),
+    );
   }
 
   private render(settings: ModelSettingsView): void {
     for (const status of this.statusTargets) {
       const { path, exists } = settings[status.dataset.slot as ModelSlot];
-      status.textContent = path === null ? "尚未指定" : exists ? path : `找不到 ${path}，請重新指定`;
+      status.textContent =
+        path === null
+          ? "尚未指定"
+          : exists
+            ? path
+            : `找不到 ${path}，請重新指定`;
       status.classList.toggle("missing", path !== null && !exists);
     }
   }

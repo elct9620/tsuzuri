@@ -13,7 +13,9 @@ const STEP_LABELS: Record<string, string> = {
 };
 
 /** Calls `show` with a readable line for every `pipeline-progress` event the backend emits. */
-export function listenProgress(show: (line: string) => void): Promise<UnlistenFn> {
+export function listenProgress(
+  show: (line: string) => void,
+): Promise<UnlistenFn> {
   return listen<PipelineProgress>("pipeline-progress", ({ payload }) => {
     show(`${STEP_LABELS[payload.step] ?? payload.step} ${payload.percent}%`);
   });

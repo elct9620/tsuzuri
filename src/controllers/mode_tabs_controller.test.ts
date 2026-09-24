@@ -25,18 +25,34 @@ describe("ModeTabsController", () => {
   });
 
   it("shows only the panel of the selected mode", () => {
-    document.querySelector<HTMLElement>('[data-mode-tabs-target="tab"][data-mode="translate"]')!.click();
+    document
+      .querySelector<HTMLElement>(
+        '[data-mode-tabs-target="tab"][data-mode="translate"]',
+      )!
+      .click();
 
-    const visible = [...document.querySelectorAll<HTMLElement>('[data-mode-tabs-target="panel"]')]
+    const visible = [
+      ...document.querySelectorAll<HTMLElement>(
+        '[data-mode-tabs-target="panel"]',
+      ),
+    ]
       .filter((panel) => !panel.hidden)
       .map((panel) => panel.dataset.mode);
     expect(visible).toEqual(["translate"]);
   });
 
   it("marks only the clicked tab as selected", () => {
-    document.querySelector<HTMLElement>('[data-mode-tabs-target="tab"][data-mode="translate"]')!.click();
+    document
+      .querySelector<HTMLElement>(
+        '[data-mode-tabs-target="tab"][data-mode="translate"]',
+      )!
+      .click();
 
-    const selected = [...document.querySelectorAll<HTMLElement>('[data-mode-tabs-target="tab"]')]
+    const selected = [
+      ...document.querySelectorAll<HTMLElement>(
+        '[data-mode-tabs-target="tab"]',
+      ),
+    ]
       .filter((tab) => tab.getAttribute("aria-selected") === "true")
       .map((tab) => tab.dataset.mode);
     expect(selected).toEqual(["translate"]);

@@ -43,11 +43,14 @@ export default class TranscriptController extends Controller {
         const time = document.createElement("time");
         time.textContent = `${formatTime(segment.start_ms)} → ${formatTime(segment.end_ms)}`;
         item.append(time, editor("text", segment.text));
-        if (segment.translation !== undefined) item.append(editor("translation", segment.translation));
+        if (segment.translation !== undefined)
+          item.append(editor("translation", segment.translation));
         return item;
       }),
     );
-    const hasTranslation = this.segments.some((segment) => segment.translation !== undefined);
+    const hasTranslation = this.segments.some(
+      (segment) => segment.translation !== undefined,
+    );
     this.emptyTarget.hidden = this.segments.length > 0;
     this.actionsTarget.hidden = this.segments.length === 0;
     this.saveTranslationTarget.hidden = !hasTranslation;
@@ -62,14 +65,18 @@ export default class TranscriptController extends Controller {
   }
 
   private async save(field: "text" | "translation"): Promise<void> {
-    const path = await save({ filters: [{ name: "SRT", extensions: ["srt"] }] });
+    const path = await save({
+      filters: [{ name: "SRT", extensions: ["srt"] }],
+    });
     if (path === null) return;
 
     const items = [...this.listTarget.children];
     const segments = this.segments.map((segment, index) => ({
       start_ms: segment.start_ms,
       end_ms: segment.end_ms,
-      text: items[index].querySelector<HTMLTextAreaElement>(`textarea.${field}`)?.value ?? "",
+      text:
+        items[index].querySelector<HTMLTextAreaElement>(`textarea.${field}`)
+          ?.value ?? "",
     }));
     await invoke("save_srt", { path, segments });
   }

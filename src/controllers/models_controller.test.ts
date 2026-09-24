@@ -15,7 +15,9 @@ describe("ModelsController", () => {
   }
 
   function statusOf(slot: string): string {
-    return document.querySelector(`[data-models-target="status"][data-slot="${slot}"]`)!.textContent!;
+    return document.querySelector(
+      `[data-models-target="status"][data-slot="${slot}"]`,
+    )!.textContent!;
   }
 
   beforeEach(() => {

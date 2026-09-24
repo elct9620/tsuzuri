@@ -6,7 +6,10 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { listenProgress } from "../progress";
 import type { Segment } from "./transcript_controller";
 
-export function translateSegments(segments: Segment[], target: string): Promise<Segment[]> {
+export function translateSegments(
+  segments: Segment[],
+  target: string,
+): Promise<Segment[]> {
   return invoke<Segment[]>("translate", { segments, target });
 }
 
@@ -45,8 +48,14 @@ export default class TranslateController extends Controller {
     try {
       const segments = await invoke<Segment[]>("open_srt", { path });
       this.dispatch("loaded", { target: window, detail: { segments } });
-      const translated = await translateSegments(segments, this.languageTarget.value);
-      this.dispatch("loaded", { target: window, detail: { segments: translated } });
+      const translated = await translateSegments(
+        segments,
+        this.languageTarget.value,
+      );
+      this.dispatch("loaded", {
+        target: window,
+        detail: { segments: translated },
+      });
       this.statusTarget.textContent = "完成";
     } catch (error) {
       this.statusTarget.textContent = `失敗：${String(error)}`;

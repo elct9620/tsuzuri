@@ -9,15 +9,21 @@ describe("ComponentsController", () => {
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-  async function mountWith(handlers: Record<string, (args?: unknown) => unknown>): Promise<void> {
-    mockIPC((command, args) => handlers[command]?.(args), { shouldMockEvents: true });
+  async function mountWith(
+    handlers: Record<string, (args?: unknown) => unknown>,
+  ): Promise<void> {
+    mockIPC((command, args) => handlers[command]?.(args), {
+      shouldMockEvents: true,
+    });
     application = Application.start();
     application.register("components", ComponentsController);
     await settle();
   }
 
   function statusOf(name: string): string {
-    return document.querySelector(`[data-components-target="status"][data-component="${name}"]`)!.textContent!;
+    return document.querySelector(
+      `[data-components-target="status"][data-component="${name}"]`,
+    )!.textContent!;
   }
 
   beforeEach(() => {
@@ -40,7 +46,13 @@ describe("ComponentsController", () => {
   it("shows a component whose executable is in place as ready", async () => {
     await mountWith({
       component_statuses: () => [
-        { name: "llama", ready: true, path: "/components/llama/bin/llama-server", origin: "bundled", hint: null },
+        {
+          name: "llama",
+          ready: true,
+          path: "/components/llama/bin/llama-server",
+          origin: "bundled",
+          hint: null,
+        },
       ],
     });
 
@@ -51,17 +63,33 @@ describe("ComponentsController", () => {
   it("says why a component is not ready", async () => {
     await mountWith({
       component_statuses: () => [
-        { name: "llama", ready: false, path: null, origin: null, hint: "the bundled llama-server does not run" },
+        {
+          name: "llama",
+          ready: false,
+          path: null,
+          origin: null,
+          hint: "the bundled llama-server does not run",
+        },
       ],
     });
 
-    expect(statusOf("llama")).toBe("未就緒（the bundled llama-server does not run）");
+    expect(statusOf("llama")).toBe(
+      "未就緒（the bundled llama-server does not run）",
+    );
   });
 
   // @behavior CP-013
   it("shows the path chosen for a component", async () => {
     await mountWith({
-      component_statuses: () => [{ name: "llama", ready: true, path: "/usr/bin/llama-server", origin: "detected", hint: null }],
+      component_statuses: () => [
+        {
+          name: "llama",
+          ready: true,
+          path: "/usr/bin/llama-server",
+          origin: "detected",
+          hint: null,
+        },
+      ],
       "plugin:dialog|open": () => "/opt/llama/llama-server",
       choose_component: (args) => {
         const { name, path } = args as { name: string; path: string };

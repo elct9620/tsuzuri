@@ -14,77 +14,236 @@
         <h1>Tsuzuri</h1>
       </header>
 
-      <section class="panel" aria-labelledby="components-title" data-controller="components">
+      <section
+        class="panel"
+        aria-labelledby="components-title"
+        data-controller="components"
+      >
         <h2 id="components-title">執行環境</h2>
         <ul class="components">
-          <li>ffmpeg <span class="status" data-components-target="status" data-component="ffmpeg">檢查中</span> <button type="button" data-component="ffmpeg" data-action="components#choose">指定</button></li>
-          <li>whisper.cpp <span class="status" data-components-target="status" data-component="whisper">檢查中</span> <button type="button" data-component="whisper" data-action="components#choose">指定</button></li>
-          <li>llama.cpp <span class="status" data-components-target="status" data-component="llama">檢查中</span> <button type="button" data-component="llama" data-action="components#choose">指定</button></li>
+          <li>
+            ffmpeg
+            <span
+              class="status"
+              data-components-target="status"
+              data-component="ffmpeg"
+              >檢查中</span
+            >
+            <button
+              type="button"
+              data-component="ffmpeg"
+              data-action="components#choose"
+            >
+              指定
+            </button>
+          </li>
+          <li>
+            whisper.cpp
+            <span
+              class="status"
+              data-components-target="status"
+              data-component="whisper"
+              >檢查中</span
+            >
+            <button
+              type="button"
+              data-component="whisper"
+              data-action="components#choose"
+            >
+              指定
+            </button>
+          </li>
+          <li>
+            llama.cpp
+            <span
+              class="status"
+              data-components-target="status"
+              data-component="llama"
+              >檢查中</span
+            >
+            <button
+              type="button"
+              data-component="llama"
+              data-action="components#choose"
+            >
+              指定
+            </button>
+          </li>
         </ul>
       </section>
 
-      <section class="panel" aria-labelledby="models-title" data-controller="models">
+      <section
+        class="panel"
+        aria-labelledby="models-title"
+        data-controller="models"
+      >
         <h2 id="models-title">模型</h2>
         <dl class="models">
           <dt>轉錄</dt>
           <dd>
-            <span data-models-target="status" data-slot="transcription">尚未指定</span>
-            <button type="button" data-slot="transcription" data-action="models#choose">指定檔案</button>
+            <span data-models-target="status" data-slot="transcription"
+              >尚未指定</span
+            >
+            <button
+              type="button"
+              data-slot="transcription"
+              data-action="models#choose"
+            >
+              指定檔案
+            </button>
           </dd>
           <dt>翻譯</dt>
           <dd>
-            <span data-models-target="status" data-slot="translation">尚未指定</span>
-            <button type="button" data-slot="translation" data-action="models#choose">指定檔案</button>
+            <span data-models-target="status" data-slot="translation"
+              >尚未指定</span
+            >
+            <button
+              type="button"
+              data-slot="translation"
+              data-action="models#choose"
+            >
+              指定檔案
+            </button>
           </dd>
         </dl>
       </section>
 
-      <section class="panel" aria-labelledby="work-title" data-controller="mode-tabs">
+      <section
+        class="panel"
+        aria-labelledby="work-title"
+        data-controller="mode-tabs"
+      >
         <h2 id="work-title">工作</h2>
         <div class="mode-tabs" role="tablist">
-          <button type="button" role="tab" data-mode="transcribe" data-mode-tabs-target="tab" data-action="mode-tabs#select" aria-selected="true">轉錄</button>
-          <button type="button" role="tab" data-mode="translate" data-mode-tabs-target="tab" data-action="mode-tabs#select" aria-selected="false">翻譯</button>
-          <button type="button" role="tab" data-mode="transcribe-and-translate" data-mode-tabs-target="tab" data-action="mode-tabs#select" aria-selected="false">轉錄後翻譯</button>
+          <button
+            type="button"
+            role="tab"
+            data-mode="transcribe"
+            data-mode-tabs-target="tab"
+            data-action="mode-tabs#select"
+            aria-selected="true"
+          >
+            轉錄
+          </button>
+          <button
+            type="button"
+            role="tab"
+            data-mode="translate"
+            data-mode-tabs-target="tab"
+            data-action="mode-tabs#select"
+            aria-selected="false"
+          >
+            翻譯
+          </button>
+          <button
+            type="button"
+            role="tab"
+            data-mode="transcribe-and-translate"
+            data-mode-tabs-target="tab"
+            data-action="mode-tabs#select"
+            aria-selected="false"
+          >
+            轉錄後翻譯
+          </button>
         </div>
-        <div class="mode-panel" role="tabpanel" data-mode="transcribe" data-mode-tabs-target="panel" data-controller="transcribe">
-          <p>拖入影片或音訊，或 <button type="button" data-action="transcribe#choose">選擇檔案</button></p>
+        <div
+          class="mode-panel"
+          role="tabpanel"
+          data-mode="transcribe"
+          data-mode-tabs-target="panel"
+          data-controller="transcribe"
+        >
+          <p>
+            拖入影片或音訊，或
+            <button type="button" data-action="transcribe#choose">
+              選擇檔案
+            </button>
+          </p>
           <p class="progress" data-transcribe-target="status"></p>
         </div>
-        <div class="mode-panel" role="tabpanel" data-mode="translate" data-mode-tabs-target="panel" data-controller="translate" hidden>
-          <p><button type="button" data-action="translate#choose">選擇 SRT 字幕檔</button> <label>翻譯成
-            <select data-translate-target="language">
-              <option value="English" selected>English</option>
-              <option value="Japanese">日本語</option>
-              <option value="Traditional Chinese (Taiwan)">繁體中文</option>
-            </select>
-          </label></p>
+        <div
+          class="mode-panel"
+          role="tabpanel"
+          data-mode="translate"
+          data-mode-tabs-target="panel"
+          data-controller="translate"
+          hidden
+        >
+          <p>
+            <button type="button" data-action="translate#choose">
+              選擇 SRT 字幕檔
+            </button>
+            <label
+              >翻譯成
+              <select data-translate-target="language">
+                <option value="English" selected>English</option>
+                <option value="Japanese">日本語</option>
+                <option value="Traditional Chinese (Taiwan)">繁體中文</option>
+              </select>
+            </label>
+          </p>
           <p class="progress" data-translate-target="status"></p>
         </div>
-        <div class="mode-panel" role="tabpanel" data-mode="transcribe-and-translate" data-mode-tabs-target="panel" data-controller="transcribe" data-transcribe-translate-value="true" hidden>
-          <p>拖入影片或音訊，或 <button type="button" data-action="transcribe#choose">選擇檔案</button> <label>翻譯成
-            <select data-transcribe-target="language">
-              <option value="English" selected>English</option>
-              <option value="Japanese">日本語</option>
-              <option value="Traditional Chinese (Taiwan)">繁體中文</option>
-            </select>
-          </label></p>
+        <div
+          class="mode-panel"
+          role="tabpanel"
+          data-mode="transcribe-and-translate"
+          data-mode-tabs-target="panel"
+          data-controller="transcribe"
+          data-transcribe-translate-value="true"
+          hidden
+        >
+          <p>
+            拖入影片或音訊，或
+            <button type="button" data-action="transcribe#choose">
+              選擇檔案
+            </button>
+            <label
+              >翻譯成
+              <select data-transcribe-target="language">
+                <option value="English" selected>English</option>
+                <option value="Japanese">日本語</option>
+                <option value="Traditional Chinese (Taiwan)">繁體中文</option>
+              </select>
+            </label>
+          </p>
           <p class="progress" data-transcribe-target="status"></p>
         </div>
       </section>
 
-      <section class="panel" aria-labelledby="transcript-title" data-controller="transcript" data-action="transcribe:loaded@window->transcript#show translate:loaded@window->transcript#show">
+      <section
+        class="panel"
+        aria-labelledby="transcript-title"
+        data-controller="transcript"
+        data-action="transcribe:loaded@window->transcript#show translate:loaded@window->transcript#show"
+      >
         <h2 id="transcript-title">字幕</h2>
         <p class="empty" data-transcript-target="empty">尚無內容</p>
         <div class="actions" data-transcript-target="actions" hidden>
-          <button type="button" data-action="transcript#saveOriginal">另存原文 SRT</button>
-          <button type="button" data-transcript-target="saveTranslation" data-action="transcript#saveTranslation" hidden>另存譯文 SRT</button>
+          <button type="button" data-action="transcript#saveOriginal">
+            另存原文 SRT
+          </button>
+          <button
+            type="button"
+            data-transcript-target="saveTranslation"
+            data-action="transcript#saveTranslation"
+            hidden
+          >
+            另存譯文 SRT
+          </button>
         </div>
         <ol class="segments" data-transcript-target="list"></ol>
       </section>
 
       <footer>
         <p>Tsuzuri 以 Apache-2.0 授權釋出。</p>
-        <p>This software uses code of FFmpeg licensed under the LGPLv2.1. Transcription uses whisper.cpp and translation uses llama.cpp, both under the MIT License. Each is bundled with Tsuzuri and runs as a separate program, which an executable you choose or have installed can replace.</p>
+        <p>
+          This software uses code of FFmpeg licensed under the LGPLv2.1.
+          Transcription uses whisper.cpp and translation uses llama.cpp, both
+          under the MIT License. Each is bundled with Tsuzuri and runs as a
+          separate program, which an executable you choose or have installed can
+          replace.
+        </p>
       </footer>
     </main>
   </body>

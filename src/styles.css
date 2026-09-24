@@ -1,5 +1,9 @@
 :root {
-  font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Noto Sans TC",
+    sans-serif;
   font-size: 15px;
   line-height: 1.5;
   color: #1f1f1f;

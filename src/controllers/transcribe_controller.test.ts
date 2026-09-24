@@ -17,7 +17,11 @@ describe("TranscribeController", () => {
       </div>
     `;
     mockWindows("main");
-    mockIPC((command) => (command === "transcribe" ? new Promise(() => {}) : undefined), { shouldMockEvents: true });
+    mockIPC(
+      (command) =>
+        command === "transcribe" ? new Promise(() => {}) : undefined,
+      { shouldMockEvents: true },
+    );
     application = Application.start();
     application.register("transcribe", TranscribeController);
     await settle();
@@ -39,6 +43,8 @@ describe("TranscribeController", () => {
     await emit("pipeline-progress", { step: "transcribe", percent: 40 });
     await settle();
 
-    expect(document.querySelector('[data-transcribe-target="status"]')!.textContent).toBe("轉錄 40%");
+    expect(
+      document.querySelector('[data-transcribe-target="status"]')!.textContent,
+    ).toBe("轉錄 40%");
   });
 });

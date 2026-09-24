@@ -14,7 +14,18 @@ export interface Transcription {
   transcribe_seconds: number;
 }
 
-const MEDIA_EXTENSIONS = ["mp4", "mov", "mkv", "m4a", "mp3", "wav", "flac", "ogg", "opus", "aac"];
+const MEDIA_EXTENSIONS = [
+  "mp4",
+  "mov",
+  "mkv",
+  "m4a",
+  "mp3",
+  "wav",
+  "flac",
+  "ogg",
+  "opus",
+  "aac",
+];
 
 export default class TranscribeController extends Controller {
   static targets = ["status", "language"];
@@ -33,7 +44,11 @@ export default class TranscribeController extends Controller {
         if (this.running) this.statusTarget.textContent = line;
       }),
       await getCurrentWebview().onDragDropEvent(({ payload }) => {
-        if (payload.type === "drop" && !this.isHidden() && payload.paths.length > 0) {
+        if (
+          payload.type === "drop" &&
+          !this.isHidden() &&
+          payload.paths.length > 0
+        ) {
           void this.transcribe(payload.paths[0]);
         }
       }),
@@ -60,12 +75,19 @@ export default class TranscribeController extends Controller {
     this.statusTarget.textContent = "準備中";
     try {
       const transcription = await invoke<Transcription>("transcribe", { path });
-      const factor = transcription.transcribe_seconds / transcription.audio_seconds;
+      const factor =
+        transcription.transcribe_seconds / transcription.audio_seconds;
       const summary = `音檔 ${transcription.audio_seconds.toFixed(1)} 秒，轉錄 ${transcription.transcribe_seconds.toFixed(1)} 秒（RTF ${factor.toFixed(2)}）`;
       this.dispatch("loaded", { target: window, detail: transcription });
       if (this.translateValue) {
-        const translated = await translateSegments(transcription.segments, this.languageTarget.value);
-        this.dispatch("loaded", { target: window, detail: { segments: translated } });
+        const translated = await translateSegments(
+          transcription.segments,
+          this.languageTarget.value,
+        );
+        this.dispatch("loaded", {
+          target: window,
+          detail: { segments: translated },
+        });
       }
       this.statusTarget.textContent = `完成：${summary}`;
     } catch (error) {

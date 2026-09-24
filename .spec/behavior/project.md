@@ -81,3 +81,11 @@ The one Project Rust holds as the single source of truth: what makes it, what ch
 | Given | the toolbar |
 | When | an SRT file is opened as the Project |
 | Then | the Translate tab is shown |
+
+## `PJ-010` Recording the Languages of a translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` |
+| When | it is translated from `ja` into `en` |
+| Then | the Project's Transcript is in `ja` and its translations are in `en` |

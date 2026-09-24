@@ -72,10 +72,10 @@ pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: St
 
 ## `translate`
 
-Run the Translate Mode on the Project into the target Language, given by its code, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The translations are written into the Project; the answer is the seconds each Phase took.
+Run the Translate Mode on the Project from the source Language into the target Language, each given by its code, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The translations and both Languages are written into the Project; the answer is the seconds each Phase took.
 
 ```rust
-pub async fn translate(app: AppHandle, target: Language) -> Result<Translation, Failure> {}
+pub async fn translate(app: AppHandle, source: Language, target: Language) -> Result<Translation, Failure> {}
 ```
 
 ## `save_srt`

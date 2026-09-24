@@ -6,6 +6,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 
 - `src-tauri/src/translation.rs`
 - `src/controllers/translate_controller.test.ts`
+- `src/controllers/transcribe_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 - `src/controllers/tabs_controller.test.ts`
 
@@ -104,3 +105,27 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a ready llama-server and the target Language `ja` |
 | When | a Transcript is translated |
 | Then | the Model is asked for Japanese |
+
+## `TL-014` Naming the source Language to the Model
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and the source Language `ja` |
+| When | a Transcript is translated |
+| Then | the Model is asked to translate from Japanese |
+
+## `TL-015` Translating from the Project's Language
+
+| Step | Statement |
+| --- | --- |
+| Given | the Translate Mode panel and a Project in `ja` |
+| When | translating is started |
+| Then | the Project is translated from `ja` |
+
+## `TL-016` Translating from the Language just transcribed
+
+| Step | Statement |
+| --- | --- |
+| Given | the Transcribe Mode panel set to translate once transcribed |
+| When | a media file is transcribed in `en` |
+| Then | the Project is translated from `en` |

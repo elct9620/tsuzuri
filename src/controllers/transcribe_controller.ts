@@ -5,6 +5,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { open } from "@tauri-apps/plugin-dialog";
 
 import { describeFailure } from "../failure";
+import { t } from "../i18n";
 import { describePhases, followProgress, type PhaseTiming } from "../progress";
 import type { Segment } from "./transcript_controller";
 import { translateSegments } from "./translate_controller";
@@ -75,14 +76,20 @@ export default class TranscribeController extends Controller {
   async transcribe(path: string): Promise<void> {
     if (this.running) return;
     this.running = true;
-    this.statusTarget.textContent = "準備中";
+    this.statusTarget.textContent = t("work.preparing");
     try {
       const transcription = await invoke<Transcription>("transcribe", { path });
       const factor =
         transcription.transcribe_seconds / transcription.audio_seconds;
       const lines = [
-        `完成：音檔 ${transcription.audio_seconds.toFixed(1)} 秒，轉錄 ${transcription.transcribe_seconds.toFixed(1)} 秒（RTF ${factor.toFixed(2)}）`,
-        `轉錄：${describePhases(transcription.phases)}`,
+        t("transcribe.done", {
+          audio: transcription.audio_seconds.toFixed(1),
+          seconds: transcription.transcribe_seconds.toFixed(1),
+          factor: factor.toFixed(2),
+        }),
+        t("transcribe.transcribePhases", {
+          phases: describePhases(transcription.phases),
+        }),
       ];
       this.dispatch("loaded", { target: window, detail: transcription });
       if (this.hasTranslateTarget && this.translateTarget.checked) {
@@ -94,11 +101,17 @@ export default class TranscribeController extends Controller {
           target: window,
           detail: { segments: translation.segments },
         });
-        lines.push(`翻譯：${describePhases(translation.phases)}`);
+        lines.push(
+          t("transcribe.translatePhases", {
+            phases: describePhases(translation.phases),
+          }),
+        );
       }
       this.statusTarget.textContent = lines.join("\n");
     } catch (error) {
-      this.statusTarget.textContent = `失敗：${describeFailure(error)}`;
+      this.statusTarget.textContent = t("work.failed", {
+        reason: describeFailure(error),
+      });
     } finally {
       this.running = false;
       this.bar()?.setAttribute("hidden", "");

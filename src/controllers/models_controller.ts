@@ -2,6 +2,8 @@ import { Controller } from "@hotwired/stimulus";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
+import { t } from "../i18n";
+
 type ModelSlot = "transcription" | "translation";
 
 interface SlotView {
@@ -44,10 +46,10 @@ export default class ModelsController extends Controller {
       const { path, exists } = settings[status.dataset.slot as ModelSlot];
       status.textContent =
         path === null
-          ? "尚未指定"
+          ? t("models.notChosen")
           : exists
             ? path
-            : `找不到 ${path}，請重新指定`;
+            : t("models.missing", { path });
       status.classList.toggle("missing", path !== null && !exists);
     }
   }

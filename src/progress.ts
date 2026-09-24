@@ -1,5 +1,7 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
+import { t } from "./i18n";
+
 interface PipelineProgress {
   phase: string;
   percent: number | null;
@@ -10,19 +12,8 @@ export interface PhaseTiming {
   seconds: number;
 }
 
-const PHASE_LABELS: Record<string, string> = {
-  prepare: "準備元件",
-  convert: "轉檔",
-  load: "載入模型",
-  transcribe: "轉錄",
-  translate: "翻譯",
-};
-
-/** Loading a Model compiles its GPU shaders on first use, which can take half a minute. */
-const LOAD_NOTE = "（第一次使用會比較久）";
-
 function label(phase: string): string {
-  return PHASE_LABELS[phase] ?? phase;
+  return t(`phases.${phase}`, { defaultValue: phase });
 }
 
 /** Calls `show` with a readable line and the percentage, if any, for every `pipeline-progress` event. */
@@ -31,11 +22,12 @@ function listenProgress(
 ): Promise<UnlistenFn> {
   return listen<PipelineProgress>("pipeline-progress", ({ payload }) => {
     const { phase, percent } = payload;
+    // Loading a Model compiles its GPU shaders on first use, which can take half a minute.
     const line =
       percent !== null
-        ? `${label(phase)} ${percent}%`
+        ? t("phases.percent", { phase: label(phase), percent })
         : phase === "load"
-          ? `${label(phase)}${LOAD_NOTE}`
+          ? t("phases.firstLoad", { phase: label(phase) })
           : label(phase);
     show(line, percent);
   });
@@ -64,6 +56,8 @@ export function followProgress(
 /** Each Phase with its seconds, in the order it ran. */
 export function describePhases(phases: PhaseTiming[]): string {
   return phases
-    .map(({ phase, seconds }) => `${label(phase)} ${seconds.toFixed(1)} 秒`)
+    .map(({ phase, seconds }) =>
+      t("phases.seconds", { phase: label(phase), seconds: seconds.toFixed(1) }),
+    )
     .join(" · ");
 }

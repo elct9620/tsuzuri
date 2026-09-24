@@ -70,6 +70,10 @@ One Component run inside a Mode: convert (ffmpeg), transcribe (whisper-cli) or t
 
 One timed part of a Mode's run, reported to the user and written to the log: preparing the Components, then each Step - split into loading its Model and doing its work when the Step's process loads one. A Phase that cannot tell how far along it is shows no percentage.
 
+### Interface Language
+
+The language the webview's text is written in: the system's language when Tsuzuri has a translation for it, otherwise English. Only the webview writes interface text.
+
 ### Failure
 
 Why a command did not finish, sent to the webview as a `code` with the data it names, such as the cue of a malformed SRT. The webview words it in the interface language; text only a system or a Component wrote travels as its `detail` untranslated.

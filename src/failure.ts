@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+
 /** Why a command did not finish, as the backend sends it: a code and the data it names. */
 export type Failure =
   | { code: "io"; detail: string }
@@ -11,8 +13,6 @@ export type Failure =
   | { code: "llama-request"; detail: string }
   | { code: "internal"; detail: string };
 
-const SLOTS = { transcription: "轉錄", translation: "翻譯" };
-
 function isFailure(error: unknown): error is Failure {
   return typeof error === "object" && error !== null && "code" in error;
 }
@@ -22,24 +22,27 @@ export function describeFailure(error: unknown): string {
   if (!isFailure(error)) return String(error);
   switch (error.code) {
     case "io":
-      return `無法讀寫檔案（${error.detail}）`;
+      return t("failures.io", { detail: error.detail });
     case "malformed-srt":
-      return `SRT 第 ${error.cue} 段無法讀取`;
+      return t("failures.malformedSrt", { cue: error.cue });
     case "model-not-chosen":
-      return `尚未指定${SLOTS[error.slot]}模型`;
+      return t("failures.modelNotChosen", { slot: t(`slots.${error.slot}`) });
     case "model-missing":
-      return `找不到模型 ${error.path}，請重新指定`;
+      return t("failures.modelMissing", { path: error.path });
     case "component-not-ready":
-      return `${error.component} 尚未就緒，請到設定確認`;
+      return t("failures.componentNotReady", { component: error.component });
     case "step-failed":
-      return `${error.step} 失敗：${error.detail}`;
+      return t("failures.stepFailed", {
+        step: t(`phases.${error.step}`, { defaultValue: error.step }),
+        detail: error.detail,
+      });
     case "llama-exited":
-      return "llama-server 在模型載入前結束";
+      return t("failures.llamaExited");
     case "llama-timed-out":
-      return "llama-server 未能及時載入模型";
+      return t("failures.llamaTimedOut");
     case "llama-request":
-      return `翻譯請求失敗（${error.detail}）`;
+      return t("failures.llamaRequest", { detail: error.detail });
     case "internal":
-      return `內部錯誤（${error.detail}）`;
+      return t("failures.internal", { detail: error.detail });
   }
 }

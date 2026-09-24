@@ -4,6 +4,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 
 import { describeFailure } from "../failure";
+import { t } from "../i18n";
 import { describePhases, followProgress, type PhaseTiming } from "../progress";
 import type { Segment } from "./transcript_controller";
 
@@ -54,7 +55,7 @@ export default class TranslateController extends Controller {
   async translate(path: string): Promise<void> {
     if (this.running) return;
     this.running = true;
-    this.statusTarget.textContent = "準備中";
+    this.statusTarget.textContent = t("work.preparing");
     try {
       const segments = await invoke<Segment[]>("open_srt", { path });
       this.dispatch("loaded", { target: window, detail: { segments } });
@@ -66,9 +67,11 @@ export default class TranslateController extends Controller {
         target: window,
         detail: { segments: translation.segments },
       });
-      this.statusTarget.textContent = `完成\n${describePhases(translation.phases)}`;
+      this.statusTarget.textContent = `${t("translate.done")}\n${describePhases(translation.phases)}`;
     } catch (error) {
-      this.statusTarget.textContent = `失敗：${describeFailure(error)}`;
+      this.statusTarget.textContent = t("work.failed", {
+        reason: describeFailure(error),
+      });
     } finally {
       this.running = false;
       this.bar()?.setAttribute("hidden", "");

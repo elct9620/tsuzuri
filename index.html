@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant-TW" class="dark:scheme-dark">
+<html lang="en" class="dark:scheme-dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="/src/styles.css" />
@@ -23,9 +23,8 @@
         <details class="relative">
           <summary
             class="cursor-pointer list-none rounded-md border border-stone-300 px-3 py-1 select-none hover:bg-stone-200 dark:border-stone-600 dark:hover:bg-stone-800"
-          >
-            匯出 ▾
-          </summary>
+            data-i18n="toolbar.export"
+          ></summary>
           <div
             class="absolute right-0 z-10 mt-1 flex w-40 flex-col rounded-md border border-stone-300 bg-white py-1 shadow-md dark:border-stone-600 dark:bg-stone-800 [&>button]:px-3 [&>button]:py-1 [&>button]:text-left [&>button:disabled]:text-stone-400 [&>button:enabled]:hover:bg-stone-100 dark:[&>button:enabled]:hover:bg-stone-700"
           >
@@ -35,27 +34,24 @@
               data-action="transcript#save"
               data-transcript-content-param="original"
               disabled
-            >
-              原文 SRT
-            </button>
+              data-i18n="toolbar.original"
+            ></button>
             <button
               type="button"
               data-transcript-target="export"
               data-action="transcript#save"
               data-transcript-content-param="translation"
               disabled
-            >
-              譯文 SRT
-            </button>
+              data-i18n="toolbar.translation"
+            ></button>
             <button
               type="button"
               data-transcript-target="export"
               data-action="transcript#save"
               data-transcript-content-param="bilingual"
               disabled
-            >
-              雙語 SRT
-            </button>
+              data-i18n="toolbar.bilingual"
+            ></button>
           </div>
         </details>
       </header>
@@ -71,9 +67,8 @@
           data-tabs-target="tab"
           data-action="tabs#select"
           aria-selected="true"
-        >
-          轉錄
-        </button>
+          data-i18n="tabs.transcribe"
+        ></button>
         <button
           type="button"
           role="tab"
@@ -81,9 +76,8 @@
           data-tabs-target="tab"
           data-action="tabs#select"
           aria-selected="false"
-        >
-          翻譯
-        </button>
+          data-i18n="tabs.translate"
+        ></button>
         <button
           type="button"
           role="tab"
@@ -91,9 +85,8 @@
           data-tabs-target="tab"
           data-action="tabs#select"
           aria-selected="false"
-        >
-          編輯
-        </button>
+          data-i18n="tabs.edit"
+        ></button>
         <button
           type="button"
           role="tab"
@@ -102,9 +95,8 @@
           data-tabs-target="tab"
           data-action="tabs#select"
           aria-selected="false"
-        >
-          設定
-        </button>
+          data-i18n="tabs.settings"
+        ></button>
       </nav>
 
       <section
@@ -116,22 +108,21 @@
       >
         <div class="flex flex-col gap-3">
           <p>
-            拖入影片或音訊，或
+            <span data-i18n="transcribe.drop"></span>
             <button
               type="button"
               class="rounded-md bg-stone-900 px-3 py-1 text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
               data-action="transcribe#choose"
-            >
-              選擇檔案
-            </button>
+              data-i18n="transcribe.choose"
+            ></button>
           </p>
           <p class="flex items-center gap-4">
             <label class="flex items-center gap-2">
               <input type="checkbox" data-transcribe-target="translate" />
-              完成後翻譯
+              <span data-i18n="transcribe.translateAfter"></span>
             </label>
             <label class="flex items-center gap-2"
-              >譯成
+              ><span data-i18n="work.into"></span>
               <select
                 class="rounded-md border border-stone-300 bg-white px-2 py-1 dark:border-stone-600 dark:bg-stone-800"
                 data-transcribe-target="language"
@@ -170,11 +161,10 @@
             type="button"
             class="rounded-md bg-stone-900 px-3 py-1 text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
             data-action="translate#choose"
-          >
-            選擇 SRT 字幕檔
-          </button>
+            data-i18n="translate.choose"
+          ></button>
           <label class="flex items-center gap-2"
-            >譯成
+            ><span data-i18n="work.into"></span>
             <select
               class="rounded-md border border-stone-300 bg-white px-2 py-1 dark:border-stone-600 dark:bg-stone-800"
               data-translate-target="language"
@@ -209,9 +199,8 @@
         <p
           class="text-stone-500 dark:text-stone-400"
           data-transcript-target="empty"
-        >
-          尚無內容
-        </p>
+          data-i18n="edit.empty"
+        ></p>
         <ol
           class="flex flex-col gap-2 [&_textarea]:mt-0.5 [&_textarea]:block [&_textarea]:w-full [&_textarea]:resize-y [&_textarea]:rounded [&_textarea]:border [&_textarea]:border-transparent [&_textarea]:px-1.5 [&_textarea]:py-1 [&_textarea]:hover:border-stone-300 [&_textarea]:focus:border-stone-400 [&_textarea]:focus:outline-none [&_textarea.translation]:text-sky-800 dark:[&_textarea.translation]:text-sky-300 [&_time]:text-xs [&_time]:text-stone-500 [&_time]:tabular-nums"
           data-transcript-target="list"
@@ -228,7 +217,7 @@
         <dl
           class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-4 [&>dt]:font-semibold"
         >
-          <dt>元件</dt>
+          <dt data-i18n="settings.components"></dt>
           <dd data-controller="components">
             <ul
               class="flex flex-col gap-1 [&_button]:ml-2 [&_button]:rounded-md [&_button]:border [&_button]:border-stone-300 [&_button]:px-2 [&_button]:hover:bg-stone-200 dark:[&_button]:border-stone-600 dark:[&_button]:hover:bg-stone-800"
@@ -239,15 +228,14 @@
                   class="break-all text-stone-500 dark:text-stone-400"
                   data-components-target="status"
                   data-component="ffmpeg"
-                  >檢查中</span
-                >
+                  data-i18n="settings.checking"
+                ></span>
                 <button
                   type="button"
                   data-component="ffmpeg"
                   data-action="components#choose"
-                >
-                  指定
-                </button>
+                  data-i18n="settings.choose"
+                ></button>
               </li>
               <li>
                 whisper.cpp
@@ -255,15 +243,14 @@
                   class="break-all text-stone-500 dark:text-stone-400"
                   data-components-target="status"
                   data-component="whisper"
-                  >檢查中</span
-                >
+                  data-i18n="settings.checking"
+                ></span>
                 <button
                   type="button"
                   data-component="whisper"
                   data-action="components#choose"
-                >
-                  指定
-                </button>
+                  data-i18n="settings.choose"
+                ></button>
               </li>
               <li>
                 llama.cpp
@@ -271,64 +258,61 @@
                   class="break-all text-stone-500 dark:text-stone-400"
                   data-components-target="status"
                   data-component="llama"
-                  >檢查中</span
-                >
+                  data-i18n="settings.checking"
+                ></span>
                 <button
                   type="button"
                   data-component="llama"
                   data-action="components#choose"
-                >
-                  指定
-                </button>
+                  data-i18n="settings.choose"
+                ></button>
               </li>
             </ul>
           </dd>
 
-          <dt>模型</dt>
+          <dt data-i18n="settings.models"></dt>
           <dd data-controller="models">
             <dl
               class="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 [&_button]:ml-2 [&_button]:rounded-md [&_button]:border [&_button]:border-stone-300 [&_button]:px-2 [&_button]:hover:bg-stone-200 dark:[&_button]:border-stone-600 dark:[&_button]:hover:bg-stone-800"
             >
-              <dt>轉錄</dt>
+              <dt data-i18n="slots.transcription"></dt>
               <dd>
                 <span
                   class="break-all text-stone-500 dark:text-stone-400 [&.missing]:text-red-700 dark:[&.missing]:text-red-400"
                   data-models-target="status"
                   data-slot="transcription"
-                  >尚未指定</span
-                >
+                  data-i18n="models.notChosen"
+                ></span>
                 <button
                   type="button"
                   data-slot="transcription"
                   data-action="models#choose"
-                >
-                  指定檔案
-                </button>
+                  data-i18n="settings.chooseFile"
+                ></button>
               </dd>
-              <dt>翻譯</dt>
+              <dt data-i18n="slots.translation"></dt>
               <dd>
                 <span
                   class="break-all text-stone-500 dark:text-stone-400 [&.missing]:text-red-700 dark:[&.missing]:text-red-400"
                   data-models-target="status"
                   data-slot="translation"
-                  >尚未指定</span
-                >
+                  data-i18n="models.notChosen"
+                ></span>
                 <button
                   type="button"
                   data-slot="translation"
                   data-action="models#choose"
-                >
-                  指定檔案
-                </button>
+                  data-i18n="settings.chooseFile"
+                ></button>
               </dd>
             </dl>
           </dd>
 
-          <dt>關於</dt>
+          <dt data-i18n="settings.about"></dt>
           <dd
             class="flex flex-col gap-1 text-sm text-stone-600 dark:text-stone-400"
           >
-            <p>Tsuzuri 以 Apache-2.0 授權釋出。</p>
+            <p data-i18n="settings.license"></p>
             <p>
               This software uses code of FFmpeg licensed under the LGPLv2.1.
               Transcription uses whisper.cpp and translation uses llama.cpp,

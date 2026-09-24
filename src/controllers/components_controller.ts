@@ -2,6 +2,8 @@ import { Controller } from "@hotwired/stimulus";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
+import { t } from "../i18n";
+
 interface ComponentStatus {
   name: string;
   ready: boolean;
@@ -12,12 +14,6 @@ interface ComponentStatus {
   install: string | null;
 }
 
-const ORIGIN_LABELS: Record<string, string> = {
-  chosen: "指定",
-  detected: "偵測到",
-  bundled: "內建",
-};
-
 function describe({
   ready,
   path,
@@ -26,12 +22,14 @@ function describe({
   install,
 }: ComponentStatus): string {
   if (ready && path)
-    return `${ORIGIN_LABELS[origin ?? ""] ?? "已就緒"}：${path}`;
-  if (problem === "does-not-run")
-    return "未就緒（內建的版本無法執行，可能缺少驅動程式或系統函式庫）";
+    return t("components.found", {
+      origin: t(`components.${origin ?? "ready"}`),
+      path,
+    });
+  if (problem === "does-not-run") return t("components.doesNotRun");
   return install
-    ? `未就緒（可用 ${install} 安裝）`
-    : "未就緒（請用套件管理工具安裝）";
+    ? t("components.installWith", { command: install })
+    : t("components.install");
 }
 
 export default class ComponentsController extends Controller {

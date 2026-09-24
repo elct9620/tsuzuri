@@ -477,9 +477,10 @@ whisper 的切段常常需要手動修正，所以調整時間戳與段落是校
 | 項目 | 設計 |
 |---|---|
 | 樣式工具 | TailwindCSS，隨前端一起由 Vite 建置 |
+| 元件樣式 | daisyUI，以 Tailwind 外掛提供元件 class 與主題色 |
 | 與 Stimulus 的分工 | Stimulus 管互動，Tailwind 的 class 寫在 HTML 上 |
 
-畫面變多之後，手寫 CSS 難以維持一致。樣式跟著 HTML 走，controller 不需要知道樣式。
+畫面變多之後，手寫 CSS 難以維持一致。樣式跟著 HTML 走，controller 不需要知道樣式。元件與顏色取自 daisyUI，各畫面共用同一套外觀。
 
 ## 12 首次設定引導
 

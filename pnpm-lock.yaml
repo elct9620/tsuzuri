@@ -30,6 +30,9 @@ importers:
       '@tauri-apps/cli':
         specifier: ^2
         version: 2.11.5
+      daisyui:
+        specifier: ^5.7.43
+        version: 5.7.43
       happy-dom:
         specifier: ^20.14.5
         version: 20.14.5
@@ -394,6 +397,9 @@ packages:
   chai@6.2.2:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
     engines: {node: '>=18'}
+
+  daisyui@5.7.43:
+    resolution: {integrity: sha512-o80D/SaF70gWppzpfk1X01ApWjVeqEEARbySaC0hWzIQymMqStcp28e+5lTWErHIfOk8RqGkD8ozA4v9tI4MZA==}
 
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
@@ -1013,6 +1019,8 @@ snapshots:
       '@types/node': 26.6.2
 
   chai@6.2.2: {}
+
+  daisyui@5.7.43: {}
 
   detect-libc@2.1.2: {}
 

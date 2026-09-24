@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "daisyui";
 
 @theme {
   --font-sans: system-ui, -apple-system, "Noto Sans TC", sans-serif;

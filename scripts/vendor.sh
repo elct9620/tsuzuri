@@ -12,7 +12,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VENDOR="$ROOT/vendor"
 MANIFEST="$ROOT/components.json"
-JOBS="${JOBS:-$(getconf _NPROCESSORS_ONLN)}"
+JOBS="${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || nproc)}"
 
 require() {
   for tool in "$@"; do
@@ -29,6 +29,7 @@ platform() {
   case "$(uname -s)" in
     Darwin) echo macos ;;
     Linux) echo linux ;;
+    MINGW*) echo windows ;;
     *) echo "vendor: $(uname -s) is not a platform components.json lists" >&2; exit 1 ;;
   esac
 }
@@ -48,18 +49,38 @@ variant_for() {
   echo "$requested"
 }
 
+# Windows executables carry .exe; everywhere else they carry nothing.
+exe() {
+  if [[ "$(platform)" == windows ]]; then echo "$1.exe"; else echo "$1"; fi
+}
+
+# Copies the MSYS2 UCRT64 DLLs an executable loads next to it, so it runs outside MSYS2.
+# Linux and macOS executables rely on the system's libraries instead.
+bundle_runtime() {
+  [[ "$(platform)" == windows ]] || return 0
+  ldd "$1" | awk '$3 ~ "^/ucrt64/" { print $3 }' | while read -r dll; do cp "$dll" "$(dirname "$1")/"; done
+}
+
+sha256_matches() {
+  if command -v sha256sum >/dev/null; then
+    echo "$1  $2" | sha256sum -c --status
+  else
+    echo "$1  $2" | shasum -a 256 -c --status
+  fi
+}
+
 up_to_date() {
   [[ -f "$VENDOR/$1/VERSION" && "$(cat "$VENDOR/$1/VERSION")" == "$2" ]]
 }
 
 fetch_source() {
   local url sha256 dir="$2" archive="$2.tar"
-  require curl shasum
+  require curl
   url="$(pinned "$1" source)"
   sha256="$(pinned "$1" sha256)"
   rm -rf "$dir" && mkdir -p "$dir"
   curl -fsSL -o "$archive" "$url"
-  echo "$sha256  $archive" | shasum -a 256 -c --status || { echo "vendor: $url does not match its pinned SHA256" >&2; exit 1; }
+  sha256_matches "$sha256" "$archive" || { echo "vendor: $url does not match its pinned SHA256" >&2; exit 1; }
   tar -xf "$archive" -C "$dir" --strip-components=1
 }
 
@@ -82,9 +103,11 @@ build() {
 # ggml links statically and targets no host-specific instructions, so the executable
 # needs only the libraries its backend loads (OpenBLAS, the Vulkan loader).
 compile_ggml() {
-  local src="$1" variant="$2" bin="$3" target="$4" backend=()
+  local src="$1" variant="$2" bin="$3" target="$4" backend=() generator=()
   shift 4
   require cmake
+  # Ninja is single-config, so the executable lands in build/bin as it does with Make.
+  if [[ "$(platform)" == windows ]]; then generator=(-G Ninja); fi
   case "$variant" in
     cpu) ;;
     openblas) backend=(-DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS) ;;
@@ -92,14 +115,15 @@ compile_ggml() {
     metal) backend=(-DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON) ;;
     *) echo "vendor: no ggml backend is known for Variant $variant" >&2; exit 1 ;;
   esac
-  cmake -S "$src" -B "$src/build" \
+  cmake -S "$src" -B "$src/build" ${generator[@]+"${generator[@]}"} \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=OFF \
     -DGGML_NATIVE=OFF \
     ${backend[@]+"${backend[@]}"} \
     "$@"
   cmake --build "$src/build" --config Release --target "$target" -j "$JOBS"
-  cp "$src/build/bin/$target" "$bin/"
+  cp "$src/build/bin/$(exe "$target")" "$bin/"
+  bundle_runtime "$bin/$(exe "$target")"
 }
 
 compile_whisper() {
@@ -138,7 +162,8 @@ compile_ffmpeg() {
     --enable-swresample \
     ${asm[@]+"${asm[@]}"})
   make -C "$src" -j "$JOBS"
-  cp "$src/ffmpeg" "$bin/"
+  cp "$src/$(exe ffmpeg)" "$bin/"
+  bundle_runtime "$bin/$(exe ffmpeg)"
 }
 
 usage() {

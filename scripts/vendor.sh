@@ -61,12 +61,15 @@ bundle_runtime() {
   ldd "$1" | awk '$3 ~ "^/ucrt64/" { print $3 }' | while read -r dll; do cp "$dll" "$(dirname "$1")/"; done
 }
 
+# Compares digests itself: the check modes of sha256sum and shasum differ between GNU, BSD and MSYS2.
 sha256_matches() {
+  local actual
   if command -v sha256sum >/dev/null; then
-    echo "$1  $2" | sha256sum -c --status
+    actual="$(sha256sum "$2")"
   else
-    echo "$1  $2" | shasum -a 256 -c --status
+    actual="$(shasum -a 256 "$2")"
   fi
+  [[ "${actual%% *}" == "$1" ]]
 }
 
 up_to_date() {

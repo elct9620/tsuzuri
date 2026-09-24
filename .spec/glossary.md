@@ -78,6 +78,10 @@ One Component run inside a Mode: convert (ffmpeg), transcribe (whisper-cli) or t
 
 One timed part of a Mode's run, reported to the user and written to the log: preparing the Components, then each Step - split into loading its Model and doing its work when the Step's process loads one. A Phase that cannot tell how far along it is shows no percentage.
 
+### Language
+
+A language Tsuzuri transcribes from or translates into, named by its code: `zh-TW`, `en` or `ja`. The webview sends only the code; Rust keeps what each code means to a Component, such as the name a Model is told.
+
 ### Interface Language
 
 The language the webview's text is written in: the system's language when Tsuzuri has a translation for it, otherwise English. Only the webview writes interface text.

@@ -96,3 +96,11 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | the Translate Mode panel and a Project |
 | When | a translation succeeds |
 | Then | the Edit tab is shown |
+
+## `TL-013` Naming the target Language to the Model
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and the target Language `ja` |
+| When | a Transcript is translated |
+| Then | the Model is asked for Japanese |

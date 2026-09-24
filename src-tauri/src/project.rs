@@ -5,15 +5,17 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::failure::Failure;
-use crate::language::Language;
+use crate::language::{Language, LanguagePair};
 use crate::transcript::{Segment, SrtContent, Transcript};
 
-/// The work on one input: the media file, when there is one, its Transcript and the Language it is in.
+/// The work on one input: the media file, when there is one, its Transcript, the Language it is in
+/// and the Language of its translations once translated.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Project {
     pub media: Option<PathBuf>,
     pub transcript: Transcript,
     pub language: Language,
+    pub translation_language: Option<Language>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -21,6 +23,7 @@ pub struct ProjectView {
     media: Option<PathBuf>,
     segments: Vec<Segment>,
     language: Language,
+    translation_language: Option<Language>,
 }
 
 impl ProjectView {
@@ -30,6 +33,10 @@ impl ProjectView {
 
     pub fn language(&self) -> Language {
         self.language
+    }
+
+    pub fn translation_language(&self) -> Option<Language> {
+        self.translation_language
     }
 
     pub fn segments(&self) -> &[Segment] {
@@ -68,6 +75,7 @@ impl CurrentProject {
             media: project.media.clone(),
             segments: project.transcript.segments.clone(),
             language: project.language,
+            translation_language: project.translation_language,
         })
     }
 
@@ -78,13 +86,21 @@ impl CurrentProject {
         Ok((held.generation, project.transcript.clone()))
     }
 
-    /// Writes each Segment's translation by position, unless the Project was replaced since `generation`.
-    pub fn write_translations(&self, generation: u64, segments: Vec<Segment>) {
+    /// Writes each Segment's translation by position and the Languages it went between,
+    /// unless the Project was replaced since `generation`.
+    pub fn write_translations(
+        &self,
+        generation: u64,
+        languages: LanguagePair,
+        segments: Vec<Segment>,
+    ) {
         let mut held = self.lock();
         if held.generation != generation {
             return;
         }
         if let Some(project) = held.project.as_mut() {
+            project.language = languages.source;
+            project.translation_language = Some(languages.target);
             for (segment, translated) in project.transcript.segments.iter_mut().zip(segments) {
                 segment.translation = translated.translation;
             }
@@ -133,6 +149,7 @@ fn open(path: PathBuf) -> Result<Project, Failure> {
         media: None,
         transcript: Transcript::from_srt(&srt)?,
         language: Language::TraditionalChinese,
+        translation_language: None,
     })
 }
 
@@ -169,6 +186,7 @@ pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<()
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::language::LanguagePair;
     use crate::test_support::TempDir;
 
     fn segment(text: &str, translation: Option<&str>) -> Segment {
@@ -185,6 +203,7 @@ mod tests {
         current.replace(Project {
             media: None,
             language: Language::TraditionalChinese,
+            translation_language: None,
             transcript: Transcript { segments },
         });
         current
@@ -273,13 +292,43 @@ mod tests {
         current.replace(Project {
             media: None,
             language: Language::TraditionalChinese,
+            translation_language: None,
             transcript: Transcript {
                 segments: vec![segment("另一份", None)],
             },
         });
 
-        current.write_translations(generation, vec![segment("大家好", Some("Hello"))]);
+        current.write_translations(generation, pair(), vec![segment("大家好", Some("Hello"))]);
 
         assert_eq!(segments(&current), vec![segment("另一份", None)]);
+    }
+
+    fn pair() -> LanguagePair {
+        LanguagePair {
+            source: Language::TraditionalChinese,
+            target: Language::English,
+        }
+    }
+
+    // @behavior PJ-010
+    #[test]
+    fn records_the_languages_of_a_translation() {
+        let current = current_project_of(vec![segment("こんにちは", None)]);
+        let (generation, _) = current.snapshot().unwrap();
+
+        current.write_translations(
+            generation,
+            LanguagePair {
+                source: Language::Japanese,
+                target: Language::English,
+            },
+            vec![segment("こんにちは", Some("Hello"))],
+        );
+
+        let view = current.view().unwrap();
+        assert_eq!(
+            (view.language(), view.translation_language()),
+            (Language::Japanese, Some(Language::English))
+        );
     }
 }

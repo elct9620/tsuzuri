@@ -11,6 +11,13 @@ pub enum Language {
     Japanese,
 }
 
+/// The Languages a translation goes from and into.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LanguagePair {
+    pub source: Language,
+    pub target: Language,
+}
+
 impl Language {
     /// The name a Model is told the language by.
     pub fn name(self) -> &'static str {

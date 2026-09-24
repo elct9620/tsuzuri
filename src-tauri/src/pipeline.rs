@@ -96,6 +96,7 @@ pub async fn run_transcribe<R: Runtime>(
         media: Some(input.to_path_buf()),
         transcript: Transcript::from_srt(&srt)?,
         language: job.language,
+        translation_language: None,
     });
     project::announce(app);
     Ok(Transcription {

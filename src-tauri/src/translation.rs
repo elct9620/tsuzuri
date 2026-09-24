@@ -13,7 +13,7 @@ use tauri_plugin_shell::process::CommandEvent;
 
 use crate::components::{self, Resolver};
 use crate::failure::Failure;
-use crate::language::Language;
+use crate::language::{Language, LanguagePair};
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::pipeline::{enter, report};
 use crate::processes::Processes;
@@ -27,10 +27,10 @@ const HEALTH_POLL: Duration = Duration::from_millis(500);
 /// Each request carries one subtitle line, so a small context keeps the KV cache inside 4 GB of VRAM.
 const CONTEXT_SIZE: &str = "4096";
 
-/// What to translate: the Segments and the language they are translated into.
+/// What to translate: the Segments and the Languages they go between.
 struct TranslationJob<'a> {
     segments: &'a [Segment],
-    target: Language,
+    languages: LanguagePair,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -43,7 +43,7 @@ pub async fn run_translate<R: Runtime>(
     processes: &Processes,
     llama: &Path,
     settings: &ModelSettings,
-    target: Language,
+    languages: LanguagePair,
     ready_timeout: Duration,
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
@@ -52,7 +52,7 @@ pub async fn run_translate<R: Runtime>(
     let (generation, transcript) = project.snapshot()?;
     let job = TranslationJob {
         segments: &transcript.segments,
-        target,
+        languages,
     };
     let port = free_port()?;
     let args = [
@@ -100,7 +100,7 @@ pub async fn run_translate<R: Runtime>(
     )
     .await;
     processes.kill(pid);
-    project.write_translations(generation, result?);
+    project.write_translations(generation, languages, result?);
     project::announce(app);
     Ok(Translation {
         phases: phases.finish(),
@@ -119,7 +119,7 @@ async fn translate_once_ready<R: Runtime>(
 ) -> Result<Vec<Segment>, Failure> {
     wait_until_ready(client, base_url, ready_timeout, has_exited).await?;
     enter(app, phases, "translate");
-    translate_segments(client, base_url, job.segments, job.target, |percent| {
+    translate_segments(client, base_url, job.segments, job.languages, |percent| {
         report(app, "translate", Some(percent))
     })
     .await
@@ -161,12 +161,13 @@ async fn translate_segments(
     client: &reqwest::Client,
     base_url: &str,
     segments: &[Segment],
-    target: Language,
+    languages: LanguagePair,
     on_progress: impl Fn(u8),
 ) -> Result<Vec<Segment>, Failure> {
     let instruction = format!(
-        "You translate subtitles into {}. Reply with only the translation of the user's line, without quotes or notes.",
-        target.name()
+        "You translate {} subtitles into {}. Reply with only the translation of the user's line, without quotes or notes.",
+        languages.source.name(),
+        languages.target.name()
     );
     let mut translated = Vec::with_capacity(segments.len());
     for (index, segment) in segments.iter().enumerate() {
@@ -203,7 +204,11 @@ async fn translate_segments(
 }
 
 #[tauri::command]
-pub async fn translate(app: AppHandle, target: Language) -> Result<Translation, Failure> {
+pub async fn translate(
+    app: AppHandle,
+    source: Language,
+    target: Language,
+) -> Result<Translation, Failure> {
     let phases = Phases::start("translate", "prepare");
     report(&app, "prepare", None);
     let [llama] = components::find_ready_executables(Resolver::from_app(&app)?, ["llama"]).await?;
@@ -214,7 +219,7 @@ pub async fn translate(app: AppHandle, target: Language) -> Result<Translation, 
         &processes,
         &llama,
         &settings,
-        target,
+        LanguagePair { source, target },
         READY_TIMEOUT,
         phases,
     )
@@ -245,6 +250,7 @@ mod tests {
         Project {
             media: None,
             language: Language::TraditionalChinese,
+            translation_language: None,
             transcript: Transcript { segments },
         }
     }
@@ -308,7 +314,7 @@ mod tests {
             &reqwest::Client::new(),
             &server.base_url,
             &segments,
-            Language::English,
+            to_english(),
             |_| {},
         )
         .await
@@ -329,9 +335,15 @@ mod tests {
         );
     }
 
-    // @behavior TL-013
-    #[tokio::test]
-    async fn asks_the_model_for_the_target_language() {
+    fn to_english() -> LanguagePair {
+        LanguagePair {
+            source: Language::TraditionalChinese,
+            target: Language::English,
+        }
+    }
+
+    /// The system prompt the Model is sent when translating between `languages`.
+    async fn instruction_for(languages: LanguagePair) -> String {
         let instructions = Arc::new(Mutex::new(Vec::new()));
         let seen = Arc::clone(&instructions);
         let server = FakeHttp::serve(move |request| {
@@ -346,13 +358,42 @@ mod tests {
             &reqwest::Client::new(),
             &server.base_url,
             &[segment(0, 1_000, "大家好")],
-            serde_json::from_str::<Language>("\"ja\"").unwrap(),
+            languages,
             |_| {},
         )
         .await
         .unwrap();
 
-        assert!(instructions.lock().unwrap()[0].contains("Japanese"));
+        let instruction = instructions.lock().unwrap()[0].clone();
+        instruction
+    }
+
+    fn language(code: &str) -> Language {
+        serde_json::from_value(json!(code)).unwrap()
+    }
+
+    // @behavior TL-013
+    #[tokio::test]
+    async fn asks_the_model_for_the_target_language() {
+        let instruction = instruction_for(LanguagePair {
+            source: Language::TraditionalChinese,
+            target: language("ja"),
+        })
+        .await;
+
+        assert!(instruction.contains("into Japanese"), "{instruction}");
+    }
+
+    // @behavior TL-014
+    #[tokio::test]
+    async fn asks_the_model_to_translate_from_the_source_language() {
+        let instruction = instruction_for(LanguagePair {
+            source: language("ja"),
+            target: Language::English,
+        })
+        .await;
+
+        assert!(instruction.contains("Japanese subtitles"), "{instruction}");
     }
 
     // @behavior TL-010
@@ -370,12 +411,12 @@ mod tests {
             &reqwest::Client::new(),
             &server.base_url,
             &transcript.segments,
-            Language::English,
+            to_english(),
             |_| {},
         )
         .await
         .unwrap();
-        project.write_translations(generation, translated);
+        project.write_translations(generation, to_english(), translated);
 
         let view = project.view().unwrap();
         let segment = &view.segments()[0];
@@ -398,7 +439,7 @@ mod tests {
             &client,
             &server.base_url,
             &[segment(0, 1_000, "大家好")],
-            Language::English,
+            to_english(),
             |_| {},
         )
         .await
@@ -429,7 +470,7 @@ mod tests {
             &processes,
             Path::new("/bin/sleep"),
             &ModelSettings::default(),
-            Language::English,
+            to_english(),
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -470,7 +511,7 @@ mod tests {
             &processes,
             &llama,
             &settings,
-            Language::English,
+            to_english(),
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -508,7 +549,7 @@ mod tests {
                     segment(0, 1_000, "大家好"),
                     segment(1_000, 2_000, "今天天氣很好"),
                 ],
-                target: Language::English,
+                languages: to_english(),
             },
             &mut phases,
         )
@@ -543,7 +584,7 @@ mod tests {
             &processes,
             &llama,
             &settings,
-            Language::English,
+            to_english(),
             READY_TIMEOUT,
             Phases::start("translate", "prepare"),
         )

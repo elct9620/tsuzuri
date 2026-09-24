@@ -17,10 +17,11 @@ describe("TranslateController", () => {
       '[data-translate-target="start"]',
     )!;
 
-  async function holdProject(): Promise<void> {
+  async function holdProject(language = "zh-TW"): Promise<void> {
     project = {
       media: null,
-      language: "zh-TW",
+      language,
+      translation_language: null,
       segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
     };
     await emit("project-changed");
@@ -73,7 +74,17 @@ describe("TranslateController", () => {
     start().click();
     await settle();
 
-    expect(translateArgs).toEqual({ target: "ja" });
+    expect(translateArgs).toMatchObject({ target: "ja" });
+  });
+
+  // @behavior TL-015
+  it("translates the Project from the Language it is in", async () => {
+    await holdProject("ja");
+
+    start().click();
+    await settle();
+
+    expect(translateArgs).toMatchObject({ source: "ja" });
   });
 
   // @behavior TL-008

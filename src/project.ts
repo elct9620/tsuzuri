@@ -14,14 +14,20 @@ export interface ProjectView {
   segments: Segment[];
   /** The Language code the Transcript is in. */
   language: string;
+  /** The Language code of the translations, once translated. */
+  translation_language: string | null;
+}
+
+/** The Project Rust holds now, or none before one is made. */
+export function currentProject(): Promise<ProjectView | null> {
+  return invoke<ProjectView | null>("current_project");
 }
 
 /** Calls `show` with the Project Rust holds now and again each time it changes. */
 export async function followProject(
   show: (project: ProjectView | null) => void,
 ): Promise<UnlistenFn> {
-  const refresh = async () =>
-    show(await invoke<ProjectView | null>("current_project"));
+  const refresh = async () => show(await currentProject());
   const unlisten = await listen("project-changed", () => void refresh());
   await refresh();
   return unlisten;

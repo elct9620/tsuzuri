@@ -38,6 +38,7 @@ describe("TranscriptController", () => {
   const translated: ProjectView = {
     media: null,
     language: "zh-TW",
+    translation_language: null,
     segments: [
       {
         start_ms: 0,
@@ -86,6 +87,7 @@ describe("TranscriptController", () => {
     await hold({
       media: "/media/lecture.mp4",
       language: "zh-TW",
+      translation_language: null,
       segments: [
         { start_ms: 0, end_ms: 1000, text: "大家好" },
         { start_ms: 62_003, end_ms: 64_500, text: "今天天氣很好" },
@@ -114,6 +116,7 @@ describe("TranscriptController", () => {
     await hold({
       media: null,
       language: "zh-TW",
+      translation_language: null,
       segments: [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }],
     });
 

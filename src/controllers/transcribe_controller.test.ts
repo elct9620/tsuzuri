@@ -118,7 +118,23 @@ describe("TranscribeController", () => {
 
     await controller().transcribe("/media/lecture.mp4");
 
-    expect(translated).toEqual({ target: "ja" });
+    expect(translated).toMatchObject({ target: "ja" });
+  });
+
+  // @behavior TL-016
+  it("translates from the Language it just transcribed", async () => {
+    transcription = Promise.resolve({
+      audio_seconds: 1,
+      transcribe_seconds: 1,
+      phases: [],
+    });
+    document.querySelector<HTMLInputElement>(
+      '[data-transcribe-target="translate"]',
+    )!.checked = true;
+
+    await controller().transcribe("/media/lecture.mp4");
+
+    expect(translated).toMatchObject({ source: "en" });
   });
 
   // @behavior TX-016

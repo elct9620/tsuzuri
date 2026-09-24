@@ -5,15 +5,18 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { failureMessage } from "../failure";
 import { t } from "../i18n";
 import { phasesSummary, followProgress, type PhaseTiming } from "../progress";
-import { followProject } from "../project";
+import { currentProject, followProject } from "../project";
 
 export interface Translation {
   phases: PhaseTiming[];
 }
 
 /** Translates the Project Rust holds; the translations land there, not in the answer. */
-export function translateProject(target: string): Promise<Translation> {
-  return invoke<Translation>("translate", { target });
+export function translateProject(
+  source: string,
+  target: string,
+): Promise<Translation> {
+  return invoke<Translation>("translate", { source, target });
 }
 
 export default class TranslateController extends Controller {
@@ -47,7 +50,11 @@ export default class TranslateController extends Controller {
     this.isRunning = true;
     this.statusTarget.textContent = t("work.preparing");
     try {
-      const translation = await translateProject(this.languageTarget.value);
+      const project = await currentProject();
+      const translation = await translateProject(
+        project?.language ?? "",
+        this.languageTarget.value,
+      );
       this.statusTarget.textContent = `${t("translate.done")}\n${phasesSummary(translation.phases)}`;
       this.dispatch("finished");
     } catch (error) {

@@ -103,6 +103,7 @@ export default class TranscribeController extends Controller {
       ];
       if (this.hasTranslateTarget && this.translateTarget.checked) {
         const translation = await translateProject(
+          this.languageTarget.value,
           this.translationLanguageTarget.value,
         );
         lines.push(

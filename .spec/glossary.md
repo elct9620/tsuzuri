@@ -22,9 +22,13 @@ The ordered Segments of one media file. Transcribe produces it, Translate consum
 
 An SRT whose every cue carries the original text above its translation, so any player shows both languages without support of its own. A Segment without a translation is written with its original text alone.
 
+### Project
+
+The work on one input that Rust holds as the single source of truth: the media file, when there is one, and its Transcript with the translations and edits. Transcribing a media file or opening an SRT file replaces it; translating, editing and exporting work on it. For now only one exists, in memory.
+
 ### Mode
 
-What the user asks Tsuzuri to do with one input: Transcribe (media to Transcript), Translate (an existing SRT to a translated Transcript), or Transcribe and Translate (both, in that order).
+What the user asks Tsuzuri to do with one input: Transcribe (media to Transcript), Translate (the Project's Transcript into another language), or Transcribe and Translate (both, in that order).
 
 ### Component
 

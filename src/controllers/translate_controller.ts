@@ -6,11 +6,19 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { listenProgress } from "../progress";
 import type { Segment } from "./transcript_controller";
 
-export function translateSegments(
+interface Translation {
+  segments: Segment[];
+}
+
+export async function translateSegments(
   segments: Segment[],
   target: string,
 ): Promise<Segment[]> {
-  return invoke<Segment[]>("translate", { segments, target });
+  const translation = await invoke<Translation>("translate", {
+    segments,
+    target,
+  });
+  return translation.segments;
 }
 
 export default class TranslateController extends Controller {

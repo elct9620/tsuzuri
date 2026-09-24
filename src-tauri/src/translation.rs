@@ -13,8 +13,9 @@ use tauri_plugin_shell::process::CommandEvent;
 
 use crate::components::{self, Resolver};
 use crate::models::{self, ModelSettings, ModelSlot};
-use crate::pipeline::report;
+use crate::pipeline::{enter, report};
 use crate::processes::Processes;
+use crate::timing::{PhaseTiming, Phases};
 use crate::transcript::Segment;
 
 /// How long llama-server may take to load its Model before translation gives up.
@@ -31,15 +32,27 @@ pub struct TranslatedSegment {
     translation: String,
 }
 
+/// What to translate: the Segments and the language they are translated into.
+pub struct TranslationJob<'a> {
+    pub segments: &'a [Segment],
+    pub target: &'a str,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Translation {
+    segments: Vec<TranslatedSegment>,
+    phases: Vec<PhaseTiming>,
+}
+
 pub async fn run_translate<R: Runtime>(
     app: &AppHandle<R>,
     processes: &Processes,
     llama: &Path,
     settings: &ModelSettings,
-    segments: &[Segment],
-    target: &str,
+    job: &TranslationJob<'_>,
     ready_timeout: Duration,
-) -> Result<Vec<TranslatedSegment>, String> {
+    mut phases: Phases,
+) -> Result<Translation, String> {
     let model = settings
         .require(ModelSlot::Translation)
         .map_err(|error| error.to_string())?;
@@ -56,7 +69,7 @@ pub async fn run_translate<R: Runtime>(
         "--no-webui".to_string(),
     ];
 
-    report(app, "load", None);
+    enter(app, &mut phases, "load");
     let (mut events, pid) = processes.spawn(app, llama, &args)?;
     let exited = Arc::new(AtomicBool::new(false));
     async_runtime::spawn({
@@ -72,19 +85,39 @@ pub async fn run_translate<R: Runtime>(
 
     let client = reqwest::Client::new();
     let base_url = format!("http://127.0.0.1:{port}");
-    let result = async {
-        wait_until_ready(&client, &base_url, ready_timeout, || {
-            exited.load(Ordering::SeqCst)
-        })
-        .await?;
-        translate_segments(&client, &base_url, segments, target, |percent| {
-            report(app, "translate", Some(percent))
-        })
-        .await
-    }
+    let result = translate_once_ready(
+        app,
+        &client,
+        &base_url,
+        ready_timeout,
+        || exited.load(Ordering::SeqCst),
+        job,
+        &mut phases,
+    )
     .await;
     processes.kill(pid);
-    result
+    Ok(Translation {
+        segments: result?,
+        phases: phases.finish(),
+    })
+}
+
+/// Waits for llama-server to load its Model, then translates every Segment in the translate Phase.
+async fn translate_once_ready<R: Runtime>(
+    app: &AppHandle<R>,
+    client: &reqwest::Client,
+    base_url: &str,
+    ready_timeout: Duration,
+    has_exited: impl Fn() -> bool,
+    job: &TranslationJob<'_>,
+    phases: &mut Phases,
+) -> Result<Vec<TranslatedSegment>, String> {
+    wait_until_ready(client, base_url, ready_timeout, has_exited).await?;
+    enter(app, phases, "translate");
+    translate_segments(client, base_url, job.segments, job.target, |percent| {
+        report(app, "translate", Some(percent))
+    })
+    .await
 }
 
 /// A port the OS just handed out and released; llama-server binds it moments later.
@@ -173,9 +206,10 @@ pub async fn translate(
     app: AppHandle,
     segments: Vec<Segment>,
     target: String,
-) -> Result<Vec<TranslatedSegment>, String> {
-    let resolver = Resolver::of(&app)?;
-    let llama = components::ready_executable("llama", &resolver)?;
+) -> Result<Translation, String> {
+    let phases = Phases::start("translate", "prepare");
+    report(&app, "prepare", None);
+    let [llama] = components::ready_executables(Resolver::of(&app)?, ["llama"]).await?;
     let settings = models::load_settings(&app)?;
     let processes = app.state::<Processes>().inner().clone();
     run_translate(
@@ -183,9 +217,12 @@ pub async fn translate(
         &processes,
         &llama,
         &settings,
-        &segments,
-        &target,
+        &TranslationJob {
+            segments: &segments,
+            target: &target,
+        },
         READY_TIMEOUT,
+        phases,
     )
     .await
 }
@@ -331,9 +368,12 @@ mod tests {
             &processes,
             Path::new("/bin/sleep"),
             &ModelSettings::default(),
-            &[segment(0, 1_000, "大家好")],
-            "English",
+            &TranslationJob {
+                segments: &[segment(0, 1_000, "大家好")],
+                target: "English",
+            },
             Duration::from_secs(1),
+            Phases::start("translate", "prepare"),
         )
         .await;
 
@@ -369,9 +409,12 @@ mod tests {
             &processes,
             &llama,
             &settings,
-            &[segment(0, 1_000, "大家好")],
-            "English",
+            &TranslationJob {
+                segments: &[segment(0, 1_000, "大家好")],
+                target: "English",
+            },
             Duration::from_secs(1),
+            Phases::start("translate", "prepare"),
         )
         .await;
 
@@ -387,6 +430,35 @@ mod tests {
             state.trim().is_empty() || state.starts_with('Z'),
             "llama-server still running: {state}"
         );
+    }
+
+    // @behavior TL-007
+    #[tokio::test]
+    async fn answers_how_long_each_phase_took() {
+        let (server, _) = fake_llama(2);
+        let app = mock_app();
+        let mut phases = Phases::start("translate", "load");
+
+        translate_once_ready(
+            app.handle(),
+            &reqwest::Client::new(),
+            &server.base_url,
+            Duration::from_secs(5),
+            || false,
+            &TranslationJob {
+                segments: &[
+                    segment(0, 1_000, "大家好"),
+                    segment(1_000, 2_000, "今天天氣很好"),
+                ],
+                target: "English",
+            },
+            &mut phases,
+        )
+        .await
+        .unwrap();
+
+        let names: Vec<_> = phases.finish().iter().map(|timing| timing.phase).collect();
+        assert_eq!(names, vec!["load", "translate"]);
     }
 
     /// Runs a real llama-server:
@@ -413,16 +485,20 @@ mod tests {
             &processes,
             &llama,
             &settings,
-            &segments,
-            "English",
+            &TranslationJob {
+                segments: &segments,
+                target: "English",
+            },
             READY_TIMEOUT,
+            Phases::start("translate", "prepare"),
         )
         .await
         .unwrap();
 
-        for segment in &translated {
+        for segment in &translated.segments {
             println!("{} -> {}", segment.text, segment.translation);
         }
-        assert_eq!(translated.len(), 2);
+        println!("phases {:?}", translated.phases);
+        assert_eq!(translated.segments.len(), 2);
     }
 }

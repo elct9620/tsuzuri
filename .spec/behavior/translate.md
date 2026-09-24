@@ -55,3 +55,11 @@ The Translate Mode: a Transcript - read from an existing SRT, or just produced b
 | Given | a translated Transcript |
 | When | it is loaded into the transcript panel |
 | Then | each Segment shows its translation under its text |
+
+## `TL-007` Answering how long each Phase took
+
+| Step | Statement |
+| --- | --- |
+| Given | a started llama-server that loads its Model and a Transcript of two Segments |
+| When | the Transcript is translated |
+| Then | the result holds the load and translate Phases with their seconds, in that order |

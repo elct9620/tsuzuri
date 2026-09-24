@@ -27,7 +27,10 @@ describe("TranslateController", () => {
         if (command === "open_srt") return segments;
         if (command === "translate") {
           translateArgs = args;
-          return [{ ...segments[0], translation: "皆さん、こんにちは" }];
+          return {
+            segments: [{ ...segments[0], translation: "皆さん、こんにちは" }],
+            phases: [],
+          };
         }
       },
       { shouldMockEvents: true },

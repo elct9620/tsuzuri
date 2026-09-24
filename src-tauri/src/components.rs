@@ -221,7 +221,7 @@ impl Resolver {
 }
 
 /// The executable of a Component that is ready to run, or why it is not.
-pub fn ready_executable(name: &str, resolver: &Resolver) -> Result<PathBuf, String> {
+fn ready_executable(name: &str, resolver: &Resolver) -> Result<PathBuf, String> {
     let component = components()
         .into_iter()
         .find(|component| component.name == name)

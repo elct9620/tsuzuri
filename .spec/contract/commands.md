@@ -56,10 +56,10 @@ pub fn open_srt(path: PathBuf) -> Result<Vec<Segment>, String> {}
 
 ## `translate`
 
-Run the Translate Mode on Segments into the target language, emitting `pipeline-progress` events, and answer the Segments with their translations.
+Run the Translate Mode on Segments into the target language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes, and answer the Segments with their translations and the seconds each Phase took.
 
 ```rust
-pub async fn translate(app: AppHandle, segments: Vec<Segment>, target: String) -> Result<Vec<TranslatedSegment>, String> {}
+pub async fn translate(app: AppHandle, segments: Vec<Segment>, target: String) -> Result<Translation, String> {}
 ```
 
 ## `save_srt`

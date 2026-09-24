@@ -1,6 +1,6 @@
 # Translate
 
-The Translate Mode: a Transcript - read from an existing SRT, or just produced by Transcribe - is translated Segment by Segment through llama-server, which is started on a random port for the job and stopped when it ends.
+The Translate Mode: the Project's Transcript - from a transcription or an opened SRT file - is translated Segment by Segment through llama-server, which is started on a random port for the job and stopped when it ends, and the translations are written back into the Project.
 
 ## Includes
 

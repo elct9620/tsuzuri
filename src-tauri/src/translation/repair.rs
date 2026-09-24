@@ -24,14 +24,14 @@ pub async fn translate_batch(
         lines,
         prior,
         settings,
-        accepted: HashMap::new(),
-        imperfect: HashMap::new(),
+        accepted_translations: HashMap::new(),
+        imperfect_translations: HashMap::new(),
     };
     let reference = &prior[prior.len().saturating_sub(settings.reference_lines)..];
-    let failing = repair.attempt(lines, reference.to_vec(), None).await?;
+    let failing_reasons = repair.attempt(lines, reference.to_vec(), None).await?;
     let mut groups: Vec<Vec<(usize, &str)>> = vec![lines
         .iter()
-        .filter(|(index, _)| failing.contains_key(index))
+        .filter(|(index, _)| failing_reasons.contains_key(index))
         .copied()
         .collect()];
     while let Some(group) = groups.pop() {
@@ -40,22 +40,22 @@ pub async fn translate_batch(
         }
         let reference = repair.surrounding_lines(&group);
         let preceding = repair.preceding_text(&group);
-        let failing = repair.attempt(&group, reference, preceding).await?;
-        let still_failing: Vec<(usize, &str)> = group
+        let failing_reasons = repair.attempt(&group, reference, preceding).await?;
+        let lines_still_failing: Vec<(usize, &str)> = group
             .into_iter()
-            .filter(|(index, _)| failing.contains_key(index))
+            .filter(|(index, _)| failing_reasons.contains_key(index))
             .collect();
-        match still_failing.as_slice() {
+        match lines_still_failing.as_slice() {
             [] => {}
-            [(index, text)] => repair.give_up(*index, text, &failing[index]),
+            [(index, text)] => repair.give_up(*index, text, &failing_reasons[index]),
             _ => {
-                let (first, second) = still_failing.split_at(still_failing.len() / 2);
+                let (first, second) = lines_still_failing.split_at(lines_still_failing.len() / 2);
                 groups.push(second.to_vec());
                 groups.push(first.to_vec());
             }
         }
     }
-    Ok(repair.accepted)
+    Ok(repair.accepted_translations)
 }
 
 struct BatchRepair<'a> {
@@ -64,9 +64,9 @@ struct BatchRepair<'a> {
     lines: &'a [(usize, &'a str)],
     prior: &'a [(String, String)],
     settings: &'a TranslationSettings,
-    accepted: HashMap<usize, String>,
+    accepted_translations: HashMap<usize, String>,
     /// The latest translation of a line that is valid but imperfect, kept in case nothing better comes.
-    imperfect: HashMap<usize, String>,
+    imperfect_translations: HashMap<usize, String>,
 }
 
 impl BatchRepair<'_> {
@@ -78,7 +78,7 @@ impl BatchRepair<'_> {
         reference: Vec<(String, String)>,
         preceding: Option<String>,
     ) -> Result<BTreeMap<usize, String>, Failure> {
-        let wanted: HashSet<usize> = group.iter().map(|(index, _)| *index).collect();
+        let wanted_indices: HashSet<usize> = group.iter().map(|(index, _)| *index).collect();
         let mut correction = None;
         let mut reasons = BTreeMap::new();
         for _ in 0..self.settings.retries {
@@ -92,36 +92,40 @@ impl BatchRepair<'_> {
                     correction: correction.take(),
                 })
                 .await;
-            let got: BTreeMap<usize, String> = match answer {
-                Ok(got) => got
+            let translations: BTreeMap<usize, String> = match answer {
+                Ok(translations) => translations
                     .into_iter()
-                    .filter(|(index, text)| wanted.contains(index) && !text.trim().is_empty())
+                    .filter(|(index, text)| {
+                        wanted_indices.contains(index) && !text.trim().is_empty()
+                    })
                     .collect(),
-                Err(AnswerError::Malformed(detail)) => {
+                Err(AnswerError::MalformedAnswer(detail)) => {
                     correction = Some(format!(
                         "previous attempt failed to parse ({detail}); return valid JSON only."
                     ));
-                    reasons = self.unresolved(group, "response failed to parse");
+                    reasons = self.unresolved_reasons(group, "response failed to parse");
                     continue;
                 }
-                Err(AnswerError::Request(failure)) => return Err(failure),
+                Err(AnswerError::FailedRequest(failure)) => return Err(failure),
             };
-            let verdicts = judge(&got, group, self.languages);
-            reasons = self.unresolved(group, "missing from response");
+            let verdicts = judge(&translations, group, self.languages);
+            reasons = self.unresolved_reasons(group, "missing from response");
             for (index, verdict) in verdicts {
                 match verdict {
-                    Verdict::Accepted => {
-                        self.accepted.insert(index, got[&index].clone());
+                    Verdict::Pass => {
+                        self.accepted_translations
+                            .insert(index, translations[&index].clone());
                         reasons.remove(&index);
                     }
-                    Verdict::Broken(reason) => {
-                        if !self.accepted.contains_key(&index) {
+                    Verdict::Fault(reason) => {
+                        if !self.accepted_translations.contains_key(&index) {
                             reasons.insert(index, reason);
                         }
                     }
-                    Verdict::Imperfect(reason) => {
-                        self.imperfect.insert(index, got[&index].clone());
-                        if !self.accepted.contains_key(&index) {
+                    Verdict::Flaw(reason) => {
+                        self.imperfect_translations
+                            .insert(index, translations[&index].clone());
+                        if !self.accepted_translations.contains_key(&index) {
                             reasons.insert(index, reason);
                         }
                     }
@@ -139,26 +143,26 @@ impl BatchRepair<'_> {
         Ok(reasons)
     }
 
-    fn unresolved(&self, group: &[(usize, &str)], reason: &str) -> BTreeMap<usize, String> {
+    fn unresolved_reasons(&self, group: &[(usize, &str)], reason: &str) -> BTreeMap<usize, String> {
         group
             .iter()
-            .filter(|(index, _)| !self.accepted.contains_key(index))
+            .filter(|(index, _)| !self.accepted_translations.contains_key(index))
             .map(|(index, _)| (*index, reason.to_string()))
             .collect()
     }
 
     /// Keeps the best imperfect translation of a line that could not be repaired, or else its original text.
     fn give_up(&mut self, index: usize, text: &str, reason: &str) {
-        match self.imperfect.remove(&index) {
+        match self.imperfect_translations.remove(&index) {
             Some(imperfect) => {
                 log::warn!("line {index} kept without full compliance ({reason})");
-                self.accepted.insert(index, imperfect);
+                self.accepted_translations.insert(index, imperfect);
             }
             None => {
                 log::warn!(
                     "line {index} failed after repair ({reason}), keeping its original text"
                 );
-                self.accepted.insert(index, text.to_string());
+                self.accepted_translations.insert(index, text.to_string());
             }
         }
     }
@@ -169,7 +173,7 @@ impl BatchRepair<'_> {
         let window = self.settings.reference_lines;
         let (first, last) = self.bounds(group);
         let accepted_pair = |(index, text): &(usize, &str)| {
-            self.accepted
+            self.accepted_translations
                 .get(index)
                 .map(|translation| (text.to_string(), translation.clone()))
         };
@@ -211,10 +215,10 @@ impl BatchRepair<'_> {
 
     /// Where `group` starts and ends among the Batch's lines.
     fn bounds(&self, group: &[(usize, &str)]) -> (usize, usize) {
-        let position = |wanted: usize| {
+        let position = |wanted_indices: usize| {
             self.lines
                 .iter()
-                .position(|(index, _)| *index == wanted)
+                .position(|(index, _)| *index == wanted_indices)
                 .unwrap_or(0)
         };
         let first = group.iter().map(|(index, _)| position(*index)).min();
@@ -223,46 +227,49 @@ impl BatchRepair<'_> {
     }
 }
 
+/// What a translation is judged to be.
 enum Verdict {
-    Accepted,
+    /// Kept as the line's translation.
+    Pass,
     /// Wrong beyond keeping: the line falls back to its original text if never repaired.
-    Broken(String),
+    Fault(String),
     /// Usable but imperfect: the translation is kept if nothing better comes.
-    Imperfect(String),
+    Flaw(String),
 }
 
 /// Judges each translation the Model answered against its source line.
 fn judge(
-    got: &BTreeMap<usize, String>,
+    translations: &BTreeMap<usize, String>,
     group: &[(usize, &str)],
     languages: LanguagePair,
 ) -> Vec<(usize, Verdict)> {
     let sources: HashMap<usize, &str> = group.iter().copied().collect();
-    let duplicated = duplicated_lines(got, &sources);
-    let checks_leftover_source = languages.target == Language::English;
-    let checks_negation =
+    let duplicated = duplicated_lines(translations, &sources);
+    let is_leftover_source_checked = languages.target == Language::English;
+    let is_negation_checked =
         languages.source == Language::TraditionalChinese && languages.target == Language::English;
-    got.iter()
+    translations
+        .iter()
         .map(|(index, text)| {
             let source = sources.get(index).copied().unwrap_or_default();
             let verdict = if duplicated.contains(index) {
-                Verdict::Broken("duplicate of another line's translation".to_string())
+                Verdict::Fault("duplicate of another line's translation".to_string())
             } else if is_placeholder(text) {
-                Verdict::Broken(
+                Verdict::Fault(
                     "looks like a placeholder or meta-comment, not a translation".to_string(),
                 )
-            } else if checks_leftover_source && has_han(source) && has_han(text) {
-                Verdict::Broken(
-                    "still contains untranslated source-language characters".to_string(),
-                )
-            } else if checks_negation && has_chinese_negation(source) && !has_english_negation(text)
+            } else if is_leftover_source_checked && has_han(source) && has_han(text) {
+                Verdict::Fault("still contains untranslated source-language characters".to_string())
+            } else if is_negation_checked
+                && has_chinese_negation(source)
+                && !has_english_negation(text)
             {
-                Verdict::Imperfect(
+                Verdict::Flaw(
                     "source contains a negation that seems to be missing from the translation"
                         .to_string(),
                 )
             } else {
-                Verdict::Accepted
+                Verdict::Pass
             };
             (*index, verdict)
         })
@@ -273,12 +280,12 @@ fn judge(
 /// likely collapsed distinct content into one. A repeated source line, like a refrain, may
 /// rightly repeat its translation.
 fn duplicated_lines(
-    got: &BTreeMap<usize, String>,
+    translations: &BTreeMap<usize, String>,
     sources: &HashMap<usize, &str>,
 ) -> HashSet<usize> {
     let mut first_by_text: HashMap<String, usize> = HashMap::new();
-    let mut duplicated = HashSet::new();
-    for (index, text) in got {
+    let mut duplicates = HashSet::new();
+    for (index, text) in translations {
         let key = text.trim().to_lowercase();
         if key.chars().count() <= 5 {
             continue;
@@ -287,8 +294,8 @@ fn duplicated_lines(
             Some(&other) => {
                 let source = |line: usize| sources.get(&line).map(|text| text.trim());
                 if source(*index) != source(other) {
-                    duplicated.insert(*index);
-                    duplicated.insert(other);
+                    duplicates.insert(*index);
+                    duplicates.insert(other);
                 }
             }
             None => {
@@ -296,7 +303,7 @@ fn duplicated_lines(
             }
         }
     }
-    duplicated
+    duplicates
 }
 
 fn is_placeholder(text: &str) -> bool {

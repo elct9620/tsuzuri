@@ -9,7 +9,7 @@ describe("TranscribeController", () => {
   let application: Application;
   let transcription: Promise<unknown>;
   let translated: unknown;
-  let transcribed: unknown;
+  let transcribeArgs: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -35,7 +35,7 @@ describe("TranscribeController", () => {
     mockIPC(
       (command, args) => {
         if (command === "transcribe") {
-          transcribed = args;
+          transcribeArgs = args;
           return transcription;
         }
         if (command === "translate") {
@@ -86,7 +86,7 @@ describe("TranscribeController", () => {
   });
 
   // @behavior TX-011
-  it("lists how long each Phase took once transcribed", async () => {
+  it("lists how long each Phase took once transcribeArgs", async () => {
     transcription = Promise.resolve({
       audio_seconds: 5,
       transcribe_seconds: 2.7,
@@ -106,7 +106,7 @@ describe("TranscribeController", () => {
   });
 
   // @behavior TX-012
-  it("translates the Project once transcribed when asked to", async () => {
+  it("translates the Project once transcribeArgs when asked to", async () => {
     transcription = Promise.resolve({
       audio_seconds: 1,
       transcribe_seconds: 1,
@@ -122,7 +122,7 @@ describe("TranscribeController", () => {
   });
 
   // @behavior TL-016
-  it("translates from the Language it just transcribed", async () => {
+  it("translates from the Language it just transcribeArgs", async () => {
     transcription = Promise.resolve({
       audio_seconds: 1,
       transcribe_seconds: 1,
@@ -147,7 +147,7 @@ describe("TranscribeController", () => {
 
     await controller().transcribe("/media/lecture.mp4");
 
-    expect(transcribed).toEqual({
+    expect(transcribeArgs).toEqual({
       path: "/media/lecture.mp4",
       language: "en",
     });

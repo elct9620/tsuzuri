@@ -30,15 +30,15 @@ pub struct BatchRequest<'a> {
 /// Why the Model gave no usable answer: the request failed, or the answer could not be read.
 #[derive(Debug)]
 pub enum AnswerError {
-    Request(Failure),
-    Malformed(String),
+    FailedRequest(Failure),
+    MalformedAnswer(String),
 }
 
 impl From<AnswerError> for Failure {
     fn from(error: AnswerError) -> Failure {
         match error {
-            AnswerError::Request(failure) => failure,
-            AnswerError::Malformed(detail) => Failure::LlamaRequest { detail },
+            AnswerError::FailedRequest(failure) => failure,
+            AnswerError::MalformedAnswer(detail) => Failure::LlamaRequest { detail },
         }
     }
 }
@@ -77,7 +77,7 @@ impl TranslationModel {
             .answer(
                 instruction(batch.languages),
                 user_message(batch),
-                TRANSLATING,
+                TRANSLATION_TASK,
                 translation_schema(),
             )
             .await?;
@@ -98,7 +98,7 @@ impl TranslationModel {
             .answer(
                 split_sentence_instruction(source),
                 format!("Subtitle lines:\n{}", lines_json(lines)),
-                FINDING_SPLIT_SENTENCES,
+                SPLIT_SENTENCE_TASK,
                 split_sentence_schema(),
             )
             .await?;
@@ -137,20 +137,21 @@ impl TranslationModel {
                 },
             })
             .build()
-            .map_err(|error| AnswerError::Request(request_failure(error)))?;
+            .map_err(|error| AnswerError::FailedRequest(request_failure(error)))?;
         let response = self
             .client
             .chat()
             .create(request)
             .await
-            .map_err(|error| AnswerError::Request(request_failure(error)))?;
+            .map_err(|error| AnswerError::FailedRequest(request_failure(error)))?;
         let content = response
             .choices
             .into_iter()
             .next()
             .and_then(|choice| choice.message.content)
-            .ok_or_else(|| AnswerError::Malformed("answered without content".to_string()))?;
-        serde_json::from_str(&content).map_err(|error| AnswerError::Malformed(error.to_string()))
+            .ok_or_else(|| AnswerError::MalformedAnswer("answered without content".to_string()))?;
+        serde_json::from_str(&content)
+            .map_err(|error| AnswerError::MalformedAnswer(error.to_string()))
     }
 }
 
@@ -160,12 +161,12 @@ struct Task {
     temperature: f32,
 }
 
-const TRANSLATING: Task = Task {
+const TRANSLATION_TASK: Task = Task {
     name: "subtitle_translation",
     temperature: 0.2,
 };
 /// Judging where sentences continue wants the same answer every time.
-const FINDING_SPLIT_SENTENCES: Task = Task {
+const SPLIT_SENTENCE_TASK: Task = Task {
     name: "continuation_clusters",
     temperature: 0.0,
 };

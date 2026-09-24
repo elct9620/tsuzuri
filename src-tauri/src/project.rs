@@ -298,12 +298,16 @@ mod tests {
             },
         });
 
-        current.write_translations(generation, pair(), vec![segment("大家好", Some("Hello"))]);
+        current.write_translations(
+            generation,
+            language_pair(),
+            vec![segment("大家好", Some("Hello"))],
+        );
 
         assert_eq!(segments(&current), vec![segment("另一份", None)]);
     }
 
-    fn pair() -> LanguagePair {
+    fn language_pair() -> LanguagePair {
         LanguagePair {
             source: Language::TraditionalChinese,
             target: Language::English,

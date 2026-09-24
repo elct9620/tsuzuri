@@ -9,7 +9,7 @@ use crate::test_support::{FakeHttp, Response};
 /// The lines of one request: each index with its text.
 pub type Lines = Vec<(usize, String)>;
 
-/// A llama-server that answers `/health` as not ready `loading` times first, then answers
+/// A llama-server that answers `/health` as not ready `loading_checks` times first, then answers
 /// the n-th translation request through `translate` and each window looked at for Split
 /// Sentences through `split`, keeping every request it was sent.
 pub struct FakeLlama {
@@ -21,43 +21,43 @@ pub struct FakeLlama {
 
 impl FakeLlama {
     pub fn serve(
-        loading: usize,
+        loading_checks: usize,
         translate: impl Fn(usize, Lines) -> Response + Send + Sync + 'static,
         split: impl Fn(Lines) -> String + Send + Sync + 'static,
     ) -> FakeLlama {
         let log = Arc::new(Mutex::new(Vec::new()));
         let requests = Arc::new(Mutex::new(Vec::new()));
         let windows = Arc::new(Mutex::new(Vec::new()));
-        let (seen, sent, looked) = (
+        let (log_sink, request_sink, window_sink) = (
             Arc::clone(&log),
             Arc::clone(&requests),
             Arc::clone(&windows),
         );
         let health_checks = Mutex::new(0);
-        let translations_asked = AtomicUsize::new(0);
+        let translation_requests = AtomicUsize::new(0);
         let server = FakeHttp::serve(move |request| {
             if request.path == "/health" {
                 let mut checks = health_checks.lock().unwrap();
                 *checks += 1;
-                let ready = *checks > loading;
-                seen.lock().unwrap().push(format!(
+                let ready = *checks > loading_checks;
+                log_sink.lock().unwrap().push(format!(
                     "health {}",
-                    if ready { "ready" } else { "loading" }
+                    if ready { "ready" } else { "loading_checks" }
                 ));
                 return Response {
                     status: if ready { 200 } else { 503 },
                     body: Vec::new(),
                 };
             }
-            seen.lock().unwrap().push("chat".to_string());
+            log_sink.lock().unwrap().push("chat".to_string());
             let body: serde_json::Value = serde_json::from_slice(&request.body).unwrap();
             let lines = batch_lines(&body);
             if body["response_format"]["json_schema"]["name"] == "continuation_clusters" {
-                looked.lock().unwrap().push(lines.clone());
+                window_sink.lock().unwrap().push(lines.clone());
                 return completion(&split(lines));
             }
-            sent.lock().unwrap().push(body);
-            translate(translations_asked.fetch_add(1, Ordering::SeqCst), lines)
+            request_sink.lock().unwrap().push(body);
+            translate(translation_requests.fetch_add(1, Ordering::SeqCst), lines)
         });
         FakeLlama {
             server,
@@ -68,21 +68,23 @@ impl FakeLlama {
     }
 
     /// Answers each line as its text prefixed with `EN:`.
-    pub fn echo(loading: usize) -> FakeLlama {
+    pub fn with_echo(loading_checks: usize) -> FakeLlama {
         FakeLlama::serve(
-            loading,
+            loading_checks,
             |_, lines| translations(echo_lines(lines)),
             no_split_sentences,
         )
     }
 
     /// Echoes each line, and answers every window with `split` as its Split Sentences.
-    pub fn echo_finding(split: impl Fn(Lines) -> String + Send + Sync + 'static) -> FakeLlama {
+    pub fn with_split_sentences(
+        split: impl Fn(Lines) -> String + Send + Sync + 'static,
+    ) -> FakeLlama {
         FakeLlama::serve(0, |_, lines| translations(echo_lines(lines)), split)
     }
 
     /// Answers every translation request with the lines `answer` gives back.
-    pub fn answering(answer: impl Fn(Lines) -> Lines + Send + Sync + 'static) -> FakeLlama {
+    pub fn with_answer(answer: impl Fn(Lines) -> Lines + Send + Sync + 'static) -> FakeLlama {
         FakeLlama::serve(
             0,
             move |_, lines| translations(answer(lines)),
@@ -91,7 +93,7 @@ impl FakeLlama {
     }
 
     /// Answers the n-th translation request, counting from 0, with what `answer` gives back.
-    pub fn answering_each(
+    pub fn with_answer_per_request(
         answer: impl Fn(usize, Lines) -> Response + Send + Sync + 'static,
     ) -> FakeLlama {
         FakeLlama::serve(0, answer, no_split_sentences)

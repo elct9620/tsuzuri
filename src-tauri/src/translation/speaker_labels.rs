@@ -2,25 +2,25 @@
 const LONGEST_NAME: usize = 20;
 
 /// A Segment's text split into its dialogue and the Speaker Label found on each line.
-pub struct Labelled {
+pub struct LabelledText {
     /// Each line's label exactly as written, colon and spacing included, or none.
     labels: Vec<Option<String>>,
     pub dialogue: String,
 }
 
-impl Labelled {
+impl LabelledText {
     /// Takes the Speaker Label off the front of each line of `text`.
-    pub fn strip(text: &str) -> Labelled {
+    pub fn split_labels(text: &str) -> LabelledText {
         let (labels, lines): (Vec<_>, Vec<_>) = text.split('\n').map(split_label).unzip();
-        Labelled {
+        LabelledText {
             labels,
             dialogue: lines.join("\n"),
         }
     }
 
     /// Text whose lines carry no label and so needs none put back.
-    pub fn unlabelled(text: &str) -> Labelled {
-        Labelled {
+    pub fn new(text: &str) -> LabelledText {
+        LabelledText {
             labels: Vec::new(),
             dialogue: text.to_string(),
         }

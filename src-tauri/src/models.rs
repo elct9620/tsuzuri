@@ -129,40 +129,19 @@ pub fn choose_model(app: AppHandle, slot: ModelSlot, path: PathBuf) -> Result<Mo
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::TempDir;
 
-    struct TempDir(PathBuf);
-
-    impl TempDir {
-        fn new(name: &str) -> TempDir {
-            let path = std::env::temp_dir().join(format!("tsuzuri-{}-{name}", std::process::id()));
-            let _ = fs::remove_dir_all(&path);
-            fs::create_dir_all(&path).unwrap();
-            TempDir(path)
-        }
-
-        fn file(&self, name: &str) -> PathBuf {
-            let path = self.0.join(name);
-            fs::write(&path, b"weights").unwrap();
-            path
-        }
-    }
-
-    impl Drop for TempDir {
-        fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.0);
-        }
-    }
 
     // @behavior MD-001
     #[test]
     fn remembers_the_chosen_model_across_loads() {
         let dir = TempDir::new("remember");
         let model = dir.file("breeze.bin");
-        let mut settings = ModelSettings::load(&dir.0).unwrap();
+        let mut settings = ModelSettings::load(dir.path()).unwrap();
         settings.choose(ModelSlot::Transcription, model.clone());
-        settings.save(&dir.0).unwrap();
+        settings.save(dir.path()).unwrap();
 
-        let reloaded = ModelSettings::load(&dir.0).unwrap();
+        let reloaded = ModelSettings::load(dir.path()).unwrap();
 
         assert_eq!(reloaded.require(ModelSlot::Transcription), Ok(model.as_path()));
     }

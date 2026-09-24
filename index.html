@@ -14,12 +14,12 @@
         <h1>Tsuzuri</h1>
       </header>
 
-      <section class="panel" aria-labelledby="components-title">
+      <section class="panel" aria-labelledby="components-title" data-controller="components">
         <h2 id="components-title">執行環境</h2>
         <ul class="components">
-          <li>ffmpeg <span class="status">未安裝</span></li>
-          <li>whisper.cpp <span class="status">未安裝</span></li>
-          <li>llama.cpp <span class="status">未安裝</span></li>
+          <li>ffmpeg <span class="status" data-components-target="status" data-component="ffmpeg">檢查中</span></li>
+          <li>whisper.cpp <span class="status" data-components-target="status" data-component="whisper">檢查中</span></li>
+          <li>llama.cpp <span class="status" data-components-target="status" data-component="llama">檢查中</span></li>
         </ul>
       </section>
 

@@ -21,3 +21,19 @@ Remember a Model file for one slot and answer the slot's new state.
 ```rust
 pub fn choose_model(app: AppHandle, slot: ModelSlot, path: PathBuf) -> Result<ModelSettingsView, String> {}
 ```
+
+## `component_statuses`
+
+Whether each Component the Manifest lists for this platform is ready to run.
+
+```rust
+pub fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {}
+```
+
+## `install_components`
+
+Install every downloaded Component that is not ready yet, one after another, emitting `component-progress` events while archives download, and answer the statuses afterwards.
+
+```rust
+pub async fn install_components(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {}
+```

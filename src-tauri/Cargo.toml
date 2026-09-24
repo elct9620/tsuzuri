@@ -23,6 +23,13 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
+reqwest = { version = "0.13", features = ["stream"] }
+sha2 = "0.10"
+zip = "8.6.0"
+tar = "0.4.46"
+flate2 = "1.1.10"
+futures-util = "0.3.34"
+tokio = { version = "1.53.1", features = ["fs", "io-util", "rt", "macros"] }
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

@@ -25,3 +25,6 @@ dist-ssr
 
 # Vendored Components built by scripts/vendor.sh
 vendor/
+
+# Generated in CI by cargo about
+THIRD-PARTY-LICENSES.html

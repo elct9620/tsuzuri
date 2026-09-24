@@ -45,6 +45,8 @@ jobs:
     env:
       CARGO_DENY_VERSION: 0.20.2
       CARGO_DENY_SHA256: 9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f
+      CARGO_ABOUT_VERSION: 0.9.2
+      CARGO_ABOUT_SHA256: 9099a59e820c38a68b9d65f300662a567d56562f9a10f6aa4c7e86c17c2566af
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -60,6 +62,23 @@ jobs:
       - name: Check dependency licenses
         working-directory: src-tauri
         run: cargo deny --all-features check licenses
+      - name: Install cargo-about
+        run: |
+          name="cargo-about-$CARGO_ABOUT_VERSION-x86_64-unknown-linux-musl"
+          curl -sSL -o "$RUNNER_TEMP/cargo-about.tar.gz" \
+            "https://github.com/EmbarkStudios/cargo-about/releases/download/$CARGO_ABOUT_VERSION/$name.tar.gz"
+          echo "$CARGO_ABOUT_SHA256  $RUNNER_TEMP/cargo-about.tar.gz" | sha256sum -c -
+          tar xzf "$RUNNER_TEMP/cargo-about.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/$name" >> "$GITHUB_PATH"
+      # The binaries carry these crates, so their license texts travel with every build.
+      - name: Generate third-party license notices
+        working-directory: src-tauri
+        run: cargo about generate --locked --fail -o ../THIRD-PARTY-LICENSES.html about.hbs
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: third-party-licenses
+          path: THIRD-PARTY-LICENSES.html
+          if-no-files-found: error
 
   frontend:
     runs-on: ubuntu-latest
@@ -146,10 +165,14 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm tauri build
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: third-party-licenses
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tsuzuri-${{ runner.os }}
           path: |
             src-tauri/target/release/bundle/
             src-tauri/target/release/tsuzuri.exe
+            THIRD-PARTY-LICENSES.html
           if-no-files-found: error

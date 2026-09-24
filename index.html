@@ -10,7 +10,7 @@
 
   <body class="text-[15px]">
     <main
-      class="flex h-screen flex-col"
+      class="flex h-dvh flex-col"
       data-controller="project transcript dialog"
     >
       <section class="hero flex-1" data-project-target="start">
@@ -41,317 +41,317 @@
       </section>
 
       <div
-        class="flex min-h-0 flex-1 flex-col"
+        class="drawer drawer-open h-dvh"
         data-project-target="workspace"
         hidden
       >
-        <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
-          <h1
-            class="navbar-start truncate font-semibold"
-            data-project-target="name"
-          ></h1>
-          <div class="navbar-end gap-2">
-            <details class="dropdown dropdown-end">
-              <summary class="btn btn-sm" data-i18n="toolbar.open"></summary>
-              <ul
-                class="menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md"
-              >
-                <li>
-                  <button
-                    type="button"
-                    data-action="project#openDirectory"
-                    data-i18n="toolbar.openDirectory"
-                  ></button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    data-action="project#openSrt"
-                    data-i18n="toolbar.openSrt"
-                  ></button>
-                </li>
-              </ul>
-            </details>
-
-            <div
-              class="contents"
-              data-controller="transcribe"
-              data-transcribe-progress-outlet="#progress"
-            >
-              <button
-                type="button"
-                class="btn btn-sm"
-                data-transcribe-target="open"
-                data-action="transcribe#open"
-                data-i18n="toolbar.transcribe"
-                disabled
-              ></button>
-              <dialog class="modal" data-transcribe-target="dialog">
-                <div class="modal-box">
-                  <h3
-                    class="text-lg font-bold"
-                    data-i18n="toolbar.transcribe"
-                  ></h3>
-                  <fieldset class="fieldset gap-3 text-sm">
-                    <p class="flex items-center gap-2">
-                      <span data-i18n="transcribe.language"></span>
-                      <span data-transcribe-target="language"></span>
-                    </p>
-                    <p class="flex items-center gap-2">
-                      <span data-i18n="transcribe.model"></span>
-                      <span
-                        class="break-all text-base-content/70"
-                        data-transcribe-target="model"
-                      ></span>
-                    </p>
-                    <label class="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        class="checkbox checkbox-sm"
-                        data-transcribe-target="translate"
-                      />
-                      <span data-i18n="transcribe.translateAfter"></span>
-                    </label>
-                    <label class="flex items-center gap-2"
-                      ><span data-i18n="work.into"></span>
-                      <select
-                        class="select select-sm w-auto"
-                        data-transcribe-target="translationLanguage"
-                      >
-                        <option value="en" selected>English</option>
-                        <option value="ja">日本語</option>
-                        <option value="zh-TW">繁體中文</option>
-                      </select>
-                    </label>
-                  </fieldset>
-                  <div
-                    role="alert"
-                    class="alert alert-warning alert-soft mt-2"
-                    data-transcribe-target="overwrite"
-                    hidden
-                  >
-                    <span data-i18n="transcribe.overwrite"></span>
-                  </div>
-                  <div class="modal-action">
-                    <form method="dialog">
-                      <button class="btn" data-i18n="work.cancel"></button>
-                    </form>
+        <input id="resources-drawer" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content flex h-dvh min-w-0 flex-col">
+          <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
+            <h1
+              class="navbar-start truncate font-semibold"
+              data-project-target="name"
+            ></h1>
+            <div class="navbar-end gap-2">
+              <details class="dropdown dropdown-end">
+                <summary class="btn btn-sm" data-i18n="toolbar.open"></summary>
+                <ul
+                  class="menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md"
+                >
+                  <li>
                     <button
                       type="button"
-                      class="btn btn-primary"
-                      data-transcribe-target="start"
-                      data-action="transcribe#start"
-                      data-i18n="transcribe.start"
+                      data-action="project#openDirectory"
+                      data-i18n="toolbar.openDirectory"
                     ></button>
-                  </div>
-                </div>
-                <form method="dialog" class="modal-backdrop">
-                  <button>close</button>
-                </form>
-              </dialog>
-            </div>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      data-action="project#openSrt"
+                      data-i18n="toolbar.openSrt"
+                    ></button>
+                  </li>
+                </ul>
+              </details>
 
-            <div
-              class="contents"
-              data-controller="translate"
-              data-translate-progress-outlet="#progress"
-            >
-              <button
-                type="button"
-                class="btn btn-sm"
-                data-translate-target="open"
-                data-action="translate#open"
-                data-i18n="toolbar.translate"
-                disabled
-              ></button>
-              <dialog class="modal" data-translate-target="dialog">
-                <div class="modal-box">
-                  <h3
-                    class="text-lg font-bold"
-                    data-i18n="toolbar.translate"
-                  ></h3>
-                  <fieldset class="fieldset gap-3 text-sm">
-                    <p class="flex flex-wrap items-center gap-2">
-                      <span data-i18n="translate.source"></span>
-                      <span data-translate-target="source"></span>
-                      <span class="ml-4" data-i18n="work.into"></span>
-                      <select
-                        class="select select-sm w-auto"
-                        data-translate-target="language"
-                      >
-                        <option value="en" selected>English</option>
-                        <option value="ja">日本語</option>
-                        <option value="zh-TW">繁體中文</option>
-                      </select>
-                    </p>
-                    <p class="flex items-center gap-2">
-                      <span data-i18n="translate.glossary"></span>
-                      <span data-translate-target="glossary"></span>
-                    </p>
-                    <p class="flex flex-wrap items-center gap-4">
+              <div
+                class="contents"
+                data-controller="transcribe"
+                data-transcribe-progress-outlet="#progress"
+              >
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  data-transcribe-target="open"
+                  data-action="transcribe#open"
+                  data-i18n="toolbar.transcribe"
+                  disabled
+                ></button>
+                <dialog class="modal" data-transcribe-target="dialog">
+                  <div class="modal-box">
+                    <h3
+                      class="text-lg font-bold"
+                      data-i18n="toolbar.transcribe"
+                    ></h3>
+                    <fieldset class="fieldset gap-3 text-sm">
+                      <p class="flex items-center gap-2">
+                        <span data-i18n="transcribe.language"></span>
+                        <span data-transcribe-target="language"></span>
+                      </p>
+                      <p class="flex items-center gap-2">
+                        <span data-i18n="transcribe.model"></span>
+                        <span
+                          class="break-all text-base-content/70"
+                          data-transcribe-target="model"
+                        ></span>
+                      </p>
                       <label class="flex items-center gap-2">
                         <input
                           type="checkbox"
                           class="checkbox checkbox-sm"
-                          data-translate-target="speakerLabels"
+                          data-transcribe-target="translate"
                         />
-                        <span data-i18n="translate.speakerLabels"></span>
+                        <span data-i18n="transcribe.translateAfter"></span>
                       </label>
+                      <label class="flex items-center gap-2"
+                        ><span data-i18n="work.into"></span>
+                        <select
+                          class="select select-sm w-auto"
+                          data-transcribe-target="translationLanguage"
+                        >
+                          <option value="en" selected>English</option>
+                          <option value="ja">日本語</option>
+                          <option value="zh-TW">繁體中文</option>
+                        </select>
+                      </label>
+                    </fieldset>
+                    <div
+                      role="alert"
+                      class="alert alert-warning alert-soft mt-2"
+                      data-transcribe-target="overwrite"
+                      hidden
+                    >
+                      <span data-i18n="transcribe.overwrite"></span>
+                    </div>
+                    <div class="modal-action">
+                      <form method="dialog">
+                        <button class="btn" data-i18n="work.cancel"></button>
+                      </form>
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        data-transcribe-target="start"
+                        data-action="transcribe#start"
+                        data-i18n="transcribe.start"
+                      ></button>
+                    </div>
+                  </div>
+                  <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                  </form>
+                </dialog>
+              </div>
+
+              <div
+                class="contents"
+                data-controller="translate"
+                data-translate-progress-outlet="#progress"
+              >
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  data-translate-target="open"
+                  data-action="translate#open"
+                  data-i18n="toolbar.translate"
+                  disabled
+                ></button>
+                <dialog class="modal" data-translate-target="dialog">
+                  <div class="modal-box">
+                    <h3
+                      class="text-lg font-bold"
+                      data-i18n="toolbar.translate"
+                    ></h3>
+                    <fieldset class="fieldset gap-3 text-sm">
+                      <p class="flex flex-wrap items-center gap-2">
+                        <span data-i18n="translate.source"></span>
+                        <span data-translate-target="source"></span>
+                        <span class="ml-4" data-i18n="work.into"></span>
+                        <select
+                          class="select select-sm w-auto"
+                          data-translate-target="language"
+                        >
+                          <option value="en" selected>English</option>
+                          <option value="ja">日本語</option>
+                          <option value="zh-TW">繁體中文</option>
+                        </select>
+                      </p>
+                      <p class="flex items-center gap-2">
+                        <span data-i18n="translate.glossary"></span>
+                        <span data-translate-target="glossary"></span>
+                      </p>
+                      <p class="flex flex-wrap items-center gap-4">
+                        <label class="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            class="checkbox checkbox-sm"
+                            data-translate-target="speakerLabels"
+                          />
+                          <span data-i18n="translate.speakerLabels"></span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            class="checkbox checkbox-sm"
+                            data-translate-target="selfReview"
+                          />
+                          <span data-i18n="translate.selfReview"></span>
+                        </label>
+                      </p>
                       <label class="flex items-center gap-2">
                         <input
                           type="checkbox"
                           class="checkbox checkbox-sm"
-                          data-translate-target="selfReview"
+                          data-translate-target="summary"
                         />
-                        <span data-i18n="translate.selfReview"></span>
+                        <span data-i18n="translate.rollingSummary"></span>
+                        <input
+                          type="number"
+                          min="1"
+                          value="100"
+                          class="input input-sm w-20"
+                          data-translate-target="summaryWords"
+                        />
+                        <span data-i18n="translate.words"></span>
                       </label>
-                    </p>
-                    <label class="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        class="checkbox checkbox-sm"
-                        data-translate-target="summary"
-                      />
-                      <span data-i18n="translate.rollingSummary"></span>
-                      <input
-                        type="number"
-                        min="1"
-                        value="100"
-                        class="input input-sm w-20"
-                        data-translate-target="summaryWords"
-                      />
-                      <span data-i18n="translate.words"></span>
-                    </label>
-                  </fieldset>
-                  <div class="modal-action">
-                    <form method="dialog">
-                      <button class="btn" data-i18n="work.cancel"></button>
-                    </form>
+                    </fieldset>
+                    <div class="modal-action">
+                      <form method="dialog">
+                        <button class="btn" data-i18n="work.cancel"></button>
+                      </form>
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        data-action="translate#start"
+                        data-i18n="translate.start"
+                      ></button>
+                    </div>
+                  </div>
+                  <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                  </form>
+                </dialog>
+              </div>
+
+              <details class="dropdown dropdown-end">
+                <summary
+                  class="btn btn-sm"
+                  data-i18n="toolbar.export"
+                ></summary>
+                <ul
+                  class="menu dropdown-content z-10 w-44 rounded-box bg-base-100 shadow-md [&_button:disabled]:pointer-events-none [&_button:disabled]:text-base-content/40"
+                >
+                  <li>
                     <button
                       type="button"
-                      class="btn btn-primary"
-                      data-action="translate#start"
-                      data-i18n="translate.start"
+                      data-transcript-target="export"
+                      data-action="transcript#save"
+                      data-transcript-content-param="bilingual"
+                      disabled
+                      data-i18n="toolbar.bilingual"
                     ></button>
-                  </div>
-                </div>
-                <form method="dialog" class="modal-backdrop">
-                  <button>close</button>
-                </form>
-              </dialog>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      data-transcript-target="export"
+                      data-action="transcript#save"
+                      data-transcript-content-param="original"
+                      disabled
+                      data-i18n="toolbar.original"
+                    ></button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      data-transcript-target="export"
+                      data-action="transcript#save"
+                      data-transcript-content-param="translation"
+                      disabled
+                      data-i18n="toolbar.translation"
+                    ></button>
+                  </li>
+                </ul>
+              </details>
+
+              <button
+                type="button"
+                class="btn btn-sm btn-ghost"
+                data-action="dialog#open"
+                data-i18n="toolbar.settings"
+              ></button>
             </div>
-
-            <details class="dropdown dropdown-end">
-              <summary class="btn btn-sm" data-i18n="toolbar.export"></summary>
-              <ul
-                class="menu dropdown-content z-10 w-44 rounded-box bg-base-100 shadow-md [&_button:disabled]:pointer-events-none [&_button:disabled]:text-base-content/40"
-              >
-                <li>
-                  <button
-                    type="button"
-                    data-transcript-target="export"
-                    data-action="transcript#save"
-                    data-transcript-content-param="bilingual"
-                    disabled
-                    data-i18n="toolbar.bilingual"
-                  ></button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    data-transcript-target="export"
-                    data-action="transcript#save"
-                    data-transcript-content-param="original"
-                    disabled
-                    data-i18n="toolbar.original"
-                  ></button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    data-transcript-target="export"
-                    data-action="transcript#save"
-                    data-transcript-content-param="translation"
-                    disabled
-                    data-i18n="toolbar.translation"
-                  ></button>
-                </li>
-              </ul>
-            </details>
-
-            <button
-              type="button"
-              class="btn btn-sm btn-ghost"
-              data-action="dialog#open"
-              data-i18n="toolbar.settings"
-            ></button>
+          </header>
+          <div
+            class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
+          >
+            <h2
+              class="grow truncate font-semibold"
+              data-transcript-target="heading"
+            ></h2>
+            <label class="flex items-center gap-2 text-sm"
+              ><span data-i18n="edit.translation"></span>
+              <select
+                class="select select-sm w-auto"
+                data-transcript-target="translationLanguage"
+                data-action="change->transcript#showTranslation"
+              ></select>
+            </label>
           </div>
-        </header>
-
-        <div class="drawer drawer-open min-h-0 flex-1">
-          <input id="resources-drawer" type="checkbox" class="drawer-toggle" />
-          <div class="drawer-content flex min-h-0 flex-col">
-            <div
-              class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
-            >
-              <h2
-                class="grow truncate font-semibold"
-                data-transcript-target="heading"
-              ></h2>
-              <label class="flex items-center gap-2 text-sm"
-                ><span data-i18n="edit.translation"></span>
-                <select
-                  class="select select-sm w-auto"
-                  data-transcript-target="translationLanguage"
-                  data-action="change->transcript#showTranslation"
-                ></select>
-              </label>
-            </div>
-            <div
-              id="progress"
-              class="flex flex-col gap-2 border-b border-base-300 px-4 py-2"
-              data-controller="progress"
+          <div
+            id="progress"
+            class="flex flex-col gap-2 border-b border-base-300 px-4 py-2"
+            data-controller="progress"
+            hidden
+          >
+            <p
+              class="whitespace-pre-line text-sm text-base-content/70"
+              data-progress-target="status"
+            ></p>
+            <progress
+              class="progress w-full"
+              max="100"
+              data-progress-target="bar"
               hidden
-            >
-              <p
-                class="whitespace-pre-line text-sm text-base-content/70"
-                data-progress-target="status"
-              ></p>
-              <progress
-                class="progress w-full"
-                max="100"
-                data-progress-target="bar"
-                hidden
-              ></progress>
-            </div>
-            <div class="flex-1 overflow-y-auto p-4">
-              <p
-                class="text-base-content/60"
-                data-transcript-target="empty"
-                data-i18n="edit.empty"
-              ></p>
-              <ol
-                class="list text-[15px] [&_textarea]:block [&_textarea]:w-full [&_textarea]:resize-y [&_textarea]:rounded-field [&_textarea]:border [&_textarea]:border-transparent [&_textarea]:px-1.5 [&_textarea]:py-1 [&_textarea]:hover:border-base-300 [&_textarea]:focus:border-base-content/40 [&_textarea]:focus:outline-none [&_textarea.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row"
-                data-transcript-target="list"
-              ></ol>
-            </div>
+            ></progress>
           </div>
-          <div class="drawer-side">
-            <label
-              for="resources-drawer"
-              aria-label="close sidebar"
-              class="drawer-overlay"
-            ></label>
-            <div class="flex min-h-full w-56 flex-col bg-base-200">
-              <ul
-                class="menu w-full grow [&_button]:flex"
-                data-project-target="resources"
-              ></ul>
-              <p
-                class="px-4 py-3 text-sm text-base-content/60"
-                data-project-target="glossary"
-              ></p>
-            </div>
+          <div class="flex-1 overflow-y-auto p-4">
+            <p
+              class="text-base-content/60"
+              data-transcript-target="empty"
+              data-i18n="edit.empty"
+            ></p>
+            <ol
+              class="list text-[15px] [&_textarea]:block [&_textarea]:w-full [&_textarea]:resize-y [&_textarea]:rounded-field [&_textarea]:border [&_textarea]:border-transparent [&_textarea]:px-1.5 [&_textarea]:py-1 [&_textarea]:hover:border-base-300 [&_textarea]:focus:border-base-content/40 [&_textarea]:focus:outline-none [&_textarea.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row"
+              data-transcript-target="list"
+            ></ol>
+          </div>
+        </div>
+        <div class="drawer-side">
+          <label
+            for="resources-drawer"
+            aria-label="close sidebar"
+            class="drawer-overlay"
+          ></label>
+          <div class="flex min-h-full w-56 flex-col bg-base-200">
+            <ul
+              class="menu w-full grow [&_button]:flex"
+              data-project-target="resources"
+            ></ul>
+            <p
+              class="px-4 py-3 text-sm text-base-content/60"
+              data-project-target="glossary"
+            ></p>
           </div>
         </div>
       </div>

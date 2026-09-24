@@ -342,11 +342,9 @@ mod tests {
 
     #[cfg(unix)]
     fn script(dir: &Path, name: &str, exit_code: i32) -> PathBuf {
-        use std::os::unix::fs::PermissionsExt;
         std::fs::create_dir_all(dir).unwrap();
         let path = dir.join(name);
-        std::fs::write(&path, format!("#!/bin/sh\nexit {exit_code}\n")).unwrap();
-        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        crate::test_support::write_executable(&path, &format!("#!/bin/sh\nexit {exit_code}\n"));
         path
     }
 

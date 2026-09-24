@@ -1387,20 +1387,16 @@ mod tests {
     #[cfg(unix)]
     #[tokio::test]
     async fn stops_llama_server_when_translation_gives_up() {
-        use std::os::unix::fs::PermissionsExt;
-
         let dir = TempDir::new("tl-stop");
         let llama = dir.path().join("llama-server");
         let pid_file = dir.path().join("llama.pid");
-        std::fs::write(
+        crate::test_support::write_executable(
             &llama,
-            format!(
+            &format!(
                 "#!/bin/sh\necho $$ > '{}'\nexec sleep 30\n",
                 pid_file.display()
             ),
-        )
-        .unwrap();
-        std::fs::set_permissions(&llama, std::fs::Permissions::from_mode(0o755)).unwrap();
+        );
         let mut settings = ModelSettings::default();
         settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
         let app = mock_app();

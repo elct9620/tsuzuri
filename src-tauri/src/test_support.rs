@@ -29,6 +29,31 @@ impl Drop for TempDir {
     }
 }
 
+/// Writes an executable script at `path` through a `cp` child rather than from this process.
+/// On Linux, a child another test thread forks while this process holds the file open for
+/// writing keeps that descriptor until it execs, and running the script meanwhile fails with
+/// ETXTBSY; a file this process never opens for writing cannot be caught that way.
+#[cfg(unix)]
+pub fn write_executable(path: &Path, body: &str) {
+    use std::os::unix::fs::PermissionsExt;
+
+    let file_name = path.file_name().unwrap().to_string_lossy();
+    let source = path.with_file_name(format!(".{file_name}.source"));
+    fs::write(&source, body).unwrap();
+    let copy_status = std::process::Command::new("cp")
+        .arg(&source)
+        .arg(path)
+        .status()
+        .unwrap();
+    assert!(
+        copy_status.success(),
+        "cp could not write {}",
+        path.display()
+    );
+    fs::remove_file(&source).unwrap();
+    fs::set_permissions(path, fs::Permissions::from_mode(0o755)).unwrap();
+}
+
 pub struct Request {
     pub path: String,
     pub body: Vec<u8>,
@@ -125,4 +150,44 @@ pub fn captured_logs(run: impl FnOnce()) -> Vec<String> {
     LOGGED.with(|lines| lines.borrow_mut().clear());
     run();
     LOGGED.with(|lines| lines.take())
+}
+
+/// Only Linux refuses to run a script another process holds open for writing.
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+    use std::process::Command;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+
+    use super::*;
+
+    #[test]
+    fn runs_a_written_executable_while_other_threads_fork() {
+        let dir = TempDir::new("executable-busy");
+        let is_done = Arc::new(AtomicBool::new(false));
+        let forkers: Vec<_> = (0..2)
+            .map(|_| {
+                let is_done = Arc::clone(&is_done);
+                std::thread::spawn(move || {
+                    while !is_done.load(Ordering::Relaxed) {
+                        let _ = Command::new("true").status();
+                    }
+                })
+            })
+            .collect();
+
+        let busy_runs = (0..100)
+            .filter(|attempt| {
+                let tool = dir.path().join(format!("tool{attempt}"));
+                write_executable(&tool, "#!/bin/sh\nexit 0\n");
+                matches!(Command::new(&tool).status(), Err(error) if error.raw_os_error() == Some(26))
+            })
+            .count();
+        is_done.store(true, Ordering::Relaxed);
+        for forker in forkers {
+            forker.join().unwrap();
+        }
+
+        assert_eq!(busy_runs, 0, "runs refused as a busy text file (ETXTBSY)");
+    }
 }

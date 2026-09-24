@@ -231,14 +231,13 @@ pub async fn transcribe(
 
 #[cfg(all(test, unix))]
 mod tests {
-    use std::os::unix::fs::PermissionsExt;
     use std::sync::{Arc, Mutex};
 
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
     use tauri::Listener;
 
     use super::*;
-    use crate::test_support::TempDir;
+    use crate::test_support::{write_executable, TempDir};
 
     const TWO_SECOND_WAV: &str =
         "#!/bin/sh\nfor last; do :; done\nhead -c 64044 /dev/zero > \"$last\"\n";
@@ -331,8 +330,7 @@ mod tests {
 
     fn script(dir: &TempDir, name: &str, body: &str) -> PathBuf {
         let path = dir.path().join(name);
-        std::fs::write(&path, body).unwrap();
-        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        write_executable(&path, body);
         path
     }
 

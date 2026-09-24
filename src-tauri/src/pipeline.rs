@@ -7,6 +7,7 @@ use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tauri_plugin_shell::process::CommandEvent;
 
 use crate::components::{self, Resolver};
+use crate::failure::Failure;
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::processes::Processes;
 use crate::timing::{PhaseTiming, Phases};
@@ -45,11 +46,9 @@ pub async fn run_transcribe<R: Runtime>(
     input: &Path,
     work: &Path,
     mut phases: Phases,
-) -> Result<Transcription, String> {
-    let model = settings
-        .require(ModelSlot::Transcription)
-        .map_err(|error| error.to_string())?;
-    std::fs::create_dir_all(work).map_err(|error| error.to_string())?;
+) -> Result<Transcription, Failure> {
+    let model = settings.require(ModelSlot::Transcription)?;
+    std::fs::create_dir_all(work)?;
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
 
@@ -63,9 +62,7 @@ pub async fn run_transcribe<R: Runtime>(
         |_| {},
     )
     .await?;
-    let audio_bytes = std::fs::metadata(&wav)
-        .map_err(|error| error.to_string())?
-        .len();
+    let audio_bytes = std::fs::metadata(&wav)?.len();
 
     enter(app, &mut phases, "load");
     let started = Instant::now();
@@ -86,9 +83,8 @@ pub async fn run_transcribe<R: Runtime>(
     .await?;
     let transcribe_seconds = started.elapsed().as_secs_f64();
 
-    let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))
-        .map_err(|error| error.to_string())?;
-    let transcript = Transcript::from_srt(&srt).map_err(|error| error.to_string())?;
+    let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
+    let transcript = Transcript::from_srt(&srt)?;
     Ok(Transcription {
         segments: transcript.segments,
         audio_seconds: audio_bytes.saturating_sub(WAV_HEADER_BYTES) as f64
@@ -153,8 +149,12 @@ async fn run_step<R: Runtime>(
     program: &Path,
     args: &[String],
     mut on_stderr_line: impl FnMut(&str),
-) -> Result<(), String> {
-    let (mut events, _) = processes.spawn(app, program, args)?;
+) -> Result<(), Failure> {
+    let failed = |detail: String| Failure::StepFailed {
+        step: step.to_string(),
+        detail,
+    };
+    let (mut events, _) = processes.spawn(app, program, args).map_err(failed)?;
     let mut stderr_tail: VecDeque<String> = VecDeque::with_capacity(STDERR_TAIL_LINES + 1);
     while let Some(event) = events.recv().await {
         match event {
@@ -166,24 +166,19 @@ async fn run_step<R: Runtime>(
                     stderr_tail.pop_front();
                 }
             }
-            CommandEvent::Error(error) => return Err(format!("{step} failed: {error}")),
+            CommandEvent::Error(error) => return Err(failed(error)),
             CommandEvent::Terminated(payload) if payload.code == Some(0) => return Ok(()),
-            CommandEvent::Terminated(_) => {
-                return Err(format!(
-                    "{step} failed: {}",
-                    Vec::from(stderr_tail).join("\n")
-                ))
-            }
+            CommandEvent::Terminated(_) => return Err(failed(Vec::from(stderr_tail).join("\n"))),
             _ => {}
         }
     }
-    Err(format!(
-        "{step} failed: the process ended without an exit status"
+    Err(failed(
+        "the process ended without an exit status".to_string(),
     ))
 }
 
 #[tauri::command]
-pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, String> {
+pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, Failure> {
     let phases = Phases::start("transcribe", "prepare");
     report(&app, "prepare", None);
     let [ffmpeg, whisper] =
@@ -195,8 +190,7 @@ pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, 
         .map_or(0, |since| since.as_millis());
     let work = app
         .path()
-        .app_cache_dir()
-        .map_err(|error| error.to_string())?
+        .app_cache_dir()?
         .join("work")
         .join(started_at.to_string());
     let processes = app.state::<Processes>().inner().clone();
@@ -265,7 +259,7 @@ mod tests {
             }
         }
 
-        async fn transcribe(&self) -> Result<Transcription, String> {
+        async fn transcribe(&self) -> Result<Transcription, Failure> {
             let processes = Processes::new(self.dir.path().join("processes.json"));
             let input = self.dir.file("lecture.mp4");
             run_transcribe(
@@ -332,7 +326,7 @@ mod tests {
 
         let error = fixture.transcribe().await.unwrap_err();
 
-        assert!(error.starts_with("convert failed"));
+        assert!(matches!(error, Failure::StepFailed { step, .. } if step == "convert"));
         assert!(!fixture.whisper_started.exists());
     }
 

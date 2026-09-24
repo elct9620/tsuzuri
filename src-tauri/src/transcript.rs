@@ -3,6 +3,8 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use crate::failure::Failure;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Segment {
     pub start_ms: u64,
@@ -99,16 +101,17 @@ fn cue_lines(text: &str) -> String {
 }
 
 #[tauri::command]
-pub fn open_srt(path: PathBuf) -> Result<Vec<Segment>, String> {
-    let srt = std::fs::read_to_string(&path).map_err(|error| error.to_string())?;
-    Transcript::from_srt(&srt)
-        .map(|transcript| transcript.segments)
-        .map_err(|error| error.to_string())
+pub fn open_srt(path: PathBuf) -> Result<Vec<Segment>, Failure> {
+    let srt = std::fs::read_to_string(&path)?;
+    Ok(Transcript::from_srt(&srt)?.segments)
 }
 
 #[tauri::command]
-pub fn save_srt(path: PathBuf, segments: Vec<Segment>, content: SrtContent) -> Result<(), String> {
-    std::fs::write(path, Transcript { segments }.to_srt(content)).map_err(|error| error.to_string())
+pub fn save_srt(path: PathBuf, segments: Vec<Segment>, content: SrtContent) -> Result<(), Failure> {
+    Ok(std::fs::write(
+        path,
+        Transcript { segments }.to_srt(content),
+    )?)
 }
 
 fn parse_cue(cue: usize, block: &str) -> Result<Segment, SrtError> {

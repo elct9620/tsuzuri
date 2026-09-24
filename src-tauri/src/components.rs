@@ -8,6 +8,8 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 use tauri::{async_runtime, AppHandle, Manager};
 
+use crate::failure::Failure;
+
 const BUNDLED_DIR: &str = "components";
 const CHOICES_FILE: &str = "components.json";
 
@@ -19,15 +21,16 @@ pub struct Component {
     pub program: String,
     /// A flag the executable answers with success, proving it runs.
     pub version_flag: String,
-    pub install_hint: String,
+    /// The command that installs it, where the platform has one package manager to name.
+    pub install: Option<String>,
 }
 
-fn component(name: &str, program: &str, version_flag: &str, install_hint: &str) -> Component {
+fn component(name: &str, program: &str, version_flag: &str, install: Option<&str>) -> Component {
     Component {
         name: name.to_string(),
         program: program.to_string(),
         version_flag: version_flag.to_string(),
-        install_hint: install_hint.to_string(),
+        install: install.map(str::to_string),
     }
 }
 
@@ -35,18 +38,18 @@ fn component(name: &str, program: &str, version_flag: &str, install_hint: &str) 
 #[cfg(target_os = "macos")]
 pub fn components() -> Vec<Component> {
     vec![
-        component("ffmpeg", "ffmpeg", "-version", "brew install ffmpeg"),
+        component("ffmpeg", "ffmpeg", "-version", Some("brew install ffmpeg")),
         component(
             "whisper",
             "whisper-cli",
             "--version",
-            "brew install whisper-cpp",
+            Some("brew install whisper-cpp"),
         ),
         component(
             "llama",
             "llama-server",
             "--version",
-            "brew install llama.cpp",
+            Some("brew install llama.cpp"),
         ),
     ]
 }
@@ -55,24 +58,9 @@ pub fn components() -> Vec<Component> {
 #[cfg(not(target_os = "macos"))]
 pub fn components() -> Vec<Component> {
     vec![
-        component(
-            "ffmpeg",
-            "ffmpeg",
-            "-version",
-            "install ffmpeg with your package manager",
-        ),
-        component(
-            "whisper",
-            "whisper-cli",
-            "--version",
-            "install whisper.cpp with your package manager",
-        ),
-        component(
-            "llama",
-            "llama-server",
-            "--version",
-            "install llama.cpp with your package manager",
-        ),
+        component("ffmpeg", "ffmpeg", "-version", None),
+        component("whisper", "whisper-cli", "--version", None),
+        component("llama", "llama-server", "--version", None),
     ]
 }
 
@@ -84,13 +72,23 @@ pub enum Origin {
     Bundled,
 }
 
+/// Why a Component is not ready.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Problem {
+    NotInstalled,
+    /// The Bundled Variant is there but fails its version flag, as when a driver it needs is missing.
+    DoesNotRun,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ComponentStatus {
     name: String,
     ready: bool,
     path: Option<PathBuf>,
     origin: Option<Origin>,
-    hint: Option<String>,
+    problem: Option<Problem>,
+    install: Option<String>,
 }
 
 /// The executable the user chose for each Component, by Component name.
@@ -132,18 +130,12 @@ pub struct Resolver {
 }
 
 impl Resolver {
-    pub fn of(app: &AppHandle) -> Result<Resolver, String> {
-        let resources = app
-            .path()
-            .resource_dir()
-            .map_err(|error| error.to_string())?;
-        let config = app
-            .path()
-            .app_config_dir()
-            .map_err(|error| error.to_string())?;
+    pub fn of(app: &AppHandle) -> Result<Resolver, Failure> {
+        let resources = app.path().resource_dir()?;
+        let config = app.path().app_config_dir()?;
         Ok(Resolver {
             bundled: resources.join(BUNDLED_DIR),
-            choices: Choices::load(&config).map_err(|error| error.to_string())?,
+            choices: Choices::load(&config)?,
             search_dirs: detection::search_dirs(),
         })
     }
@@ -160,9 +152,9 @@ impl Resolver {
                 path.display()
             ),
             _ => log::info!(
-                "components: {} not ready after {seconds:.2}s: {}",
+                "components: {} not ready after {seconds:.2}s: {:?}",
                 component.name,
-                status.hint.as_deref().unwrap_or_default()
+                status.problem
             ),
         }
         status
@@ -174,14 +166,16 @@ impl Resolver {
             ready: true,
             path: Some(path),
             origin: Some(origin),
-            hint: None,
+            problem: None,
+            install: None,
         };
-        let missing = |hint: String| ComponentStatus {
+        let missing = |problem| ComponentStatus {
             name: component.name.clone(),
             ready: false,
             path: None,
             origin: None,
-            hint: Some(hint),
+            problem: Some(problem),
+            install: component.install.clone(),
         };
         if let Some(chosen) = self
             .choices
@@ -199,15 +193,12 @@ impl Resolver {
         }
         let bundled = self.bundled_executable(component);
         if !bundled.is_file() {
-            return missing(component.install_hint.clone());
+            return missing(Problem::NotInstalled);
         }
         if detection::runs(&bundled, &component.version_flag) {
             found(bundled, Origin::Bundled)
         } else {
-            missing(format!(
-                "the bundled {} does not run; a driver or system library it needs may be missing",
-                component.program
-            ))
+            missing(Problem::DoesNotRun)
         }
     }
 
@@ -221,18 +212,19 @@ impl Resolver {
 }
 
 /// The executable of a Component that is ready to run, or why it is not.
-fn ready_executable(name: &str, resolver: &Resolver) -> Result<PathBuf, String> {
+fn ready_executable(name: &str, resolver: &Resolver) -> Result<PathBuf, Failure> {
     let component = components()
         .into_iter()
         .find(|component| component.name == name)
-        .ok_or_else(|| format!("{name} is not a Component"))?;
-    let status = resolver.status(&component);
-    status.path.ok_or_else(|| {
-        format!(
-            "{name} is not installed: {}",
-            status.hint.unwrap_or_default()
-        )
-    })
+        .ok_or_else(|| Failure::Internal {
+            detail: format!("{name} is not a Component"),
+        })?;
+    resolver
+        .status(&component)
+        .path
+        .ok_or_else(|| Failure::ComponentNotReady {
+            component: name.to_string(),
+        })
 }
 
 fn statuses(resolver: &Resolver) -> Vec<ComponentStatus> {
@@ -246,29 +238,26 @@ fn statuses(resolver: &Resolver) -> Vec<ComponentStatus> {
 pub async fn ready_executables<const N: usize>(
     resolver: Resolver,
     names: [&'static str; N],
-) -> Result<[PathBuf; N], String> {
+) -> Result<[PathBuf; N], Failure> {
     let found = async_runtime::spawn_blocking(move || {
         names
             .iter()
             .map(|name| ready_executable(name, &resolver))
             .collect::<Result<Vec<_>, _>>()
     })
-    .await
-    .map_err(|error| error.to_string())??;
+    .await??;
     Ok(found
         .try_into()
         .expect("one executable is found for each name"))
 }
 
 /// Finds every Component on the blocking pool, since finding one runs it.
-async fn statuses_off_the_main_thread(resolver: Resolver) -> Result<Vec<ComponentStatus>, String> {
-    async_runtime::spawn_blocking(move || statuses(&resolver))
-        .await
-        .map_err(|error| error.to_string())
+async fn statuses_off_the_main_thread(resolver: Resolver) -> Result<Vec<ComponentStatus>, Failure> {
+    Ok(async_runtime::spawn_blocking(move || statuses(&resolver)).await?)
 }
 
 #[tauri::command]
-pub async fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {
+pub async fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, Failure> {
     statuses_off_the_main_thread(Resolver::of(&app)?).await
 }
 
@@ -277,17 +266,11 @@ pub async fn choose_component(
     app: AppHandle,
     name: String,
     path: PathBuf,
-) -> Result<Vec<ComponentStatus>, String> {
-    let config = app
-        .path()
-        .app_config_dir()
-        .map_err(|error| error.to_string())?;
+) -> Result<Vec<ComponentStatus>, Failure> {
+    let config = app.path().app_config_dir()?;
     let mut resolver = Resolver::of(&app)?;
     resolver.choices.choose(&name, path);
-    resolver
-        .choices
-        .save(&config)
-        .map_err(|error| error.to_string())?;
+    resolver.choices.save(&config)?;
     statuses_off_the_main_thread(resolver).await
 }
 
@@ -297,7 +280,7 @@ mod tests {
     use crate::test_support::TempDir;
 
     fn tool() -> Component {
-        component("tool", "tool", "--version", "brew install tool")
+        component("tool", "tool", "--version", Some("brew install tool"))
     }
 
     /// A resolver with no choices, no Detection directories and no Bundled Variants, so nothing is found.
@@ -326,8 +309,14 @@ mod tests {
 
         let status = resolver(&dir).status(&tool());
 
-        assert!(!status.ready);
-        assert_eq!(status.hint.as_deref(), Some("brew install tool"));
+        assert_eq!(
+            (status.ready, status.problem, status.install.as_deref()),
+            (
+                false,
+                Some(Problem::NotInstalled),
+                Some("brew install tool")
+            )
+        );
     }
 
     // @behavior CP-009
@@ -403,8 +392,10 @@ mod tests {
 
         let status = resolver(&dir).status(&tool());
 
-        assert!(!status.ready);
-        assert!(status.hint.unwrap().contains("does not run"));
+        assert_eq!(
+            (status.ready, status.problem),
+            (false, Some(Problem::DoesNotRun))
+        );
     }
 
     // @behavior CP-016

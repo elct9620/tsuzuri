@@ -12,6 +12,7 @@ use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_shell::process::CommandEvent;
 
 use crate::components::{self, Resolver};
+use crate::failure::Failure;
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::pipeline::{enter, report};
 use crate::processes::Processes;
@@ -44,10 +45,8 @@ pub async fn run_translate<R: Runtime>(
     job: &TranslationJob<'_>,
     ready_timeout: Duration,
     mut phases: Phases,
-) -> Result<Translation, String> {
-    let model = settings
-        .require(ModelSlot::Translation)
-        .map_err(|error| error.to_string())?;
+) -> Result<Translation, Failure> {
+    let model = settings.require(ModelSlot::Translation)?;
     let port = free_port()?;
     let args = [
         "-m".to_string(),
@@ -62,7 +61,13 @@ pub async fn run_translate<R: Runtime>(
     ];
 
     enter(app, &mut phases, "load");
-    let (mut events, pid) = processes.spawn(app, llama, &args)?;
+    let (mut events, pid) =
+        processes
+            .spawn(app, llama, &args)
+            .map_err(|detail| Failure::StepFailed {
+                step: "translate".to_string(),
+                detail,
+            })?;
     let exited = Arc::new(AtomicBool::new(false));
     async_runtime::spawn({
         let exited = Arc::clone(&exited);
@@ -103,7 +108,7 @@ async fn translate_once_ready<R: Runtime>(
     has_exited: impl Fn() -> bool,
     job: &TranslationJob<'_>,
     phases: &mut Phases,
-) -> Result<Vec<Segment>, String> {
+) -> Result<Vec<Segment>, Failure> {
     wait_until_ready(client, base_url, ready_timeout, has_exited).await?;
     enter(app, phases, "translate");
     translate_segments(client, base_url, job.segments, job.target, |percent| {
@@ -113,12 +118,9 @@ async fn translate_once_ready<R: Runtime>(
 }
 
 /// A port the OS just handed out and released; llama-server binds it moments later.
-fn free_port() -> Result<u16, String> {
-    let listener = std::net::TcpListener::bind("127.0.0.1:0").map_err(|error| error.to_string())?;
-    listener
-        .local_addr()
-        .map(|address| address.port())
-        .map_err(|error| error.to_string())
+fn free_port() -> Result<u16, Failure> {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
+    Ok(listener.local_addr()?.port())
 }
 
 async fn wait_until_ready(
@@ -126,7 +128,7 @@ async fn wait_until_ready(
     base_url: &str,
     timeout: Duration,
     has_exited: impl Fn() -> bool,
-) -> Result<(), String> {
+) -> Result<(), Failure> {
     let deadline = Instant::now() + timeout;
     loop {
         let healthy = client
@@ -138,10 +140,10 @@ async fn wait_until_ready(
             return Ok(());
         }
         if has_exited() {
-            return Err("llama-server exited before its Model was loaded".to_string());
+            return Err(Failure::LlamaExited);
         }
         if Instant::now() >= deadline {
-            return Err("llama-server did not load its Model in time".to_string());
+            return Err(Failure::LlamaTimedOut);
         }
         tokio::time::sleep(HEALTH_POLL).await;
     }
@@ -153,7 +155,7 @@ async fn translate_segments(
     segments: &[Segment],
     target: &str,
     on_progress: impl Fn(u8),
-) -> Result<Vec<Segment>, String> {
+) -> Result<Vec<Segment>, Failure> {
     let instruction = format!(
         "You translate subtitles into {target}. Reply with only the translation of the user's line, without quotes or notes."
     );
@@ -172,14 +174,14 @@ async fn translate_segments(
             .json(&request)
             .send()
             .await
-            .and_then(|response| response.error_for_status())
-            .map_err(|error| error.to_string())?
+            .and_then(|response| response.error_for_status())?
             .json()
-            .await
-            .map_err(|error| error.to_string())?;
+            .await?;
         let translation = response["choices"][0]["message"]["content"]
             .as_str()
-            .ok_or("llama-server answered without a translation")?
+            .ok_or_else(|| Failure::LlamaRequest {
+                detail: "answered without a translation".to_string(),
+            })?
             .trim()
             .to_string();
         translated.push(Segment {
@@ -196,7 +198,7 @@ pub async fn translate(
     app: AppHandle,
     segments: Vec<Segment>,
     target: String,
-) -> Result<Translation, String> {
+) -> Result<Translation, Failure> {
     let phases = Phases::start("translate", "prepare");
     report(&app, "prepare", None);
     let [llama] = components::ready_executables(Resolver::of(&app)?, ["llama"]).await?;

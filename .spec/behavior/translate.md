@@ -71,3 +71,11 @@ The Translate Mode: a Transcript - read from an existing SRT, or just produced b
 | Given | an SRT file being translated |
 | When | the translation finishes |
 | Then | the translate panel lists each Phase with its seconds |
+
+## `TL-009` Saying why an SRT file could not be read
+
+| Step | Statement |
+| --- | --- |
+| Given | the Translate Mode panel |
+| When | an SRT file whose second cue is malformed is chosen |
+| Then | the panel says the file could not be read at its second cue |

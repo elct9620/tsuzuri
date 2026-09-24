@@ -51,7 +51,8 @@ describe("ComponentsController", () => {
           ready: true,
           path: "/components/llama/bin/llama-server",
           origin: "bundled",
-          hint: null,
+          problem: null,
+          install: null,
         },
       ],
     });
@@ -68,13 +69,34 @@ describe("ComponentsController", () => {
           ready: false,
           path: null,
           origin: null,
-          hint: "the bundled llama-server does not run",
+          problem: "does-not-run",
+          install: null,
         },
       ],
     });
 
     expect(statusOf("llama")).toBe(
-      "未就緒（the bundled llama-server does not run）",
+      "未就緒（內建的版本無法執行，可能缺少驅動程式或系統函式庫）",
+    );
+  });
+
+  // @behavior CP-005
+  it("says how to install a component that cannot be found", async () => {
+    await mountWith({
+      component_statuses: () => [
+        {
+          name: "llama",
+          ready: false,
+          path: null,
+          origin: null,
+          problem: "not-installed",
+          install: "brew install llama.cpp",
+        },
+      ],
+    });
+
+    expect(statusOf("llama")).toBe(
+      "未就緒（可用 brew install llama.cpp 安裝）",
     );
   });
 
@@ -87,13 +109,23 @@ describe("ComponentsController", () => {
           ready: true,
           path: "/usr/bin/llama-server",
           origin: "detected",
-          hint: null,
+          problem: null,
+          install: null,
         },
       ],
       "plugin:dialog|open": () => "/opt/llama/llama-server",
       choose_component: (args) => {
         const { name, path } = args as { name: string; path: string };
-        return [{ name, ready: true, path, origin: "chosen", hint: null }];
+        return [
+          {
+            name,
+            ready: true,
+            path,
+            origin: "chosen",
+            problem: null,
+            install: null,
+          },
+        ];
       },
     });
 

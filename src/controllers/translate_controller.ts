@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 
+import { describeFailure } from "../failure";
 import { describePhases, followProgress, type PhaseTiming } from "../progress";
 import type { Segment } from "./transcript_controller";
 
@@ -67,7 +68,7 @@ export default class TranslateController extends Controller {
       });
       this.statusTarget.textContent = `完成\n${describePhases(translation.phases)}`;
     } catch (error) {
-      this.statusTarget.textContent = `失敗：${String(error)}`;
+      this.statusTarget.textContent = `失敗：${describeFailure(error)}`;
     } finally {
       this.running = false;
       this.bar()?.setAttribute("hidden", "");

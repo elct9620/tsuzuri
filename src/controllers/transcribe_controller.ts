@@ -4,6 +4,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { open } from "@tauri-apps/plugin-dialog";
 
+import { describeFailure } from "../failure";
 import { describePhases, followProgress, type PhaseTiming } from "../progress";
 import type { Segment } from "./transcript_controller";
 import { translateSegments } from "./translate_controller";
@@ -97,7 +98,7 @@ export default class TranscribeController extends Controller {
       }
       this.statusTarget.textContent = lines.join("\n");
     } catch (error) {
-      this.statusTarget.textContent = `失敗：${String(error)}`;
+      this.statusTarget.textContent = `失敗：${describeFailure(error)}`;
     } finally {
       this.running = false;
       this.bar()?.setAttribute("hidden", "");

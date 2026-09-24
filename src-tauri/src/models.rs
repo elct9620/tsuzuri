@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
+use crate::failure::Failure;
+
 const SETTINGS_FILE: &str = "models.json";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -106,18 +108,16 @@ impl ModelSettings {
     }
 }
 
-fn settings_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    app.path()
-        .app_config_dir()
-        .map_err(|error| error.to_string())
+fn settings_dir(app: &AppHandle) -> Result<PathBuf, Failure> {
+    Ok(app.path().app_config_dir()?)
 }
 
-pub fn load_settings(app: &AppHandle) -> Result<ModelSettings, String> {
-    ModelSettings::load(&settings_dir(app)?).map_err(|error| error.to_string())
+pub fn load_settings(app: &AppHandle) -> Result<ModelSettings, Failure> {
+    Ok(ModelSettings::load(&settings_dir(app)?)?)
 }
 
 #[tauri::command]
-pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, String> {
+pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, Failure> {
     Ok(load_settings(&app)?.view())
 }
 
@@ -126,12 +126,10 @@ pub fn choose_model(
     app: AppHandle,
     slot: ModelSlot,
     path: PathBuf,
-) -> Result<ModelSettingsView, String> {
+) -> Result<ModelSettingsView, Failure> {
     let mut settings = load_settings(&app)?;
     settings.choose(slot, path);
-    settings
-        .save(&settings_dir(&app)?)
-        .map_err(|error| error.to_string())?;
+    settings.save(&settings_dir(&app)?)?;
     Ok(settings.view())
 }
 

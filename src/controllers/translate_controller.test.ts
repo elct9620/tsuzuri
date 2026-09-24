@@ -7,10 +7,12 @@ import TranslateController from "./translate_controller";
 describe("TranslateController", () => {
   let application: Application;
   let translateArgs: unknown;
+  let openSrt: () => unknown;
 
   const segments = [{ start_ms: 0, end_ms: 1000, text: "大家好" }];
 
   beforeEach(async () => {
+    openSrt = () => segments;
     document.body.innerHTML = `
       <div data-controller="translate">
         <select data-translate-target="language">
@@ -24,7 +26,7 @@ describe("TranslateController", () => {
     mockIPC(
       (command, args) => {
         if (command === "plugin:dialog|open") return "/subtitles/lecture.srt";
-        if (command === "open_srt") return segments;
+        if (command === "open_srt") return openSrt();
         if (command === "translate") {
           translateArgs = args;
           return {
@@ -65,5 +67,19 @@ describe("TranslateController", () => {
     expect(
       document.querySelector('[data-translate-target="status"]')!.textContent,
     ).toBe("完成\n準備元件 0.0 秒 · 載入模型 2.2 秒 · 翻譯 0.6 秒");
+  });
+
+  // @behavior TL-009
+  it("says which cue kept the SRT file from being read", async () => {
+    openSrt = () => {
+      throw { code: "malformed-srt", cue: 2 };
+    };
+
+    document.querySelector<HTMLButtonElement>("button")!.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(
+      document.querySelector('[data-translate-target="status"]')!.textContent,
+    ).toBe("失敗：SRT 第 2 段無法讀取");
   });
 });

@@ -7,7 +7,9 @@ interface ComponentStatus {
   ready: boolean;
   path: string | null;
   origin: "chosen" | "detected" | "bundled" | null;
-  hint: string | null;
+  problem: "not-installed" | "does-not-run" | null;
+  /** The command that installs it, where the platform has one to name. */
+  install: string | null;
 }
 
 const ORIGIN_LABELS: Record<string, string> = {
@@ -15,6 +17,22 @@ const ORIGIN_LABELS: Record<string, string> = {
   detected: "偵測到",
   bundled: "內建",
 };
+
+function describe({
+  ready,
+  path,
+  origin,
+  problem,
+  install,
+}: ComponentStatus): string {
+  if (ready && path)
+    return `${ORIGIN_LABELS[origin ?? ""] ?? "已就緒"}：${path}`;
+  if (problem === "does-not-run")
+    return "未就緒（內建的版本無法執行，可能缺少驅動程式或系統函式庫）";
+  return install
+    ? `未就緒（可用 ${install} 安裝）`
+    : "未就緒（請用套件管理工具安裝）";
+}
 
 export default class ComponentsController extends Controller {
   static targets = ["status"];
@@ -36,15 +54,9 @@ export default class ComponentsController extends Controller {
   }
 
   private render(statuses: ComponentStatus[]): void {
-    for (const { name, ready, path, origin, hint } of statuses) {
-      const status = this.statusFor(name);
-      if (!status) continue;
-      status.textContent =
-        ready && path
-          ? `${ORIGIN_LABELS[origin ?? ""] ?? "已就緒"}：${path}`
-          : hint
-            ? `未就緒（${hint}）`
-            : "未就緒";
+    for (const component of statuses) {
+      const status = this.statusFor(component.name);
+      if (status) status.textContent = describe(component);
     }
   }
 

@@ -64,7 +64,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | --- | --- |
 | Given | a started llama-server that loads its Model and a Transcript of two Segments |
 | When | the Transcript is translated |
-| Then | the result holds the load and translate Phases with their seconds, in that order |
+| Then | the result holds the load, detect and translate Phases with their seconds, in that order |
 
 ## `TL-008` Showing how long each Phase took
 
@@ -153,3 +153,35 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a ready llama-server and a Transcript of two Batches |
 | When | it is translated |
 | Then | the second request carries the last lines of the first with their translations |
+
+## `TL-020` Keeping a Split Sentence in one Batch
+
+| Step | Statement |
+| --- | --- |
+| Given | a Transcript of three Segments whose last two the Model reports as one sentence |
+| When | it is translated in Batches of two |
+| Then | the Batches carry the first Segment, then the last two |
+
+## `TL-021` Batching an overlong Split Sentence as usual
+
+| Step | Statement |
+| --- | --- |
+| Given | a Transcript of five Segments the Model reports as one sentence |
+| When | it is translated in Batches of two |
+| Then | the Batches carry two, two and one Segments |
+
+## `TL-022` Looking for Split Sentences in overlapping windows
+
+| Step | Statement |
+| --- | --- |
+| Given | a Transcript of five Segments |
+| When | Split Sentences are looked for in windows of four |
+| Then | the Model is shown the first four Segments, then the last three |
+
+## `TL-023` Translating on when a window cannot be read
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that answers the search for Split Sentences with malformed JSON |
+| When | a Transcript is translated |
+| Then | every Segment still carries its translation |

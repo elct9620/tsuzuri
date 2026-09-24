@@ -70,6 +70,10 @@ A weights file an engine loads, always passed by absolute path. The user points 
 
 The Segments one request asks the Model to translate, each sent with its position as an index so every translation in the answer is matched back by index rather than by order.
 
+### Split Sentence
+
+Consecutive Segments the Model reports as one sentence cut apart by transcription. A Split Sentence is kept inside one Batch, which may grow past the Batch size for it, unless the merged run exceeds twice the Batch size.
+
 ### Model Slot
 
 Which job a Model is chosen for: transcription (whisper-cli) or translation (llama-server). Each slot holds one Model path.

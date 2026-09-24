@@ -1,8 +1,8 @@
 {
   "whisper": {
-    "version": "b5130",
-    "source": "https://github.com/ggml-org/whisper.cpp/archive/refs/tags/b5130.tar.gz",
-    "sha256": "a9ad0f82f30cb6ac5b627874895f89571dd64f7c49d0df3a38550fdb9325fe9b",
+    "version": "v1.9.4",
+    "source": "https://github.com/ggml-org/whisper.cpp/archive/refs/tags/v1.9.4.tar.gz",
+    "sha256": "57e280cee375ab02425b806ad5146b99f6eb9357e3c2b31357c8a6af2e2e44ae",
     "variants": {
       "macos": ["metal"],
       "linux": ["cpu", "openblas", "vulkan"],

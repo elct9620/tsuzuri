@@ -378,3 +378,43 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a ready llama-server and a Rolling Summary turned off |
 | When | a Transcript of two Batches is translated |
 | Then | no request asks for a summary |
+
+## `TL-048` Reviewing translations two lines at a time
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server, Self-Review turned on and a Batch of three lines |
+| When | it is translated |
+| Then | lines 0 and 1, then line 2, are reviewed, each with the source text of the lines beside it |
+
+## `TL-049` Repairing a translation the review places on another line
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server whose first review places line 1's translation on line 2 |
+| When | a Batch is translated with Self-Review |
+| Then | line 1 is asked for again on its own |
+
+## `TL-050` Keeping a translation the review keeps placing elsewhere
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server whose reviews always place line 1's translation on line 2 |
+| When | a Batch is translated with Self-Review |
+| Then | line 1 keeps its translation rather than its original text |
+
+## `TL-051` Translating on when a review cannot be read
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that answers every review with malformed JSON |
+| When | a Batch is translated with Self-Review |
+| Then | every line carries its translation |
+
+## `TL-052` Sending no reviews when Self-Review is off
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and Self-Review turned off |
+| When | a Batch is translated |
+| Then | no request asks for a review |

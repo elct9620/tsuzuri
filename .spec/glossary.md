@@ -86,6 +86,10 @@ The terms the user gives, as a CSV of `source,target` rows such as names and tit
 
 A summary of the translation so far, within a word limit the user sets, that the Model rewrites after each Batch and every later Batch carries. It keeps names and tone consistent beyond the few reference lines, at the cost of one more request per Batch; it is off unless turned on.
 
+### Self-Review
+
+An optional second look in which the Model, two lines at a time, restates what each translation says and names the line it belongs to. A translation it places on a neighbouring line is repaired like any other flaw. It checks placement only, not completeness.
+
 ### Model Slot
 
 Which job a Model is chosen for: transcription (whisper-cli) or translation (llama-server). Each slot holds one Model path.

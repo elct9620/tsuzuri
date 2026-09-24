@@ -78,6 +78,7 @@ const zhHant: typeof en = {
     malformedSrt: "SRT 第 {{cue}} 段無法讀取",
     modelNotChosen: "尚未指定{{slot}}模型",
     modelMissing: "找不到模型 {{path}}，請重新指定",
+    noProject: "請先轉錄媒體檔或開啟 SRT 檔",
     componentNotReady: "{{component}} 尚未就緒，請到設定確認",
     stepFailed: "{{step}} 失敗：{{detail}}",
     llamaExited: "llama-server 在模型載入前結束",

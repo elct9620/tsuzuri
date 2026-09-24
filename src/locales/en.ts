@@ -78,6 +78,7 @@ const en = {
     malformedSrt: "Could not read cue {{cue}} of the SRT file",
     modelNotChosen: "No model is chosen for {{slot}}",
     modelMissing: "The model {{path}} is missing; choose it again",
+    noProject: "Transcribe a media file or open an SRT file first",
     componentNotReady: "{{component}} is not ready; check it in Settings",
     stepFailed: "{{step}} failed: {{detail}}",
     llamaExited: "llama-server stopped before loading its model",

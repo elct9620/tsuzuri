@@ -49,6 +49,7 @@ export default class TranslateController extends Controller {
     try {
       const translation = await translateProject(this.languageTarget.value);
       this.statusTarget.textContent = `${t("translate.done")}\n${describePhases(translation.phases)}`;
+      this.dispatch("finished");
     } catch (error) {
       this.statusTarget.textContent = t("work.failed", {
         reason: describeFailure(error),

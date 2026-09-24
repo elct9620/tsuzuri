@@ -7,6 +7,7 @@ The Translate Mode: a Transcript - read from an existing SRT, or just produced b
 - `src-tauri/src/translation.rs`
 - `src/controllers/translate_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
+- `src/controllers/tabs_controller.test.ts`
 
 ## `TL-001` Translating each Segment
 
@@ -87,3 +88,11 @@ The Translate Mode: a Transcript - read from an existing SRT, or just produced b
 | Given | the Translate Mode panel and no Project |
 | When | the panel is shown |
 | Then | translating cannot be started until a Project is made |
+
+## `TL-012` Ending a translation on the Edit tab
+
+| Step | Statement |
+| --- | --- |
+| Given | the Translate Mode panel and a Project |
+| When | a translation succeeds |
+| Then | the Edit tab is shown |

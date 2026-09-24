@@ -7,6 +7,7 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 - `src-tauri/src/pipeline.rs`
 - `src/controllers/transcribe_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
+- `src/controllers/tabs_controller.test.ts`
 
 ## `TX-001` Transcribing a media file
 
@@ -103,3 +104,19 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | Given | the transcribe panel with translating afterwards chosen |
 | When | a media file is transcribed |
 | Then | the Project is translated into the selected language, making it the Transcribe and Translate Mode |
+
+## `TX-013` Ending a transcription on the Edit tab
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe panel |
+| When | a transcription, and the translation after it when chosen, succeeds |
+| Then | the Edit tab is shown |
+
+## `TX-014` Staying on a failed transcription
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe panel |
+| When | a transcription fails |
+| Then | the transcribe panel stays shown with the reason |

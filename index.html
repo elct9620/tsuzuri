@@ -14,6 +14,7 @@
     <main
       class="flex h-screen flex-col"
       data-controller="tabs transcript project"
+      data-action="transcribe:finished->tabs#showEdit translate:finished->tabs#showEdit project:opened->tabs#showTranslate"
     >
       <header
         class="flex items-center justify-between border-b border-stone-300 px-4 py-2 dark:border-stone-700"

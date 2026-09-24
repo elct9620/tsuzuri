@@ -98,6 +98,7 @@ export default class TranscribeController extends Controller {
         );
       }
       this.statusTarget.textContent = lines.join("\n");
+      this.dispatch("finished");
     } catch (error) {
       this.statusTarget.textContent = t("work.failed", {
         reason: describeFailure(error),

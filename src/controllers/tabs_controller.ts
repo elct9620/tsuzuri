@@ -7,7 +7,20 @@ export default class TabsController extends Controller {
   declare readonly panelTargets: HTMLElement[];
 
   select(event: Event): void {
-    const tab = (event.currentTarget as HTMLElement).dataset.tab;
+    this.show((event.currentTarget as HTMLElement).dataset.tab);
+  }
+
+  /** A Mode's result is corrected on the Edit tab, so finished work moves there. */
+  showEdit(): void {
+    this.show("edit");
+  }
+
+  /** An opened SRT file is ready to translate. */
+  showTranslate(): void {
+    this.show("translate");
+  }
+
+  private show(tab: string | undefined): void {
     for (const target of this.tabTargets) {
       target.setAttribute("aria-selected", String(target.dataset.tab === tab));
     }

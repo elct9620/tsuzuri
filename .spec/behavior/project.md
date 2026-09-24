@@ -8,6 +8,7 @@ The one Project Rust holds as the single source of truth: what makes it, what ch
 - `src-tauri/src/pipeline.rs`
 - `src-tauri/src/translation.rs`
 - `src/controllers/project_controller.test.ts`
+- `src/controllers/tabs_controller.test.ts`
 
 ## `PJ-001` Opening an SRT file as the Project
 
@@ -72,3 +73,11 @@ The one Project Rust holds as the single source of truth: what makes it, what ch
 | Given | the toolbar |
 | When | an SRT file whose second cue is malformed is chosen to open |
 | Then | a message says the file could not be read at its second cue |
+
+## `PJ-009` Moving on to translating an opened SRT file
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar |
+| When | an SRT file is opened as the Project |
+| Then | the Translate tab is shown |

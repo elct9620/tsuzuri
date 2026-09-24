@@ -82,6 +82,10 @@ The `name:` or `name：` before a line of dialogue, up to twenty characters with
 
 The terms the user gives, as a CSV of `source,target` rows such as names and titles, whose target term each translation of a line using the source term must contain. It belongs to the Project, so a new Project starts without one; translation uses it only once loaded. Unrelated to this file.
 
+### Rolling Summary
+
+A summary of the translation so far, within a word limit the user sets, that the Model rewrites after each Batch and every later Batch carries. It keeps names and tone consistent beyond the few reference lines, at the cost of one more request per Batch; it is off unless turned on.
+
 ### Model Slot
 
 Which job a Model is chosen for: transcription (whisper-cli) or translation (llama-server). Each slot holds one Model path.

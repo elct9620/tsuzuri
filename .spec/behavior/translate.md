@@ -346,3 +346,35 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a Project with a Translation Glossary |
 | When | the Translation Glossary is cleared |
 | Then | the Project holds none |
+
+## `TL-044` Carrying the Rolling Summary into the next Batch
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server, a Rolling Summary turned on and a Transcript of two Batches |
+| When | it is translated |
+| Then | the second Batch's request carries the summary the Model wrote after the first |
+
+## `TL-045` Rewriting the Rolling Summary after each Batch
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and a Rolling Summary of at most 50 words turned on |
+| When | a Batch has been translated |
+| Then | the Model is asked for a summary under 50 words from the previous one and the Batch's lines with their translations |
+
+## `TL-046` Keeping the Rolling Summary when a rewrite fails
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that answers the second summary request with malformed JSON |
+| When | a Transcript of three Batches is translated with a Rolling Summary |
+| Then | the third Batch's request carries the summary written after the first |
+
+## `TL-047` Sending no summary requests when the Rolling Summary is off
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and a Rolling Summary turned off |
+| When | a Transcript of two Batches is translated |
+| Then | no request asks for a summary |

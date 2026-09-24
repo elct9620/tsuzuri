@@ -11,7 +11,7 @@ use crate::failure::Failure;
 use crate::language::Language;
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::processes::Processes;
-use crate::project::{self, CurrentProject, Project};
+use crate::project::{self, CurrentProject, TranscriptionTarget};
 use crate::timing::{PhaseTiming, Phases};
 use crate::transcript::Transcript;
 
@@ -34,12 +34,6 @@ pub struct Transcription {
     phases: Vec<PhaseTiming>,
 }
 
-/// What to transcribe: the media file and the Language spoken in it.
-pub struct TranscriptionJob<'a> {
-    pub input: &'a Path,
-    pub language: Language,
-}
-
 pub struct Tools {
     pub ffmpeg: PathBuf,
     pub whisper: PathBuf,
@@ -50,11 +44,11 @@ pub async fn run_transcribe<R: Runtime>(
     processes: &Processes,
     tools: &Tools,
     settings: &ModelSettings,
-    job: &TranscriptionJob<'_>,
+    job: &TranscriptionTarget,
     work: &Path,
     mut phases: Phases,
 ) -> Result<Transcription, Failure> {
-    let input = job.input;
+    let input = job.media.as_path();
     let model = settings.ready_path(ModelSlot::Transcription)?;
     std::fs::create_dir_all(work)?;
     let wav = work.join("audio.wav");
@@ -92,14 +86,8 @@ pub async fn run_transcribe<R: Runtime>(
     let transcribe_seconds = started.elapsed().as_secs_f64();
 
     let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
-    app.state::<CurrentProject>().replace(Project {
-        media: Some(input.to_path_buf()),
-        opened_srt: None,
-        transcript: Transcript::from_srt(&srt)?,
-        language: job.language,
-        translation_language: None,
-        translation_glossary: None,
-    });
+    app.state::<CurrentProject>()
+        .write_transcript(job.generation, Transcript::from_srt(&srt)?);
     project::announce(app);
     Ok(Transcription {
         audio_seconds: audio_bytes.saturating_sub(WAV_HEADER_BYTES) as f64
@@ -198,11 +186,8 @@ async fn run_step<R: Runtime>(
 }
 
 #[tauri::command]
-pub async fn transcribe(
-    app: AppHandle,
-    path: PathBuf,
-    language: Language,
-) -> Result<Transcription, Failure> {
+pub async fn transcribe(app: AppHandle) -> Result<Transcription, Failure> {
+    let job = app.state::<CurrentProject>().transcription_target()?;
     let phases = Phases::start("transcribe", "prepare");
     report(&app, "prepare", None);
     let [ffmpeg, whisper] =
@@ -220,10 +205,6 @@ pub async fn transcribe(
         .join(started_at.to_string());
     let processes = app.state::<Processes>().inner().clone();
 
-    let job = TranscriptionJob {
-        input: &path,
-        language,
-    };
     let result = run_transcribe(&app, &processes, &tools, &settings, &job, &work, phases).await;
     let _ = std::fs::remove_dir_all(&work);
     result
@@ -237,6 +218,7 @@ mod tests {
     use tauri::Listener;
 
     use super::*;
+    use crate::project::Project;
     use crate::test_support::{write_executable, TempDir};
 
     const TWO_SECOND_WAV: &str =
@@ -292,26 +274,34 @@ mod tests {
             self.app.state::<CurrentProject>()
         }
 
-        fn media(&self) -> PathBuf {
-            self.dir.path().join("lecture.mp4")
+        /// Opens a Project of `lecture.mp4` in `language` and takes what transcribing it needs.
+        fn target_in(&self, language: Language) -> TranscriptionTarget {
+            let media = self.project_dir().join("lecture.mp4");
+            std::fs::write(&media, b"media").unwrap();
+            self.project()
+                .replace(Project::open(self.project_dir(), language).unwrap());
+            self.project().transcription_target().unwrap()
+        }
+
+        fn project_dir(&self) -> PathBuf {
+            let directory = self.dir.path().join("project");
+            std::fs::create_dir_all(&directory).unwrap();
+            directory
         }
 
         async fn transcribe(&self) -> Result<Transcription, Failure> {
-            self.transcribe_in(Language::TraditionalChinese).await
+            let target = self.target_in(Language::TraditionalChinese);
+            self.run(&target).await
         }
 
-        async fn transcribe_in(&self, language: Language) -> Result<Transcription, Failure> {
+        async fn run(&self, target: &TranscriptionTarget) -> Result<Transcription, Failure> {
             let processes = Processes::new(self.dir.path().join("processes.json"));
-            let input = self.dir.file("lecture.mp4");
             run_transcribe(
                 self.app.handle(),
                 &processes,
                 &self.tools,
                 &self.settings,
-                &TranscriptionJob {
-                    input: &input,
-                    language,
-                },
+                target,
                 &self.dir.path().join("work"),
                 Phases::start("transcribe", "prepare"),
             )
@@ -354,31 +344,39 @@ mod tests {
 
     // @behavior TX-015
     #[tokio::test]
-    async fn transcribes_in_the_chosen_language() {
+    async fn transcribes_in_the_primary_language() {
         let fixture = Fixture::new("tx-language", TWO_SECOND_WAV);
+        let target = fixture.target_in(Language::Japanese);
 
-        fixture.transcribe_in(Language::Japanese).await.unwrap();
+        fixture.run(&target).await.unwrap();
 
         let args = std::fs::read_to_string(fixture.whisper_started.with_extension("args")).unwrap();
         assert!(args.contains("-l ja "), "whisper-cli ran with {args}");
-        assert_eq!(
-            fixture.project().view().unwrap().language(),
-            Language::Japanese
-        );
     }
 
-    // @behavior PJ-002
+    // @behavior PJ-022
     #[tokio::test]
-    async fn makes_the_transcribed_media_the_project() {
-        let fixture = Fixture::new("pj-transcribe", TWO_SECOND_WAV);
+    async fn leaves_another_resource_untouched_by_a_late_transcription() {
+        let fixture = Fixture::new("pj-late-transcription", TWO_SECOND_WAV);
+        std::fs::write(
+            fixture.project_dir().join("notes.srt"),
+            "1\n00:00:00,000 --> 00:00:01,000\n另一份\n",
+        )
+        .unwrap();
+        let target = fixture.target_in(Language::TraditionalChinese);
+        fixture.project().select("notes").unwrap();
 
-        fixture.transcribe().await.unwrap();
+        fixture.run(&target).await.unwrap();
 
-        let view = fixture.project().view().unwrap();
-        assert_eq!(
-            (view.media(), view.segments().len()),
-            (Some(fixture.media().as_path()), 2)
-        );
+        let texts: Vec<String> = fixture
+            .project()
+            .view()
+            .unwrap()
+            .segments()
+            .iter()
+            .map(|segment| segment.text.clone())
+            .collect();
+        assert_eq!(texts, vec!["另一份"]);
     }
 
     // @behavior TX-002
@@ -489,16 +487,23 @@ mod tests {
             .unwrap();
         let processes = Processes::new(dir.path().join("processes.json"));
         let project = app.state::<CurrentProject>();
+        let mut opened = Project::open(
+            media.parent().unwrap().to_path_buf(),
+            Language::TraditionalChinese,
+        )
+        .unwrap();
+        opened
+            .select(&media.file_stem().unwrap().to_string_lossy())
+            .unwrap();
+        project.replace(opened);
+        let target = project.transcription_target().unwrap();
 
         let transcription = run_transcribe(
             app.handle(),
             &processes,
             &tools,
             &settings,
-            &TranscriptionJob {
-                input: &media,
-                language: Language::TraditionalChinese,
-            },
+            &target,
             &dir.path().join("work"),
             Phases::start("transcribe", "prepare"),
         )

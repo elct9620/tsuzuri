@@ -40,23 +40,47 @@ pub async fn choose_component(app: AppHandle, name: String, path: PathBuf) -> Re
 
 ## `transcribe`
 
-Run the Transcribe Mode on one media file in the given Language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The media file, its Transcript and its Language become the Project; the answer is how long the audio is and the seconds each Phase took.
+Run the Transcribe Mode on the Current Resource's media file in the Primary Language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The Transcript becomes the Resource's while it is still the Current Resource; the answer is how long the audio is and the seconds each Phase took.
 
 ```rust
-pub async fn transcribe(app: AppHandle, path: PathBuf, language: Language) -> Result<Transcription, Failure> {}
+pub async fn transcribe(app: AppHandle) -> Result<Transcription, Failure> {}
+```
+
+## `open_project`
+
+Open a directory as a new Project in the Language given for when the directory records none, and select its first Resource.
+
+```rust
+pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {}
 ```
 
 ## `open_srt`
 
-Read an SRT file into a new Project with no media file.
+Open the directory an SRT file is in as a new Project, as `open_project` does, and select the file's Resource.
 
 ```rust
-pub fn open_srt(app: AppHandle, path: PathBuf) -> Result<(), Failure> {}
+pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {}
+```
+
+## `select_resource`
+
+Make the Resource of this name the Current Resource, reading its subtitles from the directory.
+
+```rust
+pub fn select_resource(app: AppHandle, name: String) -> Result<(), Failure> {}
+```
+
+## `show_translation`
+
+Show the Current Resource's translation in this Language, or none.
+
+```rust
+pub fn show_translation(app: AppHandle, language: Option<Language>) -> Result<(), Failure> {}
 ```
 
 ## `current_project`
 
-The Project's media file and Segments, or none before one is made.
+The Project's directory, Languages, Resources and Translation Glossary, with the Current Resource's Segments, or none before one is opened.
 
 ```rust
 pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
@@ -64,7 +88,7 @@ pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
 
 ## `edit_segment`
 
-Replace the `text` or the `translation` of one Segment of the Project, by its position.
+Replace the `text` or the `translation` of one Segment of the Current Resource, by its position.
 
 ```rust
 pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}
@@ -72,15 +96,15 @@ pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: St
 
 ## `translate`
 
-Run the Translate Mode on the Project from the source Language into the target Language, each given by its code, with the options the Translate panel offers and the saved translation settings, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The translations and both Languages are written into the Project; the answer is the seconds each Phase took.
+Run the Translate Mode on the Current Resource from the Primary Language into the target Language, given by its code, with the options the Translate panel offers and the saved translation settings, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The translations are written into the Resource and the target is recorded as the Project's translation Language; the answer is the seconds each Phase took.
 
 ```rust
-pub async fn translate(app: AppHandle, source: Language, target: Language, options: TranslationOptions) -> Result<Translation, Failure> {}
+pub async fn translate(app: AppHandle, target: Language, options: TranslationOptions) -> Result<Translation, Failure> {}
 ```
 
 ## `save_srt`
 
-Write the Project to a file as SRT carrying the `original` text, the `translation`, or both as a `bilingual` SRT.
+Write the Current Resource to a file as SRT carrying the `original` text, the `translation`, or both as a `bilingual` SRT.
 
 ```rust
 pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<(), Failure> {}
@@ -88,7 +112,7 @@ pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<()
 
 ## `export_path`
 
-Where an export of the Project is saved by default: beside the media or SRT file it came from, named with the Language codes of the text it carries.
+Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone.
 
 ```rust
 pub fn export_path(app: AppHandle, content: SrtContent) -> Result<PathBuf, Failure> {}

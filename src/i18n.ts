@@ -31,6 +31,11 @@ export async function setInterfaceLanguage(
   document.documentElement.lang = instance.resolvedLanguage ?? "en";
 }
 
+/** The Language code the interface stands for, which a new Project takes as its Primary Language. */
+export function interfaceLanguageCode(): string {
+  return instance.resolvedLanguage === "zh-Hant" ? "zh-TW" : "en";
+}
+
 export function t(key: string, options?: TOptions): string {
   return instance.t(key, options);
 }

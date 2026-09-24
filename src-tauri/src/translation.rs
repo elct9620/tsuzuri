@@ -52,7 +52,8 @@ pub struct TranslationOptions {
 
 /// Everything a translation is asked to do besides the Project it reads.
 pub struct TranslationPlan {
-    pub languages: LanguagePair,
+    /// The Language to translate into; the Project's Primary Language is where it starts from.
+    pub target: Language,
     pub options: TranslationOptions,
     pub settings: TranslationSettings,
 }
@@ -88,11 +89,14 @@ pub async fn run_translate<R: Runtime>(
 ) -> Result<Translation, Failure> {
     let model = model_settings.ready_path(ModelSlot::Translation)?;
     let project = app.state::<CurrentProject>();
-    let (generation, transcript) = project.snapshot()?;
+    let (generation, transcript, source) = project.snapshot()?;
     let glossary = project.translation_glossary();
     let job = TranslationJob {
         segments: &transcript.segments,
-        languages: plan.languages,
+        languages: LanguagePair {
+            source,
+            target: plan.target,
+        },
         settings: plan.settings,
         has_speaker_labels: plan.options.has_speaker_labels,
         has_self_review: plan.options.has_self_review,
@@ -147,7 +151,7 @@ pub async fn run_translate<R: Runtime>(
     )
     .await;
     processes.kill(pid);
-    project.write_translations(generation, plan.languages, result?);
+    project.write_translations(generation, plan.target, result?);
     project::announce(app);
     Ok(Translation {
         phases: phases.finish(),
@@ -313,7 +317,6 @@ async fn translate_segments(
 #[tauri::command]
 pub async fn translate(
     app: AppHandle,
-    source: Language,
     target: Language,
     options: TranslationOptions,
 ) -> Result<Translation, Failure> {
@@ -322,7 +325,7 @@ pub async fn translate(
     let [llama] = components::find_ready_executables(Resolver::from_app(&app)?, ["llama"]).await?;
     let model_settings = models::load_settings(&app)?;
     let plan = TranslationPlan {
-        languages: LanguagePair { source, target },
+        target,
         options,
         settings: TranslationSettings::load(&models::settings_dir(&app)?)?,
     };
@@ -359,10 +362,9 @@ mod tests {
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
 
     use super::*;
-    use crate::project::{Project, SegmentField};
+    use crate::project::SegmentField;
     use crate::test_support::Response;
-    use crate::test_support::TempDir;
-    use crate::transcript::Transcript;
+    use crate::test_support::{project_of, TempDir};
     use fake_llama::{
         completion, echo_lines, numbered_summary, review_answer, translations, FakeLlama, Lines,
         Replies,
@@ -374,17 +376,6 @@ mod tests {
             end_ms,
             text: text.to_string(),
             translation: None,
-        }
-    }
-
-    fn project_of(segments: Vec<Segment>) -> Project {
-        Project {
-            media: None,
-            opened_srt: None,
-            language: Language::TraditionalChinese,
-            translation_language: None,
-            translation_glossary: None,
-            transcript: Transcript { segments },
         }
     }
 
@@ -1305,13 +1296,13 @@ mod tests {
         project
             .edit(0, SegmentField::Text, "逐字稿".to_string())
             .unwrap();
-        let (generation, transcript) = project.snapshot().unwrap();
+        let (generation, transcript, _) = project.snapshot().unwrap();
 
         let translated_segments =
             translate_segments(&llama.model(), &job(&transcript.segments), &[], |_| {})
                 .await
                 .unwrap();
-        project.write_translations(generation, japanese_pair(), translated_segments);
+        project.write_translations(generation, Language::Japanese, translated_segments);
 
         let view = project.view().unwrap();
         let segment = &view.segments()[0];
@@ -1348,10 +1339,10 @@ mod tests {
         assert!(first_ready < first_chat);
     }
 
-    /// A plan to translate between `languages` with the default options and settings.
-    fn plan_for(languages: LanguagePair) -> TranslationPlan {
+    /// A plan to translate into `target` with the default options and settings.
+    fn plan_for(target: Language) -> TranslationPlan {
         TranslationPlan {
-            languages,
+            target,
             options: TranslationOptions::default(),
             settings: TranslationSettings::default(),
         }
@@ -1373,7 +1364,7 @@ mod tests {
             &processes,
             Path::new("/bin/sleep"),
             &ModelSettings::default(),
-            &plan_for(japanese_pair()),
+            &plan_for(Language::Japanese),
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -1410,7 +1401,7 @@ mod tests {
             &processes,
             &llama,
             &settings,
-            &plan_for(japanese_pair()),
+            &plan_for(Language::Japanese),
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -1488,7 +1479,7 @@ mod tests {
                     has_self_review: true,
                     summary_word_limit: Some(50),
                 },
-                ..plan_for(english_pair())
+                ..plan_for(Language::English)
             },
             READY_TIMEOUT,
             Phases::start("translate", "prepare"),

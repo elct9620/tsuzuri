@@ -91,23 +91,11 @@ pub fn clear_glossary(app: AppHandle) -> Result<(), Failure> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::language::Language;
-    use crate::project::Project;
-    use crate::test_support::TempDir;
-    use crate::transcript::Transcript;
+    use crate::test_support::{project_of, TempDir};
 
     fn current_project() -> CurrentProject {
         let current = CurrentProject::default();
-        current.replace(Project {
-            media: None,
-            opened_srt: None,
-            transcript: Transcript {
-                segments: Vec::new(),
-            },
-            language: Language::TraditionalChinese,
-            translation_language: None,
-            translation_glossary: None,
-        });
+        current.replace(project_of(Vec::new()));
         current
     }
 

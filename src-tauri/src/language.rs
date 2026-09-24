@@ -34,6 +34,13 @@ impl Language {
         }
     }
 
+    /// The Language a code names, such as the one a subtitle's file name carries.
+    pub fn from_code(code: &str) -> Option<Language> {
+        Language::ALL
+            .into_iter()
+            .find(|language| language.code() == code)
+    }
+
     /// The name a Model is told the language by.
     pub fn name(self) -> &'static str {
         match self {

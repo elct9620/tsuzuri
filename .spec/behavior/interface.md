@@ -29,3 +29,21 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 | Given | a system language Tsuzuri has no translation for, such as `zh-CN`, or none reported |
 | When | the interface starts |
 | Then | its text is in English |
+
+## `IF-004` Naming the Language of a Traditional Chinese interface
+
+A Project's Primary Language follows the Interface Language until its directory records one.
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in Traditional Chinese |
+| When | the Language it stands for is asked |
+| Then | it is `zh-TW` |
+
+## `IF-005` Naming the Language of any other interface
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in English |
+| When | the Language it stands for is asked |
+| Then | it is `en` |

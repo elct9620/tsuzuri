@@ -121,13 +121,13 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | When | a transcription fails |
 | Then | the transcribe panel stays shown with the reason |
 
-## `TX-015` Transcribing in the chosen Language
+## `TX-015` Transcribing in the Primary Language
 
 | Step | Statement |
 | --- | --- |
-| Given | a media file and the transcription Language `ja` |
+| Given | a Project in `ja` whose Current Resource has a media file |
 | When | it is transcribed |
-| Then | whisper-cli is asked for Japanese and the Project's Transcript is in `ja` |
+| Then | whisper-cli is asked for Japanese |
 
 ## `TX-016` Transcribing in the selected Language
 

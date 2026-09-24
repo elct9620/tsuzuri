@@ -28,8 +28,12 @@ pub enum Failure {
     ModelMissing {
         path: PathBuf,
     },
-    /// Translating, editing or saving asked for before a Project was made.
+    /// Translating, editing or saving asked for before a Project was opened.
     NoProject,
+    /// The Project has no Resource by the name asked for, or none is current.
+    NoResource,
+    /// Transcribing a Current Resource that has no media file.
+    NoMedia,
     ComponentNotReady {
         component: String,
     },

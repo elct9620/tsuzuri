@@ -9,6 +9,8 @@ export type Failure =
   | { code: "model-not-chosen"; slot: "transcription" | "translation" }
   | { code: "model-missing"; path: string }
   | { code: "no-project" }
+  | { code: "no-resource" }
+  | { code: "no-media" }
   | { code: "component-not-ready"; component: string }
   | { code: "step-failed"; step: string; detail: string }
   | { code: "llama-exited" }
@@ -38,6 +40,10 @@ export function failureMessage(error: unknown): string {
       return t("failures.modelMissing", { path: error.path });
     case "no-project":
       return t("failures.noProject");
+    case "no-resource":
+      return t("failures.noResource");
+    case "no-media":
+      return t("failures.noMedia");
     case "component-not-ready":
       return t("failures.componentNotReady", { component: error.component });
     case "step-failed":

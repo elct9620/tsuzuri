@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { message, open } from "@tauri-apps/plugin-dialog";
 
 import { failureMessage } from "../failure";
+import { interfaceLanguageCode } from "../i18n";
 
 /** The toolbar's Project actions; what they make lives in Rust. */
 export default class ProjectController extends Controller {
@@ -15,7 +16,7 @@ export default class ProjectController extends Controller {
     });
     if (path === null) return;
     try {
-      await invoke("open_srt", { path });
+      await invoke("open_srt", { path, language: interfaceLanguageCode() });
       this.dispatch("opened");
     } catch (error) {
       await message(failureMessage(error), { kind: "error" });

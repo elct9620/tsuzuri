@@ -46,7 +46,10 @@ describe("ProjectController", () => {
     document.querySelector("button")!.click();
     await settle();
 
-    expect(sent("open_srt")).toEqual({ path: "/subtitles/lecture.srt" });
+    expect(sent("open_srt")).toEqual({
+      path: "/subtitles/lecture.srt",
+      language: "zh-TW",
+    });
   });
 
   // @behavior PJ-008

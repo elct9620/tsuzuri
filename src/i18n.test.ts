@@ -1,6 +1,10 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { setInterfaceLanguage, translatePage } from "./i18n";
+import {
+  interfaceLanguageCode,
+  setInterfaceLanguage,
+  translatePage,
+} from "./i18n";
 
 describe("interface language", () => {
   async function startWith(locale: string | null): Promise<string> {
@@ -29,4 +33,18 @@ describe("interface language", () => {
       expect(await startWith(locale)).toBe("Settings");
     },
   );
+
+  // @behavior IF-004
+  it("stands for zh-TW when written in Traditional Chinese", async () => {
+    await startWith("zh-TW");
+
+    expect(interfaceLanguageCode()).toBe("zh-TW");
+  });
+
+  // @behavior IF-005
+  it("stands for en when written in any other language", async () => {
+    await startWith("ja-JP");
+
+    expect(interfaceLanguageCode()).toBe("en");
+  });
 });

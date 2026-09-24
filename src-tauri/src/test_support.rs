@@ -1,6 +1,32 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use crate::language::Language;
+use crate::project::{CurrentResource, Project};
+use crate::resource::Resource;
+use crate::transcript::{Segment, Transcript};
+
+/// A Project in `zh-TW` of one Resource, `lecture`, current and holding `segments`.
+pub fn project_of(segments: Vec<Segment>) -> Project {
+    Project {
+        directory: PathBuf::from("/talks"),
+        language: Language::TraditionalChinese,
+        translation_language: None,
+        translation_glossary: None,
+        resources: vec![Resource {
+            name: "lecture".to_string(),
+            media: None,
+            subtitle: None,
+            translations: vec![],
+        }],
+        current: Some(CurrentResource {
+            name: "lecture".to_string(),
+            transcript: Transcript { segments },
+            translation: None,
+        }),
+    }
+}
+
 /// A directory under the system temp dir, unique to this test process and removed when dropped.
 pub struct TempDir(PathBuf);
 

@@ -13,6 +13,7 @@ Read the source for how things work; read these for what they are meant to be.
 | Interfaces that must stay fixed | `.spec/contract/*.md` |
 | Design and progress | `docs/design.md`; progress in § 0.3 |
 | Screen layout | `docs/ui.md` |
+| Code conventions, naming first | `docs/convention.md` |
 | Component source pins and Variants | `components.json` |
 | Build, run and test | `README.md` § Development |
 | Quality gates | `.github/workflows/ci.yml`, `.claude/hooks/` |

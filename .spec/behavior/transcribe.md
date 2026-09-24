@@ -95,3 +95,11 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | Given | a media file being transcribed |
 | When | the transcription finishes |
 | Then | the transcribe panel lists each Phase with its seconds |
+
+## `TX-012` Translating once transcribed
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe panel with translating afterwards chosen |
+| When | a media file is transcribed |
+| Then | its Segments are translated into the selected language, making it the Transcribe and Translate Mode |

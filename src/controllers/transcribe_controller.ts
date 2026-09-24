@@ -29,14 +29,15 @@ const MEDIA_EXTENSIONS = [
 ];
 
 export default class TranscribeController extends Controller {
-  static targets = ["status", "language", "bar"];
-  static values = { translate: Boolean };
+  static targets = ["status", "translate", "language", "bar"];
 
   declare readonly statusTarget: HTMLElement;
+  /** Whether to translate the Transcript once transcribed. */
+  declare readonly translateTarget: HTMLInputElement;
+  declare readonly hasTranslateTarget: boolean;
   declare readonly languageTarget: HTMLSelectElement;
   declare readonly barTarget: HTMLProgressElement;
   declare readonly hasBarTarget: boolean;
-  declare readonly translateValue: boolean;
 
   private unlisteners: UnlistenFn[] = [];
   private running = false;
@@ -83,7 +84,7 @@ export default class TranscribeController extends Controller {
         `轉錄：${describePhases(transcription.phases)}`,
       ];
       this.dispatch("loaded", { target: window, detail: transcription });
-      if (this.translateValue) {
+      if (this.hasTranslateTarget && this.translateTarget.checked) {
         const translation = await translateSegments(
           transcription.segments,
           this.languageTarget.value,

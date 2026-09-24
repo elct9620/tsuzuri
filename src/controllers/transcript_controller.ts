@@ -29,13 +29,12 @@ function editor(className: string, value: string): HTMLTextAreaElement {
 type SrtContent = "original" | "translation" | "bilingual";
 
 export default class TranscriptController extends Controller {
-  static targets = ["list", "empty", "actions", "translated"];
+  static targets = ["list", "empty", "export"];
 
   declare readonly listTarget: HTMLOListElement;
   declare readonly emptyTarget: HTMLElement;
-  declare readonly actionsTarget: HTMLElement;
-  /** Actions that need a translation, hidden until the Transcript has one. */
-  declare readonly translatedTargets: HTMLElement[];
+  /** Each export, enabled once the Transcript has the text it writes. */
+  declare readonly exportTargets: HTMLButtonElement[];
 
   private segments: Segment[] = [];
 
@@ -56,12 +55,22 @@ export default class TranscriptController extends Controller {
       (segment) => segment.translation !== undefined,
     );
     this.emptyTarget.hidden = this.segments.length > 0;
-    this.actionsTarget.hidden = this.segments.length === 0;
-    for (const action of this.translatedTargets)
-      action.hidden = !hasTranslation;
+    for (const target of this.exportTargets) {
+      const needsTranslation =
+        target.dataset.transcriptContentParam !== "original";
+      target.disabled =
+        this.segments.length === 0 || (needsTranslation && !hasTranslation);
+    }
   }
 
-  async save({ params }: { params: { content: SrtContent } }): Promise<void> {
+  async save({
+    currentTarget,
+    params,
+  }: {
+    currentTarget: EventTarget | null;
+    params: { content: SrtContent };
+  }): Promise<void> {
+    (currentTarget as HTMLElement).closest("details")?.removeAttribute("open");
     const path = await save({
       filters: [{ name: "SRT", extensions: ["srt"] }],
     });

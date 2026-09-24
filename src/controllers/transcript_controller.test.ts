@@ -25,11 +25,12 @@ describe("TranscriptController", () => {
     document.body.innerHTML = `
       <section data-controller="transcript" data-action="transcribe:loaded@window->transcript#show translate:loaded@window->transcript#show">
         <p data-transcript-target="empty">尚無內容</p>
-        <div data-transcript-target="actions" hidden>
-          <button id="save-original" data-action="transcript#save" data-transcript-content-param="original">另存原文</button>
-          <button id="save-translation" data-transcript-target="translated" data-action="transcript#save" data-transcript-content-param="translation" hidden>另存譯文</button>
-          <button id="save-bilingual" data-transcript-target="translated" data-action="transcript#save" data-transcript-content-param="bilingual" hidden>另存雙語</button>
-        </div>
+        <details open>
+          <summary>匯出</summary>
+          <button id="save-original" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="original" disabled>原文</button>
+          <button id="save-translation" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="translation" disabled>譯文</button>
+          <button id="save-bilingual" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="bilingual" disabled>雙語</button>
+        </details>
         <ol data-transcript-target="list"></ol>
       </section>
     `;

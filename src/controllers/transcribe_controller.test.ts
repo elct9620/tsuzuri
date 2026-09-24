@@ -8,20 +8,33 @@ import TranscribeController from "./transcribe_controller";
 describe("TranscribeController", () => {
   let application: Application;
   let transcription: Promise<unknown>;
+  let translated: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
   beforeEach(async () => {
     document.body.innerHTML = `
       <div data-controller="transcribe">
+        <input type="checkbox" data-transcribe-target="translate">
+        <select data-transcribe-target="language">
+          <option value="English">English</option>
+          <option value="Japanese" selected>日本語</option>
+        </select>
         <p data-transcribe-target="status"></p>
         <progress max="100" data-transcribe-target="bar" hidden></progress>
       </div>
     `;
     mockWindows("main");
     transcription = new Promise(() => {});
+    translated = undefined;
     mockIPC(
-      (command) => (command === "transcribe" ? transcription : undefined),
+      (command, args) => {
+        if (command === "transcribe") return transcription;
+        if (command === "translate") {
+          translated = args;
+          return { segments: [], phases: [] };
+        }
+      },
       { shouldMockEvents: true },
     );
     application = Application.start();
@@ -83,5 +96,23 @@ describe("TranscribeController", () => {
     expect(status()).toContain(
       "轉錄：準備元件 0.0 秒 · 轉檔 0.0 秒 · 載入模型 1.3 秒 · 轉錄 1.4 秒",
     );
+  });
+
+  // @behavior TX-012
+  it("translates the Segments once transcribed when asked to", async () => {
+    const segments = [{ start_ms: 0, end_ms: 1000, text: "大家好" }];
+    transcription = Promise.resolve({
+      segments,
+      audio_seconds: 1,
+      transcribe_seconds: 1,
+      phases: [],
+    });
+    document.querySelector<HTMLInputElement>(
+      '[data-transcribe-target="translate"]',
+    )!.checked = true;
+
+    await controller().transcribe("/media/lecture.mp4");
+
+    expect(translated).toEqual({ segments, target: "Japanese" });
   });
 });

@@ -1,7 +1,19 @@
-# Tauri + Vanilla TS
+# Tsuzuri
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
+Local transcription, subtitle editing and translation. Audio and text never leave the machine; the network is only used to download the engines and models.
 
-## Recommended IDE Setup
+## Development
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+Requires Rust, Node.js and pnpm.
+
+```bash
+pnpm install
+pnpm tauri dev      # run the app
+pnpm test           # frontend tests (Vitest)
+cargo test --manifest-path src-tauri/Cargo.toml
+sumi verify         # check code against .spec/
+```
+
+The frontend is plain TypeScript with [Stimulus](https://stimulus.hotwired.dev/) controllers under `src/controllers/`.
+
+This project uses FFmpeg under the LGPL, downloaded at runtime and run as a separate process.

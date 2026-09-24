@@ -40,7 +40,7 @@ pub async fn choose_component(app: AppHandle, name: String, path: PathBuf) -> Re
 
 ## `transcribe`
 
-Run the Transcribe Mode on one media file, emitting `pipeline-progress` events, and answer the Transcript with its timing.
+Run the Transcribe Mode on one media file, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes, and answer the Transcript with the seconds each Phase took.
 
 ```rust
 pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, String> {}

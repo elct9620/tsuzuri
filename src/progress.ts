@@ -1,14 +1,15 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 interface PipelineProgress {
-  step: string;
-  percent: number;
+  phase: string;
+  percent: number | null;
 }
 
-const STEP_LABELS: Record<string, string> = {
+const PHASE_LABELS: Record<string, string> = {
+  prepare: "準備元件",
   convert: "轉檔",
+  load: "載入模型",
   transcribe: "轉錄",
-  load: "載入翻譯模型",
   translate: "翻譯",
 };
 
@@ -17,6 +18,7 @@ export function listenProgress(
   show: (line: string) => void,
 ): Promise<UnlistenFn> {
   return listen<PipelineProgress>("pipeline-progress", ({ payload }) => {
-    show(`${STEP_LABELS[payload.step] ?? payload.step} ${payload.percent}%`);
+    const label = PHASE_LABELS[payload.phase] ?? payload.phase;
+    show(payload.percent === null ? label : `${label} ${payload.percent}%`);
   });
 }

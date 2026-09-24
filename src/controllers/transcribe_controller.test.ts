@@ -40,7 +40,7 @@ describe("TranscribeController", () => {
     ) as TranscribeController;
     void controller.transcribe("/media/lecture.mp4");
 
-    await emit("pipeline-progress", { step: "transcribe", percent: 40 });
+    await emit("pipeline-progress", { phase: "transcribe", percent: 40 });
     await settle();
 
     expect(

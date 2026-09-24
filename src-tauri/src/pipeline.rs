@@ -9,6 +9,7 @@ use tauri_plugin_shell::process::CommandEvent;
 use crate::components::{self, Resolver};
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::processes::Processes;
+use crate::timing::{PhaseTiming, Phases};
 use crate::transcript::{Segment, Transcript};
 
 /// 16-bit mono PCM at 16 kHz, the only input whisper-cli is given.
@@ -16,10 +17,11 @@ const WAV_BYTES_PER_SECOND: u64 = 16_000 * 2;
 const WAV_HEADER_BYTES: u64 = 44;
 const STDERR_TAIL_LINES: usize = 5;
 
+/// Sent as each Phase starts and as its percentage changes; a Phase that cannot tell how far along it is has no percentage.
 #[derive(Debug, Clone, Serialize)]
 struct PipelineProgress {
-    step: &'static str,
-    percent: u8,
+    phase: &'static str,
+    percent: Option<u8>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -27,6 +29,7 @@ pub struct Transcription {
     segments: Vec<Segment>,
     audio_seconds: f64,
     transcribe_seconds: f64,
+    phases: Vec<PhaseTiming>,
 }
 
 pub struct Tools {
@@ -41,6 +44,7 @@ pub async fn run_transcribe<R: Runtime>(
     settings: &ModelSettings,
     input: &Path,
     work: &Path,
+    mut phases: Phases,
 ) -> Result<Transcription, String> {
     let model = settings
         .require(ModelSlot::Transcription)
@@ -49,7 +53,7 @@ pub async fn run_transcribe<R: Runtime>(
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
 
-    report(app, "convert", 0);
+    enter(app, &mut phases, "convert");
     run_step(
         app,
         processes,
@@ -63,7 +67,7 @@ pub async fn run_transcribe<R: Runtime>(
         .map_err(|error| error.to_string())?
         .len();
 
-    report(app, "transcribe", 0);
+    enter(app, &mut phases, "load");
     let started = Instant::now();
     run_step(
         app,
@@ -72,8 +76,10 @@ pub async fn run_transcribe<R: Runtime>(
         &tools.whisper,
         &transcribe_args(model, &wav, &srt_prefix),
         |line| {
-            if let Some(percent) = whisper_progress(line) {
-                report(app, "transcribe", percent);
+            if line.starts_with(WHISPER_PROCESSING) {
+                enter(app, &mut phases, "transcribe");
+            } else if let Some(percent) = whisper_progress(line) {
+                report(app, "transcribe", Some(percent));
             }
         },
     )
@@ -88,6 +94,7 @@ pub async fn run_transcribe<R: Runtime>(
         audio_seconds: audio_bytes.saturating_sub(WAV_HEADER_BYTES) as f64
             / WAV_BYTES_PER_SECOND as f64,
         transcribe_seconds,
+        phases: phases.finish(),
     })
 }
 
@@ -114,6 +121,9 @@ fn transcribe_args(model: &Path, wav: &Path, srt_prefix: &Path) -> Vec<String> {
     ]
 }
 
+/// whisper-cli prints this on stderr once its Model is loaded and it starts on the audio.
+const WHISPER_PROCESSING: &str = "main: processing";
+
 /// whisper-cli `-pp` prints `whisper_print_progress_callback: progress = 42%` on stderr.
 fn whisper_progress(line: &str) -> Option<u8> {
     line.split_once("progress =")?
@@ -125,8 +135,14 @@ fn whisper_progress(line: &str) -> Option<u8> {
         .ok()
 }
 
-pub(crate) fn report<R: Runtime>(app: &AppHandle<R>, step: &'static str, percent: u8) {
-    let _ = app.emit("pipeline-progress", PipelineProgress { step, percent });
+pub(crate) fn report<R: Runtime>(app: &AppHandle<R>, phase: &'static str, percent: Option<u8>) {
+    let _ = app.emit("pipeline-progress", PipelineProgress { phase, percent });
+}
+
+/// Ends the current Phase and tells the webview the next one has started.
+pub(crate) fn enter<R: Runtime>(app: &AppHandle<R>, phases: &mut Phases, phase: &'static str) {
+    phases.enter(phase);
+    report(app, phase, None);
 }
 
 /// Runs one Step to completion. A Step that exits non-zero fails with the last lines it wrote to stderr.
@@ -168,11 +184,11 @@ async fn run_step<R: Runtime>(
 
 #[tauri::command]
 pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, String> {
-    let resolver = Resolver::of(&app)?;
-    let tools = Tools {
-        ffmpeg: components::ready_executable("ffmpeg", &resolver)?,
-        whisper: components::ready_executable("whisper", &resolver)?,
-    };
+    let phases = Phases::start("transcribe", "prepare");
+    report(&app, "prepare", None);
+    let [ffmpeg, whisper] =
+        components::ready_executables(Resolver::of(&app)?, ["ffmpeg", "whisper"]).await?;
+    let tools = Tools { ffmpeg, whisper };
     let settings = models::load_settings(&app)?;
     let started_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -185,7 +201,7 @@ pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, 
         .join(started_at.to_string());
     let processes = app.state::<Processes>().inner().clone();
 
-    let result = run_transcribe(&app, &processes, &tools, &settings, &path, &work).await;
+    let result = run_transcribe(&app, &processes, &tools, &settings, &path, &work, phases).await;
     let _ = std::fs::remove_dir_all(&work);
     result
 }
@@ -209,6 +225,8 @@ mod tests {
     fn whisper_script(started_marker: &Path) -> String {
         format!(
             "#!/bin/sh\ntouch '{}'\nwhile [ $# -gt 0 ]; do case \"$1\" in -of) of=\"$2\"; shift;; esac; shift; done\n\
+             echo 'whisper_model_load: model size = 1 MB' >&2\n\
+             echo \"main: processing '$of.wav' (32000 samples, 2.0 sec)\" >&2\n\
              echo 'whisper_print_progress_callback: progress = 50%' >&2\n\
              echo 'whisper_print_progress_callback: progress = 100%' >&2\n\
              printf '1\\n00:00:00,000 --> 00:00:01,000\\n大家好\\n\\n2\\n00:00:01,000 --> 00:00:02,000\\n今天天氣很好\\n' > \"$of.srt\"\n",
@@ -257,8 +275,18 @@ mod tests {
                 &self.settings,
                 &input,
                 &self.dir.path().join("work"),
+                Phases::start("transcribe", "prepare"),
             )
             .await
+        }
+
+        fn progress_events(&self) -> Arc<Mutex<Vec<String>>> {
+            let received = Arc::new(Mutex::new(Vec::new()));
+            let sink = Arc::clone(&received);
+            self.app.listen_any("pipeline-progress", move |event| {
+                sink.lock().unwrap().push(event.payload().to_string());
+            });
+            received
         }
     }
 
@@ -288,17 +316,13 @@ mod tests {
     #[tokio::test]
     async fn reports_each_percentage_whisper_prints() {
         let fixture = Fixture::new("tx-progress", TWO_SECOND_WAV);
-        let received = Arc::new(Mutex::new(Vec::new()));
-        let sink = Arc::clone(&received);
-        fixture.app.listen_any("pipeline-progress", move |event| {
-            sink.lock().unwrap().push(event.payload().to_string());
-        });
+        let received = fixture.progress_events();
 
         fixture.transcribe().await.unwrap();
 
         let received = received.lock().unwrap();
-        assert!(received.contains(&r#"{"step":"transcribe","percent":50}"#.to_string()));
-        assert!(received.contains(&r#"{"step":"transcribe","percent":100}"#.to_string()));
+        assert!(received.contains(&r#"{"phase":"transcribe","percent":50}"#.to_string()));
+        assert!(received.contains(&r#"{"phase":"transcribe","percent":100}"#.to_string()));
     }
 
     // @behavior TX-003
@@ -335,6 +359,40 @@ mod tests {
         assert!(transcription.transcribe_seconds > 0.0);
     }
 
+    // @behavior TX-008
+    #[tokio::test]
+    async fn reports_the_model_load_before_transcription_percentages() {
+        let fixture = Fixture::new("tx-load", TWO_SECOND_WAV);
+        let received = fixture.progress_events();
+
+        fixture.transcribe().await.unwrap();
+
+        let received = received.lock().unwrap();
+        let load = received
+            .iter()
+            .position(|event| event == r#"{"phase":"load","percent":null}"#);
+        let first_percentage = received
+            .iter()
+            .position(|event| event.starts_with(r#"{"phase":"transcribe","percent":5"#));
+        assert!(load.is_some());
+        assert!(load < first_percentage);
+    }
+
+    // @behavior TX-009
+    #[tokio::test]
+    async fn answers_how_long_each_phase_took() {
+        let fixture = Fixture::new("tx-phases", TWO_SECOND_WAV);
+
+        let transcription = fixture.transcribe().await.unwrap();
+
+        let phases: Vec<&str> = transcription
+            .phases
+            .iter()
+            .map(|timing| timing.phase)
+            .collect();
+        assert_eq!(phases, vec!["prepare", "convert", "load", "transcribe"]);
+    }
+
     /// Runs the real vendored whisper-cli and ffmpeg:
     /// `TSUZURI_E2E_MODEL=<ggml model> TSUZURI_E2E_MEDIA=<media file> cargo test -- --ignored`
     #[tokio::test]
@@ -363,16 +421,18 @@ mod tests {
             &settings,
             &media,
             &dir.path().join("work"),
+            Phases::start("transcribe", "prepare"),
         )
         .await
         .unwrap();
 
         println!(
-            "{} segments, audio {:.1}s, transcribe {:.1}s, RTF {:.2}",
+            "{} segments, audio {:.1}s, transcribe {:.1}s, RTF {:.2}, phases {:?}",
             transcription.segments.len(),
             transcription.audio_seconds,
             transcription.transcribe_seconds,
-            transcription.transcribe_seconds / transcription.audio_seconds
+            transcription.transcribe_seconds / transcription.audio_seconds,
+            transcription.phases
         );
         assert!(!transcription.segments.is_empty());
     }

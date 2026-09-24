@@ -242,6 +242,24 @@ fn statuses(resolver: &Resolver) -> Vec<ComponentStatus> {
         .collect()
 }
 
+/// The ready executable of each named Component, found on the blocking pool since finding one runs it.
+pub async fn ready_executables<const N: usize>(
+    resolver: Resolver,
+    names: [&'static str; N],
+) -> Result<[PathBuf; N], String> {
+    let found = async_runtime::spawn_blocking(move || {
+        names
+            .iter()
+            .map(|name| ready_executable(name, &resolver))
+            .collect::<Result<Vec<_>, _>>()
+    })
+    .await
+    .map_err(|error| error.to_string())??;
+    Ok(found
+        .try_into()
+        .expect("one executable is found for each name"))
+}
+
 /// Finds every Component on the blocking pool, since finding one runs it.
 async fn statuses_off_the_main_thread(resolver: Resolver) -> Result<Vec<ComponentStatus>, String> {
     async_runtime::spawn_blocking(move || statuses(&resolver))

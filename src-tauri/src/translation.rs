@@ -56,7 +56,7 @@ pub async fn run_translate<R: Runtime>(
         "--no-webui".to_string(),
     ];
 
-    report(app, "load", 0);
+    report(app, "load", None);
     let (mut events, pid) = processes.spawn(app, llama, &args)?;
     let exited = Arc::new(AtomicBool::new(false));
     async_runtime::spawn({
@@ -78,7 +78,7 @@ pub async fn run_translate<R: Runtime>(
         })
         .await?;
         translate_segments(&client, &base_url, segments, target, |percent| {
-            report(app, "translate", percent)
+            report(app, "translate", Some(percent))
         })
         .await
     }

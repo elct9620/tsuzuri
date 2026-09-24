@@ -1,6 +1,8 @@
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+use serde::Serialize;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Segment {
     pub start_ms: u64,
     pub end_ms: u64,
@@ -107,7 +109,8 @@ fn format_timestamp(ms: u64) -> String {
 mod tests {
     use super::*;
 
-    const TWO_CUES: &str = "1\n00:00:01,000 --> 00:00:02,500\n你好\n\n2\n00:01:02,003 --> 01:00:00,000\n世界\n";
+    const TWO_CUES: &str =
+        "1\n00:00:01,000 --> 00:00:02,500\n你好\n\n2\n00:01:02,003 --> 01:00:00,000\n世界\n";
 
     fn segment(start_ms: u64, end_ms: u64, text: &str) -> Segment {
         Segment {
@@ -154,7 +157,8 @@ mod tests {
     // @behavior TR-004
     #[test]
     fn names_the_cue_with_a_malformed_timestamp() {
-        let input = "1\n00:00:01,000 --> 00:00:02,000\nok\n\n2\n00:00:0x,000 --> 00:00:04,000\nbad\n";
+        let input =
+            "1\n00:00:01,000 --> 00:00:02,000\nok\n\n2\n00:00:0x,000 --> 00:00:04,000\nbad\n";
 
         let error = Transcript::from_srt(input).unwrap_err();
 

@@ -1,5 +1,6 @@
 pub mod components;
 pub mod models;
+pub mod pipeline;
 pub mod processes;
 pub mod transcript;
 
@@ -25,7 +26,8 @@ pub fn run() {
             components::component_statuses,
             components::install_components,
             models::model_settings,
-            models::choose_model
+            models::choose_model,
+            pipeline::transcribe
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

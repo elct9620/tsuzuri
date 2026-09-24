@@ -48,7 +48,10 @@ impl Processes {
             .map_err(|error| error.to_string())?;
         let pid = child.pid();
         let name = executable_name(&program.to_string_lossy());
-        self.running.lock().unwrap().insert(pid, Running { child, name });
+        self.running
+            .lock()
+            .unwrap()
+            .insert(pid, Running { child, name });
         self.write_record();
 
         let (forward, received) = async_runtime::channel(64);
@@ -67,7 +70,13 @@ impl Processes {
     }
 
     pub fn kill_all(&self) {
-        let running: Vec<Running> = self.running.lock().unwrap().drain().map(|(_, running)| running).collect();
+        let running: Vec<Running> = self
+            .running
+            .lock()
+            .unwrap()
+            .drain()
+            .map(|(_, running)| running)
+            .collect();
         for running in running {
             let _ = running.child.kill();
         }
@@ -139,7 +148,9 @@ fn running_name(pid: u32) -> Option<String> {
 
 #[cfg(windows)]
 fn kill_tree(pid: u32) {
-    let _ = hidden("taskkill").args(["/PID", &pid.to_string(), "/T", "/F"]).status();
+    let _ = hidden("taskkill")
+        .args(["/PID", &pid.to_string(), "/T", "/F"])
+        .status();
 }
 
 #[cfg(unix)]
@@ -154,7 +165,9 @@ fn running_name(pid: u32) -> Option<String> {
 
 #[cfg(unix)]
 fn kill_tree(pid: u32) {
-    let _ = std::process::Command::new("kill").args(["-9", &pid.to_string()]).status();
+    let _ = std::process::Command::new("kill")
+        .args(["-9", &pid.to_string()])
+        .status();
 }
 
 #[cfg(all(test, unix))]
@@ -219,7 +232,8 @@ mod tests {
             .unwrap();
 
         let recorded: Vec<Recorded> =
-            serde_json::from_slice(&std::fs::read(dir.path().join("processes.json")).unwrap()).unwrap();
+            serde_json::from_slice(&std::fs::read(dir.path().join("processes.json")).unwrap())
+                .unwrap();
         processes.kill_all();
         assert_eq!(
             recorded,

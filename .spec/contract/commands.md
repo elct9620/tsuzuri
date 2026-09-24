@@ -37,3 +37,11 @@ Install every downloaded Component that is not ready yet, one after another, emi
 ```rust
 pub async fn install_components(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {}
 ```
+
+## `transcribe`
+
+Run the Transcribe Mode on one media file, emitting `pipeline-progress` events, and answer the Transcript with its timing.
+
+```rust
+pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, String> {}
+```

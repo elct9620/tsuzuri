@@ -39,16 +39,23 @@ pub struct Locations {
 
 impl Locations {
     pub fn of(app: &AppHandle) -> Result<Locations, String> {
-        let data = app.path().app_data_dir().map_err(|error| error.to_string())?;
+        let data = app
+            .path()
+            .app_data_dir()
+            .map_err(|error| error.to_string())?;
         Ok(Locations {
             components: data.join("components"),
-            vendor: Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("vendor"),
+            vendor: Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("vendor"),
         })
     }
 
     pub fn executable(&self, entry: &Entry) -> PathBuf {
         match &entry.source {
-            Source::Download { executable, .. } => self.components.join(&entry.name).join(executable),
+            Source::Download { executable, .. } => {
+                self.components.join(&entry.name).join(executable)
+            }
             Source::Vendored { executable } => self.vendor.join(executable),
         }
     }
@@ -69,6 +76,23 @@ pub fn status(entry: &Entry, locations: &Locations) -> ComponentStatus {
     }
 }
 
+/// The executable of a Component that is ready to run, or why it is not.
+pub fn ready_executable(name: &str, locations: &Locations) -> Result<PathBuf, String> {
+    let entry = manifest::manifest()
+        .into_iter()
+        .find(|entry| entry.name == name)
+        .ok_or_else(|| format!("{name} is not in the Manifest"))?;
+    let status = status(&entry, locations);
+    if status.ready {
+        Ok(locations.executable(&entry))
+    } else {
+        Err(match status.hint {
+            Some(hint) => format!("{name} is not ready: {hint}"),
+            None => format!("{name} is not installed"),
+        })
+    }
+}
+
 fn installed_marker(tag: &str, archives: &[Archive]) -> String {
     std::iter::once(tag)
         .chain(archives.iter().map(|archive| archive.sha256.as_str()))
@@ -80,7 +104,10 @@ fn is_installed(entry: &Entry, locations: &Locations) -> bool {
     let Source::Download { tag, archives, .. } = &entry.source else {
         return false;
     };
-    let marker = locations.components.join(&entry.name).join(INSTALLED_MARKER);
+    let marker = locations
+        .components
+        .join(&entry.name)
+        .join(INSTALLED_MARKER);
     std::fs::read_to_string(marker).is_ok_and(|content| content == installed_marker(tag, archives))
         && locations.executable(entry).is_file()
 }
@@ -101,7 +128,9 @@ pub async fn install(
     }
 
     let downloads = locations.components.join(DOWNLOADS_DIR);
-    tokio::fs::create_dir_all(&downloads).await.map_err(|error| error.to_string())?;
+    tokio::fs::create_dir_all(&downloads)
+        .await
+        .map_err(|error| error.to_string())?;
     let mut fetched = Vec::with_capacity(archives.len());
     for archive in archives {
         let path = downloads.join(archive_file_name(&archive.url));
@@ -128,7 +157,10 @@ async fn fetch(
     path: &Path,
     on_progress: &(dyn Fn(u64, Option<u64>) + Sync),
 ) -> Result<(), String> {
-    let on_disk = tokio::fs::metadata(path).await.map(|meta| meta.len()).unwrap_or(0);
+    let on_disk = tokio::fs::metadata(path)
+        .await
+        .map(|meta| meta.len())
+        .unwrap_or(0);
     let mut request = client.get(url);
     if on_disk > 0 {
         request = request.header(RANGE, format!("bytes={on_disk}-"));
@@ -137,7 +169,9 @@ async fn fetch(
     if response.status() == StatusCode::RANGE_NOT_SATISFIABLE {
         return Ok(());
     }
-    let response = response.error_for_status().map_err(|error| error.to_string())?;
+    let response = response
+        .error_for_status()
+        .map_err(|error| error.to_string())?;
 
     let resumed = response.status() == StatusCode::PARTIAL_CONTENT;
     let mut downloaded = if resumed { on_disk } else { 0 };
@@ -153,7 +187,9 @@ async fn fetch(
     let mut body = response.bytes_stream();
     while let Some(chunk) = body.next().await {
         let chunk = chunk.map_err(|error| error.to_string())?;
-        file.write_all(&chunk).await.map_err(|error| error.to_string())?;
+        file.write_all(&chunk)
+            .await
+            .map_err(|error| error.to_string())?;
         downloaded += chunk.len() as u64;
         on_progress(downloaded, total);
     }
@@ -178,7 +214,10 @@ async fn verify(path: &Path, expected: &str) -> Result<(), String> {
         Ok(())
     } else {
         let _ = tokio::fs::remove_file(&path).await;
-        Err(format!("{} does not match its pinned SHA256", path.display()))
+        Err(format!(
+            "{} does not match its pinned SHA256",
+            path.display()
+        ))
     }
 }
 
@@ -194,7 +233,9 @@ fn unpack_all(dir: &Path, archives: &[(PathBuf, ArchiveFormat)], marker: &str) -
             ArchiveFormat::Zip => zip::ZipArchive::new(file)
                 .and_then(|mut zip| zip.extract(dir))
                 .map_err(io::Error::other)?,
-            ArchiveFormat::TarGz => tar::Archive::new(flate2::read::GzDecoder::new(file)).unpack(dir)?,
+            ArchiveFormat::TarGz => {
+                tar::Archive::new(flate2::read::GzDecoder::new(file)).unpack(dir)?
+            }
         }
     }
     std::fs::write(dir.join(INSTALLED_MARKER), marker)?;
@@ -265,9 +306,19 @@ mod tests {
                     }
                     recorded.lock().unwrap().push(range.clone());
                     let start = range
-                        .and_then(|value| value.strip_prefix("bytes=")?.strip_suffix('-')?.parse().ok())
+                        .and_then(|value| {
+                            value
+                                .strip_prefix("bytes=")?
+                                .strip_suffix('-')?
+                                .parse()
+                                .ok()
+                        })
                         .unwrap_or(0usize);
-                    let status = if start == 0 { "200 OK" } else { "206 Partial Content" };
+                    let status = if start == 0 {
+                        "200 OK"
+                    } else {
+                        "206 Partial Content"
+                    };
                     let rest = &body[start..];
                     let head = format!(
                         "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
@@ -331,7 +382,9 @@ mod tests {
         let entry = tool_entry(&server.url, sha256(&archive));
         let locations = locations(&dir);
 
-        install(&entry, &locations, &reqwest::Client::new(), &|_, _| {}).await.unwrap();
+        install(&entry, &locations, &reqwest::Client::new(), &|_, _| {})
+            .await
+            .unwrap();
 
         assert!(locations.executable(&entry).is_file());
     }
@@ -345,9 +398,13 @@ mod tests {
         let entry = tool_entry(&server.url, sha256(&archive));
         let locations = locations(&dir);
         let client = reqwest::Client::new();
-        install(&entry, &locations, &client, &|_, _| {}).await.unwrap();
+        install(&entry, &locations, &client, &|_, _| {})
+            .await
+            .unwrap();
 
-        install(&entry, &locations, &client, &|_, _| {}).await.unwrap();
+        install(&entry, &locations, &client, &|_, _| {})
+            .await
+            .unwrap();
 
         assert_eq!(server.ranges().len(), 1);
     }
@@ -364,7 +421,9 @@ mod tests {
         std::fs::create_dir_all(partial.parent().unwrap()).unwrap();
         std::fs::write(&partial, &archive[..10]).unwrap();
 
-        install(&entry, &locations, &reqwest::Client::new(), &|_, _| {}).await.unwrap();
+        install(&entry, &locations, &reqwest::Client::new(), &|_, _| {})
+            .await
+            .unwrap();
 
         assert_eq!(server.ranges(), vec![Some("bytes=10-".to_string())]);
     }

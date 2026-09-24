@@ -46,14 +46,18 @@
           <button type="button" role="tab" data-mode="translate" data-mode-tabs-target="tab" data-action="mode-tabs#select" aria-selected="false">翻譯</button>
           <button type="button" role="tab" data-mode="transcribe-and-translate" data-mode-tabs-target="tab" data-action="mode-tabs#select" aria-selected="false">轉錄後翻譯</button>
         </div>
-        <div class="mode-panel" role="tabpanel" data-mode="transcribe" data-mode-tabs-target="panel">拖入影片或音訊</div>
+        <div class="mode-panel" role="tabpanel" data-mode="transcribe" data-mode-tabs-target="panel" data-controller="transcribe">
+          <p>拖入影片或音訊，或 <button type="button" data-action="transcribe#choose">選擇檔案</button></p>
+          <p class="progress" data-transcribe-target="status"></p>
+        </div>
         <div class="mode-panel" role="tabpanel" data-mode="translate" data-mode-tabs-target="panel" hidden>拖入 SRT 字幕檔</div>
         <div class="mode-panel" role="tabpanel" data-mode="transcribe-and-translate" data-mode-tabs-target="panel" hidden>拖入影片或音訊</div>
       </section>
 
-      <section class="panel" aria-labelledby="transcript-title">
+      <section class="panel" aria-labelledby="transcript-title" data-controller="transcript" data-action="transcribe:loaded@window->transcript#show">
         <h2 id="transcript-title">字幕</h2>
-        <p class="empty">尚無內容</p>
+        <p class="empty" data-transcript-target="empty">尚無內容</p>
+        <ol class="segments" data-transcript-target="list"></ol>
       </section>
 
       <footer>使用 FFmpeg（LGPL）</footer>

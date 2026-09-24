@@ -107,22 +107,31 @@ impl ModelSettings {
 }
 
 fn settings_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    app.path().app_config_dir().map_err(|error| error.to_string())
+    app.path()
+        .app_config_dir()
+        .map_err(|error| error.to_string())
+}
+
+pub fn load_settings(app: &AppHandle) -> Result<ModelSettings, String> {
+    ModelSettings::load(&settings_dir(app)?).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
 pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, String> {
-    let dir = settings_dir(&app)?;
-    let settings = ModelSettings::load(&dir).map_err(|error| error.to_string())?;
-    Ok(settings.view())
+    Ok(load_settings(&app)?.view())
 }
 
 #[tauri::command]
-pub fn choose_model(app: AppHandle, slot: ModelSlot, path: PathBuf) -> Result<ModelSettingsView, String> {
-    let dir = settings_dir(&app)?;
-    let mut settings = ModelSettings::load(&dir).map_err(|error| error.to_string())?;
+pub fn choose_model(
+    app: AppHandle,
+    slot: ModelSlot,
+    path: PathBuf,
+) -> Result<ModelSettingsView, String> {
+    let mut settings = load_settings(&app)?;
     settings.choose(slot, path);
-    settings.save(&dir).map_err(|error| error.to_string())?;
+    settings
+        .save(&settings_dir(&app)?)
+        .map_err(|error| error.to_string())?;
     Ok(settings.view())
 }
 
@@ -130,7 +139,6 @@ pub fn choose_model(app: AppHandle, slot: ModelSlot, path: PathBuf) -> Result<Mo
 mod tests {
     use super::*;
     use crate::test_support::TempDir;
-
 
     // @behavior MD-001
     #[test]
@@ -143,7 +151,10 @@ mod tests {
 
         let reloaded = ModelSettings::load(dir.path()).unwrap();
 
-        assert_eq!(reloaded.require(ModelSlot::Transcription), Ok(model.as_path()));
+        assert_eq!(
+            reloaded.require(ModelSlot::Transcription),
+            Ok(model.as_path())
+        );
     }
 
     // @behavior MD-002

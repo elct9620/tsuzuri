@@ -17,11 +17,30 @@ pub struct TranslationModel {
     client: Client<OpenAIConfig>,
 }
 
-/// One Batch: each line with its index, and lines already translated for the Model to stay consistent with.
+/// One request for translations: each line with its index, lines already translated for the Model
+/// to stay consistent with, the source text just before the lines, and what to fix from last time.
 pub struct BatchRequest<'a> {
     pub languages: LanguagePair,
     pub lines: Vec<(usize, &'a str)>,
     pub reference: &'a [(String, String)],
+    pub preceding: Option<String>,
+    pub correction: Option<String>,
+}
+
+/// Why the Model gave no usable answer: the request failed, or the answer could not be read.
+#[derive(Debug)]
+pub enum AnswerError {
+    Request(Failure),
+    Malformed(String),
+}
+
+impl From<AnswerError> for Failure {
+    fn from(error: AnswerError) -> Failure {
+        match error {
+            AnswerError::Request(failure) => failure,
+            AnswerError::Malformed(detail) => Failure::LlamaRequest { detail },
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -53,7 +72,7 @@ impl TranslationModel {
     pub async fn translate_batch(
         &self,
         batch: &BatchRequest<'_>,
-    ) -> Result<HashMap<usize, String>, Failure> {
+    ) -> Result<HashMap<usize, String>, AnswerError> {
         let answer: BatchAnswer = self
             .answer(
                 instruction(batch.languages),
@@ -74,7 +93,7 @@ impl TranslationModel {
         &self,
         source: Language,
         lines: &[(usize, &str)],
-    ) -> Result<Vec<Vec<usize>>, Failure> {
+    ) -> Result<Vec<Vec<usize>>, AnswerError> {
         let answer: SplitSentencesAnswer = self
             .answer(
                 split_sentence_instruction(source),
@@ -101,7 +120,7 @@ impl TranslationModel {
         user: String,
         task: Task,
         schema: serde_json::Value,
-    ) -> Result<T, Failure> {
+    ) -> Result<T, AnswerError> {
         let request = CreateChatCompletionRequestArgs::default()
             .model("tsuzuri")
             .messages([
@@ -118,24 +137,20 @@ impl TranslationModel {
                 },
             })
             .build()
-            .map_err(request_failure)?;
+            .map_err(|error| AnswerError::Request(request_failure(error)))?;
         let response = self
             .client
             .chat()
             .create(request)
             .await
-            .map_err(request_failure)?;
+            .map_err(|error| AnswerError::Request(request_failure(error)))?;
         let content = response
             .choices
             .into_iter()
             .next()
             .and_then(|choice| choice.message.content)
-            .ok_or_else(|| Failure::LlamaRequest {
-                detail: "answered without content".to_string(),
-            })?;
-        serde_json::from_str(&content).map_err(|error| Failure::LlamaRequest {
-            detail: format!("answered malformed JSON: {error}"),
-        })
+            .ok_or_else(|| AnswerError::Malformed("answered without content".to_string()))?;
+        serde_json::from_str(&content).map_err(|error| AnswerError::Malformed(error.to_string()))
     }
 }
 
@@ -179,6 +194,11 @@ Rules:
 /// The Batch's lines go last, as one line of JSON, after whatever the Model should read first.
 fn user_message(batch: &BatchRequest<'_>) -> String {
     let mut parts = Vec::new();
+    if let Some(preceding) = &batch.preceding {
+        parts.push(format!(
+            "Note: the original-language text below immediately precedes the lines you are about to translate, and their sentence may continue from it. Use it only to understand grammar and meaning - do not translate it or include it in your output:\n{preceding}"
+        ));
+    }
     if !batch.reference.is_empty() {
         let lines: Vec<String> = batch
             .reference
@@ -189,6 +209,9 @@ fn user_message(batch: &BatchRequest<'_>) -> String {
             "Reference context (already translated, for consistency only, do not re-translate these):\n{}",
             lines.join("\n")
         ));
+    }
+    if let Some(correction) = &batch.correction {
+        parts.push(format!("Correction needed: {correction}"));
     }
     parts.push(format!(
         "Translate the following subtitle lines:\n{}",

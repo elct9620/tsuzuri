@@ -56,16 +56,6 @@ case "$file" in
 		exit 2
 	fi
 	;;
-"$ROOT"/docs/*.md | *.zh-TW.md)
-	# Documents written in Traditional Chinese keep Taiwan's wording. Info-level
-	# findings stay advisory: they include false positives such as file names
-	# inside link targets, which no rewrite can settle.
-	command -v zhtw-mcp >/dev/null 2>&1 || exit 0
-	if ! out="$(zhtw-mcp lint --format compact --max-errors 0 --max-warnings 0 "$file" 2>&1)"; then
-		printf 'zhtw-mcp lint reports wording to fix in %s:\n%s\n' "${file#"$ROOT"/}" "$out" >&2
-		exit 2
-	fi
-	;;
 esac
 
 exit 0

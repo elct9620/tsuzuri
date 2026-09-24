@@ -44,11 +44,11 @@ Looking for a Component already on the computer: `vendor/` in debug builds, then
 
 ### Vendored Component
 
-A Component `scripts/vendor.sh` builds from the source the Build Manifest pins into `vendor/`, one Variant per Component, for development and for CI. Only debug builds look there; a release build never refers to `vendor/` and finds Components among its Bundled Variants instead.
+A Component `scripts/vendor.sh` builds from the source the Build Manifest pins into `vendor/<component>/<variant>/`, for development and for CI. Only debug builds look there; a release build never refers to `vendor/` and finds Components among its Bundled Variants instead.
 
 ### Build Manifest
 
-`components.json`: for each Component, the upstream source version and SHA256 Tsuzuri builds from, and the Variants built on each platform. The first Variant listed for a platform is its Bundled Variant.
+`components.json`: for each Component, the upstream source version and SHA256 Tsuzuri builds from, and the Variants built on each platform, in the order Auto-Selection tries them.
 
 ### Variant
 
@@ -56,7 +56,11 @@ One build of a Component for a kind of hardware: `cpu`, `openblas`, `vulkan` or 
 
 ### Bundled Variant
 
-The one Variant per Component the installer carries in its resources, first in the Build Manifest's list for the platform: `vulkan` on Windows and Linux, `metal` on macOS, `audio` for ffmpeg. Other Variants are chosen by the user until the app selects among them itself.
+A Variant the installer carries in its resources, under `components/<component>/<variant>/`. Until every Variant is bundled, each platform carries the first the Build Manifest lists: `vulkan` on Windows and Linux, `metal` on macOS, `audio` for ffmpeg.
+
+### Auto-Selection
+
+Taking the first Bundled Variant, in the Build Manifest's order for the platform, whose executable answers its version flag. A Variant that does not run, as when the driver or library its backend loads is missing, is passed over for the next.
 
 ### Model
 

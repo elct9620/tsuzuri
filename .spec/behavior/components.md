@@ -1,6 +1,6 @@
 # Components
 
-Finding every Component the running platform needs before a Mode runs: the path the user chose, else one found by Detection, else the Bundled Variant. Nothing is downloaded.
+Finding every Component the running platform needs before a Mode runs: the path the user chose, else one found by Detection, else the Bundled Variant Auto-Selection takes. Nothing is downloaded.
 
 ## Includes
 
@@ -56,11 +56,11 @@ Finding every Component the running platform needs before a Mode runs: the path 
 | When | an executable is chosen for a Component |
 | Then | its status shows the chosen path |
 
-## `CP-014` Reporting a Bundled Variant that does not run
+## `CP-014` Reporting Bundled Variants that do not run
 
 | Step | Statement |
 | --- | --- |
-| Given | a Bundled Variant whose executable fails its version flag, as when a driver or system library it needs is missing |
+| Given | Bundled Variants whose executables all fail their version flag, as when a driver or system library they need is missing |
 | When | its status is read |
 | Then | it reads as not ready and says the executable does not run |
 
@@ -70,7 +70,33 @@ Finding every Component the running platform needs before a Mode runs: the path 
 | --- | --- |
 | Given | no executable chosen, none found by Detection, and a Bundled Variant that answers its version flag |
 | When | its status is read |
-| Then | it reads as ready at the bundled path |
+| Then | it reads as ready at the bundled path, naming its Variant |
+
+## `CP-017` Passing over a Bundled Variant that does not run
+
+| Step | Statement |
+| --- | --- |
+| Given | no executable chosen and none found by Detection |
+| Given | a first Bundled Variant that fails its version flag and a second that answers it |
+| When | its status is read |
+| Then | it reads as ready at the second Variant's path |
+
+## `CP-018` Trying Bundled Variants in the Build Manifest's order
+
+| Step | Statement |
+| --- | --- |
+| Given | no executable chosen and none found by Detection |
+| Given | two Bundled Variants that both answer their version flag |
+| When | its status is read |
+| Then | it reads as ready at the Variant the Build Manifest lists first |
+
+## `CP-019` Showing the Variant Auto-Selection took
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component ready as a Bundled Variant |
+| When | the components panel loads |
+| Then | its status names the Variant |
 
 ## `CP-016` Logging how long finding a Component took
 

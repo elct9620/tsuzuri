@@ -24,11 +24,31 @@ An SRT whose every cue carries the original text above its translation, so any p
 
 ### Project
 
-The work on one input that Rust holds as the single source of truth: the media file, when there is one, or the SRT file it was opened from, and its Transcript with the translations and edits, the Language the Transcript is in and the Language of its translations, and the Translation Glossary once loaded. Transcribing a media file or opening an SRT file replaces it; translating, editing and exporting work on it. For now only one exists, in memory.
+A directory the user opens, holding the Resources of one series of work, a Project Config and, when present, a Translation Glossary. Rust holds the open Project as the single source of truth, and the directory's files are where its subtitles live: edits are written back to them, never kept as a copy of Tsuzuri's own.
+
+### Resource
+
+The files of a Project sharing one name: a media file, the Primary Language subtitle `[name].srt` or `[name].[code].srt`, and a translation `[name].[code].srt` for each other Language. A Resource may have any of them but needs one of the first two.
+
+### Current Resource
+
+The one Resource of the Project that the editor shows and a Mode works on. Opening a Project selects its first Resource; opening an SRT file selects that file's.
+
+### Primary Language
+
+The Language a Project's Resources are spoken and transcribed in, and the one every translation starts from. The Project Config records it; without one it follows the Interface Language.
+
+### Project Config
+
+`tsuzuri.config.json` in the Project's directory: the Primary Language and the Language of the last translation. Written the first time either changes.
 
 ### Mode
 
-What the user asks Tsuzuri to do with one input: Transcribe (media to Transcript), Translate (the Project's Transcript into another language), or Transcribe and Translate (both, in that order).
+What the user starts on the Current Resource from a task dialog: Transcribe (its media file to its Primary Language subtitle), Translate (its Primary Language subtitle into another Language), or Transcribe and Translate (both, in that order). Its results appear in the editor as they arrive.
+
+#### Rejected
+
+- `Tab` - Modes used to be tabs; the editor is now the one screen and a Mode is started over it.
 
 ### Component
 
@@ -80,7 +100,7 @@ The `name:` or `name：` before a line of dialogue, up to twenty characters with
 
 ### Translation Glossary
 
-The terms the user gives, as a CSV of `source,target` rows such as names and titles, whose target term each translation of a line using the source term must contain. It belongs to the Project, so a new Project starts without one; translation uses it only once loaded. Unrelated to this file.
+The terms the user gives, as a CSV of `source,target` rows such as names and titles, whose target term each translation of a line using the source term must contain. It is the Project's `glossary.csv`, read when the Project opens and again before each translation; without the file there is none. Unrelated to this file.
 
 ### Rolling Summary
 

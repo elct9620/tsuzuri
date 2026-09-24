@@ -5,9 +5,11 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 ## Includes
 
 - `src-tauri/src/translation.rs`
+- `src-tauri/src/translation/*.rs`
 - `src-tauri/src/translation_glossary.rs`
 - `src/controllers/translate_controller.test.ts`
 - `src/controllers/transcribe_controller.test.ts`
+- `src/controllers/translation_settings_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 - `src/controllers/tabs_controller.test.ts`
 
@@ -418,3 +420,43 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a ready llama-server and Self-Review turned off |
 | When | a Batch is translated |
 | Then | no request asks for a review |
+
+## `TL-053` Remembering the translation settings
+
+| Step | Statement |
+| --- | --- |
+| Given | translation settings of Batch size 4, 2 retries and 1 reference line |
+| When | they are saved and loaded again |
+| Then | they are Batch size 4, 2 retries and 1 reference line |
+
+## `TL-054` Keeping each translation setting at least one
+
+| Step | Statement |
+| --- | --- |
+| Given | translation settings of Batch size 0 and 0 retries |
+| When | they are saved |
+| Then | they are saved as Batch size 1 and 1 retry |
+
+## `TL-055` Saving a translation setting from the settings panel
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings panel showing the saved translation settings |
+| When | the Batch size is changed to 4 |
+| Then | the translation settings are saved with Batch size 4 |
+
+## `TL-056` Translating with the options the panel offers
+
+| Step | Statement |
+| --- | --- |
+| Given | the Translate Mode panel with Speaker Labels, Self-Review and a Rolling Summary of 80 words turned on |
+| When | translating is started |
+| Then | the Project is translated with those options |
+
+## `TL-057` Translating from another source Language
+
+| Step | Statement |
+| --- | --- |
+| Given | the Translate Mode panel and a Project in `ja` whose source Language is changed to `en` |
+| When | translating is started |
+| Then | the Project is translated from `en` |

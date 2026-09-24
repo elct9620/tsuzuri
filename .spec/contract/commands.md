@@ -72,10 +72,10 @@ pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: St
 
 ## `translate`
 
-Run the Translate Mode on the Project from the source Language into the target Language, each given by its code, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The translations and both Languages are written into the Project; the answer is the seconds each Phase took.
+Run the Translate Mode on the Project from the source Language into the target Language, each given by its code, with the options the Translate panel offers and the saved translation settings, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. The translations and both Languages are written into the Project; the answer is the seconds each Phase took.
 
 ```rust
-pub async fn translate(app: AppHandle, source: Language, target: Language) -> Result<Translation, Failure> {}
+pub async fn translate(app: AppHandle, source: Language, target: Language, options: TranslationOptions) -> Result<Translation, Failure> {}
 ```
 
 ## `save_srt`
@@ -100,4 +100,20 @@ Remove the Project's Translation Glossary, so translation runs without one.
 
 ```rust
 pub fn clear_glossary(app: AppHandle) -> Result<(), Failure> {}
+```
+
+## `translation_settings`
+
+The saved translation settings: Batch size, retries before a failing group is split, and reference lines.
+
+```rust
+pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failure> {}
+```
+
+## `save_translation_settings`
+
+Save the translation settings, each raised to at least one, and answer them as saved.
+
+```rust
+pub fn save_translation_settings(app: AppHandle, settings: TranslationSettings) -> Result<TranslationSettings, Failure> {}
 ```

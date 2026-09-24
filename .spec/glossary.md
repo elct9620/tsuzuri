@@ -40,7 +40,7 @@ A Component `scripts/vendor.sh` builds from the source the Build Manifest pins i
 
 ### Build Manifest
 
-`components.json`: for each Component, the upstream source version and SHA256 Tsuzuri builds from, and the Variants built on each platform.
+`components.json`: for each Component, the upstream source version and SHA256 Tsuzuri builds from, and the Variants built on each platform. The first Variant listed for a platform is its Bundled Variant.
 
 ### Variant
 
@@ -48,7 +48,7 @@ One build of a Component for a kind of hardware: `cpu`, `openblas`, `vulkan` or 
 
 ### Bundled Variant
 
-The one Variant per Component the installer carries in its resources: `vulkan` on Windows and Linux, `metal` on macOS, `audio` for ffmpeg. Other Variants are chosen by the user until the app selects among them itself.
+The one Variant per Component the installer carries in its resources, first in the Build Manifest's list for the platform: `vulkan` on Windows and Linux, `metal` on macOS, `audio` for ffmpeg. Other Variants are chosen by the user until the app selects among them itself.
 
 ### Model
 

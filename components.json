@@ -5,8 +5,8 @@
     "sha256": "57e280cee375ab02425b806ad5146b99f6eb9357e3c2b31357c8a6af2e2e44ae",
     "variants": {
       "macos": ["metal"],
-      "linux": ["cpu", "openblas", "vulkan"],
-      "windows": ["cpu", "openblas", "vulkan"]
+      "linux": ["vulkan", "openblas", "cpu"],
+      "windows": ["vulkan", "openblas", "cpu"]
     }
   },
   "llama": {
@@ -15,8 +15,8 @@
     "sha256": "4bdedbd86fc4287eaea1e8473ff3a4870fd3bec2f3517d405f8c12cf74143345",
     "variants": {
       "macos": ["metal"],
-      "linux": ["cpu", "openblas", "vulkan"],
-      "windows": ["cpu", "openblas", "vulkan"]
+      "linux": ["vulkan", "openblas", "cpu"],
+      "windows": ["vulkan", "openblas", "cpu"]
     }
   },
   "ffmpeg": {

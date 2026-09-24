@@ -66,7 +66,7 @@ scripts/vendor.sh               # every Component
 scripts/vendor.sh whisper cpu   # one Component, one Variant
 ```
 
-CI builds every Variant the same way in `.github/workflows/components.yml`, caching each by its pin. Packaging merges `src-tauri/tauri.bundle.conf.json`, which bundles `vendor/` into the installer, so CI restores the first Variant listed for each platform before it runs `pnpm tauri build --config src-tauri/tauri.bundle.conf.json`.
+Packaging merges `src-tauri/tauri.bundle.conf.json`, which bundles `vendor/` into the installer. CI builds the first Variant listed for each platform the same way, caching each by its pin, before it runs `pnpm tauri build --config src-tauri/tauri.bundle.conf.json`.
 
 The frontend is plain TypeScript with [Stimulus](https://stimulus.hotwired.dev/) controllers under `src/controllers/`. The design is in [docs/design.md](docs/design.md).
 

@@ -372,16 +372,15 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
            └▶ rust × 3 平台（fmt、clippy、test）
                    │ 全部通過，且是 push main 或手動觸發
                    ▼
-              build × 3 平台：還原內建變體 ─▶ 打包 ─▶ 上傳產物
-
-  改動 Build Manifest 或建置腳本、手動觸發、被釋出流程呼叫
-     ─▶ components × 元件、變體、平台（build-component action）
-             │ cache 命中就跳過編譯
-             ▼
-          確認能回應版本參數 ─▶ 上傳元件產物
+              build × 3 平台
+                   │ 每個元件的內建變體（build-component action）
+                   │   cache 命中就還原，否則以 vendor.sh 編譯
+                   │   確認能回應版本參數
+                   ▼
+              打包 ─▶ 上傳產物
 ```
 
-action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版本與 lockfile 為 key，存檔前移除會重新編譯的產物。元件 cache 以該元件的釘版與建置腳本為 key，只重編改到的元件。
+action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版本與 lockfile 為 key，存檔前移除會重新編譯的產物。元件 cache 以平台、變體、該元件的釘版與建置腳本為 key，只重編改到的元件；cache 過期時由 GitHub 清除，下次打包重新編譯。
 
 ### 10.2 產物與授權聲明
 

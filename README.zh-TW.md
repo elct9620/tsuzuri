@@ -66,7 +66,7 @@ scripts/vendor.sh               # 全部元件
 scripts/vendor.sh whisper cpu   # 單一元件、單一變體
 ```
 
-CI 在 `.github/workflows/components.yml` 以同樣方式編譯全部變體，並依釘版分別快取。打包時合併 `src-tauri/tauri.bundle.conf.json`，把 `vendor/` 放進安裝檔，所以 CI 先還原各平台列出的第一個變體，再執行 `pnpm tauri build --config src-tauri/tauri.bundle.conf.json`。
+打包時合併 `src-tauri/tauri.bundle.conf.json`，把 `vendor/` 放進安裝檔。CI 以同樣方式編譯各平台列出的第一個變體，並依釘版分別快取，再執行 `pnpm tauri build --config src-tauri/tauri.bundle.conf.json`。
 
 前端是純 TypeScript，Stimulus controller 放在 `src/controllers/`。設計請見 [docs/design.md](docs/design.md)。
 

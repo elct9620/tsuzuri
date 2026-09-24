@@ -196,7 +196,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # The installer carries each Component's Bundled Variant: the first components.json lists for the platform.
-      # The build restores from the cache the Components workflow saves, so it rarely compiles anything.
+      # Each is restored from the cache unless its pin or the build script changed, or the cache expired.
       - name: Choose the Bundled Variants
         id: bundled
         shell: bash

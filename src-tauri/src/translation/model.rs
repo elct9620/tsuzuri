@@ -52,6 +52,26 @@ struct BatchAnswer {
     translations: Vec<TranslatedLine>,
 }
 
+/// One translation for Self-Review, with the source text of the lines on either side of it.
+pub struct ReviewItem<'a> {
+    pub index: usize,
+    pub source: &'a str,
+    pub translation: &'a str,
+    pub previous_line: Option<(usize, &'a str)>,
+    pub next_line: Option<(usize, &'a str)>,
+}
+
+#[derive(Deserialize)]
+struct ReviewAnswer {
+    reviews: Vec<LineReview>,
+}
+
+#[derive(Deserialize)]
+struct LineReview {
+    index: usize,
+    best_matching_index: usize,
+}
+
 #[derive(Deserialize)]
 struct SummaryAnswer {
     summary: String,
@@ -151,6 +171,49 @@ impl TranslationModel {
         Ok(answer.summary.trim().to_string())
     }
 
+    /// The line each item's translation belongs to, by the Model's reading, for each item it reviewed.
+    pub async fn review_translations(
+        &self,
+        languages: LanguagePair,
+        items: &[ReviewItem<'_>],
+    ) -> Result<HashMap<usize, usize>, AnswerError> {
+        let payload: Vec<_> = items
+            .iter()
+            .map(|item| {
+                let mut entry = json!({
+                    "index": item.index,
+                    "source": item.source,
+                    "translation": item.translation,
+                });
+                if let Some((index, source)) = item.previous_line {
+                    entry["previous_line_index"] = json!(index);
+                    entry["previous_line_source"] = json!(source);
+                }
+                if let Some((index, source)) = item.next_line {
+                    entry["next_line_index"] = json!(index);
+                    entry["next_line_source"] = json!(source);
+                }
+                entry
+            })
+            .collect();
+        let answer: ReviewAnswer = self
+            .answer(
+                review_instruction(languages),
+                format!(
+                    "Review these translations:\n{}",
+                    serde_json::Value::from(payload)
+                ),
+                REVIEW_TASK,
+                review_schema(),
+            )
+            .await?;
+        Ok(answer
+            .reviews
+            .into_iter()
+            .map(|review| (review.index, review.best_matching_index))
+            .collect())
+    }
+
     async fn answer<T: for<'de> Deserialize<'de>>(
         &self,
         system: String,
@@ -201,6 +264,11 @@ struct Task {
 const TRANSLATION_TASK: Task = Task {
     name: "subtitle_translation",
     temperature: 0.2,
+};
+/// A review should reach the same verdict on the same lines every time.
+const REVIEW_TASK: Task = Task {
+    name: "subtitle_translation_review",
+    temperature: 0.0,
 };
 /// A summary should say the same of the same lines every time.
 const SUMMARY_TASK: Task = Task {
@@ -291,6 +359,62 @@ fn pair_lines(pairs: &[(String, String)]) -> String {
         .map(|(source, translation)| format!("- {source} => {translation}"))
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn review_instruction(languages: LanguagePair) -> String {
+    format!(
+        "You are reviewing {target} subtitle translations for accuracy against
+their original {source} lines, each identified by an \"index\". Some entries also
+include \"previous_line_source\"/\"previous_line_index\" and/or
+\"next_line_source\"/\"next_line_index\" - the neighboring subtitle's original text and its
+index number, given only as background context. Never grade the translation against
+these, they are not being reviewed.
+
+For each entry, complete these steps in order:
+1. \"translation_meaning\": in one short sentence, state in your own words what the given
+   \"translation\" text actually says - only what it actually says, not what it should say.
+2. \"best_matching_index\": among the index values visible to you (this entry's own
+   index, and previous_line_index/next_line_index if given), which one's own source
+   line does the meaning you just restated most closely describe? This should almost
+   always be the entry's own index - only pick a different one if the restated meaning
+   clearly and unambiguously belongs to a different line's content instead.
+3. \"issue\": one short sentence only if best_matching_index differs from this entry's
+   own index, or you found another clear, specific meaning error; otherwise an empty
+   string.
+
+Most translations are correct - only report a problem when you can point to a specific,
+concrete mismatch. If genuinely unsure, prefer answering that it is fine.
+
+Respond only with the JSON object matching the required schema.",
+        source = languages.source.name(),
+        target = languages.target.name(),
+    )
+}
+
+/// `translation_meaning` comes before the verdict so the Model restates the translation in its
+/// own words first, grounding the verdict in the text rather than in the neighbouring lines.
+fn review_schema() -> serde_json::Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "reviews": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "index": {"type": "integer"},
+                        "translation_meaning": {"type": "string"},
+                        "best_matching_index": {"type": "integer"},
+                        "issue": {"type": "string"},
+                    },
+                    "required": ["index", "translation_meaning", "best_matching_index", "issue"],
+                    "additionalProperties": false,
+                },
+            },
+        },
+        "required": ["reviews"],
+        "additionalProperties": false,
+    })
 }
 
 fn summary_instruction(languages: LanguagePair, word_limit: usize) -> String {

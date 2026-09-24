@@ -68,6 +68,8 @@ struct TranslationJob<'a> {
     glossary_terms: &'a [(String, String)],
     /// The Rolling Summary's word limit, or none when it is off.
     summary_word_limit: Option<usize>,
+    /// Whether the Model reviews where each translation belongs.
+    has_self_review: bool,
     /// Whether Speaker Labels are kept out of what the Model is sent.
     has_speaker_labels: bool,
 }
@@ -95,6 +97,7 @@ pub async fn run_translate<R: Runtime>(
         languages,
         settings: TranslationSettings::default(),
         has_speaker_labels: false,
+        has_self_review: false,
         summary_word_limit: None,
         glossary_terms: glossary.as_ref().map_or(&[], |glossary| glossary.terms()),
     };
@@ -343,7 +346,10 @@ mod tests {
     use crate::test_support::Response;
     use crate::test_support::TempDir;
     use crate::transcript::Transcript;
-    use fake_llama::{completion, echo_lines, numbered_summary, translations, FakeLlama, Lines};
+    use fake_llama::{
+        completion, echo_lines, numbered_summary, review_answer, translations, FakeLlama, Lines,
+        Replies,
+    };
 
     fn segment(start_ms: u64, end_ms: u64, text: &str) -> Segment {
         Segment {
@@ -394,6 +400,7 @@ mod tests {
             languages: japanese_pair(),
             settings: TranslationSettings::default(),
             has_speaker_labels: false,
+            has_self_review: false,
             summary_word_limit: None,
             glossary_terms: &[],
         }
@@ -1132,6 +1139,143 @@ mod tests {
         .unwrap();
 
         assert!(llama.summary_requests.lock().unwrap().is_empty());
+    }
+
+    /// Translates `segments` in one Batch with Self-Review turned on.
+    async fn translate_with_self_review(llama: &FakeLlama, segments: &[Segment]) -> Vec<Segment> {
+        translate_segments(
+            &llama.model(),
+            &TranslationJob {
+                has_self_review: true,
+                ..job(segments)
+            },
+            &[],
+            |_| {},
+        )
+        .await
+        .unwrap()
+    }
+
+    /// A review placing line 1 on line 2 in the requests `is_misplaced` picks, and every other line on its own.
+    fn llama_misplacing_line_one(
+        is_misplaced: impl Fn(usize) -> bool + Send + Sync + 'static,
+    ) -> FakeLlama {
+        FakeLlama::serve(Replies {
+            review: Box::new(move |(asked, items)| {
+                let placements = items
+                    .iter()
+                    .map(|item| {
+                        let index = item["index"].as_u64().unwrap() as usize;
+                        match index == 1 && is_misplaced(asked) {
+                            true => (1, 2),
+                            false => (index, index),
+                        }
+                    })
+                    .collect();
+                review_answer(placements)
+            }),
+            ..Replies::default()
+        })
+    }
+
+    // @behavior TL-048
+    #[tokio::test]
+    async fn reviews_translations_two_lines_at_a_time() {
+        let llama = FakeLlama::with_echo(0);
+
+        translate_with_self_review(&llama, &three_segments()).await;
+
+        let requests = llama.review_requests.lock().unwrap();
+        let reviewed: Vec<Vec<serde_json::Value>> =
+            requests.iter().map(fake_llama::reviewed_items).collect();
+        assert_eq!(
+            reviewed[0][1],
+            json!({
+                "index": 1,
+                "source": "今天天氣很好",
+                "translation": "EN:今天天氣很好",
+                "previous_line_index": 0,
+                "previous_line_source": "大家好",
+                "next_line_index": 2,
+                "next_line_source": "我們出發吧",
+            })
+        );
+        assert_eq!(
+            reviewed.iter().map(Vec::len).collect::<Vec<_>>(),
+            vec![2, 1]
+        );
+        let properties: Vec<&String> = requests[0]["response_format"]["json_schema"]["schema"]
+            ["properties"]["reviews"]["items"]["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .collect();
+        assert!(
+            properties
+                .iter()
+                .position(|key| *key == "translation_meaning")
+                < properties
+                    .iter()
+                    .position(|key| *key == "best_matching_index"),
+            "{properties:?}"
+        );
+    }
+
+    // @behavior TL-049
+    #[tokio::test]
+    async fn repairs_a_translation_the_review_places_on_another_line() {
+        let llama = llama_misplacing_line_one(|asked| asked == 0);
+
+        translate_with_self_review(&llama, &three_segments()).await;
+
+        let requests = llama.requests.lock().unwrap();
+        let repaired_lines: Vec<usize> = fake_llama::batch_lines(&requests[1])
+            .into_iter()
+            .map(|(index, _)| index)
+            .collect();
+        assert_eq!(repaired_lines, vec![1]);
+    }
+
+    // @behavior TL-050
+    #[tokio::test]
+    async fn keeps_a_translation_the_review_keeps_placing_elsewhere() {
+        let llama = llama_misplacing_line_one(|_| true);
+
+        let translated_segments = translate_with_self_review(&llama, &three_segments()).await;
+
+        assert_eq!(
+            translations_of(&translated_segments),
+            vec!["EN:大家好", "EN:今天天氣很好", "EN:我們出發吧"]
+        );
+    }
+
+    // @behavior TL-051
+    #[tokio::test]
+    async fn translates_on_when_a_review_cannot_be_read() {
+        let llama = FakeLlama::serve(Replies {
+            review: Box::new(|_| completion("not json")),
+            ..Replies::default()
+        });
+
+        let translated_segments = translate_with_self_review(&llama, &three_segments()).await;
+
+        assert_eq!(
+            translations_of(&translated_segments),
+            vec!["EN:大家好", "EN:今天天氣很好", "EN:我們出發吧"]
+        );
+        assert_eq!(llama.requests.lock().unwrap().len(), 1);
+    }
+
+    // @behavior TL-052
+    #[tokio::test]
+    async fn sends_no_reviews_when_self_review_is_off() {
+        let llama = FakeLlama::with_echo(0);
+
+        translate_all(&llama, &three_segments(), japanese_pair())
+            .await
+            .unwrap();
+
+        assert!(llama.review_requests.lock().unwrap().is_empty());
     }
 
     // @behavior TL-010

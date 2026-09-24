@@ -9,34 +9,58 @@ use crate::test_support::{FakeHttp, Response};
 /// The lines of one request: each index with its text.
 pub type Lines = Vec<(usize, String)>;
 
-/// A llama-server that answers `/health` as not ready `loading_checks` times first, then answers
-/// the n-th translation request through `translate`, each window looked at for Split Sentences
-/// through `split` and the n-th Rolling Summary request through `summarize`, keeping every
-/// request it was sent.
+type Reply<T> = Box<dyn Fn(T) -> Response + Send + Sync>;
+
+/// How a fake llama-server answers each kind of request.
+pub struct Replies {
+    /// `/health` answers as not ready this many times first.
+    pub loading_checks: usize,
+    /// Answers the n-th translation request, counting from 0.
+    pub translation: Reply<(usize, Lines)>,
+    /// Answers each window looked at for Split Sentences.
+    pub split_sentences: Reply<Lines>,
+    /// Answers the n-th Rolling Summary request, counting from 0.
+    pub summary: Reply<usize>,
+    /// Answers the n-th Self-Review request, counting from 0, with the lines it reviews.
+    pub review: Reply<(usize, Vec<serde_json::Value>)>,
+}
+
+impl Default for Replies {
+    /// Echoes every translation, finds no Split Sentences, numbers each summary and passes every review.
+    fn default() -> Replies {
+        Replies {
+            loading_checks: 0,
+            translation: Box::new(|(_, lines)| translations(echo_lines(lines))),
+            split_sentences: Box::new(|_| completion(&json!({"clusters": []}).to_string())),
+            summary: Box::new(numbered_summary),
+            review: Box::new(|(_, items)| passing_review(items)),
+        }
+    }
+}
+
+/// A llama-server answering through its `Replies` and keeping every request it was sent.
 pub struct FakeLlama {
     server: FakeHttp,
     pub log: Arc<Mutex<Vec<String>>>,
     pub requests: Arc<Mutex<Vec<serde_json::Value>>>,
     pub windows: Arc<Mutex<Vec<Lines>>>,
     pub summary_requests: Arc<Mutex<Vec<serde_json::Value>>>,
+    pub review_requests: Arc<Mutex<Vec<serde_json::Value>>>,
 }
 
 impl FakeLlama {
-    pub fn serve(
-        loading_checks: usize,
-        translate: impl Fn(usize, Lines) -> Response + Send + Sync + 'static,
-        split: impl Fn(Lines) -> String + Send + Sync + 'static,
-        summarize: impl Fn(usize) -> Response + Send + Sync + 'static,
-    ) -> FakeLlama {
+    pub fn serve(replies: Replies) -> FakeLlama {
         let log = Arc::new(Mutex::new(Vec::new()));
         let requests = Arc::new(Mutex::new(Vec::new()));
         let windows = Arc::new(Mutex::new(Vec::new()));
         let summary_requests = Arc::new(Mutex::new(Vec::new()));
-        let (log_sink, request_sink, window_sink, summary_sink) = (
+        let review_requests = Arc::new(Mutex::new(Vec::new()));
+        let (log_sink, request_sink, window_sink, summary_sink, review_sink) = (
             Arc::clone(&log),
             Arc::clone(&requests),
             Arc::clone(&windows),
             Arc::clone(&summary_requests),
+            Arc::clone(&review_requests),
         );
         let health_checks = Mutex::new(0);
         let translation_requests = AtomicUsize::new(0);
@@ -44,10 +68,10 @@ impl FakeLlama {
             if request.path == "/health" {
                 let mut checks = health_checks.lock().unwrap();
                 *checks += 1;
-                let ready = *checks > loading_checks;
+                let ready = *checks > replies.loading_checks;
                 log_sink.lock().unwrap().push(format!(
                     "health {}",
-                    if ready { "ready" } else { "loading_checks" }
+                    if ready { "ready" } else { "loading" }
                 ));
                 return Response {
                     status: if ready { 200 } else { 503 },
@@ -60,17 +84,24 @@ impl FakeLlama {
                 Some("continuation_clusters") => {
                     let lines = batch_lines(&body);
                     window_sink.lock().unwrap().push(lines.clone());
-                    completion(&split(lines))
+                    (replies.split_sentences)(lines)
                 }
                 Some("rolling_summary") => {
                     let mut sink = summary_sink.lock().unwrap();
                     sink.push(body);
-                    summarize(sink.len() - 1)
+                    (replies.summary)(sink.len() - 1)
+                }
+                Some("subtitle_translation_review") => {
+                    let items = reviewed_items(&body);
+                    let mut sink = review_sink.lock().unwrap();
+                    sink.push(body);
+                    (replies.review)((sink.len() - 1, items))
                 }
                 _ => {
                     let lines = batch_lines(&body);
                     request_sink.lock().unwrap().push(body);
-                    translate(translation_requests.fetch_add(1, Ordering::SeqCst), lines)
+                    let asked = translation_requests.fetch_add(1, Ordering::SeqCst);
+                    (replies.translation)((asked, lines))
                 }
             }
         });
@@ -80,58 +111,54 @@ impl FakeLlama {
             requests,
             windows,
             summary_requests,
+            review_requests,
         }
     }
 
     /// Answers each line as its text prefixed with `EN:`.
     pub fn with_echo(loading_checks: usize) -> FakeLlama {
-        FakeLlama::serve(
+        FakeLlama::serve(Replies {
             loading_checks,
-            |_, lines| translations(echo_lines(lines)),
-            no_split_sentences,
-            numbered_summary,
-        )
+            ..Replies::default()
+        })
     }
 
     /// Echoes each line, and answers every window with `split` as its Split Sentences.
     pub fn with_split_sentences(
         split: impl Fn(Lines) -> String + Send + Sync + 'static,
     ) -> FakeLlama {
-        FakeLlama::serve(
-            0,
-            |_, lines| translations(echo_lines(lines)),
-            split,
-            numbered_summary,
-        )
+        FakeLlama::serve(Replies {
+            split_sentences: Box::new(move |lines| completion(&split(lines))),
+            ..Replies::default()
+        })
     }
 
     /// Answers every translation request with the lines `answer` gives back.
     pub fn with_answer(answer: impl Fn(Lines) -> Lines + Send + Sync + 'static) -> FakeLlama {
-        FakeLlama::serve(
-            0,
-            move |_, lines| translations(answer(lines)),
-            no_split_sentences,
-            numbered_summary,
-        )
+        FakeLlama::serve(Replies {
+            translation: Box::new(move |(_, lines)| translations(answer(lines))),
+            ..Replies::default()
+        })
     }
 
     /// Answers the n-th translation request, counting from 0, with what `answer` gives back.
     pub fn with_answer_per_request(
         answer: impl Fn(usize, Lines) -> Response + Send + Sync + 'static,
     ) -> FakeLlama {
-        FakeLlama::serve(0, answer, no_split_sentences, numbered_summary)
+        FakeLlama::serve(Replies {
+            translation: Box::new(move |(asked, lines)| answer(asked, lines)),
+            ..Replies::default()
+        })
     }
 
     /// Echoes each line, and answers the n-th Rolling Summary request with what `summarize` gives back.
     pub fn with_summaries(
         summarize: impl Fn(usize) -> Response + Send + Sync + 'static,
     ) -> FakeLlama {
-        FakeLlama::serve(
-            0,
-            |_, lines| translations(echo_lines(lines)),
-            no_split_sentences,
-            summarize,
-        )
+        FakeLlama::serve(Replies {
+            summary: Box::new(summarize),
+            ..Replies::default()
+        })
     }
 
     pub fn base_url(&self) -> &str {
@@ -166,8 +193,39 @@ pub fn numbered_summary(request: usize) -> Response {
     completion(&json!({"summary": format!("summary {request}")}).to_string())
 }
 
-fn no_split_sentences(_: Lines) -> String {
-    json!({"clusters": []}).to_string()
+/// A review placing every item's translation on its own line.
+pub fn passing_review(items: Vec<serde_json::Value>) -> Response {
+    review_answer(
+        items
+            .iter()
+            .map(|item| {
+                let index = item["index"].as_u64().unwrap() as usize;
+                (index, index)
+            })
+            .collect(),
+    )
+}
+
+/// A review placing each index's translation on the line paired with it.
+pub fn review_answer(placements: Vec<(usize, usize)>) -> Response {
+    let reviews: Vec<_> = placements
+        .into_iter()
+        .map(|(index, placed_on)| {
+            json!({
+                "index": index,
+                "translation_meaning": "what it says",
+                "best_matching_index": placed_on,
+                "issue": "",
+            })
+        })
+        .collect();
+    completion(&json!({"reviews": reviews}).to_string())
+}
+
+/// The items a Self-Review request asks about: the JSON on the last line of its user message.
+pub fn reviewed_items(body: &serde_json::Value) -> Vec<serde_json::Value> {
+    let user = body["messages"][1]["content"].as_str().unwrap();
+    serde_json::from_str(user.lines().last().unwrap()).unwrap()
 }
 
 pub fn echo_lines(lines: Lines) -> Lines {

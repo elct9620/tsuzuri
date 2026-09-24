@@ -1,12 +1,14 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use super::model::{AnswerError, BatchRequest, TranslationModel};
+use super::model::{AnswerError, BatchRequest, ReviewItem, TranslationModel};
 use super::TranslationJob;
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 
 /// Source lines of the preceding text a repair request shows the Model.
 const PRECEDING_LINES: usize = 2;
+/// Lines one Self-Review request asks about; a small Model judges a couple at a time far more reliably.
+const LINES_PER_REVIEW: usize = 2;
 
 /// Translates one Batch, repairing what the Model gets wrong: a group of lines still failing after
 /// its retries is split in half until each line stands alone, and a lone line that still fails
@@ -30,7 +32,8 @@ pub async fn translate_batch(
     let reference = &earlier_pairs[earlier_pairs
         .len()
         .saturating_sub(job.settings.reference_lines)..];
-    let failing_reasons = repair.attempt(lines, reference.to_vec(), None).await?;
+    let mut failing_reasons = repair.attempt(lines, reference.to_vec(), None).await?;
+    failing_reasons.extend(repair.review(lines).await?);
     let mut groups: Vec<Vec<(usize, &str)>> = vec![lines
         .iter()
         .filter(|(index, _)| failing_reasons.contains_key(index))
@@ -42,7 +45,8 @@ pub async fn translate_batch(
         }
         let reference = repair.surrounding_lines(&group);
         let preceding = repair.preceding_text(&group);
-        let failing_reasons = repair.attempt(&group, reference, preceding).await?;
+        let mut failing_reasons = repair.attempt(&group, reference, preceding).await?;
+        failing_reasons.extend(repair.review(&group).await?);
         let lines_still_failing: Vec<(usize, &str)> = group
             .into_iter()
             .filter(|(index, _)| failing_reasons.contains_key(index))
@@ -146,6 +150,70 @@ impl BatchRepair<'_> {
             correction = Some(format!("Fix these lines:\n{}", fixes.join("\n")));
         }
         Ok(reasons)
+    }
+
+    /// Asks the Model, a couple of lines at a time, whether each accepted translation in `group`
+    /// belongs to its own line when Self-Review is on; one it places on another line becomes a
+    /// flaw to repair. A review the Model cannot answer is skipped.
+    async fn review(
+        &mut self,
+        group: &[(usize, &str)],
+    ) -> Result<BTreeMap<usize, String>, Failure> {
+        let mut misplaced_reasons = BTreeMap::new();
+        if !self.job.has_self_review {
+            return Ok(misplaced_reasons);
+        }
+        let accepted_lines: Vec<(usize, &str)> = group
+            .iter()
+            .filter(|(index, _)| self.accepted_translations.contains_key(index))
+            .copied()
+            .collect();
+        for chunk in accepted_lines.chunks(LINES_PER_REVIEW) {
+            let items: Vec<ReviewItem> = chunk
+                .iter()
+                .map(|(index, source)| self.review_item(*index, source))
+                .collect();
+            let placements = match self
+                .model
+                .review_translations(self.job.languages, &items)
+                .await
+            {
+                Ok(placements) => placements,
+                Err(AnswerError::MalformedAnswer(detail)) => {
+                    log::warn!("skipped a self-review that could not be read: {detail}");
+                    continue;
+                }
+                Err(AnswerError::FailedRequest(failure)) => return Err(failure),
+            };
+            for (index, placed_line) in placements {
+                if placed_line == index || !chunk.iter().any(|(line, _)| *line == index) {
+                    continue;
+                }
+                if let Some(translation) = self.accepted_translations.remove(&index) {
+                    self.imperfect_translations.insert(index, translation);
+                    misplaced_reasons.insert(
+                        index,
+                        format!(
+                            "verifier: translation content seems to belong to line {placed_line} instead"
+                        ),
+                    );
+                }
+            }
+        }
+        Ok(misplaced_reasons)
+    }
+
+    /// The accepted translation of line `index`, with the source text of the Batch's lines beside it.
+    fn review_item<'b>(&'b self, index: usize, source: &'b str) -> ReviewItem<'b> {
+        let position = self.bounds(&[(index, source)]).0;
+        let neighbour = |at: Option<usize>| at.and_then(|at| self.lines.get(at)).copied();
+        ReviewItem {
+            index,
+            source,
+            translation: &self.accepted_translations[&index],
+            previous_line: neighbour(position.checked_sub(1)),
+            next_line: neighbour(Some(position + 1)),
+        }
     }
 
     fn unresolved_reasons(&self, group: &[(usize, &str)], reason: &str) -> BTreeMap<usize, String> {

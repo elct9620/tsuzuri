@@ -1,5 +1,7 @@
+pub mod detection;
 pub mod manifest;
 
+use std::collections::HashMap;
 use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -7,7 +9,7 @@ use std::path::{Path, PathBuf};
 use futures_util::StreamExt;
 use reqwest::header::RANGE;
 use reqwest::StatusCode;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::io::AsyncWriteExt;
@@ -16,11 +18,22 @@ use manifest::{Archive, ArchiveFormat, Entry, Source};
 
 const INSTALLED_MARKER: &str = ".installed";
 const DOWNLOADS_DIR: &str = ".downloads";
+const CHOICES_FILE: &str = "components.json";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Origin {
+    Chosen,
+    Detected,
+    Downloaded,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ComponentStatus {
     name: String,
     ready: bool,
+    path: Option<PathBuf>,
+    origin: Option<Origin>,
     hint: Option<String>,
 }
 
@@ -31,65 +44,123 @@ struct Progress {
     total: Option<u64>,
 }
 
-/// Where Components live: downloaded ones under app data, vendored ones under the repository's `vendor/`.
-pub struct Locations {
-    pub components: PathBuf,
-    pub vendor: PathBuf,
+/// The executable the user chose for each Component, by Component name.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct Choices(HashMap<String, PathBuf>);
+
+impl Choices {
+    /// Choices never saved load as none, so a first launch relies on Detection and downloads.
+    pub fn load(dir: &Path) -> io::Result<Choices> {
+        match std::fs::read(dir.join(CHOICES_FILE)) {
+            Ok(bytes) => serde_json::from_slice(&bytes).map_err(io::Error::other),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Choices::default()),
+            Err(error) => Err(error),
+        }
+    }
+
+    pub fn save(&self, dir: &Path) -> io::Result<()> {
+        std::fs::create_dir_all(dir)?;
+        let json = serde_json::to_vec_pretty(self).map_err(io::Error::other)?;
+        std::fs::write(dir.join(CHOICES_FILE), json)
+    }
+
+    pub fn choose(&mut self, name: &str, path: PathBuf) {
+        self.0.insert(name.to_string(), path);
+    }
+
+    fn get(&self, name: &str) -> Option<&Path> {
+        self.0.get(name).map(PathBuf::as_path)
+    }
 }
 
-impl Locations {
-    pub fn of(app: &AppHandle) -> Result<Locations, String> {
+/// Finds each Component in order: the user's choice, Detection, then what was downloaded into app data.
+pub struct Resolver {
+    pub components: PathBuf,
+    pub choices: Choices,
+    pub search_dirs: Vec<PathBuf>,
+}
+
+impl Resolver {
+    pub fn of(app: &AppHandle) -> Result<Resolver, String> {
         let data = app
             .path()
             .app_data_dir()
             .map_err(|error| error.to_string())?;
-        Ok(Locations {
+        let config = app
+            .path()
+            .app_config_dir()
+            .map_err(|error| error.to_string())?;
+        Ok(Resolver {
             components: data.join("components"),
-            vendor: Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("..")
-                .join("vendor"),
+            choices: Choices::load(&config).map_err(|error| error.to_string())?,
+            search_dirs: detection::search_dirs(),
         })
     }
 
-    pub fn executable(&self, entry: &Entry) -> PathBuf {
+    pub fn status(&self, entry: &Entry) -> ComponentStatus {
+        let found = |path: PathBuf, origin| ComponentStatus {
+            name: entry.name.clone(),
+            ready: true,
+            path: Some(path),
+            origin: Some(origin),
+            hint: None,
+        };
+        if let Some(chosen) = self.choices.get(&entry.name).filter(|path| path.is_file()) {
+            return found(chosen.to_path_buf(), Origin::Chosen);
+        }
+        if let Some(detected) =
+            detection::detect(&entry.program, &entry.version_flag, &self.search_dirs)
+        {
+            return found(detected, Origin::Detected);
+        }
         match &entry.source {
-            Source::Download { executable, .. } => {
-                self.components.join(&entry.name).join(executable)
+            Source::Download { .. } if self.is_installed(entry) => {
+                found(self.downloaded_executable(entry), Origin::Downloaded)
             }
-            Source::Vendored { executable } => self.vendor.join(executable),
+            source => ComponentStatus {
+                name: entry.name.clone(),
+                ready: false,
+                path: None,
+                origin: None,
+                hint: match source {
+                    Source::External { install_hint } => Some(install_hint.clone()),
+                    Source::Download { .. } => None,
+                },
+            },
         }
     }
-}
 
-pub fn status(entry: &Entry, locations: &Locations) -> ComponentStatus {
-    let (ready, hint) = match &entry.source {
-        Source::Download { .. } => (is_installed(entry, locations), None),
-        Source::Vendored { .. } => {
-            let built = locations.executable(entry).is_file();
-            (built, (!built).then(|| "run scripts/vendor.sh".to_string()))
+    fn downloaded_executable(&self, entry: &Entry) -> PathBuf {
+        let dir = self.components.join(&entry.name);
+        match &entry.source {
+            Source::Download { executable, .. } => dir.join(executable),
+            Source::External { .. } => dir,
         }
-    };
-    ComponentStatus {
-        name: entry.name.clone(),
-        ready,
-        hint,
+    }
+
+    fn is_installed(&self, entry: &Entry) -> bool {
+        let Source::Download { tag, archives, .. } = &entry.source else {
+            return false;
+        };
+        let marker = self.components.join(&entry.name).join(INSTALLED_MARKER);
+        std::fs::read_to_string(marker)
+            .is_ok_and(|content| content == installed_marker(tag, archives))
+            && self.downloaded_executable(entry).is_file()
     }
 }
 
 /// The executable of a Component that is ready to run, or why it is not.
-pub fn ready_executable(name: &str, locations: &Locations) -> Result<PathBuf, String> {
+pub fn ready_executable(name: &str, resolver: &Resolver) -> Result<PathBuf, String> {
     let entry = manifest::manifest()
         .into_iter()
         .find(|entry| entry.name == name)
         .ok_or_else(|| format!("{name} is not in the Manifest"))?;
-    let status = status(&entry, locations);
-    if status.ready {
-        Ok(locations.executable(&entry))
-    } else {
-        Err(match status.hint {
-            Some(hint) => format!("{name} is not ready: {hint}"),
-            None => format!("{name} is not installed"),
-        })
+    let status = resolver.status(&entry);
+    match (status.path, status.hint) {
+        (Some(path), _) => Ok(path),
+        (None, Some(hint)) => Err(format!("{name} is not installed: {hint}")),
+        (None, None) => Err(format!("{name} is not downloaded yet")),
     }
 }
 
@@ -100,34 +171,21 @@ fn installed_marker(tag: &str, archives: &[Archive]) -> String {
         .join("\n")
 }
 
-fn is_installed(entry: &Entry, locations: &Locations) -> bool {
-    let Source::Download { tag, archives, .. } = &entry.source else {
-        return false;
-    };
-    let marker = locations
-        .components
-        .join(&entry.name)
-        .join(INSTALLED_MARKER);
-    std::fs::read_to_string(marker).is_ok_and(|content| content == installed_marker(tag, archives))
-        && locations.executable(entry).is_file()
-}
-
-/// Downloads, verifies and unpacks a downloaded Component unless the pinned archives are already installed.
-/// Vendored Components are left to `scripts/vendor.sh`.
+/// Downloads, verifies and unpacks a Component unless it was chosen, detected, or already installed from its pinned archives.
 pub async fn install(
     entry: &Entry,
-    locations: &Locations,
+    resolver: &Resolver,
     client: &reqwest::Client,
     on_progress: &(dyn Fn(u64, Option<u64>) + Sync),
 ) -> Result<(), String> {
     let Source::Download { tag, archives, .. } = &entry.source else {
         return Ok(());
     };
-    if is_installed(entry, locations) {
+    if resolver.status(entry).ready {
         return Ok(());
     }
 
-    let downloads = locations.components.join(DOWNLOADS_DIR);
+    let downloads = resolver.components.join(DOWNLOADS_DIR);
     tokio::fs::create_dir_all(&downloads)
         .await
         .map_err(|error| error.to_string())?;
@@ -139,7 +197,7 @@ pub async fn install(
         fetched.push((path, archive.format));
     }
 
-    let dir = locations.components.join(&entry.name);
+    let dir = resolver.components.join(&entry.name);
     let marker = installed_marker(tag, archives);
     tokio::task::spawn_blocking(move || unpack_all(&dir, &fetched, &marker))
         .await
@@ -245,18 +303,40 @@ fn unpack_all(dir: &Path, archives: &[(PathBuf, ArchiveFormat)], marker: &str) -
     Ok(())
 }
 
+fn statuses(resolver: &Resolver) -> Vec<ComponentStatus> {
+    manifest::manifest()
+        .iter()
+        .map(|entry| resolver.status(entry))
+        .collect()
+}
+
 #[tauri::command]
 pub fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {
-    let locations = Locations::of(&app)?;
-    Ok(manifest::manifest()
-        .iter()
-        .map(|entry| status(entry, &locations))
-        .collect())
+    Ok(statuses(&Resolver::of(&app)?))
+}
+
+#[tauri::command]
+pub fn choose_component(
+    app: AppHandle,
+    name: String,
+    path: PathBuf,
+) -> Result<Vec<ComponentStatus>, String> {
+    let config = app
+        .path()
+        .app_config_dir()
+        .map_err(|error| error.to_string())?;
+    let mut resolver = Resolver::of(&app)?;
+    resolver.choices.choose(&name, path);
+    resolver
+        .choices
+        .save(&config)
+        .map_err(|error| error.to_string())?;
+    Ok(statuses(&resolver))
 }
 
 #[tauri::command]
 pub async fn install_components(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {
-    let locations = Locations::of(&app)?;
+    let resolver = Resolver::of(&app)?;
     let client = reqwest::Client::new();
     for entry in manifest::manifest() {
         let report = |downloaded, total| {
@@ -267,9 +347,9 @@ pub async fn install_components(app: AppHandle) -> Result<Vec<ComponentStatus>, 
             };
             let _ = app.emit("component-progress", progress);
         };
-        install(&entry, &locations, &client, &report).await?;
+        install(&entry, &resolver, &client, &report).await?;
     }
-    component_statuses(app)
+    Ok(statuses(&resolver))
 }
 
 #[cfg(test)]
@@ -331,7 +411,8 @@ mod tests {
     fn deflated_zip(path: &str, contents: &[u8]) -> Vec<u8> {
         use std::io::Write;
         let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-        let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
         writer.start_file(path, options).unwrap();
         writer.write_all(contents).unwrap();
         writer.finish().unwrap().into_inner()
@@ -344,6 +425,8 @@ mod tests {
     fn tool_entry(url: &str, sha256: String) -> Entry {
         Entry {
             name: "tool".to_string(),
+            program: "tool".to_string(),
+            version_flag: "--version".to_string(),
             source: Source::Download {
                 tag: "t1".to_string(),
                 archives: vec![Archive {
@@ -356,11 +439,34 @@ mod tests {
         }
     }
 
-    fn locations(dir: &TempDir) -> Locations {
-        Locations {
-            components: dir.path().join("components"),
-            vendor: dir.path().join("vendor"),
+    fn external_entry() -> Entry {
+        Entry {
+            name: "tool".to_string(),
+            program: "tool".to_string(),
+            version_flag: "--version".to_string(),
+            source: Source::External {
+                install_hint: "brew install tool".to_string(),
+            },
         }
+    }
+
+    /// A resolver with no choices and no Detection directories, so nothing on this machine is found.
+    fn resolver(dir: &TempDir) -> Resolver {
+        Resolver {
+            components: dir.path().join("components"),
+            choices: Choices::default(),
+            search_dirs: Vec::new(),
+        }
+    }
+
+    #[cfg(unix)]
+    fn script(dir: &Path, name: &str, exit_code: i32) -> PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::create_dir_all(dir).unwrap();
+        let path = dir.join(name);
+        std::fs::write(&path, format!("#!/bin/sh\nexit {exit_code}\n")).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        path
     }
 
     // @behavior CP-001
@@ -370,13 +476,13 @@ mod tests {
         let archive = tar_gz("pkg/bin/tool", b"#!/bin/sh\n");
         let server = ArchiveServer::serve(archive.clone());
         let entry = tool_entry(&server.url, sha256(&archive));
-        let locations = locations(&dir);
+        let resolver = resolver(&dir);
 
-        install(&entry, &locations, &reqwest::Client::new(), &|_, _| {})
+        install(&entry, &resolver, &reqwest::Client::new(), &|_, _| {})
             .await
             .unwrap();
 
-        assert!(locations.executable(&entry).is_file());
+        assert!(resolver.downloaded_executable(&entry).is_file());
     }
 
     // @behavior CP-001
@@ -386,15 +492,25 @@ mod tests {
         let archive = deflated_zip("Release/tool.exe", &[b'x'; 4096]);
         let server = ArchiveServer::serve(archive.clone());
         let mut entry = tool_entry(&server.url, sha256(&archive));
-        if let Source::Download { archives, executable, .. } = &mut entry.source {
+        if let Source::Download {
+            archives,
+            executable,
+            ..
+        } = &mut entry.source
+        {
             archives[0].format = ArchiveFormat::Zip;
             *executable = "Release/tool.exe".to_string();
         }
-        let locations = locations(&dir);
+        let resolver = resolver(&dir);
 
-        install(&entry, &locations, &reqwest::Client::new(), &|_, _| {}).await.unwrap();
+        install(&entry, &resolver, &reqwest::Client::new(), &|_, _| {})
+            .await
+            .unwrap();
 
-        assert_eq!(std::fs::read(locations.executable(&entry)).unwrap(), vec![b'x'; 4096]);
+        assert_eq!(
+            std::fs::read(resolver.downloaded_executable(&entry)).unwrap(),
+            vec![b'x'; 4096]
+        );
     }
 
     // @behavior CP-002
@@ -404,13 +520,13 @@ mod tests {
         let archive = tar_gz("pkg/bin/tool", b"#!/bin/sh\n");
         let server = ArchiveServer::serve(archive.clone());
         let entry = tool_entry(&server.url, sha256(&archive));
-        let locations = locations(&dir);
+        let resolver = resolver(&dir);
         let client = reqwest::Client::new();
-        install(&entry, &locations, &client, &|_, _| {})
+        install(&entry, &resolver, &client, &|_, _| {})
             .await
             .unwrap();
 
-        install(&entry, &locations, &client, &|_, _| {})
+        install(&entry, &resolver, &client, &|_, _| {})
             .await
             .unwrap();
 
@@ -424,12 +540,12 @@ mod tests {
         let archive = tar_gz("pkg/bin/tool", b"#!/bin/sh\n");
         let server = ArchiveServer::serve(archive.clone());
         let entry = tool_entry(&server.url, sha256(&archive));
-        let locations = locations(&dir);
-        let partial = locations.components.join(DOWNLOADS_DIR).join("tool.tar.gz");
+        let resolver = resolver(&dir);
+        let partial = resolver.components.join(DOWNLOADS_DIR).join("tool.tar.gz");
         std::fs::create_dir_all(partial.parent().unwrap()).unwrap();
         std::fs::write(&partial, &archive[..10]).unwrap();
 
-        install(&entry, &locations, &reqwest::Client::new(), &|_, _| {})
+        install(&entry, &resolver, &reqwest::Client::new(), &|_, _| {})
             .await
             .unwrap();
 
@@ -443,28 +559,89 @@ mod tests {
         let archive = tar_gz("pkg/bin/tool", b"#!/bin/sh\n");
         let server = ArchiveServer::serve(archive.clone());
         let entry = tool_entry(&server.url, sha256(b"something else"));
-        let locations = locations(&dir);
+        let resolver = resolver(&dir);
 
-        let result = install(&entry, &locations, &reqwest::Client::new(), &|_, _| {}).await;
+        let result = install(&entry, &resolver, &reqwest::Client::new(), &|_, _| {}).await;
 
         assert!(result.is_err());
-        assert!(!status(&entry, &locations).ready);
+        assert!(!resolver.status(&entry).ready);
     }
 
     // @behavior CP-005
     #[test]
-    fn reports_a_vendored_component_that_was_never_built() {
-        let dir = TempDir::new("cp-vendor");
-        let entry = Entry {
-            name: "whisper".to_string(),
-            source: Source::Vendored {
-                executable: "whisper/bin/whisper-cli".to_string(),
-            },
-        };
+    fn tells_how_to_install_a_component_that_cannot_be_found() {
+        let dir = TempDir::new("cp-external");
 
-        let status = status(&entry, &locations(&dir));
+        let status = resolver(&dir).status(&external_entry());
 
         assert!(!status.ready);
-        assert!(status.hint.unwrap().contains("scripts/vendor.sh"));
+        assert_eq!(status.hint.as_deref(), Some("brew install tool"));
+    }
+
+    // @behavior CP-009
+    #[test]
+    fn uses_the_executable_the_user_chose() {
+        let dir = TempDir::new("cp-chosen");
+        let chosen = dir.file("my-tool");
+        let mut resolver = resolver(&dir);
+        resolver.choices.choose("tool", chosen.clone());
+
+        let status = resolver.status(&external_entry());
+
+        assert_eq!(
+            (status.path, status.origin),
+            (Some(chosen), Some(Origin::Chosen))
+        );
+    }
+
+    // @behavior CP-010
+    #[cfg(unix)]
+    #[test]
+    fn detects_an_installed_executable_that_runs() {
+        let dir = TempDir::new("cp-detect");
+        let installed = script(&dir.path().join("bin"), "tool", 0);
+        let mut resolver = resolver(&dir);
+        resolver.search_dirs = vec![dir.path().join("empty"), dir.path().join("bin")];
+
+        let status = resolver.status(&external_entry());
+
+        assert_eq!(
+            (status.path, status.origin),
+            (Some(installed), Some(Origin::Detected))
+        );
+    }
+
+    // @behavior CP-011
+    #[cfg(unix)]
+    #[test]
+    fn passes_over_an_executable_that_does_not_run() {
+        let dir = TempDir::new("cp-broken");
+        script(&dir.path().join("broken"), "tool", 1);
+        let working = script(&dir.path().join("working"), "tool", 0);
+        let mut resolver = resolver(&dir);
+        resolver.search_dirs = vec![dir.path().join("broken"), dir.path().join("working")];
+
+        let status = resolver.status(&external_entry());
+
+        assert_eq!(status.path, Some(working));
+    }
+
+    // @behavior CP-012
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn does_not_download_a_component_already_detected() {
+        let dir = TempDir::new("cp-detected-skip");
+        let archive = tar_gz("pkg/bin/tool", b"#!/bin/sh\n");
+        let server = ArchiveServer::serve(archive.clone());
+        let entry = tool_entry(&server.url, sha256(&archive));
+        script(&dir.path().join("bin"), "tool", 0);
+        let mut resolver = resolver(&dir);
+        resolver.search_dirs = vec![dir.path().join("bin")];
+
+        install(&entry, &resolver, &reqwest::Client::new(), &|_, _| {})
+            .await
+            .unwrap();
+
+        assert!(server.ranges().is_empty());
     }
 }

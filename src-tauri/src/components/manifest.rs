@@ -19,13 +19,17 @@ pub enum Source {
         archives: Vec<Archive>,
         executable: String,
     },
-    /// Built by `scripts/vendor.sh`; `executable` is relative to `vendor/`.
-    Vendored { executable: String },
+    /// Upstream publishes no prebuilt executable for this platform; the user installs it.
+    External { install_hint: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entry {
     pub name: String,
+    /// The executable's file name without extension, as package managers install it.
+    pub program: String,
+    /// A flag the executable answers with success, proving it runs.
+    pub version_flag: String,
     pub source: Source,
 }
 
@@ -37,24 +41,39 @@ fn archive(url: &str, sha256: &str, format: ArchiveFormat) -> Archive {
     }
 }
 
-fn download(name: &str, tag: &str, archives: Vec<Archive>, executable: &str) -> Entry {
+fn ffmpeg(source: Source) -> Entry {
+    entry("ffmpeg", "ffmpeg", "-version", source)
+}
+
+fn whisper(source: Source) -> Entry {
+    entry("whisper", "whisper-cli", "--version", source)
+}
+
+fn llama(source: Source) -> Entry {
+    entry("llama", "llama-server", "--version", source)
+}
+
+fn entry(name: &str, program: &str, version_flag: &str, source: Source) -> Entry {
     Entry {
         name: name.to_string(),
-        source: Source::Download {
-            tag: tag.to_string(),
-            archives,
-            executable: executable.to_string(),
-        },
+        program: program.to_string(),
+        version_flag: version_flag.to_string(),
+        source,
+    }
+}
+
+fn download(tag: &str, archives: Vec<Archive>, executable: &str) -> Source {
+    Source::Download {
+        tag: tag.to_string(),
+        archives,
+        executable: executable.to_string(),
     }
 }
 
 #[cfg(target_os = "macos")]
-fn vendored(name: &str, executable: &str) -> Entry {
-    Entry {
-        name: name.to_string(),
-        source: Source::Vendored {
-            executable: executable.to_string(),
-        },
+fn external(install_hint: &str) -> Source {
+    Source::External {
+        install_hint: install_hint.to_string(),
     }
 }
 
@@ -63,8 +82,7 @@ fn vendored(name: &str, executable: &str) -> Entry {
 pub fn manifest() -> Vec<Entry> {
     use ArchiveFormat::Zip;
     vec![
-        download(
-            "ffmpeg",
+        ffmpeg(download(
             "autobuild-2026-08-31-13-27",
             vec![archive(
                 "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-31-13-27/ffmpeg-n8.1.2-50-g1a748fe2cd-win64-lgpl-8.1.zip",
@@ -72,9 +90,8 @@ pub fn manifest() -> Vec<Entry> {
                 Zip,
             )],
             "ffmpeg-n8.1.2-50-g1a748fe2cd-win64-lgpl-8.1/bin/ffmpeg.exe",
-        ),
-        download(
-            "whisper",
+        )),
+        whisper(download(
             "b5130",
             vec![archive(
                 "https://github.com/ggml-org/whisper.cpp/releases/download/b5130/whisper-cublas-11.8.0-bin-x64.zip",
@@ -82,9 +99,8 @@ pub fn manifest() -> Vec<Entry> {
                 Zip,
             )],
             "Release/whisper-cli.exe",
-        ),
-        download(
-            "llama",
+        )),
+        llama(download(
             "b11149",
             vec![
                 archive(
@@ -99,7 +115,7 @@ pub fn manifest() -> Vec<Entry> {
                 ),
             ],
             "llama-server.exe",
-        ),
+        )),
     ]
 }
 
@@ -119,13 +135,16 @@ pub fn manifest() -> Vec<Entry> {
         "llama-b11149/llama-server",
     );
     vec![
-        vendored("ffmpeg", "ffmpeg/bin/ffmpeg"),
-        vendored("whisper", "whisper/bin/whisper-cli"),
-        download(
-            "llama",
+        ffmpeg(external(
+            "brew install ffmpeg, or nix profile install nixpkgs#ffmpeg",
+        )),
+        whisper(external(
+            "brew install whisper-cpp, or nix profile install nixpkgs#whisper-cpp",
+        )),
+        llama(download(
             "b11149",
             vec![archive(llama_url, llama_sha256, ArchiveFormat::TarGz)],
             llama_executable,
-        ),
+        )),
     ]
 }

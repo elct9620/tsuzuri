@@ -11,7 +11,7 @@ use tauri::async_runtime;
 use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_shell::process::CommandEvent;
 
-use crate::components::{self, Locations};
+use crate::components::{self, Resolver};
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::pipeline::report;
 use crate::processes::Processes;
@@ -174,8 +174,8 @@ pub async fn translate(
     segments: Vec<Segment>,
     target: String,
 ) -> Result<Vec<TranslatedSegment>, String> {
-    let locations = Locations::of(&app)?;
-    let llama = components::ready_executable("llama", &locations)?;
+    let resolver = Resolver::of(&app)?;
+    let llama = components::ready_executable("llama", &resolver)?;
     let settings = models::load_settings(&app)?;
     let processes = app.state::<Processes>().inner().clone();
     run_translate(

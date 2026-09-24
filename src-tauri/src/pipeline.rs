@@ -6,7 +6,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tauri_plugin_shell::process::CommandEvent;
 
-use crate::components::{self, Locations};
+use crate::components::{self, Resolver};
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::processes::Processes;
 use crate::transcript::{Segment, Transcript};
@@ -168,10 +168,10 @@ async fn run_step<R: Runtime>(
 
 #[tauri::command]
 pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, String> {
-    let locations = Locations::of(&app)?;
+    let resolver = Resolver::of(&app)?;
     let tools = Tools {
-        ffmpeg: components::ready_executable("ffmpeg", &locations)?,
-        whisper: components::ready_executable("whisper", &locations)?,
+        ffmpeg: components::ready_executable("ffmpeg", &resolver)?,
+        whisper: components::ready_executable("whisper", &resolver)?,
     };
     let settings = models::load_settings(&app)?;
     let started_at = SystemTime::now()

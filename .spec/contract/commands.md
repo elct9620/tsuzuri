@@ -30,9 +30,17 @@ Whether each Component the Manifest lists for this platform is ready to run.
 pub fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {}
 ```
 
+## `choose_component`
+
+Remember an executable for one Component and answer the statuses afterwards.
+
+```rust
+pub fn choose_component(app: AppHandle, name: String, path: PathBuf) -> Result<Vec<ComponentStatus>, String> {}
+```
+
 ## `install_components`
 
-Install every downloaded Component that is not ready yet, one after another, emitting `component-progress` events while archives download, and answer the statuses afterwards.
+Download every Component that is neither chosen nor detected and has a prebuilt executable for this platform, one after another, emitting `component-progress` events while archives download, and answer the statuses afterwards.
 
 ```rust
 pub async fn install_components(app: AppHandle) -> Result<Vec<ComponentStatus>, String> {}

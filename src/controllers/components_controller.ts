@@ -1,12 +1,21 @@
 import { Controller } from "@hotwired/stimulus";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-dialog";
 
 interface ComponentStatus {
   name: string;
   ready: boolean;
+  path: string | null;
+  origin: "chosen" | "detected" | "downloaded" | null;
   hint: string | null;
 }
+
+const ORIGIN_LABELS: Record<string, string> = {
+  chosen: "指定",
+  detected: "偵測到",
+  downloaded: "已下載",
+};
 
 interface Progress {
   name: string;
@@ -42,11 +51,20 @@ export default class ComponentsController extends Controller {
     this.unlisten?.();
   }
 
+  async choose(event: Event): Promise<void> {
+    const name = (event.currentTarget as HTMLElement).dataset.component;
+    const path = await open({ multiple: false, directory: false });
+    if (!name || path === null) return;
+
+    this.render(await invoke<ComponentStatus[]>("choose_component", { name, path }));
+  }
+
   private render(statuses: ComponentStatus[]): void {
-    for (const { name, ready, hint } of statuses) {
+    for (const { name, ready, path, origin, hint } of statuses) {
       const status = this.statusFor(name);
       if (!status) continue;
-      status.textContent = ready ? "已就緒" : hint ? `未建置（${hint}）` : "未安裝";
+      status.textContent =
+        ready && path ? `${ORIGIN_LABELS[origin ?? ""] ?? "已就緒"}：${path}` : hint ? `未安裝（${hint}）` : "未安裝";
     }
   }
 

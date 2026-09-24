@@ -94,6 +94,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Check the frontend is formatted
+        run: pnpm exec prettier --check .
       - run: pnpm test
       - name: Type-check and build
         run: pnpm build

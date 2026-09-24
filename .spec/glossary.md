@@ -40,15 +40,11 @@ A Component upstream publishes no prebuilt executable for on a platform, so `scr
 
 ### Model
 
-A weights file an engine loads, always passed by absolute path. The user points at a local file or downloads one into the Model Directory; the Manifest never lists Models.
+A weights file an engine loads, always passed by absolute path. The user points at a file already on disk; Tsuzuri neither downloads Models nor lists them in the Manifest.
 
 ### Model Slot
 
 Which job a Model is chosen for: transcription (whisper-cli) or translation (llama-server). Each slot holds one Model path.
-
-### Model Directory
-
-The folder under app data where Tsuzuri keeps the Models it downloads.
 
 ### Step
 

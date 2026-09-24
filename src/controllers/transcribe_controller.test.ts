@@ -17,8 +17,8 @@ describe("TranscribeController", () => {
       <div data-controller="transcribe">
         <input type="checkbox" data-transcribe-target="translate">
         <select data-transcribe-target="language">
-          <option value="English">English</option>
-          <option value="Japanese" selected>日本語</option>
+          <option value="en">English</option>
+          <option value="ja" selected>日本語</option>
         </select>
         <p data-transcribe-target="status"></p>
         <progress max="100" data-transcribe-target="bar" hidden></progress>
@@ -110,6 +110,6 @@ describe("TranscribeController", () => {
 
     await controller().transcribe("/media/lecture.mp4");
 
-    expect(translated).toEqual({ target: "Japanese" });
+    expect(translated).toEqual({ target: "ja" });
   });
 });

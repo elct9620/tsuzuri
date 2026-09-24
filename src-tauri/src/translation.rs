@@ -13,6 +13,7 @@ use tauri_plugin_shell::process::CommandEvent;
 
 use crate::components::{self, Resolver};
 use crate::failure::Failure;
+use crate::language::Language;
 use crate::models::{self, ModelSettings, ModelSlot};
 use crate::pipeline::{enter, report};
 use crate::processes::Processes;
@@ -29,7 +30,7 @@ const CONTEXT_SIZE: &str = "4096";
 /// What to translate: the Segments and the language they are translated into.
 struct TranslationJob<'a> {
     segments: &'a [Segment],
-    target: &'a str,
+    target: Language,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -42,7 +43,7 @@ pub async fn run_translate<R: Runtime>(
     processes: &Processes,
     llama: &Path,
     settings: &ModelSettings,
-    target: &str,
+    target: Language,
     ready_timeout: Duration,
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
@@ -160,11 +161,12 @@ async fn translate_segments(
     client: &reqwest::Client,
     base_url: &str,
     segments: &[Segment],
-    target: &str,
+    target: Language,
     on_progress: impl Fn(u8),
 ) -> Result<Vec<Segment>, Failure> {
     let instruction = format!(
-        "You translate subtitles into {target}. Reply with only the translation of the user's line, without quotes or notes."
+        "You translate subtitles into {}. Reply with only the translation of the user's line, without quotes or notes.",
+        target.name()
     );
     let mut translated = Vec::with_capacity(segments.len());
     for (index, segment) in segments.iter().enumerate() {
@@ -201,7 +203,7 @@ async fn translate_segments(
 }
 
 #[tauri::command]
-pub async fn translate(app: AppHandle, target: String) -> Result<Translation, Failure> {
+pub async fn translate(app: AppHandle, target: Language) -> Result<Translation, Failure> {
     let phases = Phases::start("translate", "prepare");
     report(&app, "prepare", None);
     let [llama] = components::find_ready_executables(Resolver::from_app(&app)?, ["llama"]).await?;
@@ -212,7 +214,7 @@ pub async fn translate(app: AppHandle, target: String) -> Result<Translation, Fa
         &processes,
         &llama,
         &settings,
-        &target,
+        target,
         READY_TIMEOUT,
         phases,
     )
@@ -305,7 +307,7 @@ mod tests {
             &reqwest::Client::new(),
             &server.base_url,
             &segments,
-            "English",
+            Language::English,
             |_| {},
         )
         .await
@@ -326,6 +328,32 @@ mod tests {
         );
     }
 
+    // @behavior TL-013
+    #[tokio::test]
+    async fn asks_the_model_for_the_target_language() {
+        let instructions = Arc::new(Mutex::new(Vec::new()));
+        let seen = Arc::clone(&instructions);
+        let server = FakeHttp::serve(move |request| {
+            let body: serde_json::Value = serde_json::from_slice(&request.body).unwrap();
+            seen.lock()
+                .unwrap()
+                .push(body["messages"][0]["content"].as_str().unwrap().to_string());
+            completion("こんにちは")
+        });
+
+        translate_segments(
+            &reqwest::Client::new(),
+            &server.base_url,
+            &[segment(0, 1_000, "大家好")],
+            serde_json::from_str::<Language>("\"ja\"").unwrap(),
+            |_| {},
+        )
+        .await
+        .unwrap();
+
+        assert!(instructions.lock().unwrap()[0].contains("Japanese"));
+    }
+
     // @behavior TL-010
     #[tokio::test]
     async fn translates_the_project_as_edited() {
@@ -341,7 +369,7 @@ mod tests {
             &reqwest::Client::new(),
             &server.base_url,
             &transcript.segments,
-            "English",
+            Language::English,
             |_| {},
         )
         .await
@@ -369,7 +397,7 @@ mod tests {
             &client,
             &server.base_url,
             &[segment(0, 1_000, "大家好")],
-            "English",
+            Language::English,
             |_| {},
         )
         .await
@@ -400,7 +428,7 @@ mod tests {
             &processes,
             Path::new("/bin/sleep"),
             &ModelSettings::default(),
-            "English",
+            Language::English,
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -441,7 +469,7 @@ mod tests {
             &processes,
             &llama,
             &settings,
-            "English",
+            Language::English,
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -479,7 +507,7 @@ mod tests {
                     segment(0, 1_000, "大家好"),
                     segment(1_000, 2_000, "今天天氣很好"),
                 ],
-                target: "English",
+                target: Language::English,
             },
             &mut phases,
         )
@@ -514,7 +542,7 @@ mod tests {
             &processes,
             &llama,
             &settings,
-            "English",
+            Language::English,
             READY_TIMEOUT,
             Phases::start("translate", "prepare"),
         )

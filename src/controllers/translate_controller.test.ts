@@ -32,8 +32,8 @@ describe("TranslateController", () => {
     document.body.innerHTML = `
       <div data-controller="translate">
         <select data-translate-target="language">
-          <option value="English">English</option>
-          <option value="Japanese" selected>日本語</option>
+          <option value="en">English</option>
+          <option value="ja" selected>日本語</option>
         </select>
         <button data-translate-target="start" data-action="translate#translate" disabled>開始翻譯</button>
         <p data-translate-target="status"></p>
@@ -72,7 +72,7 @@ describe("TranslateController", () => {
     start().click();
     await settle();
 
-    expect(translateArgs).toEqual({ target: "Japanese" });
+    expect(translateArgs).toEqual({ target: "ja" });
   });
 
   // @behavior TL-008

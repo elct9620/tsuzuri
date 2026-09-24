@@ -81,7 +81,7 @@ describe("TabsController", () => {
             <p data-transcribe-target="status"></p>
           </section>
           <section data-tab="translate" data-tabs-target="panel" data-controller="translate" hidden>
-            <select data-translate-target="language"><option value="English">English</option></select>
+            <select data-translate-target="language"><option value="en">English</option></select>
             <button id="translate" data-translate-target="start" data-action="translate#translate">開始翻譯</button>
             <p data-translate-target="status"></p>
           </section>

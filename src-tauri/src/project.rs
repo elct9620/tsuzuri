@@ -171,7 +171,7 @@ mod tests {
         }
     }
 
-    fn holding(segments: Vec<Segment>) -> CurrentProject {
+    fn current_project_of(segments: Vec<Segment>) -> CurrentProject {
         let current = CurrentProject::default();
         current.replace(Project {
             media: None,
@@ -205,7 +205,7 @@ mod tests {
     // @behavior PJ-003
     #[test]
     fn holds_edits_to_text_and_translation() {
-        let current = holding(vec![segment("竹子搞", Some("Bamboo"))]);
+        let current = current_project_of(vec![segment("竹子搞", Some("Bamboo"))]);
 
         current
             .edit(0, SegmentField::Text, "逐字稿".to_string())
@@ -223,7 +223,7 @@ mod tests {
     // @behavior PJ-004
     #[test]
     fn writes_the_project_as_edited() {
-        let current = holding(vec![segment("竹子搞", None)]);
+        let current = current_project_of(vec![segment("竹子搞", None)]);
         current
             .edit(0, SegmentField::Text, "逐字稿".to_string())
             .unwrap();
@@ -258,7 +258,7 @@ mod tests {
     // @behavior PJ-006
     #[test]
     fn leaves_a_replaced_project_untouched_by_a_late_translation() {
-        let current = holding(vec![segment("大家好", None)]);
+        let current = current_project_of(vec![segment("大家好", None)]);
         let (generation, _) = current.snapshot().unwrap();
         current.replace(Project {
             media: None,

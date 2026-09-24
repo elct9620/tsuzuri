@@ -5,6 +5,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 ## Includes
 
 - `src-tauri/src/translation.rs`
+- `src-tauri/src/translation_glossary.rs`
 - `src/controllers/translate_controller.test.ts`
 - `src/controllers/transcribe_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
@@ -297,3 +298,51 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a ready llama-server, Speaker Labels turned off and a Segment `co: 你好` |
 | When | it is translated |
 | Then | the Model is sent `co: 你好` |
+
+## `TL-038` Loading a Translation Glossary into the Project
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project and a CSV file with a `source,target` header and two rows |
+| When | it is loaded as the Translation Glossary |
+| Then | the Project holds the file and its two terms |
+
+## `TL-039` Refusing a Translation Glossary without its header
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project and a CSV file whose header is not `source,target` |
+| When | it is loaded as the Translation Glossary |
+| Then | it is refused and the Project keeps the Translation Glossary it had |
+
+## `TL-040` Sending only the terms a request uses
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and a Translation Glossary of `蝙蝠俠` and `阿福` |
+| When | a Batch whose lines name only `蝙蝠俠` is translated |
+| Then | the request carries `蝙蝠俠 => Batman` and not `阿福` |
+
+## `TL-041` Retrying a translation that ignores the Translation Glossary
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that always translates `蝙蝠俠` as `Bat-Man` and a Translation Glossary giving `Batman` |
+| When | a Transcript is translated |
+| Then | the line is asked for again naming `Batman`, and keeps `Bat-Man` as its best imperfect translation |
+
+## `TL-042` Showing the loaded Translation Glossary
+
+| Step | Statement |
+| --- | --- |
+| Given | the Translate Mode panel and a Project with a Translation Glossary of twelve terms from `names.csv` |
+| When | the panel is shown |
+| Then | it names `names.csv` with twelve terms and can clear it |
+
+## `TL-043` Clearing the Translation Glossary
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project with a Translation Glossary |
+| When | the Translation Glossary is cleared |
+| Then | the Project holds none |

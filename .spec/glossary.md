@@ -24,7 +24,7 @@ An SRT whose every cue carries the original text above its translation, so any p
 
 ### Project
 
-The work on one input that Rust holds as the single source of truth: the media file, when there is one, and its Transcript with the translations and edits, the Language the Transcript is in and the Language of its translations. Transcribing a media file or opening an SRT file replaces it; translating, editing and exporting work on it. For now only one exists, in memory.
+The work on one input that Rust holds as the single source of truth: the media file, when there is one, and its Transcript with the translations and edits, the Language the Transcript is in and the Language of its translations, and the Translation Glossary once loaded. Transcribing a media file or opening an SRT file replaces it; translating, editing and exporting work on it. For now only one exists, in memory.
 
 ### Mode
 
@@ -77,6 +77,10 @@ Consecutive Segments the Model reports as one sentence cut apart by transcriptio
 ### Speaker Label
 
 The `name:` or `name：` before a line of dialogue, up to twenty characters with no digits-only name, such as `co:`. When the user turns them on, translation sends only the dialogue and puts each label back in front of its line.
+
+### Translation Glossary
+
+The terms the user gives, as a CSV of `source,target` rows such as names and titles, whose target term each translation of a line using the source term must contain. It belongs to the Project, so a new Project starts without one; translation uses it only once loaded. Unrelated to this file.
 
 ### Model Slot
 

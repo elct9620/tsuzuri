@@ -89,3 +89,11 @@ The one Project Rust holds as the single source of truth: what makes it, what ch
 | Given | a Project in `zh-TW` |
 | When | it is translated from `ja` into `en` |
 | Then | the Project's Transcript is in `ja` and its translations are in `en` |
+
+## `PJ-011` Starting a new Project without a Translation Glossary
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project with a Translation Glossary |
+| When | an SRT file is opened as a new Project |
+| Then | the new Project holds no Translation Glossary |

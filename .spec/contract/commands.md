@@ -85,3 +85,19 @@ Write the Project to a file as SRT carrying the `original` text, the `translatio
 ```rust
 pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<(), Failure> {}
 ```
+
+## `load_glossary`
+
+Read a CSV file with a `source,target` header into the Project's Translation Glossary, replacing the one it had.
+
+```rust
+pub fn load_glossary(app: AppHandle, path: PathBuf) -> Result<(), Failure> {}
+```
+
+## `clear_glossary`
+
+Remove the Project's Translation Glossary, so translation runs without one.
+
+```rust
+pub fn clear_glossary(app: AppHandle) -> Result<(), Failure> {}
+```

@@ -236,7 +236,6 @@ jobs:
           name: tsuzuri-${{ runner.os }}
           path: |
             src-tauri/target/release/bundle/
-            src-tauri/target/release/tsuzuri.exe
             THIRD-PARTY-LICENSES.html
           if-no-files-found: error
       # Kept even when a check fails, so dependencies are not rebuilt on the next run.

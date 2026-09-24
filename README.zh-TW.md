@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-在自己的電腦上把影片與音訊轉成字幕，並翻譯、校對。音訊與文字不會離開電腦；網路只用來準備轉錄與翻譯引擎。
+在自己的電腦上把影片與音訊轉成字幕，並翻譯、校對。音訊與文字不會離開電腦，轉錄與翻譯引擎也隨 App 內建。
 
 ## 安裝
 
@@ -10,9 +10,11 @@
 
 | 平台 | 下載 |
 |---|---|
-| Windows x64 | NSIS 安裝檔（`*-setup.exe`）、MSI，或單獨的 `tsuzuri.exe` |
+| Windows x64 | NSIS 安裝檔（`*-setup.exe`）或 MSI |
 | macOS（Apple Silicon） | `.dmg` |
 | Linux x64 | `.deb`、`.rpm` 或 `.AppImage` |
+
+安裝檔內建 ffmpeg、whisper.cpp 與 llama.cpp，Windows 與 Linux 是 Vulkan 版，macOS 是 Metal 版。顯示卡驅動不支援 Vulkan，或想改用 CUDA 等其他版本時，請在 App 裡指定執行檔。
 
 Tsuzuri 沒有程式碼簽章，所以各系統第一次開啟時會出現警告。
 
@@ -30,10 +32,10 @@ xattr -dr com.apple.quarantine /Applications/tsuzuri.app
 
 ### Linux
 
-轉錄與翻譯引擎需要系統提供 `libgomp1` 與 `libvulkan1`，ffmpeg 則使用發行版的套件：
+內建的引擎需要系統提供 `libgomp1` 與 `libvulkan1`：
 
 ```bash
-sudo apt install libgomp1 libvulkan1 ffmpeg
+sudo apt install libgomp1 libvulkan1
 ```
 
 ## 模型
@@ -57,14 +59,14 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # 對照 .spec/ 檢查程式碼
 ```
 
-Tsuzuri 依序使用：在 App 指定的執行檔、偵測到的已安裝版本（Homebrew、Nix、`PATH`）、為該平台釘版的上游預編譯版。macOS 沒有 whisper-cli 與 ffmpeg 的預編譯版，Linux 沒有 ffmpeg 的預編譯版；開發時請先編譯到 `vendor/`，debug build 會優先使用。`scripts/vendor.sh` 依 [`components.json`](components.json) 釘住的原始程式碼編譯 whisper-cli、llama-server 與 ffmpeg，沒有指定變體時使用該平台列出的第一個。需要 cmake、make 與 jq；Linux 的 OpenBLAS、Vulkan 版還需要 pkg-config、libopenblas-dev、libvulkan-dev、glslc 與 spirv-headers，Windows 則在 MSYS2 UCRT64 裡編譯：
+Tsuzuri 依序使用：在 App 指定的執行檔、偵測到的已安裝版本（Homebrew、Nix、`PATH`）、安裝檔內建的版本。開發時的建置不內建元件，請先編譯到 `vendor/`，debug build 會優先使用。`scripts/vendor.sh` 依 [`components.json`](components.json) 釘住的原始程式碼編譯 whisper-cli、llama-server 與 ffmpeg，沒有指定變體時使用該平台列出的第一個。需要 cmake、make 與 jq；Linux 的 OpenBLAS、Vulkan 版還需要 pkg-config、libopenblas-dev、libvulkan-dev、glslc 與 spirv-headers，Windows 則在 MSYS2 UCRT64 裡編譯：
 
 ```bash
 scripts/vendor.sh               # 全部元件
 scripts/vendor.sh whisper cpu   # 單一元件、單一變體
 ```
 
-CI 在 `.github/workflows/components.yml` 以同樣方式編譯全部變體，並依釘版分別快取。
+CI 在 `.github/workflows/components.yml` 以同樣方式編譯全部變體，並依釘版分別快取。打包時合併 `src-tauri/tauri.bundle.conf.json`，把 `vendor/` 放進安裝檔，所以 CI 先還原各平台列出的第一個變體，再執行 `pnpm tauri build --config src-tauri/tauri.bundle.conf.json`。
 
 前端是純 TypeScript，Stimulus controller 放在 `src/controllers/`。設計請見 [docs/design.md](docs/design.md)。
 
@@ -81,4 +83,4 @@ TSUZURI_E2E_LLAMA=<llama-server> TSUZURI_E2E_TRANSLATION_MODEL=<GGUF 模型> \
 
 Copyright 2026 ZhengXian Qiu。以 [Apache License 2.0](LICENSE) 授權。
 
-Tsuzuri 不附帶任何第三方執行檔。[FFmpeg](https://ffmpeg.org)（LGPLv2.1）、[whisper.cpp](https://github.com/ggml-org/whisper.cpp)（MIT）與 [llama.cpp](https://github.com/ggml-org/llama.cpp)（MIT）都以獨立程式執行，執行時從上游下載，或在開發時由 `scripts/vendor.sh` 編譯到 `vendor/`。Rust 相依套件只允許 `src-tauri/deny.toml` 列出的授權；CI 以 cargo-about 產生完整授權文字 `THIRD-PARTY-LICENSES.html`，隨每次建置一起提供。
+安裝檔內建 [FFmpeg](https://ffmpeg.org)（LGPLv2.1）、[whisper.cpp](https://github.com/ggml-org/whisper.cpp)（MIT）與 [llama.cpp](https://github.com/ggml-org/llama.cpp)（MIT），由 `scripts/vendor.sh` 從原始程式碼編譯，以獨立程式執行，也能改用你指定的執行檔。Rust 相依套件只允許 `src-tauri/deny.toml` 列出的授權；CI 以 cargo-about 產生完整授權文字 `THIRD-PARTY-LICENSES.html`，隨每次建置一起提供。

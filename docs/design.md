@@ -45,23 +45,23 @@ Tsuzuri（綴り）在本機把影片與音訊轉成字幕，並提供翻譯與�
 |---|---|---|
 | 1 字幕資料 | 🚧 | TR-001～006。尚缺說話者標籤 |
 | 2 行程 | ✅ | PR-001～004；Windows 的 `taskkill` 路徑只在 CI 編譯過 |
-| 3 元件 | 🚧 | CP-001～014：尋找順序、下載、偵測；CI 依 Build Manifest 編譯全部變體。尚缺放進安裝檔並移除執行時下載（Manifest、CP-001～004、006、008、012、014）、自動選擇變體、隨版本附上 ffmpeg 原始程式碼 |
+| 3 元件 | 🚧 | CP-005、007、009～011、013～015：尋找順序、偵測、內建預設變體。尚缺自動選擇變體、隨版本附上 ffmpeg 原始程式碼 |
 | 4 模型 | ✅ | MD-001～005 |
 | 5 工作流程 | 📋 | 目前三種模式寫死在程式裡 |
 | 6 轉錄模組 | 🚧 | TX-001～007。尚缺語言選擇、細緻進度、取消 |
 | 7 翻譯模組 | 🚧 | TL-001～006：逐段翻譯。尚缺分批、翻譯詞彙表、滾動摘要、自我修復、可調整的 context |
 | 8 字幕校對與儲存 | 🚧 | ED-001～002：編輯文字、另存 SRT。尚缺影片預覽、時間軸對齊、說話者、自動儲存 |
 | 9 首次設定引導 | 📋 | |
-| 10 建置與釋出 | 🚧 | CI 檢查、三平台打包、元件建置完成；尚缺 release-please、自動更新 |
+| 10 建置與釋出 | 🚧 | CI 檢查、元件建置、內建元件的三平台打包完成；尚缺 release-please、自動更新 |
 
-✅ 完成、🚧 進行中、📋 未開始。章節依實作的相依關係排列，對照 `c86c0d0`。
+✅ 完成、🚧 進行中、📋 未開始。章節依實作的相依關係排列，對照 `1a81e2d`。
 
 ### 0.4 平台與變體
 
-| 平台 | 內建變體 | 自動選擇 | 進階 |
+| 平台 | 目前內建 | 自動選擇後內建與順序 | 進階 |
 |---|---|---|---|
-| Windows x64 | CPU、OpenBLAS、Vulkan | Vulkan → OpenBLAS → CPU | 使用者指定 CUDA 版 |
-| Linux x64 | CPU、OpenBLAS、Vulkan | Vulkan → OpenBLAS → CPU | 使用者指定 CUDA 版 |
+| Windows x64 | Vulkan | Vulkan → OpenBLAS → CPU | 使用者指定 CUDA 版 |
+| Linux x64 | Vulkan | Vulkan → OpenBLAS → CPU | 使用者指定 CUDA 版 |
 | macOS（Apple Silicon） | Metal | 只有一種 | — |
 
 已驗證的最低硬體是約 4GB VRAM 的 RTX 3060，搭配使用者指定的 CUDA 版 whisper-cli。Intel Mac 目前不提供。
@@ -146,9 +146,7 @@ SRT 是 Transcript 在磁碟上的唯一格式：whisper-cli 輸出它、使用�
 | llama.cpp | CPU、OpenBLAS、Vulkan；macOS 用 Metal | 與 whisper.cpp 一致 |
 | ffmpeg | 純音訊的 LGPL 版 | 只需要解出音軌，範圍小、授權單純 |
 
-自動選能執行的最快變體。選擇結果顯示在首次設定引導與設定頁，可以手動改。
-
-變體內建後，App 不再於執行時下載上游預編譯版，PoC 的 Manifest 與下載流程一併移除。Windows 目前下載的 CUDA 版改由使用者依 9.2 指定。
+App 不在執行時下載元件。自動選擇上線前，每個平台只內建 Build Manifest 列的第一個變體，其他變體與 CUDA 版由使用者依 9.2 指定；上線後內建全部變體，選擇結果顯示在首次設定引導與設定頁，可以手動改。
 
 ### 3.3 自行編譯
 
@@ -158,7 +156,7 @@ SRT 是 Transcript 在磁碟上的唯一格式：whisper-cli 輸出它、使用�
 | Linux | GitHub Actions 的 Linux runner，使用系統的 OpenBLAS、Vulkan 函式庫 |
 | macOS | GitHub Actions 的 macOS runner，靜態連結 |
 
-原始程式碼的版本、SHA256 與各平台的變體記在 `components.json`（Build Manifest），CI 與開發機跑同一支 `scripts/vendor.sh`。ffmpeg 的 `configure` 在 Windows 需要 MSYS2，所以 Windows 全部在那裡編譯。開發時的 debug build 會先偵測 `vendor/`，release build 不引用它。
+原始程式碼的版本、SHA256 與各平台的變體記在 `components.json`（Build Manifest），CI 與開發機跑同一支 `scripts/vendor.sh`。ffmpeg 的 `configure` 在 Windows 需要 MSYS2，所以 Windows 全部在那裡編譯。開發時的 debug build 會先偵測 `vendor/`；打包時合併 `tauri.bundle.conf.json`，把 `vendor/` 放進安裝檔的 resources。
 
 ### 3.4 授權
 
@@ -374,7 +372,7 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
            └▶ rust × 3 平台（fmt、clippy、test）
                    │ 全部通過，且是 push main 或手動觸發
                    ▼
-              build × 3 平台 ─▶ 上傳產物
+              build × 3 平台：還原內建變體 ─▶ 打包 ─▶ 上傳產物
 
   改動 Build Manifest 或建置腳本、手動觸發、被釋出流程呼叫
      ─▶ components × 元件、變體、平台（build-component action）
@@ -423,7 +421,8 @@ updater 用自己的金鑰簽章，跟作業系統要求的程式碼簽章無關
 | Windows 專屬程式碼沒有自動測試 | 殘留行程清理可能失效 | Windows 實機測試；補 Windows 測試 |
 | CSP 關閉 | 少一層防護 | 設定 CSP 後確認介面正常 |
 | Vulkan、OpenBLAS 變體實際多快 | 自動選擇順序可能要調整 | 在不同硬體上量 RTF |
-| Linux 系統函式庫 | 缺 libgomp1、libopenblas0、libvulkan1 時跑不起來 | `.deb` 宣告相依 |
+| Linux 系統函式庫 | 缺 libgomp1、libvulkan1 時跑不起來 | `.deb` 宣告相依 |
+| 沒有支援 Vulkan 的驅動 | 內建的 whisper-cli、llama-server 無法執行 | 顯示無法執行，使用者指定 CPU 版；自動選擇上線後改為自動退回 |
 | 殘留行程只比對名稱 | PID 重用時可能誤殺同名行程 | 評估是否加上啟動時間比對 |
 | macOS 產物只有 linker 產生的 ad-hoc 簽章，且不完整 | 下載後顯示「已損毀」，沒有「強制打開」可選，只能用 `xattr` 移除隔離標記 | 打包時以 `signingIdentity: "-"` 完整 ad-hoc 簽章後，確認出現「強制打開」 |
 | updater 私鑰遺失 | 已安裝的版本無法再自動更新 | 在 CI 以外另存私鑰備份 |

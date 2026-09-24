@@ -2,9 +2,9 @@ import { Controller } from "@hotwired/stimulus";
 import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 
-import { describeFailure } from "../failure";
+import { failureMessage } from "../failure";
 import { t } from "../i18n";
-import { describePhases, followProgress, type PhaseTiming } from "../progress";
+import { phasesSummary, followProgress, type PhaseTiming } from "../progress";
 import { followProject } from "../project";
 
 export interface Translation {
@@ -26,11 +26,11 @@ export default class TranslateController extends Controller {
   declare readonly startTarget: HTMLButtonElement;
 
   private unlisteners: UnlistenFn[] = [];
-  private running = false;
+  private isRunning = false;
 
   async connect(): Promise<void> {
     this.unlisteners.push(
-      await followProgress(this.statusTarget, this.bar(), () => this.running),
+      await followProgress(this.statusTarget, this.bar(), () => this.isRunning),
       await followProject((project) => {
         this.startTarget.disabled = project === null;
       }),
@@ -43,19 +43,19 @@ export default class TranslateController extends Controller {
   }
 
   async translate(): Promise<void> {
-    if (this.running) return;
-    this.running = true;
+    if (this.isRunning) return;
+    this.isRunning = true;
     this.statusTarget.textContent = t("work.preparing");
     try {
       const translation = await translateProject(this.languageTarget.value);
-      this.statusTarget.textContent = `${t("translate.done")}\n${describePhases(translation.phases)}`;
+      this.statusTarget.textContent = `${t("translate.done")}\n${phasesSummary(translation.phases)}`;
       this.dispatch("finished");
     } catch (error) {
       this.statusTarget.textContent = t("work.failed", {
-        reason: describeFailure(error),
+        reason: failureMessage(error),
       });
     } finally {
-      this.running = false;
+      this.isRunning = false;
       this.bar()?.setAttribute("hidden", "");
     }
   }

@@ -4,9 +4,9 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { open } from "@tauri-apps/plugin-dialog";
 
-import { describeFailure } from "../failure";
+import { failureMessage } from "../failure";
 import { t } from "../i18n";
-import { describePhases, followProgress, type PhaseTiming } from "../progress";
+import { phasesSummary, followProgress, type PhaseTiming } from "../progress";
 import { translateProject } from "./translate_controller";
 
 export interface Transcription {
@@ -40,11 +40,11 @@ export default class TranscribeController extends Controller {
   declare readonly hasBarTarget: boolean;
 
   private unlisteners: UnlistenFn[] = [];
-  private running = false;
+  private isRunning = false;
 
   async connect(): Promise<void> {
     this.unlisteners.push(
-      await followProgress(this.statusTarget, this.bar(), () => this.running),
+      await followProgress(this.statusTarget, this.bar(), () => this.isRunning),
       await getCurrentWebview().onDragDropEvent(({ payload }) => {
         if (
           payload.type === "drop" &&
@@ -72,8 +72,8 @@ export default class TranscribeController extends Controller {
   }
 
   async transcribe(path: string): Promise<void> {
-    if (this.running) return;
-    this.running = true;
+    if (this.isRunning) return;
+    this.isRunning = true;
     this.statusTarget.textContent = t("work.preparing");
     try {
       const transcription = await invoke<Transcription>("transcribe", { path });
@@ -86,14 +86,14 @@ export default class TranscribeController extends Controller {
           factor: factor.toFixed(2),
         }),
         t("transcribe.transcribePhases", {
-          phases: describePhases(transcription.phases),
+          phases: phasesSummary(transcription.phases),
         }),
       ];
       if (this.hasTranslateTarget && this.translateTarget.checked) {
         const translation = await translateProject(this.languageTarget.value);
         lines.push(
           t("transcribe.translatePhases", {
-            phases: describePhases(translation.phases),
+            phases: phasesSummary(translation.phases),
           }),
         );
       }
@@ -101,10 +101,10 @@ export default class TranscribeController extends Controller {
       this.dispatch("finished");
     } catch (error) {
       this.statusTarget.textContent = t("work.failed", {
-        reason: describeFailure(error),
+        reason: failureMessage(error),
       });
     } finally {
-      this.running = false;
+      this.isRunning = false;
       this.bar()?.setAttribute("hidden", "");
     }
   }

@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 import { invoke } from "@tauri-apps/api/core";
 import { message, open } from "@tauri-apps/plugin-dialog";
 
-import { describeFailure } from "../failure";
+import { failureMessage } from "../failure";
 
 /** The toolbar's Project actions; what they make lives in Rust. */
 export default class ProjectController extends Controller {
@@ -18,7 +18,7 @@ export default class ProjectController extends Controller {
       await invoke("open_srt", { path });
       this.dispatch("opened");
     } catch (error) {
-      await message(describeFailure(error), { kind: "error" });
+      await message(failureMessage(error), { kind: "error" });
     }
   }
 }

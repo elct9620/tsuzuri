@@ -14,7 +14,7 @@ interface ComponentStatus {
   install: string | null;
 }
 
-function describe({
+function statusMessage({
   ready,
   path,
   origin,
@@ -53,12 +53,12 @@ export default class ComponentsController extends Controller {
 
   private render(statuses: ComponentStatus[]): void {
     for (const component of statuses) {
-      const status = this.statusFor(component.name);
-      if (status) status.textContent = describe(component);
+      const status = this.statusByName(component.name);
+      if (status) status.textContent = statusMessage(component);
     }
   }
 
-  private statusFor(name: string): HTMLElement | undefined {
+  private statusByName(name: string): HTMLElement | undefined {
     return this.statusTargets.find(
       (status) => status.dataset.component === name,
     );

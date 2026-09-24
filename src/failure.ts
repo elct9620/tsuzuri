@@ -19,7 +19,7 @@ function isFailure(error: unknown): error is Failure {
 }
 
 /** A sentence for a failed command; anything that is not a Failure, such as a plugin's error, is shown as it came. */
-export function describeFailure(error: unknown): string {
+export function failureMessage(error: unknown): string {
   if (!isFailure(error)) return String(error);
   switch (error.code) {
     case "io":

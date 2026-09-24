@@ -54,7 +54,7 @@ export function followProgress(
 }
 
 /** Each Phase with its seconds, in the order it ran. */
-export function describePhases(phases: PhaseTiming[]): string {
+export function phasesSummary(phases: PhaseTiming[]): string {
   return phases
     .map(({ phase, seconds }) =>
       t("phases.seconds", { phase: label(phase), seconds: seconds.toFixed(1) }),

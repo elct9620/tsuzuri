@@ -14,59 +14,59 @@
       data-controller="tabs transcript project"
       data-action="transcribe:finished->tabs#showEdit translate:finished->tabs#showEdit project:opened->tabs#showTranslate"
     >
-      <header
-        class="flex items-center justify-between border-b border-stone-300 px-4 py-2 dark:border-stone-700"
-      >
-        <h1 class="font-semibold">Tsuzuri</h1>
-        <div class="flex gap-2">
-          <details class="relative">
-            <summary
-              class="cursor-pointer list-none rounded-md border border-stone-300 px-3 py-1 select-none hover:bg-stone-200 dark:border-stone-600 dark:hover:bg-stone-800"
-              data-i18n="toolbar.open"
-            ></summary>
-            <div
-              class="absolute right-0 z-10 mt-1 flex w-40 flex-col rounded-md border border-stone-300 bg-white py-1 shadow-md dark:border-stone-600 dark:bg-stone-800 [&>button]:px-3 [&>button]:py-1 [&>button]:text-left [&>button:disabled]:text-stone-400 [&>button:enabled]:hover:bg-stone-100 dark:[&>button:enabled]:hover:bg-stone-700"
+      <header class="navbar min-h-0 bg-base-200 px-4 py-2">
+        <h1 class="navbar-start font-semibold">Tsuzuri</h1>
+        <div class="navbar-end gap-2">
+          <details class="dropdown dropdown-end">
+            <summary class="btn btn-sm" data-i18n="toolbar.open"></summary>
+            <ul
+              class="menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md"
             >
-              <button
-                type="button"
-                data-action="project#openSrt"
-                data-i18n="toolbar.fromSrt"
-              ></button>
-            </div>
+              <li>
+                <button
+                  type="button"
+                  data-action="project#openSrt"
+                  data-i18n="toolbar.fromSrt"
+                ></button>
+              </li>
+            </ul>
           </details>
-          <details class="relative">
-            <summary
-              class="cursor-pointer list-none rounded-md border border-stone-300 px-3 py-1 select-none hover:bg-stone-200 dark:border-stone-600 dark:hover:bg-stone-800"
-              data-i18n="toolbar.export"
-            ></summary>
-            <div
-              class="absolute right-0 z-10 mt-1 flex w-40 flex-col rounded-md border border-stone-300 bg-white py-1 shadow-md dark:border-stone-600 dark:bg-stone-800 [&>button]:px-3 [&>button]:py-1 [&>button]:text-left [&>button:disabled]:text-stone-400 [&>button:enabled]:hover:bg-stone-100 dark:[&>button:enabled]:hover:bg-stone-700"
+          <details class="dropdown dropdown-end">
+            <summary class="btn btn-sm" data-i18n="toolbar.export"></summary>
+            <ul
+              class="menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md [&_button:disabled]:pointer-events-none [&_button:disabled]:text-base-content/40"
             >
-              <button
-                type="button"
-                data-transcript-target="export"
-                data-action="transcript#save"
-                data-transcript-content-param="original"
-                disabled
-                data-i18n="toolbar.original"
-              ></button>
-              <button
-                type="button"
-                data-transcript-target="export"
-                data-action="transcript#save"
-                data-transcript-content-param="translation"
-                disabled
-                data-i18n="toolbar.translation"
-              ></button>
-              <button
-                type="button"
-                data-transcript-target="export"
-                data-action="transcript#save"
-                data-transcript-content-param="bilingual"
-                disabled
-                data-i18n="toolbar.bilingual"
-              ></button>
-            </div>
+              <li>
+                <button
+                  type="button"
+                  data-transcript-target="export"
+                  data-action="transcript#save"
+                  data-transcript-content-param="original"
+                  disabled
+                  data-i18n="toolbar.original"
+                ></button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  data-transcript-target="export"
+                  data-action="transcript#save"
+                  data-transcript-content-param="translation"
+                  disabled
+                  data-i18n="toolbar.translation"
+                ></button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  data-transcript-target="export"
+                  data-action="transcript#save"
+                  data-transcript-content-param="bilingual"
+                  disabled
+                  data-i18n="toolbar.bilingual"
+                ></button>
+              </li>
+            </ul>
           </details>
         </div>
       </header>

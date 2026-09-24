@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
-use tauri::async_runtime::{self, Receiver};
+use tauri::async_runtime::{self, Receiver, Sender};
 use tauri::{AppHandle, Runtime};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
@@ -40,7 +40,7 @@ impl Processes {
         program: &Path,
         args: &[String],
     ) -> Result<(Receiver<CommandEvent>, u32), String> {
-        let (mut events, child) = app
+        let (events, child) = app
             .shell()
             .command(program)
             .args(args)
@@ -57,13 +57,7 @@ impl Processes {
         let (forward, received) = async_runtime::channel(64);
         let processes = self.clone();
         async_runtime::spawn(async move {
-            while let Some(event) = events.recv().await {
-                let terminated = matches!(event, CommandEvent::Terminated(_));
-                let _ = forward.send(event).await;
-                if terminated {
-                    break;
-                }
-            }
+            forward_in_order(events, forward).await;
             processes.forget(pid);
         });
         Ok((received, pid))
@@ -117,6 +111,23 @@ impl Processes {
 }
 
 /// The file name of an executable without its directory, as both `ps` and `tasklist` report it.
+/// Forwards the plugin's events with the exit status last. The plugin sends it as soon as the process exits,
+/// possibly ahead of lines its reader threads have yet to send, and its channel closes once they have.
+async fn forward_in_order(mut events: Receiver<CommandEvent>, forward: Sender<CommandEvent>) {
+    let mut exit = None;
+    while let Some(event) = events.recv().await {
+        match event {
+            CommandEvent::Terminated(_) => exit = Some(event),
+            event => {
+                let _ = forward.send(event).await;
+            }
+        }
+    }
+    if let Some(exit) = exit {
+        let _ = forward.send(exit).await;
+    }
+}
+
 fn executable_name(path: &str) -> String {
     path.rsplit(['/', '\\']).next().unwrap_or(path).to_string()
 }
@@ -184,6 +195,7 @@ mod tests {
     use std::time::{Duration, Instant};
 
     use tauri::test::{mock_builder, mock_context, noop_assets};
+    use tauri_plugin_shell::process::TerminatedPayload;
 
     use super::*;
     use crate::test_support::TempDir;
@@ -293,5 +305,37 @@ mod tests {
         let _ = child.kill();
         let _ = child.wait();
         assert!(still_running);
+    }
+
+    // @behavior PR-005
+    #[test]
+    fn delivers_every_line_before_the_exit_status() {
+        let (sender, events) = async_runtime::channel(8);
+        let (forward, mut received) = async_runtime::channel(8);
+        let line = |text: &str| CommandEvent::Stderr(text.as_bytes().to_vec());
+        async_runtime::block_on(async move {
+            sender.send(line("50%")).await.unwrap();
+            // The shell plugin sends the exit status as soon as the process exits, even while a reader still holds its last lines.
+            sender
+                .send(CommandEvent::Terminated(TerminatedPayload {
+                    code: Some(0),
+                    signal: None,
+                }))
+                .await
+                .unwrap();
+            sender.send(line("100%")).await.unwrap();
+        });
+
+        async_runtime::block_on(forward_in_order(events, forward));
+
+        let mut order = Vec::new();
+        while let Some(event) = received.blocking_recv() {
+            order.push(match event {
+                CommandEvent::Stderr(bytes) => String::from_utf8(bytes).unwrap(),
+                CommandEvent::Terminated(_) => "exit".to_string(),
+                _ => "other".to_string(),
+            });
+        }
+        assert_eq!(order, vec!["50%", "100%", "exit"]);
     }
 }

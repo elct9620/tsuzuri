@@ -8,7 +8,7 @@ The one way a Component is launched, so every child process is recorded and clea
 
 ## `Processes::spawn`
 
-Launch an executable by absolute path and record its PID.
+Launch an executable by absolute path and record its PID. Its events end with the exit status, after everything it wrote, so a caller may stop at the exit status.
 
 | Attribute | Value |
 | --- | --- |

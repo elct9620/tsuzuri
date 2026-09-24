@@ -37,3 +37,11 @@ Launching Components as child processes so that none outlives the app: those ali
 | Given | a process record naming a PID now held by a process with another name |
 | When | the app launches |
 | Then | that process keeps running |
+
+## `PR-005` Delivering all output before the exit status
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component that writes many lines to stderr and exits at once |
+| When | it is launched |
+| Then | every line arrives before its exit status |

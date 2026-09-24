@@ -45,3 +45,19 @@ Run the Transcribe Mode on one media file, emitting `pipeline-progress` events, 
 ```rust
 pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, String> {}
 ```
+
+## `open_srt`
+
+Read an SRT file into Segments.
+
+```rust
+pub fn open_srt(path: PathBuf) -> Result<Vec<Segment>, String> {}
+```
+
+## `translate`
+
+Run the Translate Mode on Segments into the target language, emitting `pipeline-progress` events, and answer the Segments with their translations.
+
+```rust
+pub async fn translate(app: AppHandle, segments: Vec<Segment>, target: String) -> Result<Vec<TranslatedSegment>, String> {}
+```

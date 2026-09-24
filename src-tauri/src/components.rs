@@ -274,14 +274,12 @@ pub async fn install_components(app: AppHandle) -> Result<Vec<ComponentStatus>, 
 
 #[cfg(test)]
 mod tests {
-    use std::io::{BufRead, BufReader, Write};
-    use std::net::TcpListener;
     use std::sync::{Arc, Mutex};
 
     use super::*;
-    use crate::test_support::TempDir;
+    use crate::test_support::{FakeHttp, Response, TempDir};
 
-    /// Serves one body over HTTP, honouring `Range: bytes=N-`, and records the Range header of every request.
+    /// Serves one archive, honouring `Range: bytes=N-`, and records the Range header of every request.
     struct ArchiveServer {
         url: String,
         ranges: Arc<Mutex<Vec<Option<String>>>>,
@@ -289,46 +287,29 @@ mod tests {
 
     impl ArchiveServer {
         fn serve(body: Vec<u8>) -> ArchiveServer {
-            let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-            let url = format!("http://{}/tool.tar.gz", listener.local_addr().unwrap());
             let ranges = Arc::new(Mutex::new(Vec::new()));
             let recorded = Arc::clone(&ranges);
-            std::thread::spawn(move || {
-                for mut stream in listener.incoming().flatten() {
-                    let mut range = None;
-                    for line in BufReader::new(&stream).lines().map_while(Result::ok) {
-                        if line.is_empty() {
-                            break;
-                        }
-                        if let Some(value) = line.to_ascii_lowercase().strip_prefix("range: ") {
-                            range = Some(value.to_string());
-                        }
-                    }
-                    recorded.lock().unwrap().push(range.clone());
-                    let start = range
-                        .and_then(|value| {
-                            value
-                                .strip_prefix("bytes=")?
-                                .strip_suffix('-')?
-                                .parse()
-                                .ok()
-                        })
-                        .unwrap_or(0usize);
-                    let status = if start == 0 {
-                        "200 OK"
-                    } else {
-                        "206 Partial Content"
-                    };
-                    let rest = &body[start..];
-                    let head = format!(
-                        "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                        rest.len()
-                    );
-                    let _ = stream.write_all(head.as_bytes());
-                    let _ = stream.write_all(rest);
+            let server = FakeHttp::serve(move |request| {
+                let range = request.header("range").map(str::to_string);
+                recorded.lock().unwrap().push(range.clone());
+                let start = range
+                    .and_then(|value| {
+                        value
+                            .strip_prefix("bytes=")?
+                            .strip_suffix('-')?
+                            .parse()
+                            .ok()
+                    })
+                    .unwrap_or(0usize);
+                Response {
+                    status: if start == 0 { 200 } else { 206 },
+                    body: body[start..].to_vec(),
                 }
             });
-            ArchiveServer { url, ranges }
+            ArchiveServer {
+                url: format!("{}/tool.tar.gz", server.base_url),
+                ranges,
+            }
         }
 
         fn ranges(&self) -> Vec<Option<String>> {

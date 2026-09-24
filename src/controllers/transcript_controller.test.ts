@@ -8,7 +8,7 @@ describe("TranscriptController", () => {
 
   beforeEach(async () => {
     document.body.innerHTML = `
-      <section data-controller="transcript" data-action="transcribe:loaded@window->transcript#show">
+      <section data-controller="transcript" data-action="transcribe:loaded@window->transcript#show translate:loaded@window->transcript#show">
         <p data-transcript-target="empty">尚無內容</p>
         <ol data-transcript-target="list"></ol>
       </section>
@@ -33,5 +33,15 @@ describe("TranscriptController", () => {
 
     const items = [...document.querySelectorAll("li")].map((item) => item.textContent);
     expect(items).toEqual(["00:00:00.000 → 00:00:01.000大家好", "00:01:02.003 → 00:01:04.500今天天氣很好"]);
+  });
+
+  // @behavior TL-006
+  it("shows each translation under its segment", () => {
+    const segments = [{ start_ms: 0, end_ms: 1000, text: "大家好", translation: "Hello everyone" }];
+
+    window.dispatchEvent(new CustomEvent("translate:loaded", { detail: { segments } }));
+
+    const lines = [...document.querySelectorAll("li p")].map((line) => line.textContent);
+    expect(lines).toEqual(["大家好", "Hello everyone"]);
   });
 });

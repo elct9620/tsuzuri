@@ -1,0 +1,57 @@
+# Translate
+
+The Translate Mode: a Transcript - read from an existing SRT, or just produced by Transcribe - is translated Segment by Segment through llama-server, which is started on a random port for the job and stopped when it ends.
+
+## Includes
+
+- `src-tauri/src/translation.rs`
+- `src/controllers/translate_controller.test.ts`
+- `src/controllers/transcript_controller.test.ts`
+
+## `TL-001` Translating each Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and a Transcript of two Segments |
+| When | the Transcript is translated |
+| Then | each Segment keeps its times and carries its translation |
+
+## `TL-002` Waiting for the Model to load
+
+| Step | Statement |
+| --- | --- |
+| Given | a llama-server still loading its Model |
+| When | the Transcript is translated |
+| Then | no Segment is sent before `/health` answers ready |
+
+## `TL-003` Refusing without a translation Model
+
+| Step | Statement |
+| --- | --- |
+| Given | no translation Model chosen |
+| When | a Transcript is translated |
+| Then | it is refused before llama-server starts |
+
+## `TL-004` Stopping llama-server when translation ends
+
+| Step | Statement |
+| --- | --- |
+| Given | a llama-server that never answers ready |
+| When | translation gives up waiting |
+| Then | the llama-server process is no longer running |
+
+## `TL-005` Translating an existing SRT file
+
+| Step | Statement |
+| --- | --- |
+| Given | the Translate Mode panel |
+| When | an SRT file is chosen |
+| Then | its Segments are translated into the selected language |
+
+## `TL-006` Showing a translation beside its Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a translated Transcript |
+| When | it is loaded into the transcript panel |
+| Then | each Segment shows its translation under its text |

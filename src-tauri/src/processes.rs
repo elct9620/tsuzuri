@@ -69,6 +69,14 @@ impl Processes {
         Ok((received, pid))
     }
 
+    pub fn kill(&self, pid: u32) {
+        let running = self.running.lock().unwrap().remove(&pid);
+        if let Some(running) = running {
+            let _ = running.child.kill();
+        }
+        self.write_record();
+    }
+
     pub fn kill_all(&self) {
         let running: Vec<Running> = self
             .running

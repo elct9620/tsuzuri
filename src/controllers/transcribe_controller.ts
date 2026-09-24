@@ -1,15 +1,12 @@
 import { Controller } from "@hotwired/stimulus";
 import { invoke } from "@tauri-apps/api/core";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { open } from "@tauri-apps/plugin-dialog";
 
+import { listenProgress } from "../progress";
 import type { Segment } from "./transcript_controller";
-
-interface PipelineProgress {
-  step: string;
-  percent: number;
-}
+import { translateSegments } from "./translate_controller";
 
 export interface Transcription {
   segments: Segment[];
@@ -17,25 +14,23 @@ export interface Transcription {
   transcribe_seconds: number;
 }
 
-const STEP_LABELS: Record<string, string> = {
-  convert: "轉檔",
-  transcribe: "轉錄",
-};
-
 const MEDIA_EXTENSIONS = ["mp4", "mov", "mkv", "m4a", "mp3", "wav", "flac", "ogg", "opus", "aac"];
 
 export default class TranscribeController extends Controller {
-  static targets = ["status"];
+  static targets = ["status", "language"];
+  static values = { translate: Boolean };
 
   declare readonly statusTarget: HTMLElement;
+  declare readonly languageTarget: HTMLSelectElement;
+  declare readonly translateValue: boolean;
 
   private unlisteners: UnlistenFn[] = [];
   private running = false;
 
   async connect(): Promise<void> {
     this.unlisteners.push(
-      await listen<PipelineProgress>("pipeline-progress", ({ payload }) => {
-        if (this.running) this.statusTarget.textContent = `${STEP_LABELS[payload.step] ?? payload.step} ${payload.percent}%`;
+      await listenProgress((line) => {
+        if (this.running) this.statusTarget.textContent = line;
       }),
       await getCurrentWebview().onDragDropEvent(({ payload }) => {
         if (payload.type === "drop" && !this.isHidden() && payload.paths.length > 0) {
@@ -66,8 +61,13 @@ export default class TranscribeController extends Controller {
     try {
       const transcription = await invoke<Transcription>("transcribe", { path });
       const factor = transcription.transcribe_seconds / transcription.audio_seconds;
-      this.statusTarget.textContent = `完成：音檔 ${transcription.audio_seconds.toFixed(1)} 秒，轉錄 ${transcription.transcribe_seconds.toFixed(1)} 秒（RTF ${factor.toFixed(2)}）`;
+      const summary = `音檔 ${transcription.audio_seconds.toFixed(1)} 秒，轉錄 ${transcription.transcribe_seconds.toFixed(1)} 秒（RTF ${factor.toFixed(2)}）`;
       this.dispatch("loaded", { target: window, detail: transcription });
+      if (this.translateValue) {
+        const translated = await translateSegments(transcription.segments, this.languageTarget.value);
+        this.dispatch("loaded", { target: window, detail: { segments: translated } });
+      }
+      this.statusTarget.textContent = `完成：${summary}`;
     } catch (error) {
       this.statusTarget.textContent = `失敗：${String(error)}`;
     } finally {

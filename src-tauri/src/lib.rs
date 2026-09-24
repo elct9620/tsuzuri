@@ -3,6 +3,7 @@ pub mod models;
 pub mod pipeline;
 pub mod processes;
 pub mod transcript;
+pub mod translation;
 
 #[cfg(test)]
 mod test_support;
@@ -27,7 +28,9 @@ pub fn run() {
             components::install_components,
             models::model_settings,
             models::choose_model,
-            pipeline::transcribe
+            pipeline::transcribe,
+            translation::open_srt,
+            translation::translate
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

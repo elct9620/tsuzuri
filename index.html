@@ -50,11 +50,29 @@
           <p>拖入影片或音訊，或 <button type="button" data-action="transcribe#choose">選擇檔案</button></p>
           <p class="progress" data-transcribe-target="status"></p>
         </div>
-        <div class="mode-panel" role="tabpanel" data-mode="translate" data-mode-tabs-target="panel" hidden>拖入 SRT 字幕檔</div>
-        <div class="mode-panel" role="tabpanel" data-mode="transcribe-and-translate" data-mode-tabs-target="panel" hidden>拖入影片或音訊</div>
+        <div class="mode-panel" role="tabpanel" data-mode="translate" data-mode-tabs-target="panel" data-controller="translate" hidden>
+          <p><button type="button" data-action="translate#choose">選擇 SRT 字幕檔</button> <label>翻譯成
+            <select data-translate-target="language">
+              <option value="English" selected>English</option>
+              <option value="Japanese">日本語</option>
+              <option value="Traditional Chinese (Taiwan)">繁體中文</option>
+            </select>
+          </label></p>
+          <p class="progress" data-translate-target="status"></p>
+        </div>
+        <div class="mode-panel" role="tabpanel" data-mode="transcribe-and-translate" data-mode-tabs-target="panel" data-controller="transcribe" data-transcribe-translate-value="true" hidden>
+          <p>拖入影片或音訊，或 <button type="button" data-action="transcribe#choose">選擇檔案</button> <label>翻譯成
+            <select data-transcribe-target="language">
+              <option value="English" selected>English</option>
+              <option value="Japanese">日本語</option>
+              <option value="Traditional Chinese (Taiwan)">繁體中文</option>
+            </select>
+          </label></p>
+          <p class="progress" data-transcribe-target="status"></p>
+        </div>
       </section>
 
-      <section class="panel" aria-labelledby="transcript-title" data-controller="transcript" data-action="transcribe:loaded@window->transcript#show">
+      <section class="panel" aria-labelledby="transcript-title" data-controller="transcript" data-action="transcribe:loaded@window->transcript#show translate:loaded@window->transcript#show">
         <h2 id="transcript-title">字幕</h2>
         <p class="empty" data-transcript-target="empty">尚無內容</p>
         <ol class="segments" data-transcript-target="list"></ol>

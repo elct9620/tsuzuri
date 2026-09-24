@@ -4,6 +4,7 @@ export interface Segment {
   start_ms: number;
   end_ms: number;
   text: string;
+  translation?: string;
 }
 
 export function formatTime(ms: number): string {
@@ -30,6 +31,12 @@ export default class TranscriptController extends Controller {
         const text = document.createElement("p");
         text.textContent = segment.text;
         item.append(time, text);
+        if (segment.translation) {
+          const translation = document.createElement("p");
+          translation.className = "translation";
+          translation.textContent = segment.translation;
+          item.append(translation);
+        }
         return item;
       }),
     );

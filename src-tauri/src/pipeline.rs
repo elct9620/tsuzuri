@@ -125,7 +125,7 @@ fn whisper_progress(line: &str) -> Option<u8> {
         .ok()
 }
 
-fn report<R: Runtime>(app: &AppHandle<R>, step: &'static str, percent: u8) {
+pub(crate) fn report<R: Runtime>(app: &AppHandle<R>, step: &'static str, percent: u8) {
     let _ = app.emit("pipeline-progress", PipelineProgress { step, percent });
 }
 

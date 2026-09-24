@@ -4,6 +4,7 @@ import ModeTabsController from "./controllers/mode_tabs_controller";
 import ModelsController from "./controllers/models_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
+import TranslateController from "./controllers/translate_controller";
 
 const application = Application.start();
 application.register("components", ComponentsController);
@@ -11,3 +12,4 @@ application.register("mode-tabs", ModeTabsController);
 application.register("models", ModelsController);
 application.register("transcribe", TranscribeController);
 application.register("transcript", TranscriptController);
+application.register("translate", TranslateController);

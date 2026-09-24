@@ -24,7 +24,7 @@ What the user asks Tsuzuri to do with one input: Transcribe (media to Transcript
 
 ### Component
 
-An upstream executable Tsuzuri downloads and runs as a child process: ffmpeg, whisper.cpp (`whisper-cli`) or llama.cpp (`llama-server`). Each is pinned in the Manifest.
+An upstream executable Tsuzuri runs as a child process: ffmpeg, whisper.cpp (`whisper-cli`) or llama.cpp (`llama-server`). The Manifest says, per platform, whether it is downloaded or local.
 
 #### Rejected
 
@@ -32,7 +32,11 @@ An upstream executable Tsuzuri downloads and runs as a child process: ffmpeg, wh
 
 ### Manifest
 
-The list built into the app that pins each Component: release tag, download URLs, SHA256 and the executable's path after extraction. Upgrading a Component means editing it.
+The list built into the app that says, for each platform, how every Component is obtained. A downloaded Component pins its release tag, archive URLs, SHA256 and the executable's path after extraction; upgrading means editing these. A local Component is one upstream publishes no prebuilt executable for on that platform, so the user points at one already installed.
+
+### Local Component
+
+A Component the Manifest marks local for the running platform - on macOS, whisper-cli and ffmpeg - whose executable path the user chooses, the way a Model is chosen.
 
 ### Model
 

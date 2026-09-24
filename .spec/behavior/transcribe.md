@@ -7,7 +7,6 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 - `src-tauri/src/pipeline.rs`
 - `src/controllers/transcribe_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
-- `src/controllers/tabs_controller.test.ts`
 
 ## `TX-001` Transcribing a media file
 
@@ -61,9 +60,9 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 
 | Step | Statement |
 | --- | --- |
-| Given | a media file being transcribed |
+| Given | a Current Resource being transcribed |
 | When | a progress event arrives |
-| Then | the transcribe panel shows the Phase and its percentage |
+| Then | the editor shows the Phase and its percentage |
 
 ## `TX-008` Telling the Model load apart from transcribing
 
@@ -85,41 +84,33 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 
 | Step | Statement |
 | --- | --- |
-| Given | a media file being transcribed |
+| Given | a Current Resource being transcribed |
 | When | a load progress event without a percentage arrives |
-| Then | the transcribe panel shows a progress bar with no value |
+| Then | the editor shows a progress bar with no value |
 
 ## `TX-011` Showing how long each Phase took
 
 | Step | Statement |
 | --- | --- |
-| Given | a media file being transcribed |
+| Given | a Current Resource being transcribed |
 | When | the transcription finishes |
-| Then | the transcribe panel lists each Phase with its seconds |
+| Then | the editor lists each Phase with its seconds |
 
 ## `TX-012` Translating once transcribed
 
 | Step | Statement |
 | --- | --- |
-| Given | the transcribe panel with translating afterwards chosen |
-| When | a media file is transcribed |
-| Then | the Project is translated into the selected language, making it the Transcribe and Translate Mode |
+| Given | the transcribe dialog with translating afterwards into `ja` chosen |
+| When | transcribing is started |
+| Then | the Current Resource is translated into `ja` once transcribed |
 
-## `TX-013` Ending a transcription on the Edit tab
-
-| Step | Statement |
-| --- | --- |
-| Given | the transcribe panel |
-| When | a transcription, and the translation after it when chosen, succeeds |
-| Then | the Edit tab is shown |
-
-## `TX-014` Staying on a failed transcription
+## `TX-014` Saying why a transcription failed
 
 | Step | Statement |
 | --- | --- |
-| Given | the transcribe panel |
-| When | a transcription fails |
-| Then | the transcribe panel stays shown with the reason |
+| Given | a Current Resource being transcribed |
+| When | the transcription fails |
+| Then | the editor shows the reason |
 
 ## `TX-015` Transcribing in the Primary Language
 
@@ -128,14 +119,6 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | Given | a Project in `ja` whose Current Resource has a media file |
 | When | it is transcribed |
 | Then | whisper-cli is asked for Japanese |
-
-## `TX-016` Transcribing in the selected Language
-
-| Step | Statement |
-| --- | --- |
-| Given | the Transcribe Mode panel with a Language selected |
-| When | a media file is transcribed |
-| Then | it is transcribed in the selected Language |
 
 ## `TX-017` Showing each Segment as whisper-cli prints it
 
@@ -168,3 +151,19 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | Given | a Current Resource of `ep01.mp4` and `ep01.srt` |
 | When | it is transcribed asking to overwrite |
 | Then | `ep01.srt` holds the Segments of the SRT whisper-cli wrote |
+
+## `TX-021` Transcribing only a Resource with a media file
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of an SRT file alone |
+| When | the toolbar shows it |
+| Then | transcribing cannot be started |
+
+## `TX-022` Asking before overwriting a subtitle
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and an original subtitle |
+| When | the transcribe dialog is started |
+| Then | it warns the subtitle will be overwritten and transcribes asking to overwrite |

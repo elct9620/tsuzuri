@@ -2,20 +2,21 @@ import { Controller } from "@hotwired/stimulus";
 import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 
-import { failureMessage } from "../failure";
 import { t } from "../i18n";
-import { phasesSummary, followProgress, type PhaseTiming } from "../progress";
+import { phasesSummary, type PhaseTiming } from "../progress";
 import {
+  currentResource,
   followProject,
   type ProjectView,
   type TranslationGlossaryView,
 } from "../project";
+import type ProgressController from "./progress_controller";
 
 export interface Translation {
   phases: PhaseTiming[];
 }
 
-/** The choices the Translate panel offers, named as Rust names them. */
+/** The choices the translate dialog offers, named as Rust names them. */
 export interface TranslationOptions {
   has_speaker_labels: boolean;
   has_self_review: boolean;
@@ -28,13 +29,12 @@ const DEFAULT_OPTIONS: TranslationOptions = {
   summary_word_limit: null,
 };
 
-/** Translates the Project Rust holds; the translations land there, not in the answer. */
+/** Translates the Current Resource from the Primary Language; the translations land in the Project, not in the answer. */
 export function translateProject(
-  source: string,
   target: string,
   options: TranslationOptions = DEFAULT_OPTIONS,
 ): Promise<Translation> {
-  return invoke<Translation>("translate", { source, target, options });
+  return invoke<Translation>("translate", { target, options });
 }
 
 function glossaryLabel(glossary: TranslationGlossaryView | null): string {
@@ -43,68 +43,71 @@ function glossaryLabel(glossary: TranslationGlossaryView | null): string {
   return t("translate.glossaryLoaded", { file, count: glossary.term_count });
 }
 
+/** The translate dialog: it translates the Current Resource's original subtitle. */
 export default class TranslateController extends Controller {
   static targets = [
-    "status",
+    "open",
+    "dialog",
     "source",
     "language",
     "speakerLabels",
     "selfReview",
     "summary",
     "summaryWords",
-    "bar",
-    "start",
     "glossary",
   ];
+  static outlets = ["progress"];
 
-  declare readonly statusTarget: HTMLElement;
-  /** The Language the Project is translated from, following the Project's own until changed. */
-  declare readonly sourceTarget: HTMLSelectElement;
+  /** The toolbar button, usable only for a Current Resource with an original subtitle. */
+  declare readonly openTarget: HTMLButtonElement;
+  declare readonly dialogTarget: HTMLDialogElement;
+  /** Names the Primary Language it is translated from. */
+  declare readonly sourceTarget: HTMLElement;
   declare readonly languageTarget: HTMLSelectElement;
   declare readonly speakerLabelsTarget: HTMLInputElement;
   declare readonly selfReviewTarget: HTMLInputElement;
   declare readonly summaryTarget: HTMLInputElement;
   declare readonly summaryWordsTarget: HTMLInputElement;
-  declare readonly barTarget: HTMLProgressElement;
-  declare readonly hasBarTarget: boolean;
-  declare readonly startTarget: HTMLButtonElement;
   /** Names the Project's `glossary.csv` and how many terms it holds. */
   declare readonly glossaryTarget: HTMLElement;
+  declare readonly progressOutlet: ProgressController;
 
-  private unlisteners: UnlistenFn[] = [];
-  private isRunning = false;
+  private unlisten?: UnlistenFn;
+  private project: ProjectView | null = null;
 
   async connect(): Promise<void> {
-    this.unlisteners.push(
-      await followProgress(this.statusTarget, this.bar(), () => this.isRunning),
-      await followProject((project) => this.show(project)),
-    );
+    this.unlisten = await followProject((project) => this.show(project));
   }
 
   disconnect(): void {
-    for (const unlisten of this.unlisteners) unlisten();
-    this.unlisteners = [];
+    this.unlisten?.();
   }
 
-  async translate(): Promise<void> {
-    if (this.isRunning) return;
-    this.isRunning = true;
-    this.statusTarget.textContent = t("work.preparing");
+  open(): void {
+    if (this.project !== null) {
+      this.sourceTarget.textContent = t(`languages.${this.project.language}`);
+      this.glossaryTarget.textContent = glossaryLabel(
+        this.project.translation_glossary,
+      );
+      if (this.project.translation_language !== null)
+        this.languageTarget.value = this.project.translation_language;
+    }
+    this.dialogTarget.showModal();
+  }
+
+  async start(): Promise<void> {
+    const progress = this.progressOutlet;
+    if (progress.isBusy) return;
+    this.dialogTarget.close();
+    progress.begin();
     try {
       const translation = await translateProject(
-        this.sourceTarget.value,
         this.languageTarget.value,
         this.options(),
       );
-      this.statusTarget.textContent = `${t("translate.done")}\n${phasesSummary(translation.phases)}`;
-      this.dispatch("finished");
+      progress.finish([t("translate.done"), phasesSummary(translation.phases)]);
     } catch (error) {
-      this.statusTarget.textContent = t("work.failed", {
-        reason: failureMessage(error),
-      });
-    } finally {
-      this.isRunning = false;
-      this.bar()?.setAttribute("hidden", "");
+      progress.fail(error);
     }
   }
 
@@ -119,13 +122,9 @@ export default class TranslateController extends Controller {
   }
 
   private show(project: ProjectView | null): void {
-    this.startTarget.disabled = project === null;
-    if (project !== null) this.sourceTarget.value = project.language;
-    const glossary = project?.translation_glossary ?? null;
-    this.glossaryTarget.textContent = glossaryLabel(glossary);
-  }
-
-  private bar(): HTMLProgressElement | undefined {
-    return this.hasBarTarget ? this.barTarget : undefined;
+    this.project = project;
+    this.openTarget.disabled = !(
+      currentResource(project)?.has_subtitle ?? false
+    );
   }
 }

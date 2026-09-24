@@ -11,465 +11,561 @@
   <body class="text-[15px]">
     <main
       class="flex h-screen flex-col"
-      data-controller="tabs transcript project"
-      data-action="transcribe:finished->tabs#showEdit translate:finished->tabs#showEdit project:opened->tabs#showTranslate"
+      data-controller="project transcript dialog"
     >
-      <header class="navbar min-h-0 bg-base-200 px-4 py-2">
-        <h1 class="navbar-start font-semibold">Tsuzuri</h1>
-        <div class="navbar-end gap-2">
-          <details class="dropdown dropdown-end">
-            <summary class="btn btn-sm" data-i18n="toolbar.open"></summary>
-            <ul
-              class="menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md"
-            >
-              <li>
-                <button
-                  type="button"
-                  data-action="project#openSrt"
-                  data-i18n="toolbar.fromSrt"
-                ></button>
-              </li>
-            </ul>
-          </details>
-          <details class="dropdown dropdown-end">
-            <summary class="btn btn-sm" data-i18n="toolbar.export"></summary>
-            <ul
-              class="menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md [&_button:disabled]:pointer-events-none [&_button:disabled]:text-base-content/40"
-            >
-              <li>
-                <button
-                  type="button"
-                  data-transcript-target="export"
-                  data-action="transcript#save"
-                  data-transcript-content-param="original"
-                  disabled
-                  data-i18n="toolbar.original"
-                ></button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  data-transcript-target="export"
-                  data-action="transcript#save"
-                  data-transcript-content-param="translation"
-                  disabled
-                  data-i18n="toolbar.translation"
-                ></button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  data-transcript-target="export"
-                  data-action="transcript#save"
-                  data-transcript-content-param="bilingual"
-                  disabled
-                  data-i18n="toolbar.bilingual"
-                ></button>
-              </li>
-            </ul>
-          </details>
-        </div>
-      </header>
-
-      <nav class="tabs border-b border-base-300 px-4" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          class="tab"
-          data-tab="transcribe"
-          data-tabs-target="tab"
-          data-action="tabs#select"
-          aria-selected="true"
-          data-i18n="tabs.transcribe"
-        ></button>
-        <button
-          type="button"
-          role="tab"
-          class="tab"
-          data-tab="translate"
-          data-tabs-target="tab"
-          data-action="tabs#select"
-          aria-selected="false"
-          data-i18n="tabs.translate"
-        ></button>
-        <button
-          type="button"
-          role="tab"
-          class="tab"
-          data-tab="edit"
-          data-tabs-target="tab"
-          data-action="tabs#select"
-          aria-selected="false"
-          data-i18n="tabs.edit"
-        ></button>
-        <button
-          type="button"
-          role="tab"
-          class="tab ml-auto"
-          data-tab="settings"
-          data-tabs-target="tab"
-          data-action="tabs#select"
-          aria-selected="false"
-          data-i18n="tabs.settings"
-        ></button>
-      </nav>
-
-      <section
-        class="flex-1 overflow-y-auto p-4"
-        role="tabpanel"
-        data-tab="transcribe"
-        data-tabs-target="panel"
-        data-controller="transcribe"
-      >
-        <fieldset
-          class="fieldset gap-3 rounded-box text-sm border border-base-300 p-4"
-        >
-          <label class="flex items-center gap-2"
-            ><span data-i18n="transcribe.language"></span>
-            <select
-              class="select select-sm w-auto"
-              data-transcribe-target="language"
-            >
-              <option value="zh-TW" selected>繁體中文</option>
-              <option value="en">English</option>
-              <option value="ja">日本語</option>
-            </select>
-          </label>
-          <label class="flex items-center gap-2">
-            <input
-              type="checkbox"
-              class="checkbox checkbox-sm"
-              data-transcribe-target="translate"
-            />
-            <span data-i18n="transcribe.translateAfter"></span>
-          </label>
-          <label class="flex items-center gap-2"
-            ><span data-i18n="work.into"></span>
-            <select
-              class="select select-sm w-auto"
-              data-transcribe-target="translationLanguage"
-            >
-              <option value="en" selected>English</option>
-              <option value="ja">日本語</option>
-              <option value="zh-TW">繁體中文</option>
-            </select>
-          </label>
-          <p class="flex items-center justify-end gap-2">
-            <span data-i18n="transcribe.drop"></span>
+      <section class="hero flex-1" data-project-target="start">
+        <div class="hero-content flex-col text-center">
+          <h1 class="text-2xl font-semibold">Tsuzuri</h1>
+          <p class="text-base-content/70" data-i18n="start.title"></p>
+          <div class="flex gap-2">
             <button
               type="button"
-              class="btn btn-sm btn-primary"
-              data-action="transcribe#choose"
-              data-i18n="transcribe.choose"
+              class="btn btn-primary"
+              data-action="project#openDirectory"
+              data-i18n="toolbar.openDirectory"
             ></button>
-          </p>
-        </fieldset>
-        <div class="mt-4 flex flex-col gap-2">
-          <p
-            class="whitespace-pre-line text-base-content/70"
-            data-transcribe-target="status"
-          ></p>
-          <progress
-            class="progress w-full"
-            max="100"
-            data-transcribe-target="bar"
-            hidden
-          ></progress>
-        </div>
-      </section>
-
-      <section
-        class="flex-1 overflow-y-auto p-4"
-        role="tabpanel"
-        data-tab="translate"
-        data-tabs-target="panel"
-        data-controller="translate"
-        hidden
-      >
-        <fieldset
-          class="fieldset gap-3 rounded-box text-sm border border-base-300 p-4"
-        >
-          <label class="flex items-center gap-2"
-            ><span data-i18n="translate.source"></span>
-            <select
-              class="select select-sm w-auto"
-              data-translate-target="source"
-            >
-              <option value="zh-TW" selected>繁體中文</option>
-              <option value="en">English</option>
-              <option value="ja">日本語</option>
-            </select>
-          </label>
-          <label class="flex items-center gap-2"
-            ><span data-i18n="work.into"></span>
-            <select
-              class="select select-sm w-auto"
-              data-translate-target="language"
-            >
-              <option value="en" selected>English</option>
-              <option value="ja">日本語</option>
-              <option value="zh-TW">繁體中文</option>
-            </select>
-          </label>
-          <p class="flex items-center gap-2">
-            <span data-i18n="translate.glossary"></span>
-            <span data-translate-target="glossary"></span>
-          </p>
-          <p class="flex flex-wrap items-center gap-4">
-            <label class="flex items-center gap-2">
-              <input
-                type="checkbox"
-                class="checkbox checkbox-sm"
-                data-translate-target="speakerLabels"
-              />
-              <span data-i18n="translate.speakerLabels"></span>
-            </label>
-            <label class="flex items-center gap-2">
-              <input
-                type="checkbox"
-                class="checkbox checkbox-sm"
-                data-translate-target="selfReview"
-              />
-              <span data-i18n="translate.selfReview"></span>
-            </label>
-            <label class="flex items-center gap-2">
-              <input
-                type="checkbox"
-                class="checkbox checkbox-sm"
-                data-translate-target="summary"
-              />
-              <span data-i18n="translate.rollingSummary"></span>
-              <input
-                type="number"
-                min="1"
-                value="100"
-                class="input input-sm w-20"
-                data-translate-target="summaryWords"
-              />
-              <span data-i18n="translate.words"></span>
-            </label>
-          </p>
-          <p class="flex justify-end">
             <button
               type="button"
-              class="btn btn-sm btn-primary"
-              data-translate-target="start"
-              data-action="translate#translate"
-              data-i18n="translate.start"
-              disabled
+              class="btn"
+              data-action="project#openSrt"
+              data-i18n="toolbar.openSrt"
             ></button>
-          </p>
-        </fieldset>
-        <div class="mt-4 flex flex-col gap-2">
-          <p
-            class="whitespace-pre-line text-base-content/70"
-            data-translate-target="status"
-          ></p>
-          <progress
-            class="progress w-full"
-            max="100"
-            data-translate-target="bar"
-            hidden
-          ></progress>
+            <button
+              type="button"
+              class="btn btn-ghost"
+              data-action="dialog#open"
+              data-i18n="toolbar.settings"
+            ></button>
+          </div>
         </div>
       </section>
 
-      <section
-        class="flex-1 overflow-y-auto p-4"
-        role="tabpanel"
-        data-tab="edit"
-        data-tabs-target="panel"
+      <div
+        class="flex min-h-0 flex-1 flex-col"
+        data-project-target="workspace"
         hidden
       >
-        <p
-          class="text-base-content/60"
-          data-transcript-target="empty"
-          data-i18n="edit.empty"
-        ></p>
-        <ol
-          class="list text-[15px] [&_textarea]:block [&_textarea]:w-full [&_textarea]:resize-y [&_textarea]:rounded-field [&_textarea]:border [&_textarea]:border-transparent [&_textarea]:px-1.5 [&_textarea]:py-1 [&_textarea]:hover:border-base-300 [&_textarea]:focus:border-base-content/40 [&_textarea]:focus:outline-none [&_textarea.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row"
-          data-transcript-target="list"
-        ></ol>
-      </section>
+        <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
+          <h1
+            class="navbar-start truncate font-semibold"
+            data-project-target="name"
+          ></h1>
+          <div class="navbar-end gap-2">
+            <details class="dropdown dropdown-end">
+              <summary class="btn btn-sm" data-i18n="toolbar.open"></summary>
+              <ul
+                class="menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md"
+              >
+                <li>
+                  <button
+                    type="button"
+                    data-action="project#openDirectory"
+                    data-i18n="toolbar.openDirectory"
+                  ></button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    data-action="project#openSrt"
+                    data-i18n="toolbar.openSrt"
+                  ></button>
+                </li>
+              </ul>
+            </details>
 
-      <section
-        class="flex-1 overflow-y-auto p-4"
-        role="tabpanel"
-        data-tab="settings"
-        data-tabs-target="panel"
-        hidden
-      >
-        <div class="flex flex-col gap-4">
-          <fieldset class="fieldset text-sm" data-controller="components">
-            <legend
-              class="fieldset-legend"
-              data-i18n="settings.components"
-            ></legend>
-            <ul class="list rounded-box border border-base-300">
-              <li class="list-row items-center">
-                <span class="w-28 font-medium">ffmpeg</span>
-                <span
-                  class="break-all text-base-content/70"
-                  data-components-target="status"
-                  data-component="ffmpeg"
-                  data-i18n="settings.checking"
-                ></span>
-                <button
-                  type="button"
-                  class="btn btn-sm"
-                  data-component="ffmpeg"
-                  data-action="components#choose"
-                  data-i18n="settings.choose"
-                ></button>
-              </li>
-              <li class="list-row items-center">
-                <span class="w-28 font-medium">whisper.cpp</span>
-                <span
-                  class="break-all text-base-content/70"
-                  data-components-target="status"
-                  data-component="whisper"
-                  data-i18n="settings.checking"
-                ></span>
-                <button
-                  type="button"
-                  class="btn btn-sm"
-                  data-component="whisper"
-                  data-action="components#choose"
-                  data-i18n="settings.choose"
-                ></button>
-              </li>
-              <li class="list-row items-center">
-                <span class="w-28 font-medium">llama.cpp</span>
-                <span
-                  class="break-all text-base-content/70"
-                  data-components-target="status"
-                  data-component="llama"
-                  data-i18n="settings.checking"
-                ></span>
-                <button
-                  type="button"
-                  class="btn btn-sm"
-                  data-component="llama"
-                  data-action="components#choose"
-                  data-i18n="settings.choose"
-                ></button>
-              </li>
-            </ul>
-          </fieldset>
-
-          <fieldset
-            class="fieldset text-sm"
-            data-controller="translation-settings"
-          >
-            <legend
-              class="fieldset-legend"
-              data-i18n="settings.translation"
-            ></legend>
-            <ul class="list rounded-box border border-base-300">
-              <li class="list-row items-center">
-                <span
-                  class="w-28 font-medium"
-                  data-i18n="settings.batchSize"
-                ></span>
-                <input
-                  type="number"
-                  min="1"
-                  class="input input-sm w-24"
-                  data-translation-settings-target="batchSize"
-                  data-action="change->translation-settings#save"
-                />
-              </li>
-              <li class="list-row items-center">
-                <span
-                  class="w-28 font-medium"
-                  data-i18n="settings.retries"
-                ></span>
-                <input
-                  type="number"
-                  min="1"
-                  class="input input-sm w-24"
-                  data-translation-settings-target="retries"
-                  data-action="change->translation-settings#save"
-                />
-              </li>
-              <li class="list-row items-center">
-                <span
-                  class="w-28 font-medium"
-                  data-i18n="settings.referenceLines"
-                ></span>
-                <input
-                  type="number"
-                  min="1"
-                  class="input input-sm w-24"
-                  data-translation-settings-target="referenceLines"
-                  data-action="change->translation-settings#save"
-                />
-              </li>
-            </ul>
-          </fieldset>
-
-          <fieldset class="fieldset text-sm" data-controller="models">
-            <legend
-              class="fieldset-legend"
-              data-i18n="settings.models"
-            ></legend>
-            <ul class="list rounded-box border border-base-300">
-              <li class="list-row items-center">
-                <span
-                  class="w-28 font-medium"
-                  data-i18n="slots.transcription"
-                ></span>
-                <span
-                  class="break-all text-base-content/70 [&.missing]:text-error"
-                  data-models-target="status"
-                  data-slot="transcription"
-                  data-i18n="models.notChosen"
-                ></span>
-                <button
-                  type="button"
-                  class="btn btn-sm"
-                  data-slot="transcription"
-                  data-action="models#choose"
-                  data-i18n="settings.chooseFile"
-                ></button>
-              </li>
-              <li class="list-row items-center">
-                <span
-                  class="w-28 font-medium"
-                  data-i18n="slots.translation"
-                ></span>
-                <span
-                  class="break-all text-base-content/70 [&.missing]:text-error"
-                  data-models-target="status"
-                  data-slot="translation"
-                  data-i18n="models.notChosen"
-                ></span>
-                <button
-                  type="button"
-                  class="btn btn-sm"
-                  data-slot="translation"
-                  data-action="models#choose"
-                  data-i18n="settings.chooseFile"
-                ></button>
-              </li>
-            </ul>
-          </fieldset>
-
-          <fieldset class="fieldset text-sm">
-            <legend class="fieldset-legend" data-i18n="settings.about"></legend>
-            <div class="flex flex-col gap-1 text-base-content/70">
-              <p data-i18n="settings.license"></p>
-              <p>
-                This software uses code of FFmpeg licensed under the LGPLv2.1.
-                Transcription uses whisper.cpp and translation uses llama.cpp,
-                both under the MIT License. Each is bundled with Tsuzuri and
-                runs as a separate program, which an executable you choose or
-                have installed can replace.
-              </p>
+            <div
+              class="contents"
+              data-controller="transcribe"
+              data-transcribe-progress-outlet="#progress"
+            >
+              <button
+                type="button"
+                class="btn btn-sm"
+                data-transcribe-target="open"
+                data-action="transcribe#open"
+                data-i18n="toolbar.transcribe"
+                disabled
+              ></button>
+              <dialog class="modal" data-transcribe-target="dialog">
+                <div class="modal-box">
+                  <h3
+                    class="text-lg font-bold"
+                    data-i18n="toolbar.transcribe"
+                  ></h3>
+                  <fieldset class="fieldset gap-3 text-sm">
+                    <p class="flex items-center gap-2">
+                      <span data-i18n="transcribe.language"></span>
+                      <span data-transcribe-target="language"></span>
+                    </p>
+                    <p class="flex items-center gap-2">
+                      <span data-i18n="transcribe.model"></span>
+                      <span
+                        class="break-all text-base-content/70"
+                        data-transcribe-target="model"
+                      ></span>
+                    </p>
+                    <label class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        class="checkbox checkbox-sm"
+                        data-transcribe-target="translate"
+                      />
+                      <span data-i18n="transcribe.translateAfter"></span>
+                    </label>
+                    <label class="flex items-center gap-2"
+                      ><span data-i18n="work.into"></span>
+                      <select
+                        class="select select-sm w-auto"
+                        data-transcribe-target="translationLanguage"
+                      >
+                        <option value="en" selected>English</option>
+                        <option value="ja">日本語</option>
+                        <option value="zh-TW">繁體中文</option>
+                      </select>
+                    </label>
+                  </fieldset>
+                  <div
+                    role="alert"
+                    class="alert alert-warning alert-soft mt-2"
+                    data-transcribe-target="overwrite"
+                    hidden
+                  >
+                    <span data-i18n="transcribe.overwrite"></span>
+                  </div>
+                  <div class="modal-action">
+                    <form method="dialog">
+                      <button class="btn" data-i18n="work.cancel"></button>
+                    </form>
+                    <button
+                      type="button"
+                      class="btn btn-primary"
+                      data-transcribe-target="start"
+                      data-action="transcribe#start"
+                      data-i18n="transcribe.start"
+                    ></button>
+                  </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                  <button>close</button>
+                </form>
+              </dialog>
             </div>
-          </fieldset>
+
+            <div
+              class="contents"
+              data-controller="translate"
+              data-translate-progress-outlet="#progress"
+            >
+              <button
+                type="button"
+                class="btn btn-sm"
+                data-translate-target="open"
+                data-action="translate#open"
+                data-i18n="toolbar.translate"
+                disabled
+              ></button>
+              <dialog class="modal" data-translate-target="dialog">
+                <div class="modal-box">
+                  <h3
+                    class="text-lg font-bold"
+                    data-i18n="toolbar.translate"
+                  ></h3>
+                  <fieldset class="fieldset gap-3 text-sm">
+                    <p class="flex flex-wrap items-center gap-2">
+                      <span data-i18n="translate.source"></span>
+                      <span data-translate-target="source"></span>
+                      <span class="ml-4" data-i18n="work.into"></span>
+                      <select
+                        class="select select-sm w-auto"
+                        data-translate-target="language"
+                      >
+                        <option value="en" selected>English</option>
+                        <option value="ja">日本語</option>
+                        <option value="zh-TW">繁體中文</option>
+                      </select>
+                    </p>
+                    <p class="flex items-center gap-2">
+                      <span data-i18n="translate.glossary"></span>
+                      <span data-translate-target="glossary"></span>
+                    </p>
+                    <p class="flex flex-wrap items-center gap-4">
+                      <label class="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          class="checkbox checkbox-sm"
+                          data-translate-target="speakerLabels"
+                        />
+                        <span data-i18n="translate.speakerLabels"></span>
+                      </label>
+                      <label class="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          class="checkbox checkbox-sm"
+                          data-translate-target="selfReview"
+                        />
+                        <span data-i18n="translate.selfReview"></span>
+                      </label>
+                    </p>
+                    <label class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        class="checkbox checkbox-sm"
+                        data-translate-target="summary"
+                      />
+                      <span data-i18n="translate.rollingSummary"></span>
+                      <input
+                        type="number"
+                        min="1"
+                        value="100"
+                        class="input input-sm w-20"
+                        data-translate-target="summaryWords"
+                      />
+                      <span data-i18n="translate.words"></span>
+                    </label>
+                  </fieldset>
+                  <div class="modal-action">
+                    <form method="dialog">
+                      <button class="btn" data-i18n="work.cancel"></button>
+                    </form>
+                    <button
+                      type="button"
+                      class="btn btn-primary"
+                      data-action="translate#start"
+                      data-i18n="translate.start"
+                    ></button>
+                  </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                  <button>close</button>
+                </form>
+              </dialog>
+            </div>
+
+            <details class="dropdown dropdown-end">
+              <summary class="btn btn-sm" data-i18n="toolbar.export"></summary>
+              <ul
+                class="menu dropdown-content z-10 w-44 rounded-box bg-base-100 shadow-md [&_button:disabled]:pointer-events-none [&_button:disabled]:text-base-content/40"
+              >
+                <li>
+                  <button
+                    type="button"
+                    data-transcript-target="export"
+                    data-action="transcript#save"
+                    data-transcript-content-param="bilingual"
+                    disabled
+                    data-i18n="toolbar.bilingual"
+                  ></button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    data-transcript-target="export"
+                    data-action="transcript#save"
+                    data-transcript-content-param="original"
+                    disabled
+                    data-i18n="toolbar.original"
+                  ></button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    data-transcript-target="export"
+                    data-action="transcript#save"
+                    data-transcript-content-param="translation"
+                    disabled
+                    data-i18n="toolbar.translation"
+                  ></button>
+                </li>
+              </ul>
+            </details>
+
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost"
+              data-action="dialog#open"
+              data-i18n="toolbar.settings"
+            ></button>
+          </div>
+        </header>
+
+        <div class="drawer drawer-open min-h-0 flex-1">
+          <input id="resources-drawer" type="checkbox" class="drawer-toggle" />
+          <div class="drawer-content flex min-h-0 flex-col">
+            <div
+              class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
+            >
+              <h2
+                class="grow truncate font-semibold"
+                data-transcript-target="heading"
+              ></h2>
+              <label class="flex items-center gap-2 text-sm"
+                ><span data-i18n="edit.translation"></span>
+                <select
+                  class="select select-sm w-auto"
+                  data-transcript-target="translationLanguage"
+                  data-action="change->transcript#showTranslation"
+                ></select>
+              </label>
+            </div>
+            <div
+              id="progress"
+              class="flex flex-col gap-2 border-b border-base-300 px-4 py-2"
+              data-controller="progress"
+              hidden
+            >
+              <p
+                class="whitespace-pre-line text-sm text-base-content/70"
+                data-progress-target="status"
+              ></p>
+              <progress
+                class="progress w-full"
+                max="100"
+                data-progress-target="bar"
+                hidden
+              ></progress>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4">
+              <p
+                class="text-base-content/60"
+                data-transcript-target="empty"
+                data-i18n="edit.empty"
+              ></p>
+              <ol
+                class="list text-[15px] [&_textarea]:block [&_textarea]:w-full [&_textarea]:resize-y [&_textarea]:rounded-field [&_textarea]:border [&_textarea]:border-transparent [&_textarea]:px-1.5 [&_textarea]:py-1 [&_textarea]:hover:border-base-300 [&_textarea]:focus:border-base-content/40 [&_textarea]:focus:outline-none [&_textarea.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row"
+                data-transcript-target="list"
+              ></ol>
+            </div>
+          </div>
+          <div class="drawer-side">
+            <label
+              for="resources-drawer"
+              aria-label="close sidebar"
+              class="drawer-overlay"
+            ></label>
+            <div class="flex min-h-full w-56 flex-col bg-base-200">
+              <ul
+                class="menu w-full grow [&_button]:flex"
+                data-project-target="resources"
+              ></ul>
+              <p
+                class="px-4 py-3 text-sm text-base-content/60"
+                data-project-target="glossary"
+              ></p>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
+
+      <dialog class="modal" data-dialog-target="dialog">
+        <div class="modal-box max-w-3xl">
+          <h3 class="mb-2 text-lg font-bold" data-i18n="toolbar.settings"></h3>
+          <div class="flex flex-col gap-4">
+            <fieldset class="fieldset text-sm" data-project-target="settings">
+              <legend
+                class="fieldset-legend"
+                data-i18n="settings.project"
+              ></legend>
+              <ul class="list rounded-box border border-base-300">
+                <li class="list-row items-center">
+                  <span
+                    class="w-28 font-medium"
+                    data-i18n="settings.primaryLanguage"
+                  ></span>
+                  <select
+                    class="select select-sm w-auto"
+                    data-project-target="language"
+                    data-action="change->project#setLanguage"
+                  >
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="en">English</option>
+                    <option value="ja">日本語</option>
+                  </select>
+                </li>
+              </ul>
+            </fieldset>
+
+            <fieldset class="fieldset text-sm" data-controller="components">
+              <legend
+                class="fieldset-legend"
+                data-i18n="settings.components"
+              ></legend>
+              <ul class="list rounded-box border border-base-300">
+                <li class="list-row items-center">
+                  <span class="w-28 font-medium">ffmpeg</span>
+                  <span
+                    class="break-all text-base-content/70"
+                    data-components-target="status"
+                    data-component="ffmpeg"
+                    data-i18n="settings.checking"
+                  ></span>
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    data-component="ffmpeg"
+                    data-action="components#choose"
+                    data-i18n="settings.choose"
+                  ></button>
+                </li>
+                <li class="list-row items-center">
+                  <span class="w-28 font-medium">whisper.cpp</span>
+                  <span
+                    class="break-all text-base-content/70"
+                    data-components-target="status"
+                    data-component="whisper"
+                    data-i18n="settings.checking"
+                  ></span>
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    data-component="whisper"
+                    data-action="components#choose"
+                    data-i18n="settings.choose"
+                  ></button>
+                </li>
+                <li class="list-row items-center">
+                  <span class="w-28 font-medium">llama.cpp</span>
+                  <span
+                    class="break-all text-base-content/70"
+                    data-components-target="status"
+                    data-component="llama"
+                    data-i18n="settings.checking"
+                  ></span>
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    data-component="llama"
+                    data-action="components#choose"
+                    data-i18n="settings.choose"
+                  ></button>
+                </li>
+              </ul>
+            </fieldset>
+
+            <fieldset
+              class="fieldset text-sm"
+              data-controller="translation-settings"
+            >
+              <legend
+                class="fieldset-legend"
+                data-i18n="settings.translation"
+              ></legend>
+              <ul class="list rounded-box border border-base-300">
+                <li class="list-row items-center">
+                  <span
+                    class="w-28 font-medium"
+                    data-i18n="settings.batchSize"
+                  ></span>
+                  <input
+                    type="number"
+                    min="1"
+                    class="input input-sm w-24"
+                    data-translation-settings-target="batchSize"
+                    data-action="change->translation-settings#save"
+                  />
+                </li>
+                <li class="list-row items-center">
+                  <span
+                    class="w-28 font-medium"
+                    data-i18n="settings.retries"
+                  ></span>
+                  <input
+                    type="number"
+                    min="1"
+                    class="input input-sm w-24"
+                    data-translation-settings-target="retries"
+                    data-action="change->translation-settings#save"
+                  />
+                </li>
+                <li class="list-row items-center">
+                  <span
+                    class="w-28 font-medium"
+                    data-i18n="settings.referenceLines"
+                  ></span>
+                  <input
+                    type="number"
+                    min="1"
+                    class="input input-sm w-24"
+                    data-translation-settings-target="referenceLines"
+                    data-action="change->translation-settings#save"
+                  />
+                </li>
+              </ul>
+            </fieldset>
+
+            <fieldset class="fieldset text-sm" data-controller="models">
+              <legend
+                class="fieldset-legend"
+                data-i18n="settings.models"
+              ></legend>
+              <ul class="list rounded-box border border-base-300">
+                <li class="list-row items-center">
+                  <span
+                    class="w-28 font-medium"
+                    data-i18n="slots.transcription"
+                  ></span>
+                  <span
+                    class="break-all text-base-content/70 [&.missing]:text-error"
+                    data-models-target="status"
+                    data-slot="transcription"
+                    data-i18n="models.notChosen"
+                  ></span>
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    data-slot="transcription"
+                    data-action="models#choose"
+                    data-i18n="settings.chooseFile"
+                  ></button>
+                </li>
+                <li class="list-row items-center">
+                  <span
+                    class="w-28 font-medium"
+                    data-i18n="slots.translation"
+                  ></span>
+                  <span
+                    class="break-all text-base-content/70 [&.missing]:text-error"
+                    data-models-target="status"
+                    data-slot="translation"
+                    data-i18n="models.notChosen"
+                  ></span>
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    data-slot="translation"
+                    data-action="models#choose"
+                    data-i18n="settings.chooseFile"
+                  ></button>
+                </li>
+              </ul>
+            </fieldset>
+
+            <fieldset class="fieldset text-sm">
+              <legend
+                class="fieldset-legend"
+                data-i18n="settings.about"
+              ></legend>
+              <div class="flex flex-col gap-1 text-base-content/70">
+                <p data-i18n="settings.license"></p>
+                <p>
+                  This software uses code of FFmpeg licensed under the LGPLv2.1.
+                  Transcription uses whisper.cpp and translation uses llama.cpp,
+                  both under the MIT License. Each is bundled with Tsuzuri and
+                  runs as a separate program, which an executable you choose or
+                  have installed can replace.
+                </p>
+              </div>
+            </fieldset>
+          </div>
+          <div class="modal-action">
+            <form method="dialog">
+              <button class="btn" data-i18n="work.close"></button>
+            </form>
+          </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
     </main>
   </body>
 </html>

@@ -8,7 +8,7 @@ import {
 
 describe("interface language", () => {
   async function startWith(locale: string | null): Promise<string> {
-    document.body.innerHTML = `<button data-i18n="tabs.settings"></button>`;
+    document.body.innerHTML = `<button data-i18n="toolbar.settings"></button>`;
     await setInterfaceLanguage(locale);
     translatePage();
     return document.querySelector("button")!.textContent!;

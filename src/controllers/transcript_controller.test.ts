@@ -4,6 +4,7 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "../project";
+import { projectOf, resourceOf } from "../test_project";
 import TranscriptController from "./transcript_controller";
 
 describe("TranscriptController", () => {
@@ -35,11 +36,9 @@ describe("TranscriptController", () => {
     return calls.find((call) => call.command === command)?.args;
   }
 
-  const translated: ProjectView = {
-    media: null,
-    language: "zh-TW",
-    translation_language: null,
-    translation_glossary: null,
+  const translated: ProjectView = projectOf({
+    resources: [resourceOf({ translation_languages: ["en", "ja"] })],
+    shown_translation: "en",
     segments: [
       {
         start_ms: 0,
@@ -48,13 +47,15 @@ describe("TranscriptController", () => {
         translation: "Hello everyone",
       },
     ],
-  };
+  });
 
   beforeEach(async () => {
     project = null;
     calls = [];
     document.body.innerHTML = `
       <section data-controller="transcript">
+        <h2 data-transcript-target="heading"></h2>
+        <select data-transcript-target="translationLanguage" data-action="change->transcript#showTranslation"></select>
         <p data-transcript-target="empty">尚無內容</p>
         <details open>
           <summary>匯出</summary>
@@ -86,16 +87,14 @@ describe("TranscriptController", () => {
 
   // @behavior TX-006
   it("lists each segment of the Project with its start and end time", async () => {
-    await hold({
-      media: "/media/lecture.mp4",
-      language: "zh-TW",
-      translation_language: null,
-      translation_glossary: null,
-      segments: [
-        { start_ms: 0, end_ms: 1000, text: "大家好" },
-        { start_ms: 62_003, end_ms: 64_500, text: "今天天氣很好" },
-      ],
-    });
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "大家好" },
+          { start_ms: 62_003, end_ms: 64_500, text: "今天天氣很好" },
+        ],
+      }),
+    );
 
     const times = [...document.querySelectorAll("li time")].map(
       (time) => time.textContent,
@@ -116,13 +115,9 @@ describe("TranscriptController", () => {
 
   // @behavior ED-001
   it("writes an edited text to the Project", async () => {
-    await hold({
-      media: null,
-      language: "zh-TW",
-      translation_language: null,
-      translation_glossary: null,
-      segments: [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }],
-    });
+    await hold(
+      projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }] }),
+    );
 
     edit("textarea.text", "逐字稿");
     await settle();
@@ -172,5 +167,34 @@ describe("TranscriptController", () => {
     expect(sent("plugin:dialog|save")).toMatchObject({
       options: { defaultPath: "/talks/lecture.en.srt" },
     });
+  });
+
+  // @behavior ED-004
+  it("shows the translation chosen for the Current Resource", async () => {
+    await hold(translated);
+    const choice = document.querySelector<HTMLSelectElement>(
+      '[data-transcript-target="translationLanguage"]',
+    )!;
+
+    choice.value = "ja";
+    choice.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(sent("show_translation")).toEqual({ language: "ja" });
+  });
+
+  // @behavior ED-005
+  it("leaves an empty translation field for a Segment not yet translated", async () => {
+    await hold(
+      projectOf({
+        shown_translation: "en",
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "大家好", translation: "Hello" },
+          { start_ms: 1000, end_ms: 2000, text: "今天天氣很好" },
+        ],
+      }),
+    );
+
+    expect(fields()).toEqual(["大家好", "Hello", "今天天氣很好", ""]);
   });
 });

@@ -11,7 +11,6 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 - `src/controllers/transcribe_controller.test.ts`
 - `src/controllers/translation_settings_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
-- `src/controllers/tabs_controller.test.ts`
 
 ## `TL-001` Translating each Segment
 
@@ -45,13 +44,13 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | When | translation gives up waiting |
 | Then | the llama-server process is no longer running |
 
-## `TL-005` Translating the Project
+## `TL-005` Translating the Current Resource
 
 | Step | Statement |
 | --- | --- |
-| Given | the Translate Mode panel and a Project |
-| When | translating is started |
-| Then | the Project is translated into the selected language |
+| Given | the translate dialog and a Current Resource with an original subtitle |
+| When | translating is started into `ja` |
+| Then | the Current Resource is translated into `ja` |
 
 ## `TL-006` Showing a translation beside its Segment
 
@@ -73,9 +72,9 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 
 | Step | Statement |
 | --- | --- |
-| Given | an SRT file being translated |
+| Given | a Current Resource being translated |
 | When | the translation finishes |
-| Then | the translate panel lists each Phase with its seconds |
+| Then | the editor lists each Phase with its seconds |
 
 ## `TL-010` Translating the Project as edited
 
@@ -85,21 +84,13 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | When | the Project is translated |
 | Then | the edited text is translated and its translation is written into the Project |
 
-## `TL-011` Waiting for a Project before translating
+## `TL-011` Translating only a Resource with an original subtitle
 
 | Step | Statement |
 | --- | --- |
-| Given | the Translate Mode panel and no Project |
-| When | the panel is shown |
-| Then | translating cannot be started until a Project is made |
-
-## `TL-012` Ending a translation on the Edit tab
-
-| Step | Statement |
-| --- | --- |
-| Given | the Translate Mode panel and a Project |
-| When | a translation succeeds |
-| Then | the Edit tab is shown |
+| Given | a Current Resource of a media file alone |
+| When | the toolbar shows it |
+| Then | translating cannot be started |
 
 ## `TL-013` Naming the target Language to the Model
 
@@ -117,21 +108,13 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | When | a Transcript is translated |
 | Then | the Model is asked to translate from Japanese |
 
-## `TL-015` Translating from the Project's Language
+## `TL-015` Naming the Primary Language in the translate dialog
 
 | Step | Statement |
 | --- | --- |
-| Given | the Translate Mode panel and a Project in `ja` |
-| When | translating is started |
-| Then | the Project is translated from `ja` |
-
-## `TL-016` Translating from the Language just transcribed
-
-| Step | Statement |
-| --- | --- |
-| Given | the Transcribe Mode panel set to translate once transcribed |
-| When | a media file is transcribed in `en` |
-| Then | the Project is translated from `en` |
+| Given | a Project in `ja` |
+| When | the translate dialog opens |
+| Then | it names Japanese as the Language translated from |
 
 ## `TL-017` Translating in Batches
 
@@ -337,8 +320,8 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 
 | Step | Statement |
 | --- | --- |
-| Given | the Translate Mode panel and a Project whose `glossary.csv` holds twelve terms |
-| When | the panel is shown |
+| Given | a Project whose `glossary.csv` holds twelve terms |
+| When | the translate dialog opens |
 | Then | it names `glossary.csv` with twelve terms |
 
 ## `TL-043` Reading the Translation Glossary again before translating
@@ -449,17 +432,9 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 
 | Step | Statement |
 | --- | --- |
-| Given | the Translate Mode panel with Speaker Labels, Self-Review and a Rolling Summary of 80 words turned on |
+| Given | the translate dialog with Speaker Labels, Self-Review and a Rolling Summary of 80 words turned on |
 | When | translating is started |
 | Then | the Project is translated with those options |
-
-## `TL-057` Translating from another source Language
-
-| Step | Statement |
-| --- | --- |
-| Given | the Translate Mode panel and a Project in `ja` whose source Language is changed to `en` |
-| When | translating is started |
-| Then | the Project is translated from `en` |
 
 ## `TL-058` Showing each Batch as it is translated
 

@@ -1,51 +1,90 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
-import { clearMocks, mockIPC, mockWindows } from "@tauri-apps/api/mocks";
+import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { ProjectView } from "../project";
+import { projectOf, resourceOf } from "../test_project";
+import ProgressController from "./progress_controller";
 import TranscribeController from "./transcribe_controller";
 
 describe("TranscribeController", () => {
   let application: Application;
-  let transcription: Promise<unknown>;
-  let translated: unknown;
+  let project: ProjectView | null;
+  let transcription: () => Promise<unknown>;
+  let translateArgs: unknown;
   let transcribeArgs: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const target = <T extends HTMLElement>(name: string) =>
+    document.querySelector<T>(`[data-transcribe-target="${name}"]`)!;
+  const status = () =>
+    document.querySelector('[data-progress-target="status"]')!.textContent;
+  const bar = () =>
+    document.querySelector<HTMLProgressElement>(
+      '[data-progress-target="bar"]',
+    )!;
+
+  async function hold(next: ProjectView): Promise<void> {
+    project = next;
+    await emit("project-changed");
+    await settle();
+  }
+
+  const media = projectOf({
+    resources: [resourceOf({ has_media: true, has_subtitle: false })],
+  });
+
+  async function start(): Promise<void> {
+    target("open").click();
+    await settle();
+    target("start").click();
+    await settle();
+  }
 
   beforeEach(async () => {
+    project = null;
+    transcription = () => new Promise(() => {});
+    translateArgs = undefined;
+    transcribeArgs = undefined;
     document.body.innerHTML = `
-      <div data-controller="transcribe">
-        <select data-transcribe-target="language">
-          <option value="zh-TW">繁體中文</option>
-          <option value="en" selected>English</option>
-        </select>
-        <input type="checkbox" data-transcribe-target="translate">
-        <select data-transcribe-target="translationLanguage">
-          <option value="en">English</option>
-          <option value="ja" selected>日本語</option>
-        </select>
-        <p data-transcribe-target="status"></p>
-        <progress max="100" data-transcribe-target="bar" hidden></progress>
+      <div data-controller="transcribe" data-transcribe-progress-outlet="#progress">
+        <button data-transcribe-target="open" data-action="transcribe#open" disabled>轉錄</button>
+        <dialog data-transcribe-target="dialog">
+          <span data-transcribe-target="language"></span>
+          <span data-transcribe-target="model"></span>
+          <input type="checkbox" data-transcribe-target="translate">
+          <select data-transcribe-target="translationLanguage">
+            <option value="en">English</option>
+            <option value="ja" selected>日本語</option>
+          </select>
+          <div data-transcribe-target="overwrite" hidden>字幕已存在</div>
+          <button data-transcribe-target="start" data-action="transcribe#start">開始</button>
+        </dialog>
+      </div>
+      <div id="progress" data-controller="progress" hidden>
+        <p data-progress-target="status"></p>
+        <progress max="100" data-progress-target="bar" hidden></progress>
       </div>
     `;
-    mockWindows("main");
-    transcription = new Promise(() => {});
-    translated = undefined;
     mockIPC(
       (command, args) => {
+        if (command === "current_project") return project;
+        if (command === "model_settings")
+          return { transcription: { path: "/models/breeze.bin" } };
         if (command === "transcribe") {
           transcribeArgs = args;
-          return transcription;
+          return transcription();
         }
         if (command === "translate") {
-          translated = args;
+          translateArgs = args;
           return { phases: [] };
         }
       },
       { shouldMockEvents: true },
     );
     application = Application.start();
+    application.register("progress", ProgressController);
     application.register("transcribe", TranscribeController);
     await settle();
   });
@@ -55,101 +94,90 @@ describe("TranscribeController", () => {
     clearMocks();
   });
 
-  const controller = () =>
-    application.getControllerForElementAndIdentifier(
-      document.querySelector('[data-controller="transcribe"]')!,
-      "transcribe",
-    ) as TranscribeController;
-
-  const status = () =>
-    document.querySelector('[data-transcribe-target="status"]')!.textContent;
-
   // @behavior TX-007
-  it("shows the Phase and its percentage while transcribing", async () => {
-    void controller().transcribe("/media/lecture.mp4");
+  it("shows the Phase and its percentage in the editor", async () => {
+    await hold(media);
+    await start();
 
-    await emit("pipeline-progress", { phase: "transcribe", percent: 40 });
+    await emit("pipeline-progress", { phase: "transcribe", percent: 42 });
     await settle();
 
-    expect(status()).toBe("轉錄 40%");
+    expect(status()).toBe("轉錄 42%");
   });
 
   // @behavior TX-010
-  it("shows a progress bar with no value while the Model loads", async () => {
-    void controller().transcribe("/media/lecture.mp4");
+  it("shows a Phase without a percentage as a bar with no value", async () => {
+    await hold(media);
+    await start();
 
     await emit("pipeline-progress", { phase: "load", percent: null });
     await settle();
 
-    const bar = document.querySelector("progress")!;
-    expect([bar.hidden, bar.hasAttribute("value")]).toEqual([false, false]);
+    expect([bar().hidden, bar().hasAttribute("value")]).toEqual([false, false]);
   });
 
   // @behavior TX-011
-  it("lists how long each Phase took once transcribeArgs", async () => {
-    transcription = Promise.resolve({
-      audio_seconds: 5,
-      transcribe_seconds: 2.7,
+  it("lists each Phase with its seconds once transcribed", async () => {
+    await hold(media);
+    transcription = async () => ({
+      audio_seconds: 60,
+      transcribe_seconds: 30,
       phases: [
-        { phase: "prepare", seconds: 0.01 },
-        { phase: "convert", seconds: 0.02 },
-        { phase: "load", seconds: 1.28 },
-        { phase: "transcribe", seconds: 1.44 },
+        { phase: "convert", seconds: 1.25 },
+        { phase: "transcribe", seconds: 28 },
       ],
     });
 
-    await controller().transcribe("/media/lecture.mp4");
+    await start();
 
-    expect(status()).toContain(
-      "轉錄：準備元件 0.0 秒 · 轉檔 0.0 秒 · 載入模型 1.3 秒 · 轉錄 1.4 秒",
-    );
+    expect(status()).toContain("轉檔 1.3 秒 · 轉錄 28.0 秒");
   });
 
   // @behavior TX-012
-  it("translates the Project once transcribeArgs when asked to", async () => {
-    transcription = Promise.resolve({
-      audio_seconds: 1,
-      transcribe_seconds: 1,
+  it("translates the Current Resource once transcribed when asked", async () => {
+    await hold(media);
+    transcription = async () => ({
+      audio_seconds: 60,
+      transcribe_seconds: 30,
       phases: [],
     });
-    document.querySelector<HTMLInputElement>(
-      '[data-transcribe-target="translate"]',
-    )!.checked = true;
+    target<HTMLInputElement>("translate").checked = true;
 
-    await controller().transcribe("/media/lecture.mp4");
+    await start();
 
-    expect(translated).toMatchObject({ target: "ja" });
+    expect(translateArgs).toMatchObject({ target: "ja" });
   });
 
-  // @behavior TL-016
-  it("translates from the Language it just transcribeArgs", async () => {
-    transcription = Promise.resolve({
-      audio_seconds: 1,
-      transcribe_seconds: 1,
-      phases: [],
-    });
-    document.querySelector<HTMLInputElement>(
-      '[data-transcribe-target="translate"]',
-    )!.checked = true;
+  // @behavior TX-014
+  it("shows why the transcription failed", async () => {
+    await hold(media);
+    transcription = () => Promise.reject({ code: "no-media" });
 
-    await controller().transcribe("/media/lecture.mp4");
+    await start();
 
-    expect(translated).toMatchObject({ source: "en" });
+    expect(status()).toBe("失敗：這個資源沒有可轉錄的影片或音訊");
   });
 
-  // @behavior TX-016
-  it("transcribes in the selected Language", async () => {
-    transcription = Promise.resolve({
-      audio_seconds: 1,
-      transcribe_seconds: 1,
-      phases: [],
-    });
+  // @behavior TX-021
+  it("cannot start transcribing a Resource without a media file", async () => {
+    await hold(projectOf());
 
-    await controller().transcribe("/media/lecture.mp4");
+    expect(target<HTMLButtonElement>("open").disabled).toBe(true);
+  });
 
-    expect(transcribeArgs).toEqual({
-      path: "/media/lecture.mp4",
-      language: "en",
-    });
+  // @behavior TX-022
+  it("warns before overwriting a subtitle and asks to overwrite it", async () => {
+    await hold(
+      projectOf({
+        resources: [resourceOf({ has_media: true, has_subtitle: true })],
+      }),
+    );
+
+    await start();
+
+    expect([target("overwrite").hidden, transcribeArgs]).toEqual([
+      false,
+      { overwrite: true },
+    ]);
   });
 });

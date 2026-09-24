@@ -8,15 +8,40 @@ export interface Segment {
   translation?: string;
 }
 
+/** A Resource as the Resource list shows it. */
+export interface ResourceView {
+  name: string;
+  has_media: boolean;
+  has_subtitle: boolean;
+  /** The Language codes of its translation files. */
+  translation_languages: string[];
+}
+
 /** The Project as Rust holds it; the webview only ever shows this, never a copy of its own. */
 export interface ProjectView {
-  media: string | null;
-  segments: Segment[];
-  /** The Language code the Transcript is in. */
+  directory: string;
+  /** The Primary Language code. */
   language: string;
-  /** The Language code of the translations, once translated. */
+  /** The Language code of the last translation. */
   translation_language: string | null;
   translation_glossary: TranslationGlossaryView | null;
+  resources: ResourceView[];
+  current_resource: string | null;
+  /** The Current Resource's media file. */
+  media: string | null;
+  /** The Current Resource's Segments. */
+  segments: Segment[];
+  /** The Language code of the translations the Segments carry. */
+  shown_translation: string | null;
+}
+
+/** The Current Resource as the Resource list shows it, or none. */
+export function currentResource(
+  project: ProjectView | null,
+): ResourceView | undefined {
+  return project?.resources.find(
+    (resource) => resource.name === project.current_resource,
+  );
 }
 
 /** The file a Translation Glossary came from and how many terms it holds. */

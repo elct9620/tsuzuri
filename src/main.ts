@@ -2,9 +2,10 @@ import { Application } from "@hotwired/stimulus";
 import { locale } from "@tauri-apps/plugin-os";
 
 import ComponentsController from "./controllers/components_controller";
+import DialogController from "./controllers/dialog_controller";
 import ModelsController from "./controllers/models_controller";
+import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
-import TabsController from "./controllers/tabs_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
 import TranslateController from "./controllers/translate_controller";
@@ -17,9 +18,10 @@ async function start(): Promise<void> {
   translatePage();
   const application = Application.start();
   application.register("components", ComponentsController);
+  application.register("dialog", DialogController);
   application.register("models", ModelsController);
+  application.register("progress", ProgressController);
   application.register("project", ProjectController);
-  application.register("tabs", TabsController);
   application.register("transcribe", TranscribeController);
   application.register("transcript", TranscriptController);
   application.register("translate", TranslateController);

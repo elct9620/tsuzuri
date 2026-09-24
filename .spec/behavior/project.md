@@ -9,7 +9,6 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src-tauri/src/pipeline.rs`
 - `src-tauri/src/translation.rs`
 - `src/controllers/project_controller.test.ts`
-- `src/controllers/tabs_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 
 ## `PJ-001` Opening a directory as the Project
@@ -212,14 +211,6 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | the transcription finishes |
 | Then | the Project holds the Segments of `ep02` unchanged |
 
-## `PJ-009` Moving on to translating an opened SRT file
-
-| Step | Statement |
-| --- | --- |
-| Given | the toolbar |
-| When | an SRT file is opened as the Project |
-| Then | the Translate tab is shown |
-
 ## `PJ-010` Recording the Language of a translation
 
 | Step | Statement |
@@ -251,3 +242,43 @@ The directory Rust holds open as the single source of truth: which files make it
 | Given | a Project whose translation export defaults to `/talks/lecture.en.srt` |
 | When | the translation is exported from the toolbar |
 | Then | the save dialog opens at `/talks/lecture.en.srt` |
+
+## `PJ-033` Opening a directory from the toolbar
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in Traditional Chinese |
+| When | a directory is chosen to open |
+| Then | it is opened as the Project in `zh-TW` |
+
+## `PJ-034` Listing the Resources
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project of `ep01` translated into `en` and `ep02` of a media file alone |
+| When | the Resource list shows it |
+| Then | it lists `ep01` with `en` and `ep02` marked as having no subtitle |
+
+## `PJ-035` Selecting a Resource from the list
+
+| Step | Statement |
+| --- | --- |
+| Given | the Resource list of `ep01` and `ep02` |
+| When | `ep02` is clicked |
+| Then | `ep02` is selected as the Current Resource |
+
+## `PJ-036` Starting without a Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Project |
+| When | the window shows |
+| Then | only the start screen is shown |
+
+## `PJ-037` Changing the Primary Language in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of a Project in `zh-TW` |
+| When | `ja` is chosen as its Primary Language |
+| Then | the Project's Primary Language is set to `ja` |

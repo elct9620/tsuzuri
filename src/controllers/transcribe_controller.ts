@@ -1,12 +1,11 @@
 import { Controller } from "@hotwired/stimulus";
 import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { open } from "@tauri-apps/plugin-dialog";
 
-import { failureMessage } from "../failure";
 import { t } from "../i18n";
-import { phasesSummary, followProgress, type PhaseTiming } from "../progress";
+import { phasesSummary, type PhaseTiming } from "../progress";
+import { currentResource, followProject, type ProjectView } from "../project";
+import type ProgressController from "./progress_controller";
 import { translateProject } from "./translate_controller";
 
 export interface Transcription {
@@ -15,79 +14,79 @@ export interface Transcription {
   phases: PhaseTiming[];
 }
 
-const MEDIA_EXTENSIONS = [
-  "mp4",
-  "mov",
-  "mkv",
-  "m4a",
-  "mp3",
-  "wav",
-  "flac",
-  "ogg",
-  "opus",
-  "aac",
-];
+interface ModelSettingsView {
+  transcription: { path: string | null };
+}
 
+/** The transcribe dialog: it transcribes the Current Resource into its original subtitle. */
 export default class TranscribeController extends Controller {
   static targets = [
-    "status",
+    "open",
+    "dialog",
     "language",
     "translate",
     "translationLanguage",
-    "bar",
+    "overwrite",
+    "start",
+    "model",
   ];
+  static outlets = ["progress"];
 
-  declare readonly statusTarget: HTMLElement;
+  /** The toolbar button, usable only for a Current Resource with a media file. */
+  declare readonly openTarget: HTMLButtonElement;
+  declare readonly dialogTarget: HTMLDialogElement;
+  /** Names the Primary Language it is transcribed in. */
+  declare readonly languageTarget: HTMLElement;
   /** Whether to translate the Transcript once transcribed. */
   declare readonly translateTarget: HTMLInputElement;
-  declare readonly hasTranslateTarget: boolean;
-  /** The Language spoken in the media file. */
-  declare readonly languageTarget: HTMLSelectElement;
-  /** The Language to translate into once transcribed. */
   declare readonly translationLanguageTarget: HTMLSelectElement;
-  declare readonly barTarget: HTMLProgressElement;
-  declare readonly hasBarTarget: boolean;
+  /** Warns that the original subtitle will be overwritten. */
+  declare readonly overwriteTarget: HTMLElement;
+  declare readonly startTarget: HTMLButtonElement;
+  /** Names the transcription Model's file. */
+  declare readonly modelTarget: HTMLElement;
+  declare readonly progressOutlet: ProgressController;
 
-  private unlisteners: UnlistenFn[] = [];
-  private isRunning = false;
+  private unlisten?: UnlistenFn;
+  private project: ProjectView | null = null;
 
   async connect(): Promise<void> {
-    this.unlisteners.push(
-      await followProgress(this.statusTarget, this.bar(), () => this.isRunning),
-      await getCurrentWebview().onDragDropEvent(({ payload }) => {
-        if (
-          payload.type === "drop" &&
-          !this.isHidden() &&
-          payload.paths.length > 0
-        ) {
-          void this.transcribe(payload.paths[0]);
-        }
-      }),
-    );
+    this.unlisten = await followProject((project) => this.show(project));
   }
 
   disconnect(): void {
-    for (const unlisten of this.unlisteners) unlisten();
-    this.unlisteners = [];
+    this.unlisten?.();
   }
 
-  async choose(): Promise<void> {
-    const path = await open({
-      multiple: false,
-      directory: false,
-      filters: [{ name: "Media", extensions: MEDIA_EXTENSIONS }],
-    });
-    if (path !== null) await this.transcribe(path);
+  async open(): Promise<void> {
+    const hasSubtitle = currentResource(this.project)?.has_subtitle ?? false;
+    this.overwriteTarget.hidden = !hasSubtitle;
+    this.startTarget.textContent = t(
+      hasSubtitle ? "transcribe.overwriteAndStart" : "transcribe.start",
+    );
+    if (this.project !== null) {
+      this.languageTarget.textContent = t(`languages.${this.project.language}`);
+      if (this.project.translation_language !== null)
+        this.translationLanguageTarget.value =
+          this.project.translation_language;
+    }
+    this.dialogTarget.showModal();
+    const models = await invoke<ModelSettingsView | null>("model_settings");
+    const path = models?.transcription.path ?? null;
+    this.modelTarget.textContent =
+      path === null
+        ? t("models.notChosen")
+        : (path.split(/[\\/]/).pop() ?? path);
   }
 
-  async transcribe(path: string): Promise<void> {
-    if (this.isRunning) return;
-    this.isRunning = true;
-    this.statusTarget.textContent = t("work.preparing");
+  async start(): Promise<void> {
+    const progress = this.progressOutlet;
+    if (progress.isBusy) return;
+    this.dialogTarget.close();
+    progress.begin();
     try {
       const transcription = await invoke<Transcription>("transcribe", {
-        path,
-        language: this.languageTarget.value,
+        overwrite: currentResource(this.project)?.has_subtitle ?? false,
       });
       const factor =
         transcription.transcribe_seconds / transcription.audio_seconds;
@@ -101,9 +100,8 @@ export default class TranscribeController extends Controller {
           phases: phasesSummary(transcription.phases),
         }),
       ];
-      if (this.hasTranslateTarget && this.translateTarget.checked) {
+      if (this.translateTarget.checked) {
         const translation = await translateProject(
-          this.languageTarget.value,
           this.translationLanguageTarget.value,
         );
         lines.push(
@@ -112,23 +110,14 @@ export default class TranscribeController extends Controller {
           }),
         );
       }
-      this.statusTarget.textContent = lines.join("\n");
-      this.dispatch("finished");
+      progress.finish(lines);
     } catch (error) {
-      this.statusTarget.textContent = t("work.failed", {
-        reason: failureMessage(error),
-      });
-    } finally {
-      this.isRunning = false;
-      this.bar()?.setAttribute("hidden", "");
+      progress.fail(error);
     }
   }
 
-  private bar(): HTMLProgressElement | undefined {
-    return this.hasBarTarget ? this.barTarget : undefined;
-  }
-
-  private isHidden(): boolean {
-    return this.element.closest("[hidden]") !== null;
+  private show(project: ProjectView | null): void {
+    this.project = project;
+    this.openTarget.disabled = !(currentResource(project)?.has_media ?? false);
   }
 }

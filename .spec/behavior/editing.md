@@ -29,3 +29,19 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | Given | a translated Project in the panel |
 | When | it is exported as a Bilingual SRT |
 | Then | the Project is saved as bilingual to the chosen file |
+
+## `ED-004` Showing another translation in the editor
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with `en` and `ja` translations in the editor |
+| When | `ja` is chosen as the translation shown |
+| Then | its `ja` translation is shown |
+
+## `ED-005` Leaving room for a translation not yet made
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing `en` whose second Segment has no translation |
+| When | the editor shows it |
+| Then | the second Segment has an empty translation field |

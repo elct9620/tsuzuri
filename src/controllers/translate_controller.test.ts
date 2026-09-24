@@ -4,62 +4,67 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "../project";
+import { projectOf, resourceOf } from "../test_project";
+import ProgressController from "./progress_controller";
 import TranslateController from "./translate_controller";
 
 describe("TranslateController", () => {
   let application: Application;
   let translateArgs: unknown;
-  let commands: string[];
   let project: ProjectView | null;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const start = () =>
-    document.querySelector<HTMLButtonElement>(
-      '[data-translate-target="start"]',
-    )!;
+  const target = <T extends HTMLElement>(name: string) =>
+    document.querySelector<T>(`[data-translate-target="${name}"]`)!;
 
-  async function holdProject(
-    language = "zh-TW",
-    glossary: ProjectView["translation_glossary"] = null,
-  ): Promise<void> {
-    project = {
-      media: null,
-      language,
-      translation_language: null,
-      translation_glossary: glossary,
-      segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
-    };
+  async function hold(next: ProjectView): Promise<void> {
+    project = next;
     await emit("project-changed");
     await settle();
+  }
+
+  async function openDialog(): Promise<void> {
+    target("open").click();
+    await settle();
+  }
+
+  async function start(): Promise<void> {
+    await openDialog();
+    document.querySelector<HTMLButtonElement>("#start")!.click();
+    await settle();
+  }
+
+  function check(name: string): void {
+    target<HTMLInputElement>(name).checked = true;
   }
 
   beforeEach(async () => {
     project = null;
     translateArgs = undefined;
-    commands = [];
     document.body.innerHTML = `
-      <div data-controller="translate">
-        <select data-translate-target="source">
-          <option value="zh-TW">繁體中文</option>
-          <option value="en">English</option>
-          <option value="ja">日本語</option>
-        </select>
-        <select data-translate-target="language">
-          <option value="en">English</option>
-          <option value="ja" selected>日本語</option>
-        </select>
-        <input type="checkbox" data-translate-target="speakerLabels">
-        <input type="checkbox" data-translate-target="selfReview">
-        <input type="checkbox" data-translate-target="summary">
-        <input type="number" value="100" data-translate-target="summaryWords">
-        <span data-translate-target="glossary"></span>
-        <button data-translate-target="start" data-action="translate#translate" disabled>開始翻譯</button>
-        <p data-translate-target="status"></p>
+      <div data-controller="translate" data-translate-progress-outlet="#progress">
+        <button data-translate-target="open" data-action="translate#open" disabled>翻譯</button>
+        <dialog data-translate-target="dialog">
+          <span data-translate-target="source"></span>
+          <select data-translate-target="language">
+            <option value="en">English</option>
+            <option value="ja" selected>日本語</option>
+          </select>
+          <span data-translate-target="glossary"></span>
+          <input type="checkbox" data-translate-target="speakerLabels">
+          <input type="checkbox" data-translate-target="selfReview">
+          <input type="checkbox" data-translate-target="summary">
+          <input type="number" value="100" data-translate-target="summaryWords">
+          <button id="start" data-action="translate#start">開始翻譯</button>
+        </dialog>
+      </div>
+      <div id="progress" data-controller="progress" hidden>
+        <p data-progress-target="status"></p>
+        <progress max="100" data-progress-target="bar" hidden></progress>
       </div>
     `;
     mockIPC(
       (command, args) => {
-        commands.push(command);
         if (command === "current_project") return project;
         if (command === "translate") {
           translateArgs = args;
@@ -75,6 +80,7 @@ describe("TranslateController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
+    application.register("progress", ProgressController);
     application.register("translate", TranslateController);
     await settle();
   });
@@ -85,76 +91,67 @@ describe("TranslateController", () => {
   });
 
   // @behavior TL-005
-  it("translates the Project into the selected language", async () => {
-    await holdProject();
+  it("translates the Current Resource into the selected language", async () => {
+    await hold(projectOf());
 
-    start().click();
-    await settle();
+    await start();
 
     expect(translateArgs).toMatchObject({ target: "ja" });
   });
 
   // @behavior TL-015
-  it("translates the Project from the Language it is in", async () => {
-    await holdProject("ja");
+  it("names the Primary Language it translates from", async () => {
+    await hold(projectOf({ language: "ja" }));
 
-    start().click();
-    await settle();
+    await openDialog();
 
-    expect(translateArgs).toMatchObject({ source: "ja" });
+    expect(target("source").textContent).toBe("日本語");
   });
 
   // @behavior TL-008
   it("lists how long each Phase took once translated", async () => {
-    await holdProject();
+    await hold(projectOf());
 
-    start().click();
-    await settle();
+    await start();
 
     expect(
-      document.querySelector('[data-translate-target="status"]')!.textContent,
+      document.querySelector('[data-progress-target="status"]')!.textContent,
     ).toBe("完成\n準備元件 0.0 秒 · 載入模型 2.2 秒 · 翻譯 0.6 秒");
   });
 
   // @behavior TL-011
-  it("waits for a Project before translating can start", async () => {
-    const before = start().disabled;
+  it("cannot start translating a Resource without an original subtitle", async () => {
+    await hold(
+      projectOf({
+        resources: [resourceOf({ has_media: true, has_subtitle: false })],
+      }),
+    );
 
-    await holdProject();
-
-    expect([before, start().disabled]).toEqual([true, false]);
+    expect(target<HTMLButtonElement>("open").disabled).toBe(true);
   });
 
   // @behavior TL-042
   it("names the Project's glossary.csv and its terms", async () => {
-    await holdProject("zh-TW", {
-      file: "/talks/glossary.csv",
-      term_count: 12,
-    });
+    await hold(
+      projectOf({
+        translation_glossary: { file: "/talks/glossary.csv", term_count: 12 },
+      }),
+    );
 
-    expect(
-      document.querySelector('[data-translate-target="glossary"]')!.textContent,
-    ).toBe("glossary.csv（12 筆）");
+    await openDialog();
+
+    expect(target("glossary").textContent).toBe("glossary.csv（12 筆）");
   });
 
-  function check(target: string): void {
-    document.querySelector<HTMLInputElement>(
-      `[data-translate-target="${target}"]`,
-    )!.checked = true;
-  }
-
   // @behavior TL-056
-  it("translates with the options the panel offers", async () => {
-    await holdProject();
+  it("translates with the options the dialog offers", async () => {
+    await hold(projectOf());
     check("speakerLabels");
     check("selfReview");
     check("summary");
-    document.querySelector<HTMLInputElement>(
-      '[data-translate-target="summaryWords"]',
-    )!.value = "80";
+    target<HTMLInputElement>("summaryWords").value = "80";
 
-    start().click();
-    await settle();
+    await start();
 
     expect(translateArgs).toMatchObject({
       options: {
@@ -163,18 +160,5 @@ describe("TranslateController", () => {
         summary_word_limit: 80,
       },
     });
-  });
-
-  // @behavior TL-057
-  it("translates from another source Language", async () => {
-    await holdProject("ja");
-    document.querySelector<HTMLSelectElement>(
-      '[data-translate-target="source"]',
-    )!.value = "en";
-
-    start().click();
-    await settle();
-
-    expect(translateArgs).toMatchObject({ source: "en" });
   });
 });

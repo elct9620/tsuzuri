@@ -73,7 +73,7 @@ impl ModelSettings {
     }
 
     /// The Model an engine is started with; checked right before the start so a file moved since it was chosen is caught.
-    pub fn require(&self, slot: ModelSlot) -> Result<&Path, ModelError> {
+    pub fn ready_path(&self, slot: ModelSlot) -> Result<&Path, ModelError> {
         let path = self.slot(slot).ok_or(ModelError::NotChosen(slot))?;
         if path.is_file() {
             Ok(path)
@@ -85,7 +85,7 @@ impl ModelSettings {
     pub fn view(&self) -> ModelSettingsView {
         let slot_view = |slot| SlotView {
             path: self.slot(slot).map(Path::to_path_buf),
-            exists: self.require(slot).is_ok(),
+            exists: self.ready_path(slot).is_ok(),
         };
         ModelSettingsView {
             transcription: slot_view(ModelSlot::Transcription),
@@ -150,7 +150,7 @@ mod tests {
         let reloaded = ModelSettings::load(dir.path()).unwrap();
 
         assert_eq!(
-            reloaded.require(ModelSlot::Transcription),
+            reloaded.ready_path(ModelSlot::Transcription),
             Ok(model.as_path())
         );
     }
@@ -160,7 +160,7 @@ mod tests {
     fn refuses_a_slot_with_no_model_chosen() {
         let settings = ModelSettings::default();
 
-        let result = settings.require(ModelSlot::Translation);
+        let result = settings.ready_path(ModelSlot::Translation);
 
         assert_eq!(result, Err(ModelError::NotChosen(ModelSlot::Translation)));
     }
@@ -174,7 +174,7 @@ mod tests {
         settings.choose(ModelSlot::Transcription, model.clone());
         fs::remove_file(&model).unwrap();
 
-        let result = settings.require(ModelSlot::Transcription);
+        let result = settings.ready_path(ModelSlot::Transcription);
 
         assert_eq!(result, Err(ModelError::Missing(model)));
     }

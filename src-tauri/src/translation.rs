@@ -46,7 +46,7 @@ pub async fn run_translate<R: Runtime>(
     ready_timeout: Duration,
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
-    let model = settings.require(ModelSlot::Translation)?;
+    let model = settings.ready_path(ModelSlot::Translation)?;
     let project = app.state::<CurrentProject>();
     let (generation, transcript) = project.snapshot()?;
     let job = TranslationJob {
@@ -204,7 +204,7 @@ async fn translate_segments(
 pub async fn translate(app: AppHandle, target: String) -> Result<Translation, Failure> {
     let phases = Phases::start("translate", "prepare");
     report(&app, "prepare", None);
-    let [llama] = components::ready_executables(Resolver::of(&app)?, ["llama"]).await?;
+    let [llama] = components::find_ready_executables(Resolver::from_app(&app)?, ["llama"]).await?;
     let settings = models::load_settings(&app)?;
     let processes = app.state::<Processes>().inner().clone();
     run_translate(

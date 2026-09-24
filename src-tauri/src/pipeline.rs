@@ -47,7 +47,7 @@ pub async fn run_transcribe<R: Runtime>(
     work: &Path,
     mut phases: Phases,
 ) -> Result<Transcription, Failure> {
-    let model = settings.require(ModelSlot::Transcription)?;
+    let model = settings.ready_path(ModelSlot::Transcription)?;
     std::fs::create_dir_all(work)?;
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
@@ -58,7 +58,7 @@ pub async fn run_transcribe<R: Runtime>(
         processes,
         "convert",
         &tools.ffmpeg,
-        &convert_args(input, &wav),
+        &conversion_args(input, &wav),
         |_| {},
     )
     .await?;
@@ -71,7 +71,7 @@ pub async fn run_transcribe<R: Runtime>(
         processes,
         "transcribe",
         &tools.whisper,
-        &transcribe_args(model, &wav, &srt_prefix),
+        &transcription_args(model, &wav, &srt_prefix),
         |line| {
             if line.starts_with(WHISPER_PROCESSING) {
                 enter(app, &mut phases, "transcribe");
@@ -97,7 +97,7 @@ pub async fn run_transcribe<R: Runtime>(
     })
 }
 
-fn convert_args(input: &Path, wav: &Path) -> Vec<String> {
+fn conversion_args(input: &Path, wav: &Path) -> Vec<String> {
     let mut args: Vec<String> = ["-nostdin", "-y", "-i"].map(String::from).to_vec();
     args.push(input.to_string_lossy().into_owned());
     args.extend(["-vn", "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le"].map(String::from));
@@ -105,7 +105,7 @@ fn convert_args(input: &Path, wav: &Path) -> Vec<String> {
     args
 }
 
-fn transcribe_args(model: &Path, wav: &Path, srt_prefix: &Path) -> Vec<String> {
+fn transcription_args(model: &Path, wav: &Path, srt_prefix: &Path) -> Vec<String> {
     vec![
         "-m".to_string(),
         model.to_string_lossy().into_owned(),
@@ -185,7 +185,8 @@ pub async fn transcribe(app: AppHandle, path: PathBuf) -> Result<Transcription, 
     let phases = Phases::start("transcribe", "prepare");
     report(&app, "prepare", None);
     let [ffmpeg, whisper] =
-        components::ready_executables(Resolver::of(&app)?, ["ffmpeg", "whisper"]).await?;
+        components::find_ready_executables(Resolver::from_app(&app)?, ["ffmpeg", "whisper"])
+            .await?;
     let tools = Tools { ffmpeg, whisper };
     let settings = models::load_settings(&app)?;
     let started_at = SystemTime::now()

@@ -71,11 +71,11 @@ pub fn detect(program: &str, version_flag: &str, dirs: &[PathBuf]) -> Option<Pat
     let file_name = format!("{program}{}", std::env::consts::EXE_SUFFIX);
     dirs.iter()
         .map(|dir| dir.join(&file_name))
-        .find(|candidate| candidate.is_file() && runs(candidate, version_flag))
+        .find(|candidate| candidate.is_file() && probe(candidate, version_flag))
 }
 
-/// Whether the executable starts and answers its version flag with success.
-pub fn runs(executable: &Path, version_flag: &str) -> bool {
+/// Runs the executable with its version flag and answers whether it succeeded.
+pub fn probe(executable: &Path, version_flag: &str) -> bool {
     let mut command = Command::new(executable);
     command
         .arg(version_flag)

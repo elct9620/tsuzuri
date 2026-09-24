@@ -116,7 +116,7 @@ impl Choices {
         self.0.insert(name.to_string(), path);
     }
 
-    fn get(&self, name: &str) -> Option<&Path> {
+    fn path_by_name(&self, name: &str) -> Option<&Path> {
         self.0.get(name).map(PathBuf::as_path)
     }
 }
@@ -130,7 +130,7 @@ pub struct Resolver {
 }
 
 impl Resolver {
-    pub fn of(app: &AppHandle) -> Result<Resolver, Failure> {
+    pub fn from_app(app: &AppHandle) -> Result<Resolver, Failure> {
         let resources = app.path().resource_dir()?;
         let config = app.path().app_config_dir()?;
         Ok(Resolver {
@@ -141,9 +141,9 @@ impl Resolver {
     }
 
     /// Finds where `component` is, logging where it was found and how long finding it took.
-    pub fn status(&self, component: &Component) -> ComponentStatus {
+    pub fn find(&self, component: &Component) -> ComponentStatus {
         let started = Instant::now();
-        let status = self.find(component);
+        let status = self.resolve(component);
         let seconds = started.elapsed().as_secs_f64();
         match (&status.path, status.origin) {
             (Some(path), Some(origin)) => log::info!(
@@ -160,7 +160,7 @@ impl Resolver {
         status
     }
 
-    fn find(&self, component: &Component) -> ComponentStatus {
+    fn resolve(&self, component: &Component) -> ComponentStatus {
         let found = |path: PathBuf, origin| ComponentStatus {
             name: component.name.clone(),
             ready: true,
@@ -179,7 +179,7 @@ impl Resolver {
         };
         if let Some(chosen) = self
             .choices
-            .get(&component.name)
+            .path_by_name(&component.name)
             .filter(|path| path.is_file())
         {
             return found(chosen.to_path_buf(), Origin::Chosen);
@@ -195,7 +195,7 @@ impl Resolver {
         if !bundled.is_file() {
             return missing(Problem::NotInstalled);
         }
-        if detection::runs(&bundled, &component.version_flag) {
+        if detection::probe(&bundled, &component.version_flag) {
             found(bundled, Origin::Bundled)
         } else {
             missing(Problem::DoesNotRun)
@@ -212,7 +212,7 @@ impl Resolver {
 }
 
 /// The executable of a Component that is ready to run, or why it is not.
-fn ready_executable(name: &str, resolver: &Resolver) -> Result<PathBuf, Failure> {
+fn find_ready_executable(name: &str, resolver: &Resolver) -> Result<PathBuf, Failure> {
     let component = components()
         .into_iter()
         .find(|component| component.name == name)
@@ -220,29 +220,29 @@ fn ready_executable(name: &str, resolver: &Resolver) -> Result<PathBuf, Failure>
             detail: format!("{name} is not a Component"),
         })?;
     resolver
-        .status(&component)
+        .find(&component)
         .path
         .ok_or_else(|| Failure::ComponentNotReady {
             component: name.to_string(),
         })
 }
 
-fn statuses(resolver: &Resolver) -> Vec<ComponentStatus> {
+fn find_statuses(resolver: &Resolver) -> Vec<ComponentStatus> {
     components()
         .iter()
-        .map(|component| resolver.status(component))
+        .map(|component| resolver.find(component))
         .collect()
 }
 
 /// The ready executable of each named Component, found on the blocking pool since finding one runs it.
-pub async fn ready_executables<const N: usize>(
+pub async fn find_ready_executables<const N: usize>(
     resolver: Resolver,
     names: [&'static str; N],
 ) -> Result<[PathBuf; N], Failure> {
     let found = async_runtime::spawn_blocking(move || {
         names
             .iter()
-            .map(|name| ready_executable(name, &resolver))
+            .map(|name| find_ready_executable(name, &resolver))
             .collect::<Result<Vec<_>, _>>()
     })
     .await??;
@@ -252,13 +252,15 @@ pub async fn ready_executables<const N: usize>(
 }
 
 /// Finds every Component on the blocking pool, since finding one runs it.
-async fn statuses_off_the_main_thread(resolver: Resolver) -> Result<Vec<ComponentStatus>, Failure> {
-    Ok(async_runtime::spawn_blocking(move || statuses(&resolver)).await?)
+async fn find_statuses_off_the_main_thread(
+    resolver: Resolver,
+) -> Result<Vec<ComponentStatus>, Failure> {
+    Ok(async_runtime::spawn_blocking(move || find_statuses(&resolver)).await?)
 }
 
 #[tauri::command]
 pub async fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, Failure> {
-    statuses_off_the_main_thread(Resolver::of(&app)?).await
+    find_statuses_off_the_main_thread(Resolver::from_app(&app)?).await
 }
 
 #[tauri::command]
@@ -268,10 +270,10 @@ pub async fn choose_component(
     path: PathBuf,
 ) -> Result<Vec<ComponentStatus>, Failure> {
     let config = app.path().app_config_dir()?;
-    let mut resolver = Resolver::of(&app)?;
+    let mut resolver = Resolver::from_app(&app)?;
     resolver.choices.choose(&name, path);
     resolver.choices.save(&config)?;
-    statuses_off_the_main_thread(resolver).await
+    find_statuses_off_the_main_thread(resolver).await
 }
 
 #[cfg(test)]
@@ -307,7 +309,7 @@ mod tests {
     fn tells_how_to_install_a_component_that_cannot_be_found() {
         let dir = TempDir::new("cp-missing");
 
-        let status = resolver(&dir).status(&tool());
+        let status = resolver(&dir).find(&tool());
 
         assert_eq!(
             (status.ready, status.problem, status.install.as_deref()),
@@ -327,7 +329,7 @@ mod tests {
         let mut resolver = resolver(&dir);
         resolver.choices.choose("tool", chosen.clone());
 
-        let status = resolver.status(&tool());
+        let status = resolver.find(&tool());
 
         assert_eq!(
             (status.path, status.origin),
@@ -345,7 +347,7 @@ mod tests {
         let mut resolver = resolver(&dir);
         resolver.search_dirs = vec![dir.path().join("empty"), dir.path().join("bin")];
 
-        let status = resolver.status(&tool());
+        let status = resolver.find(&tool());
 
         assert_eq!(
             (status.path, status.origin),
@@ -363,7 +365,7 @@ mod tests {
         let mut resolver = resolver(&dir);
         resolver.search_dirs = vec![dir.path().join("broken"), dir.path().join("working")];
 
-        let status = resolver.status(&tool());
+        let status = resolver.find(&tool());
 
         assert_eq!(status.path, Some(working));
     }
@@ -375,7 +377,7 @@ mod tests {
         let dir = TempDir::new("cp-bundled");
         let bundled = script(&dir.path().join("components/tool/bin"), "tool", 0);
 
-        let status = resolver(&dir).status(&tool());
+        let status = resolver(&dir).find(&tool());
 
         assert_eq!(
             (status.path, status.origin),
@@ -390,7 +392,7 @@ mod tests {
         let dir = TempDir::new("cp-bundled-broken");
         script(&dir.path().join("components/tool/bin"), "tool", 127);
 
-        let status = resolver(&dir).status(&tool());
+        let status = resolver(&dir).find(&tool());
 
         assert_eq!(
             (status.ready, status.problem),
@@ -409,7 +411,7 @@ mod tests {
         resolver.search_dirs = vec![dir.path().join("bin")];
 
         let logs = captured_logs(|| {
-            resolver.status(&tool());
+            resolver.find(&tool());
         });
 
         let expected = format!(

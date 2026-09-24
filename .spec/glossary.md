@@ -40,7 +40,15 @@ Looking for a Component already on the computer: `vendor/` in debug builds, then
 
 ### Vendored Component
 
-A Component `scripts/vendor.sh` builds from pinned upstream source into `vendor/`, for development and for CI. Only debug builds look there; a release build never refers to `vendor/` and ships no Component.
+A Component `scripts/vendor.sh` builds from the source the Build Manifest pins into `vendor/`, one Variant per Component, for development and for CI. Only debug builds look there; a release build never refers to `vendor/` and ships no Component.
+
+### Build Manifest
+
+`components.json`: for each Component, the upstream source version and SHA256 Tsuzuri builds from, and the Variants built on each platform. It pins what is built, not what the app downloads, which is the Manifest's.
+
+### Variant
+
+One build of a Component for a kind of hardware: `cpu`, `openblas`, `vulkan` or `metal` for whisper.cpp and llama.cpp, and a single `audio` build for ffmpeg.
 
 ### Model
 

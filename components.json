@@ -1,0 +1,32 @@
+{
+  "whisper": {
+    "version": "b5130",
+    "source": "https://github.com/ggml-org/whisper.cpp/archive/refs/tags/b5130.tar.gz",
+    "sha256": "a9ad0f82f30cb6ac5b627874895f89571dd64f7c49d0df3a38550fdb9325fe9b",
+    "variants": {
+      "macos": ["metal"],
+      "linux": ["cpu", "openblas", "vulkan"],
+      "windows": ["cpu", "openblas", "vulkan"]
+    }
+  },
+  "llama": {
+    "version": "b11149",
+    "source": "https://github.com/ggml-org/llama.cpp/archive/refs/tags/b11149.tar.gz",
+    "sha256": "4bdedbd86fc4287eaea1e8473ff3a4870fd3bec2f3517d405f8c12cf74143345",
+    "variants": {
+      "macos": ["metal"],
+      "linux": ["cpu", "openblas", "vulkan"],
+      "windows": ["cpu", "openblas", "vulkan"]
+    }
+  },
+  "ffmpeg": {
+    "version": "8.1.2",
+    "source": "https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz",
+    "sha256": "464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c",
+    "variants": {
+      "macos": ["audio"],
+      "linux": ["audio"],
+      "windows": ["audio"]
+    }
+  }
+}

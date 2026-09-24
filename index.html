@@ -53,9 +53,15 @@
               data-project-target="name"
             ></h1>
             <div class="navbar-end gap-2">
-              <details class="dropdown dropdown-end">
-                <summary class="btn btn-sm" data-i18n="toolbar.open"></summary>
+              <div class="dropdown dropdown-end">
+                <div
+                  tabindex="0"
+                  role="button"
+                  class="btn btn-sm"
+                  data-i18n="toolbar.open"
+                ></div>
                 <ul
+                  tabindex="-1"
                   class="menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md"
                 >
                   <li>
@@ -73,7 +79,7 @@
                     ></button>
                   </li>
                 </ul>
-              </details>
+              </div>
 
               <div
                 class="contents"
@@ -243,12 +249,15 @@
                 </dialog>
               </div>
 
-              <details class="dropdown dropdown-end">
-                <summary
+              <div class="dropdown dropdown-end">
+                <div
+                  tabindex="0"
+                  role="button"
                   class="btn btn-sm"
                   data-i18n="toolbar.export"
-                ></summary>
+                ></div>
                 <ul
+                  tabindex="-1"
                   class="menu dropdown-content z-10 w-44 rounded-box bg-base-100 shadow-md [&_button:disabled]:pointer-events-none [&_button:disabled]:text-base-content/40"
                 >
                   <li>
@@ -282,7 +291,7 @@
                     ></button>
                   </li>
                 </ul>
-              </details>
+              </div>
 
               <button
                 type="button"

@@ -1,10 +1,11 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens.
+Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, and keeping the toolbar's menus out of the way.
 
 ## Includes
 
 - `src/i18n.test.ts`
+- `src/menu.test.ts`
 
 ## `IF-001` Following the system language
 
@@ -47,3 +48,13 @@ A Project's Primary Language follows the Interface Language until its directory 
 | Given | an interface in English |
 | When | the Language it stands for is asked |
 | Then | it is `en` |
+
+## `IF-006` Closing a toolbar menu once an item is chosen
+
+A menu stays open only while focus is inside it, so clicking anywhere else closes it too.
+
+| Step | Statement |
+| --- | --- |
+| Given | an open toolbar menu |
+| When | one of its items is chosen |
+| Then | focus leaves the menu |

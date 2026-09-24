@@ -41,11 +41,11 @@ describe("ProjectController", () => {
         <section data-project-target="start"></section>
         <div data-project-target="workspace" hidden>
           <h1 data-project-target="name"></h1>
-          <details open>
-            <summary>開啟</summary>
+          <div class="dropdown">
+            <div tabindex="0" role="button">開啟</div>
             <button id="open-directory" data-action="project#openDirectory">開啟目錄</button>
             <button id="open-srt" data-action="project#openSrt">開啟 SRT</button>
-          </details>
+          </div>
           <ul data-project-target="resources"></ul>
           <p data-project-target="glossary"></p>
         </div>

@@ -57,12 +57,12 @@ describe("TranscriptController", () => {
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage" data-action="change->transcript#showTranslation"></select>
         <p data-transcript-target="empty">尚無內容</p>
-        <details open>
-          <summary>匯出</summary>
+        <div class="dropdown">
+          <div tabindex="0" role="button">匯出</div>
           <button id="save-original" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="original" disabled>原文</button>
           <button id="save-translation" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="translation" disabled>譯文</button>
           <button id="save-bilingual" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="bilingual" disabled>雙語</button>
-        </details>
+        </div>
         <ol data-transcript-target="list"></ol>
       </section>
     `;

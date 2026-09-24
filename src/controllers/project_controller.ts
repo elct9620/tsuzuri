@@ -5,6 +5,7 @@ import { message, open } from "@tauri-apps/plugin-dialog";
 
 import { failureMessage } from "../failure";
 import { interfaceLanguageCode, t } from "../i18n";
+import { closeMenu } from "../menu";
 import { followProject, type ProjectView, type ResourceView } from "../project";
 
 function resourceItem(
@@ -131,9 +132,4 @@ export default class ProjectController extends Controller {
         : t("resources.glossary", { count: glossary.term_count });
     this.languageTarget.value = project.language;
   }
-}
-
-/** Closes the toolbar menu an item was chosen from. */
-function closeMenu(item: EventTarget | null): void {
-  (item as HTMLElement | null)?.closest("details")?.removeAttribute("open");
 }

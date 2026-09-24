@@ -4,6 +4,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { save } from "@tauri-apps/plugin-dialog";
 
 import { t } from "../i18n";
+import { closeMenu } from "../menu";
 import {
   currentResource,
   followProject,
@@ -115,7 +116,7 @@ export default class TranscriptController extends Controller {
     currentTarget: EventTarget | null;
     params: { content: SrtContent };
   }): Promise<void> {
-    (currentTarget as HTMLElement).closest("details")?.removeAttribute("open");
+    closeMenu(currentTarget);
     const path = await save({
       defaultPath: await invoke<string>("export_path", {
         content: params.content,

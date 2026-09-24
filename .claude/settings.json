@@ -26,5 +26,16 @@
 				]
 			}
 		]
+	},
+	"extraKnownMarketplaces": {
+		"daisyui": {
+			"source": {
+				"source": "github",
+				"repo": "saadeghi/daisyui"
+			}
+		}
+	},
+	"enabledPlugins": {
+		"daisyui@daisyui": true
 	}
 }

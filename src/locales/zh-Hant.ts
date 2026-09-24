@@ -31,6 +31,11 @@ const zhHant: typeof en = {
   },
   translate: {
     source: "來源：本專案的 Transcript",
+    glossary: "詞彙表",
+    glossaryNone: "未指定",
+    glossaryLoaded: "{{file}}（{{count}} 筆）",
+    chooseGlossary: "指定",
+    clearGlossary: "清除",
     start: "開始翻譯",
     done: "完成",
   },
@@ -79,6 +84,8 @@ const zhHant: typeof en = {
   failures: {
     io: "無法讀寫檔案（{{detail}}）",
     malformedSrt: "SRT 第 {{cue}} 段無法讀取",
+    glossaryWithoutHeader: "詞彙表的第一列必須是 source,target",
+    malformedGlossary: "詞彙表無法讀取（{{detail}}）",
     modelNotChosen: "尚未指定{{slot}}模型",
     modelMissing: "找不到模型 {{path}}，請重新指定",
     noProject: "請先轉錄媒體檔或開啟 SRT 檔",

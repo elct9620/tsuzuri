@@ -7,15 +7,17 @@ use tauri::{AppHandle, Emitter, Manager, Runtime};
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::transcript::{Segment, SrtContent, Transcript};
+use crate::translation_glossary::{TranslationGlossary, TranslationGlossaryView};
 
 /// The work on one input: the media file, when there is one, its Transcript, the Language it is in
-/// and the Language of its translations once translated.
+/// the Language of its translations once translated, and the Translation Glossary once loaded.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Project {
     pub media: Option<PathBuf>,
     pub transcript: Transcript,
     pub language: Language,
     pub translation_language: Option<Language>,
+    pub translation_glossary: Option<TranslationGlossary>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -24,6 +26,7 @@ pub struct ProjectView {
     segments: Vec<Segment>,
     language: Language,
     translation_language: Option<Language>,
+    translation_glossary: Option<TranslationGlossaryView>,
 }
 
 impl ProjectView {
@@ -37,6 +40,10 @@ impl ProjectView {
 
     pub fn translation_language(&self) -> Option<Language> {
         self.translation_language
+    }
+
+    pub fn translation_glossary(&self) -> Option<&TranslationGlossaryView> {
+        self.translation_glossary.as_ref()
     }
 
     pub fn segments(&self) -> &[Segment] {
@@ -76,6 +83,10 @@ impl CurrentProject {
             segments: project.transcript.segments.clone(),
             language: project.language,
             translation_language: project.translation_language,
+            translation_glossary: project
+                .translation_glossary
+                .as_ref()
+                .map(TranslationGlossary::view),
         })
     }
 
@@ -105,6 +116,25 @@ impl CurrentProject {
                 segment.translation = translated.translation;
             }
         }
+    }
+
+    /// Replaces the Project's Translation Glossary, or removes it with `None`.
+    pub fn set_translation_glossary(
+        &self,
+        glossary: Option<TranslationGlossary>,
+    ) -> Result<(), Failure> {
+        let mut held = self.lock();
+        let project = held.project.as_mut().ok_or(Failure::NoProject)?;
+        project.translation_glossary = glossary;
+        Ok(())
+    }
+
+    /// The Project's Translation Glossary, for a translation to use.
+    pub fn translation_glossary(&self) -> Option<TranslationGlossary> {
+        self.lock()
+            .project
+            .as_ref()
+            .and_then(|project| project.translation_glossary.clone())
     }
 
     pub fn edit(&self, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {
@@ -150,6 +180,7 @@ fn open(path: PathBuf) -> Result<Project, Failure> {
         transcript: Transcript::from_srt(&srt)?,
         language: Language::TraditionalChinese,
         translation_language: None,
+        translation_glossary: None,
     })
 }
 
@@ -204,6 +235,7 @@ mod tests {
             media: None,
             language: Language::TraditionalChinese,
             translation_language: None,
+            translation_glossary: None,
             transcript: Transcript { segments },
         });
         current
@@ -229,6 +261,24 @@ mod tests {
 
         let view = current.view().unwrap();
         assert_eq!((view.media(), view.segments().len()), (None, 2));
+    }
+
+    // @behavior PJ-011
+    #[test]
+    fn starts_a_new_project_without_a_translation_glossary() {
+        let dir = TempDir::new("pj-glossary");
+        let names = dir.path().join("names.csv");
+        std::fs::write(&names, "source,target\n阿福,Alfred\n").unwrap();
+        let srt = dir.path().join("lecture.srt");
+        std::fs::write(&srt, "1\n00:00:00,000 --> 00:00:01,000\n你好\n").unwrap();
+        let current = current_project_of(vec![segment("大家好", None)]);
+        current
+            .set_translation_glossary(Some(TranslationGlossary::from_csv(&names).unwrap()))
+            .unwrap();
+
+        current.replace(open(srt).unwrap());
+
+        assert_eq!(current.view().unwrap().translation_glossary(), None);
     }
 
     // @behavior PJ-003
@@ -293,6 +343,7 @@ mod tests {
             media: None,
             language: Language::TraditionalChinese,
             translation_language: None,
+            translation_glossary: None,
             transcript: Transcript {
                 segments: vec![segment("另一份", None)],
             },

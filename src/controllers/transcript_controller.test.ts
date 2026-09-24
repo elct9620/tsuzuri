@@ -39,6 +39,7 @@ describe("TranscriptController", () => {
     media: null,
     language: "zh-TW",
     translation_language: null,
+    translation_glossary: null,
     segments: [
       {
         start_ms: 0,
@@ -88,6 +89,7 @@ describe("TranscriptController", () => {
       media: "/media/lecture.mp4",
       language: "zh-TW",
       translation_language: null,
+      translation_glossary: null,
       segments: [
         { start_ms: 0, end_ms: 1000, text: "大家好" },
         { start_ms: 62_003, end_ms: 64_500, text: "今天天氣很好" },
@@ -117,6 +119,7 @@ describe("TranscriptController", () => {
       media: null,
       language: "zh-TW",
       translation_language: null,
+      translation_glossary: null,
       segments: [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }],
     });
 

@@ -17,6 +17,11 @@ pub enum Failure {
     MalformedSrt {
         cue: usize,
     },
+    /// A Translation Glossary file whose header is not `source,target`.
+    GlossaryWithoutHeader,
+    MalformedGlossary {
+        detail: String,
+    },
     ModelNotChosen {
         slot: ModelSlot,
     },

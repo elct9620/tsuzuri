@@ -64,6 +64,8 @@ struct TranslationJob<'a> {
     segments: &'a [Segment],
     languages: LanguagePair,
     settings: TranslationSettings,
+    /// The Translation Glossary's terms, empty when none is loaded.
+    glossary_terms: &'a [(String, String)],
     /// Whether Speaker Labels are kept out of what the Model is sent.
     has_speaker_labels: bool,
 }
@@ -85,11 +87,13 @@ pub async fn run_translate<R: Runtime>(
     let model = settings.ready_path(ModelSlot::Translation)?;
     let project = app.state::<CurrentProject>();
     let (generation, transcript) = project.snapshot()?;
+    let glossary = project.translation_glossary();
     let job = TranslationJob {
         segments: &transcript.segments,
         languages,
         settings: TranslationSettings::default(),
         has_speaker_labels: false,
+        glossary_terms: glossary.as_ref().map_or(&[], |glossary| glossary.terms()),
     };
     let port = free_port()?;
     let args = [
@@ -259,6 +263,7 @@ async fn translate_segments(
             job.languages,
             &lines,
             &translated_pairs,
+            job.glossary_terms,
             &job.settings,
         )
         .await?;
@@ -327,6 +332,7 @@ mod tests {
             media: None,
             language: Language::TraditionalChinese,
             translation_language: None,
+            translation_glossary: None,
             transcript: Transcript { segments },
         }
     }
@@ -361,6 +367,7 @@ mod tests {
             languages: japanese_pair(),
             settings: TranslationSettings::default(),
             has_speaker_labels: false,
+            glossary_terms: &[],
         }
     }
 
@@ -947,6 +954,71 @@ mod tests {
             .unwrap();
 
         assert_eq!(sent_lines(&llama), vec!["co: 你好"]);
+    }
+
+    fn batman_glossary() -> Vec<(String, String)> {
+        vec![
+            ("蝙蝠俠".to_string(), "Batman".to_string()),
+            ("阿福".to_string(), "Alfred".to_string()),
+        ]
+    }
+
+    // @behavior TL-040
+    #[tokio::test]
+    async fn sends_only_the_terms_a_request_uses() {
+        let llama = FakeLlama::with_echo(0);
+        let segments = [segment(0, 1_000, "蝙蝠俠來了")];
+        let glossary_terms = batman_glossary();
+
+        translate_segments(
+            &llama.model(),
+            &TranslationJob {
+                glossary_terms: &glossary_terms,
+                ..job(&segments)
+            },
+            &[],
+            |_| {},
+        )
+        .await
+        .unwrap();
+
+        let request = &llama.user_messages()[0];
+        assert!(
+            request.contains("- 蝙蝠俠 => Batman") && !request.contains("阿福"),
+            "{request}"
+        );
+    }
+
+    // @behavior TL-041
+    #[tokio::test]
+    async fn retries_a_translation_that_ignores_the_translation_glossary() {
+        let llama = FakeLlama::with_answer(|lines| {
+            lines
+                .into_iter()
+                .map(|(index, _)| (index, "Bat-Man is here".to_string()))
+                .collect()
+        });
+        let segments = [segment(0, 1_000, "蝙蝠俠來了")];
+        let glossary_terms = batman_glossary();
+
+        let translated_segments = translate_segments(
+            &llama.model(),
+            &TranslationJob {
+                languages: english_pair(),
+                glossary_terms: &glossary_terms,
+                ..job(&segments)
+            },
+            &[],
+            |_| {},
+        )
+        .await
+        .unwrap();
+
+        assert!(llama.user_messages()[1].contains("must use glossary translation(s): Batman"));
+        assert_eq!(
+            translations_of(&translated_segments),
+            vec!["Bat-Man is here"]
+        );
     }
 
     // @behavior TL-010

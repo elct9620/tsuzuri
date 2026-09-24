@@ -9,6 +9,7 @@ import TranslateController from "./translate_controller";
 describe("TranslateController", () => {
   let application: Application;
   let translateArgs: unknown;
+  let commands: string[];
   let project: ProjectView | null;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -17,11 +18,15 @@ describe("TranslateController", () => {
       '[data-translate-target="start"]',
     )!;
 
-  async function holdProject(language = "zh-TW"): Promise<void> {
+  async function holdProject(
+    language = "zh-TW",
+    glossary: ProjectView["translation_glossary"] = null,
+  ): Promise<void> {
     project = {
       media: null,
       language,
       translation_language: null,
+      translation_glossary: glossary,
       segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
     };
     await emit("project-changed");
@@ -31,18 +36,23 @@ describe("TranslateController", () => {
   beforeEach(async () => {
     project = null;
     translateArgs = undefined;
+    commands = [];
     document.body.innerHTML = `
       <div data-controller="translate">
         <select data-translate-target="language">
           <option value="en">English</option>
           <option value="ja" selected>日本語</option>
         </select>
+        <span data-translate-target="glossary"></span>
+        <button data-translate-target="chooseGlossary" data-action="translate#chooseGlossary" disabled>指定</button>
+        <button data-translate-target="clearGlossary" data-action="translate#clearGlossary" disabled>清除</button>
         <button data-translate-target="start" data-action="translate#translate" disabled>開始翻譯</button>
         <p data-translate-target="status"></p>
       </div>
     `;
     mockIPC(
       (command, args) => {
+        commands.push(command);
         if (command === "current_project") return project;
         if (command === "translate") {
           translateArgs = args;
@@ -106,5 +116,22 @@ describe("TranslateController", () => {
     await holdProject();
 
     expect([before, start().disabled]).toEqual([true, false]);
+  });
+
+  // @behavior TL-042
+  it("names the loaded Translation Glossary and can clear it", async () => {
+    await holdProject("zh-TW", { file: "/terms/names.csv", term_count: 12 });
+    const clear = document.querySelector<HTMLButtonElement>(
+      '[data-translate-target="clearGlossary"]',
+    )!;
+
+    clear.click();
+    await settle();
+
+    expect(
+      document.querySelector('[data-translate-target="glossary"]')!.textContent,
+    ).toBe("names.csv（12 筆）");
+    expect(clear.disabled).toBe(false);
+    expect(commands).toContain("clear_glossary");
   });
 });

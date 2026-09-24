@@ -4,6 +4,8 @@ import { t } from "./i18n";
 export type Failure =
   | { code: "io"; detail: string }
   | { code: "malformed-srt"; cue: number }
+  | { code: "glossary-without-header" }
+  | { code: "malformed-glossary"; detail: string }
   | { code: "model-not-chosen"; slot: "transcription" | "translation" }
   | { code: "model-missing"; path: string }
   | { code: "no-project" }
@@ -26,6 +28,10 @@ export function failureMessage(error: unknown): string {
       return t("failures.io", { detail: error.detail });
     case "malformed-srt":
       return t("failures.malformedSrt", { cue: error.cue });
+    case "glossary-without-header":
+      return t("failures.glossaryWithoutHeader");
+    case "malformed-glossary":
+      return t("failures.malformedGlossary", { detail: error.detail });
     case "model-not-chosen":
       return t("failures.modelNotChosen", { slot: t(`slots.${error.slot}`) });
     case "model-missing":

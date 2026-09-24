@@ -24,6 +24,8 @@ pub struct BatchRequest<'a> {
     pub lines: Vec<(usize, &'a str)>,
     pub reference: &'a [(String, String)],
     pub preceding: Option<String>,
+    /// The Translation Glossary's terms the lines use.
+    pub glossary_terms: &'a [(String, String)],
     pub correction: Option<String>,
 }
 
@@ -185,6 +187,7 @@ Rules:
 - Keep translations concise and natural, suitable for on-screen subtitles.
 - Preserve the original meaning, tone, and speaker's intent; do not add explanations.
 - Keep proper nouns (names, titles) consistent with the reference context if provided.
+- If a glossary is provided, its target terms are mandatory and override your own word choice.
 - Return exactly one translation per input \"index\", with no extra or missing indices.
 - Respond only with the JSON object matching the required schema.",
         source = languages.source.name(),
@@ -209,6 +212,17 @@ fn user_message(batch: &BatchRequest<'_>) -> String {
         parts.push(format!(
             "Reference context (already translated, for consistency only, do not re-translate these):\n{}",
             lines.join("\n")
+        ));
+    }
+    if !batch.glossary_terms.is_empty() {
+        let terms: Vec<String> = batch
+            .glossary_terms
+            .iter()
+            .map(|(source, target)| format!("- {source} => {target}"))
+            .collect();
+        parts.push(format!(
+            "Glossary (mandatory): whenever a source term below appears in a line, the translation must contain its exact given target term:\n{}",
+            terms.join("\n")
         ));
     }
     if let Some(correction) = &batch.correction {

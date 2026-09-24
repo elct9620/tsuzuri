@@ -8,6 +8,7 @@ pub mod project;
 pub mod timing;
 pub mod transcript;
 pub mod translation;
+pub mod translation_glossary;
 
 #[cfg(test)]
 mod test_support;
@@ -50,7 +51,9 @@ pub fn run() {
             project::edit_segment,
             project::open_srt,
             project::save_srt,
-            translation::translate
+            translation::translate,
+            translation_glossary::clear_glossary,
+            translation_glossary::load_glossary
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

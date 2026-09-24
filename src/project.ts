@@ -16,6 +16,13 @@ export interface ProjectView {
   language: string;
   /** The Language code of the translations, once translated. */
   translation_language: string | null;
+  translation_glossary: TranslationGlossaryView | null;
+}
+
+/** The file a Translation Glossary came from and how many terms it holds. */
+export interface TranslationGlossaryView {
+  file: string;
+  term_count: number;
 }
 
 /** The Project Rust holds now, or none before one is made. */

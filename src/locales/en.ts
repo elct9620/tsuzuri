@@ -30,6 +30,11 @@ const en = {
   },
   translate: {
     source: "Source: this Project's Transcript",
+    glossary: "Glossary",
+    glossaryNone: "None",
+    glossaryLoaded: "{{file}} ({{count}} terms)",
+    chooseGlossary: "Choose",
+    clearGlossary: "Clear",
     start: "Translate",
     done: "Done",
   },
@@ -79,6 +84,8 @@ const en = {
   failures: {
     io: "Could not read or write a file ({{detail}})",
     malformedSrt: "Could not read cue {{cue}} of the SRT file",
+    glossaryWithoutHeader: "The glossary's first row must be source,target",
+    malformedGlossary: "Could not read the glossary ({{detail}})",
     modelNotChosen: "No model is chosen for {{slot}}",
     modelMissing: "The model {{path}} is missing; choose it again",
     noProject: "Transcribe a media file or open an SRT file first",

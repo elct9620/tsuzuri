@@ -16,6 +16,7 @@ pub async fn translate_batch(
     languages: LanguagePair,
     lines: &[(usize, &str)],
     prior: &[(String, String)],
+    glossary_terms: &[(String, String)],
     settings: &TranslationSettings,
 ) -> Result<HashMap<usize, String>, Failure> {
     let mut repair = BatchRepair {
@@ -23,6 +24,7 @@ pub async fn translate_batch(
         languages,
         lines,
         prior,
+        glossary_terms,
         settings,
         accepted_translations: HashMap::new(),
         imperfect_translations: HashMap::new(),
@@ -63,6 +65,7 @@ struct BatchRepair<'a> {
     languages: LanguagePair,
     lines: &'a [(usize, &'a str)],
     prior: &'a [(String, String)],
+    glossary_terms: &'a [(String, String)],
     settings: &'a TranslationSettings,
     accepted_translations: HashMap<usize, String>,
     /// The latest translation of a line that is valid but imperfect, kept in case nothing better comes.
@@ -79,6 +82,7 @@ impl BatchRepair<'_> {
         preceding: Option<String>,
     ) -> Result<BTreeMap<usize, String>, Failure> {
         let wanted_indices: HashSet<usize> = group.iter().map(|(index, _)| *index).collect();
+        let used_terms = used_terms(self.glossary_terms, group);
         let mut correction = None;
         let mut reasons = BTreeMap::new();
         for _ in 0..self.settings.retries {
@@ -89,6 +93,7 @@ impl BatchRepair<'_> {
                     lines: group.to_vec(),
                     reference: &reference,
                     preceding: preceding.clone(),
+                    glossary_terms: &used_terms,
                     correction: correction.take(),
                 })
                 .await;
@@ -108,7 +113,7 @@ impl BatchRepair<'_> {
                 }
                 Err(AnswerError::FailedRequest(failure)) => return Err(failure),
             };
-            let verdicts = judge(&translations, group, self.languages);
+            let verdicts = judge(&translations, group, self.languages, &used_terms);
             reasons = self.unresolved_reasons(group, "missing from response");
             for (index, verdict) in verdicts {
                 match verdict {
@@ -242,9 +247,10 @@ fn judge(
     translations: &BTreeMap<usize, String>,
     group: &[(usize, &str)],
     languages: LanguagePair,
+    glossary_terms: &[(String, String)],
 ) -> Vec<(usize, Verdict)> {
     let sources: HashMap<usize, &str> = group.iter().copied().collect();
-    let duplicated = duplicated_lines(translations, &sources);
+    let duplicates = duplicated_lines(translations, &sources);
     let is_leftover_source_checked = languages.target == Language::English;
     let is_negation_checked =
         languages.source == Language::TraditionalChinese && languages.target == Language::English;
@@ -252,7 +258,7 @@ fn judge(
         .iter()
         .map(|(index, text)| {
             let source = sources.get(index).copied().unwrap_or_default();
-            let verdict = if duplicated.contains(index) {
+            let verdict = if duplicates.contains(index) {
                 Verdict::Fault("duplicate of another line's translation".to_string())
             } else if is_placeholder(text) {
                 Verdict::Fault(
@@ -260,6 +266,8 @@ fn judge(
                 )
             } else if is_leftover_source_checked && has_han(source) && has_han(text) {
                 Verdict::Fault("still contains untranslated source-language characters".to_string())
+            } else if let Some(missing) = missing_terms(glossary_terms, source, text) {
+                Verdict::Flaw(format!("must use glossary translation(s): {missing}"))
             } else if is_negation_checked
                 && has_chinese_negation(source)
                 && !has_english_negation(text)
@@ -304,6 +312,35 @@ fn duplicated_lines(
         }
     }
     duplicates
+}
+
+/// The Translation Glossary's terms whose source appears in any of `group`'s lines.
+fn used_terms(
+    glossary_terms: &[(String, String)],
+    group: &[(usize, &str)],
+) -> Vec<(String, String)> {
+    glossary_terms
+        .iter()
+        .filter(|(source, _)| group.iter().any(|(_, text)| text.contains(source.as_str())))
+        .cloned()
+        .collect()
+}
+
+/// The targets `translation` leaves out of the terms its `source` line uses, joined for a correction note.
+fn missing_terms(
+    glossary_terms: &[(String, String)],
+    source: &str,
+    translation: &str,
+) -> Option<String> {
+    let translation = translation.to_lowercase();
+    let missing_targets: Vec<&str> = glossary_terms
+        .iter()
+        .filter(|(term, target)| {
+            source.contains(term.as_str()) && !translation.contains(&target.to_lowercase())
+        })
+        .map(|(_, target)| target.as_str())
+        .collect();
+    (!missing_targets.is_empty()).then(|| missing_targets.join(", "))
 }
 
 fn is_placeholder(text: &str) -> bool {

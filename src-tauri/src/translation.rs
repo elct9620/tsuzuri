@@ -25,8 +25,10 @@ mod batching;
 mod fake_llama;
 mod model;
 mod repair;
+mod speaker_labels;
 
 use model::TranslationModel;
+use speaker_labels::Labelled;
 
 /// How long llama-server may take to load its Model before translation gives up.
 const READY_TIMEOUT: Duration = Duration::from_secs(180);
@@ -62,6 +64,8 @@ struct TranslationJob<'a> {
     segments: &'a [Segment],
     languages: LanguagePair,
     settings: TranslationSettings,
+    /// Whether Speaker Labels are kept out of what the Model is sent.
+    speaker_labels: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -85,6 +89,7 @@ pub async fn run_translate<R: Runtime>(
         segments: &transcript.segments,
         languages,
         settings: TranslationSettings::default(),
+        speaker_labels: false,
     };
     let port = free_port()?;
     let args = [
@@ -234,28 +239,32 @@ async fn translate_segments(
     split_sentences: &[Vec<usize>],
     on_progress: impl Fn(u8),
 ) -> Result<Vec<Segment>, Failure> {
+    let labelled: Vec<Labelled> = job
+        .segments
+        .iter()
+        .map(|segment| match job.speaker_labels {
+            true => Labelled::strip(&segment.text),
+            false => Labelled::unlabelled(&segment.text),
+        })
+        .collect();
     let mut translated: Vec<Segment> = Vec::with_capacity(job.segments.len());
     let mut done_pairs: Vec<(String, String)> = Vec::new();
     for range in batching::batches(job.segments.len(), job.settings.batch_size, split_sentences) {
-        let batch = &job.segments[range];
-        let first = translated.len();
-        let lines: Vec<(usize, &str)> = batch
-            .iter()
-            .enumerate()
-            .map(|(offset, segment)| (first + offset, segment.text.as_str()))
+        let lines: Vec<(usize, &str)> = range
+            .clone()
+            .map(|index| (index, labelled[index].dialogue.as_str()))
             .collect();
         let answer =
             repair::translate_batch(model, job.languages, &lines, &done_pairs, &job.settings)
                 .await?;
-        for (offset, segment) in batch.iter().enumerate() {
-            let index = first + offset;
+        for (index, dialogue) in lines {
             let translation = answer.get(&index).ok_or_else(|| Failure::LlamaRequest {
                 detail: format!("answered without line {index}"),
             })?;
-            done_pairs.push((segment.text.clone(), translation.clone()));
+            done_pairs.push((dialogue.to_string(), translation.clone()));
             translated.push(Segment {
-                translation: Some(translation.clone()),
-                ..segment.clone()
+                translation: Some(labelled[index].reattach(translation)),
+                ..job.segments[index].clone()
             });
         }
         on_progress((translated.len() * 100 / job.segments.len()) as u8);
@@ -346,6 +355,7 @@ mod tests {
             segments,
             languages: into_japanese(),
             settings: TranslationSettings::default(),
+            speaker_labels: false,
         }
     }
 
@@ -835,6 +845,84 @@ mod tests {
             matches!(&result, Err(Failure::LlamaRequest { detail }) if detail.contains("boom")),
             "{result:?}"
         );
+    }
+
+    /// Translates `segments` with Speaker Labels turned on.
+    async fn translate_labelled(llama: &FakeLlama, segments: &[Segment]) -> Vec<Segment> {
+        translate_segments(
+            &llama.model(),
+            &TranslationJob {
+                speaker_labels: true,
+                ..job(segments)
+            },
+            &[],
+            |_| {},
+        )
+        .await
+        .unwrap()
+    }
+
+    fn sent_lines(llama: &FakeLlama) -> Vec<String> {
+        llama
+            .requests
+            .lock()
+            .unwrap()
+            .iter()
+            .flat_map(|body| {
+                fake_llama::batch_lines(body)
+                    .into_iter()
+                    .map(|(_, text)| text)
+            })
+            .collect()
+    }
+
+    // @behavior TL-034
+    #[tokio::test]
+    async fn translates_dialogue_without_its_speaker_label() {
+        let llama = FakeLlama::echo(0);
+
+        let translated = translate_labelled(&llama, &[segment(0, 1_000, "co: 你好")]).await;
+
+        assert_eq!(sent_lines(&llama), vec!["你好"]);
+        assert_eq!(translations_of(&translated), vec!["co: EN:你好"]);
+    }
+
+    // @behavior TL-035
+    #[tokio::test]
+    async fn leaves_a_clock_time_in_the_dialogue() {
+        let llama = FakeLlama::echo(0);
+
+        translate_labelled(&llama, &[segment(0, 1_000, "12:30 出發")]).await;
+
+        assert_eq!(sent_lines(&llama), vec!["12:30 出發"]);
+    }
+
+    // @behavior TL-036
+    #[tokio::test]
+    async fn drops_speaker_labels_when_the_lines_change() {
+        let llama = FakeLlama::answering(|lines| {
+            lines
+                .into_iter()
+                .map(|(index, text)| (index, text.replace('\n', " ")))
+                .collect()
+        });
+
+        let translated =
+            translate_labelled(&llama, &[segment(0, 1_000, "甲：你好\n乙：你也好")]).await;
+
+        assert_eq!(translations_of(&translated), vec!["你好 你也好"]);
+    }
+
+    // @behavior TL-037
+    #[tokio::test]
+    async fn sends_speaker_labels_when_turned_off() {
+        let llama = FakeLlama::echo(0);
+
+        translate_all(&llama, &[segment(0, 1_000, "co: 你好")], into_japanese())
+            .await
+            .unwrap();
+
+        assert_eq!(sent_lines(&llama), vec!["co: 你好"]);
     }
 
     // @behavior TL-010

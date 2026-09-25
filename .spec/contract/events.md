@@ -12,7 +12,7 @@ The events Rust emits to the webview. Each says only that something happened; th
 
 ## `pipeline-progress`
 
-The Phase a running Mode has entered, with its percentage once it has one.
+The Phase a running Mode has entered, with its percentage once it has one and, when the Phase counts what it works through, how many it has done of how many.
 
 ## `project-changed`
 

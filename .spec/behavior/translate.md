@@ -475,3 +475,19 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a Project in `zh-TW` with no translation Language whose `glossary.csv` has a `source,target` header |
 | When | its Translation Glossary is read |
 | Then | it fails saying the header is missing |
+
+## `TL-063` Reporting how many Segments are translated
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and three Segments in Batches of two |
+| When | they are translated |
+| Then | the translate progress carries two done of three, then three of three |
+
+## `TL-064` Reporting how many windows are searched for Split Sentences
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server and three Segments searched in windows of two |
+| When | the Split Sentences are searched for |
+| Then | the detect progress carries how many windows are done of how many |

@@ -162,6 +162,10 @@ impl<R: Runtime> Progress for AppPorts<'_, R> {
         self.app.report(phase, percent);
     }
 
+    fn report_count(&self, phase: &'static str, done: usize, total: usize) {
+        self.app.report_count(phase, done, total);
+    }
+
     fn announce_project(&self) {
         self.app.announce_project();
     }

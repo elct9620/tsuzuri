@@ -171,16 +171,13 @@ async fn translate_once_ready(
     llama::wait_until_ready(base_url, ready_timeout, has_exited).await?;
     let model = TranslationModel::new(base_url);
     enter(progress, phases, "detect");
-    let split_sentences = find_split_sentences(&model, job, |percent| {
-        progress.report("detect", Some(percent))
+    let split_sentences = find_split_sentences(&model, job, |done, total| {
+        progress.report_count("detect", done, total)
     })
     .await;
     enter(progress, phases, "translate");
     translate_segments(&model, job, &split_sentences, |translated_segments| {
-        progress.report(
-            "translate",
-            Some((translated_segments.len() * 100 / job.segments.len()) as u8),
-        );
+        progress.report_count("translate", translated_segments.len(), job.segments.len());
         on_batch(translated_segments);
     })
     .await
@@ -190,7 +187,7 @@ async fn translate_once_ready(
 async fn find_split_sentences(
     model: &TranslationModel,
     job: &TranslationJob<'_>,
-    on_progress: impl Fn(u8),
+    on_progress: impl Fn(usize, usize),
 ) -> Vec<Vec<usize>> {
     let windows = batching::windows(job.segments.len(), job.settings.batch_size);
     let mut split_sentences = Vec::new();
@@ -212,7 +209,7 @@ async fn find_split_sentences(
             }
             Err(failure) => log::warn!("skipped a window looking for split sentences: {failure:?}"),
         }
-        on_progress(((done + 1) * 100 / windows.len()) as u8);
+        on_progress(done + 1, windows.len());
     }
     split_sentences
 }
@@ -1270,6 +1267,68 @@ mod tests {
         .unwrap();
 
         assert_eq!(*shown.lock().unwrap(), vec![2, 3]);
+    }
+
+    /// The `pipeline-progress` payloads of `phase`, as sent, while three Segments are translated in Batches of two.
+    async fn progress_events(phase: &str) -> Vec<String> {
+        let llama = FakeLlama::with_echo(0);
+        let app = mock_app();
+        let received = Arc::new(Mutex::new(Vec::new()));
+        app.listen_any("pipeline-progress", {
+            let received = Arc::clone(&received);
+            move |event| received.lock().unwrap().push(event.payload().to_string())
+        });
+        let segments = three_segments();
+
+        translate_once_ready(
+            app.handle(),
+            llama.base_url(),
+            Duration::from_secs(5),
+            || false,
+            &job_in_batches_of_two(&segments),
+            &mut Phases::start("translate", "load"),
+            |_| {},
+        )
+        .await
+        .unwrap();
+
+        let prefix = format!(r#"{{"phase":"{phase}","#);
+        let received = received.lock().unwrap();
+        received
+            .iter()
+            .filter(|event| event.starts_with(&prefix))
+            .cloned()
+            .collect()
+    }
+
+    // @behavior TL-063
+    #[tokio::test]
+    async fn reports_how_many_segments_are_translated() {
+        let events = progress_events("translate").await;
+
+        assert_eq!(
+            events,
+            vec![
+                r#"{"phase":"translate","percent":null}"#,
+                r#"{"phase":"translate","percent":66,"count":{"done":2,"total":3}}"#,
+                r#"{"phase":"translate","percent":100,"count":{"done":3,"total":3}}"#,
+            ]
+        );
+    }
+
+    // @behavior TL-064
+    #[tokio::test]
+    async fn reports_how_many_windows_are_searched_for_split_sentences() {
+        let events = progress_events("detect").await;
+
+        assert_eq!(
+            events,
+            vec![
+                r#"{"phase":"detect","percent":null}"#,
+                r#"{"phase":"detect","percent":50,"count":{"done":1,"total":2}}"#,
+                r#"{"phase":"detect","percent":100,"count":{"done":2,"total":2}}"#,
+            ]
+        );
     }
 
     // @behavior TL-010

@@ -5,6 +5,8 @@ use crate::timing::Phases;
 
 pub trait Progress {
     fn report(&self, phase: &'static str, percent: Option<u8>);
+    /// Reports a Phase that works through `total` things and has finished `done` of them.
+    fn report_count(&self, phase: &'static str, done: usize, total: usize);
     fn announce_project(&self);
 }
 
@@ -19,12 +21,43 @@ pub fn enter(progress: &impl Progress, phases: &mut Phases, phase: &'static str)
 struct PipelineProgress {
     phase: &'static str,
     percent: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    count: Option<Count>,
+}
+
+/// How many of the things a Phase works through it has finished.
+#[derive(Clone, Serialize)]
+struct Count {
+    done: usize,
+    total: usize,
+}
+
+fn emit_progress<R: Runtime>(app: &AppHandle<R>, progress: PipelineProgress) {
+    // @event pipeline-progress
+    let _ = app.emit("pipeline-progress", progress);
 }
 
 impl<R: Runtime> Progress for AppHandle<R> {
     fn report(&self, phase: &'static str, percent: Option<u8>) {
-        // @event pipeline-progress
-        let _ = self.emit("pipeline-progress", PipelineProgress { phase, percent });
+        emit_progress(
+            self,
+            PipelineProgress {
+                phase,
+                percent,
+                count: None,
+            },
+        );
+    }
+
+    fn report_count(&self, phase: &'static str, done: usize, total: usize) {
+        emit_progress(
+            self,
+            PipelineProgress {
+                phase,
+                percent: Some((done * 100 / total.max(1)) as u8),
+                count: Some(Count { done, total }),
+            },
+        );
     }
 
     fn announce_project(&self) {

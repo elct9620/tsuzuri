@@ -74,7 +74,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | --- | --- |
 | Given | a Current Resource being translated |
 | When | the translation finishes |
-| Then | the editor lists each Phase with its seconds |
+| Then | a Notification lists each Phase with its seconds |
 
 ## `TL-010` Translating the Project as edited
 

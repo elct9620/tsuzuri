@@ -94,7 +94,7 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | --- | --- |
 | Given | a Current Resource being transcribed |
 | When | the transcription finishes |
-| Then | the editor lists each Phase with its seconds |
+| Then | a Notification lists each Phase with its seconds |
 
 ## `TX-012` Translating once transcribed
 
@@ -128,7 +128,7 @@ Transcribing leads into translating, so the transcribe dialog offers the same tr
 | --- | --- |
 | Given | a Current Resource being transcribed |
 | When | the transcription fails |
-| Then | the editor shows the reason |
+| Then | a Notification shows the reason |
 
 ## `TX-015` Transcribing in the Primary Language
 
@@ -185,3 +185,13 @@ Transcribing leads into translating, so the transcribe dialog offers the same tr
 | Given | a Current Resource with a media file and an original subtitle |
 | When | the transcribe dialog is started |
 | Then | it warns the subtitle will be overwritten and transcribes asking to overwrite |
+
+## `TX-025` Clearing the progress once a transcription ends
+
+The progress belongs to a running task, so what is left to say afterwards goes to a Notification.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource being transcribed |
+| When | the transcription finishes |
+| Then | the editor shows no progress |

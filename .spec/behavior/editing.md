@@ -52,4 +52,12 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | --- | --- |
 | Given | a Project whose subtitle was changed elsewhere since it was read |
 | When | a Segment is edited |
-| Then | the editor says the edit was not written and the subtitle was read again |
+| Then | a Notification says the edit was not written and the subtitle was read again |
+
+## `ED-007` Saying an edit was saved
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel |
+| When | a Segment's text is edited |
+| Then | a Notification says the edit was saved |

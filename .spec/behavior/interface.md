@@ -1,12 +1,13 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
+Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, telling what just happened in Notifications, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
 - `src/i18n.test.ts`
 - `src/menu.test.ts`
 - `src/controllers/tooltip_controller.test.ts`
+- `src/notification.test.ts`
 - `src-tauri/src/window.rs`
 
 ## `IF-001` Following the system language
@@ -122,3 +123,37 @@ Each setting says what it is for and how to use it, since its name alone rarely 
 | Given | the settings dialog |
 | When | its rows are read in either Interface Language |
 | Then | every row carries a tooltip that explains it |
+
+## `IF-014` Letting a Notification go on its own
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task finished |
+| When | a few seconds pass |
+| Then | it is no longer shown |
+
+## `IF-015` Keeping a failure until it is closed
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task failed |
+| When | a few seconds pass |
+| Then | it is still shown |
+
+## `IF-016` Closing a Notification by clicking it
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task failed |
+| When | it is clicked |
+| Then | it is no longer shown |
+
+## `IF-017` Saying the same thing once
+
+Saving after every edit would otherwise pile up one Notification per edit.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that an edit was saved |
+| When | another edit is saved |
+| Then | one Notification says an edit was saved |

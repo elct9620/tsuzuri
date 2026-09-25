@@ -12,7 +12,6 @@
     <main
       class="flex h-dvh flex-col"
       data-controller="project transcript dialog"
-      data-transcript-progress-outlet="#progress"
     >
       <section class="hero flex-1" data-project-target="start">
         <div class="hero-content flex-col text-center">
@@ -776,6 +775,7 @@
         <span data-i18n="translate.words"></span>
       </label>
     </template>
+    <div class="toast toast-end toast-bottom z-40" data-notifications></div>
     <div
       class="tooltip tooltip-open tooltip-right pointer-events-none fixed z-50"
       data-tooltip-target="bubble"

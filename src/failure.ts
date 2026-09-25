@@ -24,6 +24,11 @@ function isFailure(error: unknown): error is Failure {
   return typeof error === "object" && error !== null && "code" in error;
 }
 
+/** The code of a Failure, or none for an error that is not one. */
+export function failureCode(error: unknown): Failure["code"] | undefined {
+  return isFailure(error) ? error.code : undefined;
+}
+
 /** A sentence for a failed command; anything that is not a Failure, such as a plugin's error, is shown as it came. */
 export function failureMessage(error: unknown): string {
   if (!isFailure(error)) return String(error);

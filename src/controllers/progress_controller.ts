@@ -3,9 +3,10 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 
 import { failureMessage } from "../failure";
 import { t } from "../i18n";
+import { notify } from "../notification";
 import { followProgress } from "../progress";
 
-/** The running task's progress above the editor, which the task dialogs report to. */
+/** The running task's progress above the editor, which the task dialogs report to; how it ended is a Notification. */
 export default class ProgressController extends Controller {
   static targets = ["status", "bar"];
 
@@ -39,22 +40,18 @@ export default class ProgressController extends Controller {
   }
 
   finish(lines: string[]): void {
-    this.end(lines.join("\n"));
-  }
-
-  /** Shows a message about something other than the running task, leaving the task running. */
-  note(text: string): void {
-    this.element.removeAttribute("hidden");
-    this.statusTarget.textContent = text;
+    this.end();
+    notify(lines.join("\n"), "success");
   }
 
   fail(error: unknown): void {
-    this.end(t("work.failed", { reason: failureMessage(error) }));
+    this.end();
+    notify(t("work.failed", { reason: failureMessage(error) }), "error");
   }
 
-  private end(text: string): void {
+  private end(): void {
     this.isRunning = false;
-    this.statusTarget.textContent = text;
+    this.element.setAttribute("hidden", "");
     this.barTarget.hidden = true;
   }
 }

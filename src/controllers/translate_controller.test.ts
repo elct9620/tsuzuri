@@ -10,6 +10,7 @@ import {
   translationOptionsTemplate,
 } from "../test_translation_options";
 import ProgressController from "./progress_controller";
+import { NOTIFICATION_STACK, notifications } from "../test_notification";
 import TranslateController from "./translate_controller";
 import TranslationOptionsController from "./translation_options_controller";
 
@@ -64,6 +65,7 @@ describe("TranslateController", () => {
         <p data-progress-target="status"></p>
         <progress max="100" data-progress-target="bar" hidden></progress>
       </div>
+      ${NOTIFICATION_STACK}
     `;
     mockIPC(
       (command, args) => {
@@ -117,9 +119,9 @@ describe("TranslateController", () => {
 
     await start();
 
-    expect(
-      document.querySelector('[data-progress-target="status"]')!.textContent,
-    ).toBe("完成\n準備元件 0.0 秒 · 載入模型 2.2 秒 · 翻譯 0.6 秒");
+    expect(notifications()).toEqual([
+      "完成\n準備元件 0.0 秒 · 載入模型 2.2 秒 · 翻譯 0.6 秒",
+    ]);
   });
 
   // @behavior TL-011

@@ -67,6 +67,7 @@ const en = {
     translation: "Translation",
     noTranslation: "None",
     untranslated: "Not translated yet",
+    saved: "Saved",
   },
   settings: {
     project: "Project",

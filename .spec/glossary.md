@@ -142,6 +142,10 @@ The language the webview's text is written in: the system's language when Tsuzur
 
 Why a command did not finish, sent to the webview as a `code` with the data it names, such as the cue of a malformed SRT. The webview words it in the interface language; text only a system or a Component wrote travels as its `detail` untranslated.
 
+### Notification
+
+A short message in a corner of the window about something that has just happened: a task finished or failed, an edit was saved or was not written. It goes away on its own after a moment, except one saying something failed, which stays until it is closed.
+
 ### Stray Process
 
 A Component process left alive after the app that launched it has exited or crashed. Tsuzuri records the PID of every process it launches so the next start can kill what the last one left.

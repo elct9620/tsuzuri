@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "../project";
 import { projectOf, resourceOf } from "../test_project";
 import ProgressController from "./progress_controller";
+import { NOTIFICATION_STACK, notifications } from "../test_notification";
 import TranscriptController from "./transcript_controller";
 
 describe("TranscriptController", () => {
@@ -56,11 +57,8 @@ describe("TranscriptController", () => {
     calls = [];
     editFailure = undefined;
     document.body.innerHTML = `
-      <div id="progress" data-controller="progress" hidden>
-        <p data-progress-target="status"></p>
-        <progress data-progress-target="bar" hidden></progress>
-      </div>
-      <section data-controller="transcript" data-transcript-progress-outlet="#progress">
+      ${NOTIFICATION_STACK}
+      <section data-controller="transcript">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage" data-action="change->transcript#showTranslation"></select>
         <p data-transcript-target="empty">尚無內容</p>
@@ -133,9 +131,21 @@ describe("TranscriptController", () => {
     edit("textarea.text", "逐字稿");
     await settle();
 
-    expect(
-      document.querySelector('[data-progress-target="status"]')!.textContent,
-    ).toBe("字幕已在其他程式修改過，已重新讀取，這次的修改沒有寫入");
+    expect(notifications()).toEqual([
+      "字幕已在其他程式修改過，已重新讀取，這次的修改沒有寫入",
+    ]);
+  });
+
+  // @behavior ED-007
+  it("says an edit was saved", async () => {
+    await hold(
+      projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }] }),
+    );
+
+    edit("textarea.text", "逐字稿");
+    await settle();
+
+    expect(notifications()).toEqual(["已存檔"]);
   });
 
   // @behavior ED-001

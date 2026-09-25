@@ -10,6 +10,7 @@ import {
   translationOptionsTemplate,
 } from "../test_translation_options";
 import ProgressController from "./progress_controller";
+import { NOTIFICATION_STACK, notifications } from "../test_notification";
 import TranscribeController from "./transcribe_controller";
 import TranslationOptionsController from "./translation_options_controller";
 
@@ -71,6 +72,7 @@ describe("TranscribeController", () => {
         <p data-progress-target="status"></p>
         <progress max="100" data-progress-target="bar" hidden></progress>
       </div>
+      ${NOTIFICATION_STACK}
     `;
     mockIPC(
       (command, args) => {
@@ -136,7 +138,21 @@ describe("TranscribeController", () => {
 
     await start();
 
-    expect(status()).toContain("轉檔 1.3 秒 · 轉錄 28.0 秒");
+    expect(notifications().join("\n")).toContain("轉檔 1.3 秒 · 轉錄 28.0 秒");
+  });
+
+  // @behavior TX-025
+  it("clears the progress once the transcription ends", async () => {
+    await hold(media);
+    transcription = async () => ({
+      audio_seconds: 60,
+      transcribe_seconds: 30,
+      phases: [],
+    });
+
+    await start();
+
+    expect(document.querySelector<HTMLElement>("#progress")!.hidden).toBe(true);
   });
 
   // @behavior TX-012
@@ -196,7 +212,7 @@ describe("TranscribeController", () => {
 
     await start();
 
-    expect(status()).toBe("失敗：這個資源沒有可轉錄的影片或音訊");
+    expect(notifications()).toEqual(["失敗：這個資源沒有可轉錄的影片或音訊"]);
   });
 
   // @behavior TX-021

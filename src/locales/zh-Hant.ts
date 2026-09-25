@@ -67,6 +67,7 @@ const zhHant: typeof en = {
     translation: "譯文",
     noTranslation: "無",
     untranslated: "尚未翻譯",
+    saved: "已存檔",
   },
   settings: {
     project: "專案",

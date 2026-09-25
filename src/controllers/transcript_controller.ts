@@ -3,8 +3,9 @@ import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { save } from "@tauri-apps/plugin-dialog";
 
-import { failureMessage } from "../failure";
+import { failureCode, failureMessage } from "../failure";
 import { t } from "../i18n";
+import { notify } from "../notification";
 import { closeMenu } from "../menu";
 import {
   currentResource,
@@ -12,7 +13,6 @@ import {
   type ProjectView,
   type Segment,
 } from "../project";
-import type ProgressController from "./progress_controller";
 
 export function formatTime(ms: number): string {
   const pad = (value: number, width = 2) => String(value).padStart(width, "0");
@@ -76,7 +76,6 @@ export default class TranscriptController extends Controller {
     "heading",
     "translationLanguage",
   ];
-  static outlets = ["progress"];
 
   declare readonly listTarget: HTMLOListElement;
   declare readonly emptyTarget: HTMLElement;
@@ -86,8 +85,6 @@ export default class TranscriptController extends Controller {
   declare readonly translationLanguageTarget: HTMLSelectElement;
   /** Each export, enabled once the Project has the text it writes. */
   declare readonly exportTargets: HTMLButtonElement[];
-  /** Where an edit that was not written says why. */
-  declare readonly progressOutlet: ProgressController;
 
   private unlisten?: UnlistenFn;
 
@@ -107,8 +104,12 @@ export default class TranscriptController extends Controller {
         field: textarea.dataset.field as SegmentField,
         value: textarea.value,
       });
+      notify(t("edit.saved"), "success", "saved");
     } catch (error) {
-      this.progressOutlet.note(failureMessage(error));
+      notify(
+        failureMessage(error),
+        failureCode(error) === "changed-elsewhere" ? "warning" : "error",
+      );
     }
   }
 

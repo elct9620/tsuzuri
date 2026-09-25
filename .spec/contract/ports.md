@@ -128,3 +128,17 @@ impl<P: Steps> ModeRun<'_, P> {
     pub async fn run_until_cancelled<T>(&self, task: impl Future<Output = Result<T, Failure>>) -> Result<T, Failure> {}
 }
 ```
+
+## `ModeRun::keep`
+
+Keep `guard` until the Mode Run ends, however it ends; a use case hands over its hold on the Resource this way, so the hold lasts as long as the run.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+impl<'a, P: Steps> ModeRun<'a, P> {
+    pub fn keep(&self, guard: impl Send + 'a) {}
+}
+```

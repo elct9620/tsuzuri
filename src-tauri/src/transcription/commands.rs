@@ -38,8 +38,8 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
         .join(started_at.to_string());
     let result = run
         .run_until_cancelled(run_transcribe(
-            run.ports(),
-            &app.state::<CurrentProject>(),
+            &run,
+            app.state::<CurrentProject>().inner(),
             &tools,
             &settings,
             &job,

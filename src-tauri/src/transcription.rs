@@ -6,7 +6,7 @@ use serde::Serialize;
 use crate::failure::Failure;
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, RunningMode, TranscriptionTarget};
-use crate::steps::{run_step, Steps};
+use crate::steps::{run_step, ModeRun, Steps};
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
 use crate::transcript::Transcript;
@@ -26,16 +26,17 @@ pub struct Tools {
     pub whisper: PathBuf,
 }
 
-pub async fn run_transcribe(
-    ports: &(impl Progress + Steps),
-    project: &CurrentProject,
+pub async fn run_transcribe<'a>(
+    run: &ModeRun<'a, impl Progress + Steps>,
+    project: &'a CurrentProject,
     tools: &Tools,
     settings: &ModelSettings,
     job: &TranscriptionTarget,
     work: &Path,
     mut phases: Phases,
 ) -> Result<Transcription, Failure> {
-    let _hold = project.hold_resource(&job.directory, &job.name, RunningMode::Transcription);
+    run.keep(project.hold_resource(&job.directory, &job.name, RunningMode::Transcription));
+    let ports = run.ports();
     let input = job.media.as_path();
     let model = settings.ready_path(ModelSlot::Transcription)?;
     std::fs::create_dir_all(work)?;
@@ -105,6 +106,7 @@ mod tests {
     use crate::language::Language;
     use crate::processes::{AppPorts, Processes};
     use crate::project::Project;
+    use crate::steps::ModeLock;
     use crate::test_support::{write_executable, TempDir};
     use crate::toolchain::{self, Resolver};
 
@@ -195,8 +197,10 @@ mod tests {
             let processes = Processes::new(self.dir.path().join("processes.json"));
             let app = self.app.handle();
             run_transcribe(
-                &AppPorts::new(app, &processes),
-                &app.state::<CurrentProject>(),
+                &ModeLock::default()
+                    .begin(AppPorts::new(app, &processes))
+                    .await,
+                app.state::<CurrentProject>().inner(),
                 &self.tools,
                 &self.settings,
                 target,
@@ -553,7 +557,9 @@ mod tests {
         let target = project.transcription_target(true).unwrap();
 
         let transcription = run_transcribe(
-            &AppPorts::new(app.handle(), &processes),
+            &ModeLock::default()
+                .begin(AppPorts::new(app.handle(), &processes))
+                .await,
             &project,
             &tools,
             &settings,

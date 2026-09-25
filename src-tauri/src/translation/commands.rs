@@ -61,8 +61,8 @@ async fn run_translation(
     let server = llama_server(&plan.settings, &resident, &preset_dir);
     let result = run
         .run_until_cancelled(run_translate(
-            run.ports(),
-            &app.state::<CurrentProject>(),
+            &run,
+            app.state::<CurrentProject>().inner(),
             &llama,
             &model_settings,
             &plan,

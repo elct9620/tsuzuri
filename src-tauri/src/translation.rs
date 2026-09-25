@@ -11,7 +11,7 @@ use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, RunningMode, SegmentSpan, TranslationSource};
-use crate::steps::{StepEvent, Steps};
+use crate::steps::{ModeRun, StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
 use crate::transcript::Segment;
@@ -118,9 +118,9 @@ pub fn llama_server<'a>(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub async fn run_translate(
-    ports: &(impl Progress + Steps),
-    project: &CurrentProject,
+pub async fn run_translate<'a>(
+    run: &ModeRun<'a, impl Progress + Steps>,
+    project: &'a CurrentProject,
     llama: &Path,
     model_settings: &ModelSettings,
     plan: &TranslationPlan,
@@ -130,13 +130,14 @@ pub async fn run_translate(
 ) -> Result<Translation, Failure> {
     let model = model_settings.ready_path(ModelSlot::Translation)?;
     let source = project.snapshot()?;
-    let _hold = project.hold_resource(
+    run.keep(project.hold_resource(
         &source.directory,
         &source.name,
         RunningMode::Translation {
             language: plan.target,
         },
-    );
+    ));
+    let ports = run.ports();
     let languages = LanguagePair {
         source: source.language,
         target: plan.target,
@@ -1802,8 +1803,10 @@ mod tests {
             .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
         let result = run_translate(
-            &AppPorts::new(app.handle(), &processes),
-            &app.state::<CurrentProject>(),
+            &ModeLock::default()
+                .begin(AppPorts::new(app.handle(), &processes))
+                .await,
+            app.state::<CurrentProject>().inner(),
             Path::new("/bin/sleep"),
             &ModelSettings::default(),
             &plan_for(Language::Japanese),
@@ -1831,8 +1834,10 @@ mod tests {
         app.state::<CurrentProject>().replace(project);
 
         let result = run_translate(
-            &AppPorts::new(app.handle(), &processes),
-            &app.state::<CurrentProject>(),
+            &ModeLock::default()
+                .begin(AppPorts::new(app.handle(), &processes))
+                .await,
+            app.state::<CurrentProject>().inner(),
             Path::new("/bin/sleep"),
             &settings,
             &plan_for(Language::English),
@@ -1868,8 +1873,10 @@ mod tests {
             .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
         let result = run_translate(
-            &AppPorts::new(app.handle(), &processes),
-            &app.state::<CurrentProject>(),
+            &ModeLock::default()
+                .begin(AppPorts::new(app.handle(), &processes))
+                .await,
+            app.state::<CurrentProject>().inner(),
             &llama,
             &settings,
             &plan_for(Language::Japanese),
@@ -1922,12 +1929,13 @@ mod tests {
             running_mode()
         };
 
-        let ports = AppPorts::new(app.handle(), &processes);
         let project = app.state::<CurrentProject>();
+        let lock = ModeLock::default();
+        let mode_run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
         let plan = plan_for(Language::Japanese);
         let run = run_translate(
-            &ports,
-            &project,
+            &mode_run,
+            project.inner(),
             &llama,
             &settings,
             &plan,
@@ -1937,6 +1945,7 @@ mod tests {
         );
 
         let (_, seen) = tokio::join!(run, watch);
+        drop(mode_run);
 
         assert_eq!(
             (seen, running_mode()),
@@ -2000,11 +2009,12 @@ mod tests {
         .unwrap();
         project.resources[0].subtitle = Some(dir.file("lecture.srt"));
         app.state::<CurrentProject>().replace(project);
-        let ports = AppPorts::new(app.handle(), &processes);
+        let lock = ModeLock::default();
+        let mode_run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
 
         let translated_segments = run_translate(
-            &ports,
-            &app.state::<CurrentProject>(),
+            &mode_run,
+            app.state::<CurrentProject>().inner(),
             &llama,
             &settings,
             &TranslationPlan {

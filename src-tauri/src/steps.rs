@@ -96,6 +96,7 @@ impl ModeLock {
         ModeRun {
             turn: self.wait_turn().await,
             ports,
+            kept_guards: std::sync::Mutex::default(),
         }
     }
 
@@ -110,11 +111,18 @@ impl ModeLock {
 pub struct ModeRun<'a, P> {
     turn: Turn<'a>,
     ports: P,
+    /// What the run keeps until it ends, such as its hold on the Resource it writes.
+    kept_guards: std::sync::Mutex<Vec<Box<dyn Send + 'a>>>,
 }
 
-impl<P: Steps> ModeRun<'_, P> {
+impl<'a, P: Steps> ModeRun<'a, P> {
     pub fn ports(&self) -> &P {
         &self.ports
+    }
+
+    /// Keeps `guard` until the Mode Run ends, however it ends.
+    pub fn keep(&self, guard: impl Send + 'a) {
+        self.kept_guards.lock().unwrap().push(Box::new(guard));
     }
 
     /// Runs `task` until it ends or the Mode Run is asked to stop; then the Components it

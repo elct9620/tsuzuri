@@ -322,3 +322,27 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | a paused Current Resource with Segments from 0 to 1 s and from 1 to 2 s |
 | When | the media is moved to 1 s, the end of the first |
 | Then | no row is marked as playing |
+
+## `PV-040` Zooming the timeline with Alt and the wheel
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second |
+| When | the wheel turns up with Alt held, as far as zooming by two takes |
+| Then | the timeline shows 200 pixels a second |
+
+## `PV-041` Showing how far the timeline is zoomed
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second, shown as 100% |
+| When | zoom in is pressed |
+| Then | the zoom level reads 200% |
+
+## `PV-042` Taking the timeline back to where it started
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline zoomed in to 200% |
+| When | the zoom level is pressed |
+| Then | the timeline shows 100 pixels a second again |

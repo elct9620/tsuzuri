@@ -94,6 +94,8 @@ const en = {
     notRedone: "Change not redone",
   },
   preview: {
+    zoomHint: "Ctrl or Alt with the wheel also zooms",
+    resetZoom: "Back to 100%",
     current: "Current Segment",
     pickSegment: "Click a Segment to play it on its own.",
     space: "Space",

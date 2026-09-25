@@ -99,7 +99,7 @@ describe("Current Segment", () => {
           <span data-preview-target="time"></span>
           <p data-preview-target="currentEmpty"></p>
           <div data-preview-target="current" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
-          <div data-timeline-target="waveform"></div>
+          <span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
           </div>
         </div>
         <h2 data-transcript-target="heading"></h2>

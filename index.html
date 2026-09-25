@@ -434,7 +434,7 @@
               </button>
             </div>
             <div
-              class="flex flex-col gap-3 border-b border-base-300 bg-base-200 p-3"
+              class="flex flex-col gap-3 border-b border-base-300 p-3"
               data-preview-target="panel"
               hidden
             >
@@ -464,7 +464,7 @@
                     <span data-i18n="preview.unplayable"></span>
                   </div>
                 </div>
-                <div class="card card-sm min-w-0 flex-3 bg-base-100 shadow-sm">
+                <div class="card card-sm card-border min-w-0 flex-3">
                   <div class="card-body">
                     <div class="flex items-center gap-3">
                       <button
@@ -482,24 +482,6 @@
                         class="text-lg font-medium whitespace-nowrap tabular-nums"
                         data-preview-target="time"
                       ></span>
-                      <div class="join ml-auto">
-                        <button
-                          type="button"
-                          class="btn btn-square btn-sm join-item"
-                          data-action="timeline#zoomOut"
-                          data-i18n-label="preview.zoomOut"
-                        >
-                          <i data-lucide="zoom-out" class="size-4"></i>
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-square btn-sm join-item"
-                          data-action="timeline#zoomIn"
-                          data-i18n-label="preview.zoomIn"
-                        >
-                          <i data-lucide="zoom-in" class="size-4"></i>
-                        </button>
-                      </div>
                     </div>
                     <div class="divider my-0"></div>
                     <p
@@ -539,7 +521,36 @@
                   </div>
                 </div>
               </div>
-              <div class="h-28 rounded-box bg-base-100 px-2 pt-2 pb-6">
+              <div
+                class="relative h-28 rounded-box border border-base-300 px-2 pt-2 pb-6"
+              >
+                <div class="join absolute top-1 right-1 z-10">
+                  <button
+                    type="button"
+                    class="btn btn-square btn-xs join-item"
+                    data-action="timeline#zoomOut"
+                    data-i18n-label="preview.zoomOut"
+                    data-i18n-tooltip="preview.zoomHint"
+                  >
+                    <i data-lucide="zoom-out" class="size-3.5"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-xs join-item tabular-nums"
+                    data-timeline-target="zoomLevel"
+                    data-action="timeline#resetZoom"
+                    data-i18n-tooltip="preview.resetZoom"
+                  ></button>
+                  <button
+                    type="button"
+                    class="btn btn-square btn-xs join-item"
+                    data-action="timeline#zoomIn"
+                    data-i18n-label="preview.zoomIn"
+                    data-i18n-tooltip="preview.zoomHint"
+                  >
+                    <i data-lucide="zoom-in" class="size-3.5"></i>
+                  </button>
+                </div>
                 <div
                   class="h-full [--segment-even:color-mix(in_oklab,var(--color-base-content)_6%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-base-content)_12%,transparent)] [--segment-current:color-mix(in_oklab,var(--color-primary)_25%,transparent)]"
                   data-timeline-target="waveform"

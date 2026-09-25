@@ -94,6 +94,8 @@ const zhHant: typeof en = {
     notRedone: "沒有重做",
   },
   preview: {
+    zoomHint: "Ctrl 或 Alt 加滾輪也能縮放",
+    resetZoom: "回到 100%",
     current: "目前段落",
     pickSegment: "點一段字幕，就能單獨播放。",
     space: "空白鍵",

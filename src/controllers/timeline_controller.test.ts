@@ -64,7 +64,7 @@ describe("TimelineController", () => {
         <video data-timeline-target="media"></video>
         <button data-action="timeline#zoomOut"></button>
         <button data-action="timeline#zoomIn"></button>
-        <div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent" hidden></div>
+        <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent" hidden></div>
       </div>
     `;
     application = Application.start();
@@ -176,5 +176,42 @@ describe("TimelineController", () => {
       .dispatchEvent(pinch);
 
     expect(wrapper().style.width).toBe("400px");
+  });
+
+  // @behavior PV-040
+  it("zooms in as the wheel turns up with Alt held", async () => {
+    await show(projectWithMedia());
+    const turn = new WheelEvent("wheel", { deltaY: -200 * Math.log(2) });
+    // happy-dom's WheelEvent is not a MouseEvent, so it keeps no modifier keys.
+    Object.defineProperty(turn, "altKey", { value: true });
+
+    document
+      .querySelector('[data-timeline-target="waveform"]')!
+      .dispatchEvent(turn);
+
+    expect(wrapper().style.width).toBe("400px");
+  });
+
+  // @behavior PV-041
+  it("reads the zoom level as a percentage of where it starts", async () => {
+    await show(projectWithMedia());
+
+    press("timeline#zoomIn");
+
+    expect(
+      document.querySelector('[data-timeline-target="zoomLevel"]')!.textContent,
+    ).toBe("200%");
+  });
+
+  // @behavior PV-042
+  it("goes back to where it started when the zoom level is pressed", async () => {
+    await show(projectWithMedia());
+    press("timeline#zoomIn");
+
+    document
+      .querySelector<HTMLElement>('[data-timeline-target="zoomLevel"]')!
+      .click();
+
+    expect(wrapper().style.width).toBe("200px");
   });
 });

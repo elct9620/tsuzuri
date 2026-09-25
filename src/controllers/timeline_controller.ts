@@ -55,10 +55,12 @@ export function controlOption({
 
 /** The Preview's timeline: the Waveform of the Current Resource's media with a region for each Segment. */
 export default class TimelineController extends Controller {
-  static targets = ["media", "waveform"];
+  static targets = ["media", "waveform", "zoomLevel"];
 
   declare readonly mediaTarget: HTMLMediaElement;
   declare readonly waveformTarget: HTMLElement;
+  /** How far the timeline is zoomed, as a percentage of where it starts; pressing it goes back there. */
+  declare readonly zoomLevelTarget: HTMLElement;
 
   private media: string | null = null;
   private segments: Segment[] = [];
@@ -69,6 +71,7 @@ export default class TimelineController extends Controller {
   private unlisten?: UnlistenFn;
 
   async connect(): Promise<void> {
+    this.showZoomLevel();
     this.unlisten = await followProject((project) => this.show(project));
   }
 
@@ -79,6 +82,10 @@ export default class TimelineController extends Controller {
 
   zoomIn(): void {
     this.zoomTo(this.pxPerSec * ZOOM_FACTOR);
+  }
+
+  resetZoom(): void {
+    this.zoomTo(INITIAL_PX_PER_SEC);
   }
 
   zoomOut(): void {
@@ -102,9 +109,12 @@ export default class TimelineController extends Controller {
     this.colorRegions();
   }
 
-  /** Scrolls the timeline, or zooms it while ⌘ or Ctrl is held, as a trackpad pinch also reports. */
+  /**
+   * Scrolls the timeline, or zooms it while Ctrl (Windows), Alt (as Subtitle Edit does) or ⌘ is
+   * held; a trackpad pinch reports itself as Ctrl.
+   */
   scrollOrZoom(event: WheelEvent): void {
-    if (event.ctrlKey || event.metaKey) {
+    if (event.ctrlKey || event.altKey || event.metaKey) {
       this.zoomTo(this.pxPerSec * Math.exp(-event.deltaY / WHEEL_ZOOM_SCALE));
       return;
     }
@@ -196,12 +206,18 @@ export default class TimelineController extends Controller {
     );
   }
 
+  private showZoomLevel(): void {
+    const percent = Math.round((this.pxPerSec / INITIAL_PX_PER_SEC) * 100);
+    this.zoomLevelTarget.textContent = `${percent}%`;
+  }
+
   private zoomTo(pxPerSec: number): void {
     this.pxPerSec = Math.min(
       MAX_PX_PER_SEC,
       Math.max(MIN_PX_PER_SEC, pxPerSec),
     );
     this.surfer?.zoom(this.pxPerSec);
+    this.showZoomLevel();
   }
 
   /** A theme colour resolved to a value the canvas can paint, since a canvas cannot read CSS variables. */

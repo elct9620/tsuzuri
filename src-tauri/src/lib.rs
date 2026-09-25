@@ -70,6 +70,8 @@ pub fn run() {
             translation::save_translation_settings,
             translation::translate,
             translation::translation_settings,
+            translation_glossary::save_translation_glossary,
+            translation_glossary::translation_glossary_table,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

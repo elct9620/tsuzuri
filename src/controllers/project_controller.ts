@@ -137,7 +137,7 @@ export default class ProjectController extends Controller {
     const glossary = project.translation_glossary;
     this.glossaryTarget.textContent =
       glossary === null
-        ? t("translate.glossaryNone")
+        ? t("resources.createGlossary")
         : t("resources.glossary", { count: glossary.term_count });
     this.languageTarget.value = project.language;
   }

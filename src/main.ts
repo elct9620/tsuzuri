@@ -3,6 +3,7 @@ import { locale } from "@tauri-apps/plugin-os";
 
 import ComponentsController from "./controllers/components_controller";
 import DialogController from "./controllers/dialog_controller";
+import GlossaryController from "./controllers/glossary_controller";
 import ModelsController from "./controllers/models_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
@@ -20,6 +21,7 @@ async function start(): Promise<void> {
   const application = Application.start();
   application.register("components", ComponentsController);
   application.register("dialog", DialogController);
+  application.register("glossary", GlossaryController);
   application.register("models", ModelsController);
   application.register("progress", ProgressController);
   application.register("project", ProjectController);

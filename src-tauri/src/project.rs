@@ -6,11 +6,11 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::failure::Failure;
-use crate::language::Language;
+use crate::language::{Language, LanguagePair};
 use crate::project_config::ProjectConfig;
 use crate::resource::{self, Resource};
 use crate::transcript::{Segment, SrtContent, Transcript};
-use crate::translation_glossary::{TranslationGlossary, TranslationGlossaryView};
+use crate::translation_glossary::{GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 
 /// The opened directory: its Primary Language, the Language of its last translation,
 /// its Resources, the Current Resource and the Translation Glossary once loaded.
@@ -60,14 +60,16 @@ impl Project {
         let language = config.language.unwrap_or(language);
         let mut project = Project {
             resources: resource::resources_in(&directory, language)?,
-            translation_glossary: TranslationGlossary::from_directory(&directory)
-                .ok()
-                .flatten(),
+            translation_glossary: None,
             directory,
             language,
             translation_language: config.translation_language,
             current: None,
         };
+        project.translation_glossary =
+            TranslationGlossary::from_directory(&project.directory, project.source_target())
+                .ok()
+                .flatten();
         if let Some(first) = project.resources.first().map(|found| found.name.clone()) {
             project.select(&first)?;
         }
@@ -102,6 +104,15 @@ impl Project {
         resource.carry_translations(&mut current.transcript.segments, language)?;
         current.translation = language;
         self.remember_subtitles()
+    }
+
+    /// The Languages a Translation Glossary's `source,target` header stands for: the Primary
+    /// Language and the translation Language, once the Project has one.
+    fn source_target(&self) -> Option<LanguagePair> {
+        self.translation_language.map(|target| LanguagePair {
+            source: self.language,
+            target,
+        })
     }
 
     /// Digests of the Current Resource's original subtitle and the translation file it shows.
@@ -543,8 +554,29 @@ impl CurrentProject {
     /// Reads the directory's `glossary.csv` again into the Project, for a translation to use.
     pub fn reload_translation_glossary(&self) -> Result<Option<TranslationGlossary>, Failure> {
         self.update_project(|project| {
-            project.translation_glossary = TranslationGlossary::from_directory(&project.directory)?;
+            project.translation_glossary =
+                TranslationGlossary::from_directory(&project.directory, project.source_target())?;
             Ok(project.translation_glossary.clone())
+        })
+    }
+
+    /// The directory's `glossary.csv` as a table to edit, or an empty one without the file.
+    pub fn glossary_table(&self) -> Result<GlossaryTable, Failure> {
+        self.update_project(|project| {
+            Ok(
+                TranslationGlossary::from_directory(&project.directory, project.source_target())?
+                    .map_or_else(GlossaryTable::empty, |glossary| glossary.table()),
+            )
+        })
+    }
+
+    /// Writes an edited table to the directory's `glossary.csv` and holds it as the Project's.
+    pub fn save_translation_glossary(&self, rows: &[Vec<String>]) -> Result<(), Failure> {
+        self.update_project(|project| {
+            TranslationGlossary::write(&project.directory, rows)?;
+            project.translation_glossary =
+                TranslationGlossary::from_directory(&project.directory, project.source_target())?;
+            Ok(())
         })
     }
 
@@ -942,7 +974,7 @@ mod tests {
     fn starts_a_new_project_without_a_translation_glossary() {
         let with_glossary = directory_of(
             "pj-glossary",
-            &[("glossary.csv", "source,target\n阿福,Alfred\n")],
+            &[("glossary.csv", "zh-TW,en\n阿福,Alfred\n")],
         );
         let without_glossary = directory_of("pj-no-glossary", &[("ep01.srt", &cue("你好"))]);
         let current = project_in(&with_glossary);

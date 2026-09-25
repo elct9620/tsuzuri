@@ -288,7 +288,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 
 | Step | Statement |
 | --- | --- |
-| Given | a directory whose `glossary.csv` has a `source,target` header and two rows |
+| Given | a directory whose `glossary.csv` has a `zh-TW,en` header and two rows |
 | When | it is opened as the Project |
 | Then | the Project holds `glossary.csv` and its two terms |
 
@@ -296,7 +296,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project whose `glossary.csv` has a header other than `source,target` |
+| Given | a Project whose `glossary.csv` has a header naming no Language, such as `名稱,譯名` |
 | When | its Current Resource is translated |
 | Then | the translation fails saying the header is missing |
 
@@ -443,3 +443,35 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a ready llama-server and a Project whose Current Resource is three Segments in Batches of two |
 | When | it is translated |
 | Then | a change is announced after each Batch, holding two translations and then three |
+
+## `TL-059` Using the columns of the Languages translated between
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` is `zh-TW,en,ja` with the row `蝙蝠俠,Batman,バットマン` |
+| When | the terms for translating into `ja` are asked |
+| Then | they are `蝙蝠俠` to `バットマン` |
+
+## `TL-060` Leaving out a term the target Language has no word for
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` is `zh-TW,en,ja` with the row `阿福,Alfred,` |
+| When | the terms for translating into `ja` are asked |
+| Then | there are none |
+
+## `TL-061` Taking a `source,target` header as the Primary and translation Languages
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` last translated into `en` whose `glossary.csv` is `source,target` with the row `蝙蝠俠,Batman` |
+| When | the terms for translating into `en` are asked |
+| Then | they are `蝙蝠俠` to `Batman` |
+
+## `TL-062` Refusing a `source,target` header without a translation Language
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` with no translation Language whose `glossary.csv` has a `source,target` header |
+| When | its Translation Glossary is read |
+| Then | it fails saying the header is missing |

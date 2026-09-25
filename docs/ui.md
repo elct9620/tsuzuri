@@ -194,6 +194,6 @@
 | 表格 | 每種支援的語言一欄，每個詞一列，可直接編輯 | modal、table、input |
 | 新增、刪除 | 表格下方新增一列；每列最後可以刪除 | btn |
 | 標頭提示 | 讀到 `source,target` 時出現 | alert-warning |
-| 儲存 | 寫回 `glossary.csv`，沒有時建立；關閉 modal | btn-primary |
+| 儲存 | 寫回 `glossary.csv`，沒有時建立；關閉 modal。檔案讀不到時停用，避免空表蓋掉原檔 | btn-primary |
 
 modal 用較寬的 `max-w-5xl`，表格太寬時水平捲動。格式見 `docs/design.md` 9.3。

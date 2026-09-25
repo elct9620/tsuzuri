@@ -141,3 +141,19 @@ Save the translation settings, each raised to at least one, and answer them as s
 ```rust
 pub fn save_translation_settings(app: AppHandle, settings: TranslationSettings) -> Result<TranslationSettings, Failure> {}
 ```
+
+## `translation_glossary_table`
+
+The Project's Translation Glossary as a table: a column for every Language, a row of words for every term, and whether its file has a `source,target` header; an empty table when the Project has no `glossary.csv`.
+
+```rust
+pub fn translation_glossary_table(app: AppHandle) -> Result<GlossaryTable, Failure> {}
+```
+
+## `save_translation_glossary`
+
+Write `rows`, each holding a word for every Language in the order the table gave them, to the Project's `glossary.csv` with a header of Language codes, leaving out empty rows and creating the file when there is none; the Project then holds the Translation Glossary as saved and `project-changed` is emitted.
+
+```rust
+pub fn save_translation_glossary(app: AppHandle, rows: Vec<Vec<String>>) -> Result<(), Failure> {}
+```

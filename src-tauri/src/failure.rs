@@ -17,7 +17,8 @@ pub enum Failure {
     MalformedSrt {
         cue: usize,
     },
-    /// A Translation Glossary file whose header is not `source,target`.
+    /// A Translation Glossary file whose header does not name a Language for each column, or is
+    /// `source,target` while the Project has no translation Language to stand for `target`.
     GlossaryWithoutHeader,
     MalformedGlossary {
         detail: String,

@@ -24,6 +24,13 @@ const zhHant: typeof en = {
   resources: {
     noSubtitle: "還沒有字幕，可以轉錄產生",
     glossary: "詞彙表 {{count}} 筆",
+    createGlossary: "建立詞彙表",
+  },
+  glossary: {
+    addRow: "新增一列",
+    removeRow: "刪除這一列",
+    sourceTargetHeader: "目前的標頭是 source,target，儲存後改用語言代碼",
+    save: "儲存",
   },
   work: {
     into: "譯成",
@@ -109,7 +116,8 @@ const zhHant: typeof en = {
   failures: {
     io: "無法讀寫檔案（{{detail}}）",
     malformedSrt: "SRT 第 {{cue}} 段無法讀取",
-    glossaryWithoutHeader: "詞彙表的第一列必須是 source,target",
+    glossaryWithoutHeader:
+      "詞彙表的第一列必須是語言代碼，例如 zh-TW,en,ja；source,target 要先翻譯過一次才能使用",
     malformedGlossary: "詞彙表無法讀取（{{detail}}）",
     modelNotChosen: "尚未指定{{slot}}模型",
     modelMissing: "找不到模型 {{path}}，請重新指定",

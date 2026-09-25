@@ -149,6 +149,13 @@ describe("ProjectController", () => {
     expect(button?.title).toBe("[SHANA]C0220260514.zh-TW.mix");
   });
 
+  // @behavior GL-006
+  it("offers to create a Translation Glossary when the Project has none", async () => {
+    await hold(projectOf({ translation_glossary: null }));
+
+    expect(target("glossary").textContent).toBe("建立詞彙表");
+  });
+
   // @behavior PJ-035
   it("selects the Resource clicked in the list", async () => {
     await hold(

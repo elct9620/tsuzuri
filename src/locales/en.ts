@@ -23,6 +23,14 @@ const en = {
   resources: {
     noSubtitle: "No subtitle yet; transcribe it to make one",
     glossary: "Glossary: {{count}} terms",
+    createGlossary: "Create a glossary",
+  },
+  glossary: {
+    addRow: "Add a row",
+    removeRow: "Remove this row",
+    sourceTargetHeader:
+      "The header is source,target; saving writes it as Language codes",
+    save: "Save",
   },
   work: {
     into: "Into",
@@ -109,7 +117,8 @@ const en = {
   failures: {
     io: "Could not read or write a file ({{detail}})",
     malformedSrt: "Could not read cue {{cue}} of the SRT file",
-    glossaryWithoutHeader: "The glossary's first row must be source,target",
+    glossaryWithoutHeader:
+      "The glossary's first row must be Language codes, such as zh-TW,en,ja; source,target works only after a first translation",
     malformedGlossary: "Could not read the glossary ({{detail}})",
     modelNotChosen: "No model is chosen for {{slot}}",
     modelMissing: "The model {{path}} is missing; choose it again",

@@ -90,18 +90,21 @@ pub async fn run_translate<R: Runtime>(
     let model = model_settings.ready_path(ModelSlot::Translation)?;
     let project = app.state::<CurrentProject>();
     let source = project.snapshot()?;
-    let glossary = project.reload_translation_glossary()?;
+    let languages = LanguagePair {
+        source: source.language,
+        target: plan.target,
+    };
+    let glossary_terms = project
+        .reload_translation_glossary()?
+        .map_or_else(Vec::new, |glossary| glossary.terms_for(languages));
     let job = TranslationJob {
         segments: &source.transcript.segments,
-        languages: LanguagePair {
-            source: source.language,
-            target: plan.target,
-        },
+        languages,
         settings: plan.settings,
         has_speaker_labels: plan.options.has_speaker_labels,
         has_self_review: plan.options.has_self_review,
         summary_word_limit: plan.options.summary_word_limit,
-        glossary_terms: glossary.as_ref().map_or(&[], |glossary| glossary.terms()),
+        glossary_terms: &glossary_terms,
     };
     let port = free_port()?;
     let args = [

@@ -165,6 +165,10 @@ const en = {
       "How many times a batch whose line count does not match is tried again before it is split in half.",
     referenceLinesHelp:
       "How many lines before and after each batch are sent as context; they help the model and are not translated.",
+    residentLlamaHelp:
+      "Keeps llama-server running without a model, so a translation only loads the model; when off, llama-server starts for each translation and stops when it ends.",
+    modelKeepSecondsHelp:
+      "How many seconds the model stays loaded after a translation before its memory is freed, which saves loading it again for the next one. 0 frees it at once.",
     transcriptionModelHelp:
       "A whisper ggml model file (.bin), such as Breeze-ASR-25. A larger model is more accurate and slower.",
     translationModelHelp:
@@ -179,6 +183,9 @@ const en = {
     batchSize: "Lines per batch",
     retries: "Retries before splitting",
     referenceLines: "Reference lines",
+    residentLlama: "Keep llama-server running",
+    modelKeepSeconds: "Keep the model after translating",
+    seconds: "s",
     about: "About",
     choose: "Choose",
     chooseFile: "Choose a file",

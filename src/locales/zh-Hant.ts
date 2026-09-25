@@ -163,6 +163,10 @@ const zhHant: typeof en = {
     retriesHelp: "一批翻譯對不上句數時重試的次數；仍失敗就把這批拆成兩半再翻。",
     referenceLinesHelp:
       "每批前後各附上幾句當作上下文，幫助模型理解，這些句子本身不翻譯。",
+    residentLlamaHelp:
+      "讓 llama-server 一直開著但不載入模型，翻譯時只需載入模型；關掉時每次翻譯才啟動、完成就結束。",
+    modelKeepSecondsHelp:
+      "翻譯完成後模型保留幾秒再釋放記憶體，連續翻譯時可以省下載入時間。0 表示立刻釋放。",
     transcriptionModelHelp:
       "whisper 的 ggml 模型檔（.bin），例如 Breeze-ASR-25。模型越大越準，也越慢。",
     translationModelHelp:
@@ -177,6 +181,9 @@ const zhHant: typeof en = {
     batchSize: "每批句數",
     retries: "拆半前重試次數",
     referenceLines: "參考前後句數",
+    residentLlama: "常駐 llama-server",
+    modelKeepSeconds: "翻譯後保留模型",
+    seconds: "秒",
     about: "關於",
     choose: "指定",
     chooseFile: "指定檔案",

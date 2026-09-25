@@ -16,6 +16,10 @@ pub struct TranslationSettings {
     pub reference_lines: usize,
     /// Requests for the same lines before a failing group is split in half.
     pub retries: usize,
+    /// Whether translations run on the Resident llama-server rather than one started for each.
+    pub has_resident_llama: bool,
+    /// Seconds the Resident llama-server keeps the Model after a translation ends.
+    pub model_keep_seconds: u64,
 }
 
 impl Default for TranslationSettings {
@@ -24,6 +28,8 @@ impl Default for TranslationSettings {
             batch_size: 8,
             reference_lines: 2,
             retries: 3,
+            has_resident_llama: true,
+            model_keep_seconds: 0,
         }
     }
 }
@@ -47,6 +53,7 @@ impl TranslationSettings {
             batch_size: self.batch_size.max(1),
             reference_lines: self.reference_lines.max(1),
             retries: self.retries.max(1),
+            ..self
         };
         fs::create_dir_all(dir)?;
         let json = serde_json::to_vec_pretty(&saved_settings).map_err(io::Error::other)?;
@@ -68,6 +75,8 @@ mod tests {
             batch_size: 4,
             reference_lines: 1,
             retries: 2,
+            has_resident_llama: false,
+            model_keep_seconds: 30,
         };
 
         settings.save(dir.path()).unwrap();
@@ -84,6 +93,7 @@ mod tests {
             batch_size: 0,
             reference_lines: 2,
             retries: 0,
+            ..TranslationSettings::default()
         }
         .save(dir.path())
         .unwrap();

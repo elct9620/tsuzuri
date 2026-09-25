@@ -82,6 +82,24 @@ pub enum LlamaServer<'a> {
     },
 }
 
+/// The llama-server a translation with `settings` runs on: the Resident llama-server, keeping
+/// its Model for the chosen seconds, unless it is turned off.
+pub fn llama_server<'a>(
+    settings: &TranslationSettings,
+    resident: &'a ResidentLlama,
+    preset_dir: &'a Path,
+) -> LlamaServer<'a> {
+    if settings.has_resident_llama {
+        LlamaServer::Router {
+            resident,
+            preset_dir,
+            keep: Duration::from_secs(settings.model_keep_seconds),
+        }
+    } else {
+        LlamaServer::Job
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub async fn run_translate(
     ports: &(impl Progress + Steps),
@@ -1365,6 +1383,39 @@ mod tests {
             .filter(|event| event.starts_with(&prefix))
             .cloned()
             .collect()
+    }
+
+    // @behavior TL-074
+    #[test]
+    fn translates_on_a_llama_server_of_its_own_with_the_resident_one_off() {
+        let settings = TranslationSettings {
+            has_resident_llama: false,
+            ..TranslationSettings::default()
+        };
+
+        let resident = ResidentLlama::default();
+
+        let server = llama_server(&settings, &resident, Path::new("/presets"));
+
+        assert!(matches!(server, LlamaServer::Job));
+    }
+
+    // @behavior TL-075
+    #[test]
+    fn keeps_the_model_for_the_seconds_the_settings_choose() {
+        let settings = TranslationSettings {
+            model_keep_seconds: 30,
+            ..TranslationSettings::default()
+        };
+
+        let resident = ResidentLlama::default();
+
+        let server = llama_server(&settings, &resident, Path::new("/presets"));
+
+        assert!(matches!(
+            server,
+            LlamaServer::Router { keep, .. } if keep == Duration::from_secs(30)
+        ));
     }
 
     // @behavior TL-063

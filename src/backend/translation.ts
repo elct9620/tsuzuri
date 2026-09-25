@@ -14,6 +14,8 @@ export interface TranslationSettings {
   batch_size: number;
   retries: number;
   reference_lines: number;
+  has_resident_llama: boolean;
+  model_keep_seconds: number;
 }
 
 export interface Translation {

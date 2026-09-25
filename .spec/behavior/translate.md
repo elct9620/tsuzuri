@@ -565,3 +565,36 @@ The Model is freed when a transcription starts, so only one Model is loaded at a
 | Given | a Resident llama-server whose process has exited |
 | When | a translation asks for it |
 | Then | a new one is started |
+
+## `TL-074` Translating on a llama-server of its own with the Resident llama-server off
+
+| Step | Statement |
+| --- | --- |
+| Given | the translation settings with the Resident llama-server turned off |
+| When | a translation picks its llama-server |
+| Then | it starts one for itself and stops it when it ends |
+
+## `TL-075` Keeping the Model for the seconds the settings choose
+
+| Step | Statement |
+| --- | --- |
+| Given | the translation settings with the Resident llama-server on and the Model kept for 30 seconds |
+| When | a translation picks its llama-server |
+| Then | it runs on the Resident llama-server and frees the Model 30 seconds after it ends |
+
+## `TL-076` Stopping the Resident llama-server
+
+| Step | Statement |
+| --- | --- |
+| Given | a running Resident llama-server |
+| When | it is turned off in the settings |
+| Then | its process is stopped |
+
+## `TL-077` Turning the Resident llama-server off on the settings panel
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings panel with the Resident llama-server on |
+| When | its toggle is turned off |
+| Then | the setting is saved off and the kept seconds can no longer be changed |
+

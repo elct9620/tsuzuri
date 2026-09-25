@@ -1,10 +1,8 @@
-use std::time::Duration;
-
 use tauri::{AppHandle, Manager};
 
 use super::llama::READY_TIMEOUT;
 use super::{
-    run_translate, LlamaServer, ResidentLlama, Translation, TranslationOptions, TranslationPlan,
+    llama_server, run_translate, ResidentLlama, Translation, TranslationOptions, TranslationPlan,
     TranslationSettings,
 };
 use crate::failure::Failure;
@@ -32,11 +30,8 @@ pub async fn translate(
     };
     let processes = app.state::<Processes>().inner().clone();
     let preset_dir = app.path().app_data_dir()?;
-    let server = LlamaServer::Router {
-        resident: &app.state::<ResidentLlama>(),
-        preset_dir: &preset_dir,
-        keep: Duration::ZERO,
-    };
+    let resident = app.state::<ResidentLlama>();
+    let server = llama_server(&plan.settings, &resident, &preset_dir);
     run_translate(
         &AppPorts {
             app: &app,
@@ -58,12 +53,25 @@ pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failu
     Ok(TranslationSettings::load(&settings::settings_dir(&app)?)?)
 }
 
+/// Saves the settings, stopping the Resident llama-server when it is turned off and starting it when turned on.
 #[tauri::command]
-pub fn save_translation_settings(
+pub async fn save_translation_settings(
     app: AppHandle,
     settings: TranslationSettings,
 ) -> Result<TranslationSettings, Failure> {
-    Ok(settings.save(&settings::settings_dir(&app)?)?)
+    let saved_settings = settings.save(&settings::settings_dir(&app)?)?;
+    if saved_settings.has_resident_llama {
+        start_resident_llama(&app);
+    } else {
+        let processes = app.state::<Processes>().inner().clone();
+        app.state::<ResidentLlama>()
+            .stop(&AppPorts {
+                app: &app,
+                processes: &processes,
+            })
+            .await;
+    }
+    Ok(saved_settings)
 }
 
 /// Starts the Resident llama-server in the background once llama-server and the translation Model

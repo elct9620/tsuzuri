@@ -115,6 +115,13 @@ impl ResidentLlama {
         }
     }
 
+    /// Stops the router and the Model it holds.
+    pub async fn stop(&self, steps: &impl Steps) {
+        if let Some(running) = self.router.lock().await.take() {
+            steps.stop(running.pid);
+        }
+    }
+
     async fn ensure_router(
         &self,
         router: &mut Option<Router>,
@@ -512,6 +519,17 @@ mod tests {
         fixture.resident.release().await;
 
         assert_eq!(fixture.log().last().map(String::as_str), Some("unload"));
+    }
+
+    // @behavior TL-076
+    #[tokio::test]
+    async fn stops_the_router_when_turned_off() {
+        let fixture = Fixture::new("resident-stop", Replies::default());
+        fixture.start().await.unwrap();
+
+        fixture.resident.stop(&fixture.steps).await;
+
+        assert_eq!(*fixture.steps.stopped.lock().unwrap(), vec![1]);
     }
 
     // @behavior TL-073

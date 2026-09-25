@@ -21,11 +21,19 @@ describe("TranslationSettingsController", () => {
         <input data-translation-settings-target="batchSize" data-action="change->translation-settings#save">
         <input data-translation-settings-target="retries" data-action="change->translation-settings#save">
         <input data-translation-settings-target="referenceLines" data-action="change->translation-settings#save">
+        <input type="checkbox" data-translation-settings-target="residentLlama" data-action="change->translation-settings#save">
+        <input data-translation-settings-target="modelKeepSeconds" data-action="change->translation-settings#save">
       </div>
     `;
     mockIPC((command, args) => {
       if (command === "translation_settings")
-        return { batch_size: 8, retries: 3, reference_lines: 2 };
+        return {
+          batch_size: 8,
+          retries: 3,
+          reference_lines: 2,
+          has_resident_llama: true,
+          model_keep_seconds: 0,
+        };
       if (command === "save_translation_settings") {
         savedArgs = args;
         return (args as { settings: unknown }).settings;
@@ -50,7 +58,28 @@ describe("TranslationSettingsController", () => {
     await settle();
 
     expect(savedArgs).toEqual({
-      settings: { batch_size: 4, retries: 3, reference_lines: 2 },
+      settings: {
+        batch_size: 4,
+        retries: 3,
+        reference_lines: 2,
+        has_resident_llama: true,
+        model_keep_seconds: 0,
+      },
     });
+  });
+
+  // @behavior TL-077
+  it("saves the Resident llama-server turned off and stops offering the kept seconds", async () => {
+    const residentLlama = input("residentLlama");
+
+    residentLlama.checked = false;
+    residentLlama.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect([
+      (savedArgs as { settings: { has_resident_llama: boolean } }).settings
+        .has_resident_llama,
+      input("modelKeepSeconds").disabled,
+    ]).toEqual([false, true]);
   });
 });

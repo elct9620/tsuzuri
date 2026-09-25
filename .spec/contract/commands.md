@@ -182,6 +182,14 @@ Make the Current Resource's latest undone change again, as `undo` puts one back.
 pub fn redo(app: AppHandle) -> Result<(), Failure> {}
 ```
 
+## `revert_row`
+
+Take back one Comparison Row of the named Backup against the Current Resource's original, or its translation into `language`, as they compare now: for a Pair its `text`, its `times`, or the `whole` cue; for any other row the whole of it, putting back the Backup's cues in place of the subtitle's. Only that subtitle is written, with the Bilingual SRTs it feeds, as one change in the Undo History, emitting `project-changed`. A row the comparison does not have is refused as `no-row`, a Backup the subtitle does not have as `no-backup`, and a subtitle a running Mode writes as `mode-running`.
+
+```rust
+pub fn revert_row(app: AppHandle, language: Option<Language>, backup: String, row: usize, part: RevertPart) -> Result<(), Failure> {}
+```
+
 ## `export_path`
 
 Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone, a Bilingual SRT's in its Bilingual Order.

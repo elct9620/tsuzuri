@@ -50,6 +50,10 @@ pub enum Failure {
     NoBackup {
         backup: String,
     },
+    /// Taking back a Comparison Row the comparison no longer has, as after the subtitle changed.
+    NoRow {
+        row: usize,
+    },
     /// Transcribing over an original subtitle the user did not ask to overwrite.
     SubtitleExists {
         path: PathBuf,

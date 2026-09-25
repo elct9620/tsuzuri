@@ -40,6 +40,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.invalidTimes");
     case "no-backup":
       return t("failures.noBackup", { backup: error.backup });
+    case "no-row":
+      return t("failures.noRow");
     case "subtitle-exists":
       return t("failures.subtitleExists", { path: error.path });
     case "component-not-ready":

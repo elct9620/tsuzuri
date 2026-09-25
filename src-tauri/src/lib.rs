@@ -68,6 +68,7 @@ pub fn run() {
             project::commands::current_project,
             project::commands::edit_segment,
             project::commands::change_segments,
+            project::commands::revert_row,
             project::commands::undo,
             project::commands::redo,
             project::commands::subtitle_versions,

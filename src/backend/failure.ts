@@ -13,6 +13,7 @@ export type Failure =
   | { code: "mode-running" }
   | { code: "invalid-times" }
   | { code: "no-backup"; backup: string }
+  | { code: "no-row"; row: number }
   | { code: "subtitle-exists"; path: string }
   | { code: "component-not-ready"; component: string }
   | { code: "step-failed"; step: string; detail: string }

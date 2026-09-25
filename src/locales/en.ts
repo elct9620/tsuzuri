@@ -193,6 +193,7 @@ const en = {
     noResource: "The directory has no media file or SRT file to work on",
     noMedia: "This resource has no video or audio file to transcribe",
     noBackup: "No such backup: {{backup}}",
+    noRow: "The comparison has changed; compare again before taking a cue back",
     invalidTimes: "A segment cannot end before it starts",
     modeRunning:
       "A task running on this Resource is writing this subtitle; try again once it ends",

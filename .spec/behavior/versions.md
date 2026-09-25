@@ -129,3 +129,60 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | Given | the Versions dialog listing a Backup of the `en` translation |
 | When | restoring it is chosen |
 | Then | the Project is asked to restore that Backup of `en`, and a Notification says it was restored |
+
+## `VR-016` Taking back the text of one cue
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup of `ep01.srt` reading `你好` from 0 to 1 second, and `ep01.srt` now `您好` from 0 to 1.2 seconds |
+| When | the text of that row is taken back |
+| Then | `ep01.srt` reads `你好` from 0 to 1.2 seconds |
+
+## `VR-017` Taking back the times of one cue
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup of `ep01.srt` reading `你好` from 0 to 1 second, and `ep01.srt` now `您好` from 0 to 1.2 seconds |
+| When | the times of that row are taken back |
+| Then | `ep01.srt` reads `您好` from 0 to 1 second |
+
+## `VR-018` Taking back a removed cue
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup of `ep01.srt` reading `你好` from 0 to 1 and `世界` from 1 to 2 seconds, and `ep01.srt` now only `你好` |
+| When | the row of `世界` is taken back |
+| Then | `ep01.srt` reads `你好` and then `世界` from 1 to 2 seconds |
+
+## `VR-019` Taking back an added cue
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup of `ep01.srt` reading `你好`, and `ep01.srt` now `你好` and `再見` from 2 to 3 seconds |
+| When | the row of `再見` is taken back |
+| Then | `ep01.srt` reads only `你好` |
+
+## `VR-020` Taking back a split
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup of `ep01.srt` reading `你好世界` from 0 to 2 seconds, and `ep01.srt` now `你好` from 0 to 1 and `世界` from 1 to 2 seconds |
+| When | the row is taken back |
+| Then | `ep01.srt` reads `你好世界` from 0 to 2 seconds |
+
+## `VR-021` Undoing a cue taken back
+
+| Step | Statement |
+| --- | --- |
+| Given | the text of one row of `ep01.srt` taken back |
+| When | the change is undone |
+| Then | `ep01.srt` reads as it did before |
+
+## `VR-022` Refusing a row the comparison does not have
+
+| Step | Statement |
+| --- | --- |
+| Given | a comparison of a Backup with `ep01.srt` of one row |
+| When | its second row is taken back |
+| Then | it is refused as `no-row` and `ep01.srt` is left as it was |
+

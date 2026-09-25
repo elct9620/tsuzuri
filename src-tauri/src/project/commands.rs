@@ -4,7 +4,7 @@ use tauri::{AppHandle, Manager, Runtime};
 
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
-use super::versions::{compare, ComparedRow, SubtitleVersions};
+use super::versions::{compare, ComparedRow, RevertPart, SubtitleVersions};
 use super::{CurrentProject, Project, ProjectOptions, ProjectView, SegmentField};
 use crate::failure::Failure;
 use crate::language::Language;
@@ -86,6 +86,21 @@ pub fn edit_segment(
 #[tauri::command]
 pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Failure> {
     let result = app.state::<CurrentProject>().change_segments(change);
+    app.announce_project();
+    result
+}
+
+#[tauri::command]
+pub fn revert_row(
+    app: AppHandle,
+    language: Option<Language>,
+    backup: String,
+    row: usize,
+    part: RevertPart,
+) -> Result<(), Failure> {
+    let result = app
+        .state::<CurrentProject>()
+        .revert_row(language, &backup, row, part);
     app.announce_project();
     result
 }

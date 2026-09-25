@@ -190,6 +190,7 @@ const zhHant: typeof en = {
     noResource: "目錄裡沒有可處理的媒體檔或 SRT 檔",
     noMedia: "這個資源沒有可轉錄的影片或音訊",
     noBackup: "找不到這份備份：{{backup}}",
+    noRow: "比較的內容已經變了，請重新比較後再還原",
     invalidTimes: "結束時間不能早於開始時間",
     modeRunning: "這個資源的任務正在寫入這份字幕，請等任務結束再改",
     changedElsewhere: "字幕已在其他程式修改過，已重新讀取，這次的修改沒有寫入",

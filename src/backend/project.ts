@@ -229,6 +229,19 @@ export function restoreVersion(
   return invoke("restore_version", { language, backup });
 }
 
+/** Which part of a Comparison Row to take back. */
+export type RevertPart = "text" | "times" | "whole";
+
+/** Takes back one Comparison Row of `backup` against the subtitle in `language`, as they compare now. */
+export function revertRow(
+  language: string | null,
+  backup: string,
+  row: number,
+  part: RevertPart,
+): Promise<void> {
+  return invoke("revert_row", { language, backup, row, part });
+}
+
 /** One term: its word in each Language, and whether it names a Speaker. */
 export interface GlossaryRow {
   words: string[];

@@ -8,7 +8,7 @@ use serde::Serialize;
 use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 use super::history::{SubtitleSnapshot, UndoHistory};
-use super::versions::SubtitleVersions;
+use super::versions::{self, RevertPart, SubtitleVersions};
 use super::{
     translation_srt, translation_with_speakers, BackupKind, CurrentResource, Project,
     ProjectConfig, ProjectOptions, SegmentField, SubtitleDigest, TranscriptionTarget,
@@ -368,7 +368,30 @@ impl Project {
             Some(backup) => self.backup_of(language, backup)?,
             None => self.subtitle_path(language)?,
         };
-        files::transcript_at(&path)
+        version_at(&path, language)
+    }
+
+    /// Takes back the Comparison Row at `row` of the named Backup against the subtitle in
+    /// `language`, writing only that subtitle and the Bilingual SRTs it feeds.
+    fn revert_row(
+        &mut self,
+        language: Option<Language>,
+        backup: &str,
+        row: usize,
+        part: RevertPart,
+    ) -> Result<(), Failure> {
+        let subtitle = self.subtitle_path(language)?;
+        let transcript = versions::reverted_transcript(
+            &version_at(&self.backup_of(language, backup)?, language)?,
+            &version_at(&subtitle, language)?,
+            row,
+            part,
+        )
+        .ok_or(Failure::NoRow { row })?;
+        files::write_srt(&subtitle, transcript.to_srt(SrtContent::Original))?;
+        let name = self.current()?.name.clone();
+        self.read_current_again()?;
+        self.write_bilingual_subtitles(&name, language)
     }
 
     /// Keeps the subtitle in `language` as a Backup, puts the named Backup in its place and reads
@@ -424,6 +447,15 @@ impl Project {
 
     fn save_config(&self) -> Result<(), Failure> {
         Ok(self.config().save(&self.directory)?)
+    }
+}
+
+/// The Version of a subtitle at `path`: an original read for its Speakers, a translation as
+/// written, so a comparison and what it takes back see each cue the same way.
+fn version_at(path: &Path, language: Option<Language>) -> Result<Transcript, Failure> {
+    match language {
+        None => files::transcript_at(path),
+        Some(_) => files::translation_at(path),
     }
 }
 
@@ -1011,6 +1043,22 @@ impl CurrentProject {
             |_, subtitle| subtitle == language,
             |project| {
                 project.make_undoable_change(|project| project.restore_version(language, backup))
+            },
+        )
+    }
+
+    pub fn revert_row(
+        &self,
+        language: Option<Language>,
+        backup: &str,
+        row: usize,
+        part: RevertPart,
+    ) -> Result<(), Failure> {
+        self.change_unless_held(
+            |_, subtitle| subtitle == language,
+            |project| {
+                project
+                    .make_undoable_change(|project| project.revert_row(language, backup, row, part))
             },
         )
     }
@@ -3008,6 +3056,132 @@ mod tests {
         assert_eq!(
             current.view().unwrap().running_mode(),
             Some(ENGLISH_TRANSLATION)
+        );
+    }
+    const BACKUP: &str = "ep01.20260925T023000Z.srt";
+
+    /// A Current Resource `ep01` reading `now`, with a Backup of it reading `backup`.
+    fn backed_up_project_in(dir: &TempDir, backup: &str, now: &str) -> CurrentProject {
+        std::fs::write(dir.path().join("ep01.srt"), now).unwrap();
+        write_backup(dir, BACKUP, backup);
+        project_in(dir)
+    }
+
+    // @behavior VR-016
+    #[test]
+    fn takes_back_the_text_of_one_cue() {
+        let dir = TempDir::new("vr-revert-text");
+        let current = backed_up_project_in(
+            &dir,
+            &srt_of(&[(0, 1_000, "你好")]),
+            &srt_of(&[(0, 1_200, "您好")]),
+        );
+
+        current
+            .revert_row(None, BACKUP, 0, RevertPart::Text)
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), srt_of(&[(0, 1_200, "你好")]));
+    }
+
+    // @behavior VR-017
+    #[test]
+    fn takes_back_the_times_of_one_cue() {
+        let dir = TempDir::new("vr-revert-times");
+        let current = backed_up_project_in(
+            &dir,
+            &srt_of(&[(0, 1_000, "你好")]),
+            &srt_of(&[(0, 1_200, "您好")]),
+        );
+
+        current
+            .revert_row(None, BACKUP, 0, RevertPart::Times)
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), srt_of(&[(0, 1_000, "您好")]));
+    }
+
+    // @behavior VR-018
+    #[test]
+    fn takes_back_a_removed_cue() {
+        let dir = TempDir::new("vr-revert-removed");
+        let current = backed_up_project_in(
+            &dir,
+            &srt_of(&[(0, 1_000, "你好"), (1_000, 2_000, "世界")]),
+            &srt_of(&[(0, 1_000, "你好")]),
+        );
+
+        current
+            .revert_row(None, BACKUP, 1, RevertPart::Whole)
+            .unwrap();
+
+        assert_eq!(
+            read(&dir, "ep01.srt"),
+            srt_of(&[(0, 1_000, "你好"), (1_000, 2_000, "世界")])
+        );
+    }
+
+    // @behavior VR-019
+    #[test]
+    fn takes_back_an_added_cue() {
+        let dir = TempDir::new("vr-revert-added");
+        let current = backed_up_project_in(
+            &dir,
+            &srt_of(&[(0, 1_000, "你好")]),
+            &srt_of(&[(0, 1_000, "你好"), (2_000, 3_000, "再見")]),
+        );
+
+        current
+            .revert_row(None, BACKUP, 1, RevertPart::Whole)
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), srt_of(&[(0, 1_000, "你好")]));
+    }
+
+    // @behavior VR-020
+    #[test]
+    fn takes_back_a_split() {
+        let dir = TempDir::new("vr-revert-split");
+        let current = backed_up_project_in(
+            &dir,
+            &srt_of(&[(0, 2_000, "你好世界")]),
+            &srt_of(&[(0, 1_000, "你好"), (1_000, 2_000, "世界")]),
+        );
+
+        current
+            .revert_row(None, BACKUP, 0, RevertPart::Whole)
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), srt_of(&[(0, 2_000, "你好世界")]));
+    }
+
+    // @behavior VR-021
+    #[test]
+    fn undoes_a_cue_taken_back() {
+        let dir = TempDir::new("vr-revert-undo");
+        let now = srt_of(&[(0, 1_200, "您好")]);
+        let current = backed_up_project_in(&dir, &srt_of(&[(0, 1_000, "你好")]), &now);
+        current
+            .revert_row(None, BACKUP, 0, RevertPart::Text)
+            .unwrap();
+
+        current.undo().unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), now);
+    }
+
+    // @behavior VR-022
+    #[test]
+    fn refuses_a_row_the_comparison_does_not_have() {
+        let dir = TempDir::new("vr-revert-no-row");
+        let now = srt_of(&[(0, 1_000, "您好")]);
+        let current = backed_up_project_in(&dir, &srt_of(&[(0, 1_000, "你好")]), &now);
+
+        let result = current.revert_row(None, BACKUP, 1, RevertPart::Whole);
+
+        assert_eq!(
+            (result, read(&dir, "ep01.srt")),
+            (Err(Failure::NoRow { row: 1 }), now)
         );
     }
 }

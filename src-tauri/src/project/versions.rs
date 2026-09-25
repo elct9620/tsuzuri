@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::language::Language;
 use crate::project::Backup;
@@ -46,6 +46,74 @@ pub struct ComparedRow {
 pub fn compare(left: &Transcript, right: &Transcript) -> Vec<ComparedRow> {
     let left: Vec<ComparedCue> = left.segments.iter().map(ComparedCue::from).collect();
     let right: Vec<ComparedCue> = right.segments.iter().map(ComparedCue::from).collect();
+    row_positions(&left, &right)
+        .into_iter()
+        .map(|positions| {
+            row_of(
+                positions.left.iter().map(|&at| left[at].clone()).collect(),
+                positions
+                    .right
+                    .iter()
+                    .map(|&at| right[at].clone())
+                    .collect(),
+            )
+        })
+        .collect()
+}
+
+/// Which part of a Comparison Row to take back.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum RevertPart {
+    Text,
+    Times,
+    Whole,
+}
+
+/// `now` with the Comparison Row at `row` against `backup` taken back: for a Pair its text, its
+/// times or the whole cue, for any other row the Backup's cues in place of those now. None when
+/// the comparison has no such row.
+pub fn reverted_transcript(
+    backup: &Transcript,
+    now: &Transcript,
+    row: usize,
+    part: RevertPart,
+) -> Option<Transcript> {
+    let left: Vec<ComparedCue> = backup.segments.iter().map(ComparedCue::from).collect();
+    let right: Vec<ComparedCue> = now.segments.iter().map(ComparedCue::from).collect();
+    let positions = row_positions(&left, &right).into_iter().nth(row)?;
+    let mut segments = now.segments.clone();
+    match (positions.left.as_slice(), positions.right.as_slice(), part) {
+        ([from], [to], RevertPart::Text) => {
+            segments[*to].text = backup.segments[*from].text.clone()
+        }
+        ([from], [to], RevertPart::Times) => {
+            segments[*to].start_ms = backup.segments[*from].start_ms;
+            segments[*to].end_ms = backup.segments[*from].end_ms;
+        }
+        _ => {
+            segments = now
+                .segments
+                .iter()
+                .enumerate()
+                .filter(|(at, _)| !positions.right.contains(at))
+                .map(|(_, segment)| segment.clone())
+                .collect();
+            segments.extend(positions.left.iter().map(|&at| backup.segments[at].clone()));
+            segments.sort_by_key(|segment| (segment.start_ms, segment.end_ms));
+        }
+    }
+    Some(Transcript { segments })
+}
+
+/// The positions of the cues of one Comparison Row in each Version.
+struct RowPositions {
+    left: Vec<usize>,
+    right: Vec<usize>,
+}
+
+/// The cues of `left` and `right` grouped into Comparison Rows by position, in time order.
+fn row_positions(left: &[ComparedCue], right: &[ComparedCue]) -> Vec<RowPositions> {
     // Each cue is a node, the left ones first; a pair of overlapping cues joins their groups.
     let mut groups = Groups::new(left.len() + right.len());
     for (left_index, left_cue) in left.iter().enumerate() {
@@ -55,31 +123,23 @@ pub fn compare(left: &Transcript, right: &Transcript) -> Vec<ComparedRow> {
             }
         }
     }
-    pair_moved_cues(&left, &right, &mut groups);
-    let mut rows: Vec<ComparedRow> = groups
+    pair_moved_cues(left, right, &mut groups);
+    let mut rows: Vec<RowPositions> = groups
         .members()
         .into_iter()
         .map(|members| {
             let (lefts, rights): (Vec<usize>, Vec<usize>) =
                 members.into_iter().partition(|&node| node < left.len());
-            row_of(
-                lefts
-                    .into_iter()
-                    .map(|left_index| left[left_index].clone())
-                    .collect(),
-                rights
-                    .into_iter()
-                    .map(|right_index| right[right_index - left.len()].clone())
-                    .collect(),
-            )
+            RowPositions {
+                left: lefts,
+                right: rights.into_iter().map(|node| node - left.len()).collect(),
+            }
         })
         .collect();
-    rows.sort_by_key(|row| {
-        row.left
-            .iter()
-            .chain(&row.right)
-            .map(|cue| cue.start_ms)
-            .min()
+    rows.sort_by_key(|positions| {
+        let lefts = positions.left.iter().map(|&at| left[at].start_ms);
+        let rights = positions.right.iter().map(|&at| right[at].start_ms);
+        lefts.chain(rights).min()
     });
     rows
 }

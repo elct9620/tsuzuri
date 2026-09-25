@@ -4,7 +4,8 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 
 ## Includes
 
-- `src-tauri/src/pipeline.rs`
+- `src-tauri/src/transcription.rs`
+- `src-tauri/src/transcription/*.rs`
 - `src/controllers/transcribe_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 

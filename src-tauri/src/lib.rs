@@ -3,7 +3,6 @@ pub mod failure;
 pub mod history;
 pub mod language;
 pub mod models;
-pub mod pipeline;
 pub mod processes;
 pub mod progress;
 pub mod project;
@@ -13,6 +12,7 @@ pub mod segment_change;
 pub mod steps;
 pub mod timing;
 pub mod transcript;
+pub mod transcription;
 pub mod translation;
 pub mod translation_glossary;
 pub mod versions;
@@ -63,7 +63,7 @@ pub fn run() {
             components::component_statuses,
             models::model_settings,
             models::choose_model,
-            pipeline::transcribe,
+            transcription::commands::transcribe,
             project::current_project,
             project::edit_segment,
             project::change_segments,
@@ -78,9 +78,9 @@ pub fn run() {
             project::set_primary_language,
             project::set_project_options,
             project::show_translation,
-            translation::save_translation_settings,
-            translation::translate,
-            translation::translation_settings,
+            translation::commands::save_translation_settings,
+            translation::commands::translate,
+            translation::commands::translation_settings,
             translation_glossary::save_translation_glossary,
             translation_glossary::translation_glossary_table,
         ])

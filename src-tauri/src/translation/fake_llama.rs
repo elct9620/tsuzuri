@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use serde_json::json;
 
-use super::model::TranslationModel;
+use super::llama::TranslationModel;
 use crate::test_support::{FakeHttp, Response};
 
 /// The lines of one request: each index with its text.

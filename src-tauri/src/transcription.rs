@@ -1,24 +1,20 @@
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::Instant;
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager};
 
-use crate::components::{self, Resolver};
 use crate::failure::Failure;
-use crate::language::Language;
-use crate::models::{self, ModelSettings, ModelSlot};
-use crate::processes::{AppPorts, Processes};
+use crate::models::{ModelSettings, ModelSlot};
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, TranscriptionTarget};
 use crate::steps::{StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
-use crate::transcript::{parse_timestamp, Segment, Transcript};
+use crate::transcript::Transcript;
 
-/// 16-bit mono PCM at 16 kHz, the only input whisper-cli is given.
-const WAV_BYTES_PER_SECOND: u64 = 16_000 * 2;
-const WAV_HEADER_BYTES: u64 = 44;
+pub mod commands;
+mod whisper;
+
 const STDERR_TAIL_LINES: usize = 5;
 
 #[derive(Debug, Clone, Serialize)]
@@ -53,7 +49,7 @@ pub async fn run_transcribe(
         ports,
         "convert",
         &tools.ffmpeg,
-        &conversion_args(input, &wav),
+        &whisper::conversion_args(input, &wav),
         |_| {},
         |_| {},
     )
@@ -68,16 +64,16 @@ pub async fn run_transcribe(
         ports,
         "transcribe",
         &tools.whisper,
-        &transcription_args(model, job.language, &wav, &srt_prefix),
+        &whisper::transcription_args(model, job.language, &wav, &srt_prefix),
         |line| {
-            if line.starts_with(WHISPER_START_MARK) {
+            if line.starts_with(whisper::START_MARK) {
                 enter(ports, &mut phases, "transcribe");
-            } else if let Some(percent) = whisper_progress(line) {
+            } else if let Some(percent) = whisper::progress(line) {
                 ports.report("transcribe", Some(percent));
             }
         },
         |line| {
-            if let Some(segment) = whisper_segment(line) {
+            if let Some(segment) = whisper::segment(line) {
                 project.push_segment(job.generation, segment);
                 ports.announce_project();
             }
@@ -95,67 +91,10 @@ pub async fn run_transcribe(
     project.write_transcript(job.generation, transcript);
     ports.announce_project();
     Ok(Transcription {
-        audio_seconds: audio_bytes.saturating_sub(WAV_HEADER_BYTES) as f64
-            / WAV_BYTES_PER_SECOND as f64,
+        audio_seconds: whisper::audio_seconds(audio_bytes),
         transcribe_seconds,
         phases: phases.finish(),
     })
-}
-
-fn conversion_args(input: &Path, wav: &Path) -> Vec<String> {
-    let mut args: Vec<String> = ["-nostdin", "-y", "-i"].map(String::from).to_vec();
-    args.push(input.to_string_lossy().into_owned());
-    args.extend(["-vn", "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le"].map(String::from));
-    args.push(wav.to_string_lossy().into_owned());
-    args
-}
-
-fn transcription_args(
-    model: &Path,
-    language: Language,
-    wav: &Path,
-    srt_prefix: &Path,
-) -> Vec<String> {
-    vec![
-        "-m".to_string(),
-        model.to_string_lossy().into_owned(),
-        "-l".to_string(),
-        language.whisper_code().to_string(),
-        "-osrt".to_string(),
-        "-pp".to_string(),
-        "-f".to_string(),
-        wav.to_string_lossy().into_owned(),
-        "-of".to_string(),
-        srt_prefix.to_string_lossy().into_owned(),
-    ]
-}
-
-/// whisper-cli prints this on stderr once its Model is loaded and it starts on the audio.
-const WHISPER_START_MARK: &str = "main: processing";
-
-/// whisper-cli prints each Segment on stdout as it is transcribed:
-/// `[00:00:00.000 --> 00:00:02.000]  text`.
-fn whisper_segment(line: &str) -> Option<Segment> {
-    let (times, text) = line.trim().strip_prefix('[')?.split_once(']')?;
-    let (start, end) = times.split_once("-->")?;
-    Some(Segment {
-        start_ms: parse_timestamp(start.trim())?,
-        end_ms: parse_timestamp(end.trim())?,
-        speaker: None,
-        text: text.trim().to_string(),
-        translation: None,
-    })
-}
-
-/// whisper-cli `-pp` prints `whisper_print_progress_callback: progress = 42%` on stderr.
-fn whisper_progress(line: &str) -> Option<u8> {
-    line.split_once("progress =")?
-        .1
-        .trim()
-        .strip_suffix('%')?
-        .trim()
-        .parse()
-        .ok()
 }
 
 /// Runs one Step to completion. A Step that exits non-zero fails with the last lines it wrote to stderr.
@@ -193,46 +132,6 @@ async fn run_step(
     ))
 }
 
-#[tauri::command]
-pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription, Failure> {
-    let job = app
-        .state::<CurrentProject>()
-        .transcription_target(overwrite)?;
-    let phases = Phases::start("transcribe", "prepare");
-    app.report("prepare", None);
-    let [ffmpeg, whisper] =
-        components::find_ready_executables(Resolver::from_app(&app)?, ["ffmpeg", "whisper"])
-            .await?;
-    let tools = Tools { ffmpeg, whisper };
-    let settings = models::load_settings(&app)?;
-    let started_at = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |since| since.as_millis());
-    let work = app
-        .path()
-        .app_cache_dir()?
-        .join("work")
-        .join(started_at.to_string());
-    let processes = app.state::<Processes>().inner().clone();
-
-    let ports = AppPorts {
-        app: &app,
-        processes: &processes,
-    };
-    let result = run_transcribe(
-        &ports,
-        &app.state::<CurrentProject>(),
-        &tools,
-        &settings,
-        &job,
-        &work,
-        phases,
-    )
-    .await;
-    let _ = std::fs::remove_dir_all(&work);
-    result
-}
-
 #[cfg(all(test, unix))]
 mod tests {
     use std::sync::{Arc, Mutex};
@@ -240,7 +139,12 @@ mod tests {
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
     use tauri::Listener;
 
+    use tauri::Manager;
+
     use super::*;
+    use crate::components::{self, Resolver};
+    use crate::language::Language;
+    use crate::processes::{AppPorts, Processes};
     use crate::project::Project;
     use crate::test_support::{write_executable, TempDir};
 

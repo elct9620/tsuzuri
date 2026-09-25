@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use super::model::{AnswerError, BatchRequest, ReviewItem, TranslationModel};
+use super::llama::{AnswerError, TranslationModel};
+use super::prompt::{BatchRequest, ReviewItem};
 use super::TranslationJob;
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};

@@ -3,16 +3,13 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
 
-use crate::components::{self, Resolver};
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
-use crate::models::{self, ModelSettings, ModelSlot};
-use crate::processes::{AppPorts, Processes};
+use crate::models::{ModelSettings, ModelSlot};
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, TranslationSource};
 use crate::steps::{StepEvent, Steps};
@@ -20,24 +17,18 @@ use crate::timing::{PhaseTiming, Phases};
 use crate::transcript::Segment;
 
 mod batching;
+pub mod commands;
 #[cfg(test)]
 mod fake_llama;
-mod model;
+mod llama;
+mod prompt;
 mod repair;
 mod settings;
 mod speaker_labels;
 
-use model::TranslationModel;
+use llama::TranslationModel;
 pub use settings::TranslationSettings;
 use speaker_labels::LabelledText;
-
-/// How long llama-server may take to load its Model before translation gives up.
-const READY_TIMEOUT: Duration = Duration::from_secs(180);
-const HEALTH_POLL: Duration = Duration::from_millis(500);
-/// A Batch and its reference lines fit in a small context, which keeps the KV cache inside 4 GB of VRAM.
-const CONTEXT_SIZE: &str = "4096";
-/// Subtitles need no reasoning, and a thinking Model spends most of each request on it.
-const CHAT_TEMPLATE_KWARGS: &str = r#"{"enable_thinking":false}"#;
 
 /// The choices the Translate panel offers for one translation.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
@@ -104,20 +95,8 @@ pub async fn run_translate(
         summary_word_limit: plan.options.summary_word_limit,
         glossary_terms: &glossary_terms,
     };
-    let port = free_port()?;
-    let args = [
-        "-m".to_string(),
-        model.to_string_lossy().into_owned(),
-        "--host".to_string(),
-        "127.0.0.1".to_string(),
-        "--port".to_string(),
-        port.to_string(),
-        "-c".to_string(),
-        CONTEXT_SIZE.to_string(),
-        "--chat-template-kwargs".to_string(),
-        CHAT_TEMPLATE_KWARGS.to_string(),
-        "--no-webui".to_string(),
-    ];
+    let port = llama::free_port()?;
+    let args = llama::server_args(model, port);
 
     enter(ports, &mut phases, "load");
     let (mut events, pid) = ports
@@ -182,7 +161,7 @@ async fn translate_once_ready(
     phases: &mut Phases,
     on_batch: impl Fn(&[Segment]),
 ) -> Result<Vec<Segment>, Failure> {
-    wait_until_ready(&reqwest::Client::new(), base_url, ready_timeout, has_exited).await?;
+    llama::wait_until_ready(base_url, ready_timeout, has_exited).await?;
     let model = TranslationModel::new(base_url);
     enter(progress, phases, "detect");
     let split_sentences = find_split_sentences(&model, job, |percent| {
@@ -198,38 +177,6 @@ async fn translate_once_ready(
         on_batch(translated_segments);
     })
     .await
-}
-
-/// A port the OS just handed out and released; llama-server binds it moments later.
-fn free_port() -> Result<u16, Failure> {
-    let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
-    Ok(listener.local_addr()?.port())
-}
-
-async fn wait_until_ready(
-    client: &reqwest::Client,
-    base_url: &str,
-    timeout: Duration,
-    has_exited: impl Fn() -> bool,
-) -> Result<(), Failure> {
-    let deadline = Instant::now() + timeout;
-    loop {
-        let healthy = client
-            .get(format!("{base_url}/health"))
-            .send()
-            .await
-            .is_ok_and(|response| response.status().is_success());
-        if healthy {
-            return Ok(());
-        }
-        if has_exited() {
-            return Err(Failure::LlamaExited);
-        }
-        if Instant::now() >= deadline {
-            return Err(Failure::LlamaTimedOut);
-        }
-        tokio::time::sleep(HEALTH_POLL).await;
-    }
 }
 
 /// Asks the Model for Split Sentences window by window; a window it cannot answer is skipped.
@@ -334,50 +281,6 @@ async fn translate_segments(
     Ok(translated_segments)
 }
 
-#[tauri::command]
-pub async fn translate(
-    app: AppHandle,
-    target: Language,
-    options: TranslationOptions,
-) -> Result<Translation, Failure> {
-    let phases = Phases::start("translate", "prepare");
-    app.report("prepare", None);
-    let [llama] = components::find_ready_executables(Resolver::from_app(&app)?, ["llama"]).await?;
-    let model_settings = models::load_settings(&app)?;
-    let plan = TranslationPlan {
-        target,
-        options,
-        settings: TranslationSettings::load(&models::settings_dir(&app)?)?,
-    };
-    let processes = app.state::<Processes>().inner().clone();
-    run_translate(
-        &AppPorts {
-            app: &app,
-            processes: &processes,
-        },
-        &app.state::<CurrentProject>(),
-        &llama,
-        &model_settings,
-        &plan,
-        READY_TIMEOUT,
-        phases,
-    )
-    .await
-}
-
-#[tauri::command]
-pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failure> {
-    Ok(TranslationSettings::load(&models::settings_dir(&app)?)?)
-}
-
-#[tauri::command]
-pub fn save_translation_settings(
-    app: AppHandle,
-    settings: TranslationSettings,
-) -> Result<TranslationSettings, Failure> {
-    Ok(settings.save(&models::settings_dir(&app)?)?)
-}
-
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -387,7 +290,10 @@ mod tests {
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
     use tauri::Listener;
 
+    use tauri::Manager;
+
     use super::*;
+    use crate::processes::{AppPorts, Processes};
     use crate::project::SegmentField;
     use crate::test_support::Response;
     use crate::test_support::{project_of, TempDir};
@@ -1399,14 +1305,9 @@ mod tests {
         let llama = FakeLlama::with_echo(2);
         let segments = [segment(0, 1_000, "大家好")];
 
-        wait_until_ready(
-            &reqwest::Client::new(),
-            llama.base_url(),
-            Duration::from_secs(5),
-            || false,
-        )
-        .await
-        .unwrap();
+        llama::wait_until_ready(llama.base_url(), Duration::from_secs(5), || false)
+            .await
+            .unwrap();
         translate_segments(&llama.model(), &job(&segments), &[], |_| {})
             .await
             .unwrap();
@@ -1603,7 +1504,7 @@ mod tests {
                 },
                 ..plan_for(Language::English)
             },
-            READY_TIMEOUT,
+            llama::READY_TIMEOUT,
             Phases::start("translate", "prepare"),
         )
         .await

@@ -6,7 +6,8 @@ The directory Rust holds open as the single source of truth: which files make it
 
 - `src-tauri/src/project.rs`
 - `src-tauri/src/resource.rs`
-- `src-tauri/src/pipeline.rs`
+- `src-tauri/src/transcription.rs`
+- `src-tauri/src/transcription/*.rs`
 - `src-tauri/src/translation.rs`
 - `src/controllers/project_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`

@@ -99,14 +99,6 @@ impl From<tauri::Error> for Failure {
     }
 }
 
-impl From<reqwest::Error> for Failure {
-    fn from(error: reqwest::Error) -> Self {
-        Failure::LlamaRequest {
-            detail: error.to_string(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

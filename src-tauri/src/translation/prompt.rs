@@ -1,21 +1,7 @@
-use std::collections::HashMap;
-
-use async_openai::config::OpenAIConfig;
-use async_openai::types::chat::{
-    ChatCompletionRequestSystemMessage, ChatCompletionRequestUserMessage,
-    CreateChatCompletionRequestArgs, ResponseFormat, ResponseFormatJsonSchema,
-};
-use async_openai::Client;
 use serde::Deserialize;
 use serde_json::json;
 
-use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
-
-/// The translation Model behind llama-server's OpenAI-compatible API.
-pub struct TranslationModel {
-    client: Client<OpenAIConfig>,
-}
 
 /// One request for translations: each line with its index, lines already translated for the Model
 /// to stay consistent with, the source text just before the lines, and what to fix from last time.
@@ -31,27 +17,6 @@ pub struct BatchRequest<'a> {
     pub correction: Option<String>,
 }
 
-/// Why the Model gave no usable answer: the request failed, or the answer could not be read.
-#[derive(Debug)]
-pub enum AnswerError {
-    FailedRequest(Failure),
-    MalformedAnswer(String),
-}
-
-impl From<AnswerError> for Failure {
-    fn from(error: AnswerError) -> Failure {
-        match error {
-            AnswerError::FailedRequest(failure) => failure,
-            AnswerError::MalformedAnswer(detail) => Failure::LlamaRequest { detail },
-        }
-    }
-}
-
-#[derive(Deserialize)]
-struct BatchAnswer {
-    translations: Vec<TranslatedLine>,
-}
-
 /// One translation for Self-Review, with the source text of the lines on either side of it.
 pub struct ReviewItem<'a> {
     pub index: usize,
@@ -62,232 +27,64 @@ pub struct ReviewItem<'a> {
 }
 
 #[derive(Deserialize)]
-struct ReviewAnswer {
-    reviews: Vec<LineReview>,
+pub struct BatchAnswer {
+    pub translations: Vec<TranslatedLine>,
 }
 
 #[derive(Deserialize)]
-struct LineReview {
-    index: usize,
-    best_matching_index: usize,
+pub struct ReviewAnswer {
+    pub reviews: Vec<LineReview>,
 }
 
 #[derive(Deserialize)]
-struct SummaryAnswer {
-    summary: String,
+pub struct LineReview {
+    pub index: usize,
+    pub best_matching_index: usize,
 }
 
 #[derive(Deserialize)]
-struct SplitSentencesAnswer {
-    clusters: Vec<Vec<usize>>,
+pub struct SummaryAnswer {
+    pub summary: String,
 }
 
 #[derive(Deserialize)]
-struct TranslatedLine {
-    index: usize,
-    text: String,
+pub struct SplitSentencesAnswer {
+    pub clusters: Vec<Vec<usize>>,
 }
 
-impl TranslationModel {
-    pub fn new(base_url: &str) -> TranslationModel {
-        TranslationModel {
-            client: Client::with_config(
-                OpenAIConfig::new().with_api_base(format!("{base_url}/v1")),
-            ),
-        }
-    }
-
-    /// The translation the Model answered for each index it answered.
-    pub async fn translate_batch(
-        &self,
-        batch: &BatchRequest<'_>,
-    ) -> Result<HashMap<usize, String>, AnswerError> {
-        let answer: BatchAnswer = self
-            .answer(
-                instruction(batch.languages),
-                user_message(batch),
-                TRANSLATION_TASK,
-                translation_schema(),
-            )
-            .await?;
-        Ok(answer
-            .translations
-            .into_iter()
-            .map(|line| (line.index, line.text.trim().to_string()))
-            .collect())
-    }
-
-    /// Runs of consecutive indices the Model reads as one sentence cut apart, two lines or more each.
-    pub async fn find_split_sentences(
-        &self,
-        source: Language,
-        lines: &[(usize, &str)],
-    ) -> Result<Vec<Vec<usize>>, AnswerError> {
-        let answer: SplitSentencesAnswer = self
-            .answer(
-                split_sentence_instruction(source),
-                format!("Subtitle lines:\n{}", lines_json(lines)),
-                SPLIT_SENTENCE_TASK,
-                split_sentence_schema(),
-            )
-            .await?;
-        Ok(answer
-            .clusters
-            .into_iter()
-            .map(|mut sentence| {
-                sentence.sort_unstable();
-                sentence.dedup();
-                sentence
-            })
-            .filter(|sentence| sentence.len() >= 2)
-            .collect())
-    }
-
-    /// The Rolling Summary rewritten from the previous one and the lines just translated,
-    /// kept under `word_limit` words.
-    pub async fn rewrite_summary(
-        &self,
-        languages: LanguagePair,
-        previous_summary: Option<&str>,
-        batch_pairs: &[(String, String)],
-        word_limit: usize,
-    ) -> Result<String, AnswerError> {
-        let mut parts = Vec::new();
-        if let Some(previous_summary) = previous_summary {
-            parts.push(format!("Previous summary:\n{previous_summary}"));
-        }
-        parts.push(format!(
-            "Newly translated lines from this batch:\n{}",
-            pair_lines(batch_pairs)
-        ));
-        let answer: SummaryAnswer = self
-            .answer(
-                summary_instruction(languages, word_limit),
-                parts.join("\n\n"),
-                SUMMARY_TASK,
-                summary_schema(),
-            )
-            .await?;
-        Ok(answer.summary.trim().to_string())
-    }
-
-    /// The line each item's translation belongs to, by the Model's reading, for each item it reviewed.
-    pub async fn review_translations(
-        &self,
-        languages: LanguagePair,
-        items: &[ReviewItem<'_>],
-    ) -> Result<HashMap<usize, usize>, AnswerError> {
-        let payload: Vec<_> = items
-            .iter()
-            .map(|item| {
-                let mut entry = json!({
-                    "index": item.index,
-                    "source": item.source,
-                    "translation": item.translation,
-                });
-                if let Some((index, source)) = item.previous_line {
-                    entry["previous_line_index"] = json!(index);
-                    entry["previous_line_source"] = json!(source);
-                }
-                if let Some((index, source)) = item.next_line {
-                    entry["next_line_index"] = json!(index);
-                    entry["next_line_source"] = json!(source);
-                }
-                entry
-            })
-            .collect();
-        let answer: ReviewAnswer = self
-            .answer(
-                review_instruction(languages),
-                format!(
-                    "Review these translations:\n{}",
-                    serde_json::Value::from(payload)
-                ),
-                REVIEW_TASK,
-                review_schema(),
-            )
-            .await?;
-        Ok(answer
-            .reviews
-            .into_iter()
-            .map(|review| (review.index, review.best_matching_index))
-            .collect())
-    }
-
-    async fn answer<T: for<'de> Deserialize<'de>>(
-        &self,
-        system: String,
-        user: String,
-        task: Task,
-        schema: serde_json::Value,
-    ) -> Result<T, AnswerError> {
-        let request = CreateChatCompletionRequestArgs::default()
-            .model("tsuzuri")
-            .messages([
-                ChatCompletionRequestSystemMessage::from(system).into(),
-                ChatCompletionRequestUserMessage::from(user).into(),
-            ])
-            .temperature(task.temperature)
-            .response_format(ResponseFormat::JsonSchema {
-                json_schema: ResponseFormatJsonSchema {
-                    name: task.name.to_string(),
-                    schema,
-                    strict: Some(true),
-                    description: None,
-                },
-            })
-            .build()
-            .map_err(|error| AnswerError::FailedRequest(request_failure(error)))?;
-        let response = self
-            .client
-            .chat()
-            .create(request)
-            .await
-            .map_err(|error| AnswerError::FailedRequest(request_failure(error)))?;
-        let content = response
-            .choices
-            .into_iter()
-            .next()
-            .and_then(|choice| choice.message.content)
-            .ok_or_else(|| AnswerError::MalformedAnswer("answered without content".to_string()))?;
-        serde_json::from_str(&content)
-            .map_err(|error| AnswerError::MalformedAnswer(error.to_string()))
-    }
+#[derive(Deserialize)]
+pub struct TranslatedLine {
+    pub index: usize,
+    pub text: String,
 }
 
 /// What one kind of request asks of the Model: the schema's name, and how freely it may answer.
-struct Task {
-    name: &'static str,
-    temperature: f32,
+pub struct Task {
+    pub name: &'static str,
+    pub temperature: f32,
 }
 
-const TRANSLATION_TASK: Task = Task {
+pub const TRANSLATION_TASK: Task = Task {
     name: "subtitle_translation",
     temperature: 0.2,
 };
 /// A review should reach the same verdict on the same lines every time.
-const REVIEW_TASK: Task = Task {
+pub const REVIEW_TASK: Task = Task {
     name: "subtitle_translation_review",
     temperature: 0.0,
 };
 /// A summary should say the same of the same lines every time.
-const SUMMARY_TASK: Task = Task {
+pub const SUMMARY_TASK: Task = Task {
     name: "rolling_summary",
     temperature: 0.0,
 };
 /// Judging where sentences continue wants the same answer every time.
-const SPLIT_SENTENCE_TASK: Task = Task {
+pub const SPLIT_SENTENCE_TASK: Task = Task {
     name: "continuation_clusters",
     temperature: 0.0,
 };
 
-fn request_failure(error: async_openai::error::OpenAIError) -> Failure {
-    Failure::LlamaRequest {
-        detail: error.to_string(),
-    }
-}
-
-fn instruction(languages: LanguagePair) -> String {
+pub fn instruction(languages: LanguagePair) -> String {
     format!(
         "You are a professional subtitle translator.
 Translate the given {source} subtitle lines into {target}.
@@ -304,7 +101,7 @@ Rules:
 }
 
 /// The Batch's lines go last, as one line of JSON, after whatever the Model should read first.
-fn user_message(batch: &BatchRequest<'_>) -> String {
+pub fn user_message(batch: &BatchRequest<'_>) -> String {
     let mut parts = Vec::new();
     if let Some(summary) = batch.summary {
         parts.push(format!(
@@ -361,7 +158,7 @@ fn pair_lines(pairs: &[(String, String)]) -> String {
         .join("\n")
 }
 
-fn review_instruction(languages: LanguagePair) -> String {
+pub fn review_instruction(languages: LanguagePair) -> String {
     format!(
         "You are reviewing {target} subtitle translations for accuracy against
 their original {source} lines, each identified by an \"index\". Some entries also
@@ -393,7 +190,7 @@ Respond only with the JSON object matching the required schema.",
 
 /// `translation_meaning` comes before the verdict so the Model restates the translation in its
 /// own words first, grounding the verdict in the text rather than in the neighbouring lines.
-fn review_schema() -> serde_json::Value {
+pub fn review_schema() -> serde_json::Value {
     json!({
         "type": "object",
         "properties": {
@@ -417,7 +214,7 @@ fn review_schema() -> serde_json::Value {
     })
 }
 
-fn summary_instruction(languages: LanguagePair, word_limit: usize) -> String {
+pub fn summary_instruction(languages: LanguagePair, word_limit: usize) -> String {
     format!(
         "You maintain a running summary that helps a {source}-to-{target}
 subtitle translator stay consistent across a long file, beyond what a short local context
@@ -436,7 +233,7 @@ required schema.",
     )
 }
 
-fn summary_schema() -> serde_json::Value {
+pub fn summary_schema() -> serde_json::Value {
     json!({
         "type": "object",
         "properties": {"summary": {"type": "string"}},
@@ -445,7 +242,7 @@ fn summary_schema() -> serde_json::Value {
     })
 }
 
-fn split_sentence_instruction(source: Language) -> String {
+pub fn split_sentence_instruction(source: Language) -> String {
     format!(
         "You identify {source} subtitle lines whose original sentence was split
 across multiple consecutive entries by an automatic transcription/subtitling tool.
@@ -464,7 +261,7 @@ Respond only with the JSON object matching the required schema.",
     )
 }
 
-fn split_sentence_schema() -> serde_json::Value {
+pub fn split_sentence_schema() -> serde_json::Value {
     json!({
         "type": "object",
         "properties": {
@@ -478,7 +275,7 @@ fn split_sentence_schema() -> serde_json::Value {
     })
 }
 
-fn translation_schema() -> serde_json::Value {
+pub fn translation_schema() -> serde_json::Value {
     json!({
         "type": "object",
         "properties": {
@@ -498,4 +295,49 @@ fn translation_schema() -> serde_json::Value {
         "required": ["translations"],
         "additionalProperties": false,
     })
+}
+
+/// The lines whose Split Sentences the Model is asked to find.
+pub fn split_sentence_message(lines: &[(usize, &str)]) -> String {
+    format!("Subtitle lines:\n{}", lines_json(lines))
+}
+
+/// The previous Rolling Summary, when there is one, and the lines just translated.
+pub fn summary_message(previous_summary: Option<&str>, batch_pairs: &[(String, String)]) -> String {
+    let mut parts = Vec::new();
+    if let Some(previous_summary) = previous_summary {
+        parts.push(format!("Previous summary:\n{previous_summary}"));
+    }
+    parts.push(format!(
+        "Newly translated lines from this batch:\n{}",
+        pair_lines(batch_pairs)
+    ));
+    parts.join("\n\n")
+}
+
+/// The translations the Model is asked to review, each with the source lines on either side.
+pub fn review_message(items: &[ReviewItem<'_>]) -> String {
+    let payload: Vec<_> = items
+        .iter()
+        .map(|item| {
+            let mut entry = json!({
+                "index": item.index,
+                "source": item.source,
+                "translation": item.translation,
+            });
+            if let Some((index, source)) = item.previous_line {
+                entry["previous_line_index"] = json!(index);
+                entry["previous_line_source"] = json!(source);
+            }
+            if let Some((index, source)) = item.next_line {
+                entry["next_line_index"] = json!(index);
+                entry["next_line_source"] = json!(source);
+            }
+            entry
+        })
+        .collect();
+    format!(
+        "Review these translations:\n{}",
+        serde_json::Value::from(payload)
+    )
 }

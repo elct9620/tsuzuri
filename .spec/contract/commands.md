@@ -176,10 +176,10 @@ pub fn translation_cues(app: AppHandle, language: Language) -> Result<Vec<Compar
 
 ## `restore_version`
 
-Keep the subtitle as an Overwrite Backup, then put the named Backup in its place and read the Current Resource again, emitting `project-changed`. A name the subtitle's Backups do not hold is refused as `no-backup`. A subtitle a running Mode writes is refused as `mode-running`.
+Keep the subtitle as an Overwrite Backup, then put the named Backup in its place and read the Current Resource again, emitting `project-changed`. A name the subtitle's Backups do not hold is refused as `no-backup`. A subtitle a running Mode writes is refused as `mode-running`. It answers how many Segments of the original, restored with times they did not have, find no cue at those times in one of the translations.
 
 ```rust
-pub fn restore_version(app: AppHandle, language: Option<Language>, backup: String) -> Result<(), Failure> {}
+pub fn restore_version(app: AppHandle, language: Option<Language>, backup: String) -> Result<Restoration, Failure> {}
 ```
 
 ## `undo`
@@ -200,10 +200,10 @@ pub fn redo(app: AppHandle) -> Result<(), Failure> {}
 
 ## `revert_row`
 
-Take back one Comparison Row of the named Backup against the Current Resource's original, or its translation into `language`, as they compare now: for a Pair its `text`, its `times`, or the `whole` cue; for any other row the whole of it, putting back the Backup's cues in place of the subtitle's. Only that subtitle is written, with the Bilingual SRTs it feeds, as one change in the Undo History, emitting `project-changed`. A row the comparison does not have is refused as `no-row`, a Backup the subtitle does not have as `no-backup`, and a subtitle a running Mode writes as `mode-running`.
+Take back one Comparison Row of the named Backup against the Current Resource's original, or its translation into `language`, as they compare now: for a Pair its `text`, its `times`, or the `whole` cue; for any other row the whole of it, putting back the Backup's cues in place of the subtitle's. Only that subtitle is written, with the Bilingual SRTs it feeds, as one change in the Undo History, emitting `project-changed`. A row the comparison does not have is refused as `no-row`, a Backup the subtitle does not have as `no-backup`, and a subtitle a running Mode writes as `mode-running`. It answers as `restore_version` does.
 
 ```rust
-pub fn revert_row(app: AppHandle, language: Option<Language>, backup: String, row: usize, part: RevertPart) -> Result<(), Failure> {}
+pub fn revert_row(app: AppHandle, language: Option<Language>, backup: String, row: usize, part: RevertPart) -> Result<Restoration, Failure> {}
 ```
 
 ## `export_path`

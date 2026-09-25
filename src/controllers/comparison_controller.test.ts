@@ -9,6 +9,10 @@ import type {
   SubtitleVersions,
 } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
+import {
+  NOTIFICATION_STACK,
+  notifications,
+} from "../ui/test_notification";
 import ComparisonController from "./comparison_controller";
 import TranscriptController from "./transcript_controller";
 
@@ -20,6 +24,7 @@ describe("ComparisonController", () => {
   let translationRows: ComparedRow[];
   let cuesByLanguage: Record<string, ReturnType<typeof cue>[]>;
   let calls: { command: string; args: unknown }[];
+  let unmatchedCount: number;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const sent = (command: string) =>
@@ -149,7 +154,9 @@ describe("ComparisonController", () => {
         <ol data-transcript-target="list" data-comparison-target="list"></ol>
         <datalist data-transcript-target="speakers"></datalist>
       </main>
+      ${NOTIFICATION_STACK}
     `;
+    unmatchedCount = 0;
     mockIPC(
       (command, args) => {
         calls.push({ command, args });
@@ -161,6 +168,8 @@ describe("ComparisonController", () => {
             : translationRows;
         if (command === "translation_cues")
           return cuesByLanguage[(args as { language: string }).language] ?? [];
+        if (command === "revert_row")
+          return { unmatched_count: unmatchedCount };
       },
       { shouldMockEvents: true },
     );
@@ -242,14 +251,28 @@ describe("ComparisonController", () => {
     document.querySelector<HTMLButtonElement>("li .revert-text")!.click();
     await settle();
 
-    expect(sent("revert_row")).toEqual([
-      {
-        language: null,
-        backup: "ep01.20260925T023000Z.output.srt",
-        row: 0,
-        part: "text",
-      },
+    expect([sent("revert_row"), notifications()]).toEqual([
+      [
+        {
+          language: null,
+          backup: "ep01.20260925T023000Z.output.srt",
+          row: 0,
+          part: "text",
+        },
+      ],
+      ["已還原"],
     ]);
+  });
+
+  // @behavior VR-048
+  it("points at the Segments a row taken back leaves without a translation", async () => {
+    unmatchedCount = 2;
+    await show();
+
+    document.querySelector<HTMLButtonElement>("li .revert-text")!.click();
+    await settle();
+
+    expect(notifications()).toEqual(["已還原", "2 段對不上譯文"]);
   });
 
   // @behavior VR-028

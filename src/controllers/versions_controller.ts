@@ -8,11 +8,12 @@ import {
   type Backup,
   type ComparedCue,
   type ComparedRow,
+  type Restoration,
   type SubtitleVersions,
   type TextSpan,
 } from "../backend/project";
 import { t } from "../i18n";
-import { notify, notifyFailure } from "../ui/notification";
+import { notifyFailure, notifyRestoration } from "../ui/notification";
 import { iconElement } from "../ui/icons";
 import { formatTime, localTime } from "../ui/time";
 
@@ -244,8 +245,9 @@ export default class VersionsController extends Controller {
 
   /** Takes back the row a take-back button belongs to, from the Backup on the left, and compares again. */
   async revert({ params }: { params: { row: number } }): Promise<void> {
+    let restoration: Restoration;
     try {
-      await revertRow(
+      restoration = await revertRow(
         this.shownLanguage(),
         this.leftTarget.value,
         params.row,
@@ -255,6 +257,7 @@ export default class VersionsController extends Controller {
       notifyFailure(t("compare.notReverted"), error);
       return;
     }
+    notifyRestoration(t("compare.reverted"), restoration);
     await this.showComparison();
   }
 
@@ -296,8 +299,9 @@ export default class VersionsController extends Controller {
   }
 
   async restore({ currentTarget }: Event): Promise<void> {
+    let restoration: Restoration;
     try {
-      await restoreVersion(
+      restoration = await restoreVersion(
         this.shownLanguage(),
         (currentTarget as HTMLElement).dataset.file,
       );
@@ -306,11 +310,11 @@ export default class VersionsController extends Controller {
       return;
     }
     this.dialogTarget.close();
-    notify({
-      title: t("versions.restored"),
-      detail: t("versions.replacedKept"),
-      kind: "success",
-    });
+    notifyRestoration(
+      t("versions.restored"),
+      restoration,
+      t("versions.replacedKept"),
+    );
   }
 
   private shownLanguage(): string | null {

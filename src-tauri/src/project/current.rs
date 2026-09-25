@@ -11,7 +11,7 @@ use super::history::{SubtitleSnapshot, UndoHistory};
 use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
     translation_srt, translation_with_speakers, BackupKind, CurrentResource, Project,
-    ProjectConfig, ProjectOptions, SegmentField, SubtitleDigest, TranscriptionTarget,
+    ProjectConfig, ProjectOptions, Restoration, SegmentField, SubtitleDigest, TranscriptionTarget,
     TranslationSource,
 };
 use crate::failure::Failure;
@@ -379,7 +379,8 @@ impl Project {
         backup: &str,
         row: usize,
         part: RevertPart,
-    ) -> Result<(), Failure> {
+    ) -> Result<Restoration, Failure> {
+        let previous = self.current()?.transcript.clone();
         let subtitle = self.subtitle_path(language)?;
         let transcript = versions::reverted_transcript(
             &version_at(&self.backup_of(language, backup)?, language)?,
@@ -391,12 +392,18 @@ impl Project {
         files::write_srt(&subtitle, transcript.to_srt(SrtContent::Original))?;
         let name = self.current()?.name.clone();
         self.read_current_again()?;
-        self.write_bilingual_subtitles(&name, language)
+        self.write_bilingual_subtitles(&name, language)?;
+        self.restoration(language, &previous)
     }
 
     /// Keeps the subtitle in `language` as a Backup, puts the named Backup in its place and reads
     /// the Current Resource again.
-    fn restore_version(&mut self, language: Option<Language>, backup: &str) -> Result<(), Failure> {
+    fn restore_version(
+        &mut self,
+        language: Option<Language>,
+        backup: &str,
+    ) -> Result<Restoration, Failure> {
+        let previous = self.current()?.transcript.clone();
         let backup_path = self.backup_of(language, backup)?;
         let subtitle = self.subtitle_path(language)?;
         let name = self.current()?.name.clone();
@@ -408,7 +415,32 @@ impl Project {
         )?;
         files::copy(&backup_path, &subtitle)?;
         self.read_current_again()?;
-        self.write_bilingual_subtitles(&name, language)
+        self.write_bilingual_subtitles(&name, language)?;
+        self.restoration(language, &previous)
+    }
+
+    /// What restoring the subtitle in `language` left behind, given the original as it was before;
+    /// restoring a translation gives no Segment new times.
+    fn restoration(
+        &self,
+        language: Option<Language>,
+        previous: &Transcript,
+    ) -> Result<Restoration, Failure> {
+        if language.is_some() {
+            return Ok(Restoration::default());
+        }
+        let current = self.current()?;
+        let translations = self
+            .resource(&current.name)?
+            .translations
+            .iter()
+            .map(|(_, path)| files::translation_at(path))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(Restoration::new(
+            previous,
+            &current.transcript,
+            &translations,
+        ))
     }
 
     /// Writes the Bilingual SRT beside each translation of the named Resource, or beside its
@@ -1046,7 +1078,11 @@ impl CurrentProject {
         self.update_project(|project| project.version_transcript(language, backup))
     }
 
-    pub fn restore_version(&self, language: Option<Language>, backup: &str) -> Result<(), Failure> {
+    pub fn restore_version(
+        &self,
+        language: Option<Language>,
+        backup: &str,
+    ) -> Result<Restoration, Failure> {
         self.change_unless_held(
             |_, subtitle| subtitle == language,
             |project| {
@@ -1073,7 +1109,7 @@ impl CurrentProject {
         backup: &str,
         row: usize,
         part: RevertPart,
-    ) -> Result<(), Failure> {
+    ) -> Result<Restoration, Failure> {
         self.change_unless_held(
             |_, subtitle| subtitle == language,
             |project| {
@@ -3188,6 +3224,44 @@ mod tests {
         current.undo().unwrap();
 
         assert_eq!(read(&dir, "ep01.srt"), now);
+    }
+
+    /// A Current Resource `ep01` whose merged cue is translated, with a Backup from before the merge.
+    fn merged_project_in(dir: &TempDir) -> CurrentProject {
+        std::fs::write(
+            dir.path().join("ep01.en.srt"),
+            srt_of(&[(0, 2_000, "Hello world")]),
+        )
+        .unwrap();
+        backed_up_project_in(
+            dir,
+            &srt_of(&[(0, 1_000, "你好"), (1_000, 2_000, "世界")]),
+            &srt_of(&[(0, 2_000, "你好世界")]),
+        )
+    }
+
+    // @behavior VR-047
+    #[test]
+    fn counts_the_segments_a_restore_leaves_without_a_translation() {
+        let dir = TempDir::new("vr-restore-unmatched");
+        let current = merged_project_in(&dir);
+
+        let restoration = current.restore_version(None, BACKUP).unwrap();
+
+        assert_eq!(restoration, Restoration { unmatched_count: 2 });
+    }
+
+    // @behavior VR-047
+    #[test]
+    fn counts_the_segments_a_row_taken_back_leaves_without_a_translation() {
+        let dir = TempDir::new("vr-revert-unmatched");
+        let current = merged_project_in(&dir);
+
+        let restoration = current
+            .revert_row(None, BACKUP, 0, RevertPart::Whole)
+            .unwrap();
+
+        assert_eq!(restoration, Restoration { unmatched_count: 2 });
     }
 
     // @behavior VR-022

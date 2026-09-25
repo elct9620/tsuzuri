@@ -225,7 +225,7 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | --- | --- |
 | Given | the editor comparing a Backup, with a Pair whose text changed |
 | When | taking back only its text is chosen |
-| Then | the Project is asked to take back the text of that row of that Backup |
+| Then | the Project is asked to take back the text of that row of that Backup, and a Notification says it was taken back |
 
 ## `VR-028` Comparing with nothing
 
@@ -289,7 +289,7 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | --- | --- |
 | Given | a Backup compared with the subtitle now in the Versions dialog |
 | When | a row that differs is taken back |
-| Then | the Project is asked to take back that whole row of that Backup |
+| Then | the Project is asked to take back that whole row of that Backup, and a Notification says it was taken back |
 
 ## `VR-036` Showing the characters that changed
 
@@ -383,3 +383,20 @@ A Backup of one translation says nothing about another, so its comparison ends w
 | When | the Segments are shown |
 | Then | the removed row says it was removed from `en` |
 
+## `VR-047` Counting the Segments a restore leaves without a translation
+
+A translation lines up with its original by time alone, so a restore that splits a merged Segment again leaves its parts with none; saying so points at translating them again.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose `ep01.srt` reads `你好世界` from 0 to 2 seconds, translated in `ep01.en.srt`, and a Backup of `ep01.srt` reading `你好` from 0 to 1 and `世界` from 1 to 2 seconds |
+| When | the Backup is restored, or its row is taken back |
+| Then | the answer counts 2 Segments without a translation |
+
+## `VR-048` Pointing at the Segments a restore leaves without a translation
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor comparing a Backup of the original |
+| When | a row taken back leaves 2 Segments without a translation |
+| Then | beside the Notification that it was taken back, a warning says 2 Segments no longer line up with a translation and can be translated again |

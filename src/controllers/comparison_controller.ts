@@ -17,7 +17,7 @@ import { markRanges, textRange } from "../editor/highlight";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
-import { notifyFailure } from "../ui/notification";
+import { notifyFailure, notifyRestoration } from "../ui/notification";
 import { formatTime, localTime, parseTime } from "../ui/time";
 import type VersionsController from "./versions_controller";
 
@@ -279,7 +279,10 @@ export default class ComparisonController extends Controller {
     const backup = this.sideBackup(params.side);
     if (backup === null) return;
     try {
-      await revertRow(backup.language, backup.file, params.row, params.part);
+      notifyRestoration(
+        t("compare.reverted"),
+        await revertRow(backup.language, backup.file, params.row, params.part),
+      );
     } catch (error) {
       notifyFailure(t("compare.notReverted"), error);
     }

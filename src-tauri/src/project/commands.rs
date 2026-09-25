@@ -5,7 +5,7 @@ use tauri::{AppHandle, Manager, Runtime};
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
-use super::{CurrentProject, Project, ProjectOptions, ProjectView, SegmentField};
+use super::{CurrentProject, Project, ProjectOptions, ProjectView, Restoration, SegmentField};
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::progress::Progress;
@@ -109,7 +109,7 @@ pub fn revert_row(
     backup: String,
     row: usize,
     part: RevertPart,
-) -> Result<(), Failure> {
+) -> Result<Restoration, Failure> {
     let result = app
         .state::<CurrentProject>()
         .revert_row(language, &backup, row, part);
@@ -165,7 +165,7 @@ pub fn restore_version(
     app: AppHandle,
     language: Option<Language>,
     backup: String,
-) -> Result<(), Failure> {
+) -> Result<Restoration, Failure> {
     let result = app
         .state::<CurrentProject>()
         .restore_version(language, &backup);

@@ -129,6 +129,9 @@ const en = {
     revertText: "Take back the text",
     revertTimes: "Take back the times",
     notReverted: "Not taken back",
+    reverted: "Taken back",
+    unmatched: "{{count}} segments no longer line up with a translation",
+    unmatchedHelp: "A translation lines up by time; translate these segments again",
   },
   versions: {
     open: "Versions",

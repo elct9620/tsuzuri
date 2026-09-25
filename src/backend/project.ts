@@ -230,11 +230,16 @@ export function compareVersions(
   return invoke<ComparedRow[]>("compare_versions", { language, left, right });
 }
 
+/** What a restore left behind: how many Segments it gave times that no translation lines up with. */
+export interface Restoration {
+  unmatched_count: number;
+}
+
 export function restoreVersion(
   language: string | null,
   backup: string | undefined,
-): Promise<void> {
-  return invoke("restore_version", { language, backup });
+): Promise<Restoration> {
+  return invoke<Restoration>("restore_version", { language, backup });
 }
 
 /** The cues of the Current Resource's translation into `language`, as its file is written. */
@@ -251,8 +256,8 @@ export function revertRow(
   backup: string,
   row: number,
   part: RevertPart,
-): Promise<void> {
-  return invoke("revert_row", { language, backup, row, part });
+): Promise<Restoration> {
+  return invoke<Restoration>("revert_row", { language, backup, row, part });
 }
 
 /** One term: its word in each Language, and whether it names a Speaker. */

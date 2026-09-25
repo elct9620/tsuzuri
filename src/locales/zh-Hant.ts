@@ -128,6 +128,9 @@ const zhHant: typeof en = {
     revertText: "只還原文字",
     revertTimes: "只還原時間",
     notReverted: "沒有還原",
+    reverted: "已還原",
+    unmatched: "{{count}} 段對不上譯文",
+    unmatchedHelp: "譯文依時間對上原文；可重新翻譯這些段落",
   },
   versions: {
     open: "版本",

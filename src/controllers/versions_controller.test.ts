@@ -102,8 +102,14 @@ describe("VersionsController", () => {
           },
         ];
       if (command === "compare_versions") return rows;
-      if (command === "revert_row") reverted = args;
-      if (command === "restore_version") restored = args;
+      if (command === "revert_row") {
+        reverted = args;
+        return { unmatched_count: 0 };
+      }
+      if (command === "restore_version") {
+        restored = args;
+        return { unmatched_count: 0 };
+      }
     });
     application = Application.start();
     application.register("versions", VersionsController);
@@ -219,12 +225,15 @@ describe("VersionsController", () => {
     target("rows").querySelector<HTMLButtonElement>("button.revert")!.click();
     await settle();
 
-    expect(reverted).toEqual({
-      language: null,
-      backup: "ep01.20260925T023000Z.srt",
-      row: 0,
-      part: "whole",
-    });
+    expect([reverted, notifications()]).toEqual([
+      {
+        language: null,
+        backup: "ep01.20260925T023000Z.srt",
+        row: 0,
+        part: "whole",
+      },
+      ["已還原"],
+    ]);
   });
 
   // @behavior VR-036

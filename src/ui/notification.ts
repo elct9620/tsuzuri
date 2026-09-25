@@ -1,3 +1,4 @@
+import type { Restoration } from "../backend/project";
 import type { Translation } from "../backend/translation";
 import { iconElement, type IconName } from "./icons";
 import { t } from "../i18n";
@@ -194,5 +195,20 @@ export function notifyTranslation({ phases }: Translation): void {
     title: t("translate.done"),
     kind: "success",
     items: phaseItems(phases),
+  });
+}
+
+/** Says `title` was restored, warning of the Segments it left with no translation lined up. */
+export function notifyRestoration(
+  title: string,
+  { unmatched_count }: Restoration,
+  detail?: string,
+): void {
+  notify({ title, detail, kind: "success" });
+  if (unmatched_count === 0) return;
+  notify({
+    title: t("compare.unmatched", { count: unmatched_count }),
+    detail: t("compare.unmatchedHelp"),
+    kind: "warning",
   });
 }

@@ -14,6 +14,7 @@ import {
 } from "../backend/project";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
+import { iconElement } from "../ui/icons";
 import { notifyFailure } from "../ui/notification";
 import { formatTime, localTime, parseTime } from "../ui/time";
 
@@ -332,7 +333,7 @@ export default class ComparisonController extends Controller {
     this.listTarget.insertBefore(ghost, next ?? null);
   }
 
-  /** The ↺ menu: the whole row, and for a Pair its text or its times alone where they changed. */
+  /** The take-back menu: the whole row, and for a Pair its text or its times alone where they changed. */
   private revertMenu(
     row: ComparedRow,
     index: number,
@@ -343,9 +344,10 @@ export default class ComparisonController extends Controller {
     const opener = document.createElement("div");
     opener.tabIndex = 0;
     opener.setAttribute("role", "button");
-    opener.className = "btn btn-ghost btn-xs";
+    opener.className = "btn btn-square btn-ghost btn-xs";
     opener.title = t("compare.revert");
-    opener.textContent = "↺";
+    opener.setAttribute("aria-label", t("compare.revert"));
+    opener.append(iconElement("RotateCcw"));
     const menu = document.createElement("ul");
     menu.tabIndex = -1;
     menu.className =

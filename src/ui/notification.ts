@@ -1,4 +1,5 @@
 import type { Translation } from "../backend/translation";
+import { iconElement } from "./icons";
 import { t } from "../i18n";
 import { failureCode, failureMessage } from "./failure";
 import { phaseItems } from "./progress";
@@ -132,9 +133,10 @@ function buttons(alert: HTMLElement, { action }: Notification): HTMLElement {
         leave(alert);
       }),
     );
-  const close = button("✕", "btn btn-sm btn-circle btn-ghost", () =>
+  const close = button("", "btn btn-sm btn-circle btn-ghost", () =>
     leave(alert),
   );
+  close.append(iconElement("X"));
   close.dataset.close = "";
   close.setAttribute("aria-label", t("work.close"));
   group.append(close);

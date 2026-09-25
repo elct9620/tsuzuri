@@ -19,6 +19,7 @@ import {
 } from "../backend/project";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
+import { iconElement } from "../ui/icons";
 import { notify, notifyFailure, type Notification } from "../ui/notification";
 import { formatTime } from "../ui/time";
 import type { TaskKind } from "./progress_controller";
@@ -89,15 +90,16 @@ function timeEditor(
   return input;
 }
 
-/** The Segment Changes one Segment offers, in a menu opened from `⋮`. */
+/** The Segment Changes one Segment offers, in a menu opened from its button. */
 function changeMenu(index: number): HTMLElement {
   const dropdown = document.createElement("div");
   dropdown.className = "dropdown dropdown-left";
   const opener = document.createElement("div");
   opener.tabIndex = 0;
   opener.setAttribute("role", "button");
-  opener.className = "btn btn-ghost btn-xs";
-  opener.textContent = "⋮";
+  opener.className = "btn btn-square btn-ghost btn-xs";
+  opener.setAttribute("aria-label", t("edit.changes"));
+  opener.append(iconElement("EllipsisVertical"));
   const menu = document.createElement("ul");
   menu.tabIndex = -1;
   menu.className =

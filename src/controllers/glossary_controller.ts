@@ -7,6 +7,7 @@ import {
   type GlossaryTable,
 } from "../backend/project";
 import { t } from "../i18n";
+import { iconElement } from "../ui/icons";
 import { failureMessage } from "../ui/failure";
 
 /** The glossary dialog: every Language a column and every term a row of fields with whether it names a Speaker, saved to `glossary.csv`. */
@@ -113,8 +114,8 @@ export default class GlossaryController extends Controller {
     row.append(speakerCell);
     const remove = document.createElement("button");
     remove.type = "button";
-    remove.className = "btn btn-ghost btn-sm";
-    remove.textContent = "×";
+    remove.className = "btn btn-square btn-ghost btn-sm";
+    remove.append(iconElement("X"));
     remove.setAttribute("aria-label", t("glossary.removeRow"));
     remove.dataset.action = "glossary#removeRow";
     const cell = document.createElement("td");

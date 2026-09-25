@@ -13,6 +13,7 @@ import {
 } from "../backend/project";
 import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
+import { iconElement } from "../ui/icons";
 import { formatTime, localTime } from "../ui/time";
 
 function option(value: string, label: string): HTMLOptionElement {
@@ -216,7 +217,7 @@ export default class VersionsController extends Controller {
     this.moveToDifference(-1);
   }
 
-  /** Takes back the row a ↺ belongs to, from the Backup on the left, and compares again. */
+  /** Takes back the row a take-back button belongs to, from the Backup on the left, and compares again. */
   async revert({ params }: { params: { row: number } }): Promise<void> {
     try {
       await revertRow(
@@ -259,11 +260,12 @@ export default class VersionsController extends Controller {
     if (!isShown) return td;
     const control = document.createElement("button");
     control.type = "button";
-    control.className = "revert btn btn-ghost btn-xs";
+    control.className = "revert btn btn-square btn-ghost btn-xs";
     control.title = t("compare.revertWhole");
+    control.setAttribute("aria-label", t("compare.revertWhole"));
     control.dataset.action = "versions#revert";
     control.dataset.versionsRowParam = String(index);
-    control.textContent = "↺";
+    control.append(iconElement("RotateCcw"));
     td.append(control);
     return td;
   }

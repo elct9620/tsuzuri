@@ -448,4 +448,13 @@ describe("TranscriptController", () => {
       isDisabled("textarea.text"),
     ]).toEqual([true, false]);
   });
+  it("names the icon that opens a Segment's changes", async () => {
+    await hold(translated);
+
+    const opener = document.querySelector("li .dropdown [role=button]");
+    expect([
+      opener?.getAttribute("aria-label"),
+      opener?.querySelector("svg") !== null,
+    ]).toEqual(["段落操作", true]);
+  });
 });

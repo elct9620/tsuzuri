@@ -38,6 +38,14 @@ Remember an executable for one Component and answer the statuses afterwards, fou
 pub async fn choose_component(app: AppHandle, name: String, path: PathBuf) -> Result<Vec<ComponentStatus>, Failure> {}
 ```
 
+## `forget_component`
+
+Forget the executable chosen for one Component, so it is found again by Detection or as a Bundled Variant, and answer the statuses afterwards like `choose_component`.
+
+```rust
+pub async fn forget_component(app: AppHandle, name: String) -> Result<Vec<ComponentStatus>, Failure> {}
+```
+
 ## `transcribe`
 
 Run the Transcribe Mode on the Current Resource's media file in the Primary Language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes and `project-changed` as each Segment arrives. The Resource's original subtitle is written from what whisper-cli wrote, refused when it exists unless `overwrite`; the answer is how long the audio is and the seconds each Phase took.

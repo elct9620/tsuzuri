@@ -20,6 +20,12 @@ describe("ComponentsController", () => {
     await settle();
   }
 
+  function restoreButton(): HTMLButtonElement {
+    return document.querySelector<HTMLButtonElement>(
+      '[data-components-target="restore"]',
+    )!;
+  }
+
   function statusOf(name: string): string {
     return document.querySelector(
       `[data-components-target="status"][data-component="${name}"]`,
@@ -32,6 +38,7 @@ describe("ComponentsController", () => {
         <li>
           <span data-components-target="status" data-component="llama"></span>
           <button data-component="llama" data-action="components#choose">指定</button>
+          <button data-components-target="restore" data-component="llama" data-action="components#restore" hidden>恢復預設值</button>
         </li>
       </ul>
     `;
@@ -158,5 +165,57 @@ describe("ComponentsController", () => {
     await settle();
 
     expect(statusOf("llama")).toBe("指定：/opt/llama/llama-server");
+  });
+
+  // @behavior CP-021
+  it("shows where a component is found once its default is restored", async () => {
+    await mountWith({
+      component_statuses: () => [
+        {
+          name: "llama",
+          ready: true,
+          path: "/opt/llama/llama-server",
+          origin: "chosen",
+          variant: null,
+          problem: null,
+          install: null,
+        },
+      ],
+      forget_component: () => [
+        {
+          name: "llama",
+          ready: true,
+          path: "/usr/bin/llama-server",
+          origin: "detected",
+          variant: null,
+          problem: null,
+          install: null,
+        },
+      ],
+    });
+
+    restoreButton().click();
+    await settle();
+
+    expect(statusOf("llama")).toBe("偵測到：/usr/bin/llama-server");
+  });
+
+  // @behavior CP-022
+  it("offers no restoring for a component found by detection", async () => {
+    await mountWith({
+      component_statuses: () => [
+        {
+          name: "llama",
+          ready: true,
+          path: "/usr/bin/llama-server",
+          origin: "detected",
+          variant: null,
+          problem: null,
+          install: null,
+        },
+      ],
+    });
+
+    expect(restoreButton().hidden).toBe(true);
   });
 });

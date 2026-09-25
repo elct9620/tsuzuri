@@ -81,6 +81,7 @@ const en = {
     choose: "Choose",
     chooseFile: "Choose a file",
     checking: "Checking",
+    restoreDefault: "Restore default",
     license: "Tsuzuri is released under the Apache-2.0 license.",
   },
   slots: {

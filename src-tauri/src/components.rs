@@ -145,6 +145,10 @@ impl Choices {
         self.0.insert(name.to_string(), path);
     }
 
+    pub fn forget(&mut self, name: &str) {
+        self.0.remove(name);
+    }
+
     fn path_by_name(&self, name: &str) -> Option<&Path> {
         self.0.get(name).map(PathBuf::as_path)
     }
@@ -305,17 +309,33 @@ pub async fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, 
     find_statuses_off_the_main_thread(Resolver::from_app(&app)?).await
 }
 
+/// Saves the Choices `change` leaves behind and finds every Component with them.
+async fn change_choices(
+    app: &AppHandle,
+    change: impl FnOnce(&mut Choices),
+) -> Result<Vec<ComponentStatus>, Failure> {
+    let config = app.path().app_config_dir()?;
+    let mut resolver = Resolver::from_app(app)?;
+    change(&mut resolver.choices);
+    resolver.choices.save(&config)?;
+    find_statuses_off_the_main_thread(resolver).await
+}
+
 #[tauri::command]
 pub async fn choose_component(
     app: AppHandle,
     name: String,
     path: PathBuf,
 ) -> Result<Vec<ComponentStatus>, Failure> {
-    let config = app.path().app_config_dir()?;
-    let mut resolver = Resolver::from_app(&app)?;
-    resolver.choices.choose(&name, path);
-    resolver.choices.save(&config)?;
-    find_statuses_off_the_main_thread(resolver).await
+    change_choices(&app, |choices| choices.choose(&name, path)).await
+}
+
+#[tauri::command]
+pub async fn forget_component(
+    app: AppHandle,
+    name: String,
+) -> Result<Vec<ComponentStatus>, Failure> {
+    change_choices(&app, |choices| choices.forget(&name)).await
 }
 
 #[cfg(test)]
@@ -426,6 +446,24 @@ mod tests {
         assert_eq!(
             (status.path, status.origin, status.variant.as_deref()),
             (Some(bundled), Some(Origin::Bundled), Some("first"))
+        );
+    }
+
+    // @behavior CP-020
+    #[cfg(unix)]
+    #[test]
+    fn returns_to_the_bundled_variant_once_the_choice_is_forgotten() {
+        let dir = TempDir::new("cp-forget");
+        let bundled = script(&dir.path().join("components/tool/first/bin"), "tool", 0);
+        let mut resolver = resolver(&dir);
+        resolver.choices.choose("tool", dir.file("my-tool"));
+
+        resolver.choices.forget("tool");
+
+        let status = resolver.find(&tool());
+        assert_eq!(
+            (status.path, status.origin),
+            (Some(bundled), Some(Origin::Bundled))
         );
     }
 

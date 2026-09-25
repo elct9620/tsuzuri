@@ -37,9 +37,10 @@ function statusMessage({
 }
 
 export default class ComponentsController extends Controller {
-  static targets = ["status"];
+  static targets = ["status", "restore"];
 
   declare readonly statusTargets: HTMLElement[];
+  declare readonly restoreTargets: HTMLElement[];
 
   async connect(): Promise<void> {
     this.render(await invoke<ComponentStatus[]>("component_statuses"));
@@ -55,16 +56,26 @@ export default class ComponentsController extends Controller {
     );
   }
 
+  async restore(event: Event): Promise<void> {
+    const name = (event.currentTarget as HTMLElement).dataset.component;
+    if (!name) return;
+
+    this.render(await invoke<ComponentStatus[]>("forget_component", { name }));
+  }
+
   private render(statuses: ComponentStatus[]): void {
     for (const component of statuses) {
-      const status = this.statusByName(component.name);
+      const status = this.targetByName(this.statusTargets, component.name);
       if (status) status.textContent = statusMessage(component);
+      const restore = this.targetByName(this.restoreTargets, component.name);
+      if (restore) restore.hidden = component.origin !== "chosen";
     }
   }
 
-  private statusByName(name: string): HTMLElement | undefined {
-    return this.statusTargets.find(
-      (status) => status.dataset.component === name,
-    );
+  private targetByName(
+    targets: HTMLElement[],
+    name: string,
+  ): HTMLElement | undefined {
+    return targets.find((target) => target.dataset.component === name);
   }
 }

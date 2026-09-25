@@ -56,6 +56,30 @@ Finding every Component the running platform needs before a Mode runs: the path 
 | When | an executable is chosen for a Component |
 | Then | its status shows the chosen path |
 
+## `CP-020` Returning a Component to its default
+
+| Step | Statement |
+| --- | --- |
+| Given | an executable the user chose for a Component that also has a Bundled Variant |
+| When | the choice is forgotten |
+| Then | it reads as ready at the bundled path |
+
+## `CP-021` Restoring a Component's default from the components panel
+
+| Step | Statement |
+| --- | --- |
+| Given | the components panel with an executable chosen for a Component |
+| When | its default is restored |
+| Then | its status shows where it is found without the choice |
+
+## `CP-022` Offering the default only for a chosen executable
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component found by Detection |
+| When | the components panel loads |
+| Then | it offers no restoring of the default |
+
 ## `CP-014` Reporting Bundled Variants that do not run
 
 | Step | Statement |

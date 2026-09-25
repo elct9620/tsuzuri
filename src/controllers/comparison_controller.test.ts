@@ -9,10 +9,7 @@ import type {
   SubtitleVersions,
 } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
-import {
-  NOTIFICATION_STACK,
-  notifications,
-} from "../ui/test_notification";
+import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 import ComparisonController from "./comparison_controller";
 import TranscriptController from "./transcript_controller";
 

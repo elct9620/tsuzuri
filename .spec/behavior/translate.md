@@ -608,3 +608,29 @@ A transcription needs the memory whatever the kept seconds, so a Model that cann
 | When | a transcription makes room before it starts |
 | Then | the llama-server is stopped |
 
+## `TL-079` Asking before overwriting a translation
+
+Translating keeps the translation it replaces as a Backup, yet saying so before it starts lets the user choose another Language instead.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource translated into `en` |
+| When | the translate dialog opens with `en` chosen |
+| Then | it warns the translation will be overwritten, and its start button reads 覆蓋並開始 |
+
+## `TL-080` Warning only of a Language already translated
+
+| Step | Statement |
+| --- | --- |
+| Given | the translate dialog for a Current Resource translated into `en` alone |
+| When | `ja` is chosen |
+| Then | no overwrite is warned of, and its start button reads 開始翻譯 |
+
+## `TL-081` Warning of an overwritten translation when transcribing
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog for a Current Resource translated into `en` |
+| When | translating afterwards into `en` is chosen |
+| Then | its translation options warn the translation will be overwritten |
+

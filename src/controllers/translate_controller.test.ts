@@ -65,12 +65,13 @@ describe("TranslateController", () => {
     document.body.innerHTML = `
       ${translationOptionsTemplate}
       <div data-controller="translate" data-translate-progress-outlet="#progress"
+        data-action="translation-options:overwrite->translate#labelStart"
         data-translate-translation-options-outlet="#translate-options">
         <button data-translate-target="open" data-action="translate#open" disabled>翻譯</button>
         <dialog data-translate-target="dialog">
           <span data-translate-target="source"></span>
           <div id="translate-options" data-controller="translation-options"></div>
-          <button id="start" data-action="translate#start">開始翻譯</button>
+          <button id="start" data-translate-target="start" data-action="translate#start">開始翻譯</button>
         </dialog>
       </div>
       <div id="progress" data-controller="progress" hidden>
@@ -128,6 +129,39 @@ describe("TranslateController", () => {
     await start();
 
     expect(translateArgs).toMatchObject({ target: "ja" });
+  });
+
+  const projectTranslatedIntoEnglish = projectOf({
+    resources: [resourceOf({ translation_languages: ["en"] })],
+    translation_language: "en",
+  });
+  const isOverwriteWarned = () => !option("overwrite").hidden;
+
+  // @behavior TL-079
+  it("asks before overwriting a translation", async () => {
+    await hold(projectTranslatedIntoEnglish);
+
+    await openDialog();
+
+    expect([isOverwriteWarned(), target("start").textContent]).toEqual([
+      true,
+      "覆蓋並開始",
+    ]);
+  });
+
+  // @behavior TL-080
+  it("warns only of a Language already translated", async () => {
+    await hold(projectTranslatedIntoEnglish);
+    await openDialog();
+    const language = option<HTMLSelectElement>("language");
+
+    language.value = "ja";
+    language.dispatchEvent(new Event("change"));
+
+    expect([isOverwriteWarned(), target("start").textContent]).toEqual([
+      false,
+      "開始翻譯",
+    ]);
   });
 
   // @behavior TL-015

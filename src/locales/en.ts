@@ -61,6 +61,9 @@ const en = {
     glossaryNone: "No glossary",
     glossaryLoaded: "{{file}} ({{count}} terms)",
     start: "Translate",
+    overwrite:
+      "A translation into this language exists; starting overwrites it",
+    overwriteAndStart: "Overwrite and translate",
     done: "Translated",
     failed: "Translation failed",
   },
@@ -131,7 +134,8 @@ const en = {
     notReverted: "Not taken back",
     reverted: "Taken back",
     unmatched: "{{count}} segments no longer line up with a translation",
-    unmatchedHelp: "A translation lines up by time; translate these segments again",
+    unmatchedHelp:
+      "A translation lines up by time; translate these segments again",
   },
   versions: {
     open: "Versions",

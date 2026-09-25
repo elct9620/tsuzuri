@@ -292,6 +292,26 @@ describe("TranscribeController", () => {
     ).toBe(false);
   });
 
+  // @behavior TL-081
+  it("warns of an overwritten translation when transcribing", async () => {
+    await hold(
+      projectOf({
+        resources: [
+          resourceOf({ has_media: true, translation_languages: ["en"] }),
+        ],
+        translation_language: "en",
+      }),
+    );
+    target("open").click();
+    await settle();
+
+    target<HTMLInputElement>("translate").click();
+
+    expect(translationOption("#transcribe-options", "overwrite").hidden).toBe(
+      false,
+    );
+  });
+
   // @behavior TX-014
   it("shows why the transcription failed", async () => {
     await hold(media);

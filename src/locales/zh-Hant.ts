@@ -61,6 +61,8 @@ const zhHant: typeof en = {
     glossaryNone: "無詞彙表",
     glossaryLoaded: "{{file}}（{{count}} 筆）",
     start: "開始翻譯",
+    overwrite: "這個語言的譯文已存在，開始後會覆蓋",
+    overwriteAndStart: "覆蓋並開始",
     done: "翻譯完成",
     failed: "翻譯失敗",
   },

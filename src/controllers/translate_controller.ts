@@ -14,7 +14,7 @@ import type TranslationOptionsController from "./translation_options_controller"
 
 /** The translate dialog: it translates the Current Resource's original subtitle. */
 export default class TranslateController extends Controller {
-  static targets = ["open", "dialog", "source"];
+  static targets = ["open", "dialog", "source", "start"];
   static outlets = ["progress", "translation-options"];
 
   /** The toolbar button, usable only for a Current Resource with an original subtitle. */
@@ -22,6 +22,7 @@ export default class TranslateController extends Controller {
   declare readonly dialogTarget: HTMLDialogElement;
   /** Names the Primary Language it is translated from. */
   declare readonly sourceTarget: HTMLElement;
+  declare readonly startTarget: HTMLButtonElement;
   declare readonly progressOutlet: ProgressController;
   declare readonly translationOptionsOutlet: TranslationOptionsController;
 
@@ -42,6 +43,13 @@ export default class TranslateController extends Controller {
       this.translationOptionsOutlet.show(this.project);
     }
     this.dialogTarget.showModal();
+  }
+
+  /** Names the start button for whether the Language chosen is already translated. */
+  labelStart({ detail }: CustomEvent<{ isOverwriting: boolean }>): void {
+    this.startTarget.textContent = t(
+      detail.isOverwriting ? "translate.overwriteAndStart" : "translate.start",
+    );
   }
 
   async start(): Promise<void> {

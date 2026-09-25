@@ -343,6 +343,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `transcript:current` | 字幕編輯 | 時間軸標出目前段落 |
 | `timeline:current` | 時間軸 | 字幕編輯標出目前段落 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中 |
+| `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 
 ### 4.3 backend
 

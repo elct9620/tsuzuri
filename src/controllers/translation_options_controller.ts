@@ -1,7 +1,11 @@
 import { Controller } from "@hotwired/stimulus";
 
 import { t, translatePage } from "../i18n";
-import type { ProjectView, TranslationGlossaryView } from "../backend/project";
+import {
+  currentResource,
+  type ProjectView,
+  type TranslationGlossaryView,
+} from "../backend/project";
 import type { TranslationOptions } from "../backend/translation";
 
 function glossaryLabel(glossary: TranslationGlossaryView | null): string {
@@ -22,6 +26,7 @@ export default class TranslationOptionsController extends Controller {
     "selfReview",
     "summary",
     "summaryWords",
+    "overwrite",
   ];
 
   declare readonly languageTarget: HTMLSelectElement;
@@ -31,6 +36,11 @@ export default class TranslationOptionsController extends Controller {
   declare readonly selfReviewTarget: HTMLInputElement;
   declare readonly summaryTarget: HTMLInputElement;
   declare readonly summaryWordsTarget: HTMLInputElement;
+  /** Warns that the translation into the Language chosen will be overwritten. */
+  declare readonly overwriteTarget: HTMLElement;
+
+  /** The Languages the Current Resource is already translated into. */
+  private translatedLanguages: string[] = [];
 
   initialize(): void {
     const template = document.querySelector<HTMLTemplateElement>(
@@ -48,6 +58,16 @@ export default class TranslationOptionsController extends Controller {
     );
     if (project.translation_language !== null)
       this.languageTarget.value = project.translation_language;
+    this.translatedLanguages =
+      currentResource(project)?.translation_languages ?? [];
+    this.showOverwrite();
+  }
+
+  /** Warns when the Language chosen is already translated, telling the dialog around it too. */
+  showOverwrite(): void {
+    const isOverwriting = this.translatedLanguages.includes(this.language);
+    this.overwriteTarget.hidden = !isOverwriting;
+    this.dispatch("overwrite", { detail: { isOverwriting } });
   }
 
   /** The code of the Language to translate into. */

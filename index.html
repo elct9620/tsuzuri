@@ -168,6 +168,7 @@
               <div
                 class="contents"
                 data-controller="translate"
+                data-action="translation-options:overwrite->translate#labelStart"
                 data-translate-progress-outlet="#progress"
                 data-translate-translation-options-outlet="#translate-options"
               >
@@ -203,6 +204,7 @@
                       <button
                         type="button"
                         class="btn btn-primary"
+                        data-translate-target="start"
                         data-action="translate#start"
                         data-i18n="translate.start"
                       ></button>
@@ -1184,6 +1186,7 @@
         <select
           class="select select-sm w-auto"
           data-translation-options-target="language"
+          data-action="translation-options#showOverwrite"
         >
           <option value="en" selected>English</option>
           <option value="ja">日本語</option>
@@ -1228,6 +1231,14 @@
         />
         <span data-i18n="translate.words"></span>
       </label>
+      <div
+        role="alert"
+        class="alert alert-warning alert-soft"
+        data-translation-options-target="overwrite"
+        hidden
+      >
+        <span data-i18n="translate.overwrite"></span>
+      </div>
     </template>
     <div class="toast toast-end toast-bottom z-40" data-notifications></div>
     <div

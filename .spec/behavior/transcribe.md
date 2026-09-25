@@ -104,6 +104,24 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | When | transcribing is started |
 | Then | the Current Resource is translated into `ja` once transcribed |
 
+## `TX-023` Translating once transcribed with the dialog's options
+
+Transcribing leads into translating, so the transcribe dialog offers the same translation options as the translate dialog.
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog with translating afterwards and Self-Review chosen |
+| When | transcribing is started |
+| Then | the Current Resource is translated with Self-Review once transcribed |
+
+## `TX-024` Showing the translation options only when translating afterwards
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog |
+| When | translating afterwards is chosen |
+| Then | the translation options are shown |
+
 ## `TX-014` Saying why a transcription failed
 
 | Step | Statement |

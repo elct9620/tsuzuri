@@ -7,6 +7,7 @@ import { phasesSummary, type PhaseTiming } from "../progress";
 import { currentResource, followProject, type ProjectView } from "../project";
 import type ProgressController from "./progress_controller";
 import { translateProject } from "./translate_controller";
+import type TranslationOptionsController from "./translation_options_controller";
 
 export interface Transcription {
   audio_seconds: number;
@@ -25,27 +26,27 @@ export default class TranscribeController extends Controller {
     "dialog",
     "language",
     "translate",
-    "translationLanguage",
     "overwrite",
     "start",
     "model",
   ];
-  static outlets = ["progress"];
+  static outlets = ["progress", "translation-options"];
 
   /** The toolbar button, usable only for a Current Resource with a media file. */
   declare readonly openTarget: HTMLButtonElement;
   declare readonly dialogTarget: HTMLDialogElement;
   /** Names the Primary Language it is transcribed in. */
   declare readonly languageTarget: HTMLElement;
-  /** Whether to translate the Transcript once transcribed. */
+  /** Whether to translate the Transcript once transcribed, with the translation options it shows. */
   declare readonly translateTarget: HTMLInputElement;
-  declare readonly translationLanguageTarget: HTMLSelectElement;
   /** Warns that the original subtitle will be overwritten. */
   declare readonly overwriteTarget: HTMLElement;
   declare readonly startTarget: HTMLButtonElement;
   /** Names the transcription Model's file. */
   declare readonly modelTarget: HTMLElement;
   declare readonly progressOutlet: ProgressController;
+  declare readonly translationOptionsOutlet: TranslationOptionsController;
+  declare readonly translationOptionsOutletElement: HTMLElement;
 
   private unlisten?: UnlistenFn;
   private project: ProjectView | null = null;
@@ -66,10 +67,9 @@ export default class TranscribeController extends Controller {
     );
     if (this.project !== null) {
       this.languageTarget.textContent = t(`languages.${this.project.language}`);
-      if (this.project.translation_language !== null)
-        this.translationLanguageTarget.value =
-          this.project.translation_language;
+      this.translationOptionsOutlet.show(this.project);
     }
+    this.showTranslationOptions();
     this.dialogTarget.showModal();
     const models = await invoke<ModelSettingsView | null>("model_settings");
     const path = models?.transcription.path ?? null;
@@ -101,8 +101,10 @@ export default class TranscribeController extends Controller {
         }),
       ];
       if (this.translateTarget.checked) {
+        const choices = this.translationOptionsOutlet;
         const translation = await translateProject(
-          this.translationLanguageTarget.value,
+          choices.language,
+          choices.options,
         );
         lines.push(
           t("transcribe.translatePhases", {
@@ -114,6 +116,10 @@ export default class TranscribeController extends Controller {
     } catch (error) {
       progress.fail(error);
     }
+  }
+
+  showTranslationOptions(): void {
+    this.translationOptionsOutletElement.hidden = !this.translateTarget.checked;
   }
 
   private show(project: ProjectView | null): void {

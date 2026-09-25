@@ -85,6 +85,7 @@
                 class="contents"
                 data-controller="transcribe"
                 data-transcribe-progress-outlet="#progress"
+                data-transcribe-translation-options-outlet="#transcribe-options"
               >
                 <button
                   type="button"
@@ -117,20 +118,21 @@
                           type="checkbox"
                           class="checkbox checkbox-sm"
                           data-transcribe-target="translate"
+                          data-action="transcribe#showTranslationOptions"
                         />
                         <span data-i18n="transcribe.translateAfter"></span>
                       </label>
-                      <label class="flex items-center gap-2"
-                        ><span data-i18n="work.into"></span>
-                        <select
-                          class="select select-sm w-auto"
-                          data-transcribe-target="translationLanguage"
-                        >
-                          <option value="en" selected>English</option>
-                          <option value="ja">日本語</option>
-                          <option value="zh-TW">繁體中文</option>
-                        </select>
-                      </label>
+                      <fieldset
+                        id="transcribe-options"
+                        class="fieldset gap-3 rounded-box border border-base-300 px-4 pb-4"
+                        data-controller="translation-options"
+                        hidden
+                      >
+                        <legend
+                          class="fieldset-legend"
+                          data-i18n="toolbar.translate"
+                        ></legend>
+                      </fieldset>
                     </fieldset>
                     <div
                       role="alert"
@@ -163,6 +165,7 @@
                 class="contents"
                 data-controller="translate"
                 data-translate-progress-outlet="#progress"
+                data-translate-translation-options-outlet="#translate-options"
               >
                 <button
                   type="button"
@@ -182,54 +185,12 @@
                       <p class="flex flex-wrap items-center gap-2">
                         <span data-i18n="translate.source"></span>
                         <span data-translate-target="source"></span>
-                        <span class="ml-4" data-i18n="work.into"></span>
-                        <select
-                          class="select select-sm w-auto"
-                          data-translate-target="language"
-                        >
-                          <option value="en" selected>English</option>
-                          <option value="ja">日本語</option>
-                          <option value="zh-TW">繁體中文</option>
-                        </select>
                       </p>
-                      <p class="flex items-center gap-2">
-                        <span data-i18n="translate.glossary"></span>
-                        <span data-translate-target="glossary"></span>
-                      </p>
-                      <p class="flex flex-wrap items-center gap-4">
-                        <label class="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            class="checkbox checkbox-sm"
-                            data-translate-target="speakerLabels"
-                          />
-                          <span data-i18n="translate.speakerLabels"></span>
-                        </label>
-                        <label class="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            class="checkbox checkbox-sm"
-                            data-translate-target="selfReview"
-                          />
-                          <span data-i18n="translate.selfReview"></span>
-                        </label>
-                      </p>
-                      <label class="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          class="checkbox checkbox-sm"
-                          data-translate-target="summary"
-                        />
-                        <span data-i18n="translate.rollingSummary"></span>
-                        <input
-                          type="number"
-                          min="1"
-                          value="100"
-                          class="input input-sm w-20"
-                          data-translate-target="summaryWords"
-                        />
-                        <span data-i18n="translate.words"></span>
-                      </label>
+                      <div
+                        id="translate-options"
+                        class="contents"
+                        data-controller="translation-options"
+                      ></div>
                     </fieldset>
                     <div class="modal-action">
                       <form method="dialog">
@@ -576,5 +537,56 @@
         </form>
       </dialog>
     </main>
+    <template id="translation-options">
+      <p class="flex flex-wrap items-center gap-2">
+        <span data-i18n="work.into"></span>
+        <select
+          class="select select-sm w-auto"
+          data-translation-options-target="language"
+        >
+          <option value="en" selected>English</option>
+          <option value="ja">日本語</option>
+          <option value="zh-TW">繁體中文</option>
+        </select>
+      </p>
+      <p class="flex items-center gap-2">
+        <span data-i18n="translate.glossary"></span>
+        <span data-translation-options-target="glossary"></span>
+      </p>
+      <p class="flex flex-wrap items-center gap-4">
+        <label class="flex items-center gap-2">
+          <input
+            type="checkbox"
+            class="checkbox checkbox-sm"
+            data-translation-options-target="speakerLabels"
+          />
+          <span data-i18n="translate.speakerLabels"></span>
+        </label>
+        <label class="flex items-center gap-2">
+          <input
+            type="checkbox"
+            class="checkbox checkbox-sm"
+            data-translation-options-target="selfReview"
+          />
+          <span data-i18n="translate.selfReview"></span>
+        </label>
+      </p>
+      <label class="flex items-center gap-2">
+        <input
+          type="checkbox"
+          class="checkbox checkbox-sm"
+          data-translation-options-target="summary"
+        />
+        <span data-i18n="translate.rollingSummary"></span>
+        <input
+          type="number"
+          min="1"
+          value="100"
+          class="input input-sm w-20"
+          data-translation-options-target="summaryWords"
+        />
+        <span data-i18n="translate.words"></span>
+      </label>
+    </template>
   </body>
 </html>

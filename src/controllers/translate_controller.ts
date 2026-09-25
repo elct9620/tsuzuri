@@ -4,73 +4,35 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 
 import { t } from "../i18n";
 import { phasesSummary, type PhaseTiming } from "../progress";
-import {
-  currentResource,
-  followProject,
-  type ProjectView,
-  type TranslationGlossaryView,
-} from "../project";
+import { currentResource, followProject, type ProjectView } from "../project";
 import type ProgressController from "./progress_controller";
+import type TranslationOptionsController from "./translation_options_controller";
+import type { TranslationOptions } from "./translation_options_controller";
 
 export interface Translation {
   phases: PhaseTiming[];
 }
 
-/** The choices the translate dialog offers, named as Rust names them. */
-export interface TranslationOptions {
-  has_speaker_labels: boolean;
-  has_self_review: boolean;
-  summary_word_limit: number | null;
-}
-
-const DEFAULT_OPTIONS: TranslationOptions = {
-  has_speaker_labels: false,
-  has_self_review: false,
-  summary_word_limit: null,
-};
-
 /** Translates the Current Resource from the Primary Language; the translations land in the Project, not in the answer. */
 export function translateProject(
   target: string,
-  options: TranslationOptions = DEFAULT_OPTIONS,
+  options: TranslationOptions,
 ): Promise<Translation> {
   return invoke<Translation>("translate", { target, options });
 }
 
-function glossaryLabel(glossary: TranslationGlossaryView | null): string {
-  if (glossary === null) return t("translate.glossaryNone");
-  const file = glossary.file.split(/[\\/]/).pop() ?? glossary.file;
-  return t("translate.glossaryLoaded", { file, count: glossary.term_count });
-}
-
 /** The translate dialog: it translates the Current Resource's original subtitle. */
 export default class TranslateController extends Controller {
-  static targets = [
-    "open",
-    "dialog",
-    "source",
-    "language",
-    "speakerLabels",
-    "selfReview",
-    "summary",
-    "summaryWords",
-    "glossary",
-  ];
-  static outlets = ["progress"];
+  static targets = ["open", "dialog", "source"];
+  static outlets = ["progress", "translation-options"];
 
   /** The toolbar button, usable only for a Current Resource with an original subtitle. */
   declare readonly openTarget: HTMLButtonElement;
   declare readonly dialogTarget: HTMLDialogElement;
   /** Names the Primary Language it is translated from. */
   declare readonly sourceTarget: HTMLElement;
-  declare readonly languageTarget: HTMLSelectElement;
-  declare readonly speakerLabelsTarget: HTMLInputElement;
-  declare readonly selfReviewTarget: HTMLInputElement;
-  declare readonly summaryTarget: HTMLInputElement;
-  declare readonly summaryWordsTarget: HTMLInputElement;
-  /** Names the Project's `glossary.csv` and how many terms it holds. */
-  declare readonly glossaryTarget: HTMLElement;
   declare readonly progressOutlet: ProgressController;
+  declare readonly translationOptionsOutlet: TranslationOptionsController;
 
   private unlisten?: UnlistenFn;
   private project: ProjectView | null = null;
@@ -86,11 +48,7 @@ export default class TranslateController extends Controller {
   open(): void {
     if (this.project !== null) {
       this.sourceTarget.textContent = t(`languages.${this.project.language}`);
-      this.glossaryTarget.textContent = glossaryLabel(
-        this.project.translation_glossary,
-      );
-      if (this.project.translation_language !== null)
-        this.languageTarget.value = this.project.translation_language;
+      this.translationOptionsOutlet.show(this.project);
     }
     this.dialogTarget.showModal();
   }
@@ -101,24 +59,15 @@ export default class TranslateController extends Controller {
     this.dialogTarget.close();
     progress.begin();
     try {
+      const choices = this.translationOptionsOutlet;
       const translation = await translateProject(
-        this.languageTarget.value,
-        this.options(),
+        choices.language,
+        choices.options,
       );
       progress.finish([t("translate.done"), phasesSummary(translation.phases)]);
     } catch (error) {
       progress.fail(error);
     }
-  }
-
-  private options(): TranslationOptions {
-    return {
-      has_speaker_labels: this.speakerLabelsTarget.checked,
-      has_self_review: this.selfReviewTarget.checked,
-      summary_word_limit: this.summaryTarget.checked
-        ? Number(this.summaryWordsTarget.value)
-        : null,
-    };
   }
 
   private show(project: ProjectView | null): void {

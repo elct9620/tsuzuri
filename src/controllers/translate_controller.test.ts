@@ -5,8 +5,13 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "../project";
 import { projectOf, resourceOf } from "../test_project";
+import {
+  translationOption,
+  translationOptionsTemplate,
+} from "../test_translation_options";
 import ProgressController from "./progress_controller";
 import TranslateController from "./translate_controller";
+import TranslationOptionsController from "./translation_options_controller";
 
 describe("TranslateController", () => {
   let application: Application;
@@ -34,27 +39,24 @@ describe("TranslateController", () => {
     await settle();
   }
 
+  const option = <T extends HTMLElement>(name: string) =>
+    translationOption<T>("#translate-options", name);
+
   function check(name: string): void {
-    target<HTMLInputElement>(name).checked = true;
+    option<HTMLInputElement>(name).checked = true;
   }
 
   beforeEach(async () => {
     project = null;
     translateArgs = undefined;
     document.body.innerHTML = `
-      <div data-controller="translate" data-translate-progress-outlet="#progress">
+      ${translationOptionsTemplate}
+      <div data-controller="translate" data-translate-progress-outlet="#progress"
+        data-translate-translation-options-outlet="#translate-options">
         <button data-translate-target="open" data-action="translate#open" disabled>翻譯</button>
         <dialog data-translate-target="dialog">
           <span data-translate-target="source"></span>
-          <select data-translate-target="language">
-            <option value="en">English</option>
-            <option value="ja" selected>日本語</option>
-          </select>
-          <span data-translate-target="glossary"></span>
-          <input type="checkbox" data-translate-target="speakerLabels">
-          <input type="checkbox" data-translate-target="selfReview">
-          <input type="checkbox" data-translate-target="summary">
-          <input type="number" value="100" data-translate-target="summaryWords">
+          <div id="translate-options" data-controller="translation-options"></div>
           <button id="start" data-action="translate#start">開始翻譯</button>
         </dialog>
       </div>
@@ -82,6 +84,7 @@ describe("TranslateController", () => {
     application = Application.start();
     application.register("progress", ProgressController);
     application.register("translate", TranslateController);
+    application.register("translation-options", TranslationOptionsController);
     await settle();
   });
 
@@ -140,7 +143,7 @@ describe("TranslateController", () => {
 
     await openDialog();
 
-    expect(target("glossary").textContent).toBe("glossary.csv（12 筆）");
+    expect(option("glossary").textContent).toBe("glossary.csv（12 筆）");
   });
 
   // @behavior TL-056
@@ -149,7 +152,7 @@ describe("TranslateController", () => {
     check("speakerLabels");
     check("selfReview");
     check("summary");
-    target<HTMLInputElement>("summaryWords").value = "80";
+    option<HTMLInputElement>("summaryWords").value = "80";
 
     await start();
 

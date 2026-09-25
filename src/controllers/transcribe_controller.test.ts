@@ -5,8 +5,13 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "../project";
 import { projectOf, resourceOf } from "../test_project";
+import {
+  translationOption,
+  translationOptionsTemplate,
+} from "../test_translation_options";
 import ProgressController from "./progress_controller";
 import TranscribeController from "./transcribe_controller";
+import TranslationOptionsController from "./translation_options_controller";
 
 describe("TranscribeController", () => {
   let application: Application;
@@ -48,16 +53,16 @@ describe("TranscribeController", () => {
     translateArgs = undefined;
     transcribeArgs = undefined;
     document.body.innerHTML = `
-      <div data-controller="transcribe" data-transcribe-progress-outlet="#progress">
+      ${translationOptionsTemplate}
+      <div data-controller="transcribe" data-transcribe-progress-outlet="#progress"
+        data-transcribe-translation-options-outlet="#transcribe-options">
         <button data-transcribe-target="open" data-action="transcribe#open" disabled>轉錄</button>
         <dialog data-transcribe-target="dialog">
           <span data-transcribe-target="language"></span>
           <span data-transcribe-target="model"></span>
-          <input type="checkbox" data-transcribe-target="translate">
-          <select data-transcribe-target="translationLanguage">
-            <option value="en">English</option>
-            <option value="ja" selected>日本語</option>
-          </select>
+          <input type="checkbox" data-transcribe-target="translate"
+            data-action="transcribe#showTranslationOptions">
+          <fieldset id="transcribe-options" data-controller="translation-options" hidden></fieldset>
           <div data-transcribe-target="overwrite" hidden>字幕已存在</div>
           <button data-transcribe-target="start" data-action="transcribe#start">開始</button>
         </dialog>
@@ -86,6 +91,7 @@ describe("TranscribeController", () => {
     application = Application.start();
     application.register("progress", ProgressController);
     application.register("transcribe", TranscribeController);
+    application.register("translation-options", TranslationOptionsController);
     await settle();
   });
 
@@ -146,6 +152,41 @@ describe("TranscribeController", () => {
     await start();
 
     expect(translateArgs).toMatchObject({ target: "ja" });
+  });
+
+  // @behavior TX-023
+  it("translates with the dialog's translation options once transcribed", async () => {
+    await hold(media);
+    transcription = async () => ({
+      audio_seconds: 60,
+      transcribe_seconds: 30,
+      phases: [],
+    });
+    target<HTMLInputElement>("translate").checked = true;
+    translationOption<HTMLInputElement>(
+      "#transcribe-options",
+      "selfReview",
+    ).checked = true;
+
+    await start();
+
+    expect(translateArgs).toMatchObject({
+      target: "ja",
+      options: { has_self_review: true },
+    });
+  });
+
+  // @behavior TX-024
+  it("shows the translation options once translating afterwards is chosen", async () => {
+    await hold(media);
+    target("open").click();
+    await settle();
+
+    target<HTMLInputElement>("translate").click();
+
+    expect(
+      document.querySelector<HTMLElement>("#transcribe-options")!.hidden,
+    ).toBe(false);
   });
 
   // @behavior TX-014

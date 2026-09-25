@@ -9,6 +9,7 @@ import ProjectController from "./controllers/project_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
 import TranslateController from "./controllers/translate_controller";
+import TranslationOptionsController from "./controllers/translation_options_controller";
 import TranslationSettingsController from "./controllers/translation_settings_controller";
 import { setInterfaceLanguage, translatePage } from "./i18n";
 
@@ -25,6 +26,7 @@ async function start(): Promise<void> {
   application.register("transcribe", TranscribeController);
   application.register("transcript", TranscriptController);
   application.register("translate", TranslateController);
+  application.register("translation-options", TranslationOptionsController);
   application.register("translation-settings", TranslationSettingsController);
 }
 

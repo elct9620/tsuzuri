@@ -598,3 +598,13 @@ The Model is freed when a transcription starts, so only one Model is loaded at a
 | When | its toggle is turned off |
 | Then | the setting is saved off and the kept seconds can no longer be changed |
 
+## `TL-078` Making room for a transcription when the Model will not unload
+
+A transcription needs the memory whatever the kept seconds, so a Model that cannot be unloaded takes the llama-server down with it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resident llama-server with the Model loaded that fails to unload it |
+| When | a transcription makes room before it starts |
+| Then | the llama-server is stopped |
+

@@ -107,11 +107,27 @@ impl ResidentLlama {
 
     /// Unloads the Model now, returning once the router reports it unloaded.
     pub async fn release(&self) {
+        if let Err(failure) = self.unload().await {
+            log::warn!("could not unload the translation Model: {failure:?}");
+        }
+    }
+
+    /// Frees the memory the Model holds before another Model loads: unloads it, and stops the
+    /// router when it cannot, however long the Model was to be kept.
+    pub async fn make_room(&self, steps: &impl Steps) {
+        if let Err(failure) = self.unload().await {
+            log::warn!("stopping llama-server, which could not unload its Model: {failure:?}");
+            self.stop(steps).await;
+        }
+    }
+
+    async fn unload(&self) -> Result<(), Failure> {
         let router = self.router.lock().await;
-        if let Some(running) = router.as_ref() {
-            if let Err(failure) = request_unload(&running.base_url).await {
-                log::warn!("could not unload the translation Model: {failure:?}");
+        match router.as_ref() {
+            Some(running) if !running.has_exited.load(Ordering::SeqCst) => {
+                request_unload(&running.base_url).await
             }
+            _ => Ok(()),
         }
     }
 
@@ -528,6 +544,23 @@ mod tests {
         fixture.start().await.unwrap();
 
         fixture.resident.stop(&fixture.steps).await;
+
+        assert_eq!(*fixture.steps.stopped.lock().unwrap(), vec![1]);
+    }
+
+    // @behavior TL-078
+    #[tokio::test]
+    async fn stops_the_router_when_it_cannot_free_the_model() {
+        let fixture = Fixture::new(
+            "resident-make-room",
+            Replies {
+                has_unload_failure: true,
+                ..Replies::default()
+            },
+        );
+        fixture.load_model().await.unwrap();
+
+        fixture.resident.make_room(&fixture.steps).await;
 
         assert_eq!(*fixture.steps.stopped.lock().unwrap(), vec![1]);
     }

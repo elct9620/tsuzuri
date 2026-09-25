@@ -17,6 +17,8 @@ pub struct Replies {
     pub loading_checks: usize,
     /// As a router, whether loading the Model fails.
     pub has_load_failure: bool,
+    /// As a router, whether unloading the Model fails.
+    pub has_unload_failure: bool,
     /// Answers the n-th translation request, counting from 0.
     pub translation: Reply<(usize, Lines)>,
     /// Answers each window looked at for Split Sentences.
@@ -33,6 +35,7 @@ impl Default for Replies {
         Replies {
             loading_checks: 0,
             has_load_failure: false,
+            has_unload_failure: false,
             translation: Box::new(|(_, lines)| translations(echo_lines(lines))),
             split_sentences: Box::new(|_| completion(&json!({"clusters": []}).to_string())),
             summary: Box::new(numbered_summary),
@@ -95,6 +98,12 @@ impl FakeLlama {
                     }
                     "/models/unload" => {
                         log_sink.lock().unwrap().push("unload".to_string());
+                        if replies.has_unload_failure {
+                            return Response {
+                                status: 500,
+                                body: Vec::new(),
+                            };
+                        }
                         *model = ("unloaded", false);
                     }
                     _ => {}

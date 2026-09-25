@@ -35,6 +35,10 @@ export default class TooltipController extends Controller<HTMLElement> {
       width: `${width}px`,
       height: `${height}px`,
     });
+    // Opening away from the nearer window edge keeps the tip on screen.
+    const isInRightHalf = left + width / 2 > window.innerWidth / 2;
+    bubble.classList.toggle("tooltip-left", isInRightHalf);
+    bubble.classList.toggle("tooltip-right", !isInRightHalf);
     bubble.dataset.tip = trigger.dataset.tooltip;
     bubble.hidden = false;
   }

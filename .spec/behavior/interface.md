@@ -253,3 +253,11 @@ A scrolling list does not tell its page it scrolled, so the tooltip would stay w
 | Given | the page as `index.html` writes it |
 | When | its icons are drawn |
 | Then | no element naming an icon is left undrawn |
+
+## `IF-029` Keeping a tooltip on screen near the right edge
+
+| Step | Statement |
+| --- | --- |
+| Given | an element with a tooltip in the right half of the window |
+| When | the pointer comes onto it |
+| Then | its tooltip opens to its left |

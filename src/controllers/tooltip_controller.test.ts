@@ -69,4 +69,23 @@ describe("TooltipController", () => {
 
     expect(bubble().hidden).toBe(true);
   });
+
+  // @behavior IF-029
+  it("opens the tooltip to the left of an element in the right half of the window", () => {
+    const zoom = document.querySelector<HTMLElement>("#resource")!;
+    zoom.getBoundingClientRect = () =>
+      DOMRect.fromRect({
+        x: window.innerWidth - 40,
+        y: 10,
+        width: 24,
+        height: 24,
+      });
+
+    point("pointerover", "#resource");
+
+    expect([
+      bubble().classList.contains("tooltip-left"),
+      bubble().classList.contains("tooltip-right"),
+    ]).toEqual([true, false]);
+  });
 });

@@ -9,13 +9,13 @@ use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 use super::versions::SubtitleVersions;
 use super::{
-    translation_srt, CurrentResource, Project, ProjectConfig, ProjectOptions, SegmentField,
-    SubtitleDigest, TranscriptionTarget, TranslationSource,
+    carry_speakers, translation_srt, CurrentResource, Project, ProjectConfig, ProjectOptions,
+    SegmentField, SubtitleDigest, TranscriptionTarget, TranslationSource,
 };
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::segment_change::SegmentChange;
-use crate::transcript::{Segment, SrtContent, Transcript};
+use crate::transcript::{Segment, SpeakerNames, SrtContent, Transcript};
 
 impl Project {
     /// The directory's Resources in the Primary Language its Project Config records, else in
@@ -140,19 +140,19 @@ impl Project {
     fn write_back(&mut self, field: SegmentField) -> Result<(), Failure> {
         let current = self.current()?;
         let name = current.name.clone();
-        let contents: &[SrtContent] = match field {
-            SegmentField::Text => &[SrtContent::Original],
-            SegmentField::Translation => &[SrtContent::Translation],
-            SegmentField::Speaker => &[SrtContent::Original, SrtContent::Translation],
+        let content = match field {
+            SegmentField::Text | SegmentField::Speaker => SrtContent::Original,
+            SegmentField::Translation => SrtContent::Translation,
         };
         let written_translation = match field {
             SegmentField::Translation => current.translation,
             SegmentField::Text | SegmentField::Speaker => None,
         };
-        for content in contents {
-            self.write_subtitle(*content)?;
-        }
+        self.write_subtitle(content)?;
         self.resources = files::resources_in(&self.directory, self.language)?;
+        if field == SegmentField::Speaker {
+            self.write_speakers_to_translations(&name, false)?;
+        }
         self.write_bilingual_subtitles(&name, written_translation)?;
         self.remember_subtitles()
     }
@@ -180,6 +180,41 @@ impl Project {
             None => self.export_path(content)?,
         };
         files::write_srt(&path, srt)
+    }
+
+    /// Gives each cue of the named Resource's translations the Speaker of its original's Segment with
+    /// the same times, named as the Translation Glossary names it in that Language, first keeping
+    /// each translation it changes as a Backup when `is_backed_up`.
+    fn write_speakers_to_translations(
+        &self,
+        name: &str,
+        is_backed_up: bool,
+    ) -> Result<(), Failure> {
+        let resource = self.resource(name)?;
+        let Some(subtitle) = &resource.subtitle else {
+            return Ok(());
+        };
+        let original = files::transcript_at(subtitle)?;
+        for (language, path) in &resource.translations {
+            let mut translation = files::transcript_at(path)?;
+            let as_read = translation.to_srt(SrtContent::Original);
+            carry_speakers(&original.segments, &mut translation.segments);
+            let srt = translation.to_srt_with(
+                SrtContent::Original,
+                &SpeakerNames {
+                    text: self.speaker_names(Some(*language)),
+                    ..SpeakerNames::default()
+                },
+            );
+            if srt == as_read {
+                continue;
+            }
+            if is_backed_up {
+                files::back_up(&self.directory, path, SystemTime::now())?;
+            }
+            files::write_srt(path, srt)?;
+        }
+        Ok(())
     }
 
     /// Makes `change` to the Current Resource's original and to each of its translations, since a
@@ -565,7 +600,8 @@ impl CurrentProject {
     }
 
     /// Writes the transcription whisper-cli wrote as the original subtitle of `job`, kept as a
-    /// Backup first when the Project Options say so, and the Bilingual SRTs it feeds.
+    /// Backup first when the Project Options say so, its Speakers to each translation, and the
+    /// Bilingual SRTs it feeds.
     pub fn write_transcription(
         &self,
         job: &TranscriptionTarget,
@@ -574,6 +610,14 @@ impl CurrentProject {
         self.back_up_before_overwrite(&job.directory, &job.subtitle)?;
         files::write_srt(&job.subtitle, srt)?;
         self.refresh_resources(&job.directory)?;
+        match self.lock().project.as_ref() {
+            Some(project) if project.directory == job.directory => project
+                .write_speakers_to_translations(
+                    &job.name,
+                    project.options.is_overwrite_backed_up,
+                )?,
+            _ => {}
+        }
         self.write_bilingual_subtitles(&job.directory, &job.name, None)
     }
 
@@ -2084,5 +2128,137 @@ mod tests {
             read(&dir, "ep01.en.srt"),
             "1\n00:00:00,500 --> 00:00:01,500\nXiao Ming: Hello\n"
         );
+    }
+
+    // @behavior PJ-077
+    #[test]
+    fn writes_an_edited_speaker_to_every_translation() {
+        let dir = directory_of(
+            "pj-speaker-every",
+            &[
+                ("ep01.srt", &cue("你好")),
+                ("ep01.en.srt", &cue("Hello")),
+                ("ep01.ja.srt", &cue("こんにちは")),
+            ],
+        );
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Speaker, "co".to_string())
+            .unwrap();
+
+        assert_eq!(
+            [read(&dir, "ep01.en.srt"), read(&dir, "ep01.ja.srt")],
+            [cue("co: Hello"), cue("co: こんにちは")]
+        );
+    }
+
+    // @behavior PJ-078
+    #[test]
+    fn leaves_a_translations_cue_without_a_matching_segment_as_it_is() {
+        let dir = directory_of(
+            "pj-speaker-unmatched",
+            &[
+                ("ep01.srt", &cue("你好")),
+                (
+                    "ep01.ja.srt",
+                    "1\n00:00:00,000 --> 00:00:01,000\nこんにちは\n\n2\n00:00:02,000 --> 00:00:03,000\ncl: さようなら\n",
+                ),
+            ],
+        );
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Speaker, "co".to_string())
+            .unwrap();
+
+        assert_eq!(
+            read(&dir, "ep01.ja.srt"),
+            "1\n00:00:00,000 --> 00:00:01,000\nco: こんにちは\n\n2\n00:00:02,000 --> 00:00:03,000\ncl: さようなら\n"
+        );
+    }
+
+    // @behavior PJ-079
+    #[test]
+    fn names_an_edited_speaker_in_every_translation_as_the_translation_glossary_does() {
+        let dir = directory_of(
+            "pj-speaker-every-named",
+            &[
+                ("glossary.csv", "zh-TW,en,type\n小明,Xiao Ming,speaker\n"),
+                ("ep01.srt", &cue("你好")),
+                ("ep01.en.srt", &cue("Hello")),
+                ("ep01.ja.srt", &cue("こんにちは")),
+            ],
+        );
+        let current = project_in(&dir);
+        current.show_translation(Some(Language::Japanese)).unwrap();
+
+        current
+            .edit(0, SegmentField::Speaker, "小明".to_string())
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.en.srt"), cue("Xiao Ming: Hello"));
+    }
+
+    /// A Project whose `ep01` has a media file, `ep01.srt` reading `co: 你好` and `ep01.en.srt`
+    /// reading `co: Hello`, and a transcription of `你好` with no Speaker written over it.
+    fn transcribe_over_speakers(dir: &TempDir, is_overwrite_backed_up: bool) {
+        transcribe_over(dir, "co: ", is_overwrite_backed_up);
+    }
+
+    /// A Project whose `ep01` has a media file, `ep01.srt` reading `你好` and `ep01.en.srt`
+    /// reading `Hello`, each after `label`, and a transcription of `你好` with no Speaker written over it.
+    fn transcribe_over(dir: &TempDir, label: &str, is_overwrite_backed_up: bool) {
+        for (file_name, content) in [
+            ("ep01.mp4", String::new()),
+            ("ep01.srt", cue(&format!("{label}你好"))),
+            ("ep01.en.srt", cue(&format!("{label}Hello"))),
+        ] {
+            std::fs::write(dir.path().join(file_name), content).unwrap();
+        }
+        let current = project_in(dir);
+        current
+            .set_options(ProjectOptions {
+                is_overwrite_backed_up,
+                ..ProjectOptions::default()
+            })
+            .unwrap();
+        let target = current.transcription_target(true).unwrap();
+
+        current.write_transcription(&target, cue("你好")).unwrap();
+    }
+
+    // @behavior PJ-080
+    #[test]
+    fn carries_the_speakers_of_a_new_transcription_to_each_translation() {
+        let dir = TempDir::new("pj-speaker-transcribed");
+
+        transcribe_over_speakers(&dir, false);
+
+        assert_eq!(read(&dir, "ep01.en.srt"), cue("Hello"));
+    }
+
+    // @behavior PJ-081
+    #[test]
+    fn keeps_a_backup_of_a_translation_a_transcription_changes() {
+        let dir = TempDir::new("pj-speaker-transcribed-backup");
+
+        transcribe_over_speakers(&dir, true);
+
+        assert!(backups_in(dir.path())
+            .iter()
+            .any(|(file, text)| file.starts_with("ep01.en.") && *text == cue("co: Hello")));
+    }
+
+    // @behavior PJ-082
+    #[test]
+    fn keeps_no_backup_of_a_translation_a_transcription_leaves_as_it_is() {
+        let dir = TempDir::new("pj-transcribed-unchanged");
+
+        transcribe_over(&dir, "", true);
+
+        assert!(!backups_in(dir.path())
+            .iter()
+            .any(|(file, _)| file.starts_with("ep01.en.")));
     }
 }

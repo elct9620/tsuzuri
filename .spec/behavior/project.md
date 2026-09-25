@@ -602,3 +602,53 @@ What Tsuzuri wrote itself is never taken for a change made elsewhere.
 | When | its times are changed to 0.5 to 1.5 seconds |
 | Then | `ep01.en.srt` reads `Xiao Ming: Hello` from 0.5 to 1.5 seconds |
 
+## `PJ-077` Writing an edited Speaker to every translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` reads `你好`, `ep01.en.srt` `Hello` and `ep01.ja.srt` `こんにちは`, with `ep01.en.srt` shown |
+| When | the Speaker of its Segment is set to `co` |
+| Then | `ep01.en.srt` reads `co: Hello` and `ep01.ja.srt` reads `co: こんにちは` |
+
+## `PJ-078` Leaving a translation's cue without a matching Segment as it is
+
+A cue with other times belongs to no Segment, so a Speaker has nowhere to come from.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` has `你好` from 0 to 1 second, and whose `ep01.ja.srt` has `こんにちは` from 0 to 1 second and `cl: さようなら` from 2 to 3 seconds |
+| When | the Speaker of its Segment is set to `co` |
+| Then | `ep01.ja.srt` reads `co: こんにちは`, then `cl: さようなら` from 2 to 3 seconds |
+
+## `PJ-079` Naming an edited Speaker in every translation as the Translation Glossary does
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, whose `ep01.srt` reads `你好`, `ep01.en.srt` `Hello` and `ep01.ja.srt` `こんにちは`, with `ep01.ja.srt` shown |
+| When | the Speaker of its Segment is set to `小明` |
+| Then | `ep01.en.srt` reads `Xiao Ming: Hello` |
+
+## `PJ-080` Carrying the Speakers of a new transcription to each translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01` has a media file, `ep01.srt` reading `co: 你好` and `ep01.en.srt` reading `co: Hello` |
+| When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
+| Then | `ep01.en.srt` reads `Hello` |
+
+## `PJ-081` Keeping a Backup of a translation a transcription changes
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project keeping Backups whose `ep01` has a media file, `ep01.srt` reading `co: 你好` and `ep01.en.srt` reading `co: Hello` |
+| When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
+| Then | the history holds a Backup of `ep01.en.srt` reading `co: Hello` |
+
+
+## `PJ-082` Keeping no Backup of a translation a transcription leaves as it is
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project keeping Backups whose `ep01` has a media file, `ep01.srt` reading `你好` and `ep01.en.srt` reading `Hello` |
+| When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
+| Then | the history holds no Backup of `ep01.en.srt` |

@@ -173,6 +173,19 @@ fn translation_srt(transcript: &Transcript, speaker_names: HashMap<String, Strin
     )
 }
 
+/// Gives each cue of a translation the Speaker of the original's Segment with the same times; a
+/// cue with other times belongs to no Segment and keeps its own.
+fn carry_speakers(original: &[Segment], translation: &mut [Segment]) {
+    for cue in translation {
+        let matching = original
+            .iter()
+            .find(|segment| (segment.start_ms, segment.end_ms) == (cue.start_ms, cue.end_ms));
+        if let Some(segment) = matching {
+            cue.speaker = segment.speaker.clone();
+        }
+    }
+}
+
 /// Each translated Segment with its translation as its text and its text as its translation.
 fn translation_first(transcript: &Transcript) -> Transcript {
     Transcript {

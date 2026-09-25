@@ -48,7 +48,7 @@ pub async fn forget_component(app: AppHandle, name: String) -> Result<Vec<Compon
 
 ## `transcribe`
 
-Run the Transcribe Mode on the Current Resource's media file in the Primary Language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes and `project-changed` as each Segment arrives. The Resource's original subtitle is written from what whisper-cli wrote, refused when it exists unless `overwrite`; the answer is how long the audio is and the seconds each Phase took.
+Run the Transcribe Mode on the Current Resource's media file in the Primary Language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes and `project-changed` as each Segment arrives. The Resource's original subtitle is written from what whisper-cli wrote, refused when it exists unless `overwrite`, and each cue of its translations that has the times of a cue written takes that cue's Speaker; the answer is how long the audio is and the seconds each Phase took.
 
 ```rust
 pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription, Failure> {}
@@ -112,7 +112,7 @@ pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
 
 ## `edit_segment`
 
-Replace the `text`, the `translation` or the `speaker` of one Segment of the Current Resource, by its position, where an empty `speaker` leaves it with none, and write the subtitle it belongs to back to the directory; a Speaker is written to the original and the translation shown. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure.
+Replace the `text`, the `translation` or the `speaker` of one Segment of the Current Resource, by its position, where an empty `speaker` leaves it with none, and write the subtitle it belongs to back to the directory; a Speaker is written to the original and to each cue of every translation that has the Segment's times. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure.
 
 ```rust
 pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}

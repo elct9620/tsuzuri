@@ -2,9 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::language::Language;
-use crate::project::{CurrentResource, Project};
-use crate::project_config::ProjectOptions;
-use crate::resource::Resource;
+use crate::project::{CurrentResource, Project, ProjectOptions, Resource};
 use crate::transcript::{Segment, Transcript};
 
 /// A Project in `zh-TW` of one Resource, `lecture`, current and holding `segments`.
@@ -223,7 +221,7 @@ mod tests {
 
 /// The content of each Backup in `directory`'s history, with its file name, in name order.
 pub fn backups_in(directory: &std::path::Path) -> Vec<(String, String)> {
-    let Ok(entries) = std::fs::read_dir(directory.join(crate::history::HISTORY_DIR)) else {
+    let Ok(entries) = std::fs::read_dir(directory.join(crate::project::HISTORY_DIR)) else {
         return Vec::new();
     };
     let mut backups: Vec<(String, String)> = entries

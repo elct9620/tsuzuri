@@ -5,7 +5,7 @@ The directory Rust holds open as the single source of truth: which files make it
 ## Includes
 
 - `src-tauri/src/project.rs`
-- `src-tauri/src/resource.rs`
+- `src-tauri/src/project/*.rs`
 - `src-tauri/src/transcription.rs`
 - `src-tauri/src/transcription/*.rs`
 - `src-tauri/src/translation.rs`

@@ -1,12 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager};
 
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
-use crate::progress::Progress;
-use crate::project::CurrentProject;
 
 const GLOSSARY_FILE: &str = "glossary.csv";
 
@@ -176,24 +173,10 @@ fn malformed_glossary(error: csv::Error) -> Failure {
     }
 }
 
-#[tauri::command]
-pub fn translation_glossary_table(app: AppHandle) -> Result<GlossaryTable, Failure> {
-    app.state::<CurrentProject>().glossary_table()
-}
-
-#[tauri::command]
-pub fn save_translation_glossary(app: AppHandle, rows: Vec<Vec<String>>) -> Result<(), Failure> {
-    app.state::<CurrentProject>()
-        .save_translation_glossary(&rows)?;
-    app.announce_project();
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::Project;
-    use crate::project_config::ProjectConfig;
+    use crate::project::{CurrentProject, Project, ProjectConfig};
     use crate::test_support::TempDir;
 
     const ZH_TO_EN: LanguagePair = LanguagePair {

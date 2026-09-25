@@ -1,21 +1,16 @@
 pub mod components;
 pub mod failure;
-pub mod history;
 pub mod language;
 pub mod models;
 pub mod processes;
 pub mod progress;
 pub mod project;
-pub mod project_config;
-pub mod resource;
 pub mod segment_change;
 pub mod steps;
 pub mod timing;
 pub mod transcript;
 pub mod transcription;
 pub mod translation;
-pub mod translation_glossary;
-pub mod versions;
 pub mod window;
 
 #[cfg(test)]
@@ -54,7 +49,7 @@ pub fn run() {
         // A subtitle may have been corrected in another program while the window was away
         .on_window_event(|window, event| {
             if let WindowEvent::Focused(true) = event {
-                project::read_again_if_changed(window.app_handle());
+                project::commands::read_again_if_changed(window.app_handle());
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -64,25 +59,25 @@ pub fn run() {
             models::model_settings,
             models::choose_model,
             transcription::commands::transcribe,
-            project::current_project,
-            project::edit_segment,
-            project::change_segments,
-            versions::subtitle_versions,
-            versions::compare_versions,
-            versions::restore_version,
-            project::export_path,
-            project::open_project,
-            project::open_srt,
-            project::save_srt,
-            project::select_resource,
-            project::set_primary_language,
-            project::set_project_options,
-            project::show_translation,
+            project::commands::current_project,
+            project::commands::edit_segment,
+            project::commands::change_segments,
+            project::commands::subtitle_versions,
+            project::commands::compare_versions,
+            project::commands::restore_version,
+            project::commands::export_path,
+            project::commands::open_project,
+            project::commands::open_srt,
+            project::commands::save_srt,
+            project::commands::select_resource,
+            project::commands::set_primary_language,
+            project::commands::set_project_options,
+            project::commands::show_translation,
             translation::commands::save_translation_settings,
             translation::commands::translate,
             translation::commands::translation_settings,
-            translation_glossary::save_translation_glossary,
-            translation_glossary::translation_glossary_table,
+            project::commands::save_translation_glossary,
+            project::commands::translation_glossary_table,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

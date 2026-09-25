@@ -84,10 +84,7 @@ pub async fn run_transcribe(
 
     let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
     let transcript = Transcript::from_srt(&srt)?;
-    project.back_up_before_overwrite(&job.directory, &job.subtitle)?;
-    std::fs::write(&job.subtitle, &srt)?;
-    project.refresh_resources(&job.directory)?;
-    project.write_bilingual_subtitles(&job.directory, &job.name, None)?;
+    project.write_transcription(job, srt)?;
     project.write_transcript(job.generation, transcript);
     ports.announce_project();
     Ok(Transcription {

@@ -1,13 +1,9 @@
 use std::collections::BTreeMap;
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager};
 
-use crate::failure::Failure;
-use crate::history::Backup;
 use crate::language::Language;
-use crate::progress::Progress;
-use crate::project::CurrentProject;
+use crate::project::Backup;
 use crate::transcript::Transcript;
 
 /// The Backups of one subtitle of the Current Resource: its original, or its translation into `language`.
@@ -49,38 +45,6 @@ pub fn compare(left: &Transcript, right: &Transcript) -> Vec<ComparedRow> {
             right,
         })
         .collect()
-}
-
-#[tauri::command]
-pub fn subtitle_versions(app: AppHandle) -> Result<Vec<SubtitleVersions>, Failure> {
-    app.state::<CurrentProject>().subtitle_versions()
-}
-
-#[tauri::command]
-pub fn compare_versions(
-    app: AppHandle,
-    language: Option<Language>,
-    left: Option<String>,
-    right: Option<String>,
-) -> Result<Vec<ComparedRow>, Failure> {
-    let current = app.state::<CurrentProject>();
-    Ok(compare(
-        &current.version_transcript(language, left.as_deref())?,
-        &current.version_transcript(language, right.as_deref())?,
-    ))
-}
-
-#[tauri::command]
-pub fn restore_version(
-    app: AppHandle,
-    language: Option<Language>,
-    backup: String,
-) -> Result<(), Failure> {
-    let restored = app
-        .state::<CurrentProject>()
-        .restore_version(language, &backup);
-    app.announce_project();
-    restored
 }
 
 #[cfg(test)]

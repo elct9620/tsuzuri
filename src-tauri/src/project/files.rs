@@ -1,25 +1,94 @@
 use std::collections::BTreeMap;
+use std::fs;
+use std::hash::{DefaultHasher, Hash, Hasher};
+use std::io;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use super::{Backup, Project, ProjectConfig, Resource, SubtitleDigest};
 use crate::failure::Failure;
 use crate::language::Language;
-use crate::transcript::{Segment, Transcript};
+use crate::transcript::{Segment, SrtContent, Transcript};
+
+/// `name` with the code of each Language, then `.srt`.
+pub fn file_name(name: &str, languages: impl IntoIterator<Item = Option<Language>>) -> String {
+    let mut file_name = name.to_string();
+    for language in languages.into_iter().flatten() {
+        file_name.push('.');
+        file_name.push_str(language.code());
+    }
+    file_name.push_str(".srt");
+    file_name
+}
+
+pub fn digest_of(path: &Path) -> Result<SubtitleDigest, Failure> {
+    let digest = match std::fs::read(path) {
+        Ok(bytes) => {
+            let mut hasher = DefaultHasher::new();
+            bytes.hash(&mut hasher);
+            Some(hasher.finish())
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error.into()),
+    };
+    Ok((path.to_path_buf(), digest))
+}
+
+/// Writes `srt` to the subtitle at `path`.
+pub fn write_srt(path: &Path, srt: String) -> Result<(), Failure> {
+    Ok(fs::write(path, srt)?)
+}
+
+/// Puts the file at `from` in place of the one at `to`.
+pub fn copy(from: &Path, to: &Path) -> Result<(), Failure> {
+    fs::copy(from, to)?;
+    Ok(())
+}
+
+/// The Segments of the subtitle at `path`, none when there is no such file.
+pub fn transcript_at(path: &Path) -> Result<Transcript, Failure> {
+    match fs::read_to_string(path) {
+        Ok(srt) => Ok(Transcript::from_srt(&srt)?),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Transcript::default()),
+        Err(error) => Err(error.into()),
+    }
+}
+
+impl Project {
+    /// Where the Current Resource keeps its original, or its translation into `language`, whether
+    /// or not the file exists yet.
+    pub(super) fn subtitle_path(&self, language: Option<Language>) -> Result<PathBuf, Failure> {
+        let current = self.current()?;
+        let resource = self.resource(&current.name)?;
+        let found = match language {
+            Some(language) => resource.translation_path(language).map(Path::to_path_buf),
+            None => resource.subtitle.clone(),
+        };
+        Ok(found.unwrap_or_else(|| self.directory.join(file_name(&current.name, [language]))))
+    }
+
+    pub(super) fn bilingual_file_name(&self, name: &str, translation: Language) -> String {
+        file_name(name, self.bilingual_languages(Some(translation)))
+    }
+
+    /// In the directory, named after the Current Resource with the Language codes `content`
+    /// carries beyond the Primary Language alone.
+    pub(super) fn export_path(&self, content: SrtContent) -> Result<PathBuf, Failure> {
+        let current = self.current()?;
+        let languages = match content {
+            SrtContent::Original => vec![],
+            SrtContent::Translation => vec![current.translation],
+            SrtContent::Bilingual => self.bilingual_languages(current.translation).to_vec(),
+        };
+        let name = file_name(&current.name, languages);
+        Ok(self.directory.join(name))
+    }
+}
 
 /// The extensions of the containers the bundled ffmpeg demuxes (`scripts/vendor.sh`).
 const MEDIA_EXTENSIONS: [&str; 11] = [
     "mp4", "mov", "m4a", "mkv", "webm", "mp3", "wav", "ogg", "opus", "flac", "aac",
 ];
-
-/// The files of a Project sharing one name.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Resource {
-    pub name: String,
-    pub media: Option<PathBuf>,
-    /// The subtitle in the Primary Language.
-    pub subtitle: Option<PathBuf>,
-    /// A subtitle for each other Language, in the order of [`Language::ALL`].
-    pub translations: Vec<(Language, PathBuf)>,
-}
 
 impl Resource {
     /// The Segments of its subtitle, none without one, carrying their translations into `translation`.
@@ -50,13 +119,6 @@ impl Resource {
                 .map(|cue| cue.text.clone());
         }
         Ok(())
-    }
-
-    pub fn translation_path(&self, language: Language) -> Option<&Path> {
-        self.translations
-            .iter()
-            .find(|(each, _)| *each == language)
-            .map(|(_, path)| path.as_path())
     }
 }
 
@@ -171,9 +233,133 @@ fn is_language_code(text: &str) -> bool {
     is_primary && is_subtag
 }
 
+const CONFIG_FILE: &str = "tsuzuri.config.json";
+
+impl ProjectConfig {
+    /// A directory without the file loads as the default.
+    pub fn load(directory: &Path) -> io::Result<ProjectConfig> {
+        match fs::read(directory.join(CONFIG_FILE)) {
+            Ok(bytes) => serde_json::from_slice(&bytes).map_err(io::Error::other),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(ProjectConfig::default()),
+            Err(error) => Err(error),
+        }
+    }
+
+    pub fn save(self, directory: &Path) -> io::Result<()> {
+        let json = serde_json::to_vec_pretty(&self).map_err(io::Error::other)?;
+        fs::write(directory.join(CONFIG_FILE), json)
+    }
+}
+
+/// Where a Project keeps its Backups, in a directory the Resource list never reads.
+pub const HISTORY_DIR: &str = ".tsuzuri/history";
+
+/// Copies `subtitle` into the history of `directory` as a Backup taken `at`, when it exists. A
+/// Backup already taken that second is left alone and this one takes the next free second.
+pub fn back_up(directory: &Path, subtitle: &Path, at: SystemTime) -> io::Result<()> {
+    let Some(stem) = subtitle_stem(subtitle) else {
+        return Ok(());
+    };
+    if !subtitle.is_file() {
+        return Ok(());
+    }
+    let history = directory.join(HISTORY_DIR);
+    fs::create_dir_all(&history)?;
+    let mut at = at;
+    let backup = loop {
+        let backup = history.join(format!("{stem}.{}.srt", utc_stamp(at)));
+        if !backup.exists() {
+            break backup;
+        }
+        at += Duration::from_secs(1);
+    };
+    fs::copy(subtitle, backup)?;
+    Ok(())
+}
+
+/// The Backups of `subtitle` in the history of `directory`, newest first.
+pub fn backups_of(directory: &Path, subtitle: &Path) -> io::Result<Vec<Backup>> {
+    let Some(stem) = subtitle_stem(subtitle) else {
+        return Ok(Vec::new());
+    };
+    let entries = match fs::read_dir(directory.join(HISTORY_DIR)) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(error) => return Err(error),
+    };
+    let mut backups: Vec<Backup> = entries
+        .filter_map(|entry| entry.ok()?.file_name().into_string().ok())
+        .filter_map(|file| {
+            let (named, taken_at) = file.strip_suffix(".srt")?.rsplit_once('.')?;
+            (named == stem && is_utc_stamp(taken_at)).then(|| Backup {
+                taken_at: taken_at.to_string(),
+                file: file.clone(),
+            })
+        })
+        .collect();
+    backups.sort_by(|a, b| b.taken_at.cmp(&a.taken_at));
+    Ok(backups)
+}
+
+/// Where the Backup named `file` is kept in the history of `directory`.
+pub fn backup_path(directory: &Path, file: &str) -> PathBuf {
+    directory.join(HISTORY_DIR).join(file)
+}
+
+/// `ep01` of `ep01.srt`, `ep01.en` of `ep01.en.srt`.
+fn subtitle_stem(subtitle: &Path) -> Option<&str> {
+    subtitle.file_name()?.to_str()?.strip_suffix(".srt")
+}
+
+fn is_utc_stamp(text: &str) -> bool {
+    let bytes = text.as_bytes();
+    bytes.len() == 16
+        && bytes[8] == b'T'
+        && bytes[15] == b'Z'
+        && bytes[..8]
+            .iter()
+            .chain(&bytes[9..15])
+            .all(u8::is_ascii_digit)
+}
+
+/// `at` as `YYYYMMDDTHHMMSSZ` in UTC, which sorts in time order and names no time zone.
+fn utc_stamp(at: SystemTime) -> String {
+    let seconds = at
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |since| since.as_secs());
+    let (days, of_day) = (seconds / 86_400, seconds % 86_400);
+    let (year, month, day) = civil_date(days as i64);
+    format!(
+        "{year:04}{month:02}{day:02}T{:02}{:02}{:02}Z",
+        of_day / 3_600,
+        of_day / 60 % 60,
+        of_day % 60
+    )
+}
+
+/// The proleptic Gregorian date `days` after 1970-01-01, by Howard Hinnant's `civil_from_days`.
+fn civil_date(days: i64) -> (i64, u32, u32) {
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let day_of_era = z.rem_euclid(146_097);
+    let year_of_era =
+        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let shifted_month = (5 * day_of_year + 2) / 153;
+    let day = (day_of_year - (153 * shifted_month + 2) / 5 + 1) as u32;
+    let month = if shifted_month < 10 {
+        shifted_month + 3
+    } else {
+        shifted_month - 9
+    } as u32;
+    let year = year_of_era + era * 400 + i64::from(month <= 2);
+    (year, month, day)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::project::{BilingualOrder, ProjectOptions};
     use crate::test_support::TempDir;
 
     fn directory_of(name: &str, files: &[(&str, &str)]) -> TempDir {
@@ -325,5 +511,79 @@ mod tests {
             texts(&transcript),
             vec![("你好", Some("Hello")), ("世界", None)]
         );
+    }
+
+    #[test]
+    fn loads_what_it_saved() {
+        let dir = TempDir::new("config-round-trip");
+        let config = ProjectConfig {
+            language: Some(Language::Japanese),
+            translation_language: Some(Language::English),
+            options: ProjectOptions {
+                bilingual_order: BilingualOrder::TranslationFirst,
+                is_bilingual_autosaved: true,
+                is_overwrite_backed_up: true,
+            },
+        };
+
+        config.save(dir.path()).unwrap();
+
+        assert_eq!(ProjectConfig::load(dir.path()).unwrap(), config);
+    }
+
+    #[test]
+    fn loads_the_default_options_from_a_file_written_without_them() {
+        let dir = TempDir::new("config-without-options");
+        fs::write(dir.path().join(CONFIG_FILE), r#"{"language":"ja"}"#).unwrap();
+
+        let config = ProjectConfig::load(dir.path()).unwrap();
+
+        assert_eq!(
+            (config.language, config.options),
+            (Some(Language::Japanese), ProjectOptions::default())
+        );
+    }
+
+    #[test]
+    fn loads_the_default_without_a_file() {
+        let dir = TempDir::new("config-missing");
+
+        assert_eq!(
+            ProjectConfig::load(dir.path()).unwrap(),
+            ProjectConfig::default()
+        );
+    }
+
+    #[test]
+    fn stamps_a_time_in_utc() {
+        let at = UNIX_EPOCH + Duration::from_secs(1_790_303_400);
+
+        assert_eq!(utc_stamp(at), "20260925T023000Z");
+    }
+
+    #[test]
+    fn stamps_the_last_day_of_a_leap_february() {
+        let at = UNIX_EPOCH + Duration::from_secs(951_782_400);
+
+        assert_eq!(utc_stamp(at), "20000229T000000Z");
+    }
+
+    #[test]
+    fn takes_the_next_free_second_for_a_backup_taken_twice_in_one() {
+        let dir = TempDir::new("history-same-second");
+        let subtitle = dir.path().join("ep01.srt");
+        let at = UNIX_EPOCH + Duration::from_secs(1_790_303_400);
+        std::fs::write(&subtitle, "first").unwrap();
+        back_up(dir.path(), &subtitle, at).unwrap();
+        std::fs::write(&subtitle, "second").unwrap();
+
+        back_up(dir.path(), &subtitle, at).unwrap();
+
+        let taken: Vec<String> = backups_of(dir.path(), &subtitle)
+            .unwrap()
+            .into_iter()
+            .map(|backup| backup.taken_at)
+            .collect();
+        assert_eq!(taken, ["20260925T023001Z", "20260925T023000Z"]);
     }
 }

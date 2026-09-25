@@ -4,8 +4,8 @@ Editing the Project's Translation Glossary as a table in its own dialog, opened 
 
 ## Includes
 
-- `src-tauri/src/translation_glossary.rs`
 - `src-tauri/src/project.rs`
+- `src-tauri/src/project/*.rs`
 - `src/controllers/glossary_controller.test.ts`
 - `src/controllers/project_controller.test.ts`
 

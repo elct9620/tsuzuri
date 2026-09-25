@@ -109,7 +109,7 @@ describe("notify", () => {
   });
 
   // @behavior IF-020
-  it("keeps a Notification that offers something to do", async () => {
+  it("lets a Notification that offers something to do go on its own", async () => {
     await notify({
       title: "已存檔",
       kind: "success",
@@ -118,7 +118,7 @@ describe("notify", () => {
 
     vi.advanceTimersByTime(NOTIFICATION_MS);
 
-    expect(notifications()).toEqual(["已存檔"]);
+    expect(notifications()).toEqual([]);
   });
 
   // @behavior IF-021
@@ -172,7 +172,7 @@ describe("notify", () => {
 
     await notify({ title: "五", kind: "success" });
 
-    expect(notifications()).toEqual(["轉錄失敗", "二", "三", "四", "五"]);
+    expect(notifications()).toEqual(["一", "二", "三", "四", "五"]);
   });
 
   // @behavior IF-026

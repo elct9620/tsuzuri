@@ -175,15 +175,15 @@ One replacing another would take away what the earlier one said, or offered, bef
 | When | it shows |
 | Then | each Phase is a row under the title with its seconds beside it |
 
-## `IF-020` Keeping a Notification that offers something to do
+## `IF-020` Letting a Notification that offers something to do go on its own
 
-A Notification that went on its own would take its offer with it before it could be taken.
+Its offer stays within reach while the pointer or focus rests on it (IF-024, IF-026), so it goes like any other rather than piling up.
 
 | Step | Statement |
 | --- | --- |
 | Given | a Notification that an edit was saved, offering to add a Speaker to the Translation Glossary |
-| When | a few seconds pass |
-| Then | it is still shown |
+| When | a few seconds pass with nothing resting on it |
+| Then | it is no longer shown |
 
 ## `IF-021` Showing how long a Notification stays
 
@@ -221,12 +221,13 @@ A click meant for its text or its button should not take it away.
 
 ## `IF-025` Keeping at most five Notifications
 
+The newest say the most about what just happened, so the oldest goes first whatever its kind.
+
 | Step | Statement |
 | --- | --- |
 | Given | a Notification that a task failed, then four that tasks finished |
 | When | another task finishes |
-| Then | five are shown: the failure and the four latest that tasks finished |
-
+| Then | five are shown: the five latest that tasks finished, the failure taken away |
 
 ## `IF-026` Pausing a Notification while focus is within it
 

@@ -35,7 +35,7 @@ export interface Notification {
   detail?: string;
   /** Each a name and its value, one row each under the title. */
   items?: [string, string][];
-  /** Something the user may do about it; the Notification stays until closed so it can be done. */
+  /** Something the user may do about it, within reach while the pointer or focus rests on the Notification. */
   action?: { label: string; run: () => void };
 }
 
@@ -119,19 +119,25 @@ function button(
   return element;
 }
 
-/** The buttons of a Notification that stays: its action, if it has one, then a close button. */
-function buttons(alert: HTMLElement, { action }: Notification): HTMLElement {
+/** The buttons after the content: its action, if it has one, then a close button on one that stays. */
+function buttons(
+  alert: HTMLElement,
+  { action }: Notification,
+  isStaying: boolean,
+): HTMLElement {
   const group = document.createElement("div");
   group.className = "flex items-center gap-1";
   if (action) {
     actionByAlert.set(alert, action.run);
     group.append(button(action.label, "btn btn-sm", "act"));
   }
-  const close = button("", "btn btn-sm btn-circle btn-ghost", "close");
-  close.append(iconElement("X"));
-  close.dataset.close = "";
-  close.setAttribute("aria-label", t("work.close"));
-  group.append(close);
+  if (isStaying) {
+    const close = button("", "btn btn-sm btn-circle btn-ghost", "close");
+    close.append(iconElement("X"));
+    close.dataset.close = "";
+    close.setAttribute("aria-label", t("work.close"));
+    group.append(close);
+  }
   return group;
 }
 
@@ -147,35 +153,29 @@ function countDown(alert: HTMLElement, content: HTMLElement): void {
     "mouseenter->notification#rest mouseleave->notification#resume focusin->notification#rest focusout->notification#resume";
 }
 
-/** Takes away the oldest Notification that would go on its own while more than `MOST_SHOWN` are shown. */
+/** Takes away the oldest Notification while more than `MOST_SHOWN` are shown. */
 function keepMostShown(stack: HTMLElement): void {
-  const shown = [
-    ...stack.querySelectorAll<HTMLElement>(
-      '[role="alert"]:not([data-leaving])',
-    ),
-  ];
-  if (shown.length <= MOST_SHOWN) return;
-  const oldest = shown.find((alert) => !("stays" in alert.dataset));
-  if (oldest) leave(oldest);
+  const shown = stack.querySelectorAll<HTMLElement>(
+    '[role="alert"]:not([data-leaving])',
+  );
+  if (shown.length > MOST_SHOWN) leave(shown[0]);
 }
 
-/** Shows `notification` in the corner of the window, stacked under the ones already shown. A failure, or one offering an action, stays until closed; anything else counts down `NOTIFICATION_MS`. */
+/** Shows `notification` in the corner of the window, stacked under the ones already shown. A failure stays until closed; anything else counts down `NOTIFICATION_MS`, its action within reach while the pointer or focus rests on it. */
 export function notify(notification: Notification): void {
   const stack = document.querySelector<HTMLElement>("[data-notifications]");
   if (!stack) return;
   const { kind, action } = notification;
+  const isStaying = kind === "error";
   const alert = document.createElement("div");
   alert.setAttribute("role", "alert");
   alert.dataset.controller = "notification";
   alert.className = `${ALERT_CLASSES} ${KIND_CLASSES[kind]}`;
   const body = content(notification);
   alert.append(icon(kind), body);
-  if (kind === "error" || action) {
-    alert.dataset.stays = "";
-    alert.append(buttons(alert, notification));
-  } else {
-    countDown(alert, body);
-  }
+  if (!isStaying) countDown(alert, body);
+  if (isStaying || action)
+    alert.append(buttons(alert, notification, isStaying));
   stack.append(alert);
   keepMostShown(stack);
 }

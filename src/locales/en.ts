@@ -94,6 +94,9 @@ const en = {
     notRedone: "Change not redone",
   },
   preview: {
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+    noWaveform: "Could not draw the waveform",
     play: "Play or stop",
     unplayable:
       "This format cannot be previewed here; its waveform still shows.",

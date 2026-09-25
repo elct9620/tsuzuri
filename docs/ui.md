@@ -169,7 +169,8 @@
 
 | 元素 | 內容 | 元件 |
 |---|---|---|
-| 波形 | 高 80px，Rust 算好 | wavesurfer.js |
+| 波形 | 高 76px，Rust 算好 | wavesurfer.js |
+| 取波形中 | 整列閃爍 | skeleton |
 | 段落區段 | 兩色交錯 | Regions |
 | 選取 | 顏色加深 | — |
 | 點區段 | 選取該段 | — |

@@ -15,6 +15,7 @@ import PreviewController from "./controllers/preview_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
+import TimelineController from "./controllers/timeline_controller";
 import TooltipController from "./controllers/tooltip_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
@@ -46,6 +47,7 @@ async function start(): Promise<void> {
   application.register("progress", ProgressController);
   application.register("project", ProjectController);
   application.register("segment-changes", SegmentChangesController);
+  application.register("timeline", TimelineController);
   application.register("tooltip", TooltipController);
   application.register("transcribe", TranscribeController);
   application.register("transcript", TranscriptController);

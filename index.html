@@ -381,7 +381,7 @@
           </div>
           <div
             class="grid grid-cols-[auto_1fr] content-start border-base-300 has-[>:not([hidden])]:border-b"
-            data-controller="preview"
+            data-controller="preview timeline"
           >
             <div
               class="relative row-span-2 aspect-video h-45 bg-black"
@@ -392,6 +392,7 @@
                 class="size-full"
                 preload="metadata"
                 data-preview-target="media"
+                data-timeline-target="media"
                 data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"
               ></video>
               <p
@@ -428,6 +429,24 @@
                 class="text-sm tabular-nums text-base-content/70"
                 data-preview-target="time"
               ></span>
+              <div class="join ml-auto">
+                <button
+                  type="button"
+                  class="btn btn-square btn-sm join-item"
+                  data-action="timeline#zoomOut"
+                  data-i18n-label="preview.zoomOut"
+                >
+                  <i data-lucide="zoom-out" class="size-4"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-square btn-sm join-item"
+                  data-action="timeline#zoomIn"
+                  data-i18n-label="preview.zoomIn"
+                >
+                  <i data-lucide="zoom-in" class="size-4"></i>
+                </button>
+              </div>
             </div>
             <div
               id="progress"
@@ -450,6 +469,12 @@
                 hidden
               ></progress>
             </div>
+            <div
+              class="col-span-2 h-19 w-full"
+              data-timeline-target="waveform"
+              data-action="wheel->timeline#scroll:prevent"
+              hidden
+            ></div>
           </div>
           <div class="flex-1 overflow-y-auto p-4">
             <p

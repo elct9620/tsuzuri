@@ -322,6 +322,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `comparison` | 字幕編輯的對照：原文與譯文各自比較一份備份並標在各自欄位、插入已刪除的段落、疊上其他譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
 | `preview` | 預覽：播放器、整段播放、疊字 |
+| `timeline` | 預覽的時間軸：波形、段落區段、縮放 |
 | `progress` | 預覽右欄的任務進度 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
 | `components`、`models`、`translation-settings`、`logs` | 設定頁 |
@@ -330,7 +331,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `undo` | 全頁的復原與重做：欄位裡交給欄位自己，其餘交給 Rust |
 | `field` | 每個編輯欄位一個：接上 `editor/`，離開時以事件交出新的文字 |
 
-畫面配置見 `docs/ui.md`。`progress` 以 `progress:task` 事件、`project` 以 `project:select` 事件告訴字幕編輯要顯示 skeleton；字幕編輯每次畫好段落後以 `transcript:shown` 讓 `comparison` 重新標記。`comparison` 以 outlet 開啟版本 dialog，`versions` 以 `versions:compare-with` 交回設為對照的備份。
+畫面配置見 `docs/ui.md`。`progress` 以 `progress:task` 事件、`project` 以 `project:select` 事件告訴字幕編輯要顯示 skeleton；字幕編輯每次畫好段落後以 `transcript:shown` 讓 `comparison` 重新標記。`comparison` 以 outlet 開啟版本 dialog，`versions` 以 `versions:compare-with` 交回設為對照的備份。`preview` 與 `timeline` 掛在同一個元素，各以自己的 target 共用同一個 `<video>`。
 
 ### 4.3 backend
 

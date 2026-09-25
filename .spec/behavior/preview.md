@@ -8,6 +8,7 @@ Hearing and watching the Current Resource's media above the editor while its sub
 - `src-tauri/src/waveform.rs`
 - `src-tauri/src/waveform/*.rs`
 - `src/controllers/preview_controller.test.ts`
+- `src/controllers/timeline_controller.test.ts`
 
 ## `PV-001` Letting the webview read a media file of the Project
 
@@ -136,3 +137,67 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | a Current Resource with the Segment `大家好` from 0 to 1 s |
 | When | it plays to 1.5 s |
 | Then | nothing is shown over the video |
+
+## `PV-017` Drawing the Waveform of the Current Resource's media
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file whose Waveform holds 200 Peaks at 100 a second |
+| When | the Project is shown |
+| Then | the timeline draws those Peaks over 2 seconds |
+
+## `PV-018` Dropping a Waveform of media no longer current
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with `ep02.mp4` |
+| When | a Waveform taken from `ep01.mp4` arrives |
+| Then | the timeline does not draw it |
+
+## `PV-019` Marking each Segment on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and three Segments |
+| When | the Project is shown |
+| Then | each Segment is a region spanning its own times |
+
+## `PV-020` Following edited Segments on the timeline without losing the zoom
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline zoomed in on a Current Resource with two Segments |
+| When | a third Segment is added |
+| Then | the timeline marks three Segments at the same zoom |
+
+## `PV-021` Zooming the timeline in
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second |
+| When | zoom in is pressed |
+| Then | the timeline shows 200 pixels a second |
+
+## `PV-022` Zooming the timeline out
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second |
+| When | zoom out is pressed |
+| Then | the timeline shows 50 pixels a second |
+
+## `PV-023` Scrolling the timeline with the wheel
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline scrolled to its start |
+| When | the wheel turns down by 120 |
+| Then | the timeline scrolls 120 pixels later |
+
+## `PV-024` Telling neighbouring Segments apart on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and three Segments |
+| When | the Project is shown |
+| Then | the first and third regions share one colour and the second has another |

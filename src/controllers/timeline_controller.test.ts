@@ -1,0 +1,188 @@
+// @vitest-environment happy-dom
+import { Application } from "@hotwired/stimulus";
+import { emit } from "@tauri-apps/api/event";
+import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ProjectView, Segment } from "../backend/project";
+import type { Waveform } from "../backend/waveform";
+import { projectOf } from "../test_project";
+import TimelineController, { regionColor } from "./timeline_controller";
+
+describe("TimelineController", () => {
+  let application: Application;
+  let project: ProjectView | null;
+  let waveform: Waveform;
+
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const host = () =>
+    document.querySelector<HTMLElement>('[data-timeline-target="waveform"]')!
+      .firstElementChild!.shadowRoot!;
+  const wrapper = () => host().querySelector<HTMLElement>(".wrapper")!;
+  const regions = () => [
+    ...host().querySelectorAll<HTMLElement>('[part~="region"]'),
+  ];
+  const segmentAt = (start: number, end: number): Segment => ({
+    start_ms: start * 1000,
+    end_ms: end * 1000,
+    text: "",
+  });
+  const projectWithMedia = (segments: Segment[] = []) =>
+    projectOf({ media: "/talks/ep01.mp4", segments });
+
+  /** Shows `next` and waits for the timeline to draw it: the Waveform loads, then regions are placed a turn later. */
+  async function show(next: ProjectView | null): Promise<void> {
+    project = next;
+    await emit("project-changed");
+    for (let turn = 0; turn < 3; turn++) await settle();
+  }
+
+  function press(action: string): void {
+    document.querySelector<HTMLElement>(`[data-action="${action}"]`)!.click();
+  }
+
+  /** happy-dom lays nothing out; the timeline shows only regions inside its width, so give every element one. */
+  const LAID_OUT_WIDTH = 50;
+  /** happy-dom has no canvas; painting the Waveform onto this does nothing. */
+  const PAINTLESS_CONTEXT = new Proxy(
+    {},
+    { get: () => () => undefined, set: () => true },
+  ) as unknown as RenderingContext;
+  let clientWidthDescriptor: PropertyDescriptor | undefined;
+
+  beforeEach(async () => {
+    clientWidthDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "clientWidth",
+    );
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get: () => LAID_OUT_WIDTH,
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+      PAINTLESS_CONTEXT,
+    );
+    project = null;
+    waveform = {
+      media: "/talks/ep01.mp4",
+      peaks_per_second: 100,
+      peaks: Array.from({ length: 200 }, (_, index) => (index % 10) / 10),
+    };
+    mockIPC(
+      (command) => {
+        if (command === "current_project") return project;
+        if (command === "extract_waveform") return waveform;
+        return null;
+      },
+      { shouldMockEvents: true },
+    );
+    document.body.innerHTML = `
+      <div data-controller="timeline">
+        <video data-timeline-target="media"></video>
+        <button data-action="timeline#zoomOut"></button>
+        <button data-action="timeline#zoomIn"></button>
+        <div data-timeline-target="waveform" data-action="wheel->timeline#scroll:prevent" hidden></div>
+      </div>
+    `;
+    application = Application.start();
+    application.register("timeline", TimelineController);
+    await settle();
+  });
+
+  afterEach(() => {
+    application.stop();
+    clearMocks();
+    if (clientWidthDescriptor)
+      Object.defineProperty(
+        HTMLElement.prototype,
+        "clientWidth",
+        clientWidthDescriptor,
+      );
+    vi.restoreAllMocks();
+  });
+
+  // @behavior PV-017
+  it("draws the Waveform over the time its Peaks cover", async () => {
+    await show(projectWithMedia());
+
+    expect(wrapper().style.width).toBe("200px");
+  });
+
+  // @behavior PV-018
+  it("does not draw a Waveform of media no longer current", async () => {
+    waveform = { ...waveform, media: "/talks/ep01.mp4" };
+
+    await show(projectOf({ media: "/talks/ep02.mp4" }));
+
+    expect(
+      document.querySelector('[data-timeline-target="waveform"]')!
+        .childElementCount,
+    ).toBe(0);
+  });
+
+  // @behavior PV-019
+  it("marks each Segment as a region spanning its own times", async () => {
+    await show(
+      projectWithMedia([segmentAt(0, 0.5), segmentAt(0.5, 1), segmentAt(1, 2)]),
+    );
+
+    expect(
+      regions().map((region) => [region.style.left, region.style.right]),
+    ).toEqual([
+      ["0%", "75%"],
+      ["25%", "50%"],
+      ["50%", "0%"],
+    ]);
+  });
+
+  // @behavior PV-024
+  it("colours neighbouring Segments differently", () => {
+    const colors = [0, 1, 2].map(regionColor);
+
+    expect([colors[0] === colors[2], colors[0] === colors[1]]).toEqual([
+      true,
+      false,
+    ]);
+  });
+
+  // @behavior PV-020
+  it("follows an added Segment at the same zoom", async () => {
+    await show(projectWithMedia([segmentAt(0, 0.5), segmentAt(0.5, 1)]));
+    press("timeline#zoomIn");
+
+    await show(
+      projectWithMedia([segmentAt(0, 0.5), segmentAt(0.5, 1), segmentAt(1, 2)]),
+    );
+
+    expect([regions().length, wrapper().style.width]).toEqual([3, "400px"]);
+  });
+
+  // @behavior PV-021
+  it("doubles the pixels a second when zooming in", async () => {
+    await show(projectWithMedia());
+
+    press("timeline#zoomIn");
+
+    expect(wrapper().style.width).toBe("400px");
+  });
+
+  // @behavior PV-022
+  it("halves the pixels a second when zooming out", async () => {
+    await show(projectWithMedia());
+
+    press("timeline#zoomOut");
+
+    expect(wrapper().style.width).toBe("100px");
+  });
+
+  // @behavior PV-023
+  it("scrolls later as the wheel turns down", async () => {
+    await show(projectWithMedia());
+    const scroller = host().querySelector<HTMLElement>(".scroll")!;
+
+    document
+      .querySelector('[data-timeline-target="waveform"]')!
+      .dispatchEvent(new WheelEvent("wheel", { deltaY: 120 }));
+
+    expect(scroller.scrollLeft).toBe(120);
+  });
+});

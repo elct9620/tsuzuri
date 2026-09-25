@@ -26,6 +26,9 @@ importers:
       lucide:
         specifier: ^1.48.0
         version: 1.48.0
+      wavesurfer.js:
+        specifier: ^8.0.0
+        version: 8.0.0
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.3.3
@@ -770,6 +773,9 @@ packages:
       jsdom:
         optional: true
 
+  wavesurfer.js@8.0.0:
+    resolution: {integrity: sha512-xvtlehwRjKim7cgr9O5fc0hweYFlnch7A5l7i2qsJWODf7s1E2ZFjHOMHOuz1/Q0LXmgR6et5I2KlFgtke4avw==}
+
   whatwg-mimetype@3.0.0:
     resolution: {integrity: sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q==}
     engines: {node: '>=12'}
@@ -1276,6 +1282,8 @@ snapshots:
       happy-dom: 20.14.5
     transitivePeerDependencies:
       - msw
+
+  wavesurfer.js@8.0.0: {}
 
   whatwg-mimetype@3.0.0: {}
 

@@ -120,3 +120,21 @@ A Speaker's name can differ by Language, so each text of a cue names it its own 
 | When | the translation is written as SRT |
 | Then | its cue reads `Xiao Ming: Hello` |
 
+## `TR-015` Reading a Speaker of any length
+
+| Step | Statement |
+| --- | --- |
+| Given | an SRT whose cue reads `Christopher Nolan Jr.: Hello` |
+| When | it is read |
+| Then | its Segment is said by `Christopher Nolan Jr.` with the text `Hello` |
+
+## `TR-016` Reading a clock time in a line as dialogue
+
+A Speaker Label's colon is followed by the dialogue, while a clock time's is followed by a digit.
+
+| Step | Statement |
+| --- | --- |
+| Given | an SRT whose cue reads `Meet me at the station at 10:30` |
+| When | it is read |
+| Then | its Segment has no Speaker and keeps the line as written |
+

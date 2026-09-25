@@ -170,17 +170,17 @@ fn split_speaker(lines: Vec<&str>) -> (Option<String>, String) {
     (Some(speaker.to_string()), text)
 }
 
-/// Longest name a Speaker Label may carry, in characters.
-const LONGEST_NAME: usize = 20;
-
 /// The line's Speaker Label exactly as written, colon and spacing included, and its dialogue;
-/// a digits-only name, like the `12` of `12:30`, is a clock time.
+/// a colon followed by a digit, like that of `10:30`, is a clock time's, as is a digits-only name.
 pub fn split_label(line: &str) -> (Option<String>, &str) {
     let Some((colon, width)) = line
         .char_indices()
-        .take(LONGEST_NAME + 1)
-        .find(|(_, ch)| matches!(ch, ':' | '：'))
-        .map(|(at, ch)| (at, ch.len_utf8()))
+        .map(|(at, ch)| (at, ch.len_utf8(), ch))
+        .find(|&(at, width, ch)| {
+            matches!(ch, ':' | '：')
+                && !line[at + width..].starts_with(|next: char| next.is_ascii_digit())
+        })
+        .map(|(at, width, _)| (at, width))
     else {
         return (None, line);
     };
@@ -446,6 +446,28 @@ mod tests {
         assert_eq!(
             transcript.to_srt_with(SrtContent::Translation, &names),
             cue_of("Xiao Ming: Hello")
+        );
+    }
+
+    // @behavior TR-015
+    #[test]
+    fn reads_a_speaker_of_any_length() {
+        let transcript = Transcript::from_srt(&cue_of("Christopher Nolan Jr.: Hello")).unwrap();
+
+        assert_eq!(
+            transcript.segments[0].speaker.as_deref(),
+            Some("Christopher Nolan Jr.")
+        );
+    }
+
+    // @behavior TR-016
+    #[test]
+    fn reads_a_clock_time_in_a_line_as_dialogue() {
+        let transcript = Transcript::from_srt(&cue_of("Meet me at the station at 10:30")).unwrap();
+
+        assert_eq!(
+            transcript.segments[0],
+            segment(1000, 2000, "Meet me at the station at 10:30")
         );
     }
 }

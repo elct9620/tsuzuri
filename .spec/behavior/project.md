@@ -652,3 +652,11 @@ A cue with other times belongs to no Segment, so a Speaker has nowhere to come f
 | Given | a Project keeping Backups whose `ep01` has a media file, `ep01.srt` reading `你好` and `ep01.en.srt` reading `Hello` |
 | When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
 | Then | the history holds no Backup of `ep01.en.srt` |
+
+## `PJ-083` Keeping one label on a translation with a long Speaker name
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Christopher Nolan Jr.` in `en`, whose `ep01.srt` reads `小明: 你好` from 0 to 1 second and `ep01.en.srt` `Christopher Nolan Jr.: Hello` |
+| When | its times are changed to 0.5 to 1.5 seconds |
+| Then | `ep01.en.srt` reads `Christopher Nolan Jr.: Hello` from 0.5 to 1.5 seconds |

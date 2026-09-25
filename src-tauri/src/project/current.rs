@@ -2261,4 +2261,34 @@ mod tests {
             .iter()
             .any(|(file, _)| file.starts_with("ep01.en.")));
     }
+
+    // @behavior PJ-083
+    #[test]
+    fn keeps_one_label_on_a_translation_with_a_long_speaker_name() {
+        let dir = directory_of(
+            "pj-speaker-long",
+            &[
+                (
+                    "glossary.csv",
+                    "zh-TW,en,type\n小明,Christopher Nolan Jr.,speaker\n",
+                ),
+                ("ep01.srt", &cue("小明: 你好")),
+                ("ep01.en.srt", &cue("Christopher Nolan Jr.: Hello")),
+            ],
+        );
+        let current = project_in(&dir);
+
+        current
+            .change_segments(SegmentChange::Times {
+                index: 0,
+                start_ms: 500,
+                end_ms: 1_500,
+            })
+            .unwrap();
+
+        assert_eq!(
+            read(&dir, "ep01.en.srt"),
+            "1\n00:00:00,500 --> 00:00:01,500\nChristopher Nolan Jr.: Hello\n"
+        );
+    }
 }

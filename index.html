@@ -11,7 +11,7 @@
   <body
     class="text-[15px]"
     data-controller="tooltip undo"
-    data-action="keydown@window->undo#press"
+    data-action="pointerover->tooltip#show focusin->tooltip#show pointerout->tooltip#hide focusout->tooltip#hide scroll->tooltip#hide:capture keydown@window->undo#press"
   >
     <main
       class="flex h-dvh flex-col"

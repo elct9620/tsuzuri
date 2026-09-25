@@ -10,37 +10,20 @@ export default class TooltipController extends Controller<HTMLElement> {
 
   declare readonly bubbleTarget: HTMLElement;
 
-  private readonly showFor = (event: Event) => {
+  /** Shows the tip of the element with `data-tooltip` the pointer or focus has come to. */
+  show(event: Event): void {
     const trigger = (event.target as Element).closest<HTMLElement>(
       "[data-tooltip]",
     );
-    if (trigger) this.show(trigger);
-  };
+    if (trigger) this.place(trigger);
+  }
 
-  private readonly hide = () => {
+  /** Hides the tip; bound to `scroll` with `:capture`, since a scrolling list does not bubble it. */
+  hide(): void {
     this.bubbleTarget.hidden = true;
-  };
-
-  /** Each event with what it does, capturing `scroll` since a scrolling list does not bubble it. */
-  private readonly listeners: [string, EventListener, boolean][] = [
-    ["pointerover", this.showFor, false],
-    ["focusin", this.showFor, false],
-    ["pointerout", this.hide, false],
-    ["focusout", this.hide, false],
-    ["scroll", this.hide, true],
-  ];
-
-  connect(): void {
-    for (const [event, listener, isCapture] of this.listeners)
-      this.element.addEventListener(event, listener, isCapture);
   }
 
-  disconnect(): void {
-    for (const [event, listener, isCapture] of this.listeners)
-      this.element.removeEventListener(event, listener, isCapture);
-  }
-
-  private show(trigger: HTMLElement): void {
+  private place(trigger: HTMLElement): void {
     const bubble = this.bubbleTarget;
     // An open dialog is drawn above everything outside it.
     const layer = trigger.closest("dialog") ?? this.element;

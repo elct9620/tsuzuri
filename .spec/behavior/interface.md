@@ -234,3 +234,14 @@ A click meant for its text or its button should not take it away.
 | Given | a Notification that a task finished, with focus within it |
 | When | longer than it stays passes |
 | Then | it is still shown |
+
+## `IF-027` Hiding the tooltip while a list scrolls
+
+A scrolling list does not tell its page it scrolled, so the tooltip would stay where the element used to be.
+
+| Step | Statement |
+| --- | --- |
+| Given | a tooltip shown beside an element in a list |
+| When | the list scrolls |
+| Then | no tooltip is shown |
+

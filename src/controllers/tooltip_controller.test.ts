@@ -18,7 +18,7 @@ describe("TooltipController", () => {
 
   beforeEach(async () => {
     document.body.innerHTML = `
-      <div data-controller="tooltip">
+      <div data-controller="tooltip" data-action="pointerover->tooltip#show focusin->tooltip#show pointerout->tooltip#hide focusout->tooltip#hide scroll->tooltip#hide:capture">
         <ul><li><button id="resource" data-tooltip="ep03-a-very-long-name">ep03…</button></li></ul>
         <dialog open>
           <span id="setting" data-tooltip="每批送給模型的句數">每批</span>
@@ -59,5 +59,14 @@ describe("TooltipController", () => {
     point("pointerover", "#setting");
 
     expect(bubble().parentElement).toBe(document.querySelector("dialog"));
+  });
+
+  // @behavior IF-027
+  it("hides the tooltip while a list scrolls", () => {
+    point("pointerover", "#resource");
+
+    document.querySelector("ul")!.dispatchEvent(new Event("scroll"));
+
+    expect(bubble().hidden).toBe(true);
   });
 });

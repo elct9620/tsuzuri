@@ -1,5 +1,5 @@
 import type { Translation } from "../backend/translation";
-import { iconElement } from "./icons";
+import { iconElement, type IconName } from "./icons";
 import { t } from "../i18n";
 import { failureCode, failureMessage } from "./failure";
 import { phaseItems } from "./progress";
@@ -43,33 +43,21 @@ export interface Notification {
  * card keeps the page's own colour and only its edge and icon carry the kind.
  */
 const KIND_CLASSES: Record<NotificationKind, string> = {
-  success: "border-l-success [&_svg]:text-success",
-  warning: "border-l-warning [&_svg]:text-warning",
-  error: "border-l-error [&_svg]:text-error",
+  success: "border-l-success [&_svg[data-kind]]:text-success",
+  warning: "border-l-warning [&_svg[data-kind]]:text-warning",
+  error: "border-l-error [&_svg[data-kind]]:text-error",
 };
 
-/** A check, an exclamation and a cross, each in a 20 by 20 shape. */
-const KIND_ICONS: Record<NotificationKind, string> = {
-  success:
-    "M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.7-9.3a1 1 0 0 0-1.4-1.4L9 10.6 7.7 9.3a1 1 0 0 0-1.4 1.4l2 2a1 1 0 0 0 1.4 0l4-4Z",
-  warning:
-    "M8.3 3.1a2 2 0 0 1 3.4 0l6 10.4A2 2 0 0 1 16 16.5H4a2 2 0 0 1-1.7-3l6-10.4ZM10 7a1 1 0 0 0-1 1v3a1 1 0 1 0 2 0V8a1 1 0 0 0-1-1Zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z",
-  error:
-    "M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.7 7.3a1 1 0 0 0-1.4 1.4L8.6 10l-1.3 1.3a1 1 0 1 0 1.4 1.4l1.3-1.3 1.3 1.3a1 1 0 0 0 1.4-1.4L11.4 10l1.3-1.3a1 1 0 0 0-1.4-1.4L10 8.6 8.7 7.3Z",
+/** A check, an exclamation and a cross, each in a circle or a triangle. */
+const KIND_ICONS: Record<NotificationKind, IconName> = {
+  success: "CircleCheck",
+  warning: "TriangleAlert",
+  error: "CircleX",
 };
 
-const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
-
-function icon(kind: NotificationKind): SVGSVGElement {
-  const svg = document.createElementNS(SVG_NAMESPACE, "svg");
-  svg.setAttribute("viewBox", "0 0 20 20");
-  svg.setAttribute("fill", "currentColor");
-  svg.setAttribute("class", "size-5 shrink-0");
+function icon(kind: NotificationKind): SVGElement {
+  const svg = iconElement(KIND_ICONS[kind], "size-5 shrink-0");
   svg.dataset.kind = kind;
-  const path = document.createElementNS(SVG_NAMESPACE, "path");
-  path.setAttribute("fill-rule", "evenodd");
-  path.setAttribute("d", KIND_ICONS[kind]);
-  svg.append(path);
   return svg;
 }
 

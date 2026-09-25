@@ -11,6 +11,7 @@ pub mod timing;
 pub mod transcript;
 pub mod translation;
 pub mod translation_glossary;
+pub mod window;
 
 #[cfg(test)]
 mod test_support;
@@ -36,11 +37,13 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .setup(|app| {
             let record = app.path().app_data_dir()?.join("processes.json");
             processes::reap_strays(&record);
             app.manage(Processes::new(record));
             app.manage(CurrentProject::default());
+            window::size_first_window(app)?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

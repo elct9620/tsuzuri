@@ -1,11 +1,12 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, and keeping the toolbar's menus out of the way.
+Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
 - `src/i18n.test.ts`
 - `src/menu.test.ts`
+- `src-tauri/src/window.rs`
 
 ## `IF-001` Following the system language
 
@@ -58,3 +59,19 @@ A menu stays open only while focus is inside it, so clicking anywhere else close
 | Given | an open toolbar menu |
 | When | one of its items is chosen |
 | Then | focus leaves the menu |
+
+## `IF-007` Sizing the first window to the screen
+
+| Step | Statement |
+| --- | --- |
+| Given | a screen whose work area is 1920×1080 |
+| When | the window opens for the first time |
+| Then | it is 1536×864 |
+
+## `IF-008` Sizing the first window without a screen size
+
+| Step | Statement |
+| --- | --- |
+| Given | a screen that reports no size |
+| When | the window opens for the first time |
+| Then | it is 1200×900 |

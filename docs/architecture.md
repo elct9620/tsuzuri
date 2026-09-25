@@ -37,10 +37,10 @@
 
 | 來源 | 決定什麼 |
 |---|---|
-| `components.json` | 各元件的原始程式碼釘版，以及各平台變體的順序 |
+| `components.json` | 原始碼釘版、變體順序 |
 | `src-tauri/tauri.bundle.conf.json` | 打包時把 `vendor/` 放進資源的 `components/` |
 | CI 的 cargo-about | 產生 `THIRD-PARTY-LICENSES.html`，隨建置提供 |
-| CI 的 `scripts/webview-licenses.ts` | 檢查 webview 打包的套件授權，產生 `THIRD-PARTY-LICENSES-WEBVIEW.html`，隨建置提供 |
+| CI 的 `scripts/webview-licenses.ts` | 檢查 webview 套件授權並產生 `THIRD-PARTY-LICENSES-WEBVIEW.html` |
 
 App 依 `components.json` 列出的順序，使用第一個能執行的內建變體。
 
@@ -84,7 +84,7 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 | Rust 擁有 | Webview 擁有 |
 |---|---|
 | 專案、目前資源、段落、譯文 | 畫面上顯示的內容，每次都向 Rust 取得 |
-| 設定檔、備份、翻譯詞彙表 | modal 開關、勾選的段落、目前段落、捲動位置、預覽收起 |
+| 設定檔、備份、翻譯詞彙表 | modal、勾選、目前段落等 |
 | 元件行程、進度、失敗原因 | 介面語言、通知、tooltip |
 
 Rust 是唯一的事實來源。Webview 不另外儲存工作資料的副本，所有變更都寫進 Rust，再依事件重讀。
@@ -99,7 +99,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 | backend 模組 | Rust 模組 | 指令 |
 |---|---|---|
-| `project.ts` | `project/commands.rs` | 開啟、選擇、編輯、段落變更、復原與重做、匯出、版本、詞彙表 |
+| `project.ts` | `project/commands.rs` | 專案、編輯、版本、詞彙表 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
@@ -111,7 +111,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 | 事件 | 送出者 | 接收者 |
 |---|---|---|
-| `project-changed` | 改變專案的指令與用例；webview 也會以 `refreshProject` 要求重讀 | `backend/project.ts` 的 `followProject`，再呼叫 `current_project` |
+| `project-changed` | 改變專案的指令、用例；`refreshProject` | `backend/project.ts` 的 `followProject`，再呼叫 `current_project` |
 | `pipeline-progress` | 用例經由 `Progress` 回報 Phase 與百分比 | `backend/progress.ts` 的 `listenProgress` |
 | `edit-command` | macOS 編輯選單的復原與重做（`menu.rs`） | `backend/project.ts` 的 `followEditCommands` |
 
@@ -152,20 +152,20 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 
 | 層 | 可以依賴 | 不可以依賴 |
 |---|---|---|
-| 領域 | 標準函式庫、serde、同情境與字幕核心的領域 | `Failure`、Tauri、檔案系統、行程、HTTP |
+| 領域 | 標準庫、serde、字幕核心 | `Failure`、Tauri、檔案系統、行程、HTTP |
 | 應用 | 領域、Port | Tauri、`AppHandle` |
 | 轉接 | 應用的 Port、領域 | 其他情境的轉接 |
 | 介面 | 應用、轉接的設定讀取 | 直接操作專案目錄或行程 |
 
 | 例外 | 原因 |
 |---|---|
-| 專案的用例直接呼叫 `project/files.rs` | 目錄是事實來源，只有一種儲存方式；測試用暫存目錄 |
+| 專案的用例直接呼叫 `project/files.rs` | 目錄是唯一的儲存 |
 | 尋找元件直接呼叫 `toolchain/detection.rs` | 偵測就是執行元件；測試用 shell 腳本 |
-| 翻譯用例直接使用 `llama.rs` 的 `TranslationModel` | 只有一個實作；測試讓真的用戶端連上 `fake_llama` |
-| 轉錄用例自行處理暫存工作目錄 | 目錄裡只有元件的中間檔，不屬於專案 |
+| 翻譯用例直接使用 `llama.rs` 的 `TranslationModel` | 只有一個實作 |
+| 轉錄用例自行處理暫存工作目錄 | 只放中間檔，不屬於專案 |
 | `project/glossary.rs` 同時是規則與 csv 讀寫 | 詞彙表的格式就是它的規則 |
-| `progress.rs` 與 `Progress` 放在同一檔的 `AppHandle` 實作 | 實作只有發出兩個事件，與 Port 一起讀最清楚 |
-| `failure.rs` 把 `tauri::Error` 轉成 `Failure` | 指令取得路徑或狀態時的錯誤由它統一轉換 |
+| `progress.rs` 與 `Progress` 放在同一檔的 `AppHandle` 實作 | 只發兩個事件，放一起最清楚 |
+| `failure.rs` 把 `tauri::Error` 轉成 `Failure` | 統一轉換指令的錯誤 |
 | 轉錄指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（design 6.4） |
 
 ### 3.2 情境
@@ -190,21 +190,21 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 
 | 檔案 | 層 | 負責 |
 |---|---|---|
-| `menu.rs` | 轉接 | macOS 編輯選單：復原與重做改由 webview 決定交給誰 |
-| `logs.rs` | 轉接 | log 寫入的目錄：軟體設定裡選的，或系統的 log 目錄；啟動時決定 |
+| `menu.rs` | 轉接 | macOS 編輯選單的復原與重做 |
+| `logs.rs` | 轉接 | 啟動時決定 log 目錄 |
 | `transcript.rs`、`segment_change.rs`、`language.rs` | 領域 | Segment、Transcript、SRT、段落變更、語言 |
-| `project.rs` | 領域 | Project 聚合、雙語順序、編輯要寫回哪些字幕 |
+| `project.rs` | 領域 | Project 聚合、雙語順序、寫回 |
 | `project/versions.rs` | 領域 | 逐 cue 比較兩個版本 |
-| `project/history.rs` | 領域 | 每個資源的復原紀錄：改動前的字幕快照，最多 100 步 |
+| `project/history.rs` | 領域 | 每個資源的復原紀錄 |
 | `project/current.rs` | 應用 | `CurrentProject` 與開啟、編輯、寫回、還原 |
-| `project/files.rs` | 轉接 | 檔名、配對、摘要、專案設定、備份、字幕快照的讀寫 |
-| `translation.rs`、`translation/{batching,repair,speaker_labels}.rs` | 應用、領域 | 翻譯用例、分批、修復、說話者標籤 |
+| `project/files.rs` | 轉接 | 檔名、配對、備份等讀寫 |
+| `translation.rs`、`translation/{batching,repair,speaker_labels}.rs` | 應用、領域 | 翻譯用例、分批、修復 |
 | `translation/prompt.rs` | 領域 | 請求內容與回答格式 |
 | `translation/{llama,settings}.rs` | 轉接 | llama-server、翻譯設定檔 |
 | `translation/resident.rs` | 轉接 | 常駐的 llama-server |
 | `transcription.rs`、`transcription/whisper.rs` | 應用、轉接 | 轉錄用例；ffmpeg 與 whisper-cli 的參數與輸出 |
 | `waveform.rs` | 應用、領域 | 波形用例：ffmpeg 轉成 PCM，每 10 ms 取一個峰值 |
-| `toolchain.rs`、`toolchain/{detection,settings}.rs` | 應用、轉接 | 尋找元件、模型設定；偵測、設定檔 |
+| `toolchain.rs`、`toolchain/{detection,settings}.rs` | 應用、轉接 | 尋找元件、偵測、設定檔 |
 | `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、執行一個 Step、`ModeLock` 與 `ModeRun`、Phase 計時、錯誤碼 |
 | `steps/commands.rs` | 介面 | `cancel_task` |
 | `processes.rs` | 轉接 | 子行程的啟動、紀錄與清理，以及 `AppPorts` |
@@ -246,11 +246,13 @@ CurrentProject(Mutex<HeldProject>)
 
 | 保護 | 做法 |
 |---|---|
-| 同時存取 | 一把 Mutex，每次操作都很短，不在鎖內等待元件 |
-| 任務跨越切換資源 | 用例記下 generation，寫回畫面前比對 |
-| 外部修改 | 讀寫後記下字幕的摘要，編輯前比對，不同就拒絕並重讀，並清掉該資源的復原紀錄 |
-| 任務寫入中 | 用例以 `hold_resource` 記下 `mode_hold`，交給 `ModeRun` 保管到任務結束；改動前比對，碰到任務寫入的字幕就拒絕為 `mode-running` |
-| 復原 | 每次改動前記下資源所有字幕的內容，改動後有差才留下；復原與重做換回那份內容並重讀 |
+| 同時存取 | 一把 Mutex，不在鎖內等待 |
+| 任務跨越切換資源 | 寫回畫面前比對 generation |
+| 外部修改 | 比對摘要，不同就拒絕並重讀 |
+| 任務寫入中 | `mode_hold` 由 `ModeRun` 保管 |
+| 復原 | 改動前記下所有字幕的內容 |
+
+字幕被外部改過時，重讀並清掉該資源的復原紀錄。任務寫入中的字幕，改動會被拒絕為 `mode-running`。改動後內容有差才留下一步復原，復原與重做換回那份內容並重讀。
 
 ### 3.7 任務
 
@@ -280,9 +282,9 @@ transcribe 指令                       translate 指令
 | 時機 | `Processes` 做什麼 |
 |---|---|
 | 啟動元件 | 以絕對路徑經 shell plugin 啟動，把 PID 與名稱寫進 `processes.json` |
-| 元件輸出 | 每行寫進 log，結束狀態排在所有輸出之後才送出 |
+| 元件輸出 | 每行寫進 log，最後才送出結束 |
 | 元件結束 | 從紀錄移除 |
-| 常駐 router | App 啟動後在背景啟動，常駐關掉時停止；它開的模型行程由 router 管理 |
+| 常駐 router | 背景啟動，關掉常駐時停止 |
 | App 結束 | `kill_all`，連同 router 開的模型行程 |
 | 下次啟動 | `reap_strays` 只結束 PID 與名稱都相符的行程 |
 
@@ -346,20 +348,20 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 
 | Controller | 畫面區域 |
 |---|---|
-| `project`、`transcript`、`segment-changes`、`dialog` | 整頁：資源清單、字幕編輯、段落變更、設定 modal |
-| `speakers` | 每段的說話者選單與設定說話者 modal：列出全部名稱、寫回、提議加入詞彙表 |
+| `project`、`transcript`、`segment-changes`、`dialog` | 資源清單、字幕編輯、設定 |
+| `speakers` | 說話者選單與設定 modal |
 | `retranslation` | 重新翻譯一段或選取的段落 |
-| `comparison` | 字幕編輯的對照：原文與譯文各自比較一份備份並標在各自欄位、插入已刪除的段落、疊上其他譯文、單句還原 |
+| `comparison` | 對照備份、參照譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
-| `preview` | 預覽：播放器、整段播放、疊字、收起 |
-| `timeline` | 預覽的時間軸：波形、段落區段、縮放 |
+| `preview` | 播放器、疊字、收起 |
+| `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
 | `components`、`models`、`translation-settings`、`logs` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |
 | `notification` | 每則通知的倒數、暫停與按鈕 |
-| `undo` | 全頁的復原與重做：欄位裡交給欄位自己，其餘交給 Rust |
-| `field` | 每個編輯欄位一個：接上 `editor/`，離開時以事件交出新的文字 |
+| `undo` | 全頁的復原與重做 |
+| `field` | 每個編輯欄位接上 `editor/` |
 
 畫面配置見 `docs/ui.md`。controller 之間以事件或 outlet 往來，目前段落只由 webview 持有。`preview` 與 `timeline` 掛在同一個元素，各以自己的 target 共用同一個 `<video>`。
 
@@ -381,13 +383,13 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 
 | 模組 | 內容 |
 |---|---|
-| `project.ts` | 專案、版本、詞彙表的指令與型別；`followProject`、`refreshProject` |
+| `project.ts` | 專案、版本、詞彙表的指令 |
 | `transcription.ts`、`translation.ts` | 任務指令、翻譯選項與設定的型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄的指令與型別 |
 | `progress.ts` | `pipeline-progress` 與 Phase 耗時的型別 |
 | `failure.ts` | `Failure` 型別 |
-| `dialog.ts`、`system.ts` | 檔案與訊息的系統對話方塊、系統語系 |
+| `dialog.ts`、`system.ts` | 系統對話方塊與語系 |
 
 ### 4.4 共用模組
 
@@ -397,6 +399,8 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `ui/failure.ts` | 依錯誤碼產生介面語言的訊息 |
 | `ui/progress.ts` | 進度文字與各 Phase 耗時的列 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
-| `ui/icons.ts` | 介面用到的 Lucide 圖示：只打包列出的幾個，markup 以 `data-lucide` 標出，程式以 `iconElement` 建立 |
+| `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
-| `editor/` | 編輯欄位的基礎：純文字的值、游標位置、以 CSS Custom Highlight 標記範圍；不 import Stimulus 與 Tauri |
+| `editor/` | 欄位的值、游標與標記 |
+
+圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。`editor/` 以 CSS Custom Highlight 標記範圍，不 import Stimulus 與 Tauri。

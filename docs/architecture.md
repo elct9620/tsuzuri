@@ -170,7 +170,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | 檔案 | 層 | 負責 |
 |---|---|---|
 | `menu.rs` | 轉接 | macOS 編輯選單：復原與重做改由 webview 決定交給誰 |
-| `log_settings.rs` | 轉接 | log 寫入的目錄：軟體設定裡選的，或系統的 log 目錄；啟動時決定 |
+| `logs.rs` | 轉接 | log 寫入的目錄：軟體設定裡選的，或系統的 log 目錄；啟動時決定 |
 | `transcript.rs`、`segment_change.rs`、`language.rs` | 領域 | Segment、Transcript、SRT、段落變更、語言 |
 | `project.rs` | 領域 | Project 聚合、雙語順序、編輯要寫回哪些字幕 |
 | `project/versions.rs` | 領域 | 逐 cue 比較兩個版本 |

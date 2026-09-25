@@ -1,6 +1,6 @@
 pub mod failure;
 pub mod language;
-pub mod log_settings;
+pub mod logs;
 #[cfg(target_os = "macos")]
 pub mod menu;
 pub mod processes;
@@ -21,7 +21,7 @@ mod test_support;
 use tauri::{Manager, RunEvent, WindowEvent};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 
-use log_settings::{LogDirInUse, LogSettings};
+use logs::{LogDirInUse, LogSettings};
 use processes::Processes;
 use project::CurrentProject;
 
@@ -83,9 +83,9 @@ pub fn run() {
             project::commands::edit_segment,
             project::commands::change_segments,
             project::commands::translation_cues,
-            log_settings::commands::log_directory,
-            log_settings::commands::choose_log_directory,
-            log_settings::commands::open_log_directory,
+            logs::commands::log_directory,
+            logs::commands::choose_log_directory,
+            logs::commands::open_log_directory,
             project::commands::revert_row,
             project::commands::undo,
             project::commands::redo,

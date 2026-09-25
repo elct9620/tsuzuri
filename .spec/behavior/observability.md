@@ -6,7 +6,7 @@ What a run leaves in the log, so a slow or failed run can be diagnosed afterward
 
 - `src-tauri/src/timing.rs`
 - `src-tauri/src/processes.rs`
-- `src-tauri/src/log_settings.rs`
+- `src-tauri/src/logs.rs`
 - `src/controllers/logs_controller.test.ts`
 
 ## `OB-001` Logging how long a Phase took

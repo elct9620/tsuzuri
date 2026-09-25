@@ -1,5 +1,7 @@
 # Logs
 logs
+# The Rust module that sets where the log goes is source, not a log.
+!src-tauri/src/logs/
 *.log
 npm-debug.log*
 yarn-debug.log*

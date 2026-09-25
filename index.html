@@ -267,7 +267,7 @@
           <div
             class="contents"
             data-controller="preview timeline"
-            data-action="transcript:current@window->timeline#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent"
+            data-action="transcript:current@window->timeline#showCurrent transcript:current@window->preview#showCurrent timeline:current->preview#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent"
           >
             <div
               class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
@@ -432,78 +432,117 @@
               </button>
             </div>
             <div
-              class="flex h-[33vh] min-h-40 border-b border-base-300"
+              class="flex flex-col gap-3 border-b border-base-300 bg-base-200 p-3"
               data-preview-target="panel"
               hidden
             >
-              <div
-                class="relative min-w-0 flex-2 bg-black"
-                data-preview-target="screen"
-              >
-                <video
-                  class="size-full object-contain"
-                  preload="metadata"
-                  data-preview-target="media"
-                  data-timeline-target="media"
-                  data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"
-                ></video>
-                <p
-                  class="pointer-events-none absolute inset-x-2 bottom-2 text-center text-sm whitespace-pre-line text-white [text-shadow:0_1px_2px_black]"
-                  data-preview-target="caption"
-                ></p>
+              <div class="flex h-[30vh] min-h-40 gap-3">
                 <div
-                  role="alert"
-                  class="alert alert-warning alert-soft absolute inset-2 text-sm"
-                  data-preview-target="hint"
-                  hidden
+                  class="relative min-w-0 flex-2 overflow-hidden rounded-box bg-black"
+                  data-preview-target="screen"
                 >
-                  <i data-lucide="triangle-alert" class="size-4"></i>
-                  <span data-i18n="preview.unplayable"></span>
-                </div>
-              </div>
-              <div class="flex min-w-0 flex-3 flex-col">
-                <div class="flex items-center gap-2 px-3 py-2">
-                  <button
-                    type="button"
-                    class="btn btn-square btn-sm"
-                    data-action="preview#togglePlayback"
-                    data-i18n-label="preview.play"
+                  <video
+                    class="size-full object-contain"
+                    preload="metadata"
+                    data-preview-target="media"
+                    data-timeline-target="media"
+                    data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"
+                  ></video>
+                  <p
+                    class="pointer-events-none absolute inset-x-2 bottom-2 text-center text-sm whitespace-pre-line text-white [text-shadow:0_1px_2px_black]"
+                    data-preview-target="caption"
+                  ></p>
+                  <div
+                    role="alert"
+                    class="alert alert-warning alert-soft absolute inset-2 text-sm"
+                    data-preview-target="hint"
+                    hidden
                   >
-                    <span class="swap" data-preview-target="playback">
-                      <i data-lucide="pause" class="swap-on size-4"></i>
-                      <i data-lucide="play" class="swap-off size-4"></i>
-                    </span>
-                  </button>
-                  <span
-                    class="text-sm whitespace-nowrap tabular-nums text-base-content/70"
-                    data-preview-target="time"
-                  ></span>
-                  <div class="join ml-auto">
-                    <button
-                      type="button"
-                      class="btn btn-square btn-sm join-item"
-                      data-action="timeline#zoomOut"
-                      data-i18n-label="preview.zoomOut"
-                    >
-                      <i data-lucide="zoom-out" class="size-4"></i>
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-square btn-sm join-item"
-                      data-action="timeline#zoomIn"
-                      data-i18n-label="preview.zoomIn"
-                    >
-                      <i data-lucide="zoom-in" class="size-4"></i>
-                    </button>
+                    <i data-lucide="triangle-alert" class="size-4"></i>
+                    <span data-i18n="preview.unplayable"></span>
                   </div>
                 </div>
-                <div class="min-h-0 flex-1 pb-5">
-                  <div
-                    class="h-full [--segment-even:color-mix(in_oklab,var(--color-primary)_22%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-secondary)_22%,transparent)] [--segment-even-current:color-mix(in_oklab,var(--color-primary)_55%,transparent)] [--segment-odd-current:color-mix(in_oklab,var(--color-secondary)_55%,transparent)]"
-                    data-timeline-target="waveform"
-                    data-action="wheel->timeline#scrollOrZoom:prevent"
-                  ></div>
+                <div class="card card-sm min-w-0 flex-3 bg-base-100">
+                  <div class="card-body">
+                    <div class="flex items-center gap-3">
+                      <button
+                        type="button"
+                        class="btn btn-circle"
+                        data-action="preview#togglePlayback"
+                        data-i18n-label="preview.play"
+                      >
+                        <span class="swap" data-preview-target="playback">
+                          <i data-lucide="pause" class="swap-on size-5"></i>
+                          <i data-lucide="play" class="swap-off size-5"></i>
+                        </span>
+                      </button>
+                      <span
+                        class="text-lg font-medium whitespace-nowrap tabular-nums"
+                        data-preview-target="time"
+                      ></span>
+                      <div class="join ml-auto">
+                        <button
+                          type="button"
+                          class="btn btn-square btn-sm join-item"
+                          data-action="timeline#zoomOut"
+                          data-i18n-label="preview.zoomOut"
+                        >
+                          <i data-lucide="zoom-out" class="size-4"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-square btn-sm join-item"
+                          data-action="timeline#zoomIn"
+                          data-i18n-label="preview.zoomIn"
+                        >
+                          <i data-lucide="zoom-in" class="size-4"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="divider my-0"></div>
+                    <p
+                      class="text-sm text-base-content/60"
+                      data-preview-target="currentEmpty"
+                      data-i18n="preview.pickSegment"
+                    ></p>
+                    <div
+                      class="flex min-h-0 flex-col gap-1"
+                      data-preview-target="current"
+                      hidden
+                    >
+                      <h3 class="card-title text-sm">
+                        <span data-i18n="preview.current"></span>
+                        <span
+                          class="badge badge-sm"
+                          data-preview-target="currentNumber"
+                        ></span>
+                        <span
+                          class="text-xs font-normal tabular-nums text-base-content/60"
+                          data-preview-target="currentTimes"
+                        ></span>
+                      </h3>
+                      <p
+                        class="line-clamp-3 text-lg whitespace-pre-line"
+                        data-preview-target="currentText"
+                      ></p>
+                      <p
+                        class="line-clamp-2 whitespace-pre-line text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))]"
+                        data-preview-target="currentTranslation"
+                      ></p>
+                      <p class="text-xs text-base-content/60">
+                        <kbd class="kbd kbd-xs" data-i18n="preview.space"></kbd>
+                        <span data-i18n="preview.playCurrent"></span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
+              </div>
+              <div class="h-28 rounded-box bg-base-100 px-2 pt-2 pb-6">
+                <div
+                  class="h-full [--segment-even:color-mix(in_oklab,var(--color-primary)_22%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-secondary)_22%,transparent)] [--segment-even-current:color-mix(in_oklab,var(--color-primary)_55%,transparent)] [--segment-odd-current:color-mix(in_oklab,var(--color-secondary)_55%,transparent)]"
+                  data-timeline-target="waveform"
+                  data-action="wheel->timeline#scrollOrZoom:prevent"
+                ></div>
               </div>
             </div>
           </div>

@@ -7,7 +7,7 @@ import {
   type Segment,
   type UnlistenFn,
 } from "../backend/project";
-import { formatClock } from "../ui/time";
+import { formatClock, formatTime } from "../ui/time";
 
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
 /** Where the webview remembers the Preview folded away, a choice of this machine's alone. */
@@ -40,6 +40,12 @@ export default class PreviewController extends Controller {
     "hint",
     "playback",
     "time",
+    "currentEmpty",
+    "current",
+    "currentNumber",
+    "currentTimes",
+    "currentText",
+    "currentTranslation",
   ];
 
   declare readonly panelTarget: HTMLElement;
@@ -52,10 +58,19 @@ export default class PreviewController extends Controller {
   declare readonly hintTarget: HTMLElement;
   declare readonly playbackTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
+  /** Asks for a Segment to be clicked while none is current. */
+  declare readonly currentEmptyTarget: HTMLElement;
+  /** The Current Segment beside the video: its number, times and text. */
+  declare readonly currentTarget: HTMLElement;
+  declare readonly currentNumberTarget: HTMLElement;
+  declare readonly currentTimesTarget: HTMLElement;
+  declare readonly currentTextTarget: HTMLElement;
+  declare readonly currentTranslationTarget: HTMLElement;
 
   private media: string | null = null;
   private segments: Segment[] = [];
   private playingIndex: number | null = null;
+  private currentIndex: number | null = null;
   private isFolded = readFolded();
   private unlisten?: UnlistenFn;
 
@@ -65,6 +80,11 @@ export default class PreviewController extends Controller {
 
   disconnect(): void {
     this.unlisten?.();
+  }
+
+  showCurrent({ detail }: CustomEvent<{ index: number }>): void {
+    this.currentIndex = detail.index;
+    this.showCurrentSegment();
   }
 
   toggleFold(): void {
@@ -114,6 +134,18 @@ export default class PreviewController extends Controller {
     this.hintTarget.hidden = false;
   }
 
+  private showCurrentSegment(): void {
+    const segment =
+      this.currentIndex === null ? undefined : this.segments[this.currentIndex];
+    this.currentEmptyTarget.hidden = segment !== undefined;
+    this.currentTarget.hidden = segment === undefined;
+    if (!segment) return;
+    this.currentNumberTarget.textContent = `#${this.currentIndex! + 1}`;
+    this.currentTimesTarget.textContent = `${formatTime(segment.start_ms)} → ${formatTime(segment.end_ms)}`;
+    this.currentTextTarget.textContent = segment.text;
+    this.currentTranslationTarget.textContent = segment.translation ?? "";
+  }
+
   private showPanel(): void {
     const hasMedia = this.media !== null;
     this.foldTarget.hidden = !hasMedia;
@@ -132,6 +164,8 @@ export default class PreviewController extends Controller {
   private show(project: ProjectView | null): void {
     this.segments = project?.segments ?? [];
     const media = project?.media ?? null;
+    if (media !== this.media) this.currentIndex = null;
+    this.showCurrentSegment();
     if (media === this.media) return;
     this.media = media;
     this.showPanel();

@@ -290,3 +290,19 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | the Preview folded away |
 | When | another Resource with a media file becomes current |
 | Then | its Preview stays folded |
+
+## `PV-036` Showing the Current Segment beside the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments |
+| When | the second Segment's row is clicked |
+| Then | the card beside the video shows #2 with its times, text and translation |
+
+## `PV-037` Following an edit of the Current Segment beside the video
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment current, reading `今天` |
+| When | its text is changed to `明天` |
+| Then | the card beside the video shows `明天` |

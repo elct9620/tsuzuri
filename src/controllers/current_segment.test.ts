@@ -41,7 +41,7 @@ describe("Current Segment", () => {
   });
   const twoSegments = projectOf({
     media: "/talks/ep01.mp4",
-    segments: [segmentAt(0, 1), segmentAt(1, 2)],
+    segments: [segmentAt(0, 1), { ...segmentAt(1, 2), translation: "Today" }],
   });
 
   /** Shows `next` and waits for the timeline to draw it: the Waveform loads, then regions are placed a turn later. */
@@ -87,7 +87,7 @@ describe("Current Segment", () => {
       <main data-controller="transcript"
         data-action="timeline:current->transcript#showCurrent preview:playing->transcript#markPlaying">
         <div data-controller="preview timeline"
-          data-action="transcript:current@window->timeline#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent">
+          data-action="transcript:current@window->timeline#showCurrent transcript:current@window->preview#showCurrent timeline:current->preview#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent">
           <button data-preview-target="fold" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">
@@ -97,6 +97,8 @@ describe("Current Segment", () => {
           </div>
           <span data-preview-target="playback"></span>
           <span data-preview-target="time"></span>
+          <p data-preview-target="currentEmpty"></p>
+          <div data-preview-target="current" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
           <div data-timeline-target="waveform"></div>
           </div>
         </div>
@@ -202,5 +204,41 @@ describe("Current Segment", () => {
     playTo(1.5);
 
     expect(isMarked("data-playing")).toEqual([false, true]);
+  });
+
+  // @behavior PV-036
+  it("shows the Current Segment's number, times, text and translation beside the video", async () => {
+    await show(twoSegments);
+
+    rows()[1].click();
+
+    expect(
+      [
+        "currentNumber",
+        "currentTimes",
+        "currentText",
+        "currentTranslation",
+      ].map(
+        (name) =>
+          document.querySelector(`[data-preview-target="${name}"]`)!
+            .textContent,
+      ),
+    ).toEqual(["#2", "00:00:01.000 → 00:00:02.000", "1", "Today"]);
+  });
+
+  // @behavior PV-037
+  it("follows an edit of the Current Segment beside the video", async () => {
+    await show(twoSegments);
+    rows()[1].click();
+
+    await show({
+      ...twoSegments,
+      segments: [segmentAt(0, 1), { ...segmentAt(1, 2), text: "明天" }],
+    });
+
+    expect(
+      document.querySelector('[data-preview-target="currentText"]')!
+        .textContent,
+    ).toBe("明天");
   });
 });

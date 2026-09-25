@@ -57,6 +57,8 @@ describe("PreviewController", () => {
         </div>
         <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playback"></span></button>
         <span data-preview-target="time"></span>
+          <p data-preview-target="currentEmpty"></p>
+          <div data-preview-target="current" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
         </div>
       </div>
     `;

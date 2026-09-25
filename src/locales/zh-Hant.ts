@@ -94,6 +94,10 @@ const zhHant: typeof en = {
     notRedone: "沒有重做",
   },
   preview: {
+    current: "目前段落",
+    pickSegment: "點一段字幕，就能單獨播放。",
+    space: "空白鍵",
+    playCurrent: "播放這段",
     fold: "顯示或收起預覽",
     zoomIn: "放大",
     zoomOut: "縮小",

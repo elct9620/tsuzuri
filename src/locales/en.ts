@@ -94,6 +94,10 @@ const en = {
     notRedone: "Change not redone",
   },
   preview: {
+    current: "Current Segment",
+    pickSegment: "Click a Segment to play it on its own.",
+    space: "Space",
+    playCurrent: "plays this Segment",
     fold: "Show or fold the preview",
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",

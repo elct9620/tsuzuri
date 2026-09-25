@@ -179,25 +179,38 @@ impl Project {
         }
     }
 
-    /// Writes the Current Resource's subtitle that `field` belongs to back to the directory:
-    /// the original, or the translation shown, which holds only the Segments translated.
+    /// Writes the Current Resource's subtitles that `field` belongs to back to the directory, and
+    /// the Bilingual SRTs they feed.
     fn write_back(&mut self, field: SegmentField) -> Result<(), Failure> {
         let current = self.current()?;
         let name = current.name.clone();
-        let written_translation = match field {
-            SegmentField::Text => None,
-            SegmentField::Translation => current.translation,
+        let contents: &[SrtContent] = match field {
+            SegmentField::Text => &[SrtContent::Original],
+            SegmentField::Translation => &[SrtContent::Translation],
+            SegmentField::Speaker => &[SrtContent::Original, SrtContent::Translation],
         };
-        let (content, srt) = match (field, current.translation) {
-            (SegmentField::Text, _) => (
-                SrtContent::Original,
-                current.transcript.to_srt(SrtContent::Original),
-            ),
-            (SegmentField::Translation, Some(_)) => (
-                SrtContent::Translation,
-                translation_only(&current.transcript).to_srt(SrtContent::Original),
-            ),
-            (SegmentField::Translation, None) => return Ok(()),
+        let written_translation = match field {
+            SegmentField::Translation => current.translation,
+            SegmentField::Text | SegmentField::Speaker => None,
+        };
+        for content in contents {
+            self.write_subtitle(*content)?;
+        }
+        self.resources = resource::resources_in(&self.directory, self.language)?;
+        self.write_bilingual_subtitles(&name, written_translation)?;
+        self.remember_subtitles()
+    }
+
+    /// Writes the Current Resource's original, or the translation shown, which holds only the
+    /// Segments translated; with no translation shown there is none to write.
+    fn write_subtitle(&self, content: SrtContent) -> Result<(), Failure> {
+        let current = self.current()?;
+        let srt = match (content, current.translation) {
+            (SrtContent::Translation, None) => return Ok(()),
+            (SrtContent::Translation, Some(_)) => {
+                translation_only(&current.transcript).to_srt(SrtContent::Original)
+            }
+            _ => current.transcript.to_srt(SrtContent::Original),
         };
         let resource = self.resource(&current.name)?;
         let path = match (content, current.translation) {
@@ -210,10 +223,7 @@ impl Project {
             Some(path) => path,
             None => self.export_path(content)?,
         };
-        std::fs::write(path, srt)?;
-        self.resources = resource::resources_in(&self.directory, self.language)?;
-        self.write_bilingual_subtitles(&name, written_translation)?;
-        self.remember_subtitles()
+        Ok(std::fs::write(path, srt)?)
     }
 
     /// Writes the Bilingual SRT beside each translation of the named Resource, or beside its
@@ -444,6 +454,8 @@ impl ProjectView {
 pub enum SegmentField {
     Text,
     Translation,
+    /// Written to the original and the translation shown; an empty one leaves the Segment with none.
+    Speaker,
 }
 
 /// What a translation needs from the Project when it starts.
@@ -746,6 +758,10 @@ impl CurrentProject {
             match field {
                 SegmentField::Text => segment.text = value,
                 SegmentField::Translation => segment.translation = Some(value),
+                SegmentField::Speaker => {
+                    let speaker = value.trim();
+                    segment.speaker = (!speaker.is_empty()).then(|| speaker.to_string());
+                }
             }
             project.write_back(field)
         })
@@ -919,6 +935,7 @@ mod tests {
         Segment {
             start_ms: 0,
             end_ms: 1_000,
+            speaker: None,
             text: text.to_string(),
             translation: translation.map(str::to_string),
         }
@@ -1469,6 +1486,19 @@ mod tests {
             .unwrap();
 
         assert_eq!(read(&dir, "ep01.zh-TW.en.srt"), cue("大家好\nHello"));
+    }
+
+    // @behavior PJ-056
+    #[test]
+    fn writes_an_edited_speaker_back_to_the_subtitle() {
+        let dir = directory_of("pj-speaker", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Speaker, "co".to_string())
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), cue("co: 你好"));
     }
 
     // @behavior PJ-054

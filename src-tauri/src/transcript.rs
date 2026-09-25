@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 pub struct Segment {
     pub start_ms: u64,
     pub end_ms: u64,
+    /// Who says it, written as a Speaker Label before its text and its translation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub speaker: Option<String>,
     pub text: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub translation: Option<String>,
@@ -79,12 +82,20 @@ fn cue_text(segment: &Segment, content: SrtContent) -> String {
         .translation
         .as_deref()
         .filter(|translation| !translation.trim().is_empty());
+    let with_speaker = |text: &str| match &segment.speaker {
+        Some(speaker) => format!("{speaker}: {}", cue_lines(text)),
+        None => cue_lines(text),
+    };
     match (content, translation) {
-        (SrtContent::Translation, Some(translation)) => cue_lines(translation),
+        (SrtContent::Translation, Some(translation)) => with_speaker(translation),
         (SrtContent::Bilingual, Some(translation)) => {
-            format!("{}\n{}", cue_lines(&segment.text), cue_lines(translation))
+            format!(
+                "{}\n{}",
+                with_speaker(&segment.text),
+                with_speaker(translation)
+            )
         }
-        _ => cue_lines(&segment.text),
+        _ => with_speaker(&segment.text),
     }
 }
 
@@ -110,13 +121,59 @@ fn parse_cue(cue: usize, block: &str) -> Result<Segment, SrtError> {
         .ok_or_else(|| error("timing line has no -->"))?;
     let start_ms = parse_timestamp(start.trim()).ok_or_else(|| error("unreadable start time"))?;
     let end_ms = parse_timestamp(end.trim()).ok_or_else(|| error("unreadable end time"))?;
-    let text = lines.collect::<Vec<_>>().join("\n");
+    let (speaker, text) = split_speaker(lines.collect());
     Ok(Segment {
         start_ms,
         end_ms,
+        speaker,
         text,
         translation: None,
     })
+}
+
+/// The Speaker named by the Speaker Label on the first line, with the text left without it,
+/// when no other line carries a label; a cue whose lines name several keeps them all.
+fn split_speaker(lines: Vec<&str>) -> (Option<String>, String) {
+    let text = lines.join("\n");
+    let Some((first, rest)) = lines.split_first() else {
+        return (None, text);
+    };
+    let (Some(label), dialogue) = split_label(first) else {
+        return (None, text);
+    };
+    if rest.iter().any(|line| split_label(line).0.is_some()) {
+        return (None, text);
+    }
+    let speaker = label.trim_end().trim_end_matches([':', '：']).trim_end();
+    let text = std::iter::once(dialogue)
+        .chain(rest.iter().copied())
+        .collect::<Vec<_>>()
+        .join("\n");
+    (Some(speaker.to_string()), text)
+}
+
+/// Longest name a Speaker Label may carry, in characters.
+const LONGEST_NAME: usize = 20;
+
+/// The line's Speaker Label exactly as written, colon and spacing included, and its dialogue;
+/// a digits-only name, like the `12` of `12:30`, is a clock time.
+pub fn split_label(line: &str) -> (Option<String>, &str) {
+    let Some((colon, width)) = line
+        .char_indices()
+        .take(LONGEST_NAME + 1)
+        .find(|(_, ch)| matches!(ch, ':' | '：'))
+        .map(|(at, ch)| (at, ch.len_utf8()))
+    else {
+        return (None, line);
+    };
+    let name = &line[..colon];
+    if name.is_empty() || name.chars().all(|ch| ch.is_ascii_digit()) {
+        return (None, line);
+    }
+    let rest = &line[colon + width..];
+    let dialogue = rest.trim_start_matches([' ', '\t']);
+    let label_end = line.len() - dialogue.len();
+    (Some(line[..label_end].to_string()), dialogue)
 }
 
 /// Reads `HH:MM:SS,mmm`; a `.` before the milliseconds is accepted since some tools write WebVTT-style times into SRT.
@@ -154,6 +211,7 @@ mod tests {
         Segment {
             start_ms,
             end_ms,
+            speaker: None,
             text: text.to_string(),
             translation: None,
         }
@@ -278,6 +336,61 @@ mod tests {
         assert_eq!(
             transcript.to_srt(SrtContent::Bilingual),
             transcript.to_srt(SrtContent::Original)
+        );
+    }
+
+    /// A Segment from one to two seconds said by `co`.
+    fn co_segment(text: &str, translation: Option<&str>) -> Segment {
+        Segment {
+            speaker: Some("co".to_string()),
+            translation: translation.map(str::to_string),
+            ..segment(1_000, 2_000, text)
+        }
+    }
+
+    fn cue_of(text: &str) -> String {
+        format!("1\n00:00:01,000 --> 00:00:02,000\n{text}\n")
+    }
+
+    // @behavior TR-009
+    #[test]
+    fn reads_the_speaker_of_a_cue() {
+        let transcript = Transcript::from_srt(&cue_of("co: 你好")).unwrap();
+
+        assert_eq!(transcript.segments, vec![co_segment("你好", None)]);
+    }
+
+    // @behavior TR-010
+    #[test]
+    fn keeps_the_labels_of_a_cue_with_several_speakers() {
+        let transcript = Transcript::from_srt(&cue_of("co: 你好\ncl: 嗨")).unwrap();
+
+        assert_eq!(
+            transcript.segments,
+            vec![segment(1_000, 2_000, "co: 你好\ncl: 嗨")]
+        );
+    }
+
+    // @behavior TR-011
+    #[test]
+    fn writes_the_speaker_before_the_text() {
+        let transcript = Transcript {
+            segments: vec![co_segment("你好", None)],
+        };
+
+        assert_eq!(transcript.to_srt(SrtContent::Original), cue_of("co: 你好"));
+    }
+
+    // @behavior TR-012
+    #[test]
+    fn writes_the_speaker_before_both_texts_of_a_bilingual_srt() {
+        let transcript = Transcript {
+            segments: vec![co_segment("你好", Some("Hello"))],
+        };
+
+        assert_eq!(
+            transcript.to_srt(SrtContent::Bilingual),
+            cue_of("co: 你好\nco: Hello")
         );
     }
 }

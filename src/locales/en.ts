@@ -68,6 +68,7 @@ const en = {
     noTranslation: "None",
     untranslated: "Not translated yet",
     saved: "Saved",
+    speaker: "Speaker",
   },
   settings: {
     project: "Project",

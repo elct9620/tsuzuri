@@ -112,7 +112,7 @@ pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
 
 ## `edit_segment`
 
-Replace the `text` or the `translation` of one Segment of the Current Resource, by its position, and write the subtitle it belongs to back to the directory. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure.
+Replace the `text`, the `translation` or the `speaker` of one Segment of the Current Resource, by its position, where an empty `speaker` leaves it with none, and write the subtitle it belongs to back to the directory; a Speaker is written to the original and the translation shown. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure.
 
 ```rust
 pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}

@@ -12,7 +12,11 @@ The words this project keeps, and the ones it turns down in their place.
 
 ### Segment
 
-One piece of speech with a start time, an end time and its text, and its translation once translated. The unit every mode reads and writes.
+One piece of speech with a start time, an end time, its text and, when known, its Speaker, and its translation once translated. The unit every mode reads and writes.
+
+### Speaker
+
+Who says a Segment, named by the user and never detected. In an SRT it is the Speaker Label on the cue's first line when no other line carries one, and it is written back as `name: ` before both the original and the translation.
 
 ### Transcript
 
@@ -104,7 +108,7 @@ Consecutive Segments the Model reports as one sentence cut apart by transcriptio
 
 ### Speaker Label
 
-The `name:` or `name：` before a line of dialogue, up to twenty characters with no digits-only name, such as `co:`. When the user turns them on, translation sends only the dialogue and puts each label back in front of its line.
+The `name:` or `name：` before a line of dialogue, up to twenty characters with no digits-only name, such as `co:`. The label of a cue with one becomes its Segment's Speaker; the labels of a cue whose lines name several stay in its text, and when the user turns them on, translation sends only the dialogue and puts each label back in front of its line.
 
 ### Translation Glossary
 

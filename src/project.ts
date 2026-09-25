@@ -4,6 +4,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 export interface Segment {
   start_ms: number;
   end_ms: number;
+  speaker?: string;
   text: string;
   translation?: string;
 }

@@ -84,6 +84,7 @@ describe("TranscriptController", () => {
           <button id="save-bilingual" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="bilingual" disabled>雙語</button>
         </div>
         <ol data-transcript-target="list"></ol>
+        <datalist id="speakers" data-transcript-target="speakers"></datalist>
       </section>
     `;
     mockIPC(
@@ -295,5 +296,42 @@ describe("TranscriptController", () => {
       .dispatchEvent(new CustomEvent("project:select", { bubbles: true }));
 
     expect([placeholders() > 0, fields()]).toEqual([true, []]);
+  });
+
+  // @behavior ED-012
+  it("writes the Speaker named for a Segment to the Project", async () => {
+    await hold(
+      projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "你好" }] }),
+    );
+
+    edit("input.speaker", "co");
+    await settle();
+
+    expect(sent("edit_segment")).toEqual({
+      index: 0,
+      field: "speaker",
+      value: "co",
+    });
+  });
+
+  // @behavior ED-013
+  it("offers the Speakers already named to each Segment", async () => {
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 1000, speaker: "co", text: "你好" },
+          { start_ms: 1000, end_ms: 2000, speaker: "cl", text: "嗨" },
+          { start_ms: 2000, end_ms: 3000, speaker: "co", text: "再見" },
+        ],
+      }),
+    );
+
+    const offered = [...document.querySelectorAll("#speakers option")].map(
+      (option) => (option as HTMLOptionElement).value,
+    );
+    expect([
+      offered,
+      document.querySelector("input.speaker")!.getAttribute("list"),
+    ]).toEqual([["cl", "co"], "speakers"]);
   });
 });

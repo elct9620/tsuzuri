@@ -94,3 +94,19 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | Given | a Project in the panel with a Resource that cannot be read |
 | When | that Resource is selected |
 | Then | the Project is read again, so the editor shows what it holds |
+
+## `ED-012` Naming the Speaker of a Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel |
+| When | the first Segment's Speaker is set to `co` |
+| Then | the edit is written to the Project as its Speaker |
+
+## `ED-013` Offering the Speakers already named
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Segments are said by `co` and `cl` |
+| When | the editor shows it |
+| Then | each Segment's Speaker offers `cl` and `co` to choose from |

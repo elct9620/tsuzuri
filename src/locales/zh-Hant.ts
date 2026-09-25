@@ -68,6 +68,7 @@ const zhHant: typeof en = {
     noTranslation: "無",
     untranslated: "尚未翻譯",
     saved: "已存檔",
+    speaker: "說話者",
   },
   settings: {
     project: "專案",

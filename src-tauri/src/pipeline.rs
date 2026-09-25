@@ -149,6 +149,7 @@ fn whisper_segment(line: &str) -> Option<Segment> {
     Some(Segment {
         start_ms: parse_timestamp(start.trim())?,
         end_ms: parse_timestamp(end.trim())?,
+        speaker: None,
         text: text.trim().to_string(),
         translation: None,
     })

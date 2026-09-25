@@ -399,6 +399,7 @@ mod tests {
         Segment {
             start_ms,
             end_ms,
+            speaker: None,
             text: text.to_string(),
             translation: None,
         }

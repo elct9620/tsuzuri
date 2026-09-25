@@ -373,6 +373,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | saving them is turned on |
 | Then | the Project Options are set to save Bilingual SRTs |
 
+## `PJ-056` Writing an edited Speaker back to the subtitle
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` reads `你好` |
+| When | the Speaker of its Segment is set to `co` |
+| Then | `ep01.srt` reads `co: 你好` |
+
 ## `PJ-048` Offering only the general settings without a Project
 
 | Step | Statement |

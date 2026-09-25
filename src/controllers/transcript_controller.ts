@@ -25,7 +25,7 @@ export function formatTime(ms: number): string {
 }
 
 /** Which text of a Segment an editor holds, named as Rust names it. */
-type SegmentField = "text" | "translation";
+type SegmentField = "text" | "translation" | "speaker";
 
 /** Which text the saved SRT's cues carry; the backend writes each one. */
 type SrtContent = "original" | "translation" | "bilingual";
@@ -69,19 +69,35 @@ function option(value: string, label: string): HTMLOptionElement {
 }
 
 /** One row: the times, the text, and the translation when one is shown, even before it is made. */
+/** Who says the Segment, chosen from the Speakers already named or typed anew. */
+function speakerEditor(index: number, speaker: string): HTMLInputElement {
+  const input = document.createElement("input");
+  input.className = "speaker input input-xs w-28";
+  input.setAttribute("list", "speakers");
+  input.dataset.index = String(index);
+  input.dataset.field = "speaker";
+  input.dataset.action = "change->transcript#edit";
+  input.placeholder = t("edit.speaker");
+  input.value = speaker;
+  return input;
+}
+
 function item(
   segment: Segment,
   index: number,
   showsTranslation: boolean,
 ): HTMLLIElement {
   const li = document.createElement("li");
+  const heading = document.createElement("div");
+  heading.className = "flex flex-col gap-1";
   const time = document.createElement("time");
   time.textContent = `${formatTime(segment.start_ms)} → ${formatTime(segment.end_ms)}`;
+  heading.append(time, speakerEditor(index, segment.speaker ?? ""));
   const editors = document.createElement("div");
   editors.append(editor(index, "text", segment.text));
   if (showsTranslation)
     editors.append(editor(index, "translation", segment.translation ?? ""));
-  li.append(time, editors);
+  li.append(heading, editors);
   return li;
 }
 
@@ -92,6 +108,7 @@ export default class TranscriptController extends Controller {
     "export",
     "heading",
     "translationLanguage",
+    "speakers",
   ];
 
   declare readonly listTarget: HTMLOListElement;
@@ -100,6 +117,8 @@ export default class TranscriptController extends Controller {
   declare readonly headingTarget: HTMLElement;
   /** Which of the Current Resource's translations the editor shows, or none. */
   declare readonly translationLanguageTarget: HTMLSelectElement;
+  /** The Speakers the Current Resource names, which each Speaker field offers. */
+  declare readonly speakersTarget: HTMLDataListElement;
   /** Each export, enabled once the Project has the text it writes. */
   declare readonly exportTargets: HTMLButtonElement[];
 
@@ -129,12 +148,12 @@ export default class TranscriptController extends Controller {
   }
 
   async edit(event: Event): Promise<void> {
-    const textarea = event.currentTarget as HTMLTextAreaElement;
+    const field = event.currentTarget as HTMLInputElement | HTMLTextAreaElement;
     try {
       await invoke("edit_segment", {
-        index: Number(textarea.dataset.index),
-        field: textarea.dataset.field as SegmentField,
-        value: textarea.value,
+        index: Number(field.dataset.index),
+        field: field.dataset.field as SegmentField,
+        value: field.value,
       });
       notify(t("edit.saved"), "success", "saved");
     } catch (error) {
@@ -204,14 +223,17 @@ export default class TranscriptController extends Controller {
 
   /** Refreshes the editors in place when the Project keeps its shape, so the one being typed in keeps its focus. */
   private showSegments(segments: Segment[], showsTranslation: boolean): void {
+    this.showSpeakers(segments);
     const editors = [
-      ...this.listTarget.querySelectorAll<HTMLTextAreaElement>("textarea"),
+      ...this.listTarget.querySelectorAll<
+        HTMLInputElement | HTMLTextAreaElement
+      >("[data-field]"),
     ];
-    const values = segments.flatMap((segment) =>
-      showsTranslation
-        ? [segment.text, segment.translation ?? ""]
-        : [segment.text],
-    );
+    const values = segments.flatMap((segment) => [
+      segment.speaker ?? "",
+      segment.text,
+      ...(showsTranslation ? [segment.translation ?? ""] : []),
+    ]);
     const sameShape =
       this.listTarget.children.length === segments.length &&
       editors.length === values.length;
@@ -222,11 +244,20 @@ export default class TranscriptController extends Controller {
         ),
       );
     } else {
-      editors.forEach((textarea, index) => {
-        if (textarea !== document.activeElement) textarea.value = values[index];
+      editors.forEach((field, index) => {
+        if (field !== document.activeElement) field.value = values[index];
       });
     }
     this.showPendingTranslations();
+  }
+
+  private showSpeakers(segments: Segment[]): void {
+    const speakers = new Set(
+      segments.flatMap((segment) => (segment.speaker ? [segment.speaker] : [])),
+    );
+    this.speakersTarget.replaceChildren(
+      ...[...speakers].sort().map((speaker) => option(speaker, speaker)),
+    );
   }
 
   /** Marks each translation still to come while a translation runs. */

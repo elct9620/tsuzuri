@@ -14,9 +14,13 @@ import { t } from "../i18n";
 import { notifyFailure } from "../ui/notification";
 
 const INITIAL_PX_PER_SEC = 100;
+/** The time scale's height, which the page leaves free beneath the waveform. */
+const TIMELINE_HEIGHT = 20;
 const ZOOM_FACTOR = 2;
 const MIN_PX_PER_SEC = 10;
 const MAX_PX_PER_SEC = 1600;
+/** How far the wheel turns to zoom by a factor of e; a pinch reports small steps, a mouse wheel about 100. */
+const WHEEL_ZOOM_SCALE = 200;
 
 const REGION_COLORS = ["--segment-even", "--segment-odd"];
 
@@ -98,8 +102,15 @@ export default class TimelineController extends Controller {
     this.colorRegions();
   }
 
-  scroll(event: WheelEvent): void {
-    this.surfer?.setScroll(this.surfer.getScroll() + event.deltaY);
+  /** Scrolls the timeline, or zooms it while ⌘ or Ctrl is held, as a trackpad pinch also reports. */
+  scrollOrZoom(event: WheelEvent): void {
+    if (event.ctrlKey || event.metaKey) {
+      this.zoomTo(this.pxPerSec * Math.exp(-event.deltaY / WHEEL_ZOOM_SCALE));
+      return;
+    }
+    this.surfer?.setScroll(
+      this.surfer.getScroll() + event.deltaX + event.deltaY,
+    );
   }
 
   private show(project: ProjectView | null): void {
@@ -142,12 +153,17 @@ export default class TimelineController extends Controller {
       media: this.mediaTarget,
       peaks: [waveform.peaks],
       duration: waveform.peaks.length / waveform.peaks_per_second,
-      height: 56,
+      height: "auto",
+      normalize: true,
+      hideScrollbar: true,
       minPxPerSec: this.pxPerSec,
       waveColor: this.themeColor("--color-base-content", "#888"),
       progressColor: this.themeColor("--color-primary", "#555"),
       cursorColor: this.themeColor("--color-primary", "#555"),
-      plugins: [this.regions, TimelinePlugin.create({ height: 20 })],
+      plugins: [
+        this.regions,
+        TimelinePlugin.create({ height: TIMELINE_HEIGHT }),
+      ],
     });
     this.surfer.on("ready", () => this.markSegments());
   }

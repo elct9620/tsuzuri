@@ -15,6 +15,8 @@ describe("PreviewController", () => {
   const target = (name: string) =>
     document.querySelector<HTMLElement>(`[data-preview-target="${name}"]`)!;
   const media = () => target("media") as HTMLVideoElement;
+  const preview = () =>
+    document.querySelector<HTMLElement>('[data-controller="preview"]')!;
   const projectWithMedia = (changes: Partial<ProjectView> = {}) =>
     projectOf({ media: "/talks/ep01.mp4", ...changes });
 
@@ -45,16 +47,14 @@ describe("PreviewController", () => {
       shouldMockEvents: true,
     });
     document.body.innerHTML = `
-      <div data-controller="preview">
-        <div data-preview-target="screen" hidden>
+      <div data-controller="preview" hidden>
+        <div data-preview-target="screen">
           <video data-preview-target="media" data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"></video>
           <p data-preview-target="caption"></p>
           <div data-preview-target="hint" hidden></div>
         </div>
-        <div data-preview-target="controls" hidden>
-          <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playback"></span></button>
-          <span data-preview-target="time"></span>
-        </div>
+        <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playback"></span></button>
+        <span data-preview-target="time"></span>
       </div>
     `;
     application = Application.start();
@@ -80,10 +80,7 @@ describe("PreviewController", () => {
   it("shows no player or controls for a Resource without media", async () => {
     await show(projectOf());
 
-    expect([target("screen").hidden, target("controls").hidden]).toEqual([
-      true,
-      true,
-    ]);
+    expect(preview().hidden).toBe(true);
   });
 
   // @behavior PV-010
@@ -93,10 +90,7 @@ describe("PreviewController", () => {
 
     media().dispatchEvent(new Event("loadedmetadata"));
 
-    expect([target("screen").hidden, target("controls").hidden]).toEqual([
-      true,
-      false,
-    ]);
+    expect([target("screen").hidden, preview().hidden]).toEqual([true, false]);
   });
 
   // @behavior PV-011

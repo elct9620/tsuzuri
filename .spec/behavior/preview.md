@@ -266,3 +266,11 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s |
 | When | the media plays to 1.5 s |
 | Then | the second Segment's row alone is marked as playing |
+
+## `PV-033` Zooming the timeline with Ctrl and the wheel
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second |
+| When | the wheel turns up with Ctrl held, as far as zooming by two takes |
+| Then | the timeline shows 200 pixels a second |

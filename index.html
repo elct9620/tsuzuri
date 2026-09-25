@@ -380,17 +380,17 @@
             </div>
           </div>
           <div
-            class="grid grid-cols-[auto_1fr] content-start border-base-300 has-[>:not([hidden])]:border-b"
+            class="flex h-[33vh] min-h-40 border-b border-base-300"
             data-controller="preview timeline"
             data-action="transcript:current@window->timeline#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent"
+            hidden
           >
             <div
-              class="relative row-span-2 aspect-video h-45 bg-black"
+              class="relative min-w-0 flex-2 bg-black"
               data-preview-target="screen"
-              hidden
             >
               <video
-                class="size-full"
+                class="size-full object-contain"
                 preload="metadata"
                 data-preview-target="media"
                 data-timeline-target="media"
@@ -410,72 +410,68 @@
                 <span data-i18n="preview.unplayable"></span>
               </div>
             </div>
-            <div
-              class="col-start-2 flex items-center gap-2 px-4 py-2"
-              data-preview-target="controls"
-              hidden
-            >
-              <button
-                type="button"
-                class="btn btn-square btn-sm"
-                data-action="preview#togglePlayback"
-                data-i18n-label="preview.play"
-              >
-                <span class="swap" data-preview-target="playback">
-                  <i data-lucide="pause" class="swap-on size-4"></i>
-                  <i data-lucide="play" class="swap-off size-4"></i>
-                </span>
-              </button>
-              <span
-                class="text-sm whitespace-nowrap tabular-nums text-base-content/70"
-                data-preview-target="time"
-              ></span>
-              <div class="join ml-auto">
+            <div class="flex min-w-0 flex-3 flex-col">
+              <div class="flex items-center gap-2 px-3 py-2">
                 <button
                   type="button"
-                  class="btn btn-square btn-sm join-item"
-                  data-action="timeline#zoomOut"
-                  data-i18n-label="preview.zoomOut"
+                  class="btn btn-square btn-sm"
+                  data-action="preview#togglePlayback"
+                  data-i18n-label="preview.play"
                 >
-                  <i data-lucide="zoom-out" class="size-4"></i>
+                  <span class="swap" data-preview-target="playback">
+                    <i data-lucide="pause" class="swap-on size-4"></i>
+                    <i data-lucide="play" class="swap-off size-4"></i>
+                  </span>
                 </button>
-                <button
-                  type="button"
-                  class="btn btn-square btn-sm join-item"
-                  data-action="timeline#zoomIn"
-                  data-i18n-label="preview.zoomIn"
-                >
-                  <i data-lucide="zoom-in" class="size-4"></i>
-                </button>
+                <span
+                  class="text-sm whitespace-nowrap tabular-nums text-base-content/70"
+                  data-preview-target="time"
+                ></span>
+                <div class="join ml-auto">
+                  <button
+                    type="button"
+                    class="btn btn-square btn-sm join-item"
+                    data-action="timeline#zoomOut"
+                    data-i18n-label="preview.zoomOut"
+                  >
+                    <i data-lucide="zoom-out" class="size-4"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-square btn-sm join-item"
+                    data-action="timeline#zoomIn"
+                    data-i18n-label="preview.zoomIn"
+                  >
+                    <i data-lucide="zoom-in" class="size-4"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="min-h-0 flex-1 pb-5">
+                <div
+                  class="h-full [--segment-even:color-mix(in_oklab,var(--color-primary)_22%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-secondary)_22%,transparent)] [--segment-even-current:color-mix(in_oklab,var(--color-primary)_55%,transparent)] [--segment-odd-current:color-mix(in_oklab,var(--color-secondary)_55%,transparent)]"
+                  data-timeline-target="waveform"
+                  data-action="wheel->timeline#scrollOrZoom:prevent"
+                ></div>
               </div>
             </div>
-            <div
-              id="progress"
-              class="col-start-2 flex flex-col gap-2 px-4 py-2"
-              data-controller="progress"
+          </div>
+          <div
+            id="progress"
+            class="flex flex-col gap-2 border-b border-base-300 px-4 py-2"
+            data-controller="progress"
+            hidden
+          >
+            <ul class="steps w-full text-xs" data-progress-target="steps"></ul>
+            <p
+              class="whitespace-pre-line text-sm text-base-content/70"
+              data-progress-target="status"
+            ></p>
+            <progress
+              class="progress progress-primary w-full"
+              max="100"
+              data-progress-target="bar"
               hidden
-            >
-              <ul
-                class="steps w-full text-xs"
-                data-progress-target="steps"
-              ></ul>
-              <p
-                class="whitespace-pre-line text-sm text-base-content/70"
-                data-progress-target="status"
-              ></p>
-              <progress
-                class="progress progress-primary w-full"
-                max="100"
-                data-progress-target="bar"
-                hidden
-              ></progress>
-            </div>
-            <div
-              class="col-span-2 h-19 w-full [--segment-even:color-mix(in_oklab,var(--color-primary)_22%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-secondary)_22%,transparent)] [--segment-even-current:color-mix(in_oklab,var(--color-primary)_55%,transparent)] [--segment-odd-current:color-mix(in_oklab,var(--color-secondary)_55%,transparent)]"
-              data-timeline-target="waveform"
-              data-action="wheel->timeline#scroll:prevent"
-              hidden
-            ></div>
+            ></progress>
           </div>
           <div class="flex-1 overflow-y-auto p-4">
             <p

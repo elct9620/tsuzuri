@@ -64,7 +64,7 @@ describe("TimelineController", () => {
         <video data-timeline-target="media"></video>
         <button data-action="timeline#zoomOut"></button>
         <button data-action="timeline#zoomIn"></button>
-        <div data-timeline-target="waveform" data-action="wheel->timeline#scroll:prevent" hidden></div>
+        <div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent" hidden></div>
       </div>
     `;
     application = Application.start();
@@ -162,5 +162,19 @@ describe("TimelineController", () => {
       .dispatchEvent(new WheelEvent("wheel", { deltaY: 120 }));
 
     expect(scroller.scrollLeft).toBe(120);
+  });
+
+  // @behavior PV-033
+  it("zooms in as the wheel turns up with Ctrl held", async () => {
+    await show(projectWithMedia());
+    const pinch = new WheelEvent("wheel", { deltaY: -200 * Math.log(2) });
+    // happy-dom's WheelEvent is not a MouseEvent, so it keeps no modifier keys.
+    Object.defineProperty(pinch, "ctrlKey", { value: true });
+
+    document
+      .querySelector('[data-timeline-target="waveform"]')!
+      .dispatchEvent(pinch);
+
+    expect(wrapper().style.width).toBe("400px");
   });
 });

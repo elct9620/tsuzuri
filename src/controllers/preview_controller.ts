@@ -10,22 +10,13 @@ import {
 import { formatClock } from "../ui/time";
 
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
-export default class PreviewController extends Controller {
-  static targets = [
-    "screen",
-    "media",
-    "caption",
-    "hint",
-    "controls",
-    "playback",
-    "time",
-  ];
+export default class PreviewController extends Controller<HTMLElement> {
+  static targets = ["screen", "media", "caption", "hint", "playback", "time"];
 
   declare readonly screenTarget: HTMLElement;
   declare readonly mediaTarget: HTMLVideoElement;
   declare readonly captionTarget: HTMLElement;
   declare readonly hintTarget: HTMLElement;
-  declare readonly controlsTarget: HTMLElement;
   declare readonly playbackTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
 
@@ -95,8 +86,8 @@ export default class PreviewController extends Controller {
     const media = project?.media ?? null;
     if (media === this.media) return;
     this.media = media;
-    this.screenTarget.hidden = media === null;
-    this.controlsTarget.hidden = media === null;
+    this.element.hidden = media === null;
+    this.screenTarget.hidden = false;
     this.mediaTarget.hidden = false;
     this.hintTarget.hidden = true;
     this.captionTarget.textContent = "";

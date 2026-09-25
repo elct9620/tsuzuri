@@ -2,6 +2,9 @@ use std::path::PathBuf;
 
 use serde::Serialize;
 
+use crate::project::glossary::GlossaryError;
+use crate::project::ProjectError;
+use crate::segment_change::SegmentChangeError;
 use crate::toolchain::{ModelError, ModelSlot};
 use crate::transcript::SrtError;
 
@@ -79,6 +82,33 @@ impl From<std::io::Error> for Failure {
 impl From<SrtError> for Failure {
     fn from(error: SrtError) -> Self {
         Failure::MalformedSrt { cue: error.cue }
+    }
+}
+
+impl From<ProjectError> for Failure {
+    fn from(error: ProjectError) -> Self {
+        match error {
+            ProjectError::NoResource => Failure::NoResource,
+        }
+    }
+}
+
+impl From<GlossaryError> for Failure {
+    fn from(error: GlossaryError) -> Self {
+        match error {
+            GlossaryError::MissingHeader => Failure::GlossaryWithoutHeader,
+            GlossaryError::MalformedCsv { detail } => Failure::MalformedGlossary { detail },
+            GlossaryError::Io { detail } => Failure::Io { detail },
+        }
+    }
+}
+
+impl From<SegmentChangeError> for Failure {
+    fn from(error: SegmentChangeError) -> Self {
+        match error {
+            SegmentChangeError::InvalidTimes => Failure::InvalidTimes,
+            SegmentChangeError::InvalidPosition { detail } => Failure::Internal { detail },
+        }
     }
 }
 

@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
-use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 
 const GLOSSARY_FILE: &str = "glossary.csv";
@@ -52,7 +51,7 @@ impl TranslationGlossary {
     pub fn from_csv(
         path: &Path,
         source_target: Option<LanguagePair>,
-    ) -> Result<TranslationGlossary, Failure> {
+    ) -> Result<TranslationGlossary, GlossaryError> {
         let mut reader = csv::ReaderBuilder::new()
             .flexible(true)
             .from_reader(std::fs::File::open(path)?);
@@ -64,12 +63,12 @@ impl TranslationGlossary {
             .collect();
         let has_source_target_header = header == ["source", "target"];
         let languages = if has_source_target_header {
-            let pair = source_target.ok_or(Failure::GlossaryWithoutHeader)?;
+            let pair = source_target.ok_or(GlossaryError::MissingHeader)?;
             vec![pair.source, pair.target]
         } else {
             header
                 .iter()
-                .map(|code| Language::from_code(code).ok_or(Failure::GlossaryWithoutHeader))
+                .map(|code| Language::from_code(code).ok_or(GlossaryError::MissingHeader))
                 .collect::<Result<_, _>>()?
         };
         let mut rows = Vec::new();
@@ -94,7 +93,7 @@ impl TranslationGlossary {
     pub fn from_directory(
         directory: &Path,
         source_target: Option<LanguagePair>,
-    ) -> Result<Option<TranslationGlossary>, Failure> {
+    ) -> Result<Option<TranslationGlossary>, GlossaryError> {
         let path = directory.join(GLOSSARY_FILE);
         match path.try_exists()? {
             true => Ok(Some(TranslationGlossary::from_csv(&path, source_target)?)),
@@ -104,7 +103,7 @@ impl TranslationGlossary {
 
     /// Writes `rows`, each with a word for every Language in `Language::ALL` order, to the
     /// directory's `glossary.csv` under a header of Language codes, leaving out empty rows.
-    pub fn write(directory: &Path, rows: &[Vec<String>]) -> Result<(), Failure> {
+    pub fn write(directory: &Path, rows: &[Vec<String>]) -> Result<(), GlossaryError> {
         let mut writer =
             csv::Writer::from_path(directory.join(GLOSSARY_FILE)).map_err(malformed_glossary)?;
         writer
@@ -167,8 +166,26 @@ impl TranslationGlossary {
     }
 }
 
-fn malformed_glossary(error: csv::Error) -> Failure {
-    Failure::MalformedGlossary {
+/// Why a Translation Glossary could not be read or written: a header that names no Language for
+/// each column, or `source,target` with no translation Language to stand for `target`; a file
+/// that is not CSV; or the file itself.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GlossaryError {
+    MissingHeader,
+    MalformedCsv { detail: String },
+    Io { detail: String },
+}
+
+impl From<std::io::Error> for GlossaryError {
+    fn from(error: std::io::Error) -> Self {
+        GlossaryError::Io {
+            detail: error.to_string(),
+        }
+    }
+}
+
+fn malformed_glossary(error: csv::Error) -> GlossaryError {
+    GlossaryError::MalformedCsv {
         detail: error.to_string(),
     }
 }
@@ -176,6 +193,7 @@ fn malformed_glossary(error: csv::Error) -> Failure {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::failure::Failure;
     use crate::project::{CurrentProject, Project, ProjectConfig};
     use crate::test_support::TempDir;
 
@@ -261,7 +279,7 @@ mod tests {
 
         let result = TranslationGlossary::from_directory(dir.path(), Some(ZH_TO_EN));
 
-        assert_eq!(result, Err(Failure::GlossaryWithoutHeader));
+        assert_eq!(result, Err(GlossaryError::MissingHeader));
     }
 
     // @behavior TL-043

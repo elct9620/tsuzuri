@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::transcript::{Segment, SrtContent, Transcript};
 
@@ -44,6 +43,12 @@ pub struct CurrentResource {
 /// A subtitle file and a digest of what it held, or `None` while it did not exist.
 pub type SubtitleDigest = (PathBuf, Option<u64>);
 
+/// Why the Project could not answer: it has no Resource by the name asked for, or none is current.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProjectError {
+    NoResource,
+}
+
 impl Project {
     /// The Languages a Translation Glossary's `source,target` header stands for: the Primary
     /// Language and the translation Language, once the Project has one.
@@ -81,7 +86,7 @@ impl Project {
     }
 
     /// The Current Resource as SRT, a Bilingual SRT in the Bilingual Order.
-    fn to_srt(&self, content: SrtContent) -> Result<String, Failure> {
+    fn to_srt(&self, content: SrtContent) -> Result<String, ProjectError> {
         let transcript = &self.current()?.transcript;
         Ok(match content {
             SrtContent::Bilingual => self.bilingual_srt(transcript),
@@ -89,19 +94,19 @@ impl Project {
         })
     }
 
-    fn resource(&self, name: &str) -> Result<&Resource, Failure> {
+    fn resource(&self, name: &str) -> Result<&Resource, ProjectError> {
         self.resources
             .iter()
             .find(|resource| resource.name == name)
-            .ok_or(Failure::NoResource)
+            .ok_or(ProjectError::NoResource)
     }
 
-    fn current(&self) -> Result<&CurrentResource, Failure> {
-        self.current.as_ref().ok_or(Failure::NoResource)
+    fn current(&self) -> Result<&CurrentResource, ProjectError> {
+        self.current.as_ref().ok_or(ProjectError::NoResource)
     }
 
-    fn current_mut(&mut self) -> Result<&mut CurrentResource, Failure> {
-        self.current.as_mut().ok_or(Failure::NoResource)
+    fn current_mut(&mut self) -> Result<&mut CurrentResource, ProjectError> {
+        self.current.as_mut().ok_or(ProjectError::NoResource)
     }
 }
 

@@ -722,6 +722,7 @@ impl CurrentProject {
             .as_ref()
             .ok_or(Failure::NoProject)?
             .to_srt(content)
+            .map_err(Failure::from)
     }
 
     /// Writes the Current Resource to `path` as SRT carrying `content`.

@@ -1,6 +1,5 @@
 use serde::Deserialize;
 
-use crate::failure::Failure;
 use crate::transcript::Segment;
 
 /// How long a Segment inserted where no neighbour bounds it runs, in milliseconds.
@@ -44,8 +43,16 @@ pub enum SegmentChange {
     },
 }
 
+/// Why a Segment Change was not made: it would end a Segment before it starts, or it names a
+/// position the Segments do not have.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SegmentChangeError {
+    InvalidTimes,
+    InvalidPosition { detail: String },
+}
+
 impl SegmentChange {
-    pub fn apply(self, segments: &mut Vec<Segment>) -> Result<(), Failure> {
+    pub fn apply(self, segments: &mut Vec<Segment>) -> Result<(), SegmentChangeError> {
         match self {
             SegmentChange::Times {
                 index,
@@ -53,7 +60,7 @@ impl SegmentChange {
                 end_ms,
             } => {
                 if end_ms < start_ms {
-                    return Err(Failure::InvalidTimes);
+                    return Err(SegmentChangeError::InvalidTimes);
                 }
                 let segment = segment_at(segments, index)?;
                 segment.start_ms = start_ms;
@@ -83,7 +90,7 @@ impl SegmentChange {
                 let segment = segment_at(segments, index)?;
                 let length = segment.text.chars().count();
                 if at == 0 || at >= length {
-                    return Err(internal(format!("no split after {at} of {length}")));
+                    return Err(invalid_position(format!("no split after {at} of {length}")));
                 }
                 let middle_ms = segment.start_ms
                     + (segment.end_ms - segment.start_ms) * at as u64 / length as u64;
@@ -100,7 +107,9 @@ impl SegmentChange {
             }
             SegmentChange::Merge { first, last } => {
                 if first >= last {
-                    return Err(internal(format!("no merge of {first} through {last}")));
+                    return Err(invalid_position(format!(
+                        "no merge of {first} through {last}"
+                    )));
                 }
                 segment_at(segments, last)?;
                 let run: Vec<Segment> = segments.drain(first + 1..=last).collect();
@@ -133,10 +142,10 @@ impl SegmentChange {
     }
 }
 
-fn segment_at(segments: &mut [Segment], index: usize) -> Result<&mut Segment, Failure> {
+fn segment_at(segments: &mut [Segment], index: usize) -> Result<&mut Segment, SegmentChangeError> {
     segments
         .get_mut(index)
-        .ok_or_else(|| internal(format!("no Segment at {index}")))
+        .ok_or_else(|| invalid_position(format!("no Segment at {index}")))
 }
 
 fn empty_segment(start_ms: u64, end_ms: u64) -> Segment {
@@ -149,8 +158,8 @@ fn empty_segment(start_ms: u64, end_ms: u64) -> Segment {
     }
 }
 
-fn internal(detail: String) -> Failure {
-    Failure::Internal { detail }
+fn invalid_position(detail: String) -> SegmentChangeError {
+    SegmentChangeError::InvalidPosition { detail }
 }
 
 #[cfg(test)]

@@ -1,4 +1,7 @@
-@import "tailwindcss";
+/* Only the page and the webview's code name classes; scanning the whole repository slows every dev start by seconds. */
+@import "tailwindcss" source(none);
+@source "../index.html";
+@source "./";
 @plugin "daisyui";
 
 @theme {

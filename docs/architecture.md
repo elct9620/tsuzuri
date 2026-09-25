@@ -101,7 +101,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 |---|---|---|
 | `project.ts` | `project/commands.rs` | 開啟、選擇、編輯、段落變更、復原與重做、匯出、版本、詞彙表 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
-| `translation.ts` | `translation/commands.rs` | `translate`、翻譯設定 |
+| `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
 | `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
 
@@ -328,6 +328,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 |---|---|
 | `project`、`transcript`、`segment-changes`、`dialog` | 整頁：資源清單、字幕編輯、段落變更、設定 modal |
 | `speakers` | 每段的說話者選單與設定說話者 modal：列出全部名稱、寫回、提議加入詞彙表 |
+| `retranslation` | 重新翻譯一段或選取的段落 |
 | `comparison` | 字幕編輯的對照：原文與譯文各自比較一份備份並標在各自欄位、插入已刪除的段落、疊上其他譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
 | `preview` | 預覽：播放器、整段播放、疊字、收起 |
@@ -354,6 +355,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `preview:playing` | `preview` | 字幕編輯標出播放中 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為選取的段落開設定說話者 |
+| `segment-changes:retranslate` | `segment-changes` | `retranslation` 重新翻譯選取的段落 |
 
 ### 4.3 backend
 

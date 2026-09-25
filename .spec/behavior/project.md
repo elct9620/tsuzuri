@@ -786,3 +786,18 @@ A name changed in the Translation Glossary since a translation was written leave
 | When | the change is undone |
 | Then | no Segment names a Speaker |
 
+## `PJ-099` Writing a translation made again as one change
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments translated into `en` as `A`, `B` and `C`, shown in the editor |
+| When | the second is translated again as `B2` |
+| Then | `ep01.en.srt` reads `A`, `B2` and `C`, no Backup is kept, and one undo puts `B` back |
+
+## `PJ-100` Refusing to translate again with no translation shown
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing no translation |
+| When | a Segment is asked to be translated again |
+| Then | it is refused as `no-translation-shown` before any Model is loaded |

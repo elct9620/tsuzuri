@@ -14,6 +14,7 @@ import NotificationController from "./controllers/notification_controller";
 import PreviewController from "./controllers/preview_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
+import RetranslationController from "./controllers/retranslation_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
 import SpeakersController from "./controllers/speakers_controller";
 import TimelineController, {
@@ -50,6 +51,7 @@ async function start(): Promise<void> {
   application.register("preview", PreviewController);
   application.register("progress", ProgressController);
   application.register("project", ProjectController);
+  application.register("retranslation", RetranslationController);
   application.register("segment-changes", SegmentChangesController);
   application.register("speakers", SpeakersController);
   application.register("timeline", TimelineController);

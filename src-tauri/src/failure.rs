@@ -46,6 +46,8 @@ pub enum Failure {
     ModeRunning,
     /// The running Mode was asked to stop.
     ModeCancelled,
+    /// Translating again needs a translation shown to write into.
+    NoTranslationShown,
     /// A Segment Change that would leave a Segment ending before it starts.
     InvalidTimes,
     /// A restore that named no Backup of the subtitle it was asked for.

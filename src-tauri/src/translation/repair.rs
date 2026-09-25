@@ -20,6 +20,7 @@ pub async fn translate_batch(
     lines: &[(usize, &str)],
     earlier_pairs: &[(String, String)],
     summary: Option<&str>,
+    following: Option<&str>,
 ) -> Result<HashMap<usize, String>, Failure> {
     let mut repair = BatchRepair {
         model,
@@ -27,6 +28,7 @@ pub async fn translate_batch(
         lines,
         earlier_pairs,
         summary,
+        following,
         accepted_translations: HashMap::new(),
         imperfect_translations: HashMap::new(),
     };
@@ -71,6 +73,8 @@ struct BatchRepair<'a> {
     lines: &'a [(usize, &'a str)],
     earlier_pairs: &'a [(String, String)],
     summary: Option<&'a str>,
+    /// The source text after the Batch, shown with every request for it.
+    following: Option<&'a str>,
     accepted_translations: HashMap<usize, String>,
     /// The latest translation of a line that is valid but imperfect, kept in case nothing better comes.
     imperfect_translations: HashMap<usize, String>,
@@ -98,6 +102,7 @@ impl BatchRepair<'_> {
                     lines: group.to_vec(),
                     reference: &reference,
                     preceding: preceding.clone(),
+                    following: self.following.map(str::to_string),
                     glossary_terms: &used_terms,
                     correction: correction.take(),
                 })

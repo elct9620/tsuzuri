@@ -38,6 +38,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.modeRunning");
     case "mode-cancelled":
       return t("failures.cancelled");
+    case "no-translation-shown":
+      return t("failures.noTranslationShown");
     case "invalid-times":
       return t("failures.invalidTimes");
     case "no-backup":

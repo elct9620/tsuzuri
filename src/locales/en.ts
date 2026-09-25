@@ -98,6 +98,7 @@ const en = {
     insertBelow: "Insert below",
     split: "Split at cursor",
     delete: "Delete",
+    retranslate: "Translate again",
     splitWhere: "Put the cursor where the text should split first",
     unreadableTime: "Write the time as 00:00:01.000",
     selected: "{{count}} selected",
@@ -281,6 +282,7 @@ const en = {
     modeRunning:
       "A task running on this Resource is writing this subtitle; try again once it ends",
     cancelled: "The task was cancelled",
+    noTranslationShown: "Show a translation to translate into first",
     changedElsewhere:
       "The subtitle was changed in another program and has been read again; this edit was not written",
     subtitleExists:

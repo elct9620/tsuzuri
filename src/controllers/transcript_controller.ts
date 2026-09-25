@@ -132,8 +132,8 @@ function timeEditor(
   return input;
 }
 
-/** The Segment Changes one Segment offers, in a menu opened from its button. */
-function changeMenu(index: number): HTMLElement {
+/** The Segment Changes one Segment offers, and translating it again into the translation shown, in a menu opened from its button. */
+function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
   const dropdown = document.createElement("div");
   dropdown.className = "dropdown dropdown-left";
   const opener = document.createElement("div");
@@ -162,6 +162,16 @@ function changeMenu(index: number): HTMLElement {
     choice.append(button);
     menu.append(choice);
   }
+  const again = document.createElement("button");
+  again.type = "button";
+  again.className = "retranslate";
+  again.disabled = !isTranslationShown;
+  again.dataset.action = "retranslation#translateSegment";
+  again.dataset.retranslationIndexParam = String(index);
+  again.textContent = t("edit.retranslate");
+  const choice = document.createElement("li");
+  choice.append(again);
+  menu.append(choice);
   dropdown.append(opener, menu);
   return dropdown;
 }
@@ -192,7 +202,7 @@ function item(
   editors.append(editor(index, "text", segment.text));
   if (isTranslationShown)
     editors.append(editor(index, "translation", segment.translation ?? ""));
-  li.append(selection, heading, editors, changeMenu(index));
+  li.append(selection, heading, editors, changeMenu(index, isTranslationShown));
   return li;
 }
 

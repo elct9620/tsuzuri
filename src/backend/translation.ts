@@ -30,6 +30,11 @@ export function translate(
   return invoke<Translation>("translate", { target, options });
 }
 
+/** Translates the Segments at `indexes` again into the translation shown, as one change. */
+export function retranslate(indexes: number[]): Promise<Translation> {
+  return invoke<Translation>("retranslate", { indexes });
+}
+
 export function translationSettings(): Promise<TranslationSettings> {
   return invoke<TranslationSettings>("translation_settings");
 }

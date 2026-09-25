@@ -12,6 +12,8 @@ pub struct BatchRequest<'a> {
     /// The Rolling Summary so far, when one is kept.
     pub summary: Option<&'a str>,
     pub preceding: Option<String>,
+    /// The source text just after the lines, which they may lead into.
+    pub following: Option<String>,
     /// The Translation Glossary's terms the lines use.
     pub glossary_terms: &'a [(String, String)],
     pub correction: Option<String>,
@@ -111,6 +113,11 @@ pub fn user_message(batch: &BatchRequest<'_>) -> String {
     if let Some(preceding) = &batch.preceding {
         parts.push(format!(
             "Note: the original-language text below immediately precedes the lines you are about to translate, and their sentence may continue from it. Use it only to understand grammar and meaning - do not translate it or include it in your output:\n{preceding}"
+        ));
+    }
+    if let Some(following) = &batch.following {
+        parts.push(format!(
+            "Note: the original-language text below immediately follows the lines you are about to translate, and their sentence may continue into it. Use it only to understand grammar and meaning - do not translate it or include it in your output:\n{following}"
         ));
     }
     if !batch.reference.is_empty() {

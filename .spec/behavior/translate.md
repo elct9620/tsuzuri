@@ -649,3 +649,13 @@ Translating keeps the translation it replaces as a Backup, yet saying so before 
 | Given | a translation whose first Batch is shown |
 | When | it is cancelled before the next Batch is answered |
 | Then | it fails as `mode-cancelled`, the first Batch stays shown, and no translation file is written |
+
+## `TL-084` Translating chosen Segments again with their neighbours
+
+A line translated alone loses the context a Batch gives, so it carries the lines around it: those before with their translations, those after in the source alone.
+
+| Step | Statement |
+| --- | --- |
+| Given | five Segments translated into `en`, shown in the editor |
+| When | the third is translated again |
+| Then | one request asks for the third line alone, with the two before as translated reference and the two after as following source text |

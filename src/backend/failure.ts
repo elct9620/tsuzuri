@@ -12,6 +12,7 @@ export type Failure =
   | { code: "changed-elsewhere" }
   | { code: "mode-running" }
   | { code: "mode-cancelled" }
+  | { code: "no-translation-shown" }
   | { code: "invalid-times" }
   | { code: "no-backup"; backup: string }
   | { code: "no-row"; row: number }

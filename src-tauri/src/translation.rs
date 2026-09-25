@@ -48,7 +48,22 @@ pub struct TranslationPlan {
     pub target: Language,
     pub options: TranslationOptions,
     pub settings: TranslationSettings,
+    pub scope: TranslationScope,
 }
+
+/// Which Segments a translation writes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TranslationScope {
+    /// Every Segment, written as a new translation file.
+    Whole,
+    /// Those at these positions, translated again into the translation shown and written as one
+    /// change, each other keeping its translation.
+    Segments(Vec<usize>),
+}
+
+/// Lines on either side of chosen Segments shown for context: before them translated, after them
+/// as source text.
+const CONTEXT_LINES: usize = 3;
 
 /// What to translate: the Segments, the Languages they go between, and how.
 struct TranslationJob<'a> {
@@ -63,6 +78,8 @@ struct TranslationJob<'a> {
     has_self_review: bool,
     /// Whether Speaker Labels are kept out of what the Model is sent.
     has_speaker_labels: bool,
+    /// The positions of the Segments translated again, or none for every Segment.
+    chosen_indexes: &'a [usize],
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -135,6 +152,10 @@ pub async fn run_translate(
         has_self_review: plan.options.has_self_review,
         summary_word_limit: plan.options.summary_word_limit,
         glossary_terms: &glossary_terms,
+        chosen_indexes: match &plan.scope {
+            TranslationScope::Whole => &[],
+            TranslationScope::Segments(indexes) => indexes,
+        },
     };
     enter(ports, &mut phases, "load");
     let on_batch = batch_display(ports, project, &source, plan.target);
@@ -178,7 +199,12 @@ pub async fn run_translate(
             result
         }
     };
-    project.write_translations(&source, plan.target, result?)?;
+    match plan.scope {
+        TranslationScope::Whole => project.write_translations(&source, plan.target, result?)?,
+        TranslationScope::Segments(_) => {
+            project.write_retranslations(&source, plan.target, result?)?
+        }
+    }
     ports.announce_project();
     Ok(Translation {
         phases: phases.finish(),
@@ -256,6 +282,10 @@ async fn translate_once_ready(
 ) -> Result<Vec<Segment>, Failure> {
     llama::wait_until_ready(base_url, ready_timeout, has_exited).await?;
     let model = TranslationModel::new(base_url);
+    if !job.chosen_indexes.is_empty() {
+        enter(progress, phases, "translate");
+        return translate_chosen(&model, job, on_batch).await;
+    }
     enter(progress, phases, "detect");
     let split_sentences = find_split_sentences(&model, job, |done, total| {
         progress.report_count("detect", done, total)
@@ -332,6 +362,70 @@ async fn rewrite_summary(
     }
 }
 
+/// Translates the chosen Segments again as one Batch, with the translated lines before them as
+/// reference and the source lines after them to read on into; every other Segment keeps its
+/// translation. `on_batch` is handed the Segments as they stand before and after.
+async fn translate_chosen(
+    model: &TranslationModel,
+    job: &TranslationJob<'_>,
+    on_batch: impl Fn(&[Segment], Option<SegmentSpan>),
+) -> Result<Vec<Segment>, Failure> {
+    let indexes = job.chosen_indexes;
+    let (first, last) = (
+        *indexes.iter().min().unwrap_or(&0),
+        *indexes.iter().max().unwrap_or(&0),
+    );
+    let labelled_texts: Vec<(usize, LabelledText)> = indexes
+        .iter()
+        .map(|index| {
+            let text = &job.segments[*index].text;
+            let labelled_text = match job.has_speaker_labels {
+                true => LabelledText::split_labels(text),
+                false => LabelledText::new(text),
+            };
+            (*index, labelled_text)
+        })
+        .collect();
+    let lines: Vec<(usize, &str)> = labelled_texts
+        .iter()
+        .map(|(index, labelled_text)| (*index, labelled_text.dialogue.as_str()))
+        .collect();
+    let mut earlier_pairs: Vec<(String, String)> = job.segments[..first]
+        .iter()
+        .filter_map(|segment| {
+            segment
+                .translation
+                .as_ref()
+                .map(|translation| (segment.text.clone(), translation.clone()))
+        })
+        .collect();
+    earlier_pairs.drain(..earlier_pairs.len().saturating_sub(CONTEXT_LINES));
+    let following: Vec<&str> = job.segments[last + 1..]
+        .iter()
+        .take(CONTEXT_LINES)
+        .map(|segment| segment.text.as_str())
+        .collect();
+    let following = (!following.is_empty()).then(|| following.join(" "));
+    on_batch(job.segments, Some(SegmentSpan { first, last }));
+    let answer = repair::translate_batch(
+        model,
+        job,
+        &lines,
+        &earlier_pairs,
+        None,
+        following.as_deref(),
+    )
+    .await?;
+    let mut segments = job.segments.to_vec();
+    for (index, labelled_text) in &labelled_texts {
+        if let Some(translation) = answer.get(index) {
+            segments[*index].translation = Some(labelled_text.reattach(translation));
+        }
+    }
+    on_batch(&segments, None);
+    Ok(segments)
+}
+
 /// Translates the Segments Batch by Batch, keeping each Split Sentence in one Batch,
 /// each Batch carrying the last lines translated before it; `on_batch` is handed the Segments
 /// translated so far and the Batch to translate next, before the first Batch and after each.
@@ -365,9 +459,15 @@ async fn translate_segments(
             .clone()
             .map(|index| (index, labelled_texts[index].dialogue.as_str()))
             .collect();
-        let answer =
-            repair::translate_batch(model, job, &lines, &translated_pairs, summary.as_deref())
-                .await?;
+        let answer = repair::translate_batch(
+            model,
+            job,
+            &lines,
+            &translated_pairs,
+            summary.as_deref(),
+            None,
+        )
+        .await?;
         for (index, dialogue) in lines {
             let translation = answer.get(&index).ok_or_else(|| Failure::LlamaRequest {
                 detail: format!("answered without line {index}"),
@@ -453,6 +553,7 @@ mod tests {
             has_self_review: false,
             summary_word_limit: None,
             glossary_terms: &[],
+            chosen_indexes: &[],
         }
     }
 
@@ -1425,6 +1526,46 @@ mod tests {
         );
     }
 
+    // @behavior TL-084
+    #[tokio::test]
+    async fn translates_chosen_segments_again_with_their_neighbours() {
+        let llama = FakeLlama::with_echo(0);
+        let segments: Vec<Segment> = (0..5)
+            .map(|index| Segment {
+                translation: Some(format!("line {index}")),
+                ..segment(index * 1_000, (index + 1) * 1_000, &format!("第{index}句"))
+            })
+            .collect();
+        let app = mock_app();
+
+        translate_once_ready(
+            app.handle(),
+            llama.base_url(),
+            Duration::from_secs(5),
+            || false,
+            &TranslationJob {
+                chosen_indexes: &[2],
+                ..job(&segments)
+            },
+            &mut Phases::start("translate", "load"),
+            |_, _| {},
+        )
+        .await
+        .unwrap();
+
+        let messages = llama.user_messages();
+        let message = &messages[0];
+        assert_eq!(
+            (
+                messages.len(),
+                llama.batch_sizes(),
+                message.contains("第0句 => line 0") && message.contains("第1句 => line 1"),
+                message.contains("immediately follows") && message.contains("第3句 第4句"),
+            ),
+            (1, vec![1], true, true)
+        );
+    }
+
     // @behavior TL-083
     #[tokio::test]
     async fn keeps_the_translations_shown_when_cancelled() {
@@ -1650,6 +1791,7 @@ mod tests {
             target,
             options: TranslationOptions::default(),
             settings: TranslationSettings::default(),
+            scope: TranslationScope::Whole,
         }
     }
 

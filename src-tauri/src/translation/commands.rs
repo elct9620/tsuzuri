@@ -3,7 +3,7 @@ use tauri::{AppHandle, Manager};
 use super::llama::READY_TIMEOUT;
 use super::{
     llama_server, run_translate, LlamaServer, ResidentLlama, Translation, TranslationOptions,
-    TranslationPlan, TranslationSettings,
+    TranslationPlan, TranslationScope, TranslationSettings,
 };
 use crate::failure::Failure;
 use crate::language::Language;
@@ -21,16 +21,40 @@ pub async fn translate(
     target: Language,
     options: TranslationOptions,
 ) -> Result<Translation, Failure> {
+    run_translation(&app, target, options, TranslationScope::Whole).await
+}
+
+#[tauri::command]
+pub async fn retranslate(app: AppHandle, indexes: Vec<usize>) -> Result<Translation, Failure> {
+    let target = app.state::<CurrentProject>().shown_translation()?;
+    run_translation(
+        &app,
+        target,
+        TranslationOptions::default(),
+        TranslationScope::Segments(indexes),
+    )
+    .await
+}
+
+/// Translates the Current Resource as `scope` says once no other Mode runs, on the Resident
+/// llama-server or one started for it, until it ends or is cancelled.
+async fn run_translation(
+    app: &AppHandle,
+    target: Language,
+    options: TranslationOptions,
+    scope: TranslationScope,
+) -> Result<Translation, Failure> {
     let mode_lock = app.state::<ModeLock>();
     let mut turn = mode_lock.wait_turn().await;
     let phases = Phases::start("translate", "prepare");
     app.report("prepare", None);
-    let [llama] = toolchain::find_ready_executables(settings::resolver(&app)?, ["llama"]).await?;
-    let model_settings = settings::load_settings(&app)?;
+    let [llama] = toolchain::find_ready_executables(settings::resolver(app)?, ["llama"]).await?;
+    let model_settings = settings::load_settings(app)?;
     let plan = TranslationPlan {
         target,
         options,
-        settings: TranslationSettings::load(&settings::settings_dir(&app)?)?,
+        settings: TranslationSettings::load(&settings::settings_dir(app)?)?,
+        scope,
     };
     let processes = app.state::<Processes>().inner().clone();
     let preset_dir = app.path().app_data_dir()?;
@@ -41,7 +65,7 @@ pub async fn translate(
         &processes,
         run_translate(
             &AppPorts {
-                app: &app,
+                app,
                 processes: &processes,
             },
             &app.state::<CurrentProject>(),

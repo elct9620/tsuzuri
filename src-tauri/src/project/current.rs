@@ -724,6 +724,16 @@ impl CurrentProject {
         Ok(())
     }
 
+    /// The Language of the translation the Current Resource shows, which translating again writes into.
+    pub fn shown_translation(&self) -> Result<Language, Failure> {
+        self.update_project(|project| {
+            project
+                .current()?
+                .translation
+                .ok_or(Failure::NoTranslationShown)
+        })
+    }
+
     pub fn show_translation(&self, language: Option<Language>) -> Result<(), Failure> {
         self.update_project(|project| project.show_translation(language))
     }
@@ -981,6 +991,30 @@ impl CurrentProject {
         target: Language,
         segments: Vec<Segment>,
     ) -> Result<(), Failure> {
+        self.write_translation_file(source, target, segments, true)
+    }
+
+    /// Writes the translation into `target` of Segments translated again, as one change with no
+    /// Backup, since it only corrects lines of a translation already kept.
+    pub fn write_retranslations(
+        &self,
+        source: &TranslationSource,
+        target: Language,
+        segments: Vec<Segment>,
+    ) -> Result<(), Failure> {
+        self.write_translation_file(source, target, segments, false)
+    }
+
+    /// Writes `segments` as the translation into `target` of the Resource `source` was taken
+    /// from, with the Bilingual SRTs it feeds, as one change; first keeps the file it replaces
+    /// and afterwards the new one as Backups when `is_backed_up`.
+    fn write_translation_file(
+        &self,
+        source: &TranslationSource,
+        target: Language,
+        segments: Vec<Segment>,
+        is_backed_up: bool,
+    ) -> Result<(), Failure> {
         let path = source
             .directory
             .join(files::file_name(&source.name, [Some(target)]));
@@ -992,14 +1026,18 @@ impl CurrentProject {
             _ => HashMap::new(),
         };
         let before = self.job_snapshot(&source.directory, &source.name)?;
-        self.back_up_before_overwrite(&source.directory, &path)?;
+        if is_backed_up {
+            self.back_up_before_overwrite(&source.directory, &path)?;
+        }
         files::write_srt(&path, translation_srt(&translation, speaker_names))?;
-        files::back_up(
-            &source.directory,
-            &path,
-            SystemTime::now(),
-            BackupKind::Output,
-        )?;
+        if is_backed_up {
+            files::back_up(
+                &source.directory,
+                &path,
+                SystemTime::now(),
+                BackupKind::Output,
+            )?;
+        }
         self.refresh_resources(&source.directory)?;
         self.write_bilingual_subtitles(&source.directory, &source.name, Some(target))?;
         self.record_job_change(&source.directory, &source.name, before)?;
@@ -2678,6 +2716,50 @@ mod tests {
         assert_eq!(
             [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
             [cue("你好"), cue("Hello")]
+        );
+    }
+
+    // @behavior PJ-099
+    #[test]
+    fn writes_a_translation_made_again_as_one_change() {
+        let three =
+            |second: &str| srt_of(&[(0, 1_000, "A"), (1_000, 2_000, second), (2_000, 3_000, "C")]);
+        let dir = directory_of(
+            "tl-retranslate-write",
+            &[
+                (
+                    "ep01.srt",
+                    &srt_of(&[(0, 1_000, "一"), (1_000, 2_000, "二"), (2_000, 3_000, "三")]),
+                ),
+                ("ep01.en.srt", &three("B")),
+            ],
+        );
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+        let mut segments = source.transcript.segments.clone();
+        segments[1].translation = Some("B2".to_string());
+
+        current
+            .write_retranslations(&source, Language::English, segments)
+            .unwrap();
+        let written = read(&dir, "ep01.en.srt");
+        let has_backups = dir.path().join(files::HISTORY_DIR).exists();
+        current.undo().unwrap();
+
+        assert_eq!(
+            (written, has_backups, read(&dir, "ep01.en.srt")),
+            (three("B2"), false, three("B"))
+        );
+    }
+
+    // @behavior PJ-100
+    #[test]
+    fn refuses_to_translate_again_with_no_translation_shown() {
+        let current = current_project_of(vec![segment("大家好", None)]);
+
+        assert_eq!(
+            current.shown_translation(),
+            Err(Failure::NoTranslationShown)
         );
     }
 

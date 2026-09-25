@@ -142,6 +142,14 @@ Ask the running transcription or translation to stop. It stops at once, ending t
 pub fn cancel_task(app: AppHandle) {}
 ```
 
+## `retranslate`
+
+Translate the Current Resource's Segments at `indexes` again, into the translation shown, as one Batch carrying the translated lines before them and the source lines after them; no Split Sentences are searched for and no Rolling Summary is kept. The translations are written as one change in the Undo History, with no Backup, and the answer is how long each Phase took. With no translation shown it is refused as `no-translation-shown`; it runs, waits and can be cancelled as `translate` does.
+
+```rust
+pub async fn retranslate(app: AppHandle, indexes: Vec<usize>) -> Result<Translation, Failure> {}
+```
+
 ## `translate`
 
 Run the Translate Mode on the Current Resource from the Primary Language into the target Language, given by its code, with the options the Translate panel offers and the saved translation settings, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. Each Batch's translations are shown as it finishes, emitting `project-changed`; once all are done they are written to the Resource's translation file and the target is recorded as the Project's translation Language; the answer is the seconds each Phase took.

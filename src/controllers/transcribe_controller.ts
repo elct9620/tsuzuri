@@ -83,7 +83,7 @@ export default class TranscribeController extends Controller {
     const progress = this.progressOutlet;
     if (progress.isBusy) return;
     this.dialogTarget.close();
-    progress.begin();
+    progress.begin("transcribe");
     try {
       const transcription = await invoke<Transcription>("transcribe", {
         overwrite: currentResource(this.project)?.has_subtitle ?? false,
@@ -102,6 +102,7 @@ export default class TranscribeController extends Controller {
       ];
       if (this.translateTarget.checked) {
         const choices = this.translationOptionsOutlet;
+        progress.begin("translate");
         const translation = await translateProject(
           choices.language,
           choices.options,

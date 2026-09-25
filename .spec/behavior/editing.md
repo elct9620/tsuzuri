@@ -5,6 +5,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 ## Includes
 
 - `src/controllers/transcript_controller.test.ts`
+- `src/controllers/project_controller.test.ts`
 
 ## `ED-001` Writing an edited text to the Project
 
@@ -61,3 +62,35 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | Given | a Project in the panel |
 | When | a Segment's text is edited |
 | Then | a Notification says the edit was saved |
+
+## `ED-008` Showing Placeholders until a transcription writes a Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with no Segments in the panel |
+| When | its transcription begins |
+| Then | the editor shows Placeholder rows |
+
+## `ED-009` Showing a Placeholder for each translation still to come
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource being translated whose second Segment has no translation yet |
+| When | the editor shows it |
+| Then | the second Segment's translation is a Placeholder |
+
+## `ED-010` Showing Placeholders while another Resource is read
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel |
+| When | another Resource is selected |
+| Then | the editor shows Placeholder rows until that Resource is read |
+
+## `ED-011` Leaving the Placeholders when a Resource cannot be read
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with a Resource that cannot be read |
+| When | that Resource is selected |
+| Then | the Project is read again, so the editor shows what it holds |

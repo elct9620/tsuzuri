@@ -37,10 +37,12 @@ function statusMessage({
 }
 
 export default class ComponentsController extends Controller {
-  static targets = ["status", "restore"];
+  static targets = ["status", "restore", "placeholder"];
 
   declare readonly statusTargets: HTMLElement[];
   declare readonly restoreTargets: HTMLElement[];
+  /** Stand in for the statuses until they are found. */
+  declare readonly placeholderTargets: HTMLElement[];
 
   async connect(): Promise<void> {
     this.render(await invoke<ComponentStatus[]>("component_statuses"));
@@ -64,9 +66,14 @@ export default class ComponentsController extends Controller {
   }
 
   private render(statuses: ComponentStatus[]): void {
+    for (const placeholder of this.placeholderTargets)
+      placeholder.hidden = true;
     for (const component of statuses) {
       const status = this.targetByName(this.statusTargets, component.name);
-      if (status) status.textContent = statusMessage(component);
+      if (status) {
+        status.textContent = statusMessage(component);
+        status.hidden = false;
+      }
       const restore = this.targetByName(this.restoreTargets, component.name);
       if (restore) restore.hidden = component.origin !== "chosen";
     }

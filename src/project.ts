@@ -58,7 +58,7 @@ export interface TranslationGlossaryView {
 }
 
 /** The Project Rust holds now, or none before one is made. */
-function currentProject(): Promise<ProjectView | null> {
+export function currentProject(): Promise<ProjectView | null> {
   return invoke<ProjectView | null>("current_project");
 }
 

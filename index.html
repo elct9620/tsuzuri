@@ -12,6 +12,7 @@
     <main
       class="flex h-dvh flex-col"
       data-controller="project transcript dialog"
+      data-action="progress:task->transcript#followTask project:select->transcript#showLoading"
     >
       <section class="hero flex-1" data-project-target="start">
         <div class="hero-content flex-col text-center">
@@ -497,10 +498,14 @@
                         >
                       </span>
                       <span
+                        class="skeleton h-4 w-48"
+                        data-components-target="placeholder"
+                      ></span>
+                      <span
                         class="break-all text-base-content/70"
                         data-components-target="status"
                         data-component="ffmpeg"
-                        data-i18n="settings.checking"
+                        hidden
                       ></span>
                       <button
                         type="button"
@@ -530,10 +535,14 @@
                         >
                       </span>
                       <span
+                        class="skeleton h-4 w-48"
+                        data-components-target="placeholder"
+                      ></span>
+                      <span
                         class="break-all text-base-content/70"
                         data-components-target="status"
                         data-component="whisper"
-                        data-i18n="settings.checking"
+                        hidden
                       ></span>
                       <button
                         type="button"
@@ -563,10 +572,14 @@
                         >
                       </span>
                       <span
+                        class="skeleton h-4 w-48"
+                        data-components-target="placeholder"
+                      ></span>
+                      <span
                         class="break-all text-base-content/70"
                         data-components-target="status"
                         data-component="llama"
-                        data-i18n="settings.checking"
+                        hidden
                       ></span>
                       <button
                         type="button"

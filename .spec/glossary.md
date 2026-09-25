@@ -146,6 +146,10 @@ Why a command did not finish, sent to the webview as a `code` with the data it n
 
 A short message in a corner of the window about something that has just happened: a task finished or failed, an edit was saved or was not written. It goes away on its own after a moment, except one saying something failed, which stays until it is closed.
 
+### Placeholder
+
+A grey shape standing where content is still being made or read, such as a row before a transcription writes its first Segment, so the screen shows something is coming rather than nothing being there.
+
 ### Stray Process
 
 A Component process left alive after the app that launched it has exited or crashed. Tsuzuri records the PID of every process it launches so the next start can kill what the last one left.

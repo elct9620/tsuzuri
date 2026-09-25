@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 import { invoke } from "@tauri-apps/api/core";
-import type { UnlistenFn } from "@tauri-apps/api/event";
+import { emit, type UnlistenFn } from "@tauri-apps/api/event";
 import { message, open } from "@tauri-apps/plugin-dialog";
 
 import { failureMessage } from "../failure";
@@ -111,7 +111,12 @@ export default class ProjectController extends Controller {
 
   async select({ currentTarget }: Event): Promise<void> {
     const name = (currentTarget as HTMLElement).dataset.name;
-    await this.report(() => invoke("select_resource", { name }));
+    this.dispatch("select");
+    const isSelected = await this.report(() =>
+      invoke("select_resource", { name }),
+    );
+    // Rust announces nothing when it could not select, so the editor is told to read what it holds.
+    if (!isSelected) await emit("project-changed");
   }
 
   async setLanguage(): Promise<void> {
@@ -136,11 +141,14 @@ export default class ProjectController extends Controller {
     );
   }
 
-  private async report(action: () => Promise<unknown>): Promise<void> {
+  /** Runs `action`, showing why it failed, and answers whether it succeeded. */
+  private async report(action: () => Promise<unknown>): Promise<boolean> {
     try {
       await action();
+      return true;
     } catch (error) {
       await message(failureMessage(error), { kind: "error" });
+      return false;
     }
   }
 

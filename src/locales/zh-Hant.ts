@@ -106,7 +106,6 @@ const zhHant: typeof en = {
     about: "關於",
     choose: "指定",
     chooseFile: "指定檔案",
-    checking: "檢查中",
     restoreDefault: "還原預設值",
     license: "Tsuzuri 以 Apache-2.0 授權釋出。",
   },

@@ -12,6 +12,7 @@ describe("ProjectController", () => {
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
   let openSrt: () => unknown;
+  let selectFailure: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = <T extends HTMLElement>(name: string) =>
@@ -36,6 +37,7 @@ describe("ProjectController", () => {
     project = null;
     calls = [];
     openSrt = () => null;
+    selectFailure = undefined;
     document.body.innerHTML = `
       <main data-controller="project">
         <section data-project-target="start"></section>
@@ -74,6 +76,8 @@ describe("ProjectController", () => {
             ? "/talks"
             : "/subtitles/lecture.srt";
         if (command === "open_srt") return openSrt();
+        if (command === "select_resource" && selectFailure !== undefined)
+          return Promise.reject(selectFailure);
       },
       { shouldMockEvents: true },
     );
@@ -174,6 +178,40 @@ describe("ProjectController", () => {
     await click('[data-name="ep02"]');
 
     expect(sent("select_resource")).toEqual({ name: "ep02" });
+  });
+
+  // @behavior ED-011
+  it("reads the Project again when a Resource cannot be selected", async () => {
+    await hold(
+      projectOf({
+        resources: [resourceOf(), resourceOf({ name: "ep02" })],
+      }),
+    );
+    selectFailure = { code: "malformed-srt", cue: 2 };
+    const asked = calls.filter(
+      (call) => call.command === "current_project",
+    ).length;
+
+    await click('[data-name="ep02"]');
+
+    expect(
+      calls.filter((call) => call.command === "current_project").length,
+    ).toBeGreaterThan(asked);
+  });
+
+  // @behavior ED-010
+  it("tells the editor a Resource is being read once one is selected", async () => {
+    await hold(
+      projectOf({
+        resources: [resourceOf(), resourceOf({ name: "ep02" })],
+      }),
+    );
+    let isAnnounced = false;
+    document.addEventListener("project:select", () => (isAnnounced = true));
+
+    await click('[data-name="ep02"]');
+
+    expect(isAnnounced).toBe(true);
   });
 
   // @behavior PJ-036

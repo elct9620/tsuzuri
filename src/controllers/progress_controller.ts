@@ -6,6 +6,9 @@ import { t } from "../i18n";
 import { notify } from "../notification";
 import { followProgress } from "../progress";
 
+/** The kind of task running, which the editor shows Placeholders for. */
+export type TaskKind = "transcribe" | "translate";
+
 /** The running task's progress above the editor, which the task dialogs report to; how it ended is a Notification. */
 export default class ProgressController extends Controller {
   static targets = ["status", "bar"];
@@ -33,10 +36,12 @@ export default class ProgressController extends Controller {
     return this.isRunning;
   }
 
-  begin(): void {
+  /** Starts showing `task`, or moves on to it within the same run, and announces it as `progress:task`. */
+  begin(task: TaskKind): void {
     this.isRunning = true;
     this.element.removeAttribute("hidden");
     this.statusTarget.textContent = t("work.preparing");
+    this.dispatch("task", { detail: { task } });
   }
 
   finish(lines: string[]): void {
@@ -53,5 +58,6 @@ export default class ProgressController extends Controller {
     this.isRunning = false;
     this.element.setAttribute("hidden", "");
     this.barTarget.hidden = true;
+    this.dispatch("task", { detail: { task: null } });
   }
 }

@@ -35,6 +35,16 @@ describe("TranscriptController", () => {
     field.dispatchEvent(new Event("change"));
   }
 
+  function progress(): ProgressController {
+    return application.getControllerForElementAndIdentifier(
+      document.querySelector("#progress")!,
+      "progress",
+    ) as ProgressController;
+  }
+
+  const placeholders = () =>
+    document.querySelectorAll("[data-placeholder]").length;
+
   function sent(command: string): unknown {
     return calls.find((call) => call.command === command)?.args;
   }
@@ -58,7 +68,12 @@ describe("TranscriptController", () => {
     editFailure = undefined;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <section data-controller="transcript">
+      <section data-controller="transcript"
+        data-action="progress:task->transcript#followTask project:select->transcript#showLoading">
+        <div id="progress" data-controller="progress" hidden>
+          <p data-progress-target="status"></p>
+          <progress data-progress-target="bar" hidden></progress>
+        </div>
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage" data-action="change->transcript#showTranslation"></select>
         <p data-transcript-target="empty">尚無內容</p>
@@ -231,5 +246,54 @@ describe("TranscriptController", () => {
     );
 
     expect(fields()).toEqual(["大家好", "Hello", "今天天氣很好", ""]);
+  });
+
+  // @behavior ED-008
+  it("shows Placeholder rows until a transcription writes a Segment", async () => {
+    await hold(projectOf({ segments: [] }));
+
+    progress().begin("transcribe");
+    await settle();
+
+    expect([
+      placeholders() > 0,
+      document.querySelector<HTMLElement>('[data-transcript-target="empty"]')!
+        .hidden,
+    ]).toEqual([true, true]);
+  });
+
+  // @behavior ED-009
+  it("shows a Placeholder for each translation still to come", async () => {
+    await hold(
+      projectOf({
+        shown_translation: "en",
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "大家好", translation: "Hello" },
+          { start_ms: 1000, end_ms: 2000, text: "資料不上傳" },
+        ],
+      }),
+    );
+
+    progress().begin("translate");
+    await settle();
+
+    expect(
+      [...document.querySelectorAll("textarea.translation")].map((field) =>
+        field.classList.contains("skeleton"),
+      ),
+    ).toEqual([false, true]);
+  });
+
+  // @behavior ED-010
+  it("shows Placeholder rows while another Resource is read", async () => {
+    await hold(
+      projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }] }),
+    );
+
+    document
+      .querySelector("ol")!
+      .dispatchEvent(new CustomEvent("project:select", { bubbles: true }));
+
+    expect([placeholders() > 0, fields()]).toEqual([true, []]);
   });
 });

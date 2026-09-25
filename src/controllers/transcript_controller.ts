@@ -7,7 +7,9 @@ import { failureCode, failureMessage } from "../failure";
 import { t } from "../i18n";
 import { notify } from "../notification";
 import { closeMenu } from "../menu";
+import type { TaskKind } from "./progress_controller";
 import {
+  currentProject,
   currentResource,
   followProject,
   type ProjectView,
@@ -42,6 +44,21 @@ function editor(
   textarea.value = value;
   if (field === "translation") textarea.placeholder = t("edit.untranslated");
   return textarea;
+}
+
+/** Rows standing for Segments still being made or read. */
+function placeholderRows(): HTMLLIElement[] {
+  return Array.from({ length: 3 }, () => {
+    const li = document.createElement("li");
+    li.dataset.placeholder = "";
+    li.className = "flex flex-col gap-2 py-2";
+    const time = document.createElement("div");
+    time.className = "skeleton h-4 w-48";
+    const text = document.createElement("div");
+    text.className = "skeleton h-10 w-full";
+    li.append(time, text);
+    return li;
+  });
 }
 
 function option(value: string, label: string): HTMLOptionElement {
@@ -87,6 +104,8 @@ export default class TranscriptController extends Controller {
   declare readonly exportTargets: HTMLButtonElement[];
 
   private unlisten?: UnlistenFn;
+  /** The task running now, whose results the editor holds Placeholders for. */
+  private runningTask: TaskKind | null = null;
 
   async connect(): Promise<void> {
     this.unlisten = await followProject((project) => this.show(project));
@@ -94,6 +113,19 @@ export default class TranscriptController extends Controller {
 
   disconnect(): void {
     this.unlisten?.();
+  }
+
+  async followTask({
+    detail,
+  }: CustomEvent<{ task: TaskKind | null }>): Promise<void> {
+    this.runningTask = detail.task;
+    this.show(await currentProject());
+  }
+
+  /** Stands Placeholders in for the Segments of a Resource being read. */
+  showLoading(): void {
+    this.listTarget.replaceChildren(...placeholderRows());
+    this.emptyTarget.hidden = true;
   }
 
   async edit(event: Event): Promise<void> {
@@ -143,10 +175,13 @@ export default class TranscriptController extends Controller {
     this.headingTarget.textContent = project?.current_resource ?? "";
     this.showLanguages(project);
     this.showSegments(segments, showsTranslation);
+    const isAwaitingSegments =
+      segments.length === 0 && this.runningTask === "transcribe";
+    if (isAwaitingSegments) this.showLoading();
     const hasTranslation = segments.some(
       (segment) => segment.translation !== undefined,
     );
-    this.emptyTarget.hidden = segments.length > 0;
+    this.emptyTarget.hidden = segments.length > 0 || isAwaitingSegments;
     for (const target of this.exportTargets) {
       const needsTranslation =
         target.dataset.transcriptContentParam !== "original";
@@ -186,10 +221,24 @@ export default class TranscriptController extends Controller {
           item(segment, index, showsTranslation),
         ),
       );
-      return;
+    } else {
+      editors.forEach((textarea, index) => {
+        if (textarea !== document.activeElement) textarea.value = values[index];
+      });
     }
-    editors.forEach((textarea, index) => {
-      if (textarea !== document.activeElement) textarea.value = values[index];
-    });
+    this.showPendingTranslations();
+  }
+
+  /** Marks each translation still to come while a translation runs. */
+  private showPendingTranslations(): void {
+    const isTranslating = this.runningTask === "translate";
+    for (const textarea of this.listTarget.querySelectorAll<HTMLTextAreaElement>(
+      "textarea.translation",
+    )) {
+      textarea.classList.toggle(
+        "skeleton",
+        isTranslating && textarea.value === "",
+      );
+    }
   }
 }

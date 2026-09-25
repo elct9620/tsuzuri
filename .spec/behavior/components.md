@@ -80,6 +80,16 @@ Finding every Component the running platform needs before a Mode runs: the path 
 | When | the components panel loads |
 | Then | it offers no restoring of the default |
 
+## `CP-023` Showing a Placeholder while Components are found
+
+Finding a Component runs it, which takes a moment on first use.
+
+| Step | Statement |
+| --- | --- |
+| Given | the components panel whose statuses are still being found |
+| When | it shows |
+| Then | each status is a Placeholder |
+
 ## `CP-014` Reporting Bundled Variants that do not run
 
 | Step | Statement |

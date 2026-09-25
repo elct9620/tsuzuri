@@ -36,7 +36,8 @@ describe("ComponentsController", () => {
     document.body.innerHTML = `
       <ul data-controller="components">
         <li>
-          <span data-components-target="status" data-component="llama"></span>
+          <span data-components-target="placeholder"></span>
+          <span data-components-target="status" data-component="llama" hidden></span>
           <button data-component="llama" data-action="components#choose">指定</button>
           <button data-components-target="restore" data-component="llama" data-action="components#restore" hidden>還原預設值</button>
         </li>
@@ -217,5 +218,18 @@ describe("ComponentsController", () => {
     });
 
     expect(restoreButton().hidden).toBe(true);
+  });
+
+  // @behavior CP-023
+  it("shows a Placeholder while the statuses are still being found", async () => {
+    await mountWith({ component_statuses: () => new Promise(() => {}) });
+
+    expect([
+      document.querySelector<HTMLElement>(
+        '[data-components-target="placeholder"]',
+      )!.hidden,
+      document.querySelector<HTMLElement>('[data-components-target="status"]')!
+        .hidden,
+    ]).toEqual([false, true]);
   });
 });

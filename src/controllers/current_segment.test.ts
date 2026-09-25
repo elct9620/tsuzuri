@@ -106,7 +106,6 @@ describe("Current Segment", () => {
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="empty"></p>
         <ol data-transcript-target="list"></ol>
-        <datalist data-transcript-target="speakers"></datalist>
       </main>
     `;
     application = Application.start();

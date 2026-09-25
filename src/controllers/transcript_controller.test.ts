@@ -15,6 +15,7 @@ import {
   notificationDetail,
   notifications,
 } from "../ui/test_notification";
+import SpeakersController from "./speakers_controller";
 import TranscriptController from "./transcript_controller";
 
 describe("TranscriptController", () => {
@@ -89,8 +90,8 @@ describe("TranscriptController", () => {
     };
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <section data-controller="transcript"
-        data-action="progress:task->transcript#followTask project:select->transcript#showLoading">
+      <section data-controller="transcript speakers"
+        data-action="progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->speakers#follow">
         <div id="progress" data-controller="progress" hidden>
           <span data-progress-target="summary"></span>
           <ul data-progress-target="steps"></ul>
@@ -107,7 +108,6 @@ describe("TranscriptController", () => {
           <button id="save-bilingual" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="bilingual" disabled>雙語</button>
         </div>
         <ol data-transcript-target="list"></ol>
-        <datalist id="speakers" data-transcript-target="speakers"></datalist>
       </section>
     `;
     mockIPC(
@@ -126,6 +126,7 @@ describe("TranscriptController", () => {
     application.register("field", FieldController);
     application.register("notification", NotificationController);
     application.register("progress", ProgressController);
+    application.register("speakers", SpeakersController);
     application.register("transcript", TranscriptController);
     await settle();
   });
@@ -327,14 +328,54 @@ describe("TranscriptController", () => {
     expect([placeholders() > 0, fields()]).toEqual([true, []]);
   });
 
+  /** Opens the Speaker menu of the Segment at `index`, as focusing its button does. */
+  function openSpeakers(index = 0): HTMLElement {
+    const opener = document.querySelectorAll<HTMLElement>(".speaker")[index];
+    opener.dispatchEvent(new FocusEvent("focus"));
+    return opener.parentElement!;
+  }
+
+  /** The names a Speaker menu offers, the chosen one marked with `*`. */
+  const offeredSpeakers = (menu: HTMLElement) =>
+    [...menu.querySelectorAll<HTMLButtonElement>(".speakers button")].map(
+      (button) =>
+        `${button.textContent}${button.classList.contains("menu-active") ? "*" : ""}`,
+    );
+
+  async function nameSpeaker(name: string): Promise<void> {
+    const input =
+      openSpeakers().querySelector<HTMLInputElement>(".new-speaker")!;
+    input.value = name;
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    await settle();
+  }
+
+  async function chooseSpeaker(label: string, index = 0): Promise<void> {
+    const menu = openSpeakers(index);
+    await settle();
+    [...menu.querySelectorAll<HTMLButtonElement>(".speakers button")]
+      .find((button) => button.textContent === label)!
+      .click();
+    await settle();
+  }
+
+  const saidBy = (...speakers: string[]) =>
+    projectOf({
+      segments: speakers.map((speaker, at) => ({
+        start_ms: at * 1000,
+        end_ms: (at + 1) * 1000,
+        speaker,
+        text: "你好",
+      })),
+    });
+
   // @behavior ED-012
-  it("writes the Speaker named for a Segment to the Project", async () => {
+  it("writes a new Speaker named for a Segment to the Project", async () => {
     await hold(
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "你好" }] }),
     );
 
-    edit("input.speaker", "co");
-    await settle();
+    await nameSpeaker("co");
 
     expect(sent("edit_segment")).toEqual({
       index: 0,
@@ -344,14 +385,10 @@ describe("TranscriptController", () => {
   });
 
   // @behavior ED-013
-  it("offers the Speakers already named to each Segment", async () => {
+  it("offers every Speaker whatever a Segment names", async () => {
     await hold(
       projectOf({
-        segments: [
-          { start_ms: 0, end_ms: 1000, speaker: "co", text: "你好" },
-          { start_ms: 1000, end_ms: 2000, speaker: "cl", text: "嗨" },
-          { start_ms: 2000, end_ms: 3000, speaker: "co", text: "再見" },
-        ],
+        ...saidBy("co", "cl", "co"),
         translation_glossary: {
           file: "/talks/glossary.csv",
           term_count: 2,
@@ -360,13 +397,35 @@ describe("TranscriptController", () => {
       }),
     );
 
-    const offered = [...document.querySelectorAll("#speakers option")].map(
-      (option) => (option as HTMLOptionElement).value,
-    );
-    expect([
-      offered,
-      document.querySelector("input.speaker")!.getAttribute("list"),
-    ]).toEqual([["cl", "co", "小明"], "speakers"]);
+    const menu = openSpeakers(0);
+
+    expect(offeredSpeakers(menu)).toEqual(["cl", "co*", "小明", "清除說話者"]);
+  });
+
+  // @behavior ED-032
+  it("chooses a Speaker from the menu", async () => {
+    await hold(saidBy("co", "cl"));
+
+    await chooseSpeaker("cl");
+
+    expect(sent("edit_segment")).toEqual({
+      index: 0,
+      field: "speaker",
+      value: "cl",
+    });
+  });
+
+  // @behavior ED-033
+  it("clears a Segment's Speaker", async () => {
+    await hold(saidBy("co"));
+
+    await chooseSpeaker("清除說話者");
+
+    expect(sent("edit_segment")).toEqual({
+      index: 0,
+      field: "speaker",
+      value: "",
+    });
   });
 
   /** A Project in `zh-TW` of one Segment, whose Translation Glossary names `speakers`. */
@@ -379,11 +438,6 @@ describe("TranscriptController", () => {
         speakers,
       },
     });
-  }
-
-  async function nameSpeaker(name: string): Promise<void> {
-    edit("input.speaker", name);
-    await settle();
   }
 
   // @behavior ED-022
@@ -440,11 +494,14 @@ describe("TranscriptController", () => {
 
     const inputs = [...document.querySelectorAll<HTMLInputElement>("li input")];
     const textFields = [...document.querySelectorAll<HTMLElement>("li .field")];
+    const speakers = [...document.querySelectorAll<HTMLElement>("li .speaker")];
     expect(
       inputs.length > 0 &&
         textFields.length > 0 &&
+        speakers.length > 0 &&
         inputs.every((input) => input.disabled) &&
-        textFields.every(isFieldHeld),
+        textFields.every(isFieldHeld) &&
+        speakers.every((speaker) => speaker.classList.contains("btn-disabled")),
     ).toBe(true);
   });
 
@@ -465,7 +522,7 @@ describe("TranscriptController", () => {
   it("names the icon that opens a Segment's changes", async () => {
     await hold(translated);
 
-    const opener = document.querySelector("li .dropdown [role=button]");
+    const opener = document.querySelector("li .dropdown-left [role=button]");
     expect([
       opener?.getAttribute("aria-label"),
       opener?.querySelector("svg") !== null,

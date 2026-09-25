@@ -77,6 +77,8 @@ const zhHant: typeof en = {
     speakerAdded: "已把「{{name}}」加入詞彙表",
     speakerNotAdded: "沒有加入詞彙表",
     speaker: "說話者",
+    newSpeakerName: "新名稱，按 Enter",
+    clearSpeaker: "清除說話者",
     insertAbove: "在上方新增",
     insertBelow: "在下方新增",
     split: "在游標處切割",

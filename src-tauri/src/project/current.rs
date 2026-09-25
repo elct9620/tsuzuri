@@ -2603,6 +2603,28 @@ mod tests {
         );
     }
 
+    // @behavior PJ-096
+    #[test]
+    fn clears_a_speaker_from_the_original_and_every_translation() {
+        let dir = directory_of(
+            "pj-speaker-cleared",
+            &[
+                ("ep01.srt", &cue("co: 你好")),
+                ("ep01.en.srt", &cue("co: Hello")),
+            ],
+        );
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Speaker, String::new())
+            .unwrap();
+
+        assert_eq!(
+            [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
+            [cue("你好"), cue("Hello")]
+        );
+    }
+
     // @behavior PJ-078
     #[test]
     fn leaves_a_translations_cue_without_a_matching_segment_as_it_is() {

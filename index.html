@@ -15,9 +15,9 @@
   >
     <main
       class="flex h-dvh flex-col"
-      data-controller="project transcript segment-changes dialog comparison"
+      data-controller="project transcript segment-changes dialog comparison speakers"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask timeline:current->transcript#showCurrent preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark versions:compare-with->comparison#compareWith"
+      data-action="progress:task->transcript#followTask timeline:current->transcript#showCurrent preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow versions:compare-with->comparison#compareWith"
     >
       <section class="hero flex-1" data-project-target="start">
         <div class="hero-content flex-col text-center">
@@ -632,10 +632,6 @@
               data-transcript-target="list"
               data-comparison-target="list"
             ></ol>
-            <datalist
-              id="speakers"
-              data-transcript-target="speakers"
-            ></datalist>
           </div>
         </div>
         <div class="drawer-side">

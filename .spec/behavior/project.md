@@ -762,3 +762,11 @@ A name changed in the Translation Glossary since a translation was written leave
 | When | the Project is read |
 | Then | its Current Resource is said to be translated into `en` |
 
+## `PJ-096` Clearing a Speaker from the original and every translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose `ep01.srt` reads `co: 你好` and `ep01.en.srt` `co: Hello` |
+| When | the Speaker of its Segment is set to nothing |
+| Then | `ep01.srt` reads `你好` and `ep01.en.srt` reads `Hello` |
+

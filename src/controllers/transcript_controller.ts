@@ -8,9 +8,7 @@ import {
   exportPath,
   followProject,
   saveSrt,
-  saveTranslationGlossary,
   showTranslation,
-  translationGlossaryTable,
   type ProjectView,
   type Segment,
   type SegmentField,
@@ -27,7 +25,7 @@ import {
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
-import { notify, notifyFailure, type Notification } from "../ui/notification";
+import { notify, notifyFailure } from "../ui/notification";
 import { formatTime } from "../ui/time";
 import type { TaskKind } from "./progress_controller";
 
@@ -48,11 +46,6 @@ function editor(
   editor.dataset.action =
     "focus->field#remember compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent blur->field#leave field:change->transcript#edit";
   return editor;
-}
-
-/** What a text field or an input holds. */
-function enteredText(field: HTMLElement): string {
-  return isField(field) ? fieldValue(field) : (field as HTMLInputElement).value;
 }
 
 /** Rows standing for Segments still being made or read. */
@@ -77,17 +70,51 @@ function option(value: string, label: string): HTMLOptionElement {
   return choice;
 }
 
-/** Who says the Segment, chosen from the Speakers already named or typed anew. */
-function speakerEditor(index: number, speaker: string): HTMLInputElement {
-  const input = document.createElement("input");
-  input.className = "speaker input input-xs w-28";
-  input.setAttribute("list", "speakers");
-  input.dataset.index = String(index);
-  input.dataset.field = "speaker";
-  input.dataset.action = "change->transcript#edit";
-  input.placeholder = t("edit.speaker");
-  input.value = speaker;
-  return input;
+/** Shows who says a Segment on its Speaker button, or that nobody is named yet. */
+function labelSpeaker(opener: HTMLElement, speaker: string): void {
+  opener.textContent = speaker || t("edit.speaker");
+  opener.classList.toggle("text-base-content/40", speaker === "");
+}
+
+/**
+ * Who says the Segment, in a menu whose names `speakers#list` lists as it opens, so
+ * every Speaker is offered whatever the Segment names now.
+ */
+function speakerMenu(index: number, speaker: string): HTMLElement {
+  const dropdown = document.createElement("div");
+  dropdown.className = "dropdown";
+  const opener = document.createElement("div");
+  opener.tabIndex = 0;
+  opener.setAttribute("role", "button");
+  opener.className =
+    "speaker btn btn-xs w-28 justify-start truncate font-normal";
+  opener.dataset.field = "speaker";
+  opener.dataset.action = "focus->speakers#list";
+  opener.dataset.speakersIndexParam = String(index);
+  labelSpeaker(opener, speaker);
+  const card = document.createElement("div");
+  card.tabIndex = 0;
+  card.className =
+    "dropdown-content card card-sm z-10 w-48 bg-base-100 shadow-md";
+  const body = document.createElement("div");
+  body.className = "card-body gap-1 p-2";
+  const name = document.createElement("input");
+  name.className = "new-speaker input input-xs";
+  name.placeholder = t("edit.newSpeakerName");
+  name.dataset.action = "keydown.enter->speakers#name:!composing:prevent";
+  name.dataset.speakersIndexParam = String(index);
+  const names = document.createElement("ul");
+  names.className = "speakers menu menu-sm w-full p-0";
+  body.append(name, names);
+  card.append(body);
+  dropdown.append(opener, card);
+  return dropdown;
+}
+
+/** Keeps the menu `opener` opens shut while `isHeld`, as a disabled button would be. */
+function holdMenu(opener: HTMLElement, isHeld: boolean): void {
+  opener.tabIndex = isHeld ? -1 : 0;
+  opener.classList.toggle("btn-disabled", isHeld);
 }
 
 /** The start or the end of a Segment, typed as a time. */
@@ -158,7 +185,7 @@ function item(
   heading.append(
     timeEditor(index, "start", segment.start_ms),
     timeEditor(index, "end", segment.end_ms),
-    speakerEditor(index, segment.speaker ?? ""),
+    speakerMenu(index, segment.speaker ?? ""),
   );
   const editors = document.createElement("div");
   editors.className = "list-col-grow";
@@ -176,7 +203,6 @@ export default class TranscriptController extends Controller {
     "export",
     "heading",
     "translationLanguage",
-    "speakers",
   ];
 
   declare readonly listTarget: HTMLOListElement;
@@ -185,8 +211,6 @@ export default class TranscriptController extends Controller {
   declare readonly headingTarget: HTMLElement;
   /** Which of the Current Resource's translations the editor shows, or none. */
   declare readonly translationLanguageTarget: HTMLSelectElement;
-  /** The Speakers the Current Resource names, which each Speaker field offers. */
-  declare readonly speakersTarget: HTMLDataListElement;
   /** Each export, enabled once the Project has the text it writes. */
   declare readonly exportTargets: HTMLButtonElement[];
 
@@ -227,58 +251,11 @@ export default class TranscriptController extends Controller {
       await editSegment(
         Number(field.dataset.index),
         field.dataset.field as SegmentField,
-        enteredText(field),
+        fieldValue(field),
       );
-      notify({
-        title: t("edit.saved"),
-        kind: "success",
-        ...this.speakerOffer(field),
-      });
+      notify({ title: t("edit.saved"), kind: "success" });
     } catch (error) {
       notifyFailure(t("edit.notSaved"), error);
-    }
-  }
-
-  /** An offer to add the Speaker just named to the Translation Glossary, when it names none such. */
-  private speakerOffer(
-    field: HTMLElement,
-  ): Pick<Notification, "detail" | "action"> {
-    const name = enteredText(field).trim();
-    const glossarySpeakers = this.project?.translation_glossary?.speakers ?? [];
-    if (field.dataset.field !== "speaker" || name === "") return {};
-    if (glossarySpeakers.includes(name)) return {};
-    return {
-      detail: t("edit.newSpeaker", { name }),
-      action: {
-        label: t("edit.addSpeaker"),
-        run: () => void this.addSpeaker(name),
-      },
-    };
-  }
-
-  /** Marks the term `name` in the Primary Language column as a Speaker, adding the term when the glossary has none. */
-  private async addSpeaker(name: string): Promise<void> {
-    try {
-      const table = await translationGlossaryTable();
-      const column = table.languages.indexOf(this.project?.language ?? "");
-      const term = table.rows.find((row) => row.words[column] === name);
-      const rows = term
-        ? table.rows.map((row) =>
-            row === term ? { ...row, is_speaker: true } : row,
-          )
-        : [
-            ...table.rows,
-            {
-              words: table.languages.map((_, at) =>
-                at === column ? name : "",
-              ),
-              is_speaker: true,
-            },
-          ];
-      await saveTranslationGlossary(rows);
-      notify({ title: t("edit.speakerAdded", { name }), kind: "success" });
-    } catch (error) {
-      notifyFailure(t("edit.speakerNotAdded"), error);
     }
   }
 
@@ -354,7 +331,6 @@ export default class TranscriptController extends Controller {
     const isTranslationShown = (project?.shown_translation ?? null) !== null;
     this.headingTarget.textContent = project?.current_resource ?? "";
     this.showLanguages(project);
-    this.showSpeakers(segments, project?.translation_glossary?.speakers ?? []);
     this.showSegments(segments, isTranslationShown);
     this.holdFields(project);
     const isAwaitingSegments =
@@ -413,7 +389,9 @@ export default class TranscriptController extends Controller {
     } else {
       editors.forEach((field, index) => {
         if (field === document.activeElement) return;
-        if (isField(field)) setFieldValue(field, values[index]);
+        if (field.dataset.field === "speaker")
+          labelSpeaker(field, values[index]);
+        else if (isField(field)) setFieldValue(field, values[index]);
         else (field as HTMLInputElement).value = values[index];
       });
     }
@@ -429,7 +407,7 @@ export default class TranscriptController extends Controller {
       mode.language !== project?.shown_translation;
     for (const field of this.listTarget.querySelectorAll<
       HTMLInputElement | HTMLButtonElement | HTMLElement
-    >("input, button, [contenteditable]")) {
+    >('input, button, [role="button"], [contenteditable]')) {
       const isFree =
         mode === null ||
         (mode.mode === "translation" && field.classList.contains("text")) ||
@@ -439,21 +417,10 @@ export default class TranscriptController extends Controller {
         field instanceof HTMLButtonElement
       )
         field.disabled = !isFree;
+      else if (field.getAttribute("role") === "button")
+        holdMenu(field, !isFree);
       else setFieldHeld(field, !isFree);
     }
-  }
-
-  /** Offers the Speakers the Segments name and those the Translation Glossary names. */
-  private showSpeakers(segments: Segment[], glossarySpeakers: string[]): void {
-    const speakers = new Set([
-      ...segments.flatMap((segment) =>
-        segment.speaker ? [segment.speaker] : [],
-      ),
-      ...glossarySpeakers,
-    ]);
-    this.speakersTarget.replaceChildren(
-      ...[...speakers].sort().map((speaker) => option(speaker, speaker)),
-    );
   }
 
   /** Marks each translation still to come while a translation runs. */

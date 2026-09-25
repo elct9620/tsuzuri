@@ -149,7 +149,6 @@ describe("ComparisonController", () => {
         <div data-comparison-target="menu"></div>
         <p data-transcript-target="empty"></p>
         <ol data-transcript-target="list" data-comparison-target="list"></ol>
-        <datalist data-transcript-target="speakers"></datalist>
       </main>
       ${NOTIFICATION_STACK}
     `;

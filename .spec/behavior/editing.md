@@ -98,21 +98,39 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | When | that Resource is selected |
 | Then | the Project is read again, so the editor shows what it holds |
 
-## `ED-012` Naming the Speaker of a Segment
+## `ED-012` Naming a new Speaker for a Segment
 
 | Step | Statement |
 | --- | --- |
 | Given | a Project in the panel |
-| When | the first Segment's Speaker is set to `co` |
+| When | `co` is typed as a new name in the first Segment's Speaker menu |
 | Then | the edit is written to the Project as its Speaker |
 
-## `ED-013` Offering the Speakers already named
+## `ED-013` Offering every Speaker whatever a Segment names
+
+A choice limited to names like the one already set would hide the others, the very ones a correction reaches for.
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource whose Segments are said by `co` and `cl`, in a Project whose Translation Glossary names the Speaker `小明` |
-| When | the editor shows it |
-| Then | each Segment's Speaker offers `cl`, `co` and `小明` to choose from |
+| When | the Speaker menu of a Segment said by `co` is opened |
+| Then | it offers `cl`, `co` and `小明`, with `co` marked as chosen |
+
+## `ED-032` Choosing a Speaker from the menu
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Segments are said by `co` and `cl` |
+| When | `cl` is chosen in the Speaker menu of a Segment said by `co` |
+| Then | the edit is written to the Project with `cl` as its Speaker |
+
+## `ED-033` Clearing a Segment's Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment said by `co` |
+| When | clearing is chosen in its Speaker menu |
+| Then | the edit is written to the Project with no Speaker |
 
 ## `ED-014` Changing a Segment's times in the editor
 

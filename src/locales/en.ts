@@ -78,6 +78,8 @@ const en = {
     speakerAdded: 'Added "{{name}}" to the glossary',
     speakerNotAdded: "Not added to the glossary",
     speaker: "Speaker",
+    newSpeakerName: "New name, then Enter",
+    clearSpeaker: "Clear speaker",
     insertAbove: "Insert above",
     insertBelow: "Insert below",
     split: "Split at cursor",

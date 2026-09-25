@@ -68,7 +68,6 @@ describe("SegmentChangesController", () => {
           <button id="shift" data-action="segment-changes#shift">平移</button>
         </dialog>
         <ol data-transcript-target="list"></ol>
-        <datalist id="speakers" data-transcript-target="speakers"></datalist>
       </section>
     `;
     mockIPC(

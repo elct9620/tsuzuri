@@ -13,6 +13,7 @@ export interface Segment {
 export interface ProjectOptions {
   bilingual_order: "original-first" | "translation-first";
   is_bilingual_autosaved: boolean;
+  is_overwrite_backed_up: boolean;
 }
 
 /** A Resource as the Resource list shows it. */

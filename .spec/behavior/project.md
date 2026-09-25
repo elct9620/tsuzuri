@@ -453,6 +453,46 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | its times are changed to 2 to 1 seconds |
 | Then | the change is refused as `invalid-times` and the subtitle is left as it was |
 
+## `PJ-066` Backing up the original before a transcription overwrites it
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project keeping Backups, whose `lecture.srt` reads `舊的` |
+| When | `lecture` is transcribed again |
+| Then | `.tsuzuri/history/` holds a Backup of `lecture.srt` reading `舊的` |
+
+## `PJ-067` Backing up a translation before it is written again
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project keeping Backups, whose `ep01.en.srt` reads `Hello` |
+| When | its translation into `en` is written again |
+| Then | `.tsuzuri/history/` holds a Backup of `ep01.en.srt` reading `Hello` |
+
+## `PJ-068` Keeping no Backup unless asked
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project not keeping Backups, whose `ep01.en.srt` exists |
+| When | its translation into `en` is written again |
+| Then | the Project has no `.tsuzuri/history/` |
+
+## `PJ-069` Leaving Backups out of the Resources
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `ep01.srt` and `.tsuzuri/history/ep01.20260925T023000Z.srt` |
+| When | it is opened |
+| Then | the Project lists only `ep01` |
+
+## `PJ-070` Choosing to keep Backups in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of a Project not keeping Backups |
+| When | keeping them is turned on |
+| Then | the Project Options are set to keep Backups |
+
 ## `PJ-048` Offering only the general settings without a Project
 
 | Step | Statement |

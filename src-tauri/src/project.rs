@@ -1,11 +1,13 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::failure::Failure;
+use crate::history;
 use crate::language::{Language, LanguagePair};
 use crate::project_config::{BilingualOrder, ProjectConfig, ProjectOptions};
 use crate::resource::{self, Resource};
@@ -615,6 +617,23 @@ impl CurrentProject {
         })
     }
 
+    /// Keeps `subtitle` as a Backup before it is overwritten, when the Project in `directory` asks
+    /// for Backups and the file exists.
+    pub fn back_up_before_overwrite(
+        &self,
+        directory: &Path,
+        subtitle: &Path,
+    ) -> Result<(), Failure> {
+        let is_backed_up = matches!(
+            self.lock().project.as_ref(),
+            Some(project) if project.directory == directory && project.options.is_overwrite_backed_up
+        );
+        if is_backed_up {
+            history::back_up(directory, subtitle, SystemTime::now())?;
+        }
+        Ok(())
+    }
+
     /// Writes the Bilingual SRTs of the named Resource in `directory`, as the Project's own
     /// `write_bilingual_subtitles` does, if that directory is still the Project's.
     pub fn write_bilingual_subtitles(
@@ -698,6 +717,7 @@ impl CurrentProject {
             .directory
             .join(format!("{}.{}.srt", source.name, target.code()));
         let translation = Transcript { segments };
+        self.back_up_before_overwrite(&source.directory, &path)?;
         std::fs::write(
             path,
             translation_only(&translation).to_srt(SrtContent::Original),
@@ -972,7 +992,7 @@ pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<()
 mod tests {
     use super::*;
     use crate::project_config::ProjectConfig;
-    use crate::test_support::{project_of, TempDir};
+    use crate::test_support::{backups_in, project_of, TempDir};
 
     fn segment(text: &str, translation: Option<&str>) -> Segment {
         Segment {
@@ -1763,6 +1783,86 @@ mod tests {
             (refused, read(&dir, "ep01.srt")),
             (Err(Failure::InvalidTimes), srt_of(&[(0, 1_000, "你好")]))
         );
+    }
+
+    /// Whether `backups` is one Backup of `stem`, stamped with a UTC time, holding `content`.
+    fn is_one_backup_of(backups: &[(String, String)], stem: &str, content: &str) -> bool {
+        match backups {
+            [(name, held)] => {
+                let stamp = name
+                    .strip_prefix(&format!("{stem}."))
+                    .and_then(|rest| rest.strip_suffix("Z.srt"));
+                stamp.is_some_and(|stamp| stamp.len() == 15) && held == content
+            }
+            _ => false,
+        }
+    }
+
+    /// A Project in `zh-TW` of `ep01` translated into `en` as `Hello`, keeping Backups as asked.
+    fn backup_project_in(dir: &TempDir, is_overwrite_backed_up: bool) -> CurrentProject {
+        std::fs::write(dir.path().join("ep01.srt"), cue("大家好")).unwrap();
+        std::fs::write(dir.path().join("ep01.en.srt"), cue("Hello")).unwrap();
+        let current = project_in(dir);
+        current
+            .set_options(ProjectOptions {
+                is_overwrite_backed_up,
+                ..ProjectOptions::default()
+            })
+            .unwrap();
+        current
+    }
+
+    // @behavior PJ-067
+    #[test]
+    fn backs_up_a_translation_before_it_is_written_again() {
+        let dir = TempDir::new("pj-backup-translation");
+        let current = backup_project_in(&dir, true);
+        let source = current.snapshot().unwrap();
+
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("大家好", Some("Hi"))],
+            )
+            .unwrap();
+
+        assert!(is_one_backup_of(
+            &backups_in(dir.path()),
+            "ep01.en",
+            &cue("Hello")
+        ));
+    }
+
+    // @behavior PJ-068
+    #[test]
+    fn keeps_no_backup_unless_asked() {
+        let dir = TempDir::new("pj-backup-off");
+        let current = backup_project_in(&dir, false);
+        let source = current.snapshot().unwrap();
+
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("大家好", Some("Hi"))],
+            )
+            .unwrap();
+
+        assert!(!dir.path().join(".tsuzuri").exists());
+    }
+
+    // @behavior PJ-069
+    #[test]
+    fn leaves_backups_out_of_the_resources() {
+        let dir = directory_of("pj-backup-hidden", &[("ep01.srt", &cue("你好"))]);
+        let history = dir.path().join(crate::history::HISTORY_DIR);
+        std::fs::create_dir_all(&history).unwrap();
+        std::fs::write(history.join("ep01.20260925T023000Z.srt"), cue("舊的")).unwrap();
+
+        let current = project_in(&dir);
+
+        assert_eq!(current.view().unwrap().resource_names(), ["ep01"]);
     }
 
     // @behavior PJ-054

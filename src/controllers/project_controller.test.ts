@@ -64,6 +64,7 @@ describe("ProjectController", () => {
             <option value="translation-first">譯文在上</option>
           </select>
           <input type="checkbox" data-project-target="bilingualAutosave" data-action="change->project#setOptions" />
+          <input type="checkbox" data-project-target="overwriteBackup" data-action="change->project#setOptions" />
         </fieldset>
       </main>
     `;
@@ -250,6 +251,7 @@ describe("ProjectController", () => {
       options: {
         bilingual_order: "translation-first",
         is_bilingual_autosaved: false,
+        is_overwrite_backed_up: false,
       },
     });
   });
@@ -289,6 +291,25 @@ describe("ProjectController", () => {
       options: {
         bilingual_order: "original-first",
         is_bilingual_autosaved: true,
+        is_overwrite_backed_up: false,
+      },
+    });
+  });
+
+  // @behavior PJ-070
+  it("sets the Project to keep Backups when turned on in the settings", async () => {
+    await hold(projectOf());
+    const backup = target<HTMLInputElement>("overwriteBackup");
+
+    backup.checked = true;
+    backup.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(sent("set_project_options")).toEqual({
+      options: {
+        bilingual_order: "original-first",
+        is_bilingual_autosaved: false,
+        is_overwrite_backed_up: true,
       },
     });
   });

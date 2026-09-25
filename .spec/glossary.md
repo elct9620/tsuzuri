@@ -52,7 +52,7 @@ The Language a Project's Resources are spoken and transcribed in, and the one ev
 
 ### Project Options
 
-What the user sets for one Project in the settings, beside its Primary Language: its Bilingual Order and whether a Bilingual SRT is saved beside each translation. Each has a default the Project keeps until it is changed.
+What the user sets for one Project in the settings, beside its Primary Language: its Bilingual Order, whether a Bilingual SRT is saved beside each translation, and whether a subtitle about to be overwritten is kept as a Backup. Each has a default the Project keeps until it is changed.
 
 ### Mode
 
@@ -157,6 +157,10 @@ A grey shape standing where content is still being made or read, such as a row b
 ### Segment Change
 
 A change to the Segments themselves rather than to a text: new times for one, one inserted before or after another, one deleted, one split in two at a point in its text, a run of them merged, or a run of them shifted in time. It is made to the original and every translation of the Current Resource together, since a translation is matched to its original by time.
+
+### Backup
+
+A copy of a subtitle kept in the Project's `.tsuzuri/history/` just before Tsuzuri overwrites it, named `[name].srt` or `[name].[lang].srt` with the UTC time it was taken before `.srt`, such as `ep01.en.20260925T023000Z.srt`. Only taken when the Project Options ask for it; the Resource list never shows one.
 
 ### Stray Process
 

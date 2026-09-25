@@ -97,6 +97,7 @@ pub async fn run_transcribe<R: Runtime>(
 
     let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
     let transcript = Transcript::from_srt(&srt)?;
+    project.back_up_before_overwrite(&job.directory, &job.subtitle)?;
     std::fs::write(&job.subtitle, &srt)?;
     project.refresh_resources(&job.directory)?;
     project.write_bilingual_subtitles(&job.directory, &job.name, None)?;
@@ -478,6 +479,33 @@ mod tests {
         assert_eq!(
             std::fs::read_to_string(dir.join("lecture.zh-TW.en.srt")).unwrap(),
             WHISPER_SRT
+        );
+    }
+
+    // @behavior PJ-066
+    #[tokio::test]
+    async fn backs_up_the_original_before_a_transcription_overwrites_it() {
+        let fixture = Fixture::new("pj-backup-transcribed", TWO_SECOND_WAV);
+        let dir = fixture.project_dir();
+        let old = "1\n00:00:00,000 --> 00:00:01,000\n舊的\n";
+        std::fs::write(dir.join("lecture.srt"), old).unwrap();
+        std::fs::write(
+            dir.join("tsuzuri.config.json"),
+            r#"{"is_overwrite_backed_up":true}"#,
+        )
+        .unwrap();
+        fixture.open_in(Language::TraditionalChinese);
+        let target = fixture.project().transcription_target(true).unwrap();
+
+        fixture.run(&target).await.unwrap();
+
+        let backups = crate::test_support::backups_in(&dir);
+        assert_eq!(
+            backups
+                .iter()
+                .map(|(_, content)| content.as_str())
+                .collect::<Vec<_>>(),
+            [old]
         );
     }
 

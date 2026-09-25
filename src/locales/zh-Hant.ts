@@ -93,6 +93,9 @@ const zhHant: typeof en = {
     bilingualAutosave: "自動保存雙語",
     bilingualAutosaveHelp:
       "開啟後，每次寫出原文或譯文，都會在旁邊更新雙語 SRT（例如 ep01.zh-TW.en.srt），不必每次手動匯出。只影響這個專案。",
+    overwriteBackup: "覆蓋前備份",
+    overwriteBackupHelp:
+      "開啟後，轉錄或翻譯要覆蓋已有的字幕前，會先把舊檔複製到專案的 .tsuzuri/history 資料夾，檔名加上時間。只影響這個專案。",
     ffmpegHelp:
       "把影片或音訊轉成轉錄用的音檔。按「指定」選擇自己安裝的執行檔；沒有指定時，依序使用偵測到的和內建的版本。",
     whisperHelp:

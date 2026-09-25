@@ -93,6 +93,9 @@ const en = {
     bilingualAutosave: "Save bilingual",
     bilingualAutosaveHelp:
       "When on, each time the original or a translation is written, the bilingual SRT beside it (such as ep01.zh-TW.en.srt) is updated too, so it never needs exporting by hand. Applies to this project only.",
+    overwriteBackup: "Back up before overwrite",
+    overwriteBackupHelp:
+      "When on, a subtitle a transcription or translation is about to overwrite is first copied to the project’s .tsuzuri/history folder with the time in its name. Applies to this project only.",
     ffmpegHelp:
       "Turns video or audio into the audio file transcription reads. Choose an executable you installed; without one, the detected and then the bundled version is used.",
     whisperHelp:

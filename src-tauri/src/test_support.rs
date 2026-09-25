@@ -220,3 +220,21 @@ mod tests {
         assert_eq!(busy_runs, 0, "runs refused as a busy text file (ETXTBSY)");
     }
 }
+
+/// The content of each Backup in `directory`'s history, with its file name, in name order.
+pub fn backups_in(directory: &std::path::Path) -> Vec<(String, String)> {
+    let Ok(entries) = std::fs::read_dir(directory.join(crate::history::HISTORY_DIR)) else {
+        return Vec::new();
+    };
+    let mut backups: Vec<(String, String)> = entries
+        .map(|entry| {
+            let path = entry.unwrap().path();
+            (
+                path.file_name().unwrap().to_string_lossy().into_owned(),
+                std::fs::read_to_string(&path).unwrap(),
+            )
+        })
+        .collect();
+    backups.sort();
+    backups
+}

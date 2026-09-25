@@ -66,6 +66,7 @@ export default class ProjectController extends Controller {
     "language",
     "bilingualOrder",
     "bilingualAutosave",
+    "overwriteBackup",
   ];
 
   /** Shown while no Project is open. */
@@ -82,6 +83,7 @@ export default class ProjectController extends Controller {
   declare readonly languageTarget: HTMLSelectElement;
   declare readonly bilingualOrderTarget: HTMLSelectElement;
   declare readonly bilingualAutosaveTarget: HTMLInputElement;
+  declare readonly overwriteBackupTarget: HTMLInputElement;
 
   private unlisten?: UnlistenFn;
 
@@ -130,6 +132,7 @@ export default class ProjectController extends Controller {
       bilingual_order: this.bilingualOrderTarget
         .value as ProjectOptions["bilingual_order"],
       is_bilingual_autosaved: this.bilingualAutosaveTarget.checked,
+      is_overwrite_backed_up: this.overwriteBackupTarget.checked,
     };
     await this.report(() => invoke("set_project_options", { options }));
   }
@@ -173,6 +176,7 @@ export default class ProjectController extends Controller {
     this.bilingualOrderTarget.value = project.options.bilingual_order;
     this.bilingualAutosaveTarget.checked =
       project.options.is_bilingual_autosaved;
+    this.overwriteBackupTarget.checked = project.options.is_overwrite_backed_up;
   }
 
   /** The Project's own settings while one is open, opened at their tab when it has just opened. */

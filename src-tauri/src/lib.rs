@@ -1,5 +1,6 @@
 pub mod components;
 pub mod failure;
+pub mod history;
 pub mod language;
 pub mod models;
 pub mod pipeline;

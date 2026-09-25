@@ -9,6 +9,7 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
     options: {
       bilingual_order: "original-first",
       is_bilingual_autosaved: false,
+      is_overwrite_backed_up: false,
     },
     translation_glossary: null,
     resources: [resourceOf()],

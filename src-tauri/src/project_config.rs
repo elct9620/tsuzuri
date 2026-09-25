@@ -27,6 +27,8 @@ pub struct ProjectOptions {
     pub bilingual_order: BilingualOrder,
     /// Whether each translation keeps a Bilingual SRT beside it, written with either of its texts.
     pub is_bilingual_autosaved: bool,
+    /// Whether a subtitle about to be overwritten is first kept as a Backup.
+    pub is_overwrite_backed_up: bool,
 }
 
 /// Which text a Bilingual SRT puts first in each cue and in its file name.
@@ -68,6 +70,7 @@ mod tests {
             options: ProjectOptions {
                 bilingual_order: BilingualOrder::TranslationFirst,
                 is_bilingual_autosaved: true,
+                is_overwrite_backed_up: true,
             },
         };
 

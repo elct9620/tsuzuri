@@ -217,7 +217,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | `Progress` | 回報 Phase、百分比、專案已變更 | `AppHandle` 發出事件；`AppPorts` 轉交 | mock app 監聽事件 |
 | `Steps` | 啟動元件、逐行讀輸出、停止 | `AppPorts` 經由 `Processes` 與 shell plugin | 以 shell 腳本假裝元件 |
 
-介面以 `.spec/contract/ports.md` 為準。只有這兩個 trait，讓用例不依賴 Tauri；其餘協作直接呼叫函式，例外列在 3.1。
+介面以 `.spec/contract/ports.md` 為準。只有這兩個 trait，讓用例不依賴 Tauri；其餘協作直接呼叫函式，例外列在 3.1。`AppPorts` 記下它啟動的 PID，取消時只停這些。
 
 ### 3.5 生命週期
 
@@ -268,12 +268,12 @@ transcribe 指令                       translate 指令
 
 | 規則 | 做法 |
 |---|---|
-| 一次一個 | 先取得 `ModeLock` |
+| 一次一個 | `ModeLock::begin` |
 | 取消 | `cancel_task` 經 `ModeLock` |
 | 取消後 | 只結束它啟動的行程 |
 | 取波形 | 不是任務，不取鎖 |
 
-轉錄、翻譯與關掉常駐 llama-server 都先取得 `ModeLock`，後來的等前一個結束。取消時 `ModeRun` 丟下任務，只結束經它啟動的行程。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
+轉錄與翻譯以 `ModeLock::begin` 開始一個 `ModeRun`，關掉常駐 llama-server 也先取得 `ModeLock`，後來的等前一個結束。取消時 `ModeRun` 丟下任務，只結束經它啟動的行程。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
 
 ### 3.8 行程
 
@@ -298,6 +298,26 @@ transcribe 指令                       translate 指令
 ```
 
 偵測會執行元件的版本旗標，所以放在 tokio 的 blocking pool，視窗不會停住。每次找到都記錄來源與耗時。
+
+### 3.10 模式
+
+```
+lib.rs run() ── manage ──▶ Processes · CurrentProject · ResidentLlama · ModeLock
+                               │ 指令以 State<'_, T> 注入
+                               ▼
+command ── ModeLock::begin(AppPorts::new(..)) ──▶ ModeRun：執行權、ports、keep
+                                                     │ &ModeRun
+                                                     ▼
+                                                  用例（只看得到 Port）
+```
+
+| 模式 | 何時用 | 範例 |
+|---|---|---|
+| Composition Root | 組裝 app 範圍物件 | `lib.rs` |
+| 注入 State | 指令取得依賴 | `project/commands.rs` |
+| Mode Run | 任務範圍的狀態 | `transcription/commands.rs` |
+
+任務範圍的東西（取消、它啟動的行程、資源的 hold）由 `ModeRun` 擁有，不寄放在 app 範圍的物件上。design 6.4 的狀態機動工時重新檢討：Phases 與狀態應一起收進 `ModeRun`。
 
 ## 4 Webview
 

@@ -33,3 +33,18 @@ impl Transcript {
     pub fn to_srt(&self, content: SrtContent) -> String {}
 }
 ```
+
+## `Transcript::to_srt_with`
+
+Write a Transcript as `to_srt` does, naming each Speaker in a cue's text and in its translation as `names` gives it; a name `names` does not list stays as the Segment holds it.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+impl Transcript {
+    pub fn to_srt_with(&self, content: SrtContent, names: &SpeakerNames) -> String {}
+}
+```
+

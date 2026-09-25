@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
@@ -23,6 +24,14 @@ pub enum SrtContent {
     Translation,
     /// The original above the translation in the same cue.
     Bilingual,
+}
+
+/// What each text of a cue calls its Speaker, by the name its Segment holds; a Speaker's name can
+/// differ by Language, and a name not listed stays as the Segment holds it.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SpeakerNames {
+    pub text: HashMap<String, String>,
+    pub translation: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -59,6 +68,10 @@ impl Transcript {
     }
 
     pub fn to_srt(&self, content: SrtContent) -> String {
+        self.to_srt_with(content, &SpeakerNames::default())
+    }
+
+    pub fn to_srt_with(&self, content: SrtContent, names: &SpeakerNames) -> String {
         self.segments
             .iter()
             .enumerate()
@@ -68,7 +81,7 @@ impl Transcript {
                     index + 1,
                     format_timestamp(segment.start_ms),
                     format_timestamp(segment.end_ms),
-                    cue_text(segment, content)
+                    cue_text(segment, content, names)
                 )
             })
             .collect::<Vec<_>>()
@@ -76,26 +89,31 @@ impl Transcript {
     }
 }
 
-fn cue_text(segment: &Segment, content: SrtContent) -> String {
+fn cue_text(segment: &Segment, content: SrtContent, names: &SpeakerNames) -> String {
     // A translation edited down to nothing is no translation, so the cue keeps its original text.
     let translation = segment
         .translation
         .as_deref()
         .filter(|translation| !translation.trim().is_empty());
-    let with_speaker = |text: &str| match &segment.speaker {
-        Some(speaker) => format!("{speaker}: {}", cue_lines(text)),
+    let with_speaker = |line_names: &HashMap<String, String>, text: &str| match &segment.speaker {
+        Some(speaker) => {
+            let name = line_names.get(speaker).unwrap_or(speaker);
+            format!("{name}: {}", cue_lines(text))
+        }
         None => cue_lines(text),
     };
     match (content, translation) {
-        (SrtContent::Translation, Some(translation)) => with_speaker(translation),
+        (SrtContent::Translation, Some(translation)) => {
+            with_speaker(&names.translation, translation)
+        }
         (SrtContent::Bilingual, Some(translation)) => {
             format!(
                 "{}\n{}",
-                with_speaker(&segment.text),
-                with_speaker(translation)
+                with_speaker(&names.text, &segment.text),
+                with_speaker(&names.translation, translation)
             )
         }
-        _ => with_speaker(&segment.text),
+        _ => with_speaker(&names.text, &segment.text),
     }
 }
 
@@ -391,6 +409,43 @@ mod tests {
         assert_eq!(
             transcript.to_srt(SrtContent::Bilingual),
             cue_of("co: 你好\nco: Hello")
+        );
+    }
+
+    /// A Transcript of a Segment said by `小明`, `你好` translated as `Hello`, with `小明` named `Xiao Ming` in the translation.
+    fn xiao_ming() -> (Transcript, SpeakerNames) {
+        let transcript = Transcript {
+            segments: vec![Segment {
+                speaker: Some("小明".to_string()),
+                ..translated_segment(1000, 2000, "你好", "Hello")
+            }],
+        };
+        let names = SpeakerNames {
+            translation: HashMap::from([("小明".to_string(), "Xiao Ming".to_string())]),
+            ..SpeakerNames::default()
+        };
+        (transcript, names)
+    }
+
+    // @behavior TR-013
+    #[test]
+    fn writes_each_texts_own_name_for_its_speaker_in_a_bilingual_srt() {
+        let (transcript, names) = xiao_ming();
+
+        assert_eq!(
+            transcript.to_srt_with(SrtContent::Bilingual, &names),
+            cue_of("小明: 你好\nXiao Ming: Hello")
+        );
+    }
+
+    // @behavior TR-014
+    #[test]
+    fn writes_the_translations_name_for_its_speaker() {
+        let (transcript, names) = xiao_ming();
+
+        assert_eq!(
+            transcript.to_srt_with(SrtContent::Translation, &names),
+            cue_of("Xiao Ming: Hello")
         );
     }
 }

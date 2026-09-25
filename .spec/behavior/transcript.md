@@ -101,3 +101,22 @@ Reading and writing a Transcript as SRT, the one format every Mode shares: whisp
 | Given | a Transcript of a Segment said by `co`, `你好` translated as `Hello` |
 | When | it is written as a Bilingual SRT |
 | Then | its cue reads `co: 你好` above `co: Hello` |
+
+## `TR-013` Writing each text's own name for its Speaker in a Bilingual SRT
+
+A Speaker's name can differ by Language, so each text of a cue names it its own way.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Transcript of a Segment said by `小明`, `你好` translated as `Hello`, and `小明` named `Xiao Ming` in the translation |
+| When | it is written as a Bilingual SRT |
+| Then | its cue reads `小明: 你好` above `Xiao Ming: Hello` |
+
+## `TR-014` Writing the translation's name for its Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | a Transcript of a Segment said by `小明`, `你好` translated as `Hello`, and `小明` named `Xiao Ming` in the translation |
+| When | the translation is written as SRT |
+| Then | its cue reads `Xiao Ming: Hello` |
+

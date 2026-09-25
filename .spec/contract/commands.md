@@ -104,7 +104,7 @@ pub fn set_project_options(app: AppHandle, options: ProjectOptions) -> Result<()
 
 ## `current_project`
 
-The Project's directory, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments, or none before one is opened.
+The Project's directory, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments and whether it has a change to undo and to redo, or none before one is opened.
 
 ```rust
 pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
@@ -164,6 +164,22 @@ Keep the subtitle as an Overwrite Backup, then put the named Backup in its place
 
 ```rust
 pub fn restore_version(app: AppHandle, language: Option<Language>, backup: String) -> Result<(), Failure> {}
+```
+
+## `undo`
+
+Put the Current Resource's subtitles back as they were before its latest change in the Undo History, write them to the directory with the Bilingual SRTs they feed, and read the Current Resource again, emitting `project-changed`. With nothing to undo it changes nothing.
+
+```rust
+pub fn undo(app: AppHandle) -> Result<(), Failure> {}
+```
+
+## `redo`
+
+Make the Current Resource's latest undone change again, as `undo` puts one back. With nothing to redo it changes nothing.
+
+```rust
+pub fn redo(app: AppHandle) -> Result<(), Failure> {}
 ```
 
 ## `export_path`

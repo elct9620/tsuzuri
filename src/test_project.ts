@@ -17,6 +17,8 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
     media: null,
     segments: [],
     shown_translation: null,
+    has_undo: false,
+    has_redo: false,
     ...changes,
   };
 }

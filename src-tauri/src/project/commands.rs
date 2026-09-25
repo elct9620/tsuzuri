@@ -78,16 +78,30 @@ pub fn edit_segment(
     field: SegmentField,
     value: String,
 ) -> Result<(), Failure> {
-    let edited = app.state::<CurrentProject>().edit(index, field, value);
+    let result = app.state::<CurrentProject>().edit(index, field, value);
     app.announce_project();
-    edited
+    result
 }
 
 #[tauri::command]
 pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Failure> {
-    let changed = app.state::<CurrentProject>().change_segments(change);
+    let result = app.state::<CurrentProject>().change_segments(change);
     app.announce_project();
-    changed
+    result
+}
+
+#[tauri::command]
+pub fn undo(app: AppHandle) -> Result<(), Failure> {
+    let result = app.state::<CurrentProject>().undo();
+    app.announce_project();
+    result
+}
+
+#[tauri::command]
+pub fn redo(app: AppHandle) -> Result<(), Failure> {
+    let result = app.state::<CurrentProject>().redo();
+    app.announce_project();
+    result
 }
 
 #[tauri::command]
@@ -125,11 +139,11 @@ pub fn restore_version(
     language: Option<Language>,
     backup: String,
 ) -> Result<(), Failure> {
-    let restored = app
+    let result = app
         .state::<CurrentProject>()
         .restore_version(language, &backup);
     app.announce_project();
-    restored
+    result
 }
 
 #[tauri::command]

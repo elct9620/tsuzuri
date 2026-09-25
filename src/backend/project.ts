@@ -44,6 +44,10 @@ export interface ProjectView {
   segments: Segment[];
   /** The Language code of the translations the Segments carry. */
   shown_translation: string | null;
+  /** Whether the Current Resource has a change to undo. */
+  has_undo: boolean;
+  /** Whether the Current Resource has an undone change to redo. */
+  has_redo: boolean;
 }
 
 /** The Current Resource as the Resource list shows it, or none. */
@@ -130,6 +134,16 @@ export type SegmentChange =
 
 export function changeSegments(change: SegmentChange): Promise<void> {
   return invoke("change_segments", { change });
+}
+
+/** Takes back the Current Resource's latest change. */
+export function undo(): Promise<void> {
+  return invoke("undo");
+}
+
+/** Makes the Current Resource's latest undone change again. */
+export function redo(): Promise<void> {
+  return invoke("redo");
 }
 
 /** Which texts an SRT written from the Current Resource carries. */

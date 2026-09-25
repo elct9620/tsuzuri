@@ -61,6 +61,8 @@ pub fn run() {
             project::commands::current_project,
             project::commands::edit_segment,
             project::commands::change_segments,
+            project::commands::undo,
+            project::commands::redo,
             project::commands::subtitle_versions,
             project::commands::compare_versions,
             project::commands::restore_version,

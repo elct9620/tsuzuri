@@ -97,7 +97,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 | backend 模組 | Rust 模組 | 指令 |
 |---|---|---|
-| `project.ts` | `project/commands.rs` | 開啟、選擇、編輯、段落變更、匯出、版本、詞彙表 |
+| `project.ts` | `project/commands.rs` | 開啟、選擇、編輯、段落變更、復原與重做、匯出、版本、詞彙表 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
@@ -171,8 +171,9 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `transcript.rs`、`segment_change.rs`、`language.rs` | 領域 | Segment、Transcript、SRT、段落變更、語言 |
 | `project.rs` | 領域 | Project 聚合、雙語順序、編輯要寫回哪些字幕 |
 | `project/versions.rs` | 領域 | 逐 cue 比較兩個版本 |
+| `project/history.rs` | 領域 | 每個資源的復原紀錄：改動前的字幕快照，最多 100 步 |
 | `project/current.rs` | 應用 | `CurrentProject` 與開啟、編輯、寫回、還原 |
-| `project/files.rs` | 轉接 | 檔名、配對、摘要、專案設定、備份 |
+| `project/files.rs` | 轉接 | 檔名、配對、摘要、專案設定、備份、字幕快照的讀寫 |
 | `translation.rs`、`translation/{batching,repair,speaker_labels}.rs` | 應用、領域 | 翻譯用例、分批、修復、說話者標籤 |
 | `translation/prompt.rs` | 領域 | 請求內容與回答格式 |
 | `translation/{llama,settings}.rs` | 轉接 | llama-server、翻譯設定檔 |

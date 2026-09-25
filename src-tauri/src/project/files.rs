@@ -5,6 +5,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use super::history::SubtitleSnapshot;
 use super::{
     segment_at_times, translated_dialogue, Backup, BackupKind, Project, ProjectConfig, Resource,
     SubtitleDigest,
@@ -40,6 +41,30 @@ pub fn digest_of(path: &Path) -> Result<SubtitleDigest, Failure> {
 /// Writes `srt` to the subtitle at `path`.
 pub fn write_srt(path: &Path, srt: String) -> Result<(), Failure> {
     Ok(fs::write(path, srt)?)
+}
+
+/// What the original and each translation of `resource` hold now.
+pub fn subtitle_snapshot(resource: &Resource) -> Result<SubtitleSnapshot, Failure> {
+    resource
+        .subtitle
+        .iter()
+        .chain(resource.translations.iter().map(|(_, path)| path))
+        .map(|path| Ok((path.clone(), fs::read_to_string(path)?)))
+        .collect::<Result<_, Failure>>()
+        .map(SubtitleSnapshot)
+}
+
+/// Makes the subtitles of `now` hold what `snapshot` does, removing those it has none of.
+pub fn put_back(now: &SubtitleSnapshot, snapshot: &SubtitleSnapshot) -> Result<(), Failure> {
+    for (path, _) in &now.0 {
+        if !snapshot.0.iter().any(|(kept, _)| kept == path) {
+            fs::remove_file(path)?;
+        }
+    }
+    for (path, content) in &snapshot.0 {
+        fs::write(path, content)?;
+    }
+    Ok(())
 }
 
 /// Puts the file at `from` in place of the one at `to`.
@@ -228,10 +253,10 @@ fn role_of(file_name: &str, language: Language) -> Option<(String, FileRole)> {
     if is_bilingual {
         return None;
     }
-    let coded = Language::from_code(code)?;
-    let role = match coded == language {
+    let coded_language = Language::from_code(code)?;
+    let role = match coded_language == language {
         true => FileRole::CodedSubtitle,
-        false => FileRole::Translation(coded),
+        false => FileRole::Translation(coded_language),
     };
     Some((name.to_string(), role))
 }
@@ -319,13 +344,13 @@ pub fn backups_of(directory: &Path, subtitle: &Path) -> io::Result<Vec<Backup>> 
     let mut backups: Vec<Backup> = entries
         .filter_map(|entry| entry.ok()?.file_name().into_string().ok())
         .filter_map(|file| {
-            let named = file.strip_suffix(".srt")?;
-            let (named, kind) = match named.strip_suffix(OUTPUT_MARK) {
-                Some(named) => (named, BackupKind::Output),
-                None => (named, BackupKind::Overwrite),
+            let rest = file.strip_suffix(".srt")?;
+            let (rest, kind) = match rest.strip_suffix(OUTPUT_MARK) {
+                Some(rest) => (rest, BackupKind::Output),
+                None => (rest, BackupKind::Overwrite),
             };
-            let (named, taken_at) = named.rsplit_once('.')?;
-            (named == stem && is_utc_stamp(taken_at)).then(|| Backup {
+            let (backup_stem, taken_at) = rest.rsplit_once('.')?;
+            (backup_stem == stem && is_utc_stamp(taken_at)).then(|| Backup {
                 taken_at: taken_at.to_string(),
                 file: file.clone(),
                 kind,

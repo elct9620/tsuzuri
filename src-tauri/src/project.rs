@@ -10,12 +10,14 @@ pub mod commands;
 mod current;
 mod files;
 pub mod glossary;
+mod history;
 pub mod versions;
 
 pub use current::{CurrentProject, ProjectView, ResourceView};
 #[cfg(test)]
 pub(crate) use files::HISTORY_DIR;
 use glossary::TranslationGlossary;
+use history::UndoHistory;
 
 /// The opened directory: its Primary Language, the Language of its last translation,
 /// its Resources, the Current Resource and the Translation Glossary once loaded.
@@ -28,6 +30,8 @@ pub struct Project {
     pub options: ProjectOptions,
     pub resources: Vec<Resource>,
     pub current: Option<CurrentResource>,
+    /// The Undo History of each Resource changed since the Project was opened, by its name.
+    pub undo_histories: HashMap<String, UndoHistory>,
 }
 
 /// The Resource the editor shows, with its Segments as read from the directory and edited since.

@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
+use super::history::{SubtitleSnapshot, UndoHistory};
 use super::versions::SubtitleVersions;
 use super::{
     translation_srt, translation_with_speakers, BackupKind, CurrentResource, Project,
@@ -33,6 +34,7 @@ impl Project {
             translation_language: config.translation_language,
             options: config.options,
             current: None,
+            undo_histories: HashMap::new(),
         };
         project.translation_glossary =
             TranslationGlossary::from_directory(&project.directory, project.source_target())
@@ -111,6 +113,74 @@ impl Project {
         self.resources = files::resources_in(&self.directory, self.language)?;
         self.select(&name)?;
         self.show_translation(translation)
+    }
+
+    /// Reads the Current Resource again after a subtitle of it was changed elsewhere, forgetting
+    /// its Undo History, since what it would put back no longer follows from what is there.
+    fn read_changed_elsewhere(&mut self) -> Result<(), Failure> {
+        let name = self.current()?.name.clone();
+        self.undo_histories.remove(&name);
+        self.read_current_again()
+    }
+
+    fn subtitle_snapshot(&self, name: &str) -> Result<SubtitleSnapshot, Failure> {
+        files::subtitle_snapshot(self.resource(name)?)
+    }
+
+    /// Keeps `before` in the named Resource's Undo History when its subtitles no longer hold it.
+    fn record_change(&mut self, name: &str, before: SubtitleSnapshot) -> Result<(), Failure> {
+        if self.subtitle_snapshot(name)? != before {
+            self.undo_histories
+                .entry(name.to_string())
+                .or_default()
+                .record(before);
+        }
+        Ok(())
+    }
+
+    /// Makes `change` to the Current Resource's subtitles so that it can be undone.
+    fn make_undoable_change<T>(
+        &mut self,
+        change: impl FnOnce(&mut Project) -> Result<T, Failure>,
+    ) -> Result<T, Failure> {
+        let name = self.current()?.name.clone();
+        let before = self.subtitle_snapshot(&name)?;
+        let result = change(self)?;
+        self.record_change(&name, before)?;
+        Ok(result)
+    }
+
+    fn undo(&mut self) -> Result<(), Failure> {
+        self.put_back_from_history(UndoHistory::undo)
+    }
+
+    fn redo(&mut self) -> Result<(), Failure> {
+        self.put_back_from_history(UndoHistory::redo)
+    }
+
+    /// Puts back the subtitles `take` answers from the Current Resource's Undo History, given what
+    /// they hold now, and reads the Current Resource again, showing the same translation while it
+    /// is still there.
+    fn put_back_from_history(
+        &mut self,
+        take: impl FnOnce(&mut UndoHistory, SubtitleSnapshot) -> Option<SubtitleSnapshot>,
+    ) -> Result<(), Failure> {
+        let current = self.current()?;
+        let (name, shown) = (current.name.clone(), current.translation);
+        let now = self.subtitle_snapshot(&name)?;
+        let Some(history) = self.undo_histories.get_mut(&name) else {
+            return Ok(());
+        };
+        let Some(snapshot) = take(history, now.clone()) else {
+            return Ok(());
+        };
+        files::put_back(&now, &snapshot)?;
+        self.resources = files::resources_in(&self.directory, self.language)?;
+        self.select(&name)?;
+        let resource = self.resource(&name)?;
+        let shown = shown.filter(|language| resource.translation_path(*language).is_some());
+        self.show_translation(shown)?;
+        self.write_bilingual_subtitles(&name, None)
     }
 
     /// Pairs the directory's subtitles again as in `language`, keeping the Current Resource
@@ -304,7 +374,7 @@ impl Project {
     /// Keeps the subtitle in `language` as a Backup, puts the named Backup in its place and reads
     /// the Current Resource again.
     fn restore_version(&mut self, language: Option<Language>, backup: &str) -> Result<(), Failure> {
-        let restored = self.backup_of(language, backup)?;
+        let backup_path = self.backup_of(language, backup)?;
         let subtitle = self.subtitle_path(language)?;
         let name = self.current()?.name.clone();
         files::back_up(
@@ -313,7 +383,7 @@ impl Project {
             SystemTime::now(),
             BackupKind::Overwrite,
         )?;
-        files::copy(&restored, &subtitle)?;
+        files::copy(&backup_path, &subtitle)?;
         self.read_current_again()?;
         self.write_bilingual_subtitles(&name, language)
     }
@@ -385,6 +455,8 @@ pub struct ProjectView {
     media: Option<PathBuf>,
     segments: Vec<Segment>,
     shown_translation: Option<Language>,
+    has_undo: bool,
+    has_redo: bool,
 }
 
 impl ProjectView {
@@ -426,6 +498,14 @@ impl ProjectView {
     pub fn current_resource(&self) -> Option<&str> {
         self.current_resource.as_deref()
     }
+
+    pub fn has_undo(&self) -> bool {
+        self.has_undo
+    }
+
+    pub fn has_redo(&self) -> bool {
+        self.has_redo
+    }
 }
 
 #[derive(Debug, Default)]
@@ -463,6 +543,7 @@ impl CurrentProject {
     pub fn view(&self) -> Option<ProjectView> {
         self.lock().project.as_ref().map(|project| {
             let current = project.current.as_ref();
+            let history = current.and_then(|current| project.undo_histories.get(&current.name));
             ProjectView {
                 directory: project.directory.clone(),
                 language: project.language,
@@ -493,6 +574,8 @@ impl CurrentProject {
                 segments: current
                     .map_or_else(Vec::new, |current| current.transcript.segments.clone()),
                 shown_translation: current.and_then(|current| current.translation),
+                has_undo: history.is_some_and(UndoHistory::has_undo),
+                has_redo: history.is_some_and(UndoHistory::has_redo),
             }
         })
     }
@@ -532,6 +615,37 @@ impl CurrentProject {
             subtitle,
             language: project.language,
         })
+    }
+
+    /// What the named Resource's subtitles hold before a job writes them, while `directory` is
+    /// still the Project's and so has an Undo History to keep the change in.
+    fn job_snapshot(
+        &self,
+        directory: &Path,
+        name: &str,
+    ) -> Result<Option<SubtitleSnapshot>, Failure> {
+        match self.lock().project.as_ref() {
+            Some(project) if project.directory == directory => {
+                project.subtitle_snapshot(name).map(Some)
+            }
+            _ => Ok(None),
+        }
+    }
+
+    /// Keeps what a job wrote over in the named Resource's Undo History as one change.
+    fn record_job_change(
+        &self,
+        directory: &Path,
+        name: &str,
+        before: Option<SubtitleSnapshot>,
+    ) -> Result<(), Failure> {
+        let Some(before) = before else {
+            return Ok(());
+        };
+        match self.lock().project.as_mut() {
+            Some(project) if project.directory == directory => project.record_change(name, before),
+            _ => Ok(()),
+        }
     }
 
     /// Keeps `subtitle` as a Backup before it is overwritten, when the Project in `directory` asks
@@ -631,6 +745,7 @@ impl CurrentProject {
         srt: String,
     ) -> Result<(), Failure> {
         let previous = files::transcript_at(&job.subtitle)?;
+        let before = self.job_snapshot(&job.directory, &job.name)?;
         self.back_up_before_overwrite(&job.directory, &job.subtitle)?;
         files::write_srt(&job.subtitle, srt)?;
         files::back_up(
@@ -649,7 +764,8 @@ impl CurrentProject {
                 )?,
             _ => {}
         }
-        self.write_bilingual_subtitles(&job.directory, &job.name, None)
+        self.write_bilingual_subtitles(&job.directory, &job.name, None)?;
+        self.record_job_change(&job.directory, &job.name, before)
     }
 
     /// Writes the translations into `target` to the Resource's translation file, whichever
@@ -671,6 +787,7 @@ impl CurrentProject {
             }
             _ => HashMap::new(),
         };
+        let before = self.job_snapshot(&source.directory, &source.name)?;
         self.back_up_before_overwrite(&source.directory, &path)?;
         files::write_srt(&path, translation_srt(&translation, speaker_names))?;
         files::back_up(
@@ -681,6 +798,7 @@ impl CurrentProject {
         )?;
         self.refresh_resources(&source.directory)?;
         self.write_bilingual_subtitles(&source.directory, &source.name, Some(target))?;
+        self.record_job_change(&source.directory, &source.name, before)?;
         self.show_translations(source, target, &translation.segments);
         self.write_if_current(source.generation, |project| {
             project.translation_language = Some(target);
@@ -737,7 +855,7 @@ impl CurrentProject {
             if project.current.is_none() || !project.is_changed_elsewhere()? {
                 return Ok(false);
             }
-            project.read_current_again()?;
+            project.read_changed_elsewhere()?;
             Ok(true)
         })
     }
@@ -747,27 +865,29 @@ impl CurrentProject {
     pub fn edit(&self, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {
         self.update_project(|project| {
             if project.is_changed_elsewhere()? {
-                project.read_current_again()?;
+                project.read_changed_elsewhere()?;
                 return Err(Failure::ChangedElsewhere);
             }
-            let previous = project.current()?.transcript.clone();
-            let segment = project
-                .current_mut()?
-                .transcript
-                .segments
-                .get_mut(index)
-                .ok_or_else(|| Failure::Internal {
-                    detail: format!("no Segment at {index}"),
-                })?;
-            match field {
-                SegmentField::Text => segment.text = value,
-                SegmentField::Translation => segment.translation = Some(value),
-                SegmentField::Speaker => {
-                    let speaker = value.trim();
-                    segment.speaker = (!speaker.is_empty()).then(|| speaker.to_string());
+            project.make_undoable_change(|project| {
+                let previous = project.current()?.transcript.clone();
+                let segment = project
+                    .current_mut()?
+                    .transcript
+                    .segments
+                    .get_mut(index)
+                    .ok_or_else(|| Failure::Internal {
+                        detail: format!("no Segment at {index}"),
+                    })?;
+                match field {
+                    SegmentField::Text => segment.text = value,
+                    SegmentField::Translation => segment.translation = Some(value),
+                    SegmentField::Speaker => {
+                        let speaker = value.trim();
+                        segment.speaker = (!speaker.is_empty()).then(|| speaker.to_string());
+                    }
                 }
-            }
-            project.write_back(field, &previous)
+                project.write_back(field, &previous)
+            })
         })
     }
 
@@ -784,16 +904,26 @@ impl CurrentProject {
     }
 
     pub fn restore_version(&self, language: Option<Language>, backup: &str) -> Result<(), Failure> {
-        self.update_project(|project| project.restore_version(language, backup))
+        self.update_project(|project| {
+            project.make_undoable_change(|project| project.restore_version(language, backup))
+        })
+    }
+
+    pub fn undo(&self) -> Result<(), Failure> {
+        self.update_project(Project::undo)
+    }
+
+    pub fn redo(&self) -> Result<(), Failure> {
+        self.update_project(Project::redo)
     }
 
     pub fn change_segments(&self, change: SegmentChange) -> Result<(), Failure> {
         self.update_project(|project| {
             if project.is_changed_elsewhere()? {
-                project.read_current_again()?;
+                project.read_changed_elsewhere()?;
                 return Err(Failure::ChangedElsewhere);
             }
-            project.change_segments(change)
+            project.make_undoable_change(|project| project.change_segments(change))
         })
     }
 
@@ -1354,10 +1484,10 @@ mod tests {
         let dir = TempDir::new("pj-options-kept");
         translation_first_project_in(&dir);
 
-        let reopened = project_in(&dir);
+        let reopened_project = project_in(&dir);
 
         assert_eq!(
-            reopened.view().unwrap().options().bilingual_order,
+            reopened_project.view().unwrap().options().bilingual_order,
             BilingualOrder::TranslationFirst
         );
     }
@@ -1659,14 +1789,14 @@ mod tests {
         let dir = TempDir::new("pj-invalid-times");
         let current = changing_project_in(&dir, &[(0, 1_000, "你好")], &[]);
 
-        let refused = current.change_segments(SegmentChange::Times {
+        let result = current.change_segments(SegmentChange::Times {
             index: 0,
             start_ms: 2_000,
             end_ms: 1_000,
         });
 
         assert_eq!(
-            (refused, read(&dir, "ep01.srt")),
+            (result, read(&dir, "ep01.srt")),
             (Err(Failure::InvalidTimes), srt_of(&[(0, 1_000, "你好")]))
         );
     }
@@ -1920,10 +2050,10 @@ mod tests {
         let dir = directory_of("vr-no-backup", &[("ep01.srt", &cue("你好"))]);
         let current = project_in(&dir);
 
-        let refused = current.restore_version(None, "../ep01.srt");
+        let result = current.restore_version(None, "../ep01.srt");
 
         assert_eq!(
-            (refused, read(&dir, "ep01.srt")),
+            (result, read(&dir, "ep01.srt")),
             (
                 Err(Failure::NoBackup {
                     backup: "../ep01.srt".to_string()
@@ -2058,10 +2188,10 @@ mod tests {
         let current = project_in(&dir);
         std::fs::write(dir.path().join("ep01.srt"), cue("您好")).unwrap();
 
-        let edited = current.edit(0, SegmentField::Text, "大家好".to_string());
+        let result = current.edit(0, SegmentField::Text, "大家好".to_string());
 
         assert_eq!(
-            (edited, texts(&current)),
+            (result, texts(&current)),
             (Err(Failure::ChangedElsewhere), vec!["您好".to_string()])
         );
     }
@@ -2193,13 +2323,13 @@ mod tests {
         let dir = TempDir::new("pj-speaker-translated");
         let current = xiao_ming_project_in(&dir, &[]);
         let source = current.snapshot().unwrap();
-        let translated = Segment {
+        let translated_segment = Segment {
             speaker: Some("小明".to_string()),
             ..segment("你好", Some("Hello"))
         };
 
         current
-            .write_translations(&source, Language::English, vec![translated])
+            .write_translations(&source, Language::English, vec![translated_segment])
             .unwrap();
 
         assert_eq!(read(&dir, "ep01.en.srt"), cue("Xiao Ming: Hello"));
@@ -2471,5 +2601,200 @@ mod tests {
         let current = project_in(&dir);
 
         assert_eq!(shown_translation(&current).as_deref(), Some("Hello"));
+    }
+    fn edit_text(current: &CurrentProject, text: &str) {
+        current
+            .edit(0, SegmentField::Text, text.to_string())
+            .unwrap();
+    }
+
+    // @behavior UD-001
+    #[test]
+    fn undoes_an_edit() {
+        let dir = directory_of("ud-undo", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        edit_text(&current, "您好");
+
+        current.undo().unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), cue("你好"));
+        assert_eq!(current.view().unwrap().segments()[0].text, "你好");
+    }
+
+    // @behavior UD-002
+    #[test]
+    fn redoes_an_undone_edit() {
+        let dir = directory_of("ud-redo", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        edit_text(&current, "您好");
+        current.undo().unwrap();
+
+        current.redo().unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), cue("您好"));
+    }
+
+    // @behavior UD-003
+    #[test]
+    fn undoes_a_segment_change_across_every_subtitle() {
+        let dir = directory_of(
+            "ud-merge",
+            &[
+                ("ep01.srt", &two_cues("你好", "世界")),
+                ("ep01.en.srt", &two_cues("Hello", "world")),
+            ],
+        );
+        let current = project_in(&dir);
+        current
+            .change_segments(SegmentChange::Merge { first: 0, last: 1 })
+            .unwrap();
+
+        current.undo().unwrap();
+
+        assert_eq!(
+            (read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")),
+            (two_cues("你好", "世界"), two_cues("Hello", "world"))
+        );
+    }
+
+    // @behavior UD-004
+    #[test]
+    fn undoes_a_translation_as_one_change() {
+        let dir = directory_of("ud-translation", &[("ep01.srt", &cue("大家好"))]);
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("大家好", Some("Hello"))],
+            )
+            .unwrap();
+
+        current.undo().unwrap();
+
+        assert!(!dir.path().join("ep01.en.srt").exists());
+    }
+
+    // @behavior UD-005
+    #[test]
+    fn undoes_a_transcription_as_one_change() {
+        let dir = directory_of(
+            "ud-transcription",
+            &[("ep01.mp4", ""), ("ep01.srt", &cue("舊的"))],
+        );
+        let current = project_in(&dir);
+        let target = current.transcription_target(true).unwrap();
+        current.write_transcription(&target, cue("新的")).unwrap();
+
+        current.undo().unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), cue("舊的"));
+    }
+
+    // @behavior UD-006
+    #[test]
+    fn undoes_a_restore() {
+        let dir = directory_of("ud-restore", &[("ep01.srt", &cue("新的"))]);
+        write_backup(&dir, "ep01.20260925T023000Z.srt", &cue("舊的"));
+        let current = project_in(&dir);
+        current
+            .restore_version(None, "ep01.20260925T023000Z.srt")
+            .unwrap();
+
+        current.undo().unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), cue("新的"));
+    }
+
+    // @behavior UD-007
+    #[test]
+    fn clears_what_can_be_redone_with_a_new_change() {
+        let dir = directory_of("ud-redo-cleared", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        edit_text(&current, "您好");
+        current.undo().unwrap();
+
+        edit_text(&current, "妳好");
+
+        assert!(!current.view().unwrap().has_redo());
+    }
+
+    // @behavior UD-008
+    #[test]
+    fn keeps_each_resources_changes_apart() {
+        let dir = directory_of(
+            "ud-apart",
+            &[("ep01.srt", &cue("一")), ("ep02.srt", &cue("二"))],
+        );
+        let current = project_in(&dir);
+        edit_text(&current, "壹");
+        current.select("ep02").unwrap();
+        edit_text(&current, "貳");
+        current.select("ep01").unwrap();
+
+        current.undo().unwrap();
+
+        assert_eq!(
+            (read(&dir, "ep01.srt"), read(&dir, "ep02.srt")),
+            (cue("一"), cue("貳"))
+        );
+    }
+
+    // @behavior UD-009
+    #[test]
+    fn undoes_at_most_100_changes() {
+        let dir = directory_of("ud-depth", &[("ep01.srt", &cue("0"))]);
+        let current = project_in(&dir);
+        for text in 1..=101 {
+            edit_text(&current, &text.to_string());
+        }
+
+        while current.view().unwrap().has_undo() {
+            current.undo().unwrap();
+        }
+
+        assert_eq!(read(&dir, "ep01.srt"), cue("1"));
+    }
+
+    // @behavior UD-010
+    #[test]
+    fn forgets_the_changes_of_a_subtitle_changed_elsewhere() {
+        let dir = directory_of("ud-elsewhere", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        edit_text(&current, "您好");
+        std::fs::write(dir.path().join("ep01.srt"), cue("外面改的")).unwrap();
+        current.read_again_if_changed().unwrap();
+
+        assert!(!current.view().unwrap().has_undo());
+    }
+
+    // @behavior UD-011
+    #[test]
+    fn undoes_without_a_backup() {
+        let dir = directory_of("ud-no-backup", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        current
+            .set_options(ProjectOptions {
+                is_overwrite_backed_up: true,
+                ..ProjectOptions::default()
+            })
+            .unwrap();
+        edit_text(&current, "您好");
+
+        current.undo().unwrap();
+
+        assert!(overwrite_backups(dir.path()).is_empty());
+    }
+
+    // @behavior UD-012
+    #[test]
+    fn leaves_out_an_edit_that_changes_nothing() {
+        let dir = directory_of("ud-unchanged", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+
+        edit_text(&current, "你好");
+
+        assert!(!current.view().unwrap().has_undo());
     }
 }

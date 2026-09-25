@@ -170,6 +170,10 @@ A copy of a subtitle kept in the Project's `.tsuzuri/history/`, of one of two ki
 
 A subtitle of the Current Resource as it stands now, or as one of its Backups kept it. Versions of one subtitle can be compared cue by cue, matched by their times, and a Backup can be restored over the subtitle, which is itself kept as a Backup first.
 
+### Undo History
+
+What can be undone and redone for one Resource since the Project was opened: its subtitles as they were before each change Tsuzuri made to them - an edit, a Segment Change, a restore, or what a transcription or translation wrote - at most 100 back. It is kept only while the Project stays open, and forgotten once a subtitle of the Resource is changed elsewhere; undoing and redoing write the subtitles back without a Backup.
+
 ### Stray Process
 
 A Component process left alive after the app that launched it has exited or crashed. Tsuzuri records the PID of every process it launches so the next start can kill what the last one left.

@@ -14,17 +14,24 @@ use crate::transcript::SrtContent;
 
 #[tauri::command]
 pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
-    app.state::<CurrentProject>()
-        .replace(Project::open(path, language)?);
+    replace_project(&app, Project::open(path, language)?)?;
     app.announce_project();
     Ok(())
 }
 
 #[tauri::command]
 pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
-    app.state::<CurrentProject>()
-        .replace(open_directory_of(&path, language)?);
+    replace_project(&app, open_directory_of(&path, language)?)?;
     app.announce_project();
+    Ok(())
+}
+
+/// Holds `project` as the Current Project and lets the webview read the files of its directory,
+/// so the Preview can load the media; nothing outside an opened Project is handed to it.
+fn replace_project<R: Runtime>(app: &AppHandle<R>, project: Project) -> Result<(), Failure> {
+    app.asset_protocol_scope()
+        .allow_directory(&project.directory, false)?;
+    app.state::<CurrentProject>().replace(project);
     Ok(())
 }
 
@@ -177,4 +184,77 @@ pub fn save_translation_glossary(app: AppHandle, rows: Vec<GlossaryRow>) -> Resu
         .save_translation_glossary(&rows)?;
     app.announce_project();
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+
+    use super::*;
+    use crate::test_support::TempDir;
+
+    fn mock_app() -> tauri::App<MockRuntime> {
+        mock_builder()
+            .manage(CurrentProject::default())
+            .build(mock_context(noop_assets()))
+            .unwrap()
+    }
+
+    fn create_directory(dir: &TempDir, name: &str, files: &[&str]) -> PathBuf {
+        let directory = dir.path().join(name);
+        fs::create_dir_all(&directory).unwrap();
+        for file in files {
+            fs::write(directory.join(file), "").unwrap();
+        }
+        directory
+    }
+
+    // @behavior PV-001
+    #[test]
+    fn lets_the_webview_read_a_media_file_of_the_project() {
+        let dir = TempDir::new("pv-read-media");
+        let directory = create_directory(&dir, "talks", &["ep01.mp4"]);
+        let app = mock_app();
+
+        let project = Project::open(directory.clone(), Language::TraditionalChinese).unwrap();
+        replace_project(app.handle(), project).unwrap();
+
+        assert!(app
+            .asset_protocol_scope()
+            .is_allowed(directory.join("ep01.mp4")));
+    }
+
+    // @behavior PV-002
+    #[test]
+    fn keeps_the_webview_from_files_outside_the_project() {
+        let dir = TempDir::new("pv-outside");
+        let directory = create_directory(&dir, "talks", &["ep01.mp4"]);
+        let other = create_directory(&dir, "others", &["ep02.mp4"]);
+        let app = mock_app();
+
+        let project = Project::open(directory, Language::TraditionalChinese).unwrap();
+        replace_project(app.handle(), project).unwrap();
+
+        assert!(!app
+            .asset_protocol_scope()
+            .is_allowed(other.join("ep02.mp4")));
+    }
+
+    // @behavior PV-003
+    #[test]
+    fn lets_the_webview_read_the_directory_of_an_opened_srt() {
+        let dir = TempDir::new("pv-srt");
+        let directory = create_directory(&dir, "talks", &["ep01.mp4", "ep01.srt"]);
+        let app = mock_app();
+
+        let project =
+            open_directory_of(&directory.join("ep01.srt"), Language::TraditionalChinese).unwrap();
+        replace_project(app.handle(), project).unwrap();
+
+        assert!(app
+            .asset_protocol_scope()
+            .is_allowed(directory.join("ep01.mp4")));
+    }
 }

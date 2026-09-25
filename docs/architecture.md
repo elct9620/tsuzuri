@@ -129,6 +129,22 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 `Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤則由 `llama.rs` 轉換。
 
+### 2.5 媒體檔（asset protocol）
+
+```
+open_project／open_srt ─▶ asset_protocol_scope().allow_directory(專案目錄)
+controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
+```
+
+| 規則 | 做法 |
+|---|---|
+| 讀取者 | webview 的媒體元素 |
+| 範圍 | 開啟過的專案目錄 |
+| 子目錄 | 不含 |
+| 路徑來源 | `ProjectView.media` |
+
+影片要能拖動與串流，透過指令傳送整個檔案不可行，所以媒體檔是 webview 唯一直接讀取的資料。路徑仍由 Rust 給出，範圍只含開啟過的專案目錄。
+
 ## 3 Rust 端
 
 ### 3.1 分層與相依規則

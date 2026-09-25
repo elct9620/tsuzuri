@@ -172,10 +172,7 @@ mod tests {
         async fn extract(&self, ffmpeg: &Path) -> Result<Waveform, Failure> {
             let processes = Processes::new(self.dir.path().join("processes.json"));
             let app = self.app.handle();
-            let ports = AppPorts {
-                app,
-                processes: &processes,
-            };
+            let ports = AppPorts::new(app, &processes);
             extract(&ports, &app.state::<CurrentProject>(), ffmpeg, &self.work()).await
         }
     }

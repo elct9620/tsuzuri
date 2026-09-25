@@ -12,10 +12,7 @@ use crate::toolchain::{self, settings};
 pub async fn extract_waveform(app: AppHandle) -> Result<Waveform, Failure> {
     let [ffmpeg] = toolchain::find_ready_executables(settings::resolver(&app)?, ["ffmpeg"]).await?;
     let processes = app.state::<Processes>().inner().clone();
-    let ports = AppPorts {
-        app: &app,
-        processes: &processes,
-    };
+    let ports = AppPorts::new(&app, &processes);
     let started_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |since| since.as_nanos());

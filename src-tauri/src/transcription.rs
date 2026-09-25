@@ -195,10 +195,7 @@ mod tests {
             let processes = Processes::new(self.dir.path().join("processes.json"));
             let app = self.app.handle();
             run_transcribe(
-                &AppPorts {
-                    app,
-                    processes: &processes,
-                },
+                &AppPorts::new(app, &processes),
                 &app.state::<CurrentProject>(),
                 &self.tools,
                 &self.settings,
@@ -556,10 +553,7 @@ mod tests {
         let target = project.transcription_target(true).unwrap();
 
         let transcription = run_transcribe(
-            &AppPorts {
-                app: app.handle(),
-                processes: &processes,
-            },
+            &AppPorts::new(app.handle(), &processes),
             &project,
             &tools,
             &settings,

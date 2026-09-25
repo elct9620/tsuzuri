@@ -1807,10 +1807,7 @@ mod tests {
             .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
         let result = run_translate(
-            &AppPorts {
-                app: app.handle(),
-                processes: &processes,
-            },
+            &AppPorts::new(app.handle(), &processes),
             &app.state::<CurrentProject>(),
             Path::new("/bin/sleep"),
             &ModelSettings::default(),
@@ -1839,10 +1836,7 @@ mod tests {
         app.state::<CurrentProject>().replace(project);
 
         let result = run_translate(
-            &AppPorts {
-                app: app.handle(),
-                processes: &processes,
-            },
+            &AppPorts::new(app.handle(), &processes),
             &app.state::<CurrentProject>(),
             Path::new("/bin/sleep"),
             &settings,
@@ -1879,10 +1873,7 @@ mod tests {
             .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
         let result = run_translate(
-            &AppPorts {
-                app: app.handle(),
-                processes: &processes,
-            },
+            &AppPorts::new(app.handle(), &processes),
             &app.state::<CurrentProject>(),
             &llama,
             &settings,
@@ -1936,10 +1927,7 @@ mod tests {
             running_mode()
         };
 
-        let ports = AppPorts {
-            app: app.handle(),
-            processes: &processes,
-        };
+        let ports = AppPorts::new(app.handle(), &processes);
         let project = app.state::<CurrentProject>();
         let plan = plan_for(Language::Japanese);
         let run = run_translate(
@@ -2017,10 +2005,7 @@ mod tests {
         .unwrap();
         project.resources[0].subtitle = Some(dir.file("lecture.srt"));
         app.state::<CurrentProject>().replace(project);
-        let ports = AppPorts {
-            app: app.handle(),
-            processes: &processes,
-        };
+        let ports = AppPorts::new(app.handle(), &processes);
 
         let translated_segments = run_translate(
             &ports,

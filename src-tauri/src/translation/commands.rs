@@ -64,10 +64,7 @@ async fn run_translation(
         &mut turn,
         &processes,
         run_translate(
-            &AppPorts {
-                app,
-                processes: &processes,
-            },
+            &AppPorts::new(app, &processes),
             &app.state::<CurrentProject>(),
             &llama,
             &model_settings,
@@ -108,10 +105,7 @@ pub async fn save_translation_settings(
         let _turn = mode_lock.wait_turn().await;
         let processes = app.state::<Processes>().inner().clone();
         app.state::<ResidentLlama>()
-            .stop(&AppPorts {
-                app: &app,
-                processes: &processes,
-            })
+            .stop(&AppPorts::new(&app, &processes))
             .await;
     }
     Ok(saved_settings)
@@ -130,10 +124,7 @@ pub fn start_resident_llama(app: &AppHandle) {
             let processes = app.state::<Processes>().inner().clone();
             app.state::<ResidentLlama>()
                 .start(
-                    &AppPorts {
-                        app: &app,
-                        processes: &processes,
-                    },
+                    &AppPorts::new(&app, &processes),
                     &llama,
                     model,
                     &app.path().app_data_dir()?,

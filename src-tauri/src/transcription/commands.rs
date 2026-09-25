@@ -23,10 +23,7 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
     let mode_lock = app.state::<ModeLock>();
     let mut turn = mode_lock.wait_turn().await;
     let processes = app.state::<Processes>().inner().clone();
-    let ports = AppPorts {
-        app: &app,
-        processes: &processes,
-    };
+    let ports = AppPorts::new(&app, &processes);
     // Only one Model is loaded at a time, so the translation Model makes way for whisper's.
     app.state::<ResidentLlama>().make_room(&ports).await;
     let [ffmpeg, whisper] =

@@ -179,8 +179,14 @@ fn line_of(bytes: &[u8]) -> String {
 /// The ports a use case runs with under Tauri: progress told to the webview, and Steps run as
 /// Components through the shell plugin, each recorded in `processes`.
 pub struct AppPorts<'a, R: Runtime> {
-    pub app: &'a AppHandle<R>,
-    pub processes: &'a Processes,
+    app: &'a AppHandle<R>,
+    processes: &'a Processes,
+}
+
+impl<'a, R: Runtime> AppPorts<'a, R> {
+    pub fn new(app: &'a AppHandle<R>, processes: &'a Processes) -> AppPorts<'a, R> {
+        AppPorts { app, processes }
+    }
 }
 
 impl<R: Runtime> Progress for AppPorts<'_, R> {

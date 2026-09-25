@@ -4,7 +4,7 @@ use tauri::{AppHandle, Manager, Runtime};
 
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
-use super::versions::{compare, ComparedRow, RevertPart, SubtitleVersions};
+use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
 use super::{CurrentProject, Project, ProjectOptions, ProjectView, SegmentField};
 use crate::failure::Failure;
 use crate::language::Language;
@@ -88,6 +88,11 @@ pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Fail
     let result = app.state::<CurrentProject>().change_segments(change);
     app.announce_project();
     result
+}
+
+#[tauri::command]
+pub fn translation_cues(app: AppHandle, language: Language) -> Result<Vec<ComparedCue>, Failure> {
+    app.state::<CurrentProject>().translation_cues(language)
 }
 
 #[tauri::command]

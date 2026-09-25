@@ -95,6 +95,7 @@ const en = {
   compare: {
     label: "Compare",
     none: "None",
+    reference: "Read {{language}} beside",
     original: "Original",
     output: "Output",
     overwrite: "Before overwrite",

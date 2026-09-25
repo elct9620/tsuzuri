@@ -8,7 +8,7 @@ import type {
   ProjectView,
   SubtitleVersions,
 } from "../backend/project";
-import { projectOf } from "../test_project";
+import { projectOf, resourceOf } from "../test_project";
 import ComparisonController from "./comparison_controller";
 import TranscriptController from "./transcript_controller";
 
@@ -111,6 +111,7 @@ describe("ComparisonController", () => {
         if (command === "current_project") return project;
         if (command === "subtitle_versions") return versions;
         if (command === "compare_versions") return rows;
+        if (command === "translation_cues") return [cue(0, 1000, "こんにちは")];
       },
       { shouldMockEvents: true },
     );
@@ -259,5 +260,44 @@ describe("ComparisonController", () => {
     await show();
 
     expect([beforeShown, offered()]).toEqual([false, true]);
+  });
+  const choiceTarget = () =>
+    document.querySelector<HTMLSelectElement>(
+      "[data-comparison-target=choice]",
+    )!;
+
+  // @behavior VR-038
+  it("offers the other translations to read beside the cues", async () => {
+    project = {
+      ...project,
+      resources: [resourceOf({ translation_languages: ["en", "ja"] })],
+      shown_translation: "en",
+    };
+
+    await show();
+
+    const references = [...choiceTarget().options]
+      .map((choice) => choice.value)
+      .filter((value) => value.includes("reference"));
+    expect(references).toEqual([JSON.stringify({ reference: "ja" })]);
+  });
+
+  // @behavior VR-039
+  it("shows a translation beside each cue", async () => {
+    project = {
+      ...project,
+      resources: [resourceOf({ translation_languages: ["ja"] })],
+    };
+    await show();
+
+    choiceTarget().value = JSON.stringify({ reference: "ja" });
+    choiceTarget().dispatchEvent(new Event("change"));
+    await settle();
+
+    const first = document.querySelector("ol > li")!;
+    expect([
+      first.querySelector("[data-reference]")?.textContent,
+      document.querySelectorAll("[data-mark]").length,
+    ]).toEqual(["こんにちは", 0]);
   });
 });

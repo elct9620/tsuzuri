@@ -2,8 +2,10 @@ import { Controller } from "@hotwired/stimulus";
 
 import {
   compareVersions,
+  currentResource,
   revertRow,
   subtitleVersions,
+  translationCues,
   type ComparedCue,
   type ComparedRow,
   type ProjectView,
@@ -20,6 +22,9 @@ interface ComparedBackup {
   language: string | null;
   file: string;
 }
+
+/** A choice of the compare menu: a Backup to compare with, or a translation to read beside. */
+type CompareChoice = ComparedBackup | { reference: string };
 
 function choiceValue(backup: ComparedBackup): string {
   return JSON.stringify(backup);
@@ -107,7 +112,7 @@ export default class ComparisonController extends Controller {
     const resource = project?.current_resource ?? null;
     const versions = await this.readVersions(project);
     const chosen = this.choiceTarget.value;
-    this.offerChoices(versions, project?.shown_translation ?? null);
+    this.offerChoices(versions, project);
     const output = newestOutput(versions);
     const isFresh =
       resource !== this.resource ||
@@ -157,11 +162,23 @@ export default class ComparisonController extends Controller {
     }
   }
 
-  /** Offers no Backup, and each of the original and of the translation shown. */
+  /**
+   * Offers no Backup, each of the original and of the translation shown, and each other
+   * translation to read beside the cues.
+   */
   private offerChoices(
     versions: SubtitleVersions[],
-    shown: string | null,
+    project: ProjectView | null,
   ): void {
+    const shown = project?.shown_translation ?? null;
+    const references = (currentResource(project)?.translation_languages ?? [])
+      .filter((language) => language !== shown)
+      .map((language) =>
+        option(
+          JSON.stringify({ reference: language }),
+          t("compare.reference", { language: t(`languages.${language}`) }),
+        ),
+      );
     const choices = versions
       .filter((each) => each.language === null || each.language === shown)
       .flatMap((each) =>
@@ -180,32 +197,64 @@ export default class ComparisonController extends Controller {
     this.choiceTarget.replaceChildren(
       option("", t("compare.none")),
       ...choices,
+      ...references,
     );
   }
 
   private chosenBackup(): ComparedBackup | null {
+    const chosen = this.chosenValue();
+    return chosen !== null && "file" in chosen ? chosen : null;
+  }
+
+  /** The Language of the translation chosen to read beside the cues, or none. */
+  private chosenReference(): string | null {
+    const chosen = this.chosenValue();
+    return chosen !== null && "reference" in chosen ? chosen.reference : null;
+  }
+
+  private chosenValue(): CompareChoice | null {
     return this.choiceTarget.value
-      ? (JSON.parse(this.choiceTarget.value) as ComparedBackup)
+      ? (JSON.parse(this.choiceTarget.value) as CompareChoice)
       : null;
   }
 
   private async compare(): Promise<void> {
     const chosen = this.chosenBackup();
+    const reference = this.chosenReference();
     this.rows = [];
-    if (chosen !== null) {
-      try {
+    let cues: ComparedCue[] = [];
+    try {
+      if (chosen !== null)
         this.rows = await compareVersions(chosen.language, chosen.file, null);
-      } catch (error) {
-        notifyFailure(t("versions.unreadable"), error);
-      }
+      if (reference !== null) cues = await translationCues(reference);
+    } catch (error) {
+      notifyFailure(t("versions.unreadable"), error);
     }
     this.decorate(chosen?.language === null ? "text" : "translation");
+    this.showReferences(cues);
+  }
+
+  /** Shows beneath the text of each Segment the cue of the translation read beside it with its times. */
+  private showReferences(cues: ComparedCue[]): void {
+    for (const item of this.listTarget.querySelectorAll<HTMLLIElement>(
+      ":scope > li:not([data-ghost])",
+    )) {
+      const cue = cues.find((each) => isSameCue(each, item));
+      if (!cue) continue;
+      const reference = document.createElement("p");
+      reference.dataset.reference = "";
+      reference.className = "px-1.5 text-sm text-base-content/70";
+      reference.textContent = cue.text;
+      item
+        .querySelector("textarea.text")
+        ?.insertAdjacentElement("afterend", reference);
+    }
   }
 
   /** Clears the marks of the last comparison and puts those of the current one on each row. */
   private decorate(field: "text" | "translation"): void {
     for (const stale of this.listTarget.querySelectorAll(
-      "[data-ghost], [data-marks], [data-was]",
+      "[data-ghost], [data-marks], [data-was], [data-reference]",
     ))
       stale.remove();
     const items = [

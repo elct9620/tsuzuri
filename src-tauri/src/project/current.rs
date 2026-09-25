@@ -8,7 +8,7 @@ use serde::Serialize;
 use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 use super::history::{SubtitleSnapshot, UndoHistory};
-use super::versions::{self, RevertPart, SubtitleVersions};
+use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
     translation_srt, translation_with_speakers, BackupKind, CurrentResource, Project,
     ProjectConfig, ProjectOptions, SegmentField, SubtitleDigest, TranscriptionTarget,
@@ -1045,6 +1045,18 @@ impl CurrentProject {
                 project.make_undoable_change(|project| project.restore_version(language, backup))
             },
         )
+    }
+
+    /// The cues of the Current Resource's translation into `language` as its file is written.
+    pub fn translation_cues(&self, language: Language) -> Result<Vec<ComparedCue>, Failure> {
+        self.update_project(|project| {
+            let resource = project.resource(&project.current()?.name)?;
+            let Some(path) = resource.translation_path(language) else {
+                return Ok(Vec::new());
+            };
+            let translation = files::translation_at(path)?;
+            Ok(translation.segments.iter().map(ComparedCue::from).collect())
+        })
     }
 
     pub fn revert_row(
@@ -3182,6 +3194,30 @@ mod tests {
         assert_eq!(
             (result, read(&dir, "ep01.srt")),
             (Err(Failure::NoRow { row: 1 }), now)
+        );
+    }
+
+    // @behavior VR-037
+    #[test]
+    fn reads_a_translations_cues_as_written() {
+        let dir = directory_of(
+            "vr-reference",
+            &[
+                ("ep01.srt", &cue("你好")),
+                ("ep01.ja.srt", &cue("こんにちは")),
+            ],
+        );
+        let current = project_in(&dir);
+
+        let cues = current.translation_cues(Language::Japanese).unwrap();
+
+        assert_eq!(
+            cues,
+            [ComparedCue {
+                start_ms: 0,
+                end_ms: 1_000,
+                text: "こんにちは".to_string()
+            }]
         );
     }
 }

@@ -237,6 +237,11 @@ export function restoreVersion(
   return invoke("restore_version", { language, backup });
 }
 
+/** The cues of the Current Resource's translation into `language`, as its file is written. */
+export function translationCues(language: string): Promise<ComparedCue[]> {
+  return invoke<ComparedCue[]>("translation_cues", { language });
+}
+
 /** Which part of a Comparison Row to take back. */
 export type RevertPart = "text" | "times" | "whole";
 

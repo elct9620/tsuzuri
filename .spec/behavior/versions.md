@@ -299,3 +299,27 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | When | the Versions dialog shows it |
 | Then | `會` is marked as added on the side of the subtitle now |
 
+## `VR-037` Reading a translation's cues as written
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose `ep01.ja.srt` reads `こんにちは` from 0 to 1 second |
+| When | the cues of its `ja` translation are read |
+| Then | they are `こんにちは` from 0 to 1 second |
+
+## `VR-038` Offering the other translations to read beside the cues
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor showing the `en` translation of a Current Resource translated into `en` and `ja` |
+| When | the compare menu is offered |
+| Then | it offers `ja` to read beside the cues, and not `en` |
+
+## `VR-039` Showing a translation beside each cue
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor reading `ja` beside the cues, whose cue from 0 to 1 second reads `こんにちは` |
+| When | the Segments are shown |
+| Then | the Segment from 0 to 1 second shows `こんにちは` beneath its text, and no row is marked as changed |
+

@@ -158,6 +158,14 @@ Two Versions of the Current Resource's original, or of its translation into `lan
 pub fn compare_versions(app: AppHandle, language: Option<Language>, left: Option<String>, right: Option<String>) -> Result<Vec<ComparedRow>, Failure> {}
 ```
 
+## `translation_cues`
+
+The cues of the Current Resource's translation into `language` as its file is written, for reading beside the cues being edited; none when there is no such translation.
+
+```rust
+pub fn translation_cues(app: AppHandle, language: Language) -> Result<Vec<ComparedCue>, Failure> {}
+```
+
 ## `restore_version`
 
 Keep the subtitle as an Overwrite Backup, then put the named Backup in its place and read the Current Resource again, emitting `project-changed`. A name the subtitle's Backups do not hold is refused as `no-backup`. A subtitle a running Mode writes is refused as `mode-running`.

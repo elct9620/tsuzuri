@@ -95,6 +95,7 @@ const zhHant: typeof en = {
   compare: {
     label: "對照",
     none: "無",
+    reference: "參照 {{language}}",
     original: "原文",
     output: "產出",
     overwrite: "覆蓋前",

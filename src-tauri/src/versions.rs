@@ -6,7 +6,8 @@ use tauri::{AppHandle, Manager};
 use crate::failure::Failure;
 use crate::history::Backup;
 use crate::language::Language;
-use crate::project::{self, CurrentProject};
+use crate::progress::Progress;
+use crate::project::CurrentProject;
 use crate::transcript::Transcript;
 
 /// The Backups of one subtitle of the Current Resource: its original, or its translation into `language`.
@@ -78,7 +79,7 @@ pub fn restore_version(
     let restored = app
         .state::<CurrentProject>()
         .restore_version(language, &backup);
-    project::announce(&app);
+    app.announce_project();
     restored
 }
 

@@ -6,17 +6,16 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
-use tauri::async_runtime;
-use tauri::{AppHandle, Manager, Runtime};
-use tauri_plugin_shell::process::CommandEvent;
+use tauri::{AppHandle, Manager};
 
 use crate::components::{self, Resolver};
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::models::{self, ModelSettings, ModelSlot};
-use crate::pipeline::{enter, report};
-use crate::processes::Processes;
-use crate::project::{self, CurrentProject, TranslationSource};
+use crate::processes::{AppPorts, Processes};
+use crate::progress::{enter, Progress};
+use crate::project::{CurrentProject, TranslationSource};
+use crate::steps::{StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
 use crate::transcript::Segment;
 
@@ -78,9 +77,9 @@ pub struct Translation {
     phases: Vec<PhaseTiming>,
 }
 
-pub async fn run_translate<R: Runtime>(
-    app: &AppHandle<R>,
-    processes: &Processes,
+pub async fn run_translate(
+    ports: &(impl Progress + Steps),
+    project: &CurrentProject,
     llama: &Path,
     model_settings: &ModelSettings,
     plan: &TranslationPlan,
@@ -88,7 +87,6 @@ pub async fn run_translate<R: Runtime>(
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
     let model = model_settings.ready_path(ModelSlot::Translation)?;
-    let project = app.state::<CurrentProject>();
     let source = project.snapshot()?;
     let languages = LanguagePair {
         source: source.language,
@@ -121,20 +119,19 @@ pub async fn run_translate<R: Runtime>(
         "--no-webui".to_string(),
     ];
 
-    enter(app, &mut phases, "load");
-    let (mut events, pid) =
-        processes
-            .spawn(app, llama, &args)
-            .map_err(|detail| Failure::StepFailed {
-                step: "translate".to_string(),
-                detail,
-            })?;
+    enter(ports, &mut phases, "load");
+    let (mut events, pid) = ports
+        .start(llama, &args)
+        .map_err(|detail| Failure::StepFailed {
+            step: "translate".to_string(),
+            detail,
+        })?;
     let exited = Arc::new(AtomicBool::new(false));
-    async_runtime::spawn({
+    tokio::spawn({
         let exited = Arc::clone(&exited);
         async move {
             while let Some(event) = events.recv().await {
-                if matches!(event, CommandEvent::Terminated(_)) {
+                if matches!(event, StepEvent::Exit(_)) {
                     exited.store(true, Ordering::SeqCst);
                 }
             }
@@ -143,18 +140,18 @@ pub async fn run_translate<R: Runtime>(
 
     let base_url = format!("http://127.0.0.1:{port}");
     let result = translate_once_ready(
-        app,
+        ports,
         &base_url,
         ready_timeout,
         || exited.load(Ordering::SeqCst),
         &job,
         &mut phases,
-        batch_display(app, &source, plan.target),
+        batch_display(ports, project, &source, plan.target),
     )
     .await;
-    processes.kill(pid);
+    ports.stop(pid);
     project.write_translations(&source, plan.target, result?)?;
-    project::announce(app);
+    ports.announce_project();
     Ok(Translation {
         phases: phases.finish(),
     })
@@ -162,22 +159,22 @@ pub async fn run_translate<R: Runtime>(
 
 /// Shows the Segments translated into `target` so far on the Resource `source` was taken from,
 /// and tells the webview, so each Batch appears as it finishes.
-fn batch_display<'a, R: Runtime>(
-    app: &'a AppHandle<R>,
+fn batch_display<'a>(
+    progress: &'a impl Progress,
+    project: &'a CurrentProject,
     source: &'a TranslationSource,
     target: Language,
 ) -> impl Fn(&[Segment]) + 'a {
     move |translated_segments| {
-        app.state::<CurrentProject>()
-            .show_translations(source, target, translated_segments);
-        project::announce(app);
+        project.show_translations(source, target, translated_segments);
+        progress.announce_project();
     }
 }
 
 /// Waits for llama-server to load its Model, then translates every Segment in the translate Phase,
 /// handing `on_batch` the Segments translated so far after each Batch.
-async fn translate_once_ready<R: Runtime>(
-    app: &AppHandle<R>,
+async fn translate_once_ready(
+    progress: &impl Progress,
     base_url: &str,
     ready_timeout: Duration,
     has_exited: impl Fn() -> bool,
@@ -187,13 +184,14 @@ async fn translate_once_ready<R: Runtime>(
 ) -> Result<Vec<Segment>, Failure> {
     wait_until_ready(&reqwest::Client::new(), base_url, ready_timeout, has_exited).await?;
     let model = TranslationModel::new(base_url);
-    enter(app, phases, "detect");
-    let split_sentences =
-        find_split_sentences(&model, job, |percent| report(app, "detect", Some(percent))).await;
-    enter(app, phases, "translate");
+    enter(progress, phases, "detect");
+    let split_sentences = find_split_sentences(&model, job, |percent| {
+        progress.report("detect", Some(percent))
+    })
+    .await;
+    enter(progress, phases, "translate");
     translate_segments(&model, job, &split_sentences, |translated_segments| {
-        report(
-            app,
+        progress.report(
             "translate",
             Some((translated_segments.len() * 100 / job.segments.len()) as u8),
         );
@@ -343,7 +341,7 @@ pub async fn translate(
     options: TranslationOptions,
 ) -> Result<Translation, Failure> {
     let phases = Phases::start("translate", "prepare");
-    report(&app, "prepare", None);
+    app.report("prepare", None);
     let [llama] = components::find_ready_executables(Resolver::from_app(&app)?, ["llama"]).await?;
     let model_settings = models::load_settings(&app)?;
     let plan = TranslationPlan {
@@ -353,8 +351,11 @@ pub async fn translate(
     };
     let processes = app.state::<Processes>().inner().clone();
     run_translate(
-        &app,
-        &processes,
+        &AppPorts {
+            app: &app,
+            processes: &processes,
+        },
+        &app.state::<CurrentProject>(),
         &llama,
         &model_settings,
         &plan,
@@ -1345,7 +1346,12 @@ mod tests {
             || false,
             &job_in_batches_of_two(&source.transcript.segments),
             &mut Phases::start("translate", "load"),
-            batch_display(app.handle(), &source, Language::Japanese),
+            batch_display(
+                app.handle(),
+                &app.state::<CurrentProject>(),
+                &source,
+                Language::Japanese,
+            ),
         )
         .await
         .unwrap();
@@ -1435,8 +1441,11 @@ mod tests {
             .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
         let result = run_translate(
-            app.handle(),
-            &processes,
+            &AppPorts {
+                app: app.handle(),
+                processes: &processes,
+            },
+            &app.state::<CurrentProject>(),
             Path::new("/bin/sleep"),
             &ModelSettings::default(),
             &plan_for(Language::Japanese),
@@ -1463,8 +1472,11 @@ mod tests {
         app.state::<CurrentProject>().replace(project);
 
         let result = run_translate(
-            app.handle(),
-            &processes,
+            &AppPorts {
+                app: app.handle(),
+                processes: &processes,
+            },
+            &app.state::<CurrentProject>(),
             Path::new("/bin/sleep"),
             &settings,
             &plan_for(Language::English),
@@ -1499,8 +1511,11 @@ mod tests {
             .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
         let result = run_translate(
-            app.handle(),
-            &processes,
+            &AppPorts {
+                app: app.handle(),
+                processes: &processes,
+            },
+            &app.state::<CurrentProject>(),
             &llama,
             &settings,
             &plan_for(Language::Japanese),
@@ -1573,8 +1588,11 @@ mod tests {
         app.state::<CurrentProject>().replace(project);
 
         let translated_segments = run_translate(
-            app.handle(),
-            &processes,
+            &AppPorts {
+                app: app.handle(),
+                processes: &processes,
+            },
+            &app.state::<CurrentProject>(),
             &llama,
             &settings,
             &TranslationPlan {

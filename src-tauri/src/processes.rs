@@ -8,6 +8,9 @@ use tauri::{AppHandle, Runtime};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
+use crate::progress::Progress;
+use crate::steps::{StepEvent, Steps};
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct RecordedProcess {
     pid: u32,
@@ -39,7 +42,7 @@ impl Processes {
         app: &AppHandle<R>,
         program: &Path,
         args: &[String],
-    ) -> Result<(Receiver<CommandEvent>, u32), String> {
+    ) -> Result<(Receiver<StepEvent>, u32), String> {
         let (events, child) = app
             .shell()
             .command(program)
@@ -113,28 +116,64 @@ impl Processes {
     }
 }
 
-/// Forwards the plugin's events with the exit status last, logging each line of output under `name`.
+/// Forwards the plugin's events as Step events with the exit last, logging each line of output under `name`.
 /// The plugin sends the exit status as soon as the process exits, possibly ahead of lines its reader threads
 /// have yet to send, and its channel closes once they have.
 async fn forward_in_order(
     name: &str,
     mut events: Receiver<CommandEvent>,
-    forward: Sender<CommandEvent>,
+    forward: Sender<StepEvent>,
 ) {
     let mut exit = None;
     while let Some(event) = events.recv().await {
-        match event {
-            CommandEvent::Terminated(_) => exit = Some(event),
-            event => {
-                if let CommandEvent::Stdout(line) | CommandEvent::Stderr(line) = &event {
-                    log::info!("{name}: {}", String::from_utf8_lossy(line).trim_end());
-                }
-                let _ = forward.send(event).await;
+        let event = match event {
+            CommandEvent::Terminated(payload) => {
+                exit = Some(StepEvent::Exit(payload.code));
+                continue;
             }
+            CommandEvent::Stdout(bytes) => StepEvent::Stdout(line_of(&bytes)),
+            CommandEvent::Stderr(bytes) => StepEvent::Stderr(line_of(&bytes)),
+            CommandEvent::Error(error) => StepEvent::Error(error),
+            _ => continue,
+        };
+        if let StepEvent::Stdout(line) | StepEvent::Stderr(line) = &event {
+            log::info!("{name}: {line}");
         }
+        let _ = forward.send(event).await;
     }
     if let Some(exit) = exit {
         let _ = forward.send(exit).await;
+    }
+}
+
+fn line_of(bytes: &[u8]) -> String {
+    String::from_utf8_lossy(bytes).trim_end().to_string()
+}
+
+/// The ports a use case runs with under Tauri: progress told to the webview, and Steps run as
+/// Components through the shell plugin, each recorded in `processes`.
+pub struct AppPorts<'a, R: Runtime> {
+    pub app: &'a AppHandle<R>,
+    pub processes: &'a Processes,
+}
+
+impl<R: Runtime> Progress for AppPorts<'_, R> {
+    fn report(&self, phase: &'static str, percent: Option<u8>) {
+        self.app.report(phase, percent);
+    }
+
+    fn announce_project(&self) {
+        self.app.announce_project();
+    }
+}
+
+impl<R: Runtime> Steps for AppPorts<'_, R> {
+    fn start(&self, program: &Path, args: &[String]) -> Result<(Receiver<StepEvent>, u32), String> {
+        self.processes.spawn(self.app, program, args)
+    }
+
+    fn stop(&self, pid: u32) {
+        self.processes.kill(pid);
     }
 }
 
@@ -342,8 +381,8 @@ mod tests {
         let mut order = Vec::new();
         while let Some(event) = received.blocking_recv() {
             order.push(match event {
-                CommandEvent::Stderr(bytes) => String::from_utf8(bytes).unwrap(),
-                CommandEvent::Terminated(_) => "exit".to_string(),
+                StepEvent::Stderr(line) => line,
+                StepEvent::Exit(_) => "exit".to_string(),
                 _ => "other".to_string(),
             });
         }

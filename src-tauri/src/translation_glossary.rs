@@ -5,7 +5,8 @@ use tauri::{AppHandle, Manager};
 
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
-use crate::project::{self, CurrentProject};
+use crate::progress::Progress;
+use crate::project::CurrentProject;
 
 const GLOSSARY_FILE: &str = "glossary.csv";
 
@@ -184,7 +185,7 @@ pub fn translation_glossary_table(app: AppHandle) -> Result<GlossaryTable, Failu
 pub fn save_translation_glossary(app: AppHandle, rows: Vec<Vec<String>>) -> Result<(), Failure> {
     app.state::<CurrentProject>()
         .save_translation_glossary(&rows)?;
-    project::announce(&app);
+    app.announce_project();
     Ok(())
 }
 

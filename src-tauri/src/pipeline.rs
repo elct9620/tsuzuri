@@ -3,15 +3,16 @@ use std::path::{Path, PathBuf};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, Manager, Runtime};
-use tauri_plugin_shell::process::CommandEvent;
+use tauri::{AppHandle, Manager};
 
 use crate::components::{self, Resolver};
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::models::{self, ModelSettings, ModelSlot};
-use crate::processes::Processes;
-use crate::project::{self, CurrentProject, TranscriptionTarget};
+use crate::processes::{AppPorts, Processes};
+use crate::progress::{enter, Progress};
+use crate::project::{CurrentProject, TranscriptionTarget};
+use crate::steps::{StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
 use crate::transcript::{parse_timestamp, Segment, Transcript};
 
@@ -19,13 +20,6 @@ use crate::transcript::{parse_timestamp, Segment, Transcript};
 const WAV_BYTES_PER_SECOND: u64 = 16_000 * 2;
 const WAV_HEADER_BYTES: u64 = 44;
 const STDERR_TAIL_LINES: usize = 5;
-
-/// Sent as each Phase starts and as its percentage changes; a Phase that cannot tell how far along it is has no percentage.
-#[derive(Debug, Clone, Serialize)]
-struct PipelineProgress {
-    phase: &'static str,
-    percent: Option<u8>,
-}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Transcription {
@@ -39,9 +33,9 @@ pub struct Tools {
     pub whisper: PathBuf,
 }
 
-pub async fn run_transcribe<R: Runtime>(
-    app: &AppHandle<R>,
-    processes: &Processes,
+pub async fn run_transcribe(
+    ports: &(impl Progress + Steps),
+    project: &CurrentProject,
     tools: &Tools,
     settings: &ModelSettings,
     job: &TranscriptionTarget,
@@ -54,10 +48,9 @@ pub async fn run_transcribe<R: Runtime>(
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
 
-    enter(app, &mut phases, "convert");
+    enter(ports, &mut phases, "convert");
     run_step(
-        app,
-        processes,
+        ports,
         "convert",
         &tools.ffmpeg,
         &conversion_args(input, &wav),
@@ -67,28 +60,26 @@ pub async fn run_transcribe<R: Runtime>(
     .await?;
     let audio_bytes = std::fs::metadata(&wav)?.len();
 
-    enter(app, &mut phases, "load");
+    enter(ports, &mut phases, "load");
     let started = Instant::now();
-    let project = app.state::<CurrentProject>();
     project.write_transcript(job.generation, Transcript::default());
-    project::announce(app);
+    ports.announce_project();
     run_step(
-        app,
-        processes,
+        ports,
         "transcribe",
         &tools.whisper,
         &transcription_args(model, job.language, &wav, &srt_prefix),
         |line| {
             if line.starts_with(WHISPER_START_MARK) {
-                enter(app, &mut phases, "transcribe");
+                enter(ports, &mut phases, "transcribe");
             } else if let Some(percent) = whisper_progress(line) {
-                report(app, "transcribe", Some(percent));
+                ports.report("transcribe", Some(percent));
             }
         },
         |line| {
             if let Some(segment) = whisper_segment(line) {
                 project.push_segment(job.generation, segment);
-                project::announce(app);
+                ports.announce_project();
             }
         },
     )
@@ -102,7 +93,7 @@ pub async fn run_transcribe<R: Runtime>(
     project.refresh_resources(&job.directory)?;
     project.write_bilingual_subtitles(&job.directory, &job.name, None)?;
     project.write_transcript(job.generation, transcript);
-    project::announce(app);
+    ports.announce_project();
     Ok(Transcription {
         audio_seconds: audio_bytes.saturating_sub(WAV_HEADER_BYTES) as f64
             / WAV_BYTES_PER_SECOND as f64,
@@ -167,20 +158,9 @@ fn whisper_progress(line: &str) -> Option<u8> {
         .ok()
 }
 
-pub(crate) fn report<R: Runtime>(app: &AppHandle<R>, phase: &'static str, percent: Option<u8>) {
-    let _ = app.emit("pipeline-progress", PipelineProgress { phase, percent });
-}
-
-/// Ends the current Phase and tells the webview the next one has started.
-pub(crate) fn enter<R: Runtime>(app: &AppHandle<R>, phases: &mut Phases, phase: &'static str) {
-    phases.enter(phase);
-    report(app, phase, None);
-}
-
 /// Runs one Step to completion. A Step that exits non-zero fails with the last lines it wrote to stderr.
-async fn run_step<R: Runtime>(
-    app: &AppHandle<R>,
-    processes: &Processes,
+async fn run_step(
+    steps: &impl Steps,
     step: &str,
     program: &Path,
     args: &[String],
@@ -191,25 +171,21 @@ async fn run_step<R: Runtime>(
         step: step.to_string(),
         detail,
     };
-    let (mut events, _) = processes.spawn(app, program, args).map_err(failed)?;
+    let (mut events, _) = steps.start(program, args).map_err(failed)?;
     let mut stderr_tail: VecDeque<String> = VecDeque::with_capacity(STDERR_TAIL_LINES + 1);
     while let Some(event) = events.recv().await {
         match event {
-            CommandEvent::Stderr(bytes) => {
-                let line = String::from_utf8_lossy(&bytes).trim_end().to_string();
+            StepEvent::Stderr(line) => {
                 on_stderr_line(&line);
                 stderr_tail.push_back(line);
                 if stderr_tail.len() > STDERR_TAIL_LINES {
                     stderr_tail.pop_front();
                 }
             }
-            CommandEvent::Stdout(bytes) => {
-                on_stdout_line(String::from_utf8_lossy(&bytes).trim_end())
-            }
-            CommandEvent::Error(error) => return Err(failed(error)),
-            CommandEvent::Terminated(payload) if payload.code == Some(0) => return Ok(()),
-            CommandEvent::Terminated(_) => return Err(failed(Vec::from(stderr_tail).join("\n"))),
-            _ => {}
+            StepEvent::Stdout(line) => on_stdout_line(&line),
+            StepEvent::Error(error) => return Err(failed(error)),
+            StepEvent::Exit(Some(0)) => return Ok(()),
+            StepEvent::Exit(_) => return Err(failed(Vec::from(stderr_tail).join("\n"))),
         }
     }
     Err(failed(
@@ -223,7 +199,7 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
         .state::<CurrentProject>()
         .transcription_target(overwrite)?;
     let phases = Phases::start("transcribe", "prepare");
-    report(&app, "prepare", None);
+    app.report("prepare", None);
     let [ffmpeg, whisper] =
         components::find_ready_executables(Resolver::from_app(&app)?, ["ffmpeg", "whisper"])
             .await?;
@@ -239,7 +215,20 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
         .join(started_at.to_string());
     let processes = app.state::<Processes>().inner().clone();
 
-    let result = run_transcribe(&app, &processes, &tools, &settings, &job, &work, phases).await;
+    let ports = AppPorts {
+        app: &app,
+        processes: &processes,
+    };
+    let result = run_transcribe(
+        &ports,
+        &app.state::<CurrentProject>(),
+        &tools,
+        &settings,
+        &job,
+        &work,
+        phases,
+    )
+    .await;
     let _ = std::fs::remove_dir_all(&work);
     result
 }
@@ -340,9 +329,13 @@ mod tests {
 
         async fn run(&self, target: &TranscriptionTarget) -> Result<Transcription, Failure> {
             let processes = Processes::new(self.dir.path().join("processes.json"));
+            let app = self.app.handle();
             run_transcribe(
-                self.app.handle(),
-                &processes,
+                &AppPorts {
+                    app,
+                    processes: &processes,
+                },
+                &app.state::<CurrentProject>(),
                 &self.tools,
                 &self.settings,
                 target,
@@ -433,6 +426,20 @@ mod tests {
         let target = fixture.target_in(Language::TraditionalChinese);
         let hold = fixture.whisper_started.with_extension("hold");
         std::fs::write(&hold, b"").unwrap();
+        let announced_counts = Arc::new(Mutex::new(Vec::new()));
+        fixture.app.listen_any("project-changed", {
+            let announced_counts = Arc::clone(&announced_counts);
+            let handle = fixture.app.handle().clone();
+            move |_| {
+                let count = handle
+                    .state::<CurrentProject>()
+                    .view()
+                    .unwrap()
+                    .segments()
+                    .len();
+                announced_counts.lock().unwrap().push(count);
+            }
+        });
         let watch = async {
             for _ in 0..250 {
                 let count = fixture.project().view().unwrap().segments().len();
@@ -450,6 +457,10 @@ mod tests {
 
         result.unwrap();
         assert!(saw_one_segment, "no Segment arrived while whisper-cli ran");
+        assert!(
+            announced_counts.lock().unwrap().contains(&1),
+            "the webview was not told when the first Segment arrived"
+        );
     }
 
     // @behavior TX-018
@@ -659,8 +670,11 @@ mod tests {
         let target = project.transcription_target(true).unwrap();
 
         let transcription = run_transcribe(
-            app.handle(),
-            &processes,
+            &AppPorts {
+                app: app.handle(),
+                processes: &processes,
+            },
+            &project,
             &tools,
             &settings,
             &target,

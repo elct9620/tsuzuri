@@ -4,11 +4,12 @@ use std::sync::Mutex;
 use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager, Runtime};
+use tauri::{AppHandle, Manager, Runtime};
 
 use crate::failure::Failure;
 use crate::history;
 use crate::language::{Language, LanguagePair};
+use crate::progress::Progress;
 use crate::project_config::{BilingualOrder, ProjectConfig, ProjectOptions};
 use crate::resource::{self, Resource};
 use crate::segment_change::SegmentChange;
@@ -956,11 +957,6 @@ impl CurrentProject {
     }
 }
 
-/// Tells the webview the Project changed, so it asks for what Rust now holds.
-pub fn announce<R: Runtime>(app: &AppHandle<R>) {
-    let _ = app.emit("project-changed", ());
-}
-
 /// The directory an SRT file is in, opened with the file's Resource current.
 fn open_directory_of(path: &Path, language: Language) -> Result<Project, Failure> {
     let directory = path.parent().ok_or_else(|| Failure::Io {
@@ -992,7 +988,7 @@ fn open_directory_of(path: &Path, language: Language) -> Result<Project, Failure
 pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
     app.state::<CurrentProject>()
         .replace(Project::open(path, language)?);
-    announce(&app);
+    app.announce_project();
     Ok(())
 }
 
@@ -1000,7 +996,7 @@ pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result
 pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
     app.state::<CurrentProject>()
         .replace(open_directory_of(&path, language)?);
-    announce(&app);
+    app.announce_project();
     Ok(())
 }
 
@@ -1008,7 +1004,7 @@ pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(),
 /// webview; a failure is logged, since nobody asked for this read.
 pub fn read_again_if_changed<R: Runtime>(app: &AppHandle<R>) {
     match app.state::<CurrentProject>().read_again_if_changed() {
-        Ok(true) => announce(app),
+        Ok(true) => app.announce_project(),
         Ok(false) => {}
         Err(failure) => log::warn!("could not read the Current Resource again: {failure:?}"),
     }
@@ -1017,28 +1013,28 @@ pub fn read_again_if_changed<R: Runtime>(app: &AppHandle<R>) {
 #[tauri::command]
 pub fn select_resource(app: AppHandle, name: String) -> Result<(), Failure> {
     app.state::<CurrentProject>().select(&name)?;
-    announce(&app);
+    app.announce_project();
     Ok(())
 }
 
 #[tauri::command]
 pub fn show_translation(app: AppHandle, language: Option<Language>) -> Result<(), Failure> {
     app.state::<CurrentProject>().show_translation(language)?;
-    announce(&app);
+    app.announce_project();
     Ok(())
 }
 
 #[tauri::command]
 pub fn set_primary_language(app: AppHandle, language: Language) -> Result<(), Failure> {
     app.state::<CurrentProject>().set_language(language)?;
-    announce(&app);
+    app.announce_project();
     Ok(())
 }
 
 #[tauri::command]
 pub fn set_project_options(app: AppHandle, options: ProjectOptions) -> Result<(), Failure> {
     app.state::<CurrentProject>().set_options(options)?;
-    announce(&app);
+    app.announce_project();
     Ok(())
 }
 
@@ -1055,14 +1051,14 @@ pub fn edit_segment(
     value: String,
 ) -> Result<(), Failure> {
     let edited = app.state::<CurrentProject>().edit(index, field, value);
-    announce(&app);
+    app.announce_project();
     edited
 }
 
 #[tauri::command]
 pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Failure> {
     let changed = app.state::<CurrentProject>().change_segments(change);
-    announce(&app);
+    app.announce_project();
     changed
 }
 

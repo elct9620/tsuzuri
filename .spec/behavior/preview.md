@@ -263,7 +263,7 @@ Hearing and watching the Current Resource's media above the editor while its sub
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing |
 | When | the media plays to 1.5 s |
 | Then | the second Segment's row alone is marked as playing |
 
@@ -306,3 +306,19 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | the second Segment current, reading `今天` |
 | When | its text is changed to `明天` |
 | Then | the card beside the video shows `明天` |
+
+## `PV-038` Clearing the playing mark when the media stops
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment's row marked as playing |
+| When | the media pauses |
+| Then | no row is marked as playing |
+
+## `PV-039` Leaving the next row unmarked when a Segment played alone ends
+
+| Step | Statement |
+| --- | --- |
+| Given | a paused Current Resource with Segments from 0 to 1 s and from 1 to 2 s |
+| When | the media is moved to 1 s, the end of the first |
+| Then | no row is marked as playing |

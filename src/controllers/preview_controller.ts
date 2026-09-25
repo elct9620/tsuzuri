@@ -117,7 +117,8 @@ export default class PreviewController extends Controller {
       (segment) => segment.start_ms <= at && at < segment.end_ms,
     );
     this.captionTarget.textContent = this.segments[index]?.text ?? "";
-    this.markPlaying(index === -1 ? null : index);
+    const isPlaying = !this.mediaTarget.paused && index !== -1;
+    this.markPlaying(isPlaying ? index : null);
   }
 
   showPlaying(): void {
@@ -126,6 +127,7 @@ export default class PreviewController extends Controller {
 
   showPaused(): void {
     this.playbackTarget.classList.remove("swap-active");
+    this.markPlaying(null);
   }
 
   showUnplayable(): void {

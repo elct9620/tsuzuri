@@ -29,8 +29,8 @@ const REGION_COLORS = ["--segment-even", "--segment-odd"];
  * turns, so where one ends and the next begins shows, and the Current Segment is stronger.
  */
 export function regionColor(index: number, isCurrent = false): string {
-  const color = REGION_COLORS[index % REGION_COLORS.length];
-  return `var(${color}${isCurrent ? "-current" : ""})`;
+  if (isCurrent) return "var(--segment-current)";
+  return `var(${REGION_COLORS[index % REGION_COLORS.length]})`;
 }
 
 const CONTROL_SELECTOR =

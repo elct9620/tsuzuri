@@ -91,7 +91,7 @@ describe("Current Segment", () => {
           <button data-preview-target="fold" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">
-            <video data-preview-target="media" data-timeline-target="media" data-action="timeupdate->preview#follow"></video>
+            <video data-preview-target="media" data-timeline-target="media" data-action="timeupdate->preview#follow pause->preview#showPaused"></video>
             <p data-preview-target="caption"></p>
             <div data-preview-target="hint" hidden></div>
           </div>
@@ -200,6 +200,7 @@ describe("Current Segment", () => {
   // @behavior PV-032
   it("marks the row of the Segment being played", async () => {
     await show(twoSegments);
+    await media().play();
 
     playTo(1.5);
 
@@ -240,5 +241,25 @@ describe("Current Segment", () => {
       document.querySelector('[data-preview-target="currentText"]')!
         .textContent,
     ).toBe("明天");
+  });
+
+  // @behavior PV-038
+  it("clears the playing mark when the media pauses", async () => {
+    await show(twoSegments);
+    await media().play();
+    playTo(1.5);
+
+    media().pause();
+
+    expect(isMarked("data-playing")).toEqual([false, false]);
+  });
+
+  // @behavior PV-039
+  it("leaves the next row unmarked when a Segment played alone ends", async () => {
+    await show(twoSegments);
+
+    playTo(1);
+
+    expect(isMarked("data-playing")).toEqual([false, false]);
   });
 });

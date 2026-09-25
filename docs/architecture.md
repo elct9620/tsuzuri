@@ -103,6 +103,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
+| `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
 
 指令名稱與參數以 `.spec/contract/commands.md` 為準。
 
@@ -180,6 +181,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
   │ project │ │translation│ │ toolchain     │
   └────────┘ └──────────┘ └──────────────┘
   轉錄（transcription）是「工具鏈 → 字幕」的用例，沒有自己的規則
+  波形（waveform）是「工具鏈 → 預覽」的用例，只有取峰值的規則
 ```
 
 情境之間只經由字幕的型別與 `CurrentProject` 往來，翻譯與轉錄都不直接讀寫專案目錄。
@@ -201,8 +203,9 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | `translation/{llama,settings}.rs` | 轉接 | llama-server、翻譯設定檔 |
 | `translation/resident.rs` | 轉接 | 常駐的 llama-server |
 | `transcription.rs`、`transcription/whisper.rs` | 應用、轉接 | 轉錄用例；ffmpeg 與 whisper-cli 的參數與輸出 |
+| `waveform.rs` | 應用、領域 | 波形用例：ffmpeg 轉成 PCM，每 10 ms 取一個峰值 |
 | `toolchain.rs`、`toolchain/{detection,settings}.rs` | 應用、轉接 | 尋找元件、模型設定；偵測、設定檔 |
-| `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、`ModeLock`、Phase 計時、錯誤碼 |
+| `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、執行一個 Step、`ModeLock`、Phase 計時、錯誤碼 |
 | `processes.rs` | 轉接 | 子行程的啟動、紀錄與清理，以及 `AppPorts` |
 | `*/commands.rs`、`window.rs`、`lib.rs` | 介面 | 指令、視窗大小、組裝 |
 
@@ -262,7 +265,7 @@ transcribe 指令                       translate 指令
 回答各 Phase 耗時                      回答各 Phase 耗時
 ```
 
-任務一次只跑一個：轉錄、翻譯與關掉常駐 llama-server 都先取得 `ModeLock`，後來的等前一個結束。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
+任務一次只跑一個：轉錄、翻譯與關掉常駐 llama-server 都先取得 `ModeLock`，後來的等前一個結束。取波形不是任務，不取 `ModeLock`，任務進行中也能預覽。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
 
 ### 3.8 行程
 

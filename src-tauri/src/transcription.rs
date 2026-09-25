@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
@@ -7,15 +6,13 @@ use serde::Serialize;
 use crate::failure::Failure;
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, RunningMode, TranscriptionTarget};
-use crate::steps::{StepEvent, Steps};
+use crate::steps::{run_step, Steps};
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
 use crate::transcript::Transcript;
 
 pub mod commands;
 mod whisper;
-
-const STDERR_TAIL_LINES: usize = 5;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Transcription {
@@ -93,41 +90,6 @@ pub async fn run_transcribe(
         transcribe_seconds,
         phases: phases.finish(),
     })
-}
-
-/// Runs one Step to completion. A Step that exits non-zero fails with the last lines it wrote to stderr.
-async fn run_step(
-    steps: &impl Steps,
-    step: &str,
-    program: &Path,
-    args: &[String],
-    mut on_stderr_line: impl FnMut(&str),
-    mut on_stdout_line: impl FnMut(&str),
-) -> Result<(), Failure> {
-    let failed = |detail: String| Failure::StepFailed {
-        step: step.to_string(),
-        detail,
-    };
-    let (mut events, _) = steps.start(program, args).map_err(failed)?;
-    let mut stderr_tail: VecDeque<String> = VecDeque::with_capacity(STDERR_TAIL_LINES + 1);
-    while let Some(event) = events.recv().await {
-        match event {
-            StepEvent::Stderr(line) => {
-                on_stderr_line(&line);
-                stderr_tail.push_back(line);
-                if stderr_tail.len() > STDERR_TAIL_LINES {
-                    stderr_tail.pop_front();
-                }
-            }
-            StepEvent::Stdout(line) => on_stdout_line(&line),
-            StepEvent::Error(error) => return Err(failed(error)),
-            StepEvent::Exit(Some(0)) => return Ok(()),
-            StepEvent::Exit(_) => return Err(failed(Vec::from(stderr_tail).join("\n"))),
-        }
-    }
-    Err(failed(
-        "the process ended without an exit status".to_string(),
-    ))
 }
 
 #[cfg(all(test, unix))]

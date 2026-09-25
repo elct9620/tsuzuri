@@ -54,9 +54,17 @@ Run the Transcribe Mode on the Current Resource's media file in the Primary Lang
 pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription, Failure> {}
 ```
 
+## `extract_waveform`
+
+The Waveform of the Current Resource's media, with the media file it was taken from so an answer that arrives after another Resource was selected can be told apart. ffmpeg runs as a Step outside any Mode, so a running Mode does not delay it.
+
+```rust
+pub async fn extract_waveform(app: AppHandle) -> Result<Waveform, Failure> {}
+```
+
 ## `open_project`
 
-Open a directory as a new Project in the Language given for when the directory records none, and select its first Resource.
+Open a directory as a new Project in the Language given for when the directory records none, and select its first Resource. The webview may read the files of that directory from then on, so the Preview can load its media.
 
 ```rust
 pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {}

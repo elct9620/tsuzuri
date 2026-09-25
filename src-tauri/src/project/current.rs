@@ -718,6 +718,14 @@ impl CurrentProject {
         })
     }
 
+    /// The Current Resource's media file.
+    pub fn current_media(&self) -> Result<PathBuf, Failure> {
+        let held = self.lock();
+        let project = held.project.as_ref().ok_or(Failure::NoProject)?;
+        let resource = project.resource(&project.current()?.name)?;
+        resource.media.clone().ok_or(Failure::NoMedia)
+    }
+
     /// The Current Resource's media file, the Language to transcribe it in and the subtitle to
     /// write, refused when that subtitle exists unless `overwrite`.
     pub fn transcription_target(&self, overwrite: bool) -> Result<TranscriptionTarget, Failure> {

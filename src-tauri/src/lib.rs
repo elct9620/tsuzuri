@@ -13,6 +13,7 @@ pub mod toolchain;
 pub mod transcript;
 pub mod transcription;
 pub mod translation;
+pub mod waveform;
 pub mod window;
 
 #[cfg(test)]
@@ -78,6 +79,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            waveform::commands::extract_waveform,
             toolchain::commands::choose_component,
             toolchain::commands::forget_component,
             toolchain::commands::component_statuses,

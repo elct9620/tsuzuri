@@ -1,6 +1,11 @@
+use std::collections::VecDeque;
 use std::path::Path;
 
 use tokio::sync::mpsc::Receiver;
+
+use crate::failure::Failure;
+
+const STDERR_TAIL_LINES: usize = 5;
 
 /// What a started Component does: each line it writes, without its line ending, and last how it ended.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,6 +19,41 @@ pub enum StepEvent {
 pub trait Steps {
     fn start(&self, program: &Path, args: &[String]) -> Result<(Receiver<StepEvent>, u32), String>;
     fn stop(&self, pid: u32);
+}
+
+/// Runs one Step to completion. A Step that exits non-zero fails with the last lines it wrote to stderr.
+pub async fn run_step(
+    steps: &impl Steps,
+    step: &str,
+    program: &Path,
+    args: &[String],
+    mut on_stderr_line: impl FnMut(&str),
+    mut on_stdout_line: impl FnMut(&str),
+) -> Result<(), Failure> {
+    let failed = |detail: String| Failure::StepFailed {
+        step: step.to_string(),
+        detail,
+    };
+    let (mut events, _) = steps.start(program, args).map_err(failed)?;
+    let mut stderr_tail: VecDeque<String> = VecDeque::with_capacity(STDERR_TAIL_LINES + 1);
+    while let Some(event) = events.recv().await {
+        match event {
+            StepEvent::Stderr(line) => {
+                on_stderr_line(&line);
+                stderr_tail.push_back(line);
+                if stderr_tail.len() > STDERR_TAIL_LINES {
+                    stderr_tail.pop_front();
+                }
+            }
+            StepEvent::Stdout(line) => on_stdout_line(&line),
+            StepEvent::Error(error) => return Err(failed(error)),
+            StepEvent::Exit(Some(0)) => return Ok(()),
+            StepEvent::Exit(_) => return Err(failed(Vec::from(stderr_tail).join("\n"))),
+        }
+    }
+    Err(failed(
+        "the process ended without an exit status".to_string(),
+    ))
 }
 
 /// Lets one Mode run at a time: another waits its turn rather than unloading or stopping the

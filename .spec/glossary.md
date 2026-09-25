@@ -54,6 +54,18 @@ The Language a Project's Resources are spoken and transcribed in, and the one ev
 
 What the user sets for one Project in the settings, beside its Primary Language: its Bilingual Order, whether a Bilingual SRT is saved beside each translation, and whether a subtitle about to be overwritten is kept as an Overwrite Backup. Each has a default the Project keeps until it is changed.
 
+### Preview
+
+The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. It appears only for a Resource with a media file.
+
+### Waveform
+
+How loud the Current Resource's media is over time, as one Peak for every 10 ms. Rust takes it from the media with ffmpeg, so the webview never decodes the whole audio.
+
+### Peak
+
+The loudest sample within one 10 ms slice of a Waveform, from 0 for silence to 1 for full scale.
+
 ### Mode
 
 What the user starts on the Current Resource from a task dialog: Transcribe (its media file to its Primary Language subtitle), Translate (its Primary Language subtitle into another Language), or Transcribe and Translate (both, in that order). Its results appear in the editor as they arrive. While a Mode runs on a Resource, nothing else changes the subtitles it writes: a transcription holds every subtitle of the Resource, a translation only the one it writes. One Mode runs at a time; another started meanwhile waits for it to end.

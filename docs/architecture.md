@@ -214,16 +214,19 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 ```
 CurrentProject(Mutex<HeldProject>)
-  └─ HeldProject { generation, project: Option<Project> }
+  └─ HeldProject { generation, project: Option<Project>, mode_hold }
        replace／select 時 generation + 1
        用例結束時 write_if_current(generation)：資源已換就不寫入畫面
+       Project.undo_histories：每個資源一份復原紀錄（project/history.rs）
 ```
 
 | 保護 | 做法 |
 |---|---|
 | 同時存取 | 一把 Mutex，每次操作都很短，不在鎖內等待元件 |
 | 任務跨越切換資源 | 用例記下 generation，寫回畫面前比對 |
-| 外部修改 | 讀寫後記下字幕的摘要，編輯前比對，不同就拒絕並重讀 |
+| 外部修改 | 讀寫後記下字幕的摘要，編輯前比對，不同就拒絕並重讀，並清掉該資源的復原紀錄 |
+| 任務寫入中 | 用例開始時以 `hold_resource` 記下 `mode_hold`，結束時放開；改動前比對，碰到任務寫入的字幕就拒絕為 `mode-running` |
+| 復原 | 每次改動前記下資源所有字幕的內容，改動後有差才留下；復原與重做換回那份內容並重讀 |
 
 ### 3.7 任務
 

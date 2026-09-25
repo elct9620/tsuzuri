@@ -40,9 +40,23 @@ export function t(key: string, options?: TOptions): string {
   return instance.t(key, options);
 }
 
-/** Fills every element under `root` that names its text with `data-i18n`. */
+/** Where each attribute naming a text puts it: the text itself, the tooltip, or the accessible name a radio tab needs. */
+const TEXT_PLACES: [string, (element: HTMLElement, text: string) => void][] = [
+  ["data-i18n", (element, text) => (element.textContent = text)],
+  ["data-i18n-tooltip", (element, text) => (element.dataset.tooltip = text)],
+  [
+    "data-i18n-label",
+    (element, text) => element.setAttribute("aria-label", text),
+  ],
+];
+
+/** Fills every element under `root` that names a text with one of `TEXT_PLACES`' attributes. */
 export function translatePage(root: ParentNode = document): void {
-  for (const element of root.querySelectorAll<HTMLElement>("[data-i18n]")) {
-    element.textContent = t(element.dataset.i18n!);
+  for (const [attribute, place] of TEXT_PLACES) {
+    for (const element of root.querySelectorAll<HTMLElement>(
+      `[${attribute}]`,
+    )) {
+      place(element, t(element.getAttribute(attribute)!));
+    }
   }
 }

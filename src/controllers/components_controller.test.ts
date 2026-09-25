@@ -38,7 +38,7 @@ describe("ComponentsController", () => {
         <li>
           <span data-components-target="status" data-component="llama"></span>
           <button data-component="llama" data-action="components#choose">指定</button>
-          <button data-components-target="restore" data-component="llama" data-action="components#restore" hidden>恢復預設值</button>
+          <button data-components-target="restore" data-component="llama" data-action="components#restore" hidden>還原預設值</button>
         </li>
       </ul>
     `;

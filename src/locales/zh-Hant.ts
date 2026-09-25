@@ -70,6 +70,25 @@ const zhHant: typeof en = {
   },
   settings: {
     project: "專案",
+    general: "整體",
+    primaryLanguageHelp:
+      "影音裡說的語言。轉錄用它辨識語音，翻譯從它譯出；改了之後會依這個語言重新配對字幕檔。只影響這個專案。",
+    bilingualOrderHelp:
+      "雙語 SRT 每段先放原文還是譯文，匯出的檔名也照同樣的順序排列語言代碼。只影響這個專案。",
+    ffmpegHelp:
+      "把影片或音訊轉成轉錄用的音檔。按「指定」選擇自己安裝的執行檔；沒有指定時，依序使用偵測到的和內建的版本。",
+    whisperHelp:
+      "轉錄語音的 whisper-cli。有 NVIDIA 顯示卡時，可以指定 CUDA 版加快轉錄。",
+    llamaHelp: "翻譯用的 llama-server。可以指定支援你的顯示卡的版本。",
+    batchSizeHelp:
+      "一次送給模型翻譯的句數。越多越快，但小模型較容易漏翻或錯位。",
+    retriesHelp: "一批翻譯對不上句數時重試的次數；仍失敗就把這批拆成兩半再翻。",
+    referenceLinesHelp:
+      "每批前後各附上幾句當作上下文，幫助模型理解，這些句子本身不翻譯。",
+    transcriptionModelHelp:
+      "whisper 的 ggml 模型檔（.bin），例如 Breeze-ASR-25。模型越大越準，也越慢。",
+    translationModelHelp:
+      "llama.cpp 的 GGUF 模型檔，例如 Qwen3-4B。4GB 顯示記憶體建議用 4B 左右的量化模型。",
     primaryLanguage: "主語言",
     bilingualOrder: "雙語順序",
     originalFirst: "原文在上",
@@ -84,7 +103,7 @@ const zhHant: typeof en = {
     choose: "指定",
     chooseFile: "指定檔案",
     checking: "檢查中",
-    restoreDefault: "恢復預設值",
+    restoreDefault: "還原預設值",
     license: "Tsuzuri 以 Apache-2.0 授權釋出。",
   },
   slots: {

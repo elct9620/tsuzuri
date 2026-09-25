@@ -49,7 +49,9 @@ describe("ProjectController", () => {
           <ul data-project-target="resources"></ul>
           <p data-project-target="glossary"></p>
         </div>
-        <fieldset data-project-target="settings" hidden>
+        <input type="radio" name="tabs" id="project-tab" data-project-target="projectTab settings" checked />
+        <input type="radio" name="tabs" id="general-tab" data-project-target="generalTab" />
+        <fieldset data-project-target="settings">
           <select data-project-target="language" data-action="change->project#setLanguage">
             <option value="zh-TW">繁體中文</option>
             <option value="en">English</option>
@@ -180,7 +182,7 @@ describe("ProjectController", () => {
     expect([
       target("start").hidden,
       target("workspace").hidden,
-      target("settings").hidden,
+      target("workspace").hidden,
     ]).toEqual([false, true, true]);
   });
 
@@ -208,5 +210,27 @@ describe("ProjectController", () => {
     expect(sent("set_project_options")).toEqual({
       options: { bilingual_order: "translation-first" },
     });
+  });
+
+  // @behavior PJ-048
+  it("offers only the general settings without a Project", async () => {
+    await hold(null);
+
+    expect([
+      document.querySelector<HTMLInputElement>("#project-tab")!.hidden,
+      document.querySelector<HTMLElement>("fieldset")!.hidden,
+      document.querySelector<HTMLInputElement>("#general-tab")!.checked,
+    ]).toEqual([true, true, true]);
+  });
+
+  // @behavior PJ-049
+  it("opens the settings at the Project's own once a Project is open", async () => {
+    await hold(null);
+
+    await hold(projectOf());
+
+    expect(
+      document.querySelector<HTMLInputElement>("#project-tab")!.checked,
+    ).toBe(true);
   });
 });

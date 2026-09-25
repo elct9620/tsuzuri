@@ -323,6 +323,22 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | `ja` is chosen as its Primary Language |
 | Then | the Project's Primary Language is set to `ja` |
 
+## `PJ-048` Offering only the general settings without a Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Project |
+| When | the settings show |
+| Then | only the general settings are offered |
+
+## `PJ-049` Opening the settings at the Project's own once one is open
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings showing only the general settings, with no Project |
+| When | a Project is opened |
+| Then | the settings show the Project's own |
+
 ## `PJ-039` Keeping an edit off a subtitle changed elsewhere
 
 A subtitle is often corrected in a dedicated subtitle editor, and writing an edit back would overwrite that correction.

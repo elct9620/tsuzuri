@@ -104,3 +104,21 @@ A dialog is drawn above the whole page, so the tooltip of an element inside it i
 | Given | an element with a tooltip in an open dialog |
 | When | the pointer moves onto it |
 | Then | the tooltip is shown inside that dialog |
+
+## `IF-012` Writing a tooltip in the Interface Language
+
+| Step | Statement |
+| --- | --- |
+| Given | an element whose tooltip names the text `settings.primaryLanguageHelp` |
+| When | the page is written in Traditional Chinese |
+| Then | its tooltip reads that text in Traditional Chinese |
+
+## `IF-013` Explaining every setting
+
+Each setting says what it is for and how to use it, since its name alone rarely does.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings dialog |
+| When | its rows are read in either Interface Language |
+| Then | every row carries a tooltip that explains it |

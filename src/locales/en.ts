@@ -70,6 +70,27 @@ const en = {
   },
   settings: {
     project: "Project",
+    general: "General",
+    primaryLanguageHelp:
+      "The language spoken in the media. Transcription listens for it and translation starts from it; changing it pairs the subtitle files again. Applies to this project only.",
+    bilingualOrderHelp:
+      "Whether each cue of a bilingual SRT puts the original or the translation first; the exported file name lists the language codes in the same order. Applies to this project only.",
+    ffmpegHelp:
+      "Turns video or audio into the audio file transcription reads. Choose an executable you installed; without one, the detected and then the bundled version is used.",
+    whisperHelp:
+      "The whisper-cli that transcribes speech. With an NVIDIA graphics card, choose a CUDA build to transcribe faster.",
+    llamaHelp:
+      "The llama-server that translates. Choose a build that supports your graphics card.",
+    batchSizeHelp:
+      "How many lines are sent to the model at once. More is faster, but a small model skips or shifts lines more often.",
+    retriesHelp:
+      "How many times a batch whose line count does not match is tried again before it is split in half.",
+    referenceLinesHelp:
+      "How many lines before and after each batch are sent as context; they help the model and are not translated.",
+    transcriptionModelHelp:
+      "A whisper ggml model file (.bin), such as Breeze-ASR-25. A larger model is more accurate and slower.",
+    translationModelHelp:
+      "A llama.cpp GGUF model file, such as Qwen3-4B. With 4GB of video memory, a quantized model around 4B fits.",
     primaryLanguage: "Primary language",
     bilingualOrder: "Bilingual order",
     originalFirst: "Original first",

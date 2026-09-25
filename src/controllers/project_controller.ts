@@ -61,6 +61,8 @@ export default class ProjectController extends Controller {
     "resources",
     "glossary",
     "settings",
+    "projectTab",
+    "generalTab",
     "language",
     "bilingualOrder",
   ];
@@ -72,8 +74,10 @@ export default class ProjectController extends Controller {
   declare readonly nameTarget: HTMLElement;
   declare readonly resourcesTarget: HTMLUListElement;
   declare readonly glossaryTarget: HTMLElement;
-  /** The Project's own settings, shown only while one is open. */
-  declare readonly settingsTarget: HTMLElement;
+  /** The Project's own settings and their tab, shown only while one is open. */
+  declare readonly settingsTargets: HTMLElement[];
+  declare readonly projectTabTarget: HTMLInputElement;
+  declare readonly generalTabTarget: HTMLInputElement;
   declare readonly languageTarget: HTMLSelectElement;
   declare readonly bilingualOrderTarget: HTMLSelectElement;
 
@@ -140,7 +144,7 @@ export default class ProjectController extends Controller {
   private show(project: ProjectView | null): void {
     this.startTarget.hidden = project !== null;
     this.workspaceTarget.hidden = project === null;
-    this.settingsTarget.hidden = project === null;
+    this.showSettingsOf(project);
     if (project === null) return;
     this.nameTarget.textContent =
       project.directory.split(/[\\/]/).pop() ?? project.directory;
@@ -156,5 +160,14 @@ export default class ProjectController extends Controller {
         : t("resources.glossary", { count: glossary.term_count });
     this.languageTarget.value = project.language;
     this.bilingualOrderTarget.value = project.options.bilingual_order;
+  }
+
+  /** The Project's own settings while one is open, opened at their tab when it has just opened. */
+  private showSettingsOf(project: ProjectView | null): void {
+    const hasOpened = project !== null && this.projectTabTarget.hidden;
+    for (const settings of this.settingsTargets)
+      settings.hidden = project === null;
+    if (project === null) this.generalTabTarget.checked = true;
+    if (hasOpened) this.projectTabTarget.checked = true;
   }
 }

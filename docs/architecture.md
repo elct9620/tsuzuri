@@ -319,7 +319,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | Controller | 畫面區域 |
 |---|---|
 | `project`、`transcript`、`segment-changes`、`dialog` | 整頁：資源清單、字幕編輯、段落變更、設定 modal |
-| `speakers` | 每段的說話者選單：列出全部名稱、寫回、提議加入詞彙表 |
+| `speakers` | 每段的說話者選單與設定說話者 modal：列出全部名稱、寫回、提議加入詞彙表 |
 | `comparison` | 字幕編輯的對照：原文與譯文各自比較一份備份並標在各自欄位、插入已刪除的段落、疊上其他譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
 | `preview` | 預覽：播放器、整段播放、疊字、收起 |
@@ -345,6 +345,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `timeline:current` | 時間軸 | 字幕編輯標出目前段落 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
+| `segment-changes:speakers` | `segment-changes` | `speakers` 為選取的段落開設定說話者 |
 
 ### 4.3 backend
 

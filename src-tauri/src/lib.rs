@@ -88,6 +88,7 @@ pub fn run() {
             transcription::commands::transcribe,
             project::commands::current_project,
             project::commands::edit_segment,
+            project::commands::set_speakers,
             project::commands::change_segments,
             project::commands::translation_cues,
             logs::commands::log_directory,

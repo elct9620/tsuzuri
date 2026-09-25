@@ -134,6 +134,11 @@ export function editSegment(
   return invoke("edit_segment", { index, field, value });
 }
 
+/** Gives each Segment at `indexes` the Speaker `speaker`, or none when it is empty, as one change. */
+export function setSpeakers(indexes: number[], speaker: string): Promise<void> {
+  return invoke("set_speakers", { indexes, speaker });
+}
+
 export function showTranslation(language: string | null): Promise<void> {
   return invoke("show_translation", { language });
 }

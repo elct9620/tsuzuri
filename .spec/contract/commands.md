@@ -126,6 +126,14 @@ Replace the `text`, the `translation` or the `speaker` of one Segment of the Cur
 pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}
 ```
 
+## `set_speakers`
+
+Give each Segment of the Current Resource at `indexes` the Speaker `speaker`, where an empty one leaves them with none, as one change in the Undo History; the Speakers are written as `edit_segment` writes one, to the original and to each cue of every translation that has a Segment's times. A subtitle changed elsewhere and a running Mode are refused as `edit_segment` refuses them, and a position the Segments do not have is refused before anything is written.
+
+```rust
+pub fn set_speakers(app: AppHandle, indexes: Vec<usize>, speaker: String) -> Result<(), Failure> {}
+```
+
 ## `translate`
 
 Run the Translate Mode on the Current Resource from the Primary Language into the target Language, given by its code, with the options the Translate panel offers and the saved translation settings, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. Each Batch's translations are shown as it finishes, emitting `project-changed`; once all are done they are written to the Resource's translation file and the target is recorded as the Project's translation Language; the answer is the seconds each Phase took.

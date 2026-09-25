@@ -1,0 +1,164 @@
+// @vitest-environment happy-dom
+import { Application } from "@hotwired/stimulus";
+import { emit } from "@tauri-apps/api/event";
+import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { ProjectView } from "../backend/project";
+import { projectOf } from "../test_project";
+import { NOTIFICATION_STACK } from "../ui/test_notification";
+import SegmentChangesController from "./segment_changes_controller";
+import SpeakersController from "./speakers_controller";
+import TranscriptController from "./transcript_controller";
+
+describe("SpeakersController", () => {
+  let application: Application;
+  let project: ProjectView | null;
+  let named: unknown;
+
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const target = <T extends HTMLElement>(name: string) =>
+    document.querySelector<T>(`[data-speakers-target="${name}"]`)!;
+
+  async function hold(next: ProjectView): Promise<void> {
+    project = next;
+    await emit("project-changed");
+    await settle();
+  }
+
+  /** A Project of three Segments, said by `speakers` in turn, `""` naming none. */
+  const saidBy = (...speakers: string[]) =>
+    projectOf({
+      segments: speakers.map((speaker, at) => ({
+        start_ms: at * 1000,
+        end_ms: (at + 1) * 1000,
+        ...(speaker ? { speaker } : {}),
+        text: "你好",
+      })),
+    });
+
+  async function select(...indexes: number[]): Promise<void> {
+    const rows = document.querySelectorAll<HTMLLIElement>("ol > li");
+    for (const index of indexes) {
+      const checkbox =
+        rows[index].querySelector<HTMLInputElement>("input.selection")!;
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    await settle();
+  }
+
+  /** Chooses `scope` in the open Speaker dialog, sets the Speaker to `name` and applies it. */
+  async function apply(
+    scope: string,
+    name: string,
+    from?: string,
+  ): Promise<void> {
+    document
+      .querySelector<HTMLInputElement>(`input[value="${scope}"]`)!
+      .click();
+    if (from !== undefined) target<HTMLSelectElement>("from").value = from;
+    target<HTMLInputElement>("to").value = name;
+    document.querySelector<HTMLButtonElement>("#apply")!.click();
+    await settle();
+  }
+
+  async function openDialog(): Promise<void> {
+    document.querySelector<HTMLButtonElement>("#open-speakers")!.click();
+    await settle();
+  }
+
+  beforeEach(async () => {
+    project = null;
+    named = undefined;
+    document.body.innerHTML = `
+      ${NOTIFICATION_STACK}
+      <section data-controller="transcript segment-changes speakers"
+        data-action="transcript:shown->speakers#follow segment-changes:speakers->speakers#openForSelection">
+        <h2 data-transcript-target="heading"></h2>
+        <select data-transcript-target="translationLanguage"></select>
+        <p data-transcript-target="empty"></p>
+        <button id="open-speakers" data-action="speakers#open">說話者</button>
+        <dialog data-speakers-target="dialog">
+          <label data-speakers-target="selection">
+            <input type="radio" name="speaker-scope" value="selection" data-speakers-target="scope">
+            <span data-speakers-target="selectionCount"></span>
+          </label>
+          <input type="radio" name="speaker-scope" value="every" data-speakers-target="scope">
+          <input type="radio" name="speaker-scope" value="unnamed" data-speakers-target="scope">
+          <input type="radio" name="speaker-scope" value="named" data-speakers-target="scope">
+          <select data-speakers-target="from"></select>
+          <input data-speakers-target="to">
+          <div data-speakers-target="names"></div>
+          <button id="apply" data-action="speakers#apply">套用</button>
+        </dialog>
+        <div data-segment-changes-target="selection" hidden>
+          <span data-segment-changes-target="selectionCount"></span>
+          <button data-segment-changes-target="merge"></button>
+          <button id="speakers-of-selection" data-action="segment-changes#openSpeakers">說話者</button>
+        </div>
+        <ol data-transcript-target="list"></ol>
+      </section>
+    `;
+    mockIPC(
+      (command, args) => {
+        if (command === "current_project") return project;
+        if (command === "set_speakers") named = args;
+      },
+      { shouldMockEvents: true },
+    );
+    application = Application.start();
+    application.register("transcript", TranscriptController);
+    application.register("segment-changes", SegmentChangesController);
+    application.register("speakers", SpeakersController);
+    await settle();
+  });
+
+  afterEach(() => {
+    application.stop();
+    clearMocks();
+  });
+
+  // @behavior ED-034
+  it("sets the Speaker of the selected Segments", async () => {
+    await hold(saidBy("", "", ""));
+    await select(0, 2);
+    document
+      .querySelector<HTMLButtonElement>("#speakers-of-selection")!
+      .click();
+    await settle();
+
+    await apply("selection", "co");
+
+    expect(named).toEqual({ indexes: [0, 2], speaker: "co" });
+  });
+
+  // @behavior ED-035
+  it("sets the Speaker of every Segment", async () => {
+    await hold(saidBy("", "cl", ""));
+    await openDialog();
+
+    await apply("every", "co");
+
+    expect(named).toEqual({ indexes: [0, 1, 2], speaker: "co" });
+  });
+
+  // @behavior ED-036
+  it("names only the Segments without a Speaker", async () => {
+    await hold(saidBy("", "cl", ""));
+    await openDialog();
+
+    await apply("unnamed", "co");
+
+    expect(named).toEqual({ indexes: [0, 2], speaker: "co" });
+  });
+
+  // @behavior ED-037
+  it("renames a Speaker", async () => {
+    await hold(saidBy("co", "cl", "co"));
+    await openDialog();
+
+    await apply("named", "小明", "co");
+
+    expect(named).toEqual({ indexes: [0, 2], speaker: "小明" });
+  });
+});

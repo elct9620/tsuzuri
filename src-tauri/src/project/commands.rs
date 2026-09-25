@@ -91,6 +91,15 @@ pub fn edit_segment(
 }
 
 #[tauri::command]
+pub fn set_speakers(app: AppHandle, indexes: Vec<usize>, speaker: String) -> Result<(), Failure> {
+    let result = app
+        .state::<CurrentProject>()
+        .set_speakers(&indexes, &speaker);
+    app.announce_project();
+    result
+}
+
+#[tauri::command]
 pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Failure> {
     let result = app.state::<CurrentProject>().change_segments(change);
     app.announce_project();

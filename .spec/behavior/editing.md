@@ -7,6 +7,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/transcript_controller.test.ts`
 - `src/controllers/project_controller.test.ts`
 - `src/controllers/segment_changes_controller.test.ts`
+- `src/controllers/speakers_controller.test.ts`
 - `src/controllers/field_controller.test.ts`
 - `src/editor/*.test.ts`
 
@@ -281,4 +282,38 @@ A subtitle has no formatting, so what is pasted or typed into a text field stays
 | Given | a text field where an input method is composing text |
 | When | Enter is pressed to pick a candidate, even where the platform ends the composition before the key arrives |
 | Then | no line break is typed and the input method keeps the key |
+
+## `ED-034` Setting the Speaker of the selected Segments
+
+Setting Speakers one Segment at a time is slow across a long transcript, so the selection and the whole transcript can be named at once.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the first and third selected |
+| When | the Speaker dialog opened from the selection is applied with `co` |
+| Then | the Project is asked to set the Speaker of Segments 0 and 2 to `co` |
+
+## `ED-035` Setting the Speaker of every Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments |
+| When | the Speaker dialog is applied to every Segment with `co` |
+| Then | the Project is asked to set the Speaker of Segments 0, 1 and 2 to `co` |
+
+## `ED-036` Naming only the Segments without a Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the second said by `cl` |
+| When | the Speaker dialog is applied to the Segments without a Speaker with `co` |
+| Then | the Project is asked to set the Speaker of Segments 0 and 2 to `co` |
+
+## `ED-037` Renaming a Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments said by `co`, `cl` and `co` |
+| When | the Speaker dialog is applied to the Segments said by `co` with `小明` |
+| Then | the Project is asked to set the Speaker of Segments 0 and 2 to `小明` |
 

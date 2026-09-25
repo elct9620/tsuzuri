@@ -770,3 +770,19 @@ A name changed in the Translation Glossary since a translation was written leave
 | When | the Speaker of its Segment is set to nothing |
 | Then | `ep01.srt` reads `你好` and `ep01.en.srt` reads `Hello` |
 
+## `PJ-097` Naming the Speaker of several Segments at once
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose `ep01.srt` reads `你好`, `嗨` and `再見`, translated in `ep01.en.srt` |
+| When | the Speaker of its first and third Segments is set to `co` at once |
+| Then | `ep01.srt` and `ep01.en.srt` label only their first and third cues `co` |
+
+## `PJ-098` Undoing Speakers named at once in one step
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose three Segments were all given the Speaker `co` at once |
+| When | the change is undone |
+| Then | no Segment names a Speaker |
+

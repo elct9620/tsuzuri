@@ -129,6 +129,13 @@ export default class SegmentChangesController extends Controller {
     this.clearSelection();
   }
 
+  /** Hands the selected rows to the Speaker dialog. */
+  openSpeakers(): void {
+    this.dispatch("speakers", {
+      detail: { indexes: this.selectedIndexes() },
+    });
+  }
+
   clearSelection(): void {
     for (const checkbox of this.checkboxes()) checkbox.checked = false;
     this.showSelection();

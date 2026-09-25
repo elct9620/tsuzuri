@@ -123,6 +123,16 @@ impl Project {
         self.read_current_again()
     }
 
+    /// Refuses a change when a subtitle of the Current Resource was changed elsewhere since
+    /// Tsuzuri last read or wrote it, reading it again instead so that change is kept.
+    fn refuse_changed_elsewhere(&mut self) -> Result<(), Failure> {
+        if self.is_changed_elsewhere()? {
+            self.read_changed_elsewhere()?;
+            return Err(Failure::ChangedElsewhere);
+        }
+        Ok(())
+    }
+
     fn subtitle_snapshot(&self, name: &str) -> Result<SubtitleSnapshot, Failure> {
         files::subtitle_snapshot(self.resource(name)?)
     }
@@ -492,6 +502,12 @@ fn version_at(path: &Path, language: Option<Language>) -> Result<Transcript, Fai
 }
 
 /// Records the subtitles a transcription or translation has just written as Tsuzuri's own.
+/// The Speaker `value` names, trimmed; an empty one names none.
+fn speaker_from(value: &str) -> Option<String> {
+    let speaker = value.trim();
+    (!speaker.is_empty()).then(|| speaker.to_string())
+}
+
 fn remember_written_subtitles(project: &mut Project) {
     if let Err(failure) = project.remember_subtitles() {
         log::warn!("could not read back the subtitles just written: {failure:?}");
@@ -1039,10 +1055,7 @@ impl CurrentProject {
             SegmentField::Speaker => true,
         };
         self.change_unless_held(is_written, |project| {
-            if project.is_changed_elsewhere()? {
-                project.read_changed_elsewhere()?;
-                return Err(Failure::ChangedElsewhere);
-            }
+            project.refuse_changed_elsewhere()?;
             project.make_undoable_change(|project| {
                 let previous = project.current()?.transcript.clone();
                 let segment = project
@@ -1056,14 +1069,35 @@ impl CurrentProject {
                 match field {
                     SegmentField::Text => segment.text = value,
                     SegmentField::Translation => segment.translation = Some(value),
-                    SegmentField::Speaker => {
-                        let speaker = value.trim();
-                        segment.speaker = (!speaker.is_empty()).then(|| speaker.to_string());
-                    }
+                    SegmentField::Speaker => segment.speaker = speaker_from(&value),
                 }
                 project.write_back(field, &previous)
             })
         })
+    }
+
+    /// Gives each Segment at `indexes` the Speaker `speaker`, or none when it is empty, as one
+    /// change, written back as an edited Speaker is.
+    pub fn set_speakers(&self, indexes: &[usize], speaker: &str) -> Result<(), Failure> {
+        self.change_unless_held(
+            |_, _| true,
+            |project| {
+                project.refuse_changed_elsewhere()?;
+                project.make_undoable_change(|project| {
+                    let previous = project.current()?.transcript.clone();
+                    let segments = &mut project.current_mut()?.transcript.segments;
+                    if let Some(index) = indexes.iter().find(|index| **index >= segments.len()) {
+                        return Err(Failure::Internal {
+                            detail: format!("no Segment at {index}"),
+                        });
+                    }
+                    for index in indexes {
+                        segments[*index].speaker = speaker_from(speaker);
+                    }
+                    project.write_back(SegmentField::Speaker, &previous)
+                })
+            },
+        )
     }
 
     pub fn subtitle_versions(&self) -> Result<Vec<SubtitleVersions>, Failure> {
@@ -1131,10 +1165,7 @@ impl CurrentProject {
         self.change_unless_held(
             |_, _| true,
             |project| {
-                if project.is_changed_elsewhere()? {
-                    project.read_changed_elsewhere()?;
-                    return Err(Failure::ChangedElsewhere);
-                }
+                project.refuse_changed_elsewhere()?;
                 project.make_undoable_change(|project| project.change_segments(change))
             },
         )
@@ -2623,6 +2654,66 @@ mod tests {
             [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
             [cue("你好"), cue("Hello")]
         );
+    }
+
+    // @behavior PJ-097
+    #[test]
+    fn names_the_speaker_of_several_segments_at_once() {
+        let three = srt_of(&[
+            (0, 1_000, "你好"),
+            (1_000, 2_000, "嗨"),
+            (2_000, 3_000, "再見"),
+        ]);
+        let dir = directory_of(
+            "pj-speakers-at-once",
+            &[
+                ("ep01.srt", &three),
+                (
+                    "ep01.en.srt",
+                    &srt_of(&[
+                        (0, 1_000, "Hello"),
+                        (1_000, 2_000, "Hi"),
+                        (2_000, 3_000, "Bye"),
+                    ]),
+                ),
+            ],
+        );
+        let current = project_in(&dir);
+
+        current.set_speakers(&[0, 2], "co").unwrap();
+
+        assert_eq!(
+            [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
+            [
+                srt_of(&[
+                    (0, 1_000, "co: 你好"),
+                    (1_000, 2_000, "嗨"),
+                    (2_000, 3_000, "co: 再見")
+                ]),
+                srt_of(&[
+                    (0, 1_000, "co: Hello"),
+                    (1_000, 2_000, "Hi"),
+                    (2_000, 3_000, "co: Bye")
+                ]),
+            ]
+        );
+    }
+
+    // @behavior PJ-098
+    #[test]
+    fn undoes_speakers_named_at_once_in_one_step() {
+        let three = srt_of(&[
+            (0, 1_000, "你好"),
+            (1_000, 2_000, "嗨"),
+            (2_000, 3_000, "再見"),
+        ]);
+        let dir = directory_of("pj-speakers-undo", &[("ep01.srt", &three)]);
+        let current = project_in(&dir);
+        current.set_speakers(&[0, 1, 2], "co").unwrap();
+
+        current.undo().unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), three);
     }
 
     // @behavior PJ-078

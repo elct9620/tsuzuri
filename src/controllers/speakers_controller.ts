@@ -3,8 +3,10 @@ import { Controller } from "@hotwired/stimulus";
 import {
   editSegment,
   saveTranslationGlossary,
+  setSpeakers,
   translationGlossaryTable,
   type ProjectView,
+  type Segment,
 } from "../backend/project";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
@@ -29,11 +31,57 @@ function speakerChoice(
   return choice;
 }
 
+function speakerOption(speaker: string): HTMLOptionElement {
+  const option = document.createElement("option");
+  option.value = speaker;
+  option.textContent = speaker;
+  return option;
+}
+
+/** A button that fills in `speaker` as the Speaker to set. */
+function nameButton(speaker: string): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn btn-xs";
+  button.dataset.speaker = speaker;
+  button.dataset.action = "speakers#fill";
+  button.textContent = speaker;
+  return button;
+}
+
 /**
- * The Speaker menu of each Segment the editor shows: every Speaker named to choose from, a new
- * name, or none, with a new name offered to the Translation Glossary.
+ * The Speaker menu of each Segment the editor shows - every Speaker named to choose from, a new
+ * name, or none - and the Speaker dialog that names many Segments at once; a new name is offered
+ * to the Translation Glossary.
  */
+/** Which Segments the Speaker dialog names. */
+type SpeakerScope = "selection" | "every" | "unnamed" | "named";
+
 export default class SpeakersController extends Controller {
+  static targets = [
+    "dialog",
+    "scope",
+    "selection",
+    "selectionCount",
+    "from",
+    "to",
+    "names",
+  ];
+
+  declare readonly dialogTarget: HTMLDialogElement;
+  declare readonly scopeTargets: HTMLInputElement[];
+  /** The choice of the rows selected, offered only when the dialog is opened from them. */
+  declare readonly selectionTarget: HTMLElement;
+  declare readonly selectionCountTarget: HTMLElement;
+  /** The Speaker whose Segments are renamed. */
+  declare readonly fromTarget: HTMLSelectElement;
+  /** The Speaker to set, none when left empty. */
+  declare readonly toTarget: HTMLInputElement;
+  /** Each Speaker named, to fill in the Speaker to set. */
+  declare readonly namesTarget: HTMLElement;
+
+  /** The rows selected when the dialog was opened from them. */
+  private selectedIndexes: number[] = [];
   /** The Project the editor shows, whose Segments and Translation Glossary name the Speakers. */
   private project: ProjectView | null = null;
 
@@ -86,6 +134,73 @@ export default class SpeakersController extends Controller {
     await this.writeSpeaker(
       params.index,
       (currentTarget as HTMLElement).dataset.speaker ?? "",
+    );
+  }
+
+  /** Opens the Speaker dialog for the whole transcript. */
+  open(): void {
+    this.showDialog([]);
+  }
+
+  /** Opens the Speaker dialog for the rows selected. */
+  openForSelection({ detail }: CustomEvent<{ indexes: number[] }>): void {
+    this.showDialog(detail.indexes);
+  }
+
+  /** Fills in the Speaker a name button names. */
+  fill({ currentTarget }: Event): void {
+    this.toTarget.value = (currentTarget as HTMLElement).dataset.speaker ?? "";
+  }
+
+  /** Sets the Speaker typed of every Segment the chosen scope takes in, as one change. */
+  async apply(): Promise<void> {
+    const scope = this.scopeTargets.find((choice) => choice.checked)
+      ?.value as SpeakerScope;
+    const indexes = this.scopeIndexes(scope);
+    const name = this.toTarget.value.trim();
+    this.dialogTarget.close();
+    try {
+      await setSpeakers(indexes, name);
+      notify({
+        title: t("edit.saved"),
+        kind: "success",
+        ...this.speakerOffer(name),
+      });
+    } catch (error) {
+      notifyFailure(t("edit.notSaved"), error);
+    }
+  }
+
+  private showDialog(selectedIndexes: number[]): void {
+    this.selectedIndexes = selectedIndexes;
+    const isSelected = selectedIndexes.length > 0;
+    this.selectionTarget.hidden = !isSelected;
+    this.selectionCountTarget.textContent = t("edit.selected", {
+      count: selectedIndexes.length,
+    });
+    for (const choice of this.scopeTargets)
+      choice.checked = choice.value === (isSelected ? "selection" : "every");
+    const speakers = this.speakers;
+    this.fromTarget.replaceChildren(...speakers.map(speakerOption));
+    this.toTarget.value = "";
+    this.toTarget.placeholder = t("edit.speakersNone");
+    this.namesTarget.replaceChildren(...speakers.map(nameButton));
+    this.dialogTarget.showModal();
+  }
+
+  /** The positions of the Segments `scope` takes in. */
+  private scopeIndexes(scope: SpeakerScope): number[] {
+    if (scope === "selection") return this.selectedIndexes;
+    const isTaken: Record<
+      Exclude<SpeakerScope, "selection">,
+      (segment: Segment) => boolean
+    > = {
+      every: () => true,
+      unnamed: (segment) => !segment.speaker,
+      named: (segment) => segment.speaker === this.fromTarget.value,
+    };
+    return (this.project?.segments ?? []).flatMap((segment, index) =>
+      isTaken[scope](segment) ? [index] : [],
     );
   }
 

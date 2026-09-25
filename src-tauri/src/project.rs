@@ -7,7 +7,7 @@ use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
-use crate::project_config::ProjectConfig;
+use crate::project_config::{BilingualOrder, ProjectConfig, ProjectOptions};
 use crate::resource::{self, Resource};
 use crate::transcript::{Segment, SrtContent, Transcript};
 use crate::translation_glossary::{GlossaryTable, TranslationGlossary, TranslationGlossaryView};
@@ -20,6 +20,7 @@ pub struct Project {
     pub language: Language,
     pub translation_language: Option<Language>,
     pub translation_glossary: Option<TranslationGlossary>,
+    pub options: ProjectOptions,
     pub resources: Vec<Resource>,
     pub current: Option<CurrentResource>,
 }
@@ -64,6 +65,7 @@ impl Project {
             directory,
             language,
             translation_language: config.translation_language,
+            options: config.options,
             current: None,
         };
         project.translation_glossary =
@@ -157,7 +159,7 @@ impl Project {
     pub fn set_language(&mut self, language: Language) -> Result<(), Failure> {
         ProjectConfig {
             language: Some(language),
-            translation_language: self.translation_language,
+            ..self.config()
         }
         .save(&self.directory)?;
         self.language = language;
@@ -208,12 +210,38 @@ impl Project {
         self.remember_subtitles()
     }
 
-    fn save_config(&self) -> Result<(), Failure> {
-        Ok(ProjectConfig {
+    /// Replaces the Project Options and records them in the Project Config.
+    pub fn set_options(&mut self, options: ProjectOptions) -> Result<(), Failure> {
+        ProjectConfig {
+            options,
+            ..self.config()
+        }
+        .save(&self.directory)?;
+        self.options = options;
+        Ok(())
+    }
+
+    fn config(&self) -> ProjectConfig {
+        ProjectConfig {
             language: Some(self.language),
             translation_language: self.translation_language,
+            options: self.options,
         }
-        .save(&self.directory)?)
+    }
+
+    fn save_config(&self) -> Result<(), Failure> {
+        Ok(self.config().save(&self.directory)?)
+    }
+
+    /// The Current Resource as SRT, a Bilingual SRT in the Bilingual Order.
+    fn to_srt(&self, content: SrtContent) -> Result<String, Failure> {
+        let transcript = &self.current()?.transcript;
+        Ok(match (content, self.options.bilingual_order) {
+            (SrtContent::Bilingual, BilingualOrder::TranslationFirst) => {
+                translation_first(transcript).to_srt(content)
+            }
+            _ => transcript.to_srt(content),
+        })
     }
 
     /// In the directory, named after the Current Resource with the Language codes `content`
@@ -223,7 +251,10 @@ impl Project {
         let codes = match content {
             SrtContent::Original => vec![],
             SrtContent::Translation => vec![current.translation],
-            SrtContent::Bilingual => vec![Some(self.language), current.translation],
+            SrtContent::Bilingual => match self.options.bilingual_order {
+                BilingualOrder::OriginalFirst => vec![Some(self.language), current.translation],
+                BilingualOrder::TranslationFirst => vec![current.translation, Some(self.language)],
+            },
         };
         let mut name = current.name.clone();
         for language in codes.into_iter().flatten() {
@@ -275,6 +306,24 @@ fn translation_only(transcript: &Transcript) -> Transcript {
     }
 }
 
+/// Each translated Segment with its translation as its text and its text as its translation.
+fn translation_first(transcript: &Transcript) -> Transcript {
+    Transcript {
+        segments: transcript
+            .segments
+            .iter()
+            .map(|segment| match segment.translation.as_deref() {
+                Some(translation) if !translation.trim().is_empty() => Segment {
+                    text: translation.to_string(),
+                    translation: Some(segment.text.clone()),
+                    ..segment.clone()
+                },
+                _ => segment.clone(),
+            })
+            .collect(),
+    }
+}
+
 /// A Resource as the Resource list shows it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ResourceView {
@@ -289,6 +338,7 @@ pub struct ProjectView {
     directory: PathBuf,
     language: Language,
     translation_language: Option<Language>,
+    options: ProjectOptions,
     translation_glossary: Option<TranslationGlossaryView>,
     resources: Vec<ResourceView>,
     current_resource: Option<String>,
@@ -304,6 +354,10 @@ impl ProjectView {
 
     pub fn language(&self) -> Language {
         self.language
+    }
+
+    pub fn options(&self) -> ProjectOptions {
+        self.options
     }
 
     pub fn translation_language(&self) -> Option<Language> {
@@ -404,6 +458,7 @@ impl CurrentProject {
                 directory: project.directory.clone(),
                 language: project.language,
                 translation_language: project.translation_language,
+                options: project.options,
                 translation_glossary: project
                     .translation_glossary
                     .as_ref()
@@ -636,8 +691,14 @@ impl CurrentProject {
 
     pub fn to_srt(&self, content: SrtContent) -> Result<String, Failure> {
         let held = self.lock();
-        let project = held.project.as_ref().ok_or(Failure::NoProject)?;
-        Ok(project.current()?.transcript.to_srt(content))
+        held.project
+            .as_ref()
+            .ok_or(Failure::NoProject)?
+            .to_srt(content)
+    }
+
+    pub fn set_options(&self, options: ProjectOptions) -> Result<(), Failure> {
+        self.update_project(|project| project.set_options(options))
     }
 
     fn update_project<T>(
@@ -739,6 +800,13 @@ pub fn show_translation(app: AppHandle, language: Option<Language>) -> Result<()
 #[tauri::command]
 pub fn set_primary_language(app: AppHandle, language: Language) -> Result<(), Failure> {
     app.state::<CurrentProject>().set_language(language)?;
+    announce(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_project_options(app: AppHandle, options: ProjectOptions) -> Result<(), Failure> {
+    app.state::<CurrentProject>().set_options(options)?;
     announce(&app);
     Ok(())
 }
@@ -1204,6 +1272,56 @@ mod tests {
         assert_eq!(
             segments(&current),
             vec![segment("逐字稿", Some("Transcript"))]
+        );
+    }
+
+    /// A Project in `zh-TW` of `ep01` translated into `en`, whose Bilingual Order puts the
+    /// translation first.
+    fn translation_first_project_in(dir: &TempDir) -> CurrentProject {
+        std::fs::write(dir.path().join("ep01.srt"), cue("大家好")).unwrap();
+        std::fs::write(dir.path().join("ep01.en.srt"), cue("Hello")).unwrap();
+        let current = project_in(dir);
+        current
+            .set_options(ProjectOptions {
+                bilingual_order: BilingualOrder::TranslationFirst,
+            })
+            .unwrap();
+        current
+    }
+
+    // @behavior PJ-044
+    #[test]
+    fn puts_the_translation_first_in_a_bilingual_srt() {
+        let dir = TempDir::new("pj-translation-first");
+        let current = translation_first_project_in(&dir);
+
+        let srt = current.to_srt(SrtContent::Bilingual).unwrap();
+
+        assert_eq!(srt, cue("Hello\n大家好"));
+    }
+
+    // @behavior PJ-045
+    #[test]
+    fn names_a_bilingual_srt_in_its_bilingual_order() {
+        let dir = TempDir::new("pj-translation-first-name");
+        let current = translation_first_project_in(&dir);
+
+        let path = current.export_path(SrtContent::Bilingual).unwrap();
+
+        assert_eq!(path, dir.path().join("ep01.en.zh-TW.srt"));
+    }
+
+    // @behavior PJ-046
+    #[test]
+    fn keeps_the_project_options_in_the_project_config() {
+        let dir = TempDir::new("pj-options-kept");
+        translation_first_project_in(&dir);
+
+        let reopened = project_in(&dir);
+
+        assert_eq!(
+            reopened.view().unwrap().options().bilingual_order,
+            BilingualOrder::TranslationFirst
         );
     }
 

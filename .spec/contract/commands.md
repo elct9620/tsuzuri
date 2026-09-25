@@ -94,9 +94,17 @@ Make this the Project's Primary Language, record it in the Project Config, and p
 pub fn set_primary_language(app: AppHandle, language: Language) -> Result<(), Failure> {}
 ```
 
+## `set_project_options`
+
+Replace the Project Options and record them in the Project Config.
+
+```rust
+pub fn set_project_options(app: AppHandle, options: ProjectOptions) -> Result<(), Failure> {}
+```
+
 ## `current_project`
 
-The Project's directory, Languages, Resources and Translation Glossary, with the Current Resource's Segments, or none before one is opened.
+The Project's directory, Languages, Project Options, Resources and Translation Glossary, with the Current Resource's Segments, or none before one is opened.
 
 ```rust
 pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
@@ -128,7 +136,7 @@ pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<()
 
 ## `export_path`
 
-Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone.
+Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone, a Bilingual SRT's in its Bilingual Order.
 
 ```rust
 pub fn export_path(app: AppHandle, content: SrtContent) -> Result<PathBuf, Failure> {}

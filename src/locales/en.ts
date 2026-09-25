@@ -71,6 +71,9 @@ const en = {
   settings: {
     project: "Project",
     primaryLanguage: "Primary language",
+    bilingualOrder: "Bilingual order",
+    originalFirst: "Original first",
+    translationFirst: "Translation first",
     components: "Components",
     models: "Models",
     translation: "Translation",

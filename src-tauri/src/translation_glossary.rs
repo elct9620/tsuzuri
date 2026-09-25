@@ -213,6 +213,7 @@ mod tests {
         ProjectConfig {
             language: Some(Language::TraditionalChinese),
             translation_language: Some(Language::English),
+            ..ProjectConfig::default()
         }
         .save(dir.path())
         .unwrap();

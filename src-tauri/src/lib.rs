@@ -67,6 +67,7 @@ pub fn run() {
             project::save_srt,
             project::select_resource,
             project::set_primary_language,
+            project::set_project_options,
             project::show_translation,
             translation::save_translation_settings,
             translation::translate,

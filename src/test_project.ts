@@ -6,6 +6,7 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
     directory: "/talks",
     language: "zh-TW",
     translation_language: null,
+    options: { bilingual_order: "original-first" },
     translation_glossary: null,
     resources: [resourceOf()],
     current_resource: "ep01",

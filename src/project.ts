@@ -8,6 +8,11 @@ export interface Segment {
   translation?: string;
 }
 
+/** What the user sets for one Project in the settings beside its Primary Language. */
+export interface ProjectOptions {
+  bilingual_order: "original-first" | "translation-first";
+}
+
 /** A Resource as the Resource list shows it. */
 export interface ResourceView {
   name: string;
@@ -24,6 +29,7 @@ export interface ProjectView {
   language: string;
   /** The Language code of the last translation. */
   translation_language: string | null;
+  options: ProjectOptions;
   translation_glossary: TranslationGlossaryView | null;
   resources: ResourceView[];
   current_resource: string | null;

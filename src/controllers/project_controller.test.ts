@@ -55,6 +55,10 @@ describe("ProjectController", () => {
             <option value="en">English</option>
             <option value="ja">日本語</option>
           </select>
+          <select data-project-target="bilingualOrder" data-action="change->project#setOptions">
+            <option value="original-first">原文在上</option>
+            <option value="translation-first">譯文在上</option>
+          </select>
         </fieldset>
       </main>
     `;
@@ -190,5 +194,19 @@ describe("ProjectController", () => {
     await settle();
 
     expect(sent("set_primary_language")).toEqual({ language: "ja" });
+  });
+
+  // @behavior PJ-047
+  it("sets the Bilingual Order chosen in the settings", async () => {
+    await hold(projectOf());
+    const order = target<HTMLSelectElement>("bilingualOrder");
+
+    order.value = "translation-first";
+    order.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(sent("set_project_options")).toEqual({
+      options: { bilingual_order: "translation-first" },
+    });
   });
 });

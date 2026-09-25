@@ -20,7 +20,11 @@ The ordered Segments of one media file. Transcribe produces it, Translate consum
 
 ### Bilingual SRT
 
-An SRT whose every cue carries the original text above its translation, so any player shows both languages without support of its own. A Segment without a translation is written with its original text alone.
+An SRT whose every cue carries the original text and its translation in the Bilingual Order, so any player shows both languages without support of its own. A Segment without a translation is written with its original text alone.
+
+### Bilingual Order
+
+Which text a Bilingual SRT puts first in each cue and first in its file name: the original, unless the Project Options put the translation first.
 
 ### Project
 
@@ -40,7 +44,11 @@ The Language a Project's Resources are spoken and transcribed in, and the one ev
 
 ### Project Config
 
-`tsuzuri.config.json` in the Project's directory: the Primary Language and the Language of the last translation. Written the first time either changes.
+`tsuzuri.config.json` in the Project's directory: the Primary Language, the Language of the last translation and the Project Options. Written the first time any of them changes.
+
+### Project Options
+
+What the user sets for one Project in the settings, beside its Primary Language, such as its Bilingual Order. Each has a default the Project keeps until it is changed.
 
 ### Mode
 

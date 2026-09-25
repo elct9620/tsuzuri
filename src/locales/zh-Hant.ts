@@ -71,6 +71,9 @@ const zhHant: typeof en = {
   settings: {
     project: "專案",
     primaryLanguage: "主語言",
+    bilingualOrder: "雙語順序",
+    originalFirst: "原文在上",
+    translationFirst: "譯文在上",
     components: "元件",
     models: "模型",
     translation: "翻譯",

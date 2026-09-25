@@ -411,6 +411,26 @@
                     <option value="ja">日本語</option>
                   </select>
                 </li>
+                <li class="list-row items-center">
+                  <span
+                    class="w-28 font-medium"
+                    data-i18n="settings.bilingualOrder"
+                  ></span>
+                  <select
+                    class="select select-sm w-auto"
+                    data-project-target="bilingualOrder"
+                    data-action="change->project#setOptions"
+                  >
+                    <option
+                      value="original-first"
+                      data-i18n="settings.originalFirst"
+                    ></option>
+                    <option
+                      value="translation-first"
+                      data-i18n="settings.translationFirst"
+                    ></option>
+                  </select>
+                </li>
               </ul>
             </fieldset>
 

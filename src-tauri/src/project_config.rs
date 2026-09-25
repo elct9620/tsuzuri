@@ -16,6 +16,24 @@ pub struct ProjectConfig {
     pub language: Option<Language>,
     /// The Language of the last translation.
     pub translation_language: Option<Language>,
+    #[serde(flatten)]
+    pub options: ProjectOptions,
+}
+
+/// What the user sets for one Project in the settings beside its Primary Language.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ProjectOptions {
+    pub bilingual_order: BilingualOrder,
+}
+
+/// Which text a Bilingual SRT puts first in each cue and in its file name.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BilingualOrder {
+    #[default]
+    OriginalFirst,
+    TranslationFirst,
 }
 
 impl ProjectConfig {
@@ -45,11 +63,27 @@ mod tests {
         let config = ProjectConfig {
             language: Some(Language::Japanese),
             translation_language: Some(Language::English),
+            options: ProjectOptions {
+                bilingual_order: BilingualOrder::TranslationFirst,
+            },
         };
 
         config.save(dir.path()).unwrap();
 
         assert_eq!(ProjectConfig::load(dir.path()).unwrap(), config);
+    }
+
+    #[test]
+    fn loads_the_default_options_from_a_file_written_without_them() {
+        let dir = TempDir::new("config-without-options");
+        fs::write(dir.path().join(CONFIG_FILE), r#"{"language":"ja"}"#).unwrap();
+
+        let config = ProjectConfig::load(dir.path()).unwrap();
+
+        assert_eq!(
+            (config.language, config.options),
+            (Some(Language::Japanese), ProjectOptions::default())
+        );
     }
 
     #[test]

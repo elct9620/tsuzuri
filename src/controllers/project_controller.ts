@@ -6,7 +6,12 @@ import { message, open } from "@tauri-apps/plugin-dialog";
 import { failureMessage } from "../failure";
 import { interfaceLanguageCode, t } from "../i18n";
 import { closeMenu } from "../menu";
-import { followProject, type ProjectView, type ResourceView } from "../project";
+import {
+  followProject,
+  type ProjectOptions,
+  type ProjectView,
+  type ResourceView,
+} from "../project";
 
 function resourceItem(
   resource: ResourceView,
@@ -57,6 +62,7 @@ export default class ProjectController extends Controller {
     "glossary",
     "settings",
     "language",
+    "bilingualOrder",
   ];
 
   /** Shown while no Project is open. */
@@ -69,6 +75,7 @@ export default class ProjectController extends Controller {
   /** The Project's own settings, shown only while one is open. */
   declare readonly settingsTarget: HTMLElement;
   declare readonly languageTarget: HTMLSelectElement;
+  declare readonly bilingualOrderTarget: HTMLSelectElement;
 
   private unlisten?: UnlistenFn;
 
@@ -107,6 +114,14 @@ export default class ProjectController extends Controller {
     );
   }
 
+  async setOptions(): Promise<void> {
+    const options: ProjectOptions = {
+      bilingual_order: this.bilingualOrderTarget
+        .value as ProjectOptions["bilingual_order"],
+    };
+    await this.report(() => invoke("set_project_options", { options }));
+  }
+
   /** Opens `path` with the Interface Language for a directory that records none. */
   private async run(command: string, args: { path: string }): Promise<void> {
     await this.report(() =>
@@ -140,5 +155,6 @@ export default class ProjectController extends Controller {
         ? t("resources.createGlossary")
         : t("resources.glossary", { count: glossary.term_count });
     this.languageTarget.value = project.language;
+    this.bilingualOrderTarget.value = project.options.bilingual_order;
   }
 }

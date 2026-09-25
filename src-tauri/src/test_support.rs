@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use crate::language::Language;
 use crate::project::{CurrentResource, Project};
+use crate::project_config::ProjectOptions;
 use crate::resource::Resource;
 use crate::transcript::{Segment, Transcript};
 
@@ -13,6 +14,7 @@ pub fn project_of(segments: Vec<Segment>) -> Project {
         language: Language::TraditionalChinese,
         translation_language: None,
         translation_glossary: None,
+        options: ProjectOptions::default(),
         resources: vec![Resource {
             name: "lecture".to_string(),
             media: None,

@@ -235,6 +235,38 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | the default path of each export is asked for |
 | Then | the original is `/talks/ep01.srt`, the translation `/talks/ep01.en.srt` and the bilingual `/talks/ep01.zh-TW.en.srt` |
 
+## `PJ-044` Putting the translation first in a Bilingual SRT
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Bilingual Order puts the translation first, with a Current Resource translated into `en` |
+| When | it is exported as a Bilingual SRT |
+| Then | each translated cue carries the translation above the original |
+
+## `PJ-045` Naming a Bilingual SRT in its Bilingual Order
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resource `ep01` in `/talks`, in `zh-TW` and translated into `en`, whose Bilingual Order puts the translation first |
+| When | the default path of its bilingual export is asked for |
+| Then | it is `/talks/ep01.en.zh-TW.srt` |
+
+## `PJ-046` Keeping the Project Options in the Project Config
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Bilingual Order was set to put the translation first |
+| When | its directory is opened again |
+| Then | its Bilingual Order puts the translation first |
+
+## `PJ-047` Choosing the Bilingual Order in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of a Project whose Bilingual Order puts the original first |
+| When | the translation is chosen to go first |
+| Then | the Project Options are set with the translation first |
+
 ## `PJ-014` Offering the default path when exporting
 
 | Step | Statement |

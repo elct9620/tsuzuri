@@ -50,9 +50,17 @@ export interface ProjectView {
   has_redo: boolean;
   /** The Mode running on the Current Resource, holding the subtitles it writes. */
   running_mode: RunningMode | null;
+  /** The Segments the running translation works on now, by position. */
+  pending_batch: SegmentSpan | null;
 }
 
 /** A transcription holds every subtitle of its Resource; a translation, the one it writes. */
+/** The Segments from `first` through `last`, by position. */
+export interface SegmentSpan {
+  first: number;
+  last: number;
+}
+
 export type RunningMode =
   { mode: "transcription" } | { mode: "translation"; language: string };
 

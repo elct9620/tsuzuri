@@ -75,13 +75,15 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | When | its transcription begins |
 | Then | the editor shows Placeholder rows |
 
-## `ED-009` Showing a Placeholder for each translation still to come
+## `ED-009` Showing a Placeholder over the Batch being translated
+
+Only the Batch the Model works on is about to change, so a Placeholder there shows where the next translations land while the rest stay readable.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource being translated whose second Segment has no translation yet |
+| Given | a Current Resource of three untranslated Segments being translated, its first two the Batch being translated |
 | When | the editor shows it |
-| Then | the second Segment's translation is a Placeholder |
+| Then | the first two translations are Placeholders and the third is not |
 
 ## `ED-010` Showing Placeholders while another Resource is read
 
@@ -316,4 +318,12 @@ Setting Speakers one Segment at a time is slow across a long transcript, so the 
 | Given | three Segments said by `co`, `cl` and `co` |
 | When | the Speaker dialog is applied to the Segments said by `co` with `小明` |
 | Then | the Project is asked to set the Speaker of Segments 0 and 2 to `小明` |
+
+## `ED-038` Holding a Placeholder after the last Segment while transcribing
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource being transcribed that holds one Segment so far |
+| When | the editor shows it |
+| Then | one Placeholder row follows that Segment |
 

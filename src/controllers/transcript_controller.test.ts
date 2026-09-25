@@ -294,25 +294,41 @@ describe("TranscriptController", () => {
   });
 
   // @behavior ED-009
-  it("shows a Placeholder for each translation still to come", async () => {
+  it("shows a Placeholder over the Batch being translated", async () => {
     await hold(
       projectOf({
         shown_translation: "en",
+        running_mode: { mode: "translation", language: "en" },
+        pending_batch: { first: 0, last: 1 },
         segments: [
-          { start_ms: 0, end_ms: 1000, text: "大家好", translation: "Hello" },
+          { start_ms: 0, end_ms: 1000, text: "大家好" },
           { start_ms: 1000, end_ms: 2000, text: "資料不上傳" },
+          { start_ms: 2000, end_ms: 3000, text: "謝謝" },
         ],
       }),
     );
-
-    progress().begin("translate");
-    await settle();
 
     expect(
       [...document.querySelectorAll(".field.translation")].map((field) =>
         field.classList.contains("skeleton"),
       ),
-    ).toEqual([false, true]);
+    ).toEqual([true, true, false]);
+  });
+
+  // @behavior ED-038
+  it("holds a Placeholder after the last Segment while transcribing", async () => {
+    await hold(
+      projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }] }),
+    );
+
+    progress().begin("transcribe");
+    await settle();
+
+    const rows = [...document.querySelectorAll("ol > li")];
+    expect(rows.map((row) => row.hasAttribute("data-placeholder"))).toEqual([
+      false,
+      true,
+    ]);
   });
 
   // @behavior ED-010

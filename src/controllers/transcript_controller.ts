@@ -48,9 +48,9 @@ function editor(
   return editor;
 }
 
-/** Rows standing for Segments still being made or read. */
-function placeholderRows(): HTMLLIElement[] {
-  return Array.from({ length: 3 }, () => {
+/** Rows standing for Segments still being made or read, three unless `count` says otherwise. */
+function placeholderRows(count = 3): HTMLLIElement[] {
+  return Array.from({ length: count }, () => {
     const li = document.createElement("li");
     li.dataset.placeholder = "";
     li.className = "flex flex-col gap-2 py-2";
@@ -376,7 +376,7 @@ export default class TranscriptController extends Controller {
       ...(isTranslationShown ? [segment.translation ?? ""] : []),
     ]);
     const rows = this.listTarget.querySelectorAll(
-      ":scope > li:not([data-ghost])",
+      ":scope > li:not([data-ghost]):not([data-placeholder])",
     );
     const sameShape =
       rows.length === segments.length && editors.length === values.length;
@@ -396,6 +396,7 @@ export default class TranscriptController extends Controller {
       });
     }
     this.showPendingTranslations();
+    this.showSegmentsToCome(segments.length);
     this.markRows();
   }
 
@@ -423,16 +424,27 @@ export default class TranscriptController extends Controller {
     }
   }
 
-  /** Marks each translation still to come while a translation runs. */
+  /** Marks the translations of the Batch being translated, where the next ones land. */
   private showPendingTranslations(): void {
-    const isTranslating = this.runningTask === "translate";
+    const batch = this.project?.pending_batch ?? null;
     for (const field of this.listTarget.querySelectorAll<HTMLElement>(
       ".field.translation",
     )) {
+      const index = Number(field.dataset.index);
       field.classList.toggle(
         "skeleton",
-        isTranslating && fieldValue(field) === "",
+        batch !== null && index >= batch.first && index <= batch.last,
       );
     }
+  }
+
+  /** Holds a Placeholder row after the last of `count` Segments while more are transcribed. */
+  private showSegmentsToCome(count: number): void {
+    for (const row of this.listTarget.querySelectorAll(
+      ":scope > li[data-placeholder]",
+    ))
+      row.remove();
+    if (this.runningTask === "transcribe" && count > 0)
+      this.listTarget.append(...placeholderRows(1));
   }
 }

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::progress::{enter, Progress};
-use crate::project::{CurrentProject, RunningMode, TranslationSource};
+use crate::project::{CurrentProject, RunningMode, SegmentSpan, TranslationSource};
 use crate::steps::{StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -193,7 +193,7 @@ async fn translate_on_job_server(
     ready_timeout: Duration,
     job: &TranslationJob<'_>,
     phases: &mut Phases,
-    on_batch: impl Fn(&[Segment]),
+    on_batch: impl Fn(&[Segment], Option<SegmentSpan>),
 ) -> Result<Vec<Segment>, Failure> {
     let port = llama::free_port()?;
     let (mut events, pid) = ports
@@ -234,15 +234,17 @@ fn batch_display<'a>(
     project: &'a CurrentProject,
     source: &'a TranslationSource,
     target: Language,
-) -> impl Fn(&[Segment]) + 'a {
-    move |translated_segments| {
+) -> impl Fn(&[Segment], Option<SegmentSpan>) + 'a {
+    move |translated_segments, pending_batch| {
         project.show_translations(source, target, translated_segments);
+        project.mark_pending_batch(pending_batch);
         progress.announce_project();
     }
 }
 
 /// Waits for llama-server to load its Model, then translates every Segment in the translate Phase,
-/// handing `on_batch` the Segments translated so far after each Batch.
+/// handing `on_batch` the Segments translated so far and the Batch to translate next, before the
+/// first Batch and after each.
 async fn translate_once_ready(
     progress: &impl Progress,
     base_url: &str,
@@ -250,7 +252,7 @@ async fn translate_once_ready(
     has_exited: impl Fn() -> bool,
     job: &TranslationJob<'_>,
     phases: &mut Phases,
-    on_batch: impl Fn(&[Segment]),
+    on_batch: impl Fn(&[Segment], Option<SegmentSpan>),
 ) -> Result<Vec<Segment>, Failure> {
     llama::wait_until_ready(base_url, ready_timeout, has_exited).await?;
     let model = TranslationModel::new(base_url);
@@ -260,10 +262,17 @@ async fn translate_once_ready(
     })
     .await;
     enter(progress, phases, "translate");
-    translate_segments(&model, job, &split_sentences, |translated_segments| {
-        progress.report_count("translate", translated_segments.len(), job.segments.len());
-        on_batch(translated_segments);
-    })
+    translate_segments(
+        &model,
+        job,
+        &split_sentences,
+        |translated_segments, pending_batch| {
+            if !translated_segments.is_empty() {
+                progress.report_count("translate", translated_segments.len(), job.segments.len());
+            }
+            on_batch(translated_segments, pending_batch);
+        },
+    )
     .await
 }
 
@@ -324,12 +333,13 @@ async fn rewrite_summary(
 }
 
 /// Translates the Segments Batch by Batch, keeping each Split Sentence in one Batch,
-/// each Batch carrying the last lines translated before it.
+/// each Batch carrying the last lines translated before it; `on_batch` is handed the Segments
+/// translated so far and the Batch to translate next, before the first Batch and after each.
 async fn translate_segments(
     model: &TranslationModel,
     job: &TranslationJob<'_>,
     split_sentences: &[Vec<usize>],
-    on_batch: impl Fn(&[Segment]),
+    on_batch: impl Fn(&[Segment], Option<SegmentSpan>),
 ) -> Result<Vec<Segment>, Failure> {
     let labelled_texts: Vec<LabelledText> = job
         .segments
@@ -342,7 +352,15 @@ async fn translate_segments(
     let mut translated_segments: Vec<Segment> = Vec::with_capacity(job.segments.len());
     let mut translated_pairs: Vec<(String, String)> = Vec::new();
     let mut summary: Option<String> = None;
-    for range in batching::batches(job.segments.len(), job.settings.batch_size, split_sentences) {
+    let ranges = batching::batches(job.segments.len(), job.settings.batch_size, split_sentences);
+    let span_at = |at: usize| {
+        ranges.get(at).map(|range| SegmentSpan {
+            first: range.start,
+            last: range.end - 1,
+        })
+    };
+    on_batch(&translated_segments, span_at(0));
+    for (at, range) in ranges.iter().cloned().enumerate() {
         let lines: Vec<(usize, &str)> = range
             .clone()
             .map(|index| (index, labelled_texts[index].dialogue.as_str()))
@@ -364,7 +382,7 @@ async fn translate_segments(
             let batch_pairs = &translated_pairs[translated_pairs.len() - range.len()..];
             summary = rewrite_summary(model, job.languages, summary, batch_pairs, word_limit).await;
         }
-        on_batch(&translated_segments);
+        on_batch(&translated_segments, span_at(at + 1));
     }
     Ok(translated_segments)
 }
@@ -418,7 +436,7 @@ mod tests {
             || false,
             job,
             &mut Phases::start("translate", "load"),
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap()
@@ -445,9 +463,10 @@ mod tests {
             segment(1_000, 2_000, "今天天氣很好"),
         ];
 
-        let translated_segments = translate_segments(&llama.model(), &job(&segments), &[], |_| {})
-            .await
-            .unwrap();
+        let translated_segments =
+            translate_segments(&llama.model(), &job(&segments), &[], |_, _| {})
+                .await
+                .unwrap();
 
         assert_eq!(
             translated_segments,
@@ -484,7 +503,7 @@ mod tests {
                 ..job(&segments)
             },
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap();
@@ -552,7 +571,7 @@ mod tests {
             &llama.model(),
             &job_in_batches_of_two(&segments),
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap();
@@ -650,9 +669,10 @@ mod tests {
         });
         let segments = three_segments();
 
-        let translated_segments = translate_segments(&llama.model(), &job(&segments), &[], |_| {})
-            .await
-            .unwrap();
+        let translated_segments =
+            translate_segments(&llama.model(), &job(&segments), &[], |_, _| {})
+                .await
+                .unwrap();
 
         let translations: Vec<_> = translated_segments
             .iter()
@@ -674,7 +694,7 @@ mod tests {
             &llama.model(),
             &job_in_batches_of_two(&segments),
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap();
@@ -699,7 +719,7 @@ mod tests {
                 ..job(segments)
             },
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
     }
@@ -950,7 +970,7 @@ mod tests {
                 ..job(segments)
             },
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap()
@@ -1042,7 +1062,7 @@ mod tests {
                 ..job(&segments)
             },
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap();
@@ -1074,7 +1094,7 @@ mod tests {
                 ..job(&segments)
             },
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap();
@@ -1099,7 +1119,7 @@ mod tests {
                 ..job(segments)
             },
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap();
@@ -1163,7 +1183,7 @@ mod tests {
             &llama.model(),
             &job_in_batches_of_two(&segments),
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap();
@@ -1180,7 +1200,7 @@ mod tests {
                 ..job(segments)
             },
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap()
@@ -1350,7 +1370,57 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(*shown.lock().unwrap(), vec![2, 3]);
+        assert_eq!(*shown.lock().unwrap(), vec![0, 2, 3]);
+    }
+
+    // @behavior TL-082
+    #[tokio::test]
+    async fn names_the_batch_being_translated() {
+        let llama = FakeLlama::with_echo(0);
+        let dir = TempDir::new("tl-pending-batch");
+        let app = mock_app();
+        let mut project = project_of(three_segments());
+        project.directory = dir.path().to_path_buf();
+        let current = app.state::<CurrentProject>();
+        current.replace(project);
+        let source = current.snapshot().unwrap();
+        let _hold = current.hold_resource(
+            &source.directory,
+            &source.name,
+            RunningMode::Translation {
+                language: Language::Japanese,
+            },
+        );
+        let named = Arc::new(Mutex::new(Vec::new()));
+        app.listen_any("project-changed", {
+            let named = Arc::clone(&named);
+            let handle = app.handle().clone();
+            move |_| {
+                let view = handle.state::<CurrentProject>().view().unwrap();
+                named.lock().unwrap().push(view.pending_batch());
+            }
+        });
+
+        translate_once_ready(
+            app.handle(),
+            llama.base_url(),
+            Duration::from_secs(5),
+            || false,
+            &job_in_batches_of_two(&source.transcript.segments),
+            &mut Phases::start("translate", "load"),
+            batch_display(app.handle(), &current, &source, Language::Japanese),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            *named.lock().unwrap(),
+            vec![
+                Some(SegmentSpan { first: 0, last: 1 }),
+                Some(SegmentSpan { first: 2, last: 2 }),
+                None
+            ]
+        );
     }
 
     /// The `pipeline-progress` payloads of `phase`, as sent, while three Segments are translated in Batches of two.
@@ -1371,7 +1441,7 @@ mod tests {
             || false,
             &job_in_batches_of_two(&segments),
             &mut Phases::start("translate", "load"),
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap();
@@ -1466,7 +1536,7 @@ mod tests {
             &llama.model(),
             &job(&source.transcript.segments),
             &[],
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap();
@@ -1491,7 +1561,7 @@ mod tests {
         llama::wait_until_ready(llama.base_url(), Duration::from_secs(5), || false)
             .await
             .unwrap();
-        translate_segments(&llama.model(), &job(&segments), &[], |_| {})
+        translate_segments(&llama.model(), &job(&segments), &[], |_, _| {})
             .await
             .unwrap();
 
@@ -1702,7 +1772,7 @@ mod tests {
             || false,
             &job(&segments),
             &mut phases,
-            |_| {},
+            |_, _| {},
         )
         .await
         .unwrap();

@@ -13,7 +13,7 @@ pub mod glossary;
 mod history;
 pub mod versions;
 
-pub use current::{CurrentProject, ProjectView, ResourceView, RunningMode};
+pub use current::{CurrentProject, ProjectView, ResourceView, RunningMode, SegmentSpan};
 #[cfg(test)]
 pub(crate) use files::HISTORY_DIR;
 use glossary::TranslationGlossary;

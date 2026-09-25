@@ -634,3 +634,11 @@ Translating keeps the translation it replaces as a Backup, yet saying so before 
 | When | translating afterwards into `en` is chosen |
 | Then | its translation options warn the translation will be overwritten |
 
+## `TL-082` Naming the Batch being translated
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of three Segments translated in Batches of two |
+| When | it is translated |
+| Then | the Project names Segments 0 to 1 as the Batch being translated before the first Batch, 2 to 2 after it, and none once the last is done |
+

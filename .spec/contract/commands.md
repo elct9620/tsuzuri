@@ -112,7 +112,7 @@ pub fn set_project_options(app: AppHandle, options: ProjectOptions) -> Result<()
 
 ## `current_project`
 
-The Project's directory, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments, whether it has a change to undo and to redo, and the Mode running on it, or none before one is opened.
+The Project's directory, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments, whether it has a change to undo and to redo, the Mode running on it and the Batch it is translating, or none before one is opened.
 
 ```rust
 pub fn current_project(app: AppHandle) -> Option<ProjectView> {}

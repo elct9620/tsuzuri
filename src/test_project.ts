@@ -20,6 +20,7 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
     has_undo: false,
     has_redo: false,
     running_mode: null,
+    pending_batch: null,
     ...changes,
   };
 }

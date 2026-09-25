@@ -538,9 +538,14 @@ pub struct ProjectView {
     has_undo: bool,
     has_redo: bool,
     running_mode: Option<RunningMode>,
+    pending_batch: Option<SegmentSpan>,
 }
 
 impl ProjectView {
+    pub fn pending_batch(&self) -> Option<SegmentSpan> {
+        self.pending_batch
+    }
+
     pub fn media(&self) -> Option<&Path> {
         self.media.as_deref()
     }
@@ -611,12 +616,21 @@ pub enum RunningMode {
     Translation { language: Language },
 }
 
-/// The Resource a Mode runs on, by the directory it is in and its name.
+/// The Segments from `first` through `last`, by position.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct SegmentSpan {
+    pub first: usize,
+    pub last: usize,
+}
+
+/// The Resource a Mode runs on, by the directory it is in and its name, and the Batch it is
+/// translating, if any.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ModeHold {
     directory: PathBuf,
     name: String,
     mode: RunningMode,
+    pending_batch: Option<SegmentSpan>,
 }
 
 impl ModeHold {
@@ -661,8 +675,16 @@ impl CurrentProject {
             directory: directory.to_path_buf(),
             name: name.to_string(),
             mode,
+            pending_batch: None,
         });
         ResourceHold(self)
+    }
+
+    /// Names the Batch the running Mode translates next, or none once every Batch is done.
+    pub fn mark_pending_batch(&self, pending_batch: Option<SegmentSpan>) {
+        if let Some(hold) = self.lock().mode_hold.as_mut() {
+            hold.pending_batch = pending_batch;
+        }
     }
 
     /// Makes `change` to the Project, refused when a Mode running on the Current Resource holds a
@@ -747,6 +769,9 @@ impl CurrentProject {
                 running_mode: mode_hold
                     .filter(|hold| hold.is_on_current(project))
                     .map(|hold| hold.mode),
+                pending_batch: mode_hold
+                    .filter(|hold| hold.is_on_current(project))
+                    .and_then(|hold| hold.pending_batch),
             }
         })
     }

@@ -258,7 +258,7 @@ transcribe 指令                       translate 指令
   │ transcription_target               │ snapshot、讀取詞彙表
   │ 釋放常駐 llama-server 的模型        │ 常駐 router 載入模型（關掉常駐時啟動單一模型的行程）
   │ Steps：ffmpeg 轉成 WAV              │ 等待載入完成
-  │ Steps：whisper-cli，段落逐行出現    │ 分批翻譯 ─▶ show_translations ＋ project-changed
+  │ Steps：whisper-cli，段落逐行出現    │ 分批翻譯 ─▶ show_translations、mark_pending_batch ＋ project-changed
   │   └─ push_segment ＋ project-changed│ 保留 N 秒後釋放（或停止行程）
   │ write_transcription（備份、寫檔）   │
   ▼                                    ▼ write_translations（備份、寫檔）

@@ -46,7 +46,7 @@ const zhHant: typeof en = {
   translate: {
     source: "來源",
     speakerLabels: "說話者標籤",
-    selfReview: "自我審查",
+    selfReview: "自我檢查",
     rollingSummary: "滾動摘要",
     words: "字",
     glossary: "詞彙表",

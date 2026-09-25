@@ -9,6 +9,7 @@ use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::project_config::{BilingualOrder, ProjectConfig, ProjectOptions};
 use crate::resource::{self, Resource};
+use crate::segment_change::SegmentChange;
 use crate::transcript::{Segment, SrtContent, Transcript};
 use crate::translation_glossary::{GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 
@@ -224,6 +225,31 @@ impl Project {
             None => self.export_path(content)?,
         };
         Ok(std::fs::write(path, srt)?)
+    }
+
+    /// Makes `change` to the Current Resource's original and to each of its translations, since a
+    /// translation is matched to its original by time, and writes them all back.
+    fn change_segments(&mut self, change: SegmentChange) -> Result<(), Failure> {
+        let current = self.current()?;
+        let (name, shown) = (current.name.clone(), current.translation);
+        let mut original = current.transcript.clone();
+        change.apply(&mut original.segments)?;
+        let resource = self.resource(&name)?;
+        let mut translations = Vec::new();
+        for (language, path) in &resource.translations {
+            let mut translation = resource.transcript(Some(*language))?;
+            change.apply(&mut translation.segments)?;
+            translations.push((path.clone(), translation_only(&translation)));
+        }
+        self.current_mut()?.transcript = original;
+        self.write_subtitle(SrtContent::Original)?;
+        for (path, translation) in translations {
+            std::fs::write(path, translation.to_srt(SrtContent::Original))?;
+        }
+        self.resources = resource::resources_in(&self.directory, self.language)?;
+        self.select(&name)?;
+        self.show_translation(shown)?;
+        self.write_bilingual_subtitles(&name, None)
     }
 
     /// Writes the Bilingual SRT beside each translation of the named Resource, or beside its
@@ -767,6 +793,16 @@ impl CurrentProject {
         })
     }
 
+    pub fn change_segments(&self, change: SegmentChange) -> Result<(), Failure> {
+        self.update_project(|project| {
+            if project.is_changed_elsewhere()? {
+                project.read_current_again()?;
+                return Err(Failure::ChangedElsewhere);
+            }
+            project.change_segments(change)
+        })
+    }
+
     pub fn export_path(&self, content: SrtContent) -> Result<PathBuf, Failure> {
         let held = self.lock();
         held.project
@@ -912,6 +948,13 @@ pub fn edit_segment(
     let edited = app.state::<CurrentProject>().edit(index, field, value);
     announce(&app);
     edited
+}
+
+#[tauri::command]
+pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Failure> {
+    let changed = app.state::<CurrentProject>().change_segments(change);
+    announce(&app);
+    changed
 }
 
 #[tauri::command]
@@ -1499,6 +1542,227 @@ mod tests {
             .unwrap();
 
         assert_eq!(read(&dir, "ep01.srt"), cue("co: 你好"));
+    }
+
+    /// SRT text of cues each `(start ms, end ms, text)`.
+    fn srt_of(cues: &[(u64, u64, &str)]) -> String {
+        Transcript {
+            segments: cues
+                .iter()
+                .map(|(start_ms, end_ms, text)| Segment {
+                    start_ms: *start_ms,
+                    end_ms: *end_ms,
+                    speaker: None,
+                    text: text.to_string(),
+                    translation: None,
+                })
+                .collect(),
+        }
+        .to_srt(SrtContent::Original)
+    }
+
+    /// A Project in `zh-TW` of `ep01` holding `original`, and `translation` as its `en` translation.
+    fn changing_project_in(
+        dir: &TempDir,
+        original: &[(u64, u64, &str)],
+        translation: &[(u64, u64, &str)],
+    ) -> CurrentProject {
+        std::fs::write(dir.path().join("ep01.srt"), srt_of(original)).unwrap();
+        if !translation.is_empty() {
+            std::fs::write(dir.path().join("ep01.en.srt"), srt_of(translation)).unwrap();
+        }
+        project_in(dir)
+    }
+
+    // @behavior PJ-057
+    #[test]
+    fn changes_a_segments_times_in_every_subtitle() {
+        let dir = TempDir::new("pj-change-times");
+        let current = changing_project_in(&dir, &[(0, 1_000, "你好")], &[(0, 1_000, "Hello")]);
+
+        current
+            .change_segments(SegmentChange::Times {
+                index: 0,
+                start_ms: 500,
+                end_ms: 1_500,
+            })
+            .unwrap();
+
+        assert_eq!(
+            [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
+            [
+                srt_of(&[(500, 1_500, "你好")]),
+                srt_of(&[(500, 1_500, "Hello")])
+            ]
+        );
+    }
+
+    // @behavior PJ-058
+    #[test]
+    fn inserts_a_segment_into_the_gap_after_another() {
+        let dir = TempDir::new("pj-insert-after");
+        let current = changing_project_in(&dir, &[(0, 1_000, "你好"), (3_000, 4_000, "再見")], &[]);
+
+        current
+            .change_segments(SegmentChange::InsertionAfter { index: 0 })
+            .unwrap();
+
+        assert_eq!(
+            segments(&current)
+                .iter()
+                .map(|segment| (segment.start_ms, segment.end_ms, segment.text.as_str()))
+                .collect::<Vec<_>>(),
+            [
+                (0, 1_000, "你好"),
+                (1_000, 3_000, ""),
+                (3_000, 4_000, "再見")
+            ]
+        );
+    }
+
+    // @behavior PJ-059
+    #[test]
+    fn inserts_a_segment_before_the_first() {
+        let dir = TempDir::new("pj-insert-before");
+        let current = changing_project_in(&dir, &[(5_000, 6_000, "你好")], &[]);
+
+        current
+            .change_segments(SegmentChange::InsertionBefore { index: 0 })
+            .unwrap();
+
+        let first = &segments(&current)[0];
+        assert_eq!(
+            (first.start_ms, first.end_ms, first.text.as_str()),
+            (3_000, 5_000, "")
+        );
+    }
+
+    // @behavior PJ-060
+    #[test]
+    fn deletes_a_segment_from_every_subtitle() {
+        let dir = TempDir::new("pj-delete");
+        let current = changing_project_in(
+            &dir,
+            &[(0, 1_000, "你好"), (1_000, 2_000, "世界")],
+            &[(0, 1_000, "Hello"), (1_000, 2_000, "world")],
+        );
+
+        current
+            .change_segments(SegmentChange::Deletion { index: 0 })
+            .unwrap();
+
+        assert_eq!(
+            [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
+            [
+                srt_of(&[(1_000, 2_000, "世界")]),
+                srt_of(&[(1_000, 2_000, "world")])
+            ]
+        );
+    }
+
+    // @behavior PJ-061
+    #[test]
+    fn splits_a_segment_at_a_point_in_its_text() {
+        let dir = TempDir::new("pj-split");
+        let current = changing_project_in(
+            &dir,
+            &[(0, 2_000, "你好世界")],
+            &[(0, 2_000, "Hello world")],
+        );
+
+        current
+            .change_segments(SegmentChange::Split { index: 0, at: 2 })
+            .unwrap();
+
+        assert_eq!(
+            [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
+            [
+                srt_of(&[(0, 1_000, "你好"), (1_000, 2_000, "世界")]),
+                srt_of(&[(0, 1_000, "Hello world")])
+            ]
+        );
+    }
+
+    // @behavior PJ-062
+    #[test]
+    fn merges_a_run_of_segments() {
+        let dir = TempDir::new("pj-merge");
+        let current = changing_project_in(
+            &dir,
+            &[(0, 1_000, "你好"), (1_000, 2_000, "世界")],
+            &[(0, 1_000, "Hello"), (1_000, 2_000, "world")],
+        );
+
+        current
+            .change_segments(SegmentChange::Merge { first: 0, last: 1 })
+            .unwrap();
+
+        assert_eq!(
+            [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
+            [
+                srt_of(&[(0, 2_000, "你好\n世界")]),
+                srt_of(&[(0, 2_000, "Hello\nworld")])
+            ]
+        );
+    }
+
+    // @behavior PJ-063
+    #[test]
+    fn shifts_a_run_of_segments() {
+        let dir = TempDir::new("pj-shift");
+        let current = changing_project_in(
+            &dir,
+            &[(0, 1_000, "一"), (1_000, 2_000, "二"), (2_000, 3_000, "三")],
+            &[],
+        );
+
+        current
+            .change_segments(SegmentChange::Shift {
+                first: 1,
+                last: 2,
+                offset_ms: 500,
+            })
+            .unwrap();
+
+        assert_eq!(
+            read(&dir, "ep01.srt"),
+            srt_of(&[(0, 1_000, "一"), (1_500, 2_500, "二"), (2_500, 3_500, "三")])
+        );
+    }
+
+    // @behavior PJ-064
+    #[test]
+    fn stops_a_shift_at_the_start_of_the_media() {
+        let dir = TempDir::new("pj-shift-back");
+        let current = changing_project_in(&dir, &[(1_000, 3_000, "你好")], &[]);
+
+        current
+            .change_segments(SegmentChange::Shift {
+                first: 0,
+                last: 0,
+                offset_ms: -2_000,
+            })
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), srt_of(&[(0, 1_000, "你好")]));
+    }
+
+    // @behavior PJ-065
+    #[test]
+    fn refuses_a_segment_that_ends_before_it_starts() {
+        let dir = TempDir::new("pj-invalid-times");
+        let current = changing_project_in(&dir, &[(0, 1_000, "你好")], &[]);
+
+        let refused = current.change_segments(SegmentChange::Times {
+            index: 0,
+            start_ms: 2_000,
+            end_ms: 1_000,
+        });
+
+        assert_eq!(
+            (refused, read(&dir, "ep01.srt")),
+            (Err(Failure::InvalidTimes), srt_of(&[(0, 1_000, "你好")]))
+        );
     }
 
     // @behavior PJ-054

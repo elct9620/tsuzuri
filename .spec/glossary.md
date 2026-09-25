@@ -154,6 +154,10 @@ A short message in a corner of the window about something that has just happened
 
 A grey shape standing where content is still being made or read, such as a row before a transcription writes its first Segment, so the screen shows something is coming rather than nothing being there.
 
+### Segment Change
+
+A change to the Segments themselves rather than to a text: new times for one, one inserted before or after another, one deleted, one split in two at a point in its text, a run of them merged, or a run of them shifted in time. It is made to the original and every translation of the Current Resource together, since a translation is matched to its original by time.
+
 ### Stray Process
 
 A Component process left alive after the app that launched it has exited or crashed. Tsuzuri records the PID of every process it launches so the next start can kill what the last one left.

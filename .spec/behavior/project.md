@@ -381,6 +381,78 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | the Speaker of its Segment is set to `co` |
 | Then | `ep01.srt` reads `co: 你好` |
 
+## `PJ-057` Changing a Segment's times in every subtitle
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01` has a Segment from 0 to 1 second in `ep01.srt` and `ep01.en.srt` |
+| When | its times are changed to 0.5 to 1.5 seconds |
+| Then | the Segment runs from 0.5 to 1.5 seconds in both files |
+
+## `PJ-058` Inserting a Segment into the gap after another
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1 and from 3 to 4 seconds |
+| When | a Segment is inserted after the first |
+| Then | an empty Segment from 1 to 3 seconds stands between them |
+
+## `PJ-059` Inserting a Segment before the first
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose first Segment runs from 5 to 6 seconds |
+| When | a Segment is inserted before it |
+| Then | an empty Segment from 3 to 5 seconds comes first |
+
+## `PJ-060` Deleting a Segment from every subtitle
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of two Segments translated into `en` |
+| When | the first is deleted |
+| Then | the original and the translation each hold only the second |
+
+## `PJ-061` Splitting a Segment at a point in its text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of one Segment `你好世界` from 0 to 2 seconds, translated as `Hello world` |
+| When | it is split after `你好` |
+| Then | `你好` runs from 0 to 1 second with the translation and `世界` from 1 to 2 seconds without one |
+
+## `PJ-062` Merging a run of Segments
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `你好` from 0 to 1 and `世界` from 1 to 2 seconds, translated as `Hello` and `world` |
+| When | the two are merged |
+| Then | one Segment from 0 to 2 seconds reads `你好` above `世界`, translated as `Hello` above `world` |
+
+## `PJ-063` Shifting a run of Segments
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1, 1 to 2 and 2 to 3 seconds |
+| When | the last two are shifted by half a second |
+| Then | they run from 1.5 to 2.5 and 2.5 to 3.5 seconds, and the first is unchanged |
+
+## `PJ-064` Stopping a shift at the start of the media
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of one Segment from 1 to 3 seconds |
+| When | it is shifted back by two seconds |
+| Then | it runs from 0 to 1 second |
+
+## `PJ-065` Refusing a Segment that ends before it starts
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of one Segment from 0 to 1 second |
+| When | its times are changed to 2 to 1 seconds |
+| Then | the change is refused as `invalid-times` and the subtitle is left as it was |
+
 ## `PJ-048` Offering only the general settings without a Project
 
 | Step | Statement |

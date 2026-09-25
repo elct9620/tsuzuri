@@ -134,6 +134,14 @@ Write the Current Resource to a file as SRT carrying the `original` text, the `t
 pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<(), Failure> {}
 ```
 
+## `change_segments`
+
+Make a Segment Change to the Current Resource, by position, and write its original and every translation back to the directory, together with the Bilingual SRTs the Project Options keep. A Segment that would end before it starts is refused as `invalid-times`; a subtitle changed elsewhere is handled as `edit_segment` handles it.
+
+```rust
+pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Failure> {}
+```
+
 ## `export_path`
 
 Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone, a Bilingual SRT's in its Bilingual Order.

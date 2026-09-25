@@ -120,12 +120,14 @@ describe("TranscriptController", () => {
       }),
     );
 
-    const times = [...document.querySelectorAll("li time")].map(
-      (time) => time.textContent,
-    );
+    const times = [
+      ...document.querySelectorAll<HTMLInputElement>("li [data-edge]"),
+    ].map((time) => time.value);
     expect(times).toEqual([
-      "00:00:00.000 → 00:00:01.000",
-      "00:01:02.003 → 00:01:04.500",
+      "00:00:00.000",
+      "00:00:01.000",
+      "00:01:02.003",
+      "00:01:04.500",
     ]);
     expect(fields()).toEqual(["大家好", "今天天氣很好"]);
   });

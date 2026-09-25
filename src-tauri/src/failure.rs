@@ -38,6 +38,8 @@ pub enum Failure {
     /// An edit refused because a subtitle of the Current Resource was changed elsewhere since
     /// Tsuzuri last read or wrote it; the Current Resource was read again instead.
     ChangedElsewhere,
+    /// A Segment Change that would leave a Segment ending before it starts.
+    InvalidTimes,
     /// Transcribing over an original subtitle the user did not ask to overwrite.
     SubtitleExists {
         path: PathBuf,

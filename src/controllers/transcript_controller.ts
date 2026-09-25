@@ -3,10 +3,10 @@ import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { save } from "@tauri-apps/plugin-dialog";
 
-import { failureCode, failureMessage } from "../failure";
 import { t } from "../i18n";
-import { notify } from "../notification";
+import { notify, notifyFailure } from "../notification";
 import { closeMenu } from "../menu";
+import { formatTime } from "../time";
 import type { TaskKind } from "./progress_controller";
 import {
   currentProject,
@@ -15,14 +15,6 @@ import {
   type ProjectView,
   type Segment,
 } from "../project";
-
-export function formatTime(ms: number): string {
-  const pad = (value: number, width = 2) => String(value).padStart(width, "0");
-  const hours = Math.floor(ms / 3_600_000);
-  const minutes = Math.floor(ms / 60_000) % 60;
-  const seconds = Math.floor(ms / 1000) % 60;
-  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(ms % 1000, 3)}`;
-}
 
 /** Which text of a Segment an editor holds, named as Rust names it. */
 type SegmentField = "text" | "translation" | "speaker";
@@ -68,7 +60,6 @@ function option(value: string, label: string): HTMLOptionElement {
   return choice;
 }
 
-/** One row: the times, the text, and the translation when one is shown, even before it is made. */
 /** Who says the Segment, chosen from the Speakers already named or typed anew. */
 function speakerEditor(index: number, speaker: string): HTMLInputElement {
   const input = document.createElement("input");
@@ -82,22 +73,79 @@ function speakerEditor(index: number, speaker: string): HTMLInputElement {
   return input;
 }
 
+/** The start or the end of a Segment, typed as a time. */
+function timeEditor(
+  index: number,
+  edge: "start" | "end",
+  ms: number,
+): HTMLInputElement {
+  const input = document.createElement("input");
+  input.className = `${edge} input input-xs w-28 font-mono`;
+  input.dataset.index = String(index);
+  input.dataset.edge = edge;
+  input.dataset.action = "change->segment-changes#changeTimes";
+  input.value = formatTime(ms);
+  return input;
+}
+
+/** The Segment Changes one Segment offers, in a menu opened from `⋮`. */
+function changeMenu(index: number): HTMLElement {
+  const dropdown = document.createElement("div");
+  dropdown.className = "dropdown dropdown-left";
+  const opener = document.createElement("div");
+  opener.tabIndex = 0;
+  opener.setAttribute("role", "button");
+  opener.className = "btn btn-ghost btn-xs";
+  opener.textContent = "⋮";
+  const menu = document.createElement("ul");
+  menu.tabIndex = -1;
+  menu.className =
+    "menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md";
+  for (const [action, label] of [
+    ["insertBefore", "edit.insertAbove"],
+    ["insertAfter", "edit.insertBelow"],
+    ["split", "edit.split"],
+    ["delete", "edit.delete"],
+  ]) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = action;
+    button.dataset.index = String(index);
+    button.dataset.action = `segment-changes#${action}`;
+    button.textContent = t(label);
+    const choice = document.createElement("li");
+    choice.append(button);
+    menu.append(choice);
+  }
+  dropdown.append(opener, menu);
+  return dropdown;
+}
+
+/** One row: the choice to select it, its times and Speaker, the text, and the translation when one is shown, even before it is made. */
 function item(
   segment: Segment,
   index: number,
   showsTranslation: boolean,
 ): HTMLLIElement {
   const li = document.createElement("li");
+  const selection = document.createElement("input");
+  selection.type = "checkbox";
+  selection.className = "selection checkbox checkbox-xs mt-1.5";
+  selection.dataset.index = String(index);
+  selection.dataset.action = "change->segment-changes#showSelection";
   const heading = document.createElement("div");
   heading.className = "flex flex-col gap-1";
-  const time = document.createElement("time");
-  time.textContent = `${formatTime(segment.start_ms)} → ${formatTime(segment.end_ms)}`;
-  heading.append(time, speakerEditor(index, segment.speaker ?? ""));
+  heading.append(
+    timeEditor(index, "start", segment.start_ms),
+    timeEditor(index, "end", segment.end_ms),
+    speakerEditor(index, segment.speaker ?? ""),
+  );
   const editors = document.createElement("div");
+  editors.className = "list-col-grow";
   editors.append(editor(index, "text", segment.text));
   if (showsTranslation)
     editors.append(editor(index, "translation", segment.translation ?? ""));
-  li.append(heading, editors);
+  li.append(selection, heading, editors, changeMenu(index));
   return li;
 }
 
@@ -157,10 +205,7 @@ export default class TranscriptController extends Controller {
       });
       notify(t("edit.saved"), "success", "saved");
     } catch (error) {
-      notify(
-        failureMessage(error),
-        failureCode(error) === "changed-elsewhere" ? "warning" : "error",
-      );
+      notifyFailure(error);
     }
   }
 
@@ -227,9 +272,11 @@ export default class TranscriptController extends Controller {
     const editors = [
       ...this.listTarget.querySelectorAll<
         HTMLInputElement | HTMLTextAreaElement
-      >("[data-field]"),
+      >("[data-edge], [data-field]"),
     ];
     const values = segments.flatMap((segment) => [
+      formatTime(segment.start_ms),
+      formatTime(segment.end_ms),
       segment.speaker ?? "",
       segment.text,
       ...(showsTranslation ? [segment.translation ?? ""] : []),

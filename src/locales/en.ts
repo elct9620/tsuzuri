@@ -69,6 +69,19 @@ const en = {
     untranslated: "Not translated yet",
     saved: "Saved",
     speaker: "Speaker",
+    insertAbove: "Insert above",
+    insertBelow: "Insert below",
+    split: "Split at cursor",
+    delete: "Delete",
+    splitWhere: "Put the cursor where the text should split first",
+    unreadableTime: "Write the time as 00:00:01.000",
+    selected: "{{count}} selected",
+    merge: "Merge",
+    shift: "Shift…",
+    shiftTitle: "Shift times",
+    offset: "Milliseconds, negative for earlier",
+    shiftStart: "Shift",
+    cancelSelection: "Clear selection",
   },
   settings: {
     project: "Project",
@@ -154,6 +167,7 @@ const en = {
     noProject: "Open a directory or an SRT file first",
     noResource: "The directory has no media file or SRT file to work on",
     noMedia: "This resource has no video or audio file to transcribe",
+    invalidTimes: "A segment cannot end before it starts",
     changedElsewhere:
       "The subtitle was changed in another program and has been read again; this edit was not written",
     subtitleExists:

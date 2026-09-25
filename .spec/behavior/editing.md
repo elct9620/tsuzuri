@@ -6,6 +6,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 
 - `src/controllers/transcript_controller.test.ts`
 - `src/controllers/project_controller.test.ts`
+- `src/controllers/segment_changes_controller.test.ts`
 
 ## `ED-001` Writing an edited text to the Project
 
@@ -110,3 +111,69 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | Given | a Current Resource whose Segments are said by `co` and `cl` |
 | When | the editor shows it |
 | Then | each Segment's Speaker offers `cl` and `co` to choose from |
+
+## `ED-014` Changing a Segment's times in the editor
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment runs from 0 to 1 second |
+| When | its start is changed to `00:00:00.500` |
+| Then | the Project is asked to change its times to 0.5 to 1 second |
+
+## `ED-015` Refusing a time that cannot be read
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel |
+| When | a Segment's start is changed to `abc` |
+| Then | a Notification says the time cannot be read and nothing is changed |
+
+## `ED-016` Inserting a Segment from its menu
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel |
+| When | inserting below is chosen from the first Segment's menu |
+| Then | the Project is asked to insert a Segment after it |
+
+## `ED-017` Splitting a Segment where its text is being edited
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment reads `你好世界`, with the cursor after `你好` |
+| When | splitting is chosen from its menu |
+| Then | the Project is asked to split it after two characters |
+
+## `ED-018` Merging the Segments selected
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with its first two Segments selected |
+| When | merging is chosen |
+| Then | the Project is asked to merge the first through the second |
+
+## `ED-019` Shifting the Segments selected
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with its second and third Segments selected |
+| When | they are shifted by 500 milliseconds |
+| Then | the Project is asked to shift the second through the third by 500 milliseconds |
+
+## `ED-020` Merging only Segments next to each other
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with its first and third Segments selected |
+| When | the selection bar shows |
+| Then | merging is not offered |
+
+## `ED-021` Clearing the selection once the Segments change
+
+A change redraws the rows, so a selection kept across it would name rows that moved.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with its first two Segments selected |
+| When | the third Segment is deleted from its menu |
+| Then | no Segment is selected and the selection bar is hidden |

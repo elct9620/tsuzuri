@@ -11,7 +11,7 @@
   <body class="text-[15px]" data-controller="tooltip">
     <main
       class="flex h-dvh flex-col"
-      data-controller="project transcript dialog"
+      data-controller="project transcript segment-changes dialog"
       data-action="progress:task->transcript#followTask project:select->transcript#showLoading"
     >
       <section class="hero flex-1" data-project-target="start">
@@ -302,6 +302,66 @@
               data-transcript-target="empty"
               data-i18n="edit.empty"
             ></p>
+            <div
+              class="mb-2 flex items-center gap-2 rounded-box bg-base-200 px-3 py-1.5 text-sm"
+              data-segment-changes-target="selection"
+              hidden
+            >
+              <span data-segment-changes-target="selectionCount"></span>
+              <button
+                type="button"
+                class="btn btn-xs"
+                data-segment-changes-target="merge"
+                data-action="segment-changes#merge"
+                data-i18n="edit.merge"
+              ></button>
+              <button
+                type="button"
+                class="btn btn-xs"
+                data-action="segment-changes#openShift"
+                data-i18n="edit.shift"
+              ></button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs"
+                data-action="segment-changes#clearSelection"
+                data-i18n="edit.cancelSelection"
+              ></button>
+            </div>
+            <dialog class="modal" data-segment-changes-target="shiftDialog">
+              <div class="modal-box max-w-sm">
+                <h3
+                  class="mb-2 text-lg font-bold"
+                  data-i18n="edit.shiftTitle"
+                ></h3>
+                <fieldset class="fieldset">
+                  <legend
+                    class="fieldset-legend"
+                    data-i18n="edit.offset"
+                  ></legend>
+                  <input
+                    type="number"
+                    step="100"
+                    class="input w-full"
+                    data-segment-changes-target="offset"
+                  />
+                </fieldset>
+                <div class="modal-action">
+                  <form method="dialog">
+                    <button class="btn" data-i18n="work.cancel"></button>
+                  </form>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-action="segment-changes#shift"
+                    data-i18n="edit.shiftStart"
+                  ></button>
+                </div>
+              </div>
+              <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+              </form>
+            </dialog>
             <ol
               class="list text-[15px] [&_textarea]:block [&_textarea]:w-full [&_textarea]:resize-y [&_textarea]:rounded-field [&_textarea]:border [&_textarea]:border-transparent [&_textarea]:px-1.5 [&_textarea]:py-1 [&_textarea]:hover:border-base-300 [&_textarea]:focus:border-base-content/40 [&_textarea]:focus:outline-none [&_textarea.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row"
               data-transcript-target="list"

@@ -7,6 +7,7 @@ pub mod processes;
 pub mod project;
 pub mod project_config;
 pub mod resource;
+pub mod segment_change;
 pub mod timing;
 pub mod transcript;
 pub mod translation;
@@ -61,6 +62,7 @@ pub fn run() {
             pipeline::transcribe,
             project::current_project,
             project::edit_segment,
+            project::change_segments,
             project::export_path,
             project::open_project,
             project::open_srt,

@@ -1,3 +1,5 @@
+import { failureCode, failureMessage } from "./failure";
+
 /** How long a Notification of anything but a failure stays before it goes on its own. */
 export const NOTIFICATION_MS = 4000;
 
@@ -33,4 +35,12 @@ export function notify(
   }
   stack.append(alert);
   if (kind !== "error") setTimeout(() => alert.remove(), NOTIFICATION_MS);
+}
+
+/** Says why an edit or a Segment Change was not made; one refused over a change made elsewhere is a warning. */
+export function notifyFailure(error: unknown): void {
+  notify(
+    failureMessage(error),
+    failureCode(error) === "changed-elsewhere" ? "warning" : "error",
+  );
 }

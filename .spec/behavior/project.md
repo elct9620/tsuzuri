@@ -259,6 +259,14 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | the Resource list shows it |
 | Then | it lists `ep01` with `en` and `ep02` marked as having no subtitle |
 
+## `PJ-038` Naming a Resource in full when its name is cut short
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project of a Resource named `[SHANA]C0220260514.zh-TW.mix` |
+| When | the Resource list shows it |
+| Then | its item's tooltip reads `[SHANA]C0220260514.zh-TW.mix` |
+
 ## `PJ-035` Selecting a Resource from the list
 
 | Step | Statement |

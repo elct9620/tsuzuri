@@ -16,22 +16,31 @@ function resourceItem(
   button.type = "button";
   button.dataset.action = "project#select";
   button.dataset.name = resource.name;
+  button.title = resource.name;
+  button.className = "flex-col items-start gap-1";
   button.classList.toggle("menu-active", isCurrent);
   const name = document.createElement("span");
-  name.className = "grow truncate";
+  name.className = "line-clamp-2 break-all";
   name.textContent = resource.name;
   button.append(name);
+  const marks: HTMLElement[] = [];
   if (!resource.has_subtitle) {
     const status = document.createElement("span");
     status.className = "status status-warning";
     status.title = t("resources.noSubtitle");
-    button.append(status);
+    marks.push(status);
   }
   for (const code of resource.translation_languages) {
     const badge = document.createElement("span");
     badge.className = "badge badge-sm";
     badge.textContent = code;
-    button.append(badge);
+    marks.push(badge);
+  }
+  if (marks.length > 0) {
+    const row = document.createElement("span");
+    row.className = "flex items-center gap-1";
+    row.append(...marks);
+    button.append(row);
   }
   const item = document.createElement("li");
   item.append(button);

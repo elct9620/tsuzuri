@@ -137,6 +137,18 @@ describe("ProjectController", () => {
     ]);
   });
 
+  // @behavior PJ-038
+  it("names a Resource in full in its tooltip", async () => {
+    await hold(
+      projectOf({
+        resources: [resourceOf({ name: "[SHANA]C0220260514.zh-TW.mix" })],
+      }),
+    );
+
+    const button = target("resources").querySelector("button");
+    expect(button?.title).toBe("[SHANA]C0220260514.zh-TW.mix");
+  });
+
   // @behavior PJ-035
   it("selects the Resource clicked in the list", async () => {
     await hold(

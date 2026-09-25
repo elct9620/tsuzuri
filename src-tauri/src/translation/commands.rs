@@ -1,4 +1,4 @@
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, State};
 
 use super::llama::READY_TIMEOUT;
 use super::{
@@ -24,8 +24,12 @@ pub async fn translate(
 }
 
 #[tauri::command]
-pub async fn retranslate(app: AppHandle, indexes: Vec<usize>) -> Result<Translation, Failure> {
-    let target = app.state::<CurrentProject>().shown_translation()?;
+pub async fn retranslate(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    indexes: Vec<usize>,
+) -> Result<Translation, Failure> {
+    let target = current.shown_translation()?;
     run_translation(
         &app,
         target,
@@ -90,6 +94,9 @@ pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failu
 #[tauri::command]
 pub async fn save_translation_settings(
     app: AppHandle,
+    mode_lock: State<'_, ModeLock>,
+    processes: State<'_, Processes>,
+    resident: State<'_, ResidentLlama>,
     settings: TranslationSettings,
 ) -> Result<TranslationSettings, Failure> {
     let saved_settings = settings.save(&settings::settings_dir(&app)?)?;
@@ -97,12 +104,8 @@ pub async fn save_translation_settings(
         start_resident_llama(&app);
     } else {
         // A translation still running keeps its llama-server until it ends.
-        let mode_lock = app.state::<ModeLock>();
         let _turn = mode_lock.wait_turn().await;
-        let processes = app.state::<Processes>().inner().clone();
-        app.state::<ResidentLlama>()
-            .stop(&AppPorts::new(&app, &processes))
-            .await;
+        resident.stop(&AppPorts::new(&app, &processes)).await;
     }
     Ok(saved_settings)
 }

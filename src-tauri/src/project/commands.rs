@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Manager, Runtime, State};
 
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
@@ -46,46 +46,63 @@ pub fn read_again_if_changed<R: Runtime>(app: &AppHandle<R>) {
 }
 
 #[tauri::command]
-pub fn select_resource(app: AppHandle, name: String) -> Result<(), Failure> {
-    app.state::<CurrentProject>().select(&name)?;
+pub fn select_resource(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    name: String,
+) -> Result<(), Failure> {
+    current.select(&name)?;
     app.announce_project();
     Ok(())
 }
 
 #[tauri::command]
-pub fn show_translation(app: AppHandle, language: Option<Language>) -> Result<(), Failure> {
-    app.state::<CurrentProject>().show_translation(language)?;
+pub fn show_translation(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    language: Option<Language>,
+) -> Result<(), Failure> {
+    current.show_translation(language)?;
     app.announce_project();
     Ok(())
 }
 
 #[tauri::command]
-pub fn set_primary_language(app: AppHandle, language: Language) -> Result<(), Failure> {
-    app.state::<CurrentProject>().set_language(language)?;
+pub fn set_primary_language(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    language: Language,
+) -> Result<(), Failure> {
+    current.set_language(language)?;
     app.announce_project();
     Ok(())
 }
 
 #[tauri::command]
-pub fn set_project_options(app: AppHandle, options: ProjectOptions) -> Result<(), Failure> {
-    app.state::<CurrentProject>().set_options(options)?;
+pub fn set_project_options(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    options: ProjectOptions,
+) -> Result<(), Failure> {
+    current.set_options(options)?;
     app.announce_project();
     Ok(())
 }
 
 #[tauri::command]
-pub fn current_project(app: AppHandle) -> Option<ProjectView> {
-    app.state::<CurrentProject>().view()
+pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView> {
+    current.view()
 }
 
 #[tauri::command]
 pub fn edit_segment(
     app: AppHandle,
+    current: State<'_, CurrentProject>,
     index: usize,
     field: SegmentField,
     value: String,
 ) -> Result<(), Failure> {
-    let result = app.state::<CurrentProject>().edit(index, field, value);
+    let result = current.edit(index, field, value);
     app.announce_project();
     result
 }
@@ -100,15 +117,22 @@ pub fn set_speakers(app: AppHandle, indexes: Vec<usize>, speaker: String) -> Res
 }
 
 #[tauri::command]
-pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Failure> {
-    let result = app.state::<CurrentProject>().change_segments(change);
+pub fn change_segments(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    change: SegmentChange,
+) -> Result<(), Failure> {
+    let result = current.change_segments(change);
     app.announce_project();
     result
 }
 
 #[tauri::command]
-pub fn translation_cues(app: AppHandle, language: Language) -> Result<Vec<ComparedCue>, Failure> {
-    app.state::<CurrentProject>().translation_cues(language)
+pub fn translation_cues(
+    current: State<'_, CurrentProject>,
+    language: Language,
+) -> Result<Vec<ComparedCue>, Failure> {
+    current.translation_cues(language)
 }
 
 #[tauri::command]
@@ -127,42 +151,50 @@ pub fn revert_row(
 }
 
 #[tauri::command]
-pub fn undo(app: AppHandle) -> Result<(), Failure> {
-    let result = app.state::<CurrentProject>().undo();
+pub fn undo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
+    let result = current.undo();
     app.announce_project();
     result
 }
 
 #[tauri::command]
-pub fn redo(app: AppHandle) -> Result<(), Failure> {
-    let result = app.state::<CurrentProject>().redo();
+pub fn redo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
+    let result = current.redo();
     app.announce_project();
     result
 }
 
 #[tauri::command]
-pub fn export_path(app: AppHandle, content: SrtContent) -> Result<PathBuf, Failure> {
-    app.state::<CurrentProject>().export_path(content)
+pub fn export_path(
+    current: State<'_, CurrentProject>,
+    content: SrtContent,
+) -> Result<PathBuf, Failure> {
+    current.export_path(content)
 }
 
 #[tauri::command]
-pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<(), Failure> {
-    app.state::<CurrentProject>().save_srt(&path, content)
+pub fn save_srt(
+    current: State<'_, CurrentProject>,
+    path: PathBuf,
+    content: SrtContent,
+) -> Result<(), Failure> {
+    current.save_srt(&path, content)
 }
 
 #[tauri::command]
-pub fn subtitle_versions(app: AppHandle) -> Result<Vec<SubtitleVersions>, Failure> {
-    app.state::<CurrentProject>().subtitle_versions()
+pub fn subtitle_versions(
+    current: State<'_, CurrentProject>,
+) -> Result<Vec<SubtitleVersions>, Failure> {
+    current.subtitle_versions()
 }
 
 #[tauri::command]
 pub fn compare_versions(
-    app: AppHandle,
+    current: State<'_, CurrentProject>,
     language: Option<Language>,
     left: Option<String>,
     right: Option<String>,
 ) -> Result<Vec<ComparedRow>, Failure> {
-    let current = app.state::<CurrentProject>();
     Ok(compare(
         &current.version_transcript(language, left.as_deref())?,
         &current.version_transcript(language, right.as_deref())?,
@@ -183,14 +215,19 @@ pub fn restore_version(
 }
 
 #[tauri::command]
-pub fn translation_glossary_table(app: AppHandle) -> Result<GlossaryTable, Failure> {
-    app.state::<CurrentProject>().glossary_table()
+pub fn translation_glossary_table(
+    current: State<'_, CurrentProject>,
+) -> Result<GlossaryTable, Failure> {
+    current.glossary_table()
 }
 
 #[tauri::command]
-pub fn save_translation_glossary(app: AppHandle, rows: Vec<GlossaryRow>) -> Result<(), Failure> {
-    app.state::<CurrentProject>()
-        .save_translation_glossary(&rows)?;
+pub fn save_translation_glossary(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    rows: Vec<GlossaryRow>,
+) -> Result<(), Failure> {
+    current.save_translation_glossary(&rows)?;
     app.announce_project();
     Ok(())
 }

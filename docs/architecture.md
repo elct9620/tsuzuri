@@ -232,7 +232,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 結束 ─▶ kill_all       結束仍在執行的元件行程
 ```
 
-每個指令各自向 Tauri 取得 `CurrentProject` 或 `Processes`，沒有全域變數。
+`run()` 是唯一的組裝點：`manage` 的物件由指令以 `State` 參數注入，沒有全域變數。
 
 ### 3.6 目前專案
 

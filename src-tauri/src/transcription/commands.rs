@@ -1,6 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, State};
 
 use super::{run_transcribe, Tools, Transcription};
 use crate::failure::Failure;
@@ -13,17 +13,20 @@ use crate::toolchain::{self, settings};
 use crate::translation::ResidentLlama;
 
 #[tauri::command]
-pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription, Failure> {
-    let job = app
-        .state::<CurrentProject>()
-        .transcription_target(overwrite)?;
+pub async fn transcribe(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    mode_lock: State<'_, ModeLock>,
+    processes: State<'_, Processes>,
+    resident: State<'_, ResidentLlama>,
+    overwrite: bool,
+) -> Result<Transcription, Failure> {
+    let job = current.transcription_target(overwrite)?;
     let phases = Phases::start("transcribe", "prepare");
     app.report("prepare", None);
-    let mode_lock = app.state::<ModeLock>();
-    let processes = app.state::<Processes>().inner().clone();
     let run = mode_lock.begin(AppPorts::new(&app, &processes)).await;
     // Only one Model is loaded at a time, so the translation Model makes way for whisper's.
-    app.state::<ResidentLlama>().make_room(run.ports()).await;
+    resident.make_room(run.ports()).await;
     let [ffmpeg, whisper] =
         toolchain::find_ready_executables(settings::resolver(&app)?, ["ffmpeg", "whisper"]).await?;
     let tools = Tools { ffmpeg, whisper };
@@ -39,7 +42,7 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
     let result = run
         .run_until_cancelled(run_transcribe(
             &run,
-            app.state::<CurrentProject>().inner(),
+            current.inner(),
             &tools,
             &settings,
             &job,

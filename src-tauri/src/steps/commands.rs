@@ -1,8 +1,8 @@
-use tauri::{AppHandle, Manager};
+use tauri::State;
 
 use super::ModeLock;
 
 #[tauri::command]
-pub fn cancel_task(app: AppHandle) {
-    app.state::<ModeLock>().cancel();
+pub fn cancel_task(mode_lock: State<'_, ModeLock>) {
+    mode_lock.cancel();
 }

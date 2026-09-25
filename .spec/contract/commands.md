@@ -51,7 +51,7 @@ pub async fn forget_component(app: AppHandle, name: String) -> Result<Vec<Compon
 Run the Transcribe Mode on the Current Resource's media file in the Primary Language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes and `project-changed` as each Segment arrives. The Resource's original subtitle is written from what whisper-cli wrote, refused when it exists unless `overwrite`, and each cue of its translations that has the times of a cue written takes that cue's Speaker; the answer is how long the audio is and the seconds each Phase took.
 
 ```rust
-pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription, Failure> {}
+pub async fn transcribe(app: AppHandle, current: State<'_, CurrentProject>, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, resident: State<'_, ResidentLlama>, overwrite: bool) -> Result<Transcription, Failure> {}
 ```
 
 ## `extract_waveform`
@@ -59,7 +59,7 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
 The Waveform of the Current Resource's media, with the media file it was taken from so an answer that arrives after another Resource was selected can be told apart. ffmpeg runs as a Step outside any Mode, so a running Mode does not delay it.
 
 ```rust
-pub async fn extract_waveform(app: AppHandle) -> Result<Waveform, Failure> {}
+pub async fn extract_waveform(app: AppHandle, current: State<'_, CurrentProject>, processes: State<'_, Processes>) -> Result<Waveform, Failure> {}
 ```
 
 ## `open_project`
@@ -83,7 +83,7 @@ pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(),
 Make the Resource of this name the Current Resource, reading its subtitles from the directory.
 
 ```rust
-pub fn select_resource(app: AppHandle, name: String) -> Result<(), Failure> {}
+pub fn select_resource(app: AppHandle, current: State<'_, CurrentProject>, name: String) -> Result<(), Failure> {}
 ```
 
 ## `show_translation`
@@ -91,7 +91,7 @@ pub fn select_resource(app: AppHandle, name: String) -> Result<(), Failure> {}
 Show the Current Resource's translation in this Language, or none.
 
 ```rust
-pub fn show_translation(app: AppHandle, language: Option<Language>) -> Result<(), Failure> {}
+pub fn show_translation(app: AppHandle, current: State<'_, CurrentProject>, language: Option<Language>) -> Result<(), Failure> {}
 ```
 
 ## `set_primary_language`
@@ -99,7 +99,7 @@ pub fn show_translation(app: AppHandle, language: Option<Language>) -> Result<()
 Make this the Project's Primary Language, record it in the Project Config, and pair the directory's subtitles again as in it.
 
 ```rust
-pub fn set_primary_language(app: AppHandle, language: Language) -> Result<(), Failure> {}
+pub fn set_primary_language(app: AppHandle, current: State<'_, CurrentProject>, language: Language) -> Result<(), Failure> {}
 ```
 
 ## `set_project_options`
@@ -107,7 +107,7 @@ pub fn set_primary_language(app: AppHandle, language: Language) -> Result<(), Fa
 Replace the Project Options and record them in the Project Config.
 
 ```rust
-pub fn set_project_options(app: AppHandle, options: ProjectOptions) -> Result<(), Failure> {}
+pub fn set_project_options(app: AppHandle, current: State<'_, CurrentProject>, options: ProjectOptions) -> Result<(), Failure> {}
 ```
 
 ## `current_project`
@@ -115,7 +115,7 @@ pub fn set_project_options(app: AppHandle, options: ProjectOptions) -> Result<()
 The Project's directory, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments, whether it has a change to undo and to redo, the Mode running on it and the Batch it is translating, or none before one is opened.
 
 ```rust
-pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
+pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView> {}
 ```
 
 ## `edit_segment`
@@ -123,7 +123,7 @@ pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
 Replace the `text`, the `translation` or the `speaker` of one Segment of the Current Resource, by its position, where an empty `speaker` leaves it with none, and write the subtitle it belongs to back to the directory; a Speaker is written to the original and to each cue of every translation that has the Segment's times. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure. An edit of a subtitle a running Mode writes is refused as `mode-running`.
 
 ```rust
-pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}
+pub fn edit_segment(app: AppHandle, current: State<'_, CurrentProject>, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}
 ```
 
 ## `set_speakers`
@@ -139,7 +139,7 @@ pub fn set_speakers(app: AppHandle, indexes: Vec<usize>, speaker: String) -> Res
 Ask the running transcription or translation to stop. It stops at once, ending the Components it started, and answers the `mode-cancelled` Failure; what it has shown so far stays shown and nothing more is written. With no task running it changes nothing.
 
 ```rust
-pub fn cancel_task(app: AppHandle) {}
+pub fn cancel_task(mode_lock: State<'_, ModeLock>) {}
 ```
 
 ## `retranslate`
@@ -147,7 +147,7 @@ pub fn cancel_task(app: AppHandle) {}
 Translate the Current Resource's Segments at `indexes` again, into the translation shown, as one Batch carrying the translated lines before them and the source lines after them; no Split Sentences are searched for and no Rolling Summary is kept. The translations are written as one change in the Undo History, with no Backup, and the answer is how long each Phase took. With no translation shown it is refused as `no-translation-shown`; it runs, waits and can be cancelled as `translate` does.
 
 ```rust
-pub async fn retranslate(app: AppHandle, indexes: Vec<usize>) -> Result<Translation, Failure> {}
+pub async fn retranslate(app: AppHandle, current: State<'_, CurrentProject>, indexes: Vec<usize>) -> Result<Translation, Failure> {}
 ```
 
 ## `translate`
@@ -163,7 +163,7 @@ pub async fn translate(app: AppHandle, target: Language, options: TranslationOpt
 Write the Current Resource to a file as SRT carrying the `original` text, the `translation`, or both as a `bilingual` SRT.
 
 ```rust
-pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<(), Failure> {}
+pub fn save_srt(current: State<'_, CurrentProject>, path: PathBuf, content: SrtContent) -> Result<(), Failure> {}
 ```
 
 ## `change_segments`
@@ -171,7 +171,7 @@ pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<()
 Make a Segment Change to the Current Resource, by position, and write its original and every translation back to the directory, together with the Bilingual SRTs the Project Options keep. A Segment that would end before it starts is refused as `invalid-times`; a subtitle changed elsewhere is handled as `edit_segment` handles it, and one a running Mode writes is refused as `mode-running`.
 
 ```rust
-pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Failure> {}
+pub fn change_segments(app: AppHandle, current: State<'_, CurrentProject>, change: SegmentChange) -> Result<(), Failure> {}
 ```
 
 ## `subtitle_versions`
@@ -179,7 +179,7 @@ pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Fail
 The Backups of each subtitle of the Current Resource, its original first and then each translation, newest Backup first, each saying whether it is an Output or an Overwrite.
 
 ```rust
-pub fn subtitle_versions(app: AppHandle) -> Result<Vec<SubtitleVersions>, Failure> {}
+pub fn subtitle_versions(current: State<'_, CurrentProject>) -> Result<Vec<SubtitleVersions>, Failure> {}
 ```
 
 ## `compare_versions`
@@ -187,7 +187,7 @@ pub fn subtitle_versions(app: AppHandle) -> Result<Vec<SubtitleVersions>, Failur
 Two Versions of the Current Resource's original, or of its translation into `language`, as Comparison Rows in time order, a Version being a Backup by file name or, as none, the subtitle now; `left` is the earlier of the two as given.
 
 ```rust
-pub fn compare_versions(app: AppHandle, language: Option<Language>, left: Option<String>, right: Option<String>) -> Result<Vec<ComparedRow>, Failure> {}
+pub fn compare_versions(current: State<'_, CurrentProject>, language: Option<Language>, left: Option<String>, right: Option<String>) -> Result<Vec<ComparedRow>, Failure> {}
 ```
 
 ## `translation_cues`
@@ -195,7 +195,7 @@ pub fn compare_versions(app: AppHandle, language: Option<Language>, left: Option
 The cues of the Current Resource's translation into `language` as its file is written, for reading beside the cues being edited; none when there is no such translation.
 
 ```rust
-pub fn translation_cues(app: AppHandle, language: Language) -> Result<Vec<ComparedCue>, Failure> {}
+pub fn translation_cues(current: State<'_, CurrentProject>, language: Language) -> Result<Vec<ComparedCue>, Failure> {}
 ```
 
 ## `restore_version`
@@ -211,7 +211,7 @@ pub fn restore_version(app: AppHandle, language: Option<Language>, backup: Strin
 Put the Current Resource's subtitles back as they were before its latest change in the Undo History, write them to the directory with the Bilingual SRTs they feed, and read the Current Resource again, emitting `project-changed`. With nothing to undo it changes nothing; while a Mode runs on the Current Resource it is refused as `mode-running`.
 
 ```rust
-pub fn undo(app: AppHandle) -> Result<(), Failure> {}
+pub fn undo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {}
 ```
 
 ## `redo`
@@ -219,7 +219,7 @@ pub fn undo(app: AppHandle) -> Result<(), Failure> {}
 Make the Current Resource's latest undone change again, as `undo` puts one back. With nothing to redo it changes nothing.
 
 ```rust
-pub fn redo(app: AppHandle) -> Result<(), Failure> {}
+pub fn redo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {}
 ```
 
 ## `revert_row`
@@ -235,7 +235,7 @@ pub fn revert_row(app: AppHandle, language: Option<Language>, backup: String, ro
 Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone, a Bilingual SRT's in its Bilingual Order.
 
 ```rust
-pub fn export_path(app: AppHandle, content: SrtContent) -> Result<PathBuf, Failure> {}
+pub fn export_path(current: State<'_, CurrentProject>, content: SrtContent) -> Result<PathBuf, Failure> {}
 ```
 
 ## `translation_settings`
@@ -251,7 +251,7 @@ pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failu
 Save the translation settings, each raised to at least one, and answer them as saved.
 
 ```rust
-pub fn save_translation_settings(app: AppHandle, settings: TranslationSettings) -> Result<TranslationSettings, Failure> {}
+pub async fn save_translation_settings(app: AppHandle, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, resident: State<'_, ResidentLlama>, settings: TranslationSettings) -> Result<TranslationSettings, Failure> {}
 ```
 
 ## `translation_glossary_table`
@@ -259,7 +259,7 @@ pub fn save_translation_settings(app: AppHandle, settings: TranslationSettings) 
 The Project's Translation Glossary as a table: a column for every Language, a row for every term holding its words and whether it names a Speaker, and whether its file has a `source,target` header; an empty table when the Project has no `glossary.csv`.
 
 ```rust
-pub fn translation_glossary_table(app: AppHandle) -> Result<GlossaryTable, Failure> {}
+pub fn translation_glossary_table(current: State<'_, CurrentProject>) -> Result<GlossaryTable, Failure> {}
 ```
 
 ## `save_translation_glossary`
@@ -267,7 +267,7 @@ pub fn translation_glossary_table(app: AppHandle) -> Result<GlossaryTable, Failu
 Write `rows`, each holding a word for every Language in the order the table gave them and whether it names a Speaker, to the Project's `glossary.csv` with a header of Language codes and `type`, leaving out empty rows and creating the file when there is none; the Project then holds the Translation Glossary as saved and `project-changed` is emitted.
 
 ```rust
-pub fn save_translation_glossary(app: AppHandle, rows: Vec<GlossaryRow>) -> Result<(), Failure> {}
+pub fn save_translation_glossary(app: AppHandle, current: State<'_, CurrentProject>, rows: Vec<GlossaryRow>) -> Result<(), Failure> {}
 ```
 
 ## `log_directory`
@@ -275,7 +275,7 @@ pub fn save_translation_glossary(app: AppHandle, rows: Vec<GlossaryRow>) -> Resu
 The directory the log is written to in this launch, and the one chosen for the next.
 
 ```rust
-pub fn log_directory(app: AppHandle) -> Result<LogDirectory, Failure> {}
+pub fn log_directory(app: AppHandle, log_dir: State<'_, LogDirInUse>) -> Result<LogDirectory, Failure> {}
 ```
 
 ## `choose_log_directory`
@@ -283,7 +283,7 @@ pub fn log_directory(app: AppHandle) -> Result<LogDirectory, Failure> {}
 Record `path` as the directory to write the log to from the next launch, and answer both directories as `log_directory` does.
 
 ```rust
-pub fn choose_log_directory(app: AppHandle, path: PathBuf) -> Result<LogDirectory, Failure> {}
+pub fn choose_log_directory(app: AppHandle, log_dir: State<'_, LogDirInUse>, path: PathBuf) -> Result<LogDirectory, Failure> {}
 ```
 
 ## `open_log_directory`
@@ -291,6 +291,6 @@ pub fn choose_log_directory(app: AppHandle, path: PathBuf) -> Result<LogDirector
 Open the directory the log is written to in this launch with the system's file manager.
 
 ```rust
-pub fn open_log_directory(app: AppHandle) -> Result<(), Failure> {}
+pub fn open_log_directory(log_dir: State<'_, LogDirInUse>) -> Result<(), Failure> {}
 ```
 

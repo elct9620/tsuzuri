@@ -89,6 +89,8 @@ const en = {
     shiftStart: "Shift",
     cancelSelection: "Clear selection",
     notSaved: "Edit not saved",
+    notUndone: "Change not undone",
+    notRedone: "Change not redone",
   },
   versions: {
     open: "Versions",

@@ -14,6 +14,7 @@ import TranscriptController from "./controllers/transcript_controller";
 import TranslateController from "./controllers/translate_controller";
 import TranslationOptionsController from "./controllers/translation_options_controller";
 import TranslationSettingsController from "./controllers/translation_settings_controller";
+import UndoController from "./controllers/undo_controller";
 import VersionsController from "./controllers/versions_controller";
 import { setInterfaceLanguage, translatePage } from "./i18n";
 
@@ -35,6 +36,7 @@ async function start(): Promise<void> {
   application.register("translate", TranslateController);
   application.register("translation-options", TranslationOptionsController);
   application.register("translation-settings", TranslationSettingsController);
+  application.register("undo", UndoController);
   application.register("versions", VersionsController);
 }
 

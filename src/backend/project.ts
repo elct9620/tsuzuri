@@ -87,6 +87,16 @@ export async function followProject(
   return unlisten;
 }
 
+/** Undo or Redo chosen from the Edit menu. */
+export type EditCommand = "undo" | "redo";
+
+/** Calls `apply` with each Undo or Redo chosen from the Edit menu, which takes their shortcuts first. */
+export function followEditCommands(
+  apply: (command: EditCommand) => void,
+): Promise<UnlistenFn> {
+  return listen<EditCommand>("edit-command", (event) => apply(event.payload));
+}
+
 /** Asks every view to read the Project again, as when Rust announces nothing after a refusal. */
 export function refreshProject(): Promise<void> {
   return emit("project-changed");

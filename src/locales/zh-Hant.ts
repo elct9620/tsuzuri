@@ -89,6 +89,8 @@ const zhHant: typeof en = {
     shiftStart: "平移",
     cancelSelection: "取消選取",
     notSaved: "修改沒有寫入",
+    notUndone: "沒有復原",
+    notRedone: "沒有重做",
   },
   versions: {
     open: "版本",

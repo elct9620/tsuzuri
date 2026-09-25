@@ -6,6 +6,7 @@ Taking back the changes Tsuzuri made to the Current Resource's subtitles, and ma
 
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
+- `src/controllers/undo_controller.test.ts`
 
 ## `UD-001` Undoing an edit
 
@@ -102,3 +103,43 @@ Taking back the changes Tsuzuri made to the Current Resource's subtitles, and ma
 | Given | a Current Resource whose `ep01.srt` reads `你好` |
 | When | its text is edited to `你好` |
 | Then | the Current Resource has nothing to undo |
+
+## `UD-013` Leaving an undo inside a text field to the field
+
+| Step | Statement |
+| --- | --- |
+| Given | focus in a Segment's text field |
+| When | Ctrl+Z is pressed |
+| Then | the Project is not asked to undo |
+
+## `UD-014` Undoing the Project's change outside a text field
+
+| Step | Statement |
+| --- | --- |
+| Given | focus outside any text field |
+| When | Ctrl+Z is pressed |
+| Then | the Project is asked to undo |
+
+## `UD-015` Redoing with the redo shortcuts
+
+| Step | Statement |
+| --- | --- |
+| Given | focus outside any text field |
+| When | Ctrl+Shift+Z or Ctrl+Y is pressed |
+| Then | the Project is asked to redo, once for each |
+
+## `UD-016` Undoing from the Edit menu
+
+| Step | Statement |
+| --- | --- |
+| Given | focus outside any text field |
+| When | Undo is chosen from the Edit menu |
+| Then | the Project is asked to undo |
+
+## `UD-017` Undoing typing from the Edit menu
+
+| Step | Statement |
+| --- | --- |
+| Given | focus in a Segment's text field |
+| When | Undo is chosen from the Edit menu |
+| Then | the field undoes its own typing and the Project is not asked to undo |

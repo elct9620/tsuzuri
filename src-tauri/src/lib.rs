@@ -1,5 +1,7 @@
 pub mod failure;
 pub mod language;
+#[cfg(target_os = "macos")]
+pub mod menu;
 pub mod processes;
 pub mod progress;
 pub mod project;
@@ -23,7 +25,12 @@ use project::CurrentProject;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .menu(menu::build_app_menu)
+        .on_menu_event(menu::forward_edit_command);
+    builder
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(log::LevelFilter::Info)

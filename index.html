@@ -8,7 +8,11 @@
     <script type="module" src="/src/main.ts" defer></script>
   </head>
 
-  <body class="text-[15px]" data-controller="tooltip">
+  <body
+    class="text-[15px]"
+    data-controller="tooltip undo"
+    data-action="keydown@window->undo#press"
+  >
     <main
       class="flex h-dvh flex-col"
       data-controller="project transcript segment-changes dialog"

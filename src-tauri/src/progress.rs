@@ -23,10 +23,12 @@ struct PipelineProgress {
 
 impl<R: Runtime> Progress for AppHandle<R> {
     fn report(&self, phase: &'static str, percent: Option<u8>) {
+        // @event pipeline-progress
         let _ = self.emit("pipeline-progress", PipelineProgress { phase, percent });
     }
 
     fn announce_project(&self) {
+        // @event project-changed
         let _ = self.emit("project-changed", ());
     }
 }

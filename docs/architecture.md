@@ -110,6 +110,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 |---|---|---|
 | `project-changed` | 改變專案的指令與用例；webview 也會以 `refreshProject` 要求重讀 | `backend/project.ts` 的 `followProject`，再呼叫 `current_project` |
 | `pipeline-progress` | 用例經由 `Progress` 回報 Phase 與百分比 | `backend/progress.ts` 的 `listenProgress` |
+| `edit-command` | macOS 編輯選單的復原與重做（`menu.rs`） | `backend/project.ts` 的 `followEditCommands` |
 
 事件只說「有變化」或「到哪一步」，不帶工作資料；畫面要顯示的內容一律再用指令向 Rust 取得。
 
@@ -168,6 +169,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 | 檔案 | 層 | 負責 |
 |---|---|---|
+| `menu.rs` | 轉接 | macOS 編輯選單：復原與重做改由 webview 決定交給誰 |
 | `transcript.rs`、`segment_change.rs`、`language.rs` | 領域 | Segment、Transcript、SRT、段落變更、語言 |
 | `project.rs` | 領域 | Project 聚合、雙語順序、編輯要寫回哪些字幕 |
 | `project/versions.rs` | 領域 | 逐 cue 比較兩個版本 |
@@ -285,6 +287,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `versions`、`glossary` | 版本與詞彙表 modal |
 | `components`、`models`、`translation-settings` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |
+| `undo` | 全頁的復原與重做：文字框裡交給欄位自己，其餘交給 Rust |
 
 畫面配置見 `docs/ui.md`。`progress` 以 `progress:task` 事件、`project` 以 `project:select` 事件告訴字幕編輯要顯示 skeleton。
 

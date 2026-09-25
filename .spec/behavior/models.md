@@ -4,7 +4,8 @@ Pointing each Model Slot at a Model file, remembering the choice, and refusing t
 
 ## Includes
 
-- `src-tauri/src/models.rs`
+- `src-tauri/src/toolchain.rs`
+- `src-tauri/src/toolchain/*.rs`
 - `src/controllers/models_controller.test.ts`
 
 ## `MD-001` Remembering a chosen Model

@@ -1,17 +1,16 @@
-pub mod detection;
-
 use std::collections::HashMap;
-use std::io;
+use std::fmt;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
-use tauri::{async_runtime, AppHandle, Manager};
 
 use crate::failure::Failure;
 
-const BUNDLED_DIR: &str = "components";
-const CHOICES_FILE: &str = "components.json";
+pub mod commands;
+pub mod detection;
+pub mod settings;
+
 /// The Build Manifest, read for the order Auto-Selection tries each Component's Variants in.
 const BUILD_MANIFEST: &str = include_str!("../../components.json");
 
@@ -126,21 +125,6 @@ pub struct ComponentStatus {
 pub struct Choices(HashMap<String, PathBuf>);
 
 impl Choices {
-    /// Choices never saved load as none, so a first launch relies on Detection and the Bundled Variants.
-    pub fn load(dir: &Path) -> io::Result<Choices> {
-        match std::fs::read(dir.join(CHOICES_FILE)) {
-            Ok(bytes) => serde_json::from_slice(&bytes).map_err(io::Error::other),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Choices::default()),
-            Err(error) => Err(error),
-        }
-    }
-
-    pub fn save(&self, dir: &Path) -> io::Result<()> {
-        std::fs::create_dir_all(dir)?;
-        let json = serde_json::to_vec_pretty(self).map_err(io::Error::other)?;
-        std::fs::write(dir.join(CHOICES_FILE), json)
-    }
-
     pub fn choose(&mut self, name: &str, path: PathBuf) {
         self.0.insert(name.to_string(), path);
     }
@@ -163,16 +147,6 @@ pub struct Resolver {
 }
 
 impl Resolver {
-    pub fn from_app(app: &AppHandle) -> Result<Resolver, Failure> {
-        let resources = app.path().resource_dir()?;
-        let config = app.path().app_config_dir()?;
-        Ok(Resolver {
-            bundled: resources.join(BUNDLED_DIR),
-            choices: Choices::load(&config)?,
-            search_dirs: detection::search_dirs(),
-        })
-    }
-
     /// Finds where `component` is, logging where it was found and how long finding it took.
     pub fn find(&self, component: &Component) -> ComponentStatus {
         let started = Instant::now();
@@ -285,7 +259,7 @@ pub async fn find_ready_executables<const N: usize>(
     resolver: Resolver,
     names: [&'static str; N],
 ) -> Result<[PathBuf; N], Failure> {
-    let found = async_runtime::spawn_blocking(move || {
+    let found = tokio::task::spawn_blocking(move || {
         names
             .iter()
             .map(|name| find_ready_executable(name, &resolver))
@@ -298,44 +272,93 @@ pub async fn find_ready_executables<const N: usize>(
 }
 
 /// Finds every Component on the blocking pool, since finding one runs it.
-async fn find_statuses_off_the_main_thread(
+pub async fn find_statuses_off_the_main_thread(
     resolver: Resolver,
 ) -> Result<Vec<ComponentStatus>, Failure> {
-    Ok(async_runtime::spawn_blocking(move || find_statuses(&resolver)).await?)
+    Ok(tokio::task::spawn_blocking(move || find_statuses(&resolver)).await?)
 }
 
-#[tauri::command]
-pub async fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, Failure> {
-    find_statuses_off_the_main_thread(Resolver::from_app(&app)?).await
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ModelSlot {
+    Transcription,
+    Translation,
 }
 
-/// Saves the Choices `change` leaves behind and finds every Component with them.
-async fn change_choices(
-    app: &AppHandle,
-    change: impl FnOnce(&mut Choices),
-) -> Result<Vec<ComponentStatus>, Failure> {
-    let config = app.path().app_config_dir()?;
-    let mut resolver = Resolver::from_app(app)?;
-    change(&mut resolver.choices);
-    resolver.choices.save(&config)?;
-    find_statuses_off_the_main_thread(resolver).await
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ModelSettings {
+    transcription: Option<PathBuf>,
+    translation: Option<PathBuf>,
 }
 
-#[tauri::command]
-pub async fn choose_component(
-    app: AppHandle,
-    name: String,
-    path: PathBuf,
-) -> Result<Vec<ComponentStatus>, Failure> {
-    change_choices(&app, |choices| choices.choose(&name, path)).await
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ModelError {
+    NoChoice(ModelSlot),
+    MissingFile(PathBuf),
 }
 
-#[tauri::command]
-pub async fn forget_component(
-    app: AppHandle,
-    name: String,
-) -> Result<Vec<ComponentStatus>, Failure> {
-    change_choices(&app, |choices| choices.forget(&name)).await
+impl fmt::Display for ModelError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ModelError::NoChoice(slot) => write!(f, "no {slot:?} model chosen"),
+            ModelError::MissingFile(path) => write!(f, "model file not found: {}", path.display()),
+        }
+    }
+}
+
+impl std::error::Error for ModelError {}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct SlotView {
+    path: Option<PathBuf>,
+    has_file: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ModelSettingsView {
+    transcription: SlotView,
+    translation: SlotView,
+}
+
+impl ModelSettings {
+    pub fn choose(&mut self, slot: ModelSlot, path: PathBuf) {
+        *self.slot_mut(slot) = Some(path);
+    }
+
+    /// The Model an engine is started with; checked right before the start so a file moved since it was chosen is caught.
+    pub fn ready_path(&self, slot: ModelSlot) -> Result<&Path, ModelError> {
+        let path = self.slot(slot).ok_or(ModelError::NoChoice(slot))?;
+        if path.is_file() {
+            Ok(path)
+        } else {
+            Err(ModelError::MissingFile(path.to_path_buf()))
+        }
+    }
+
+    pub fn view(&self) -> ModelSettingsView {
+        let slot_view = |slot| SlotView {
+            path: self.slot(slot).map(Path::to_path_buf),
+            has_file: self.ready_path(slot).is_ok(),
+        };
+        ModelSettingsView {
+            transcription: slot_view(ModelSlot::Transcription),
+            translation: slot_view(ModelSlot::Translation),
+        }
+    }
+
+    fn slot(&self, slot: ModelSlot) -> Option<&Path> {
+        match slot {
+            ModelSlot::Transcription => self.transcription.as_deref(),
+            ModelSlot::Translation => self.translation.as_deref(),
+        }
+    }
+
+    fn slot_mut(&mut self, slot: ModelSlot) -> &mut Option<PathBuf> {
+        match slot {
+            ModelSlot::Transcription => &mut self.transcription,
+            ModelSlot::Translation => &mut self.translation,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -530,5 +553,46 @@ mod tests {
         assert_eq!(logs.len(), 1);
         assert!(logs[0].starts_with(&expected), "{}", logs[0]);
         assert!(logs[0].ends_with('s'));
+    }
+
+    // @behavior MD-001
+    #[test]
+    fn remembers_the_chosen_model_across_loads() {
+        let dir = TempDir::new("remember");
+        let model = dir.file("breeze.bin");
+        let mut settings = ModelSettings::load(dir.path()).unwrap();
+        settings.choose(ModelSlot::Transcription, model.clone());
+        settings.save(dir.path()).unwrap();
+
+        let reloaded = ModelSettings::load(dir.path()).unwrap();
+
+        assert_eq!(
+            reloaded.ready_path(ModelSlot::Transcription),
+            Ok(model.as_path())
+        );
+    }
+
+    // @behavior MD-002
+    #[test]
+    fn refuses_a_slot_with_no_model_chosen() {
+        let settings = ModelSettings::default();
+
+        let result = settings.ready_path(ModelSlot::Translation);
+
+        assert_eq!(result, Err(ModelError::NoChoice(ModelSlot::Translation)));
+    }
+
+    // @behavior MD-003
+    #[test]
+    fn refuses_a_model_file_that_is_gone() {
+        let dir = TempDir::new("gone");
+        let model = dir.file("breeze.bin");
+        let mut settings = ModelSettings::default();
+        settings.choose(ModelSlot::Transcription, model.clone());
+        std::fs::remove_file(&model).unwrap();
+
+        let result = settings.ready_path(ModelSlot::Transcription);
+
+        assert_eq!(result, Err(ModelError::MissingFile(model)));
     }
 }

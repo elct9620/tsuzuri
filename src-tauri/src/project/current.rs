@@ -227,11 +227,7 @@ impl Project {
 
     /// Where the Backup named `backup` of the subtitle in `language` is, refused unless that
     /// subtitle's own Backups hold the name.
-    fn backup_of(
-        &self,
-        language: Option<Language>,
-        backup: &str,
-    ) -> Result<PathBuf, Failure> {
+    fn backup_of(&self, language: Option<Language>, backup: &str) -> Result<PathBuf, Failure> {
         let backups = files::backups_of(&self.directory, &self.subtitle_path(language)?)?;
         if !backups.iter().any(|each| each.file == backup) {
             return Err(Failure::NoBackup {
@@ -256,11 +252,7 @@ impl Project {
 
     /// Keeps the subtitle in `language` as a Backup, puts the named Backup in its place and reads
     /// the Current Resource again.
-    fn restore_version(
-        &mut self,
-        language: Option<Language>,
-        backup: &str,
-    ) -> Result<(), Failure> {
+    fn restore_version(&mut self, language: Option<Language>, backup: &str) -> Result<(), Failure> {
         let restored = self.backup_of(language, backup)?;
         let subtitle = self.subtitle_path(language)?;
         let name = self.current()?.name.clone();
@@ -272,11 +264,7 @@ impl Project {
 
     /// Writes the Bilingual SRT beside each translation of the named Resource, or beside its
     /// translation into `only`, when the Project Options keep them.
-    fn write_bilingual_subtitles(
-        &self,
-        name: &str,
-        only: Option<Language>,
-    ) -> Result<(), Failure> {
+    fn write_bilingual_subtitles(&self, name: &str, only: Option<Language>) -> Result<(), Failure> {
         if !self.options.is_bilingual_autosaved {
             return Ok(());
         }

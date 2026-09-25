@@ -9,11 +9,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
-use crate::models::{ModelSettings, ModelSlot};
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, TranslationSource};
 use crate::steps::{StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
+use crate::toolchain::{ModelSettings, ModelSlot};
 use crate::transcript::Segment;
 
 mod batching;

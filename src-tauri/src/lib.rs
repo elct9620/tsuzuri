@@ -1,13 +1,12 @@
-pub mod components;
 pub mod failure;
 pub mod language;
-pub mod models;
 pub mod processes;
 pub mod progress;
 pub mod project;
 pub mod segment_change;
 pub mod steps;
 pub mod timing;
+pub mod toolchain;
 pub mod transcript;
 pub mod transcription;
 pub mod translation;
@@ -53,11 +52,11 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
-            components::choose_component,
-            components::forget_component,
-            components::component_statuses,
-            models::model_settings,
-            models::choose_model,
+            toolchain::commands::choose_component,
+            toolchain::commands::forget_component,
+            toolchain::commands::component_statuses,
+            toolchain::commands::model_settings,
+            toolchain::commands::choose_model,
             transcription::commands::transcribe,
             project::commands::current_project,
             project::commands::edit_segment,

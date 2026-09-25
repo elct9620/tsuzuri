@@ -2,14 +2,13 @@ use tauri::{AppHandle, Manager};
 
 use super::llama::READY_TIMEOUT;
 use super::{run_translate, Translation, TranslationOptions, TranslationPlan, TranslationSettings};
-use crate::components::{self, Resolver};
 use crate::failure::Failure;
 use crate::language::Language;
-use crate::models;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
 use crate::project::CurrentProject;
 use crate::timing::Phases;
+use crate::toolchain::{self, settings};
 
 #[tauri::command]
 pub async fn translate(
@@ -19,12 +18,12 @@ pub async fn translate(
 ) -> Result<Translation, Failure> {
     let phases = Phases::start("translate", "prepare");
     app.report("prepare", None);
-    let [llama] = components::find_ready_executables(Resolver::from_app(&app)?, ["llama"]).await?;
-    let model_settings = models::load_settings(&app)?;
+    let [llama] = toolchain::find_ready_executables(settings::resolver(&app)?, ["llama"]).await?;
+    let model_settings = settings::load_settings(&app)?;
     let plan = TranslationPlan {
         target,
         options,
-        settings: TranslationSettings::load(&models::settings_dir(&app)?)?,
+        settings: TranslationSettings::load(&settings::settings_dir(&app)?)?,
     };
     let processes = app.state::<Processes>().inner().clone();
     run_translate(
@@ -44,7 +43,7 @@ pub async fn translate(
 
 #[tauri::command]
 pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failure> {
-    Ok(TranslationSettings::load(&models::settings_dir(&app)?)?)
+    Ok(TranslationSettings::load(&settings::settings_dir(&app)?)?)
 }
 
 #[tauri::command]
@@ -52,5 +51,5 @@ pub fn save_translation_settings(
     app: AppHandle,
     settings: TranslationSettings,
 ) -> Result<TranslationSettings, Failure> {
-    Ok(settings.save(&models::settings_dir(&app)?)?)
+    Ok(settings.save(&settings::settings_dir(&app)?)?)
 }

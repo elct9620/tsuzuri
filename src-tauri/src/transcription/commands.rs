@@ -3,13 +3,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager};
 
 use super::{run_transcribe, Tools, Transcription};
-use crate::components::{self, Resolver};
 use crate::failure::Failure;
-use crate::models;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
 use crate::project::CurrentProject;
 use crate::timing::Phases;
+use crate::toolchain::{self, settings};
 
 #[tauri::command]
 pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription, Failure> {
@@ -19,10 +18,9 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
     let phases = Phases::start("transcribe", "prepare");
     app.report("prepare", None);
     let [ffmpeg, whisper] =
-        components::find_ready_executables(Resolver::from_app(&app)?, ["ffmpeg", "whisper"])
-            .await?;
+        toolchain::find_ready_executables(settings::resolver(&app)?, ["ffmpeg", "whisper"]).await?;
     let tools = Tools { ffmpeg, whisper };
-    let settings = models::load_settings(&app)?;
+    let settings = settings::load_settings(&app)?;
     let started_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |since| since.as_millis());

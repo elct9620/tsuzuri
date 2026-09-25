@@ -4,8 +4,8 @@ Finding every Component the running platform needs before a Mode runs: the path 
 
 ## Includes
 
-- `src-tauri/src/components.rs`
-- `src-tauri/src/components/**/*.rs`
+- `src-tauri/src/toolchain.rs`
+- `src-tauri/src/toolchain/*.rs`
 - `src/controllers/components_controller.test.ts`
 
 ## `CP-005` Telling how to install a Component that cannot be found

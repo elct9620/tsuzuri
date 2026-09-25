@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::Serialize;
 
-use crate::models::{ModelError, ModelSlot};
+use crate::toolchain::{ModelError, ModelSlot};
 use crate::transcript::SrtError;
 
 /// Why a command did not finish. The webview words each code in the interface language,
@@ -87,6 +87,14 @@ impl From<ModelError> for Failure {
         match error {
             ModelError::NoChoice(slot) => Failure::ModelNotChosen { slot },
             ModelError::MissingFile(path) => Failure::ModelMissing { path },
+        }
+    }
+}
+
+impl From<tokio::task::JoinError> for Failure {
+    fn from(error: tokio::task::JoinError) -> Self {
+        Failure::Internal {
+            detail: error.to_string(),
         }
     }
 }

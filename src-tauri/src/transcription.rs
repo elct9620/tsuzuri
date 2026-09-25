@@ -5,11 +5,11 @@ use std::time::Instant;
 use serde::Serialize;
 
 use crate::failure::Failure;
-use crate::models::{ModelSettings, ModelSlot};
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, TranscriptionTarget};
 use crate::steps::{StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
+use crate::toolchain::{ModelSettings, ModelSlot};
 use crate::transcript::Transcript;
 
 pub mod commands;
@@ -139,11 +139,11 @@ mod tests {
     use tauri::Manager;
 
     use super::*;
-    use crate::components::{self, Resolver};
     use crate::language::Language;
     use crate::processes::{AppPorts, Processes};
     use crate::project::Project;
     use crate::test_support::{write_executable, TempDir};
+    use crate::toolchain::{self, Resolver};
 
     const TWO_SECOND_WAV: &str =
         "#!/bin/sh\nfor last; do :; done\nhead -c 64044 /dev/zero > \"$last\"\n";
@@ -542,10 +542,10 @@ mod tests {
         // vendor/ is laid out as the installer lays out its Bundled Variants.
         let vendor = Resolver {
             bundled: Path::new(env!("CARGO_MANIFEST_DIR")).join("../vendor"),
-            choices: components::Choices::default(),
+            choices: toolchain::Choices::default(),
             search_dirs: Vec::new(),
         };
-        let [ffmpeg, whisper] = components::find_ready_executables(vendor, ["ffmpeg", "whisper"])
+        let [ffmpeg, whisper] = toolchain::find_ready_executables(vendor, ["ffmpeg", "whisper"])
             .await
             .unwrap();
         let dir = TempDir::new("tx-e2e");

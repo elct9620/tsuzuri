@@ -46,7 +46,7 @@ function editor(
   editor.dataset.field = field;
   editor.dataset.controller = "field";
   editor.dataset.action =
-    "focus->field#remember keydown.enter->field#breakLine:!composing:prevent blur->field#leave field:change->transcript#edit";
+    "focus->field#remember compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent blur->field#leave field:change->transcript#edit";
   return editor;
 }
 

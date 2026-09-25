@@ -5,20 +5,43 @@ import { fieldValue, insertLineBreak } from "../editor/field";
 /**
  * Routes a key event by whether an input method is still composing text: `:composing` routes only
  * those, `:!composing` only the others, so an Enter that picks a candidate stays the input method's.
+ * A key the input method is still processing reports `keyCode` 229, and WebKit ends a composition
+ * before the key that ends it arrives (WebKit bug 165004), which the field's own state covers.
  */
 export function composingOption({
   event,
   value,
+  controller,
 }: {
   event: Event;
   value: boolean;
+  controller: Controller;
 }): boolean {
-  return (event instanceof KeyboardEvent && event.isComposing) === value;
+  const isComposing =
+    (event instanceof KeyboardEvent &&
+      (event.isComposing || event.keyCode === 229)) ||
+    (controller instanceof FieldController && controller.isComposing);
+  return isComposing === value;
 }
 
 /** One text field of the editor: hands over its text as `field:change` when it is left changed. */
 export default class FieldController extends Controller<HTMLElement> {
   private valueOnEntry = "";
+  private hasComposition = false;
+
+  /** Whether an input method is composing, or has only just ended composing, in the field. */
+  get isComposing(): boolean {
+    return this.hasComposition;
+  }
+
+  startComposing(): void {
+    this.hasComposition = true;
+  }
+
+  /** Stays composing until the next task, so the key that ended the composition still counts as its. */
+  endComposing(): void {
+    setTimeout(() => (this.hasComposition = false), 0);
+  }
 
   remember(): void {
     this.valueOnEntry = fieldValue(this.element);

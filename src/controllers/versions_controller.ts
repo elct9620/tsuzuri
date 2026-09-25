@@ -120,6 +120,24 @@ export default class VersionsController extends Controller {
     this.dialogTarget.showModal();
   }
 
+  /** Opens the dialog at the Versions of the subtitle in `language`, or of the original for none. */
+  async openAt(language: string | null): Promise<void> {
+    await this.open();
+    this.subtitleTarget.value = language ?? "";
+    this.showBackups();
+  }
+
+  /** Hands the editor a Backup to compare with, as `versions:compare-with`, and closes. */
+  setComparison({ params }: { params: { file: string } }): void {
+    this.dispatch("compare-with", {
+      detail: {
+        language: this.subtitleTarget.value || null,
+        file: params.file,
+      },
+    });
+    this.dialogTarget.close();
+  }
+
   showBackups(): void {
     const backups = this.shownBackups();
     const now = document.createElement("li");
@@ -136,9 +154,16 @@ export default class VersionsController extends Controller {
         const time = document.createElement("span");
         time.className = "list-col-grow";
         time.textContent = localTime(taken_at);
+        const comparison = document.createElement("button");
+        comparison.type = "button";
+        comparison.className = "set-comparison btn btn-xs";
+        comparison.dataset.action = "versions#setComparison";
+        comparison.dataset.versionsFileParam = file;
+        comparison.textContent = t("versions.setComparison");
         li.append(
           label,
           time,
+          comparison,
           button("versions.compare", "compare", file),
           button("versions.restore", "restore", file),
         );

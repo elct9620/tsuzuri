@@ -16,7 +16,8 @@
     <main
       class="flex h-dvh flex-col"
       data-controller="project transcript segment-changes dialog comparison"
-      data-action="progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->comparison#mark"
+      data-comparison-versions-outlet="[data-controller~=versions]"
+      data-action="progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->comparison#mark versions:compare-with->comparison#compareWith"
     >
       <section class="hero flex-1" data-project-target="start">
         <div class="hero-content flex-col text-center">
@@ -278,14 +279,17 @@
                 data-action="change->transcript#showTranslation"
               ></select>
             </label>
-            <label class="flex items-center gap-2 text-sm"
-              ><span data-i18n="compare.label"></span>
-              <select
-                class="select select-sm w-auto"
-                data-comparison-target="choice"
-                data-action="change->comparison#choose"
-              ></select>
-            </label>
+            <div class="dropdown dropdown-end">
+              <div tabindex="0" role="button" class="btn btn-sm">
+                <span data-i18n="compare.label"></span>
+                <i data-lucide="chevron-down" class="size-4"></i>
+              </div>
+              <div
+                tabindex="-1"
+                class="dropdown-content z-20 w-64 rounded-box bg-base-100 shadow-md"
+                data-comparison-target="menu"
+              ></div>
+            </div>
             <div class="contents" data-controller="versions">
               <button
                 type="button"
@@ -460,7 +464,7 @@
               </form>
             </dialog>
             <ol
-              class="list text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row"
+              class="list text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row"
               data-transcript-target="list"
               data-comparison-target="list"
             ></ol>

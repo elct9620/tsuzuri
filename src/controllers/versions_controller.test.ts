@@ -115,6 +115,25 @@ describe("VersionsController", () => {
     clearMocks();
   });
 
+  // @behavior VR-043
+  it("hands the editor a Backup set as the comparison, and closes", async () => {
+    const handed: unknown[] = [];
+    document
+      .querySelector("[data-controller=versions]")!
+      .addEventListener("versions:compare-with", (event) =>
+        handed.push((event as CustomEvent).detail),
+      );
+    await openVersions();
+    await chooseSubtitle("en");
+
+    await click(".set-comparison");
+
+    expect([handed, target<HTMLDialogElement>("dialog").open]).toEqual([
+      [{ language: "en", file: "ep01.en.20260925T030000Z.srt" }],
+      false,
+    ]);
+  });
+
   // @behavior VR-007
   it("lists the Backups of the original by their local time", async () => {
     await openVersions();

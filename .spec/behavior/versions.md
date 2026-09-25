@@ -313,7 +313,7 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | --- | --- |
 | Given | the editor showing the `en` translation of a Current Resource translated into `en` and `ja` |
 | When | the compare menu is offered |
-| Then | it offers `ja` to read beside the cues, and not `en` |
+| Then | it offers `ja` to read beside the cues, which can be chosen with others, and not `en` |
 
 ## `VR-039` Showing a translation beside each cue
 
@@ -321,5 +321,65 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | --- | --- |
 | Given | the editor reading `ja` beside the cues, whose cue from 0 to 1 second reads `こんにちは` |
 | When | the Segments are shown |
-| Then | the Segment from 0 to 1 second shows `こんにちは` beneath its text, and no row is marked as changed |
+| Then | the Segment from 0 to 1 second shows `こんにちは` beneath its texts, named `ja` |
+
+## `VR-040` Comparing the original and the translation at once
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor showing the `en` translation, comparing the original with its Output and `en` with its Output |
+| When | the Segments are shown |
+| Then | the marks of each comparison stand beside the text field they compare, the original's by the text and `en`'s by the translation |
+
+## `VR-041` Reading several translations beside the cues
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor reading `ja` and `ko` beside the cues |
+| When | the Segments are shown |
+| Then | each Segment shows its `ja` and its `ko` cue beneath its text, each named by its Language |
+
+## `VR-042` Keeping the compare menu short
+
+However many Backups a subtitle has, the menu offers a few; the Versions dialog lists them all.
+
+| Step | Statement |
+| --- | --- |
+| Given | an original with an Output and three Overwrites |
+| When | the compare menu is offered |
+| Then | it offers the Output, nothing, and a way to choose another in the Versions dialog |
+
+## `VR-043` Comparing with a Backup chosen in the Versions dialog
+
+| Step | Statement |
+| --- | --- |
+| Given | the Versions dialog listing an Overwrite of the original |
+| When | it is set as the comparison |
+| Then | the editor compares the original with that Overwrite, and the menu offers it |
+
+## `VR-044` Comparing the translation with nothing once another is shown
+
+A Backup of one translation says nothing about another, so its comparison ends with the translation shown.
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor comparing the `en` translation with its Output |
+| When | the `ja` translation is shown instead |
+| Then | the translation is compared with nothing |
+
+## `VR-045` Marking the characters added within a text field
+
+| Step | Statement |
+| --- | --- |
+| Given | a comparison whose Pair reads `資料不上傳` in the Backup and `資料不會上傳` now |
+| When | the Segments are shown |
+| Then | `會` is marked as added inside the text field, and `資料不上傳` shows beneath it as before |
+
+## `VR-046` Saying whose cue was removed
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor comparing the `en` translation, whose Backup has a cue the translation no longer has |
+| When | the Segments are shown |
+| Then | the removed row says it was removed from `en` |
 

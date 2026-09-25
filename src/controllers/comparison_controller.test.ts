@@ -2,7 +2,7 @@
 import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   ComparedRow,
   ProjectView,
@@ -17,6 +17,8 @@ describe("ComparisonController", () => {
   let project: ProjectView;
   let versions: SubtitleVersions[];
   let rows: ComparedRow[];
+  let translationRows: ComparedRow[];
+  let cuesByLanguage: Record<string, ReturnType<typeof cue>[]>;
   let calls: { command: string; args: unknown }[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -44,6 +46,47 @@ describe("ComparisonController", () => {
       [...item.querySelectorAll("[data-mark]")].map((mark) => mark.textContent),
     );
 
+  /** Checks the menu choice `selector` names, as the user does. */
+  async function check(selector: string): Promise<void> {
+    const choice = document.querySelector<HTMLInputElement>(selector)!;
+    choice.checked = true;
+    choice.dispatchEvent(new Event("change"));
+    await settle();
+  }
+
+  /** Each row's translations read beside it, as their Language and cue. */
+  const references = () =>
+    [...document.querySelectorAll("ol > li:not([data-ghost])")].map((item) =>
+      [...item.querySelectorAll<HTMLElement>("[data-reference]")].map(
+        (reference) => [
+          reference.dataset.reference,
+          reference.querySelector("[data-cue]")?.textContent,
+        ],
+      ),
+    );
+
+  /** The Project showing its `en` translation, whose Output can be compared. */
+  function translatedProject(): ProjectView {
+    versions.push({
+      language: "en",
+      backups: [
+        {
+          file: "ep01.en.output.srt",
+          taken_at: "20260925T023100Z",
+          kind: "output",
+        },
+      ],
+    });
+    return projectOf({
+      resources: [resourceOf({ translation_languages: ["en"] })],
+      shown_translation: "en",
+      segments: [
+        { start_ms: 0, end_ms: 1000, text: "您好", translation: "Hello" },
+        { start_ms: 2000, end_ms: 3000, text: "再見", translation: "Bye" },
+      ],
+    });
+  }
+
   async function show(): Promise<void> {
     await emit("project-changed");
     await settle();
@@ -52,6 +95,8 @@ describe("ComparisonController", () => {
 
   beforeEach(async () => {
     calls = [];
+    translationRows = [];
+    cuesByLanguage = { ja: [cue(0, 1000, "こんにちは")] };
     project = projectOf({
       segments: [
         { start_ms: 0, end_ms: 1000, text: "您好" },
@@ -96,10 +141,10 @@ describe("ComparisonController", () => {
     ];
     document.body.innerHTML = `
       <main data-controller="transcript comparison"
-        data-action="transcript:shown->comparison#mark">
+        data-action="transcript:shown->comparison#mark versions:compare-with->comparison#compareWith">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
-        <select data-comparison-target="choice" data-action="change->comparison#choose"></select>
+        <div data-comparison-target="menu"></div>
         <p data-transcript-target="empty"></p>
         <ol data-transcript-target="list" data-comparison-target="list"></ol>
         <datalist data-transcript-target="speakers"></datalist>
@@ -110,8 +155,12 @@ describe("ComparisonController", () => {
         calls.push({ command, args });
         if (command === "current_project") return project;
         if (command === "subtitle_versions") return versions;
-        if (command === "compare_versions") return rows;
-        if (command === "translation_cues") return [cue(0, 1000, "こんにちは")];
+        if (command === "compare_versions")
+          return (args as { language: string | null }).language === null
+            ? rows
+            : translationRows;
+        if (command === "translation_cues")
+          return cuesByLanguage[(args as { language: string }).language] ?? [];
       },
       { shouldMockEvents: true },
     );
@@ -124,6 +173,7 @@ describe("ComparisonController", () => {
   afterEach(() => {
     application.stop();
     clearMocks();
+    vi.unstubAllGlobals();
   });
 
   // @behavior VR-023
@@ -182,7 +232,7 @@ describe("ComparisonController", () => {
       items.length,
       items[1].hasAttribute("data-ghost"),
       items[1].textContent,
-    ]).toEqual([3, true, expect.stringContaining("已刪除：世界")]);
+    ]).toEqual([3, true, expect.stringContaining("已刪除（原文）：世界")]);
   });
 
   // @behavior VR-027
@@ -205,13 +255,8 @@ describe("ComparisonController", () => {
   // @behavior VR-028
   it("compares with nothing", async () => {
     await show();
-    const choice = document.querySelector<HTMLSelectElement>(
-      "[data-comparison-target=choice]",
-    )!;
 
-    choice.value = "";
-    choice.dispatchEvent(new Event("change"));
-    await settle();
+    await check('input[name="compare-original"][value=""]');
 
     expect([marks(), document.querySelectorAll("[data-ghost]").length]).toEqual(
       [[[], []], 0],
@@ -250,8 +295,8 @@ describe("ComparisonController", () => {
     await show();
     const offered = () =>
       [
-        ...document.querySelectorAll<HTMLOptionElement>(
-          "[data-comparison-target=choice] option",
+        ...document.querySelectorAll<HTMLInputElement>(
+          'input[name="compare-translation"]',
         ),
       ].some((choice) => choice.value.includes("ep01.en."));
     const beforeShown = offered();
@@ -261,11 +306,6 @@ describe("ComparisonController", () => {
 
     expect([beforeShown, offered()]).toEqual([false, true]);
   });
-  const choiceTarget = () =>
-    document.querySelector<HTMLSelectElement>(
-      "[data-comparison-target=choice]",
-    )!;
-
   // @behavior VR-038
   it("offers the other translations to read beside the cues", async () => {
     project = {
@@ -276,10 +316,11 @@ describe("ComparisonController", () => {
 
     await show();
 
-    const references = [...choiceTarget().options]
-      .map((choice) => choice.value)
-      .filter((value) => value.includes("reference"));
-    expect(references).toEqual([JSON.stringify({ reference: "ja" })]);
+    expect(
+      [
+        ...document.querySelectorAll<HTMLInputElement>("input[data-reference]"),
+      ].map((choice) => choice.value),
+    ).toEqual(["ja"]);
   });
 
   // @behavior VR-039
@@ -290,14 +331,175 @@ describe("ComparisonController", () => {
     };
     await show();
 
-    choiceTarget().value = JSON.stringify({ reference: "ja" });
-    choiceTarget().dispatchEvent(new Event("change"));
-    await settle();
+    await check('input[data-reference][value="ja"]');
+
+    expect(references()).toEqual([[["ja", "こんにちは"]], []]);
+  });
+
+  // @behavior VR-040
+  it("marks each comparison beside the text field it compares", async () => {
+    project = translatedProject();
+    rows = [pair(cue(0, 1000, "你好"), cue(0, 1000, "您好"))];
+    translationRows = [pair(cue(0, 1000, "Hi"), cue(0, 1000, "Hello"))];
+    await show();
+
+    await check(
+      'input[name="compare-translation"][value="ep01.en.output.srt"]',
+    );
 
     const first = document.querySelector("ol > li")!;
+    const markedField = (side: string) =>
+      first.querySelector(`[data-marks="${side}"]`)?.nextElementSibling
+        ?.classList;
     expect([
-      first.querySelector("[data-reference]")?.textContent,
-      document.querySelectorAll("[data-mark]").length,
-    ]).toEqual(["こんにちは", 0]);
+      markedField("original")?.contains("text"),
+      markedField("translation")?.contains("translation"),
+    ]).toEqual([true, true]);
+  });
+
+  // @behavior VR-041
+  it("reads several translations beneath the cues", async () => {
+    project = {
+      ...project,
+      resources: [resourceOf({ translation_languages: ["ja", "ko"] })],
+    };
+    cuesByLanguage.ko = [cue(0, 1000, "안녕하세요")];
+    await show();
+
+    await check('input[data-reference][value="ja"]');
+    await check('input[data-reference][value="ko"]');
+
+    expect(references()[0]).toEqual([
+      ["ja", "こんにちは"],
+      ["ko", "안녕하세요"],
+    ]);
+  });
+
+  // @behavior VR-042
+  it("offers the Output, nothing, and the Versions dialog for the rest", async () => {
+    versions[0].backups.push(
+      {
+        file: "ep01.20260925T010000Z.srt",
+        taken_at: "20260925T010000Z",
+        kind: "overwrite",
+      },
+      {
+        file: "ep01.20260925T000000Z.srt",
+        taken_at: "20260925T000000Z",
+        kind: "overwrite",
+      },
+    );
+
+    await show();
+
+    expect([
+      [
+        ...document.querySelectorAll<HTMLInputElement>(
+          'input[name="compare-original"]',
+        ),
+      ].map((choice) => choice.value),
+      document.querySelector('[data-action="comparison#chooseInVersions"]')
+        ?.textContent,
+    ]).toEqual([["ep01.20260925T023000Z.output.srt", ""], "從版本選……"]);
+  });
+
+  // @behavior VR-043
+  it("compares with the Backup the Versions dialog sets", async () => {
+    await show();
+
+    document.querySelector("ol")!.dispatchEvent(
+      new CustomEvent("versions:compare-with", {
+        detail: { language: null, file: "ep01.20260925T030000Z.srt" },
+        bubbles: true,
+      }),
+    );
+    await settle();
+
+    expect([
+      sent("compare_versions").pop(),
+      document.querySelector<HTMLInputElement>(
+        'input[name="compare-original"]:checked',
+      )?.value,
+    ]).toEqual([
+      { language: null, left: "ep01.20260925T030000Z.srt", right: null },
+      "ep01.20260925T030000Z.srt",
+    ]);
+  });
+
+  // @behavior VR-044
+  it("compares the translation with nothing once another is shown", async () => {
+    project = translatedProject();
+    await show();
+    await check(
+      'input[name="compare-translation"][value="ep01.en.output.srt"]',
+    );
+
+    project = { ...project, shown_translation: "ja" };
+    await show();
+
+    expect(
+      document.querySelector<HTMLInputElement>(
+        'input[name="compare-translation"]:checked',
+      )?.value,
+    ).toBe("");
+  });
+
+  // @behavior VR-045
+  it("marks the characters a text gained inside its field", async () => {
+    const highlights = new Map<string, { ranges: Range[] }>();
+    vi.stubGlobal("CSS", { highlights });
+    vi.stubGlobal(
+      "Highlight",
+      class {
+        ranges: Range[];
+        constructor(...ranges: Range[]) {
+          this.ranges = ranges;
+        }
+      },
+    );
+    project = projectOf({
+      segments: [{ start_ms: 0, end_ms: 1000, text: "資料不會上傳" }],
+    });
+    rows = [
+      {
+        ...pair(cue(0, 1000, "資料不上傳"), cue(0, 1000, "資料不會上傳")),
+        text_spans: [
+          { kind: "common", text: "資料不" },
+          { kind: "addition", text: "會" },
+          { kind: "common", text: "上傳" },
+        ],
+      },
+    ];
+
+    await show();
+
+    expect([
+      highlights.get("compare-addition")?.ranges.map(String),
+      document.querySelector("[data-was]")?.textContent,
+    ]).toEqual([["會"], "原：資料不上傳"]);
+  });
+
+  // @behavior VR-046
+  it("says a removed cue was removed from the translation", async () => {
+    project = translatedProject();
+    translationRows = [
+      {
+        kind: "removal",
+        left: [cue(1000, 2000, "World")],
+        right: [],
+        is_text_changed: false,
+        is_time_changed: false,
+        text_spans: [],
+      },
+    ];
+    await show();
+
+    await check(
+      'input[name="compare-translation"][value="ep01.en.output.srt"]',
+    );
+
+    expect(
+      document.querySelector('[data-ghost="translation"]')?.textContent,
+    ).toContain("已刪除（English）：World");
   });
 });

@@ -7,9 +7,13 @@ import {
   CircleX,
   EllipsisVertical,
   Info,
+  Pause,
+  Play,
   RotateCcw,
   TriangleAlert,
   X,
+  ZoomIn,
+  ZoomOut,
   createElement,
   createIcons,
 } from "lucide";
@@ -24,9 +28,13 @@ const ICONS = {
   CircleX,
   EllipsisVertical,
   Info,
+  Pause,
+  Play,
   RotateCcw,
   TriangleAlert,
   X,
+  ZoomIn,
+  ZoomOut,
 };
 
 export type IconName = keyof typeof ICONS;

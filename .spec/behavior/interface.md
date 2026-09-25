@@ -8,6 +8,7 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/ui/menu.test.ts`
 - `src/controllers/tooltip_controller.test.ts`
 - `src/ui/notification.test.ts`
+- `src/ui/icons.test.ts`
 - `src-tauri/src/window.rs`
 
 ## `IF-001` Following the system language
@@ -245,3 +246,10 @@ A scrolling list does not tell its page it scrolled, so the tooltip would stay w
 | When | the list scrolls |
 | Then | no tooltip is shown |
 
+## `IF-028` Drawing every icon the page names
+
+| Step | Statement |
+| --- | --- |
+| Given | the page as `index.html` writes it |
+| When | its icons are drawn |
+| Then | no element naming an icon is left undrawn |

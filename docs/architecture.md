@@ -205,8 +205,8 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | `transcription.rs`、`transcription/whisper.rs` | 應用、轉接 | 轉錄用例；ffmpeg 與 whisper-cli 的參數與輸出 |
 | `waveform.rs` | 應用、領域 | 波形用例：ffmpeg 轉成 PCM，每 10 ms 取一個峰值 |
 | `toolchain.rs`、`toolchain/{detection,settings}.rs` | 應用、轉接 | 尋找元件、模型設定；偵測、設定檔 |
-| `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、執行一個 Step、`ModeLock` 與取消、Phase 計時、錯誤碼 |
-| `steps/commands.rs` | 介面 | `cancel_task`、可取消地執行任務 |
+| `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、執行一個 Step、`ModeLock` 與 `ModeRun`、Phase 計時、錯誤碼 |
+| `steps/commands.rs` | 介面 | `cancel_task` |
 | `processes.rs` | 轉接 | 子行程的啟動、紀錄與清理，以及 `AppPorts` |
 | `*/commands.rs`、`window.rs`、`lib.rs` | 介面 | 指令、視窗大小、組裝 |
 
@@ -270,10 +270,10 @@ transcribe 指令                       translate 指令
 |---|---|
 | 一次一個 | 先取得 `ModeLock` |
 | 取消 | `cancel_task` 經 `ModeLock` |
-| 取消後 | 結束任務啟動的行程 |
+| 取消後 | 只結束它啟動的行程 |
 | 取波形 | 不是任務，不取鎖 |
 
-轉錄、翻譯與關掉常駐 llama-server 都先取得 `ModeLock`，後來的等前一個結束。取消時 `run_cancellable` 丟下任務，常駐 llama-server 不受影響。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
+轉錄、翻譯與關掉常駐 llama-server 都先取得 `ModeLock`，後來的等前一個結束。取消時 `ModeRun` 丟下任務，只結束經它啟動的行程。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
 
 ### 3.8 行程
 

@@ -78,6 +78,10 @@ What the user starts on the Current Resource from a task dialog: Transcribe (its
 
 - `Tab` - Modes used to be tabs; the editor is now the one screen and a Mode is started over it.
 
+### Mode Run
+
+One run of a Mode, from taking its turn to its end: it owns the Components it starts, so cancelling it stops those and nothing else.
+
 ### Component
 
 An upstream executable Tsuzuri runs as a child process: ffmpeg, whisper.cpp (`whisper-cli`) or llama.cpp (`llama-server`). Tsuzuri takes the first of: the path the user chose, one found by Detection, the Bundled Variant. Failing all three, the user is told how to install it.

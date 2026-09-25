@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::future::Future;
 use std::path::Path;
 
 use tokio::sync::mpsc::Receiver;
@@ -22,6 +23,8 @@ pub enum StepEvent {
 pub trait Steps {
     fn start(&self, program: &Path, args: &[String]) -> Result<(Receiver<StepEvent>, u32), String>;
     fn stop(&self, pid: u32);
+    /// Stops every Component these Steps started that still runs, and none started elsewhere.
+    fn stop_started(&self);
 }
 
 /// Runs one Step to completion. A Step that exits non-zero fails with the last lines it wrote to stderr.
@@ -87,9 +90,46 @@ impl ModeLock {
         }
     }
 
+    /// Waits for the Mode Run before to end, then begins one whose Components are started
+    /// through `ports` alone.
+    pub async fn begin<P: Steps>(&self, ports: P) -> ModeRun<'_, P> {
+        ModeRun {
+            turn: self.wait_turn().await,
+            ports,
+        }
+    }
+
     /// Asks the Mode whose turn it is to stop.
     pub fn cancel(&self) {
         self.cancel.send_replace(true);
+    }
+}
+
+/// One run of a Mode, from taking its turn to its end, and the ports it starts its Components
+/// through, so a cancel stops those and nothing else.
+pub struct ModeRun<'a, P> {
+    turn: Turn<'a>,
+    ports: P,
+}
+
+impl<P: Steps> ModeRun<'_, P> {
+    pub fn ports(&self) -> &P {
+        &self.ports
+    }
+
+    /// Runs `task` until it ends or the Mode Run is asked to stop; then the Components it
+    /// started are stopped and it fails as `mode-cancelled`, what it showed so far kept.
+    pub async fn run_until_cancelled<T>(
+        &self,
+        task: impl Future<Output = Result<T, Failure>>,
+    ) -> Result<T, Failure> {
+        tokio::select! {
+            result = task => result,
+            () = self.turn.wait_for_cancel() => {
+                self.ports.stop_started();
+                Err(Failure::ModeCancelled)
+            }
+        }
     }
 }
 
@@ -101,13 +141,9 @@ pub struct Turn<'a> {
 
 impl Turn<'_> {
     /// Resolves once the Mode is asked to stop.
-    pub async fn wait_for_cancel(&mut self) {
-        if self
-            .cancel
-            .wait_for(|is_cancelled| *is_cancelled)
-            .await
-            .is_err()
-        {
+    pub async fn wait_for_cancel(&self) {
+        let mut cancel = self.cancel.clone();
+        if cancel.wait_for(|is_cancelled| *is_cancelled).await.is_err() {
             std::future::pending::<()>().await;
         }
     }
@@ -148,7 +184,7 @@ mod tests {
         let lock = ModeLock::default();
         lock.cancel();
 
-        let mut turn = lock.wait_turn().await;
+        let turn = lock.wait_turn().await;
         let is_cancelled = tokio::select! {
             () = turn.wait_for_cancel() => true,
             () = tokio::time::sleep(Duration::from_millis(50)) => false,

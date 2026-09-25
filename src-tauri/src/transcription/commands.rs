@@ -7,7 +7,6 @@ use crate::failure::Failure;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
 use crate::project::CurrentProject;
-use crate::steps::commands::run_cancellable;
 use crate::steps::ModeLock;
 use crate::timing::Phases;
 use crate::toolchain::{self, settings};
@@ -21,11 +20,10 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
     let phases = Phases::start("transcribe", "prepare");
     app.report("prepare", None);
     let mode_lock = app.state::<ModeLock>();
-    let mut turn = mode_lock.wait_turn().await;
     let processes = app.state::<Processes>().inner().clone();
-    let ports = AppPorts::new(&app, &processes);
+    let run = mode_lock.begin(AppPorts::new(&app, &processes)).await;
     // Only one Model is loaded at a time, so the translation Model makes way for whisper's.
-    app.state::<ResidentLlama>().make_room(&ports).await;
+    app.state::<ResidentLlama>().make_room(run.ports()).await;
     let [ffmpeg, whisper] =
         toolchain::find_ready_executables(settings::resolver(&app)?, ["ffmpeg", "whisper"]).await?;
     let tools = Tools { ffmpeg, whisper };
@@ -38,20 +36,17 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
         .app_cache_dir()?
         .join("work")
         .join(started_at.to_string());
-    let result = run_cancellable(
-        &mut turn,
-        &processes,
-        run_transcribe(
-            &ports,
+    let result = run
+        .run_until_cancelled(run_transcribe(
+            run.ports(),
             &app.state::<CurrentProject>(),
             &tools,
             &settings,
             &job,
             &work,
             phases,
-        ),
-    )
-    .await;
+        ))
+        .await;
     let _ = std::fs::remove_dir_all(&work);
     result
 }

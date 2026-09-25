@@ -68,6 +68,16 @@ A Mode that is given up should free its GPU and memory at once, while a Componen
 | When | the Mode is cancelled |
 | Then | the Mode fails as `mode-cancelled`, the one it started is stopped, and the other still runs |
 
+## `PR-009` Leaving a Component started beside a cancelled Mode
+
+A Waveform is taken outside any Mode, so one taken while a Mode runs is not the Mode's to stop.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Mode running, and a Component started outside it after it began |
+| When | the Mode is cancelled |
+| Then | that Component still runs |
+
 ## `PR-008` Clearing a cancel once the next Mode takes its turn
 
 | Step | Statement |

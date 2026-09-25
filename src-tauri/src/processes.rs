@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -72,32 +72,6 @@ impl Processes {
     pub fn kill(&self, pid: u32) {
         let running = self.running.lock().unwrap().remove(&pid);
         if let Some(running) = running {
-            end(running);
-        }
-        self.write_record();
-    }
-
-    /// The PIDs of every process still running.
-    pub fn pids(&self) -> HashSet<u32> {
-        self.running.lock().unwrap().keys().copied().collect()
-    }
-
-    /// Kills every process still running but those `kept` names; a cancelled Mode stops what it
-    /// started this way, leaving what ran before it.
-    pub fn kill_all_except(&self, kept: &HashSet<u32>) {
-        let running: Vec<RunningProcess> = {
-            let mut running = self.running.lock().unwrap();
-            let started: Vec<u32> = running
-                .keys()
-                .filter(|pid| !kept.contains(pid))
-                .copied()
-                .collect();
-            started
-                .iter()
-                .filter_map(|pid| running.remove(pid))
-                .collect()
-        };
-        for running in running {
             end(running);
         }
         self.write_record();
@@ -181,11 +155,17 @@ fn line_of(bytes: &[u8]) -> String {
 pub struct AppPorts<'a, R: Runtime> {
     app: &'a AppHandle<R>,
     processes: &'a Processes,
+    /// The PIDs of the Components started through these ports, the ones `stop_started` ends.
+    started_pids: Mutex<Vec<u32>>,
 }
 
 impl<'a, R: Runtime> AppPorts<'a, R> {
     pub fn new(app: &'a AppHandle<R>, processes: &'a Processes) -> AppPorts<'a, R> {
-        AppPorts { app, processes }
+        AppPorts {
+            app,
+            processes,
+            started_pids: Mutex::default(),
+        }
     }
 }
 
@@ -205,11 +185,19 @@ impl<R: Runtime> Progress for AppPorts<'_, R> {
 
 impl<R: Runtime> Steps for AppPorts<'_, R> {
     fn start(&self, program: &Path, args: &[String]) -> Result<(Receiver<StepEvent>, u32), String> {
-        self.processes.spawn(self.app, program, args)
+        let (events, pid) = self.processes.spawn(self.app, program, args)?;
+        self.started_pids.lock().unwrap().push(pid);
+        Ok((events, pid))
     }
 
     fn stop(&self, pid: u32) {
         self.processes.kill(pid);
+    }
+
+    fn stop_started(&self) {
+        for pid in self.started_pids.lock().unwrap().drain(..) {
+            self.processes.kill(pid);
+        }
     }
 }
 
@@ -292,6 +280,8 @@ mod tests {
     use tauri_plugin_shell::process::TerminatedPayload;
 
     use super::*;
+    use crate::failure::Failure;
+    use crate::steps::{ModeLock, ModeRun};
     use crate::test_support::{captured_logs, TempDir};
 
     fn mock_app() -> tauri::App<tauri::test::MockRuntime> {
@@ -450,5 +440,70 @@ mod tests {
         });
 
         assert_eq!(logs, vec!["whisper-cli: load time = 1384 ms"]);
+    }
+
+    /// A Component that sleeps for a minute, started through `steps`, by its PID.
+    fn sleep_through(steps: &impl Steps) -> u32 {
+        steps.start(&sleep_path(), &["60".to_string()]).unwrap().1
+    }
+
+    /// Cancels the Mode Run `run` once `started` hands over the PID it waits for, answering how the
+    /// run ended and that PID.
+    async fn cancel_once_started<R: Runtime>(
+        lock: &ModeLock,
+        run: &ModeRun<'_, AppPorts<'_, R>>,
+        start: impl FnOnce() -> u32,
+    ) -> (Result<(), Failure>, u32) {
+        let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+        let task = async {
+            started_tx.send(start()).unwrap();
+            std::future::pending::<Result<(), Failure>>().await
+        };
+        let cancel = async {
+            let started = started_rx.await.unwrap();
+            lock.cancel();
+            started
+        };
+        let (result, started) = tokio::join!(run.run_until_cancelled(task), cancel);
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        (result, started)
+    }
+
+    // @behavior PR-007
+    #[tokio::test]
+    async fn stops_what_a_cancelled_mode_started() {
+        let dir = TempDir::new("pr-cancel");
+        let app = mock_app();
+        let processes = Processes::new(dir.path().join("processes.json"));
+        let before = sleep_through(&AppPorts::new(app.handle(), &processes));
+        let lock = ModeLock::default();
+        let run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
+
+        let (result, started) =
+            cancel_once_started(&lock, &run, || sleep_through(run.ports())).await;
+
+        assert_eq!(
+            (result, is_running(started), is_running(before)),
+            (Err(Failure::ModeCancelled), false, true)
+        );
+        processes.kill_all();
+    }
+
+    // @behavior PR-009
+    #[tokio::test]
+    async fn leaves_a_component_started_beside_a_cancelled_mode() {
+        let dir = TempDir::new("pr-cancel-beside");
+        let app = mock_app();
+        let processes = Processes::new(dir.path().join("processes.json"));
+        let lock = ModeLock::default();
+        let run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
+
+        let (_, beside) = cancel_once_started(&lock, &run, || {
+            sleep_through(&AppPorts::new(app.handle(), &processes))
+        })
+        .await;
+
+        assert!(is_running(beside));
+        processes.kill_all();
     }
 }

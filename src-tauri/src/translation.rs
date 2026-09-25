@@ -501,7 +501,6 @@ mod tests {
     use super::*;
     use crate::processes::{AppPorts, Processes};
     use crate::project::SegmentField;
-    use crate::steps::commands::run_cancellable;
     use crate::steps::ModeLock;
     use crate::test_support::Response;
     use crate::test_support::{project_of, TempDir};
@@ -1584,7 +1583,7 @@ mod tests {
         let source = current.snapshot().unwrap();
         let processes = Processes::new(dir.path().join("processes.json"));
         let lock = ModeLock::default();
-        let mut turn = lock.wait_turn().await;
+        let run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
         let translated_count = || {
             current
                 .view()
@@ -1604,19 +1603,15 @@ mod tests {
         let job = job_in_batches_of_two(&source.transcript.segments);
         let mut phases = Phases::start("translate", "load");
         let (result, ()) = tokio::join!(
-            run_cancellable(
-                &mut turn,
-                &processes,
-                translate_once_ready(
-                    app.handle(),
-                    llama.base_url(),
-                    Duration::from_secs(5),
-                    || false,
-                    &job,
-                    &mut phases,
-                    batch_display(app.handle(), &current, &source, Language::Japanese),
-                ),
-            ),
+            run.run_until_cancelled(translate_once_ready(
+                app.handle(),
+                llama.base_url(),
+                Duration::from_secs(5),
+                || false,
+                &job,
+                &mut phases,
+                batch_display(app.handle(), &current, &source, Language::Japanese),
+            )),
             cancel_once_shown
         );
 

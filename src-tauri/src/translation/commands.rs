@@ -10,7 +10,6 @@ use crate::language::Language;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
 use crate::project::CurrentProject;
-use crate::steps::commands::run_cancellable;
 use crate::steps::ModeLock;
 use crate::timing::Phases;
 use crate::toolchain::{self, settings, ModelSlot};
@@ -45,7 +44,8 @@ async fn run_translation(
     scope: TranslationScope,
 ) -> Result<Translation, Failure> {
     let mode_lock = app.state::<ModeLock>();
-    let mut turn = mode_lock.wait_turn().await;
+    let processes = app.state::<Processes>().inner().clone();
+    let run = mode_lock.begin(AppPorts::new(app, &processes)).await;
     let phases = Phases::start("translate", "prepare");
     app.report("prepare", None);
     let [llama] = toolchain::find_ready_executables(settings::resolver(app)?, ["llama"]).await?;
@@ -56,15 +56,12 @@ async fn run_translation(
         settings: TranslationSettings::load(&settings::settings_dir(app)?)?,
         scope,
     };
-    let processes = app.state::<Processes>().inner().clone();
     let preset_dir = app.path().app_data_dir()?;
     let resident = app.state::<ResidentLlama>();
     let server = llama_server(&plan.settings, &resident, &preset_dir);
-    let result = run_cancellable(
-        &mut turn,
-        &processes,
-        run_translate(
-            &AppPorts::new(app, &processes),
+    let result = run
+        .run_until_cancelled(run_translate(
+            run.ports(),
             &app.state::<CurrentProject>(),
             &llama,
             &model_settings,
@@ -72,9 +69,8 @@ async fn run_translation(
             &server,
             READY_TIMEOUT,
             phases,
-        ),
-    )
-    .await;
+        ))
+        .await;
     // A cancelled translation leaves the Resident llama-server running, so its Model is freed as
     // after any other translation.
     if let (Err(Failure::ModeCancelled), LlamaServer::Router { resident, keep, .. }) =

@@ -378,6 +378,8 @@ mod tests {
         fn stop(&self, pid: u32) {
             self.stopped.lock().unwrap().push(pid);
         }
+
+        fn stop_started(&self) {}
     }
 
     /// A Resident llama-server whose router the fake answers for, with the Steps that start it.

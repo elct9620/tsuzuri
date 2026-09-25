@@ -138,7 +138,9 @@ describe("GlossaryController", () => {
       rows: [{ words: ["小明", "Xiao Ming", ""], is_speaker: false }],
     });
     await openDialog();
-    target("rows").querySelector<HTMLInputElement>("input[type=checkbox]")!.click();
+    target("rows")
+      .querySelector<HTMLInputElement>("input[type=checkbox]")!
+      .click();
 
     document.querySelector<HTMLButtonElement>("#save")!.click();
     await settle();

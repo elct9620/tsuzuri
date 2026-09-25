@@ -148,8 +148,8 @@ const en = {
     translation: "Translation",
   },
   components: {
-    chosen: "Chosen",
-    detected: "Detected",
+    choice: "Chosen",
+    detection: "Detected",
     bundled: "Bundled",
     bundledVariant: "Bundled ({{variant}})",
     ready: "Ready",

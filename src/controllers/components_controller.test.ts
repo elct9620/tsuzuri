@@ -56,9 +56,9 @@ describe("ComponentsController", () => {
       component_statuses: () => [
         {
           name: "llama",
-          ready: true,
+          is_ready: true,
           path: "/components/llama/bin/llama-server",
-          origin: "bundled",
+          origin: "bundled-variant",
           variant: null,
           problem: null,
           install: null,
@@ -75,9 +75,9 @@ describe("ComponentsController", () => {
       component_statuses: () => [
         {
           name: "llama",
-          ready: true,
+          is_ready: true,
           path: "/components/llama/vulkan/bin/llama-server",
-          origin: "bundled",
+          origin: "bundled-variant",
           variant: "vulkan",
           problem: null,
           install: null,
@@ -96,7 +96,7 @@ describe("ComponentsController", () => {
       component_statuses: () => [
         {
           name: "llama",
-          ready: false,
+          is_ready: false,
           path: null,
           origin: null,
           variant: null,
@@ -117,7 +117,7 @@ describe("ComponentsController", () => {
       component_statuses: () => [
         {
           name: "llama",
-          ready: false,
+          is_ready: false,
           path: null,
           origin: null,
           variant: null,
@@ -138,9 +138,9 @@ describe("ComponentsController", () => {
       component_statuses: () => [
         {
           name: "llama",
-          ready: true,
+          is_ready: true,
           path: "/usr/bin/llama-server",
-          origin: "detected",
+          origin: "detection",
           variant: null,
           problem: null,
           install: null,
@@ -152,9 +152,9 @@ describe("ComponentsController", () => {
         return [
           {
             name,
-            ready: true,
+            is_ready: true,
             path,
-            origin: "chosen",
+            origin: "choice",
             problem: null,
             install: null,
           },
@@ -174,9 +174,9 @@ describe("ComponentsController", () => {
       component_statuses: () => [
         {
           name: "llama",
-          ready: true,
+          is_ready: true,
           path: "/opt/llama/llama-server",
-          origin: "chosen",
+          origin: "choice",
           variant: null,
           problem: null,
           install: null,
@@ -185,9 +185,9 @@ describe("ComponentsController", () => {
       forget_component: () => [
         {
           name: "llama",
-          ready: true,
+          is_ready: true,
           path: "/usr/bin/llama-server",
-          origin: "detected",
+          origin: "detection",
           variant: null,
           problem: null,
           install: null,
@@ -207,9 +207,9 @@ describe("ComponentsController", () => {
       component_statuses: () => [
         {
           name: "llama",
-          ready: true,
+          is_ready: true,
           path: "/usr/bin/llama-server",
-          origin: "detected",
+          origin: "detection",
           variant: null,
           problem: null,
           install: null,

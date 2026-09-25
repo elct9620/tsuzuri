@@ -30,7 +30,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | 角色 | 名稱形式 | Rust 例 | TypeScript 例 |
 |---|---|---|---|
 | 模組或型別 | 名詞 | `Transcript`、`Resolver` | `ProjectView` |
-| 型別的一種（子型別、enum 成員） | 形容詞＋名詞，或名詞 | `RunningProcess`、`Origin::Bundled` | `SegmentField` |
+| 型別的一種（子型別、enum 成員） | 形容詞＋名詞，或名詞 | `RunningProcess`、`Origin::BundledVariant` | `SegmentField` |
 | 回答一件事、不改變任何東西 | 該事物的名詞，不加 `get` | `view()`、`ready_path(slot)`、`conversion_args(...)` | `bar()`、`label(phase)` |
 | 依鍵尋找 | 名詞＋`by`＋鍵 | `path_by_name` | `statusByName` |
 | 問句 | `is`／`has`＋形容詞或名詞 | `is_file` | `isHidden`、`isFailure` |

@@ -25,15 +25,15 @@ pub struct ModelSettings {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ModelError {
-    NotChosen(ModelSlot),
-    Missing(PathBuf),
+    NoChoice(ModelSlot),
+    MissingFile(PathBuf),
 }
 
 impl fmt::Display for ModelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ModelError::NotChosen(slot) => write!(f, "no {slot:?} model chosen"),
-            ModelError::Missing(path) => write!(f, "model file not found: {}", path.display()),
+            ModelError::NoChoice(slot) => write!(f, "no {slot:?} model chosen"),
+            ModelError::MissingFile(path) => write!(f, "model file not found: {}", path.display()),
         }
     }
 }
@@ -43,7 +43,7 @@ impl std::error::Error for ModelError {}
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct SlotView {
     path: Option<PathBuf>,
-    exists: bool,
+    has_file: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -74,18 +74,18 @@ impl ModelSettings {
 
     /// The Model an engine is started with; checked right before the start so a file moved since it was chosen is caught.
     pub fn ready_path(&self, slot: ModelSlot) -> Result<&Path, ModelError> {
-        let path = self.slot(slot).ok_or(ModelError::NotChosen(slot))?;
+        let path = self.slot(slot).ok_or(ModelError::NoChoice(slot))?;
         if path.is_file() {
             Ok(path)
         } else {
-            Err(ModelError::Missing(path.to_path_buf()))
+            Err(ModelError::MissingFile(path.to_path_buf()))
         }
     }
 
     pub fn view(&self) -> ModelSettingsView {
         let slot_view = |slot| SlotView {
             path: self.slot(slot).map(Path::to_path_buf),
-            exists: self.ready_path(slot).is_ok(),
+            has_file: self.ready_path(slot).is_ok(),
         };
         ModelSettingsView {
             transcription: slot_view(ModelSlot::Transcription),
@@ -163,7 +163,7 @@ mod tests {
 
         let result = settings.ready_path(ModelSlot::Translation);
 
-        assert_eq!(result, Err(ModelError::NotChosen(ModelSlot::Translation)));
+        assert_eq!(result, Err(ModelError::NoChoice(ModelSlot::Translation)));
     }
 
     // @behavior MD-003
@@ -177,6 +177,6 @@ mod tests {
 
         let result = settings.ready_path(ModelSlot::Transcription);
 
-        assert_eq!(result, Err(ModelError::Missing(model)));
+        assert_eq!(result, Err(ModelError::MissingFile(model)));
     }
 }

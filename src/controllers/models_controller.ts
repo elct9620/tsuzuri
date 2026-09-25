@@ -8,7 +8,7 @@ type ModelSlot = "transcription" | "translation";
 
 interface SlotView {
   path: string | null;
-  exists: boolean;
+  has_file: boolean;
 }
 
 type ModelSettingsView = Record<ModelSlot, SlotView>;
@@ -43,14 +43,14 @@ export default class ModelsController extends Controller {
 
   private render(settings: ModelSettingsView): void {
     for (const status of this.statusTargets) {
-      const { path, exists } = settings[status.dataset.slot as ModelSlot];
+      const { path, has_file } = settings[status.dataset.slot as ModelSlot];
       status.textContent =
         path === null
           ? t("models.notChosen")
-          : exists
+          : has_file
             ? path
             : t("models.missing", { path });
-      status.classList.toggle("missing", path !== null && !exists);
+      status.classList.toggle("missing", path !== null && !has_file);
     }
   }
 }

@@ -125,7 +125,7 @@ function changeMenu(index: number): HTMLElement {
 function item(
   segment: Segment,
   index: number,
-  showsTranslation: boolean,
+  isTranslationShown: boolean,
 ): HTMLLIElement {
   const li = document.createElement("li");
   const selection = document.createElement("input");
@@ -143,7 +143,7 @@ function item(
   const editors = document.createElement("div");
   editors.className = "list-col-grow";
   editors.append(editor(index, "text", segment.text));
-  if (showsTranslation)
+  if (isTranslationShown)
     editors.append(editor(index, "translation", segment.translation ?? ""));
   li.append(selection, heading, editors, changeMenu(index));
   return li;
@@ -235,10 +235,10 @@ export default class TranscriptController extends Controller {
 
   private show(project: ProjectView | null): void {
     const segments = project?.segments ?? [];
-    const showsTranslation = (project?.shown_translation ?? null) !== null;
+    const isTranslationShown = (project?.shown_translation ?? null) !== null;
     this.headingTarget.textContent = project?.current_resource ?? "";
     this.showLanguages(project);
-    this.showSegments(segments, showsTranslation);
+    this.showSegments(segments, isTranslationShown);
     const isAwaitingSegments =
       segments.length === 0 && this.runningTask === "transcribe";
     if (isAwaitingSegments) this.showLoading();
@@ -267,7 +267,7 @@ export default class TranscriptController extends Controller {
   }
 
   /** Refreshes the editors in place when the Project keeps its shape, so the one being typed in keeps its focus. */
-  private showSegments(segments: Segment[], showsTranslation: boolean): void {
+  private showSegments(segments: Segment[], isTranslationShown: boolean): void {
     this.showSpeakers(segments);
     const editors = [
       ...this.listTarget.querySelectorAll<
@@ -279,7 +279,7 @@ export default class TranscriptController extends Controller {
       formatTime(segment.end_ms),
       segment.speaker ?? "",
       segment.text,
-      ...(showsTranslation ? [segment.translation ?? ""] : []),
+      ...(isTranslationShown ? [segment.translation ?? ""] : []),
     ]);
     const sameShape =
       this.listTarget.children.length === segments.length &&
@@ -287,7 +287,7 @@ export default class TranscriptController extends Controller {
     if (!sameShape) {
       this.listTarget.replaceChildren(
         ...segments.map((segment, index) =>
-          item(segment, index, showsTranslation),
+          item(segment, index, isTranslationShown),
         ),
       );
     } else {

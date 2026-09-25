@@ -4,30 +4,38 @@ import { open } from "@tauri-apps/plugin-dialog";
 
 import { t } from "../i18n";
 
+type Origin = "choice" | "detection" | "bundled-variant";
+
 interface ComponentStatus {
   name: string;
-  ready: boolean;
+  is_ready: boolean;
   path: string | null;
-  origin: "chosen" | "detected" | "bundled" | null;
+  origin: Origin | null;
   variant: string | null;
   problem: "not-installed" | "does-not-run" | null;
   /** The command that installs it, where the platform has one to name. */
   install: string | null;
 }
 
+const ORIGIN_LABELS: Record<Origin, string> = {
+  choice: "components.choice",
+  detection: "components.detection",
+  "bundled-variant": "components.bundled",
+};
+
 function statusMessage({
-  ready,
+  is_ready,
   path,
   origin,
   variant,
   problem,
   install,
 }: ComponentStatus): string {
-  if (ready && path)
+  if (is_ready && path)
     return t("components.found", {
       origin: variant
         ? t("components.bundledVariant", { variant })
-        : t(`components.${origin ?? "ready"}`),
+        : t(origin ? ORIGIN_LABELS[origin] : "components.ready"),
       path,
     });
   if (problem === "does-not-run") return t("components.doesNotRun");
@@ -75,7 +83,7 @@ export default class ComponentsController extends Controller {
         status.hidden = false;
       }
       const restore = this.targetByName(this.restoreTargets, component.name);
-      if (restore) restore.hidden = component.origin !== "chosen";
+      if (restore) restore.hidden = component.origin !== "choice";
     }
   }
 

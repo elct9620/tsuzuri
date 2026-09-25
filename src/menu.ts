@@ -4,7 +4,11 @@
  */
 export function closeMenu(item: EventTarget | null): void {
   const menu = (item as HTMLElement | null)?.closest(".dropdown");
-  const focused = document.activeElement;
-  if (menu && focused instanceof HTMLElement && menu.contains(focused))
-    focused.blur();
+  const focusedElement = document.activeElement;
+  if (
+    menu &&
+    focusedElement instanceof HTMLElement &&
+    menu.contains(focusedElement)
+  )
+    focusedElement.blur();
 }

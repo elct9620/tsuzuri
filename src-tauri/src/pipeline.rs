@@ -79,7 +79,7 @@ pub async fn run_transcribe<R: Runtime>(
         &tools.whisper,
         &transcription_args(model, job.language, &wav, &srt_prefix),
         |line| {
-            if line.starts_with(WHISPER_PROCESSING) {
+            if line.starts_with(WHISPER_START_MARK) {
                 enter(app, &mut phases, "transcribe");
             } else if let Some(percent) = whisper_progress(line) {
                 report(app, "transcribe", Some(percent));
@@ -140,7 +140,7 @@ fn transcription_args(
 }
 
 /// whisper-cli prints this on stderr once its Model is loaded and it starts on the audio.
-const WHISPER_PROCESSING: &str = "main: processing";
+const WHISPER_START_MARK: &str = "main: processing";
 
 /// whisper-cli prints each Segment on stdout as it is transcribed:
 /// `[00:00:00.000 --> 00:00:02.000]  text`.

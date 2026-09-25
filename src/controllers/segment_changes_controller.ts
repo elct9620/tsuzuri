@@ -98,24 +98,24 @@ export default class SegmentChangesController extends Controller {
 
   /** Shows how many rows are selected, offering a merge only for rows next to each other. */
   showSelection(): void {
-    const selected = this.selectedIndexes();
-    this.selectionTarget.hidden = selected.length === 0;
+    const indexes = this.selectedIndexes();
+    this.selectionTarget.hidden = indexes.length === 0;
     this.selectionCountTarget.textContent = t("edit.selected", {
-      count: selected.length,
+      count: indexes.length,
     });
-    const isRun = selected.every(
+    const isRun = indexes.every(
       (index, position) =>
-        position === 0 || index === selected[position - 1] + 1,
+        position === 0 || index === indexes[position - 1] + 1,
     );
-    this.mergeTarget.disabled = selected.length < 2 || !isRun;
+    this.mergeTarget.disabled = indexes.length < 2 || !isRun;
   }
 
   async merge(): Promise<void> {
-    const selected = this.selectedIndexes();
+    const indexes = this.selectedIndexes();
     await this.change({
       kind: "merge",
-      first: selected[0],
-      last: selected[selected.length - 1],
+      first: indexes[0],
+      last: indexes[indexes.length - 1],
     });
   }
 
@@ -125,12 +125,12 @@ export default class SegmentChangesController extends Controller {
   }
 
   async shift(): Promise<void> {
-    const selected = this.selectedIndexes();
+    const indexes = this.selectedIndexes();
     this.shiftDialogTarget.close();
     await this.change({
       kind: "shift",
-      first: selected[0],
-      last: selected[selected.length - 1],
+      first: indexes[0],
+      last: indexes[indexes.length - 1],
       offset_ms: Math.round(Number(this.offsetTarget.value)),
     });
     this.clearSelection();

@@ -146,8 +146,8 @@ const zhHant: typeof en = {
     translation: "翻譯",
   },
   components: {
-    chosen: "指定",
-    detected: "偵測到",
+    choice: "指定",
+    detection: "偵測到",
     bundled: "內建",
     bundledVariant: "內建（{{variant}}）",
     ready: "已就緒",

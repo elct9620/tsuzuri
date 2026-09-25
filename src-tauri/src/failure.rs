@@ -85,8 +85,8 @@ impl From<SrtError> for Failure {
 impl From<ModelError> for Failure {
     fn from(error: ModelError) -> Self {
         match error {
-            ModelError::NotChosen(slot) => Failure::ModelNotChosen { slot },
-            ModelError::Missing(path) => Failure::ModelMissing { path },
+            ModelError::NoChoice(slot) => Failure::ModelNotChosen { slot },
+            ModelError::MissingFile(path) => Failure::ModelMissing { path },
         }
     }
 }

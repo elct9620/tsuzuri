@@ -37,8 +37,8 @@ describe("ModelsController", () => {
   // @behavior MD-004
   it("shows the chosen model's path", async () => {
     await mountWith({
-      transcription: { path: "/models/breeze.bin", exists: true },
-      translation: { path: null, exists: false },
+      transcription: { path: "/models/breeze.bin", has_file: true },
+      translation: { path: null, has_file: false },
     });
 
     expect(statusOf("transcription")).toBe("/models/breeze.bin");
@@ -47,8 +47,8 @@ describe("ModelsController", () => {
   // @behavior MD-005
   it("asks again for a model whose file is gone", async () => {
     await mountWith({
-      transcription: { path: null, exists: false },
-      translation: { path: "/models/qwen3-4b.gguf", exists: false },
+      transcription: { path: null, has_file: false },
+      translation: { path: "/models/qwen3-4b.gguf", has_file: false },
     });
 
     expect(statusOf("translation")).toContain("請重新指定");

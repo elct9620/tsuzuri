@@ -92,11 +92,11 @@ pub fn components() -> Vec<Component> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "kebab-case")]
 pub enum Origin {
-    Chosen,
-    Detected,
-    Bundled,
+    Choice,
+    Detection,
+    BundledVariant,
 }
 
 /// Why a Component is not ready.
@@ -111,7 +111,7 @@ pub enum Problem {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ComponentStatus {
     name: String,
-    ready: bool,
+    is_ready: bool,
     path: Option<PathBuf>,
     origin: Option<Origin>,
     /// The Bundled Variant Auto-Selection took, when that is where it was found.
@@ -196,7 +196,7 @@ impl Resolver {
     fn resolve(&self, component: &Component) -> ComponentStatus {
         let found = |path: PathBuf, origin, variant: Option<&String>| ComponentStatus {
             name: component.name.clone(),
-            ready: true,
+            is_ready: true,
             path: Some(path),
             origin: Some(origin),
             variant: variant.cloned(),
@@ -205,7 +205,7 @@ impl Resolver {
         };
         let missing = |problem| ComponentStatus {
             name: component.name.clone(),
-            ready: false,
+            is_ready: false,
             path: None,
             origin: None,
             variant: None,
@@ -217,14 +217,14 @@ impl Resolver {
             .path_by_name(&component.name)
             .filter(|path| path.is_file())
         {
-            return found(chosen.to_path_buf(), Origin::Chosen, None);
+            return found(chosen.to_path_buf(), Origin::Choice, None);
         }
         if let Some(detected) = detection::detect(
             &component.program,
             &component.version_flag,
             &self.search_dirs,
         ) {
-            return found(detected, Origin::Detected, None);
+            return found(detected, Origin::Detection, None);
         }
         let bundled: Vec<(&String, PathBuf)> = component
             .variants
@@ -239,7 +239,7 @@ impl Resolver {
             .into_iter()
             .find(|(_, path)| detection::probe(path, &component.version_flag))
         {
-            Some((variant, path)) => found(path, Origin::Bundled, Some(variant)),
+            Some((variant, path)) => found(path, Origin::BundledVariant, Some(variant)),
             None => missing(Problem::DoesNotRun),
         }
     }
@@ -376,7 +376,7 @@ mod tests {
         let status = resolver(&dir).find(&tool());
 
         assert_eq!(
-            (status.ready, status.problem, status.install.as_deref()),
+            (status.is_ready, status.problem, status.install.as_deref()),
             (
                 false,
                 Some(Problem::NotInstalled),
@@ -397,7 +397,7 @@ mod tests {
 
         assert_eq!(
             (status.path, status.origin),
-            (Some(chosen), Some(Origin::Chosen))
+            (Some(chosen), Some(Origin::Choice))
         );
     }
 
@@ -415,7 +415,7 @@ mod tests {
 
         assert_eq!(
             (status.path, status.origin),
-            (Some(installed), Some(Origin::Detected))
+            (Some(installed), Some(Origin::Detection))
         );
     }
 
@@ -445,7 +445,7 @@ mod tests {
 
         assert_eq!(
             (status.path, status.origin, status.variant.as_deref()),
-            (Some(bundled), Some(Origin::Bundled), Some("first"))
+            (Some(bundled), Some(Origin::BundledVariant), Some("first"))
         );
     }
 
@@ -463,7 +463,7 @@ mod tests {
         let status = resolver.find(&tool());
         assert_eq!(
             (status.path, status.origin),
-            (Some(bundled), Some(Origin::Bundled))
+            (Some(bundled), Some(Origin::BundledVariant))
         );
     }
 
@@ -504,7 +504,7 @@ mod tests {
         let status = resolver(&dir).find(&tool());
 
         assert_eq!(
-            (status.ready, status.problem),
+            (status.is_ready, status.problem),
             (false, Some(Problem::DoesNotRun))
         );
     }
@@ -524,7 +524,7 @@ mod tests {
         });
 
         let expected = format!(
-            "components: tool found (Detected) at {} in ",
+            "components: tool found (Detection) at {} in ",
             installed.display()
         );
         assert_eq!(logs.len(), 1);

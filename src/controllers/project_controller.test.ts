@@ -61,6 +61,7 @@ describe("ProjectController", () => {
             <option value="original-first">原文在上</option>
             <option value="translation-first">譯文在上</option>
           </select>
+          <input type="checkbox" data-project-target="bilingualAutosave" data-action="change->project#setOptions" />
         </fieldset>
       </main>
     `;
@@ -208,7 +209,10 @@ describe("ProjectController", () => {
     await settle();
 
     expect(sent("set_project_options")).toEqual({
-      options: { bilingual_order: "translation-first" },
+      options: {
+        bilingual_order: "translation-first",
+        is_bilingual_autosaved: false,
+      },
     });
   });
 
@@ -232,5 +236,22 @@ describe("ProjectController", () => {
     expect(
       document.querySelector<HTMLInputElement>("#project-tab")!.checked,
     ).toBe(true);
+  });
+
+  // @behavior PJ-055
+  it("sets the Project to save Bilingual SRTs when turned on in the settings", async () => {
+    await hold(projectOf());
+    const autosave = target<HTMLInputElement>("bilingualAutosave");
+
+    autosave.checked = true;
+    autosave.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(sent("set_project_options")).toEqual({
+      options: {
+        bilingual_order: "original-first",
+        is_bilingual_autosaved: true,
+      },
+    });
   });
 });

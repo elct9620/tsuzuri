@@ -25,6 +25,8 @@ pub struct ProjectConfig {
 #[serde(default)]
 pub struct ProjectOptions {
     pub bilingual_order: BilingualOrder,
+    /// Whether each translation keeps a Bilingual SRT beside it, written with either of its texts.
+    pub is_bilingual_autosaved: bool,
 }
 
 /// Which text a Bilingual SRT puts first in each cue and in its file name.
@@ -65,6 +67,7 @@ mod tests {
             translation_language: Some(Language::English),
             options: ProjectOptions {
                 bilingual_order: BilingualOrder::TranslationFirst,
+                is_bilingual_autosaved: true,
             },
         };
 

@@ -48,7 +48,7 @@ The Language a Project's Resources are spoken and transcribed in, and the one ev
 
 ### Project Options
 
-What the user sets for one Project in the settings, beside its Primary Language, such as its Bilingual Order. Each has a default the Project keeps until it is changed.
+What the user sets for one Project in the settings, beside its Primary Language: its Bilingual Order and whether a Bilingual SRT is saved beside each translation. Each has a default the Project keeps until it is changed.
 
 ### Mode
 

@@ -99,6 +99,7 @@ pub async fn run_transcribe<R: Runtime>(
     let transcript = Transcript::from_srt(&srt)?;
     std::fs::write(&job.subtitle, &srt)?;
     project.refresh_resources(&job.directory)?;
+    project.write_bilingual_subtitles(&job.directory, &job.name, None)?;
     project.write_transcript(job.generation, transcript);
     project::announce(app);
     Ok(Transcription {
@@ -457,6 +458,26 @@ mod tests {
         fixture.transcribe().await.unwrap();
 
         assert_eq!(fixture.subtitle_text(), WHISPER_SRT);
+    }
+
+    // @behavior PJ-053
+    #[tokio::test]
+    async fn saves_the_bilingual_srts_once_transcribed() {
+        let fixture = Fixture::new("pj-bilingual-transcribed", TWO_SECOND_WAV);
+        let dir = fixture.project_dir();
+        std::fs::write(dir.join("lecture.en.srt"), "").unwrap();
+        std::fs::write(
+            dir.join("tsuzuri.config.json"),
+            r#"{"is_bilingual_autosaved":true}"#,
+        )
+        .unwrap();
+
+        fixture.transcribe().await.unwrap();
+
+        assert_eq!(
+            std::fs::read_to_string(dir.join("lecture.zh-TW.en.srt")).unwrap(),
+            WHISPER_SRT
+        );
     }
 
     // @behavior TX-019

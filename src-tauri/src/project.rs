@@ -183,6 +183,11 @@ impl Project {
     /// the original, or the translation shown, which holds only the Segments translated.
     fn write_back(&mut self, field: SegmentField) -> Result<(), Failure> {
         let current = self.current()?;
+        let name = current.name.clone();
+        let written_translation = match field {
+            SegmentField::Text => None,
+            SegmentField::Translation => current.translation,
+        };
         let (content, srt) = match (field, current.translation) {
             (SegmentField::Text, _) => (
                 SrtContent::Original,
@@ -207,7 +212,51 @@ impl Project {
         };
         std::fs::write(path, srt)?;
         self.resources = resource::resources_in(&self.directory, self.language)?;
+        self.write_bilingual_subtitles(&name, written_translation)?;
         self.remember_subtitles()
+    }
+
+    /// Writes the Bilingual SRT beside each translation of the named Resource, or beside its
+    /// translation into `only`, when the Project Options keep them.
+    fn write_bilingual_subtitles(&self, name: &str, only: Option<Language>) -> Result<(), Failure> {
+        if !self.options.is_bilingual_autosaved {
+            return Ok(());
+        }
+        let resource = self.resource(name)?;
+        for (language, _) in &resource.translations {
+            if only.is_some_and(|only| only != *language) {
+                continue;
+            }
+            let transcript = resource.transcript(Some(*language))?;
+            std::fs::write(
+                self.directory
+                    .join(self.bilingual_file_name(name, *language)),
+                self.bilingual_srt(&transcript),
+            )?;
+        }
+        Ok(())
+    }
+
+    /// The Primary Language and `translation` in the Bilingual Order.
+    fn bilingual_languages(&self, translation: Option<Language>) -> [Option<Language>; 2] {
+        match self.options.bilingual_order {
+            BilingualOrder::OriginalFirst => [Some(self.language), translation],
+            BilingualOrder::TranslationFirst => [translation, Some(self.language)],
+        }
+    }
+
+    fn bilingual_file_name(&self, name: &str, translation: Language) -> String {
+        file_name(name, self.bilingual_languages(Some(translation)))
+    }
+
+    /// `transcript` as a Bilingual SRT in the Bilingual Order.
+    fn bilingual_srt(&self, transcript: &Transcript) -> String {
+        match self.options.bilingual_order {
+            BilingualOrder::OriginalFirst => transcript.to_srt(SrtContent::Bilingual),
+            BilingualOrder::TranslationFirst => {
+                translation_first(transcript).to_srt(SrtContent::Bilingual)
+            }
+        }
     }
 
     /// Replaces the Project Options and records them in the Project Config.
@@ -236,10 +285,8 @@ impl Project {
     /// The Current Resource as SRT, a Bilingual SRT in the Bilingual Order.
     fn to_srt(&self, content: SrtContent) -> Result<String, Failure> {
         let transcript = &self.current()?.transcript;
-        Ok(match (content, self.options.bilingual_order) {
-            (SrtContent::Bilingual, BilingualOrder::TranslationFirst) => {
-                translation_first(transcript).to_srt(content)
-            }
+        Ok(match content {
+            SrtContent::Bilingual => self.bilingual_srt(transcript),
             _ => transcript.to_srt(content),
         })
     }
@@ -248,20 +295,12 @@ impl Project {
     /// carries beyond the Primary Language alone.
     pub fn export_path(&self, content: SrtContent) -> Result<PathBuf, Failure> {
         let current = self.current()?;
-        let codes = match content {
+        let languages = match content {
             SrtContent::Original => vec![],
             SrtContent::Translation => vec![current.translation],
-            SrtContent::Bilingual => match self.options.bilingual_order {
-                BilingualOrder::OriginalFirst => vec![Some(self.language), current.translation],
-                BilingualOrder::TranslationFirst => vec![current.translation, Some(self.language)],
-            },
+            SrtContent::Bilingual => self.bilingual_languages(current.translation).to_vec(),
         };
-        let mut name = current.name.clone();
-        for language in codes.into_iter().flatten() {
-            name.push('.');
-            name.push_str(language.code());
-        }
-        name.push_str(".srt");
+        let name = file_name(&current.name, languages);
         Ok(self.directory.join(name))
     }
 
@@ -279,6 +318,17 @@ impl Project {
     fn current_mut(&mut self) -> Result<&mut CurrentResource, Failure> {
         self.current.as_mut().ok_or(Failure::NoResource)
     }
+}
+
+/// `name` with the code of each Language, then `.srt`.
+fn file_name(name: &str, languages: impl IntoIterator<Item = Option<Language>>) -> String {
+    let mut file_name = name.to_string();
+    for language in languages.into_iter().flatten() {
+        file_name.push('.');
+        file_name.push_str(language.code());
+    }
+    file_name.push_str(".srt");
+    file_name
 }
 
 /// Records the subtitles a transcription or translation has just written as Tsuzuri's own.
@@ -413,6 +463,8 @@ pub struct TranslationSource {
 pub struct TranscriptionTarget {
     pub generation: u64,
     pub directory: PathBuf,
+    /// The Resource being transcribed.
+    pub name: String,
     pub media: PathBuf,
     /// Where the Resource's original subtitle is written.
     pub subtitle: PathBuf,
@@ -518,10 +570,27 @@ impl CurrentProject {
         Ok(TranscriptionTarget {
             generation: held.generation,
             directory: project.directory.clone(),
+            name: project.current()?.name.clone(),
             media,
             subtitle,
             language: project.language,
         })
+    }
+
+    /// Writes the Bilingual SRTs of the named Resource in `directory`, as the Project's own
+    /// `write_bilingual_subtitles` does, if that directory is still the Project's.
+    pub fn write_bilingual_subtitles(
+        &self,
+        directory: &Path,
+        name: &str,
+        only: Option<Language>,
+    ) -> Result<(), Failure> {
+        match self.lock().project.as_ref() {
+            Some(project) if project.directory == directory => {
+                project.write_bilingual_subtitles(name, only)
+            }
+            _ => Ok(()),
+        }
     }
 
     /// Pairs the directory's files again after one was written, if it is still the Project's.
@@ -596,6 +665,7 @@ impl CurrentProject {
             translation_only(&translation).to_srt(SrtContent::Original),
         )?;
         self.refresh_resources(&source.directory)?;
+        self.write_bilingual_subtitles(&source.directory, &source.name, Some(target))?;
         self.show_translations(source, target, &translation.segments);
         self.write_if_current(source.generation, |project| {
             project.translation_language = Some(target);
@@ -1284,6 +1354,7 @@ mod tests {
         current
             .set_options(ProjectOptions {
                 bilingual_order: BilingualOrder::TranslationFirst,
+                ..ProjectOptions::default()
             })
             .unwrap();
         current
@@ -1323,6 +1394,94 @@ mod tests {
             reopened.view().unwrap().options().bilingual_order,
             BilingualOrder::TranslationFirst
         );
+    }
+
+    /// A Project in `zh-TW` of `ep01` translated into each of `translations`, saving Bilingual
+    /// SRTs as `is_bilingual_autosaved` says.
+    fn bilingual_project_in(
+        dir: &TempDir,
+        translations: &[(&str, &str)],
+        is_bilingual_autosaved: bool,
+    ) -> CurrentProject {
+        std::fs::write(dir.path().join("ep01.srt"), cue("大家好")).unwrap();
+        for (code, text) in translations {
+            std::fs::write(dir.path().join(format!("ep01.{code}.srt")), cue(text)).unwrap();
+        }
+        let current = project_in(dir);
+        current
+            .set_options(ProjectOptions {
+                is_bilingual_autosaved,
+                ..ProjectOptions::default()
+            })
+            .unwrap();
+        current
+    }
+
+    fn read(dir: &TempDir, file_name: &str) -> String {
+        std::fs::read_to_string(dir.path().join(file_name)).unwrap()
+    }
+
+    // @behavior PJ-050
+    #[test]
+    fn saves_the_bilingual_srt_of_an_edited_translation() {
+        let dir = TempDir::new("pj-bilingual-translation");
+        let current = bilingual_project_in(&dir, &[("en", "Hello")], true);
+
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.zh-TW.en.srt"), cue("大家好\nHi"));
+    }
+
+    // @behavior PJ-051
+    #[test]
+    fn saves_every_bilingual_srt_when_the_original_is_edited() {
+        let dir = TempDir::new("pj-bilingual-original");
+        let current = bilingual_project_in(&dir, &[("en", "Hello"), ("ja", "こんにちは")], true);
+
+        current
+            .edit(0, SegmentField::Text, "您好".to_string())
+            .unwrap();
+
+        assert_eq!(
+            [
+                read(&dir, "ep01.zh-TW.en.srt"),
+                read(&dir, "ep01.zh-TW.ja.srt")
+            ],
+            [cue("您好\nHello"), cue("您好\nこんにちは")]
+        );
+    }
+
+    // @behavior PJ-052
+    #[test]
+    fn saves_the_bilingual_srt_once_translated() {
+        let dir = TempDir::new("pj-bilingual-translated");
+        let current = bilingual_project_in(&dir, &[], true);
+        let source = current.snapshot().unwrap();
+
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("大家好", Some("Hello"))],
+            )
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.zh-TW.en.srt"), cue("大家好\nHello"));
+    }
+
+    // @behavior PJ-054
+    #[test]
+    fn saves_no_bilingual_srt_unless_asked() {
+        let dir = TempDir::new("pj-bilingual-off");
+        let current = bilingual_project_in(&dir, &[("en", "Hello")], false);
+
+        current
+            .edit(0, SegmentField::Text, "您好".to_string())
+            .unwrap();
+
+        assert!(!dir.path().join("ep01.zh-TW.en.srt").exists());
     }
 
     // @behavior PJ-004

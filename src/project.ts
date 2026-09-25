@@ -11,6 +11,7 @@ export interface Segment {
 /** What the user sets for one Project in the settings beside its Primary Language. */
 export interface ProjectOptions {
   bilingual_order: "original-first" | "translation-first";
+  is_bilingual_autosaved: boolean;
 }
 
 /** A Resource as the Resource list shows it. */

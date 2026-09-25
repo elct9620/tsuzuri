@@ -65,6 +65,7 @@ export default class ProjectController extends Controller {
     "generalTab",
     "language",
     "bilingualOrder",
+    "bilingualAutosave",
   ];
 
   /** Shown while no Project is open. */
@@ -80,6 +81,7 @@ export default class ProjectController extends Controller {
   declare readonly generalTabTarget: HTMLInputElement;
   declare readonly languageTarget: HTMLSelectElement;
   declare readonly bilingualOrderTarget: HTMLSelectElement;
+  declare readonly bilingualAutosaveTarget: HTMLInputElement;
 
   private unlisten?: UnlistenFn;
 
@@ -122,6 +124,7 @@ export default class ProjectController extends Controller {
     const options: ProjectOptions = {
       bilingual_order: this.bilingualOrderTarget
         .value as ProjectOptions["bilingual_order"],
+      is_bilingual_autosaved: this.bilingualAutosaveTarget.checked,
     };
     await this.report(() => invoke("set_project_options", { options }));
   }
@@ -160,6 +163,8 @@ export default class ProjectController extends Controller {
         : t("resources.glossary", { count: glossary.term_count });
     this.languageTarget.value = project.language;
     this.bilingualOrderTarget.value = project.options.bilingual_order;
+    this.bilingualAutosaveTarget.checked =
+      project.options.is_bilingual_autosaved;
   }
 
   /** The Project's own settings while one is open, opened at their tab when it has just opened. */

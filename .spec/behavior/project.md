@@ -323,6 +323,56 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | `ja` is chosen as its Primary Language |
 | Then | the Project's Primary Language is set to `ja` |
 
+## `PJ-050` Saving the Bilingual SRT of an edited translation
+
+With the option on, each translation keeps a Bilingual SRT beside it, written in the Bilingual Order whenever either of its texts is written.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project saving Bilingual SRTs, in `zh-TW`, whose `ep01` is translated into `en` |
+| When | a Segment's translation is edited |
+| Then | `ep01.zh-TW.en.srt` carries the edited translation below its original |
+
+## `PJ-051` Saving every Bilingual SRT when the original is edited
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project saving Bilingual SRTs, in `zh-TW`, whose `ep01` is translated into `en` and `ja` |
+| When | a Segment's text is edited |
+| Then | `ep01.zh-TW.en.srt` and `ep01.zh-TW.ja.srt` both carry the edited text |
+
+## `PJ-052` Saving the Bilingual SRT once translated
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project saving Bilingual SRTs, in `zh-TW`, with a Resource `ep01` |
+| When | its translation into `en` is written |
+| Then | `ep01.zh-TW.en.srt` carries each original above its translation |
+
+## `PJ-053` Saving the Bilingual SRTs once transcribed
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project saving Bilingual SRTs, in `zh-TW`, whose `lecture` has an `en` translation |
+| When | its media file is transcribed |
+| Then | `lecture.zh-TW.en.srt` carries the text just transcribed |
+
+## `PJ-054` Saving no Bilingual SRT unless asked
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project not saving Bilingual SRTs, whose `ep01` is translated into `en` |
+| When | a Segment's text is edited |
+| Then | the directory holds no `ep01.zh-TW.en.srt` |
+
+## `PJ-055` Choosing to save Bilingual SRTs in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of a Project not saving Bilingual SRTs |
+| When | saving them is turned on |
+| Then | the Project Options are set to save Bilingual SRTs |
+
 ## `PJ-048` Offering only the general settings without a Project
 
 | Step | Statement |

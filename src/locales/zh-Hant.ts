@@ -76,6 +76,9 @@ const zhHant: typeof en = {
       "影音裡說的語言。轉錄用它辨識語音，翻譯從它譯出；改了之後會依這個語言重新配對字幕檔。只影響這個專案。",
     bilingualOrderHelp:
       "雙語 SRT 每段先放原文還是譯文，匯出的檔名也照同樣的順序排列語言代碼。只影響這個專案。",
+    bilingualAutosave: "自動保存雙語",
+    bilingualAutosaveHelp:
+      "開啟後，每次寫出原文或譯文，都會在旁邊更新雙語 SRT（例如 ep01.zh-TW.en.srt），不必每次手動匯出。只影響這個專案。",
     ffmpegHelp:
       "把影片或音訊轉成轉錄用的音檔。按「指定」選擇自己安裝的執行檔；沒有指定時，依序使用偵測到的和內建的版本。",
     whisperHelp:

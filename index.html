@@ -450,6 +450,23 @@
                         ></option>
                       </select>
                     </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.bilingualAutosave"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.bilingualAutosaveHelp"
+                          >ⓘ</span
+                        >
+                      </span>
+                      <input
+                        type="checkbox"
+                        class="toggle"
+                        data-project-target="bilingualAutosave"
+                        data-action="change->project#setOptions"
+                      />
+                    </li>
                   </ul>
                 </fieldset>
               </div>

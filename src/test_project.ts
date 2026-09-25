@@ -19,6 +19,7 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
     shown_translation: null,
     has_undo: false,
     has_redo: false,
+    running_mode: null,
     ...changes,
   };
 }

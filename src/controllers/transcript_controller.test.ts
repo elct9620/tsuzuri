@@ -420,4 +420,32 @@ describe("TranscriptController", () => {
       rows: [{ words: ["co", "", ""], is_speaker: true }],
     });
   });
+  // @behavior ED-026
+  it("holds every field while the Current Resource is transcribed", async () => {
+    await hold({ ...translated, running_mode: { mode: "transcription" } });
+
+    const fields = [
+      ...document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+        "li input, li textarea",
+      ),
+    ];
+    expect(fields.length > 0 && fields.every((field) => field.disabled)).toBe(
+      true,
+    );
+  });
+
+  // @behavior ED-027
+  it("holds only the translation while it is written", async () => {
+    await hold({
+      ...translated,
+      running_mode: { mode: "translation", language: "en" },
+    });
+
+    const isDisabled = (selector: string) =>
+      document.querySelector<HTMLTextAreaElement>(selector)!.disabled;
+    expect([
+      isDisabled("textarea.translation"),
+      isDisabled("textarea.text"),
+    ]).toEqual([true, false]);
+  });
 });

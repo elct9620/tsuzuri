@@ -457,6 +457,7 @@ pub struct ProjectView {
     shown_translation: Option<Language>,
     has_undo: bool,
     has_redo: bool,
+    running_mode: Option<RunningMode>,
 }
 
 impl ProjectView {
@@ -506,6 +507,10 @@ impl ProjectView {
     pub fn has_redo(&self) -> bool {
         self.has_redo
     }
+
+    pub fn running_mode(&self) -> Option<RunningMode> {
+        self.running_mode
+    }
 }
 
 #[derive(Debug, Default)]
@@ -513,6 +518,44 @@ struct HeldProject {
     /// Counts replacements and selections, so a job that outlives its Current Resource can tell.
     generation: u64,
     project: Option<Project>,
+    mode_hold: Option<ModeHold>,
+}
+
+/// A Mode running on one Resource, and so which of its subtitles nothing else may change.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(tag = "mode", rename_all = "kebab-case")]
+pub enum RunningMode {
+    /// Holds every subtitle of the Resource.
+    Transcription,
+    /// Holds only the translation into `language`.
+    Translation { language: Language },
+}
+
+/// The Resource a Mode runs on, by the directory it is in and its name.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ModeHold {
+    directory: PathBuf,
+    name: String,
+    mode: RunningMode,
+}
+
+impl ModeHold {
+    fn is_on_current(&self, project: &Project) -> bool {
+        self.directory == project.directory
+            && project
+                .current
+                .as_ref()
+                .is_some_and(|current| current.name == self.name)
+    }
+}
+
+/// A Mode's hold on its Resource, let go when dropped, however the Mode ends.
+pub struct ResourceHold<'a>(&'a CurrentProject);
+
+impl Drop for ResourceHold<'_> {
+    fn drop(&mut self) {
+        self.0.lock().mode_hold = None;
+    }
 }
 
 /// The one Project every screen reads from and writes to; Rust holds it so no screen keeps its own copy.
@@ -524,6 +567,49 @@ impl CurrentProject {
         let mut held = self.lock();
         held.generation += 1;
         held.project = Some(project);
+    }
+
+    /// Keeps the subtitles `mode` writes of the named Resource in `directory` from being changed
+    /// by anything else until the answer is dropped.
+    pub fn hold_resource(
+        &self,
+        directory: &Path,
+        name: &str,
+        mode: RunningMode,
+    ) -> ResourceHold<'_> {
+        self.lock().mode_hold = Some(ModeHold {
+            directory: directory.to_path_buf(),
+            name: name.to_string(),
+            mode,
+        });
+        ResourceHold(self)
+    }
+
+    /// Makes `change` to the Project, refused when a Mode running on the Current Resource holds a
+    /// subtitle `is_written` says it changes: the original as none, or a translation by its Language.
+    fn change_unless_held<T>(
+        &self,
+        is_written: impl Fn(&Project, Option<Language>) -> bool,
+        change: impl FnOnce(&mut Project) -> Result<T, Failure>,
+    ) -> Result<T, Failure> {
+        let mut held = self.lock();
+        let HeldProject {
+            project, mode_hold, ..
+        } = &mut *held;
+        let project = project.as_mut().ok_or(Failure::NoProject)?;
+        if let Some(hold) = mode_hold
+            .as_ref()
+            .filter(|hold| hold.is_on_current(project))
+        {
+            let is_held = match hold.mode {
+                RunningMode::Transcription => true,
+                RunningMode::Translation { language } => is_written(project, Some(language)),
+            };
+            if is_held {
+                return Err(Failure::ModeRunning);
+            }
+        }
+        change(project)
     }
 
     pub fn select(&self, name: &str) -> Result<(), Failure> {
@@ -541,7 +627,9 @@ impl CurrentProject {
     }
 
     pub fn view(&self) -> Option<ProjectView> {
-        self.lock().project.as_ref().map(|project| {
+        let held = self.lock();
+        let mode_hold = held.mode_hold.as_ref();
+        held.project.as_ref().map(|project| {
             let current = project.current.as_ref();
             let history = current.and_then(|current| project.undo_histories.get(&current.name));
             ProjectView {
@@ -576,6 +664,9 @@ impl CurrentProject {
                 shown_translation: current.and_then(|current| current.translation),
                 has_undo: history.is_some_and(UndoHistory::has_undo),
                 has_redo: history.is_some_and(UndoHistory::has_redo),
+                running_mode: mode_hold
+                    .filter(|hold| hold.is_on_current(project))
+                    .map(|hold| hold.mode),
             }
         })
     }
@@ -863,7 +954,19 @@ impl CurrentProject {
     /// Makes an edit and writes it back, unless a subtitle was changed elsewhere since Tsuzuri last
     /// read or wrote it: then the Current Resource is read again instead, keeping that change.
     pub fn edit(&self, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {
-        self.update_project(|project| {
+        let is_written = |project: &Project, subtitle: Option<Language>| match field {
+            SegmentField::Text => subtitle.is_none(),
+            SegmentField::Translation => {
+                subtitle.is_some()
+                    && subtitle
+                        == project
+                            .current
+                            .as_ref()
+                            .and_then(|current| current.translation)
+            }
+            SegmentField::Speaker => true,
+        };
+        self.change_unless_held(is_written, |project| {
             if project.is_changed_elsewhere()? {
                 project.read_changed_elsewhere()?;
                 return Err(Failure::ChangedElsewhere);
@@ -904,27 +1007,33 @@ impl CurrentProject {
     }
 
     pub fn restore_version(&self, language: Option<Language>, backup: &str) -> Result<(), Failure> {
-        self.update_project(|project| {
-            project.make_undoable_change(|project| project.restore_version(language, backup))
-        })
+        self.change_unless_held(
+            |_, subtitle| subtitle == language,
+            |project| {
+                project.make_undoable_change(|project| project.restore_version(language, backup))
+            },
+        )
     }
 
     pub fn undo(&self) -> Result<(), Failure> {
-        self.update_project(Project::undo)
+        self.change_unless_held(|_, _| true, Project::undo)
     }
 
     pub fn redo(&self) -> Result<(), Failure> {
-        self.update_project(Project::redo)
+        self.change_unless_held(|_, _| true, Project::redo)
     }
 
     pub fn change_segments(&self, change: SegmentChange) -> Result<(), Failure> {
-        self.update_project(|project| {
-            if project.is_changed_elsewhere()? {
-                project.read_changed_elsewhere()?;
-                return Err(Failure::ChangedElsewhere);
-            }
-            project.make_undoable_change(|project| project.change_segments(change))
-        })
+        self.change_unless_held(
+            |_, _| true,
+            |project| {
+                if project.is_changed_elsewhere()? {
+                    project.read_changed_elsewhere()?;
+                    return Err(Failure::ChangedElsewhere);
+                }
+                project.make_undoable_change(|project| project.change_segments(change))
+            },
+        )
     }
 
     pub fn export_path(&self, content: SrtContent) -> Result<PathBuf, Failure> {
@@ -2796,5 +2905,109 @@ mod tests {
         edit_text(&current, "你好");
 
         assert!(!current.view().unwrap().has_undo());
+    }
+    fn hold_ep01<'a>(
+        current: &'a CurrentProject,
+        dir: &TempDir,
+        mode: RunningMode,
+    ) -> ResourceHold<'a> {
+        current.hold_resource(dir.path(), "ep01", mode)
+    }
+
+    const ENGLISH_TRANSLATION: RunningMode = RunningMode::Translation {
+        language: Language::English,
+    };
+
+    // @behavior PJ-090
+    #[test]
+    fn refuses_an_edit_while_its_resource_is_transcribed() {
+        let dir = directory_of("pj-hold-transcribed", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        let _hold = hold_ep01(&current, &dir, RunningMode::Transcription);
+
+        let result = current.edit(0, SegmentField::Text, "您好".to_string());
+
+        assert_eq!(
+            (result, read(&dir, "ep01.srt")),
+            (Err(Failure::ModeRunning), cue("你好"))
+        );
+    }
+
+    // @behavior PJ-091
+    #[test]
+    fn refuses_an_edit_of_the_translation_being_written() {
+        let dir = directory_of(
+            "pj-hold-translation",
+            &[("ep01.srt", &cue("你好")), ("ep01.en.srt", &cue("Hello"))],
+        );
+        let current = project_in(&dir);
+        current.show_translation(Some(Language::English)).unwrap();
+        let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
+
+        let result = current.edit(0, SegmentField::Translation, "Hi".to_string());
+
+        assert_eq!(result, Err(Failure::ModeRunning));
+    }
+
+    // @behavior PJ-092
+    #[test]
+    fn edits_the_original_while_it_is_translated() {
+        let dir = directory_of("pj-hold-original", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
+
+        current
+            .edit(0, SegmentField::Text, "您好".to_string())
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), cue("您好"));
+    }
+
+    // @behavior PJ-093
+    #[test]
+    fn refuses_a_segment_change_or_an_undo_while_a_mode_runs() {
+        let dir = directory_of("pj-hold-change", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        current
+            .edit(0, SegmentField::Text, "您好".to_string())
+            .unwrap();
+        let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
+
+        let results = (
+            current.change_segments(SegmentChange::Deletion { index: 0 }),
+            current.undo(),
+        );
+
+        assert_eq!(
+            results,
+            (Err(Failure::ModeRunning), Err(Failure::ModeRunning))
+        );
+    }
+
+    // @behavior PJ-094
+    #[test]
+    fn frees_the_subtitles_once_a_mode_ends() {
+        let dir = directory_of("pj-hold-freed", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        drop(hold_ep01(&current, &dir, RunningMode::Transcription));
+
+        current
+            .edit(0, SegmentField::Text, "您好".to_string())
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), cue("您好"));
+    }
+
+    // @behavior PJ-095
+    #[test]
+    fn says_which_mode_runs_on_the_current_resource() {
+        let dir = directory_of("pj-hold-view", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
+
+        assert_eq!(
+            current.view().unwrap().running_mode(),
+            Some(ENGLISH_TRANSLATION)
+        );
     }
 }

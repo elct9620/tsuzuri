@@ -41,6 +41,9 @@ pub enum Failure {
     /// An edit refused because a subtitle of the Current Resource was changed elsewhere since
     /// Tsuzuri last read or wrote it; the Current Resource was read again instead.
     ChangedElsewhere,
+    /// A change refused because a Mode running on the Current Resource writes the subtitle it
+    /// would change.
+    ModeRunning,
     /// A Segment Change that would leave a Segment ending before it starts.
     InvalidTimes,
     /// A restore that named no Backup of the subtitle it was asked for.

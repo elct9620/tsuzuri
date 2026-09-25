@@ -10,6 +10,7 @@ export type Failure =
   | { code: "no-resource" }
   | { code: "no-media" }
   | { code: "changed-elsewhere" }
+  | { code: "mode-running" }
   | { code: "invalid-times" }
   | { code: "no-backup"; backup: string }
   | { code: "subtitle-exists"; path: string }

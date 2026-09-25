@@ -189,6 +189,7 @@ const zhHant: typeof en = {
     noMedia: "這個資源沒有可轉錄的影片或音訊",
     noBackup: "找不到這份備份：{{backup}}",
     invalidTimes: "結束時間不能早於開始時間",
+    modeRunning: "這個資源的任務正在寫入這份字幕，請等任務結束再改",
     changedElsewhere: "字幕已在其他程式修改過，已重新讀取，這次的修改沒有寫入",
     subtitleExists: "{{path}} 已存在，確認覆蓋後才能轉錄",
     componentNotReady: "{{component}} 尚未就緒，請到設定確認",

@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::failure::Failure;
 use crate::progress::{enter, Progress};
-use crate::project::{CurrentProject, TranscriptionTarget};
+use crate::project::{CurrentProject, RunningMode, TranscriptionTarget};
 use crate::steps::{StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -38,6 +38,7 @@ pub async fn run_transcribe(
     work: &Path,
     mut phases: Phases,
 ) -> Result<Transcription, Failure> {
+    let _hold = project.hold_resource(&job.directory, &job.name, RunningMode::Transcription);
     let input = job.media.as_path();
     let model = settings.ready_path(ModelSlot::Transcription)?;
     std::fs::create_dir_all(work)?;
@@ -319,6 +320,28 @@ mod tests {
 
     const WHISPER_SRT: &str =
         "1\n00:00:00,000 --> 00:00:01,000\n大家好\n\n2\n00:00:01,000 --> 00:00:02,000\n今天天氣很好\n";
+
+    // @behavior PJ-095
+    #[tokio::test]
+    async fn holds_the_resource_while_it_is_transcribed() {
+        let fixture = Fixture::new("pj-hold-transcribing", TWO_SECOND_WAV);
+        let modes = Arc::new(Mutex::new(Vec::new()));
+        fixture.app.listen_any("project-changed", {
+            let modes = Arc::clone(&modes);
+            let handle = fixture.app.handle().clone();
+            move |_| {
+                let view = handle.state::<CurrentProject>().view().unwrap();
+                modes.lock().unwrap().push(view.running_mode());
+            }
+        });
+
+        fixture.transcribe().await.unwrap();
+
+        assert!(modes
+            .lock()
+            .unwrap()
+            .contains(&Some(RunningMode::Transcription)));
+    }
 
     // @behavior TX-017
     #[tokio::test]

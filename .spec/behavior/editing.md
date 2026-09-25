@@ -212,3 +212,19 @@ Registering a Speaker gives it a name in every Language and lets the editor offe
 | When | it is accepted |
 | Then | the rows are sent to be saved with that row naming a Speaker and no other |
 
+## `ED-026` Holding every field while the Current Resource is transcribed
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Current Resource is being transcribed |
+| When | the panel shows its Segments |
+| Then | every text, translation, Speaker and time field is disabled |
+
+## `ED-027` Holding only the translation while it is written
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Current Resource is being translated into the Language it shows |
+| When | the panel shows its Segments |
+| Then | each translation field is disabled and each text field is not |
+

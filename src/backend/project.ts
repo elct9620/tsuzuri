@@ -48,7 +48,13 @@ export interface ProjectView {
   has_undo: boolean;
   /** Whether the Current Resource has an undone change to redo. */
   has_redo: boolean;
+  /** The Mode running on the Current Resource, holding the subtitles it writes. */
+  running_mode: RunningMode | null;
 }
+
+/** A transcription holds every subtitle of its Resource; a translation, the one it writes. */
+export type RunningMode =
+  { mode: "transcription" } | { mode: "translation"; language: string };
 
 /** The Current Resource as the Resource list shows it, or none. */
 export function currentResource(

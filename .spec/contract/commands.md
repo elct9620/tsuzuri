@@ -104,7 +104,7 @@ pub fn set_project_options(app: AppHandle, options: ProjectOptions) -> Result<()
 
 ## `current_project`
 
-The Project's directory, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments and whether it has a change to undo and to redo, or none before one is opened.
+The Project's directory, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments, whether it has a change to undo and to redo, and the Mode running on it, or none before one is opened.
 
 ```rust
 pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
@@ -112,7 +112,7 @@ pub fn current_project(app: AppHandle) -> Option<ProjectView> {}
 
 ## `edit_segment`
 
-Replace the `text`, the `translation` or the `speaker` of one Segment of the Current Resource, by its position, where an empty `speaker` leaves it with none, and write the subtitle it belongs to back to the directory; a Speaker is written to the original and to each cue of every translation that has the Segment's times. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure.
+Replace the `text`, the `translation` or the `speaker` of one Segment of the Current Resource, by its position, where an empty `speaker` leaves it with none, and write the subtitle it belongs to back to the directory; a Speaker is written to the original and to each cue of every translation that has the Segment's times. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure. An edit of a subtitle a running Mode writes is refused as `mode-running`.
 
 ```rust
 pub fn edit_segment(app: AppHandle, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}
@@ -136,7 +136,7 @@ pub fn save_srt(app: AppHandle, path: PathBuf, content: SrtContent) -> Result<()
 
 ## `change_segments`
 
-Make a Segment Change to the Current Resource, by position, and write its original and every translation back to the directory, together with the Bilingual SRTs the Project Options keep. A Segment that would end before it starts is refused as `invalid-times`; a subtitle changed elsewhere is handled as `edit_segment` handles it.
+Make a Segment Change to the Current Resource, by position, and write its original and every translation back to the directory, together with the Bilingual SRTs the Project Options keep. A Segment that would end before it starts is refused as `invalid-times`; a subtitle changed elsewhere is handled as `edit_segment` handles it, and one a running Mode writes is refused as `mode-running`.
 
 ```rust
 pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Failure> {}
@@ -160,7 +160,7 @@ pub fn compare_versions(app: AppHandle, language: Option<Language>, left: Option
 
 ## `restore_version`
 
-Keep the subtitle as an Overwrite Backup, then put the named Backup in its place and read the Current Resource again, emitting `project-changed`. A name the subtitle's Backups do not hold is refused as `no-backup`.
+Keep the subtitle as an Overwrite Backup, then put the named Backup in its place and read the Current Resource again, emitting `project-changed`. A name the subtitle's Backups do not hold is refused as `no-backup`. A subtitle a running Mode writes is refused as `mode-running`.
 
 ```rust
 pub fn restore_version(app: AppHandle, language: Option<Language>, backup: String) -> Result<(), Failure> {}
@@ -168,7 +168,7 @@ pub fn restore_version(app: AppHandle, language: Option<Language>, backup: Strin
 
 ## `undo`
 
-Put the Current Resource's subtitles back as they were before its latest change in the Undo History, write them to the directory with the Bilingual SRTs they feed, and read the Current Resource again, emitting `project-changed`. With nothing to undo it changes nothing.
+Put the Current Resource's subtitles back as they were before its latest change in the Undo History, write them to the directory with the Bilingual SRTs they feed, and read the Current Resource again, emitting `project-changed`. With nothing to undo it changes nothing; while a Mode runs on the Current Resource it is refused as `mode-running`.
 
 ```rust
 pub fn undo(app: AppHandle) -> Result<(), Failure> {}

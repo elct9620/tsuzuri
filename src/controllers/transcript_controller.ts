@@ -287,6 +287,7 @@ export default class TranscriptController extends Controller {
     this.showLanguages(project);
     this.showSpeakers(segments, project?.translation_glossary?.speakers ?? []);
     this.showSegments(segments, isTranslationShown);
+    this.holdFields(project);
     const isAwaitingSegments =
       segments.length === 0 && this.runningTask === "transcribe";
     if (isAwaitingSegments) this.showLoading();
@@ -343,6 +344,23 @@ export default class TranscriptController extends Controller {
       });
     }
     this.showPendingTranslations();
+  }
+
+  /** Disables each field whose subtitle the Mode running on the Current Resource writes. */
+  private holdFields(project: ProjectView | null): void {
+    const mode = project?.running_mode ?? null;
+    const isTranslationFree =
+      mode?.mode === "translation" &&
+      mode.language !== project?.shown_translation;
+    for (const field of this.listTarget.querySelectorAll<
+      HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement
+    >("input, textarea, button")) {
+      const isFree =
+        mode === null ||
+        (mode.mode === "translation" && field.classList.contains("text")) ||
+        (isTranslationFree && field.classList.contains("translation"));
+      field.disabled = !isFree;
+    }
   }
 
   /** Offers the Speakers the Segments name and those the Translation Glossary names. */

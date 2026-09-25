@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::progress::{enter, Progress};
-use crate::project::{CurrentProject, TranslationSource};
+use crate::project::{CurrentProject, RunningMode, TranslationSource};
 use crate::steps::{StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -79,6 +79,13 @@ pub async fn run_translate(
 ) -> Result<Translation, Failure> {
     let model = model_settings.ready_path(ModelSlot::Translation)?;
     let source = project.snapshot()?;
+    let _hold = project.hold_resource(
+        &source.directory,
+        &source.name,
+        RunningMode::Translation {
+            language: plan.target,
+        },
+    );
     let languages = LanguagePair {
         source: source.language,
         target: plan.target,
@@ -1436,6 +1443,64 @@ mod tests {
         assert!(
             state.trim().is_empty() || state.starts_with('Z'),
             "llama-server still running: {state}"
+        );
+    }
+
+    // @behavior PJ-094
+    // @behavior PJ-095
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn holds_the_translation_until_the_run_ends() {
+        let dir = TempDir::new("tl-hold");
+        let llama = dir.path().join("llama-server");
+        let pid_file = dir.path().join("llama.pid");
+        crate::test_support::write_executable(
+            &llama,
+            &format!(
+                "#!/bin/sh\necho $$ > '{}'\nexec sleep 30\n",
+                pid_file.display()
+            ),
+        );
+        let mut settings = ModelSettings::default();
+        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        let app = mock_app();
+        let processes = Processes::new(dir.path().join("processes.json"));
+        app.state::<CurrentProject>()
+            .replace(project_of(vec![segment(0, 1_000, "大家好")]));
+        let running_mode = || app.state::<CurrentProject>().view().unwrap().running_mode();
+        let watch = async {
+            while !pid_file.exists() {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+            running_mode()
+        };
+
+        let ports = AppPorts {
+            app: app.handle(),
+            processes: &processes,
+        };
+        let project = app.state::<CurrentProject>();
+        let plan = plan_for(Language::Japanese);
+        let run = run_translate(
+            &ports,
+            &project,
+            &llama,
+            &settings,
+            &plan,
+            Duration::from_secs(1),
+            Phases::start("translate", "prepare"),
+        );
+
+        let (_, seen) = tokio::join!(run, watch);
+
+        assert_eq!(
+            (seen, running_mode()),
+            (
+                Some(RunningMode::Translation {
+                    language: Language::Japanese
+                }),
+                None
+            )
         );
     }
 

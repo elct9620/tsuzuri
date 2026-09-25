@@ -192,6 +192,8 @@ const en = {
     noMedia: "This resource has no video or audio file to transcribe",
     noBackup: "No such backup: {{backup}}",
     invalidTimes: "A segment cannot end before it starts",
+    modeRunning:
+      "A task running on this Resource is writing this subtitle; try again once it ends",
     changedElsewhere:
       "The subtitle was changed in another program and has been read again; this edit was not written",
     subtitleExists:

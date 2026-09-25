@@ -713,3 +713,52 @@ A name changed in the Translation Glossary since a translation was written leave
 | Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Ming` in `en`, whose `ep01.srt` reads `小明: 你好` and `ep01.en.srt` `Xiao Ming: Hello` |
 | When | `ep01.en.srt` is shown |
 | Then | its Segment's translation reads `Hello` |
+
+## `PJ-090` Refusing an edit while its Resource is transcribed
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being transcribed, whose `ep01.srt` reads `你好` |
+| When | its text is edited to `您好` |
+| Then | the edit is refused as `mode-running` and `ep01.srt` reads `你好` |
+
+## `PJ-091` Refusing an edit of the translation being written
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en`, showing its `en` translation |
+| When | a translation is edited |
+| Then | the edit is refused as `mode-running` |
+
+## `PJ-092` Editing the original while it is translated
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en`, whose `ep01.srt` reads `你好` |
+| When | its text is edited to `您好` |
+| Then | `ep01.srt` reads `您好` |
+
+## `PJ-093` Refusing a Segment Change or an undo while a Mode runs
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en`, with an edit to undo |
+| When | a Segment is deleted, and the edit undone |
+| Then | both are refused as `mode-running` |
+
+## `PJ-094` Freeing the subtitles once a Mode ends
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose transcription has ended, done or failed |
+| When | its text is edited |
+| Then | the edit is written to `ep01.srt` |
+
+## `PJ-095` Saying which Mode runs on the Current Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en` |
+| When | the Project is read |
+| Then | its Current Resource is said to be translated into `en` |
+

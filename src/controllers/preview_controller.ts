@@ -1,0 +1,97 @@
+import { Controller } from "@hotwired/stimulus";
+import { convertFileSrc } from "@tauri-apps/api/core";
+
+import {
+  followProject,
+  type ProjectView,
+  type Segment,
+  type UnlistenFn,
+} from "../backend/project";
+import { formatClock } from "../ui/time";
+
+/** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
+export default class PreviewController extends Controller {
+  static targets = [
+    "screen",
+    "media",
+    "caption",
+    "hint",
+    "controls",
+    "playback",
+    "time",
+  ];
+
+  declare readonly screenTarget: HTMLElement;
+  declare readonly mediaTarget: HTMLVideoElement;
+  declare readonly captionTarget: HTMLElement;
+  declare readonly hintTarget: HTMLElement;
+  declare readonly controlsTarget: HTMLElement;
+  declare readonly playbackTarget: HTMLElement;
+  declare readonly timeTarget: HTMLElement;
+
+  private media: string | null = null;
+  private segments: Segment[] = [];
+  private unlisten?: UnlistenFn;
+
+  async connect(): Promise<void> {
+    this.unlisten = await followProject((project) => this.show(project));
+  }
+
+  disconnect(): void {
+    this.unlisten?.();
+  }
+
+  togglePlayback(): void {
+    if (this.mediaTarget.paused) void this.mediaTarget.play();
+    else this.mediaTarget.pause();
+  }
+
+  /** Leaves the video out for media without a picture, keeping only the controls. */
+  measure(): void {
+    this.screenTarget.hidden = this.mediaTarget.videoWidth === 0;
+    this.showTime();
+  }
+
+  showTime(): void {
+    const { currentTime, duration } = this.mediaTarget;
+    const length = Number.isFinite(duration) ? duration : 0;
+    this.timeTarget.textContent = `${formatClock(currentTime * 1000)} / ${formatClock(length * 1000)}`;
+  }
+
+  follow(): void {
+    this.showTime();
+    const at = this.mediaTarget.currentTime * 1000;
+    const playing = this.segments.find(
+      (segment) => segment.start_ms <= at && at < segment.end_ms,
+    );
+    this.captionTarget.textContent = playing?.text ?? "";
+  }
+
+  showPlaying(): void {
+    this.playbackTarget.classList.add("swap-active");
+  }
+
+  showPaused(): void {
+    this.playbackTarget.classList.remove("swap-active");
+  }
+
+  showUnplayable(): void {
+    this.screenTarget.hidden = false;
+    this.mediaTarget.hidden = true;
+    this.hintTarget.hidden = false;
+  }
+
+  private show(project: ProjectView | null): void {
+    this.segments = project?.segments ?? [];
+    const media = project?.media ?? null;
+    if (media === this.media) return;
+    this.media = media;
+    this.screenTarget.hidden = media === null;
+    this.controlsTarget.hidden = media === null;
+    this.mediaTarget.hidden = false;
+    this.hintTarget.hidden = true;
+    this.captionTarget.textContent = "";
+    if (media === null) this.mediaTarget.removeAttribute("src");
+    else this.mediaTarget.src = convertFileSrc(media);
+  }
+}

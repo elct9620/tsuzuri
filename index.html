@@ -380,22 +380,76 @@
             </div>
           </div>
           <div
-            id="progress"
-            class="flex flex-col gap-2 border-b border-base-300 px-4 py-2"
-            data-controller="progress"
-            hidden
+            class="grid grid-cols-[auto_1fr] content-start border-base-300 has-[>:not([hidden])]:border-b"
+            data-controller="preview"
           >
-            <ul class="steps w-full text-xs" data-progress-target="steps"></ul>
-            <p
-              class="whitespace-pre-line text-sm text-base-content/70"
-              data-progress-target="status"
-            ></p>
-            <progress
-              class="progress progress-primary w-full"
-              max="100"
-              data-progress-target="bar"
+            <div
+              class="relative row-span-2 aspect-video h-45 bg-black"
+              data-preview-target="screen"
               hidden
-            ></progress>
+            >
+              <video
+                class="size-full"
+                preload="metadata"
+                data-preview-target="media"
+                data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"
+              ></video>
+              <p
+                class="pointer-events-none absolute inset-x-2 bottom-2 text-center text-sm whitespace-pre-line text-white [text-shadow:0_1px_2px_black]"
+                data-preview-target="caption"
+              ></p>
+              <div
+                role="alert"
+                class="alert alert-warning alert-soft absolute inset-2 text-sm"
+                data-preview-target="hint"
+                hidden
+              >
+                <i data-lucide="triangle-alert" class="size-4"></i>
+                <span data-i18n="preview.unplayable"></span>
+              </div>
+            </div>
+            <div
+              class="col-start-2 flex items-center gap-2 px-4 py-2"
+              data-preview-target="controls"
+              hidden
+            >
+              <button
+                type="button"
+                class="btn btn-square btn-sm"
+                data-action="preview#togglePlayback"
+                data-i18n-label="preview.play"
+              >
+                <span class="swap" data-preview-target="playback">
+                  <i data-lucide="pause" class="swap-on size-4"></i>
+                  <i data-lucide="play" class="swap-off size-4"></i>
+                </span>
+              </button>
+              <span
+                class="text-sm tabular-nums text-base-content/70"
+                data-preview-target="time"
+              ></span>
+            </div>
+            <div
+              id="progress"
+              class="col-start-2 flex flex-col gap-2 px-4 py-2"
+              data-controller="progress"
+              hidden
+            >
+              <ul
+                class="steps w-full text-xs"
+                data-progress-target="steps"
+              ></ul>
+              <p
+                class="whitespace-pre-line text-sm text-base-content/70"
+                data-progress-target="status"
+              ></p>
+              <progress
+                class="progress progress-primary w-full"
+                max="100"
+                data-progress-target="bar"
+                hidden
+              ></progress>
+            </div>
           </div>
           <div class="flex-1 overflow-y-auto p-4">
             <p

@@ -11,6 +11,7 @@ import GlossaryController from "./controllers/glossary_controller";
 import LogsController from "./controllers/logs_controller";
 import ModelsController from "./controllers/models_controller";
 import NotificationController from "./controllers/notification_controller";
+import PreviewController from "./controllers/preview_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
@@ -41,6 +42,7 @@ async function start(): Promise<void> {
   application.register("logs", LogsController);
   application.register("models", ModelsController);
   application.register("notification", NotificationController);
+  application.register("preview", PreviewController);
   application.register("progress", ProgressController);
   application.register("project", ProjectController);
   application.register("segment-changes", SegmentChangesController);

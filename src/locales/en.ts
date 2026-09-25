@@ -93,6 +93,11 @@ const en = {
     notUndone: "Change not undone",
     notRedone: "Change not redone",
   },
+  preview: {
+    play: "Play or stop",
+    unplayable:
+      "This format cannot be previewed here; its waveform still shows.",
+  },
   compare: {
     label: "Compare",
     none: "None",

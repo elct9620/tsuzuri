@@ -36,3 +36,13 @@ export function localTime(takenAt: string): string {
     Date.UTC(year, month - 1, day, hour, minute, second),
   ).toLocaleString(interfaceLanguageCode());
 }
+
+/** `ms` as a player shows a position: `MM:SS`, or `H:MM:SS` from an hour on. */
+export function formatClock(ms: number): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60) % 60;
+  const hours = Math.floor(seconds / 3600);
+  const clock = `${pad(minutes)}:${pad(seconds % 60)}`;
+  return hours > 0 ? `${hours}:${clock}` : clock;
+}

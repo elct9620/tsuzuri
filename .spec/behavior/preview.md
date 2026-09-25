@@ -7,6 +7,7 @@ Hearing and watching the Current Resource's media above the editor while its sub
 - `src-tauri/src/project/commands.rs`
 - `src-tauri/src/waveform.rs`
 - `src-tauri/src/waveform/*.rs`
+- `src/controllers/preview_controller.test.ts`
 
 ## `PV-001` Letting the webview read a media file of the Project
 
@@ -63,3 +64,75 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | a Current Resource with a media file |
 | When | its Waveform is extracted |
 | Then | the converted audio is removed |
+
+## `PV-008` Loading the Current Resource's media into the Preview
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with `/talks/ep01.mp4` |
+| When | the Project is shown |
+| Then | the player reads `/talks/ep01.mp4` through the asset protocol |
+
+## `PV-009` Leaving the Preview out of a Resource without media
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone |
+| When | the Project is shown |
+| Then | no player or controls are shown |
+
+## `PV-010` Showing only the controls for media without a picture
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file |
+| When | its media loads without a picture |
+| Then | the controls are shown without the video |
+
+## `PV-011` Telling the user a media file cannot be played
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file |
+| When | the player fails to read it |
+| Then | a hint that it cannot be previewed takes the video's place |
+
+## `PV-012` Playing the whole media
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, paused |
+| When | play is pressed |
+| Then | the media plays from where it is |
+
+## `PV-013` Stopping the media
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, playing |
+| When | play is pressed |
+| Then | the media pauses |
+
+## `PV-014` Showing where the media is
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with media lasting 24 minutes 10 seconds |
+| When | it plays to 1 minute 2 seconds |
+| Then | the time reads `01:02 / 24:10` |
+
+## `PV-015` Showing the Segment being played over the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` from 0 to 1 s and `今天` from 1 to 2 s |
+| When | it plays to 1.5 s |
+| Then | `今天` is shown over the video |
+
+## `PV-016` Showing nothing over the video between Segments
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `大家好` from 0 to 1 s |
+| When | it plays to 1.5 s |
+| Then | nothing is shown over the video |

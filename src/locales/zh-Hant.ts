@@ -93,6 +93,10 @@ const zhHant: typeof en = {
     notUndone: "沒有復原",
     notRedone: "沒有重做",
   },
+  preview: {
+    play: "播放或停止",
+    unplayable: "這個格式無法在這裡預覽，仍可看波形。",
+  },
   compare: {
     label: "對照",
     none: "無",

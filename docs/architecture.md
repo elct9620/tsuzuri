@@ -321,7 +321,8 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `project`、`transcript`、`segment-changes`、`dialog` | 整頁：資源清單、字幕編輯、段落變更、設定 modal |
 | `comparison` | 字幕編輯的對照：原文與譯文各自比較一份備份並標在各自欄位、插入已刪除的段落、疊上其他譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
-| `progress` | 編輯畫面上方的任務進度 |
+| `preview` | 預覽：播放器、整段播放、疊字 |
+| `progress` | 預覽右欄的任務進度 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
 | `components`、`models`、`translation-settings`、`logs` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |

@@ -42,6 +42,12 @@ export default class ProgressController extends Controller {
     this.end(lines.join("\n"));
   }
 
+  /** Shows a message about something other than the running task, leaving the task running. */
+  note(text: string): void {
+    this.element.removeAttribute("hidden");
+    this.statusTarget.textContent = text;
+  }
+
   fail(error: unknown): void {
     this.end(t("work.failed", { reason: failureMessage(error) }));
   }

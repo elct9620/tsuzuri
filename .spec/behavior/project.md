@@ -290,3 +290,47 @@ The directory Rust holds open as the single source of truth: which files make it
 | Given | the settings of a Project in `zh-TW` |
 | When | `ja` is chosen as its Primary Language |
 | Then | the Project's Primary Language is set to `ja` |
+
+## `PJ-039` Keeping an edit off a subtitle changed elsewhere
+
+A subtitle is often corrected in a dedicated subtitle editor, and writing an edit back would overwrite that correction.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose `ep01.srt` another program rewrote after Tsuzuri read it |
+| When | a Segment's text is edited |
+| Then | `ep01.srt` keeps what the other program wrote |
+
+## `PJ-040` Reading again a subtitle an edit found changed elsewhere
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose `ep01.srt` another program rewrote after Tsuzuri read it |
+| When | a Segment's text is edited |
+| Then | the Current Resource holds what the other program wrote |
+
+## `PJ-041` Reading again a subtitle changed elsewhere when the window regains focus
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose `ep01.srt` another program rewrote after Tsuzuri read it |
+| When | the window regains focus |
+| Then | the Current Resource holds what the other program wrote |
+
+## `PJ-042` Writing edit after edit
+
+What Tsuzuri wrote itself is never taken for a change made elsewhere.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose first Segment's text was just edited |
+| When | its second Segment's text is edited |
+| Then | `ep01.srt` holds both edits |
+
+## `PJ-043` Editing a translation Tsuzuri just wrote
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose translation into `en` Tsuzuri just wrote to `ep01.en.srt` |
+| When | a Segment's translation is edited |
+| Then | `ep01.en.srt` holds the edit |

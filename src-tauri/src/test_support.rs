@@ -23,6 +23,7 @@ pub fn project_of(segments: Vec<Segment>) -> Project {
             name: "lecture".to_string(),
             transcript: Transcript { segments },
             translation: None,
+            subtitle_digests: Vec::new(),
         }),
     }
 }

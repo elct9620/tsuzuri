@@ -1,3 +1,4 @@
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -30,6 +31,24 @@ pub struct CurrentResource {
     pub transcript: Transcript,
     /// The Language of the translations its Segments carry.
     pub translation: Option<Language>,
+    /// What its subtitle files held when Tsuzuri last read or wrote them, to tell a change made elsewhere.
+    pub subtitle_digests: Vec<SubtitleDigest>,
+}
+
+/// A subtitle file and a digest of what it held, or `None` while it did not exist.
+pub type SubtitleDigest = (PathBuf, Option<u64>);
+
+fn digest_of(path: &Path) -> Result<SubtitleDigest, Failure> {
+    let digest = match std::fs::read(path) {
+        Ok(bytes) => {
+            let mut hasher = DefaultHasher::new();
+            bytes.hash(&mut hasher);
+            Some(hasher.finish())
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error.into()),
+    };
+    Ok((path.to_path_buf(), digest))
 }
 
 impl Project {
@@ -67,8 +86,9 @@ impl Project {
             name: name.to_string(),
             transcript: resource.transcript(translation)?,
             translation,
+            subtitle_digests: Vec::new(),
         });
-        Ok(())
+        self.remember_subtitles()
     }
 
     /// Shows the Current Resource's translation into `language` from the directory, or none.
@@ -81,7 +101,44 @@ impl Project {
             .ok_or(Failure::NoResource)?;
         resource.carry_translations(&mut current.transcript.segments, language)?;
         current.translation = language;
+        self.remember_subtitles()
+    }
+
+    /// Digests of the Current Resource's original subtitle and the translation file it shows.
+    fn subtitle_digests(&self) -> Result<Vec<SubtitleDigest>, Failure> {
+        let current = self.current()?;
+        let resource = self.resource(&current.name)?;
+        let translation_path = current
+            .translation
+            .and_then(|language| resource.translation_path(language));
+        resource
+            .subtitle
+            .as_deref()
+            .into_iter()
+            .chain(translation_path)
+            .map(digest_of)
+            .collect()
+    }
+
+    /// Records what the Current Resource's subtitle files hold now, as read or written by Tsuzuri.
+    fn remember_subtitles(&mut self) -> Result<(), Failure> {
+        let digests = self.subtitle_digests()?;
+        self.current_mut()?.subtitle_digests = digests;
         Ok(())
+    }
+
+    /// Whether a subtitle file of the Current Resource no longer holds what Tsuzuri last read or wrote.
+    fn is_changed_elsewhere(&self) -> Result<bool, Failure> {
+        Ok(self.subtitle_digests()? != self.current()?.subtitle_digests)
+    }
+
+    /// Reads the Current Resource again from the directory, showing the same translation.
+    fn read_current_again(&mut self) -> Result<(), Failure> {
+        let current = self.current()?;
+        let (name, translation) = (current.name.clone(), current.translation);
+        self.resources = resource::resources_in(&self.directory, self.language)?;
+        self.select(&name)?;
+        self.show_translation(translation)
     }
 
     /// Pairs the directory's subtitles again as in `language`, keeping the Current Resource
@@ -137,7 +194,7 @@ impl Project {
         };
         std::fs::write(path, srt)?;
         self.resources = resource::resources_in(&self.directory, self.language)?;
-        Ok(())
+        self.remember_subtitles()
     }
 
     fn save_config(&self) -> Result<(), Failure> {
@@ -179,6 +236,13 @@ impl Project {
 
     fn current_mut(&mut self) -> Result<&mut CurrentResource, Failure> {
         self.current.as_mut().ok_or(Failure::NoResource)
+    }
+}
+
+/// Records the subtitles a transcription or translation has just written as Tsuzuri's own.
+fn remember_written_subtitles(project: &mut Project) {
+    if let Err(failure) = project.remember_subtitles() {
+        log::warn!("could not read back the subtitles just written: {failure:?}");
     }
 }
 
@@ -413,6 +477,7 @@ impl CurrentProject {
                 current.transcript = transcript;
                 current.translation = None;
             }
+            remember_written_subtitles(project);
         });
     }
 
@@ -443,6 +508,7 @@ impl CurrentProject {
                         .and_then(|translated_segment| translated_segment.translation.clone());
                 }
             }
+            remember_written_subtitles(project);
         });
     }
 
@@ -492,8 +558,26 @@ impl CurrentProject {
         Ok(())
     }
 
+    /// Reads the Current Resource again when one of its subtitles was changed elsewhere, answering
+    /// whether it did.
+    pub fn read_again_if_changed(&self) -> Result<bool, Failure> {
+        self.update_project(|project| {
+            if project.current.is_none() || !project.is_changed_elsewhere()? {
+                return Ok(false);
+            }
+            project.read_current_again()?;
+            Ok(true)
+        })
+    }
+
+    /// Makes an edit and writes it back, unless a subtitle was changed elsewhere since Tsuzuri last
+    /// read or wrote it: then the Current Resource is read again instead, keeping that change.
     pub fn edit(&self, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {
         self.update_project(|project| {
+            if project.is_changed_elsewhere()? {
+                project.read_current_again()?;
+                return Err(Failure::ChangedElsewhere);
+            }
             let segment = project
                 .current_mut()?
                 .transcript
@@ -596,6 +680,16 @@ pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(),
     Ok(())
 }
 
+/// Reads the Current Resource again when a subtitle of it was changed elsewhere, and tells the
+/// webview; a failure is logged, since nobody asked for this read.
+pub fn read_again_if_changed<R: Runtime>(app: &AppHandle<R>) {
+    match app.state::<CurrentProject>().read_again_if_changed() {
+        Ok(true) => announce(app),
+        Ok(false) => {}
+        Err(failure) => log::warn!("could not read the Current Resource again: {failure:?}"),
+    }
+}
+
 #[tauri::command]
 pub fn select_resource(app: AppHandle, name: String) -> Result<(), Failure> {
     app.state::<CurrentProject>().select(&name)?;
@@ -629,9 +723,9 @@ pub fn edit_segment(
     field: SegmentField,
     value: String,
 ) -> Result<(), Failure> {
-    app.state::<CurrentProject>().edit(index, field, value)?;
+    let edited = app.state::<CurrentProject>().edit(index, field, value);
     announce(&app);
-    Ok(())
+    edited
 }
 
 #[tauri::command]
@@ -1166,5 +1260,90 @@ mod tests {
             (view.language(), view.translation_language()),
             (Language::TraditionalChinese, Some(Language::English))
         );
+    }
+
+    fn two_cues(first: &str, second: &str) -> String {
+        format!(
+            "1\n00:00:00,000 --> 00:00:01,000\n{first}\n\n2\n00:00:01,000 --> 00:00:02,000\n{second}\n"
+        )
+    }
+
+    // @behavior PJ-039
+    #[test]
+    fn keeps_an_edit_off_a_subtitle_changed_elsewhere() {
+        let dir = directory_of("pj-changed-kept", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        std::fs::write(dir.path().join("ep01.srt"), cue("您好")).unwrap();
+
+        let _ = current.edit(0, SegmentField::Text, "大家好".to_string());
+
+        assert_eq!(file_text(&dir, "ep01.srt"), cue("您好"));
+    }
+
+    // @behavior PJ-040
+    #[test]
+    fn reads_again_a_subtitle_an_edit_found_changed_elsewhere() {
+        let dir = directory_of("pj-changed-edit", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        std::fs::write(dir.path().join("ep01.srt"), cue("您好")).unwrap();
+
+        let edited = current.edit(0, SegmentField::Text, "大家好".to_string());
+
+        assert_eq!(
+            (edited, texts(&current)),
+            (Err(Failure::ChangedElsewhere), vec!["您好".to_string()])
+        );
+    }
+
+    // @behavior PJ-041
+    #[test]
+    fn reads_again_a_subtitle_changed_elsewhere_on_focus() {
+        let dir = directory_of("pj-changed-focus", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        std::fs::write(dir.path().join("ep01.srt"), cue("您好")).unwrap();
+
+        current.read_again_if_changed().unwrap();
+
+        assert_eq!(texts(&current), vec!["您好".to_string()]);
+    }
+
+    // @behavior PJ-042
+    #[test]
+    fn writes_edit_after_edit() {
+        let dir = directory_of(
+            "pj-edit-after-edit",
+            &[("ep01.srt", &two_cues("你好", "世界"))],
+        );
+        let current = project_in(&dir);
+        current
+            .edit(0, SegmentField::Text, "大家好".to_string())
+            .unwrap();
+
+        current
+            .edit(1, SegmentField::Text, "地球".to_string())
+            .unwrap();
+
+        assert_eq!(file_text(&dir, "ep01.srt"), two_cues("大家好", "地球"));
+    }
+
+    // @behavior PJ-043
+    #[test]
+    fn edits_a_translation_tsuzuri_just_wrote() {
+        let dir = directory_of("pj-edit-written", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+        let translation = vec![Segment {
+            translation: Some("Hello".to_string()),
+            ..source.transcript.segments[0].clone()
+        }];
+        current
+            .write_translations(&source, Language::English, translation)
+            .unwrap();
+
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+
+        assert_eq!(file_text(&dir, "ep01.en.srt"), cue("Hi"));
     }
 }

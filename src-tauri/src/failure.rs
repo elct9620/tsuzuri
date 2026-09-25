@@ -34,6 +34,9 @@ pub enum Failure {
     NoResource,
     /// Transcribing a Current Resource that has no media file.
     NoMedia,
+    /// An edit refused because a subtitle of the Current Resource was changed elsewhere since
+    /// Tsuzuri last read or wrote it; the Current Resource was read again instead.
+    ChangedElsewhere,
     /// Transcribing over an original subtitle the user did not ask to overwrite.
     SubtitleExists {
         path: PathBuf,

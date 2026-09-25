@@ -116,6 +116,8 @@ const en = {
     noProject: "Open a directory or an SRT file first",
     noResource: "The directory has no media file or SRT file to work on",
     noMedia: "This resource has no video or audio file to transcribe",
+    changedElsewhere:
+      "The subtitle was changed in another program and has been read again; this edit was not written",
     subtitleExists:
       "{{path}} already exists; confirm overwriting it to transcribe",
     componentNotReady: "{{component}} is not ready; check it in Settings",

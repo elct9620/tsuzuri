@@ -116,6 +116,7 @@ const zhHant: typeof en = {
     noProject: "請先開啟目錄或 SRT 檔",
     noResource: "目錄裡沒有可處理的媒體檔或 SRT 檔",
     noMedia: "這個資源沒有可轉錄的影片或音訊",
+    changedElsewhere: "字幕已在其他程式修改過，已重新讀取，這次的修改沒有寫入",
     subtitleExists: "{{path}} 已存在，確認覆蓋後才能轉錄",
     componentNotReady: "{{component}} 尚未就緒，請到設定確認",
     stepFailed: "{{step}} 失敗：{{detail}}",

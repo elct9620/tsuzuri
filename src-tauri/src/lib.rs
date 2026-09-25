@@ -16,7 +16,7 @@ pub mod window;
 #[cfg(test)]
 mod test_support;
 
-use tauri::{Manager, RunEvent};
+use tauri::{Manager, RunEvent, WindowEvent};
 use tauri_plugin_log::{RotationStrategy, TimezoneStrategy};
 
 use processes::Processes;
@@ -45,6 +45,12 @@ pub fn run() {
             app.manage(CurrentProject::default());
             window::size_first_window(app)?;
             Ok(())
+        })
+        // A subtitle may have been corrected in another program while the window was away
+        .on_window_event(|window, event| {
+            if let WindowEvent::Focused(true) = event {
+                project::read_again_if_changed(window.app_handle());
+            }
         })
         .invoke_handler(tauri::generate_handler![
             components::choose_component,

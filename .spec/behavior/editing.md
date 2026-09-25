@@ -45,3 +45,11 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | Given | a Current Resource showing `en` whose second Segment has no translation |
 | When | the editor shows it |
 | Then | the second Segment has an empty translation field |
+
+## `ED-006` Saying an edit was not written
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose subtitle was changed elsewhere since it was read |
+| When | a Segment is edited |
+| Then | the editor says the edit was not written and the subtitle was read again |

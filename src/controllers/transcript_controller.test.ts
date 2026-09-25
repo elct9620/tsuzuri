@@ -5,12 +5,14 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "../project";
 import { projectOf, resourceOf } from "../test_project";
+import ProgressController from "./progress_controller";
 import TranscriptController from "./transcript_controller";
 
 describe("TranscriptController", () => {
   let application: Application;
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
+  let editFailure: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -52,8 +54,13 @@ describe("TranscriptController", () => {
   beforeEach(async () => {
     project = null;
     calls = [];
+    editFailure = undefined;
     document.body.innerHTML = `
-      <section data-controller="transcript">
+      <div id="progress" data-controller="progress" hidden>
+        <p data-progress-target="status"></p>
+        <progress data-progress-target="bar" hidden></progress>
+      </div>
+      <section data-controller="transcript" data-transcript-progress-outlet="#progress">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage" data-action="change->transcript#showTranslation"></select>
         <p data-transcript-target="empty">尚無內容</p>
@@ -71,11 +78,14 @@ describe("TranscriptController", () => {
         calls.push({ command, args });
         if (command === "current_project") return project;
         if (command === "export_path") return "/talks/lecture.en.srt";
+        if (command === "edit_segment" && editFailure !== undefined)
+          return Promise.reject(editFailure);
         if (command === "plugin:dialog|save") return "/subtitles/out.srt";
       },
       { shouldMockEvents: true },
     );
     application = Application.start();
+    application.register("progress", ProgressController);
     application.register("transcript", TranscriptController);
     await settle();
   });
@@ -111,6 +121,21 @@ describe("TranscriptController", () => {
     await hold(translated);
 
     expect(fields()).toEqual(["大家好", "Hello everyone"]);
+  });
+
+  // @behavior ED-006
+  it("says an edit was not written when the subtitle changed elsewhere", async () => {
+    await hold(
+      projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }] }),
+    );
+    editFailure = { code: "changed-elsewhere" };
+
+    edit("textarea.text", "逐字稿");
+    await settle();
+
+    expect(
+      document.querySelector('[data-progress-target="status"]')!.textContent,
+    ).toBe("字幕已在其他程式修改過，已重新讀取，這次的修改沒有寫入");
   });
 
   // @behavior ED-001

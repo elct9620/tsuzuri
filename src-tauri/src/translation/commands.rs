@@ -1,14 +1,19 @@
+use std::time::Duration;
+
 use tauri::{AppHandle, Manager};
 
 use super::llama::READY_TIMEOUT;
-use super::{run_translate, Translation, TranslationOptions, TranslationPlan, TranslationSettings};
+use super::{
+    run_translate, LlamaServer, ResidentLlama, Translation, TranslationOptions, TranslationPlan,
+    TranslationSettings,
+};
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
 use crate::project::CurrentProject;
 use crate::timing::Phases;
-use crate::toolchain::{self, settings};
+use crate::toolchain::{self, settings, ModelSlot};
 
 #[tauri::command]
 pub async fn translate(
@@ -26,6 +31,12 @@ pub async fn translate(
         settings: TranslationSettings::load(&settings::settings_dir(&app)?)?,
     };
     let processes = app.state::<Processes>().inner().clone();
+    let preset_dir = app.path().app_data_dir()?;
+    let server = LlamaServer::Router {
+        resident: &app.state::<ResidentLlama>(),
+        preset_dir: &preset_dir,
+        keep: Duration::ZERO,
+    };
     run_translate(
         &AppPorts {
             app: &app,
@@ -35,6 +46,7 @@ pub async fn translate(
         &llama,
         &model_settings,
         &plan,
+        &server,
         READY_TIMEOUT,
         phases,
     )
@@ -52,4 +64,34 @@ pub fn save_translation_settings(
     settings: TranslationSettings,
 ) -> Result<TranslationSettings, Failure> {
     Ok(settings.save(&settings::settings_dir(&app)?)?)
+}
+
+/// Starts the Resident llama-server in the background once llama-server and the translation Model
+/// are both ready, so the first translation only waits for its Model to load.
+pub fn start_resident_llama(app: &AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let started = async {
+            let [llama] =
+                toolchain::find_ready_executables(settings::resolver(&app)?, ["llama"]).await?;
+            let model_settings = settings::load_settings(&app)?;
+            let model = model_settings.ready_path(ModelSlot::Translation)?;
+            let processes = app.state::<Processes>().inner().clone();
+            app.state::<ResidentLlama>()
+                .start(
+                    &AppPorts {
+                        app: &app,
+                        processes: &processes,
+                    },
+                    &llama,
+                    model,
+                    &app.path().app_data_dir()?,
+                    READY_TIMEOUT,
+                )
+                .await
+        };
+        if let Err(failure) = started.await {
+            log::info!("the Resident llama-server waits for the first translation: {failure:?}");
+        }
+    });
 }

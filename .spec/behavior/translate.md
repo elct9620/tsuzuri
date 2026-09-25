@@ -1,6 +1,6 @@
 # Translate
 
-The Translate Mode: the Project's Transcript - from a transcription or an opened SRT file - is translated Segment by Segment through llama-server, which is started on a random port for the job and stopped when it ends, and the translations are written back into the Project.
+The Translate Mode: the Project's Transcript - from a transcription or an opened SRT file - is translated Segment by Segment through llama-server, the Resident llama-server or one started on a random port for the job and stopped when it ends, and the translations are written back into the Project.
 
 ## Includes
 
@@ -507,3 +507,61 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a transcription that goes on to translate once it finishes |
 | When | the translation starts |
 | Then | the editor lists preparing the Components, loading the Model, searching for Split Sentences and translating instead |
+
+## `TL-067` Starting the Resident llama-server without a Model
+
+| Step | Statement |
+| --- | --- |
+| Given | a llama-server executable and a chosen translation Model |
+| When | the Resident llama-server starts |
+| Then | it runs in router mode with a preset naming the Model, loading no Model until asked |
+
+## `TL-068` Loading the Model into the Resident llama-server
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resident llama-server with no Model loaded |
+| When | a translation asks for it |
+| Then | the Model is loaded, and no Segment is sent before it reports the Model loaded |
+
+## `TL-069` Refusing a Model the Resident llama-server fails to load
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resident llama-server that reports the Model failed to load |
+| When | a translation asks for it |
+| Then | the translation fails without waiting for the load timeout |
+
+## `TL-070` Freeing the Model once the kept seconds pass
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resident llama-server with the Model loaded, to be kept for a second |
+| When | the translation ends |
+| Then | the Model is unloaded after that second, and the llama-server keeps running |
+
+## `TL-071` Keeping the Model for a translation that starts in time
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resident llama-server whose Model is kept for a while after a translation |
+| When | another translation asks for it before then |
+| Then | the Model is not unloaded under the new translation |
+
+## `TL-072` Freeing the Model at once on request
+
+The Model is freed when a transcription starts, so only one Model is loaded at a time.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resident llama-server with the Model kept loaded |
+| When | the Model is asked to be freed |
+| Then | it is unloaded before the request returns |
+
+## `TL-073` Starting the Resident llama-server again after it exited
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resident llama-server whose process has exited |
+| When | a translation asks for it |
+| Then | a new one is started |

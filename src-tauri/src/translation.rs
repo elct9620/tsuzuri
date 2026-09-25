@@ -23,10 +23,12 @@ mod fake_llama;
 mod llama;
 mod prompt;
 mod repair;
+mod resident;
 mod settings;
 mod speaker_labels;
 
 use llama::TranslationModel;
+pub use resident::ResidentLlama;
 pub use settings::TranslationSettings;
 use speaker_labels::LabelledText;
 
@@ -68,12 +70,26 @@ pub struct Translation {
     phases: Vec<PhaseTiming>,
 }
 
+/// Which llama-server a translation runs on.
+pub enum LlamaServer<'a> {
+    /// One started for this translation alone, stopped when it ends.
+    Job,
+    /// The Resident llama-server, freeing its Model `keep` after the translation ends.
+    Router {
+        resident: &'a ResidentLlama,
+        preset_dir: &'a Path,
+        keep: Duration,
+    },
+}
+
+#[allow(clippy::too_many_arguments)]
 pub async fn run_translate(
     ports: &(impl Progress + Steps),
     project: &CurrentProject,
     llama: &Path,
     model_settings: &ModelSettings,
     plan: &TranslationPlan,
+    server: &LlamaServer<'_>,
     ready_timeout: Duration,
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
@@ -102,12 +118,68 @@ pub async fn run_translate(
         summary_word_limit: plan.options.summary_word_limit,
         glossary_terms: &glossary_terms,
     };
-    let port = llama::free_port()?;
-    let args = llama::server_args(model, port);
-
     enter(ports, &mut phases, "load");
+    let on_batch = batch_display(ports, project, &source, plan.target);
+    let result = match server {
+        LlamaServer::Job => {
+            translate_on_job_server(
+                ports,
+                llama,
+                model,
+                ready_timeout,
+                &job,
+                &mut phases,
+                on_batch,
+            )
+            .await
+        }
+        LlamaServer::Router {
+            resident,
+            preset_dir,
+            keep,
+        } => {
+            let result = match resident
+                .load_model(ports, llama, model, preset_dir, ready_timeout)
+                .await
+            {
+                Ok(base_url) => {
+                    translate_once_ready(
+                        ports,
+                        &base_url,
+                        ready_timeout,
+                        || false,
+                        &job,
+                        &mut phases,
+                        on_batch,
+                    )
+                    .await
+                }
+                Err(failure) => Err(failure),
+            };
+            resident.release_after(*keep).await;
+            result
+        }
+    };
+    project.write_translations(&source, plan.target, result?)?;
+    ports.announce_project();
+    Ok(Translation {
+        phases: phases.finish(),
+    })
+}
+
+/// Starts llama-server with `model` for this translation alone, translates once it is ready, and stops it.
+async fn translate_on_job_server(
+    ports: &(impl Progress + Steps),
+    llama: &Path,
+    model: &Path,
+    ready_timeout: Duration,
+    job: &TranslationJob<'_>,
+    phases: &mut Phases,
+    on_batch: impl Fn(&[Segment]),
+) -> Result<Vec<Segment>, Failure> {
+    let port = llama::free_port()?;
     let (mut events, pid) = ports
-        .start(llama, &args)
+        .start(llama, &llama::server_args(model, port))
         .map_err(|detail| Failure::StepFailed {
             step: "translate".to_string(),
             detail,
@@ -123,24 +195,18 @@ pub async fn run_translate(
             }
         }
     });
-
-    let base_url = format!("http://127.0.0.1:{port}");
     let result = translate_once_ready(
         ports,
-        &base_url,
+        &format!("http://127.0.0.1:{port}"),
         ready_timeout,
         || exited.load(Ordering::SeqCst),
-        &job,
-        &mut phases,
-        batch_display(ports, project, &source, plan.target),
+        job,
+        phases,
+        on_batch,
     )
     .await;
     ports.stop(pid);
-    project.write_translations(&source, plan.target, result?)?;
-    ports.announce_project();
-    Ok(Translation {
-        phases: phases.finish(),
-    })
+    result
 }
 
 /// Shows the Segments translated into `target` so far on the Resource `source` was taken from,
@@ -1416,6 +1482,7 @@ mod tests {
             Path::new("/bin/sleep"),
             &ModelSettings::default(),
             &plan_for(Language::Japanese),
+            &LlamaServer::Job,
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -1447,6 +1514,7 @@ mod tests {
             Path::new("/bin/sleep"),
             &settings,
             &plan_for(Language::English),
+            &LlamaServer::Job,
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -1486,6 +1554,7 @@ mod tests {
             &llama,
             &settings,
             &plan_for(Language::Japanese),
+            &LlamaServer::Job,
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         )
@@ -1546,6 +1615,7 @@ mod tests {
             &llama,
             &settings,
             &plan,
+            &LlamaServer::Job,
             Duration::from_secs(1),
             Phases::start("translate", "prepare"),
         );
@@ -1590,18 +1660,15 @@ mod tests {
         assert_eq!(names, vec!["load", "detect", "translate"]);
     }
 
-    /// Runs a real llama-server:
-    /// `TSUZURI_E2E_LLAMA=<llama-server> TSUZURI_E2E_TRANSLATION_MODEL=<gguf> cargo test -- --ignored`
-    #[tokio::test]
-    #[ignore = "needs llama-server and a translation Model"]
-    async fn translates_with_a_real_llama_server() {
+    /// Translates three Segments into English on a real llama-server run as `server`, printing each translation.
+    async fn translate_on_a_real_llama_server(name: &str, server: &LlamaServer<'_>) {
         let llama = PathBuf::from(std::env::var("TSUZURI_E2E_LLAMA").unwrap());
         let mut settings = ModelSettings::default();
         settings.choose(
             ModelSlot::Translation,
             PathBuf::from(std::env::var("TSUZURI_E2E_TRANSLATION_MODEL").unwrap()),
         );
-        let dir = TempDir::new("tl-e2e");
+        let dir = TempDir::new(name);
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         let mut project = project_of(vec![
@@ -1610,13 +1677,20 @@ mod tests {
             segment(3_000, 5_000, "但我不想出門"),
         ]);
         project.directory = dir.path().to_path_buf();
+        std::fs::write(
+            dir.file("lecture.srt"),
+            "1\n00:00:00,000 --> 00:00:01,000\nco: 大家好\n\n2\n00:00:01,000 --> 00:00:03,000\n今天天氣很好\n\n3\n00:00:03,000 --> 00:00:05,000\n但我不想出門\n",
+        )
+        .unwrap();
+        project.resources[0].subtitle = Some(dir.file("lecture.srt"));
         app.state::<CurrentProject>().replace(project);
+        let ports = AppPorts {
+            app: app.handle(),
+            processes: &processes,
+        };
 
         let translated_segments = run_translate(
-            &AppPorts {
-                app: app.handle(),
-                processes: &processes,
-            },
+            &ports,
             &app.state::<CurrentProject>(),
             &llama,
             &settings,
@@ -1628,11 +1702,13 @@ mod tests {
                 },
                 ..plan_for(Language::English)
             },
+            server,
             llama::READY_TIMEOUT,
             Phases::start("translate", "prepare"),
         )
         .await
         .unwrap();
+        processes.kill_all();
 
         let segments = app
             .state::<CurrentProject>()
@@ -1649,5 +1725,29 @@ mod tests {
         }
         println!("phases {:?}", translated_segments.phases);
         assert!(segments.iter().all(|segment| segment.translation.is_some()));
+    }
+
+    /// Runs a real llama-server:
+    /// `TSUZURI_E2E_LLAMA=<llama-server> TSUZURI_E2E_TRANSLATION_MODEL=<gguf> cargo test -- --ignored`
+    #[tokio::test]
+    #[ignore = "needs llama-server and a translation Model"]
+    async fn translates_with_a_real_llama_server() {
+        translate_on_a_real_llama_server("tl-e2e", &LlamaServer::Job).await;
+    }
+
+    /// Runs a real llama-server as the Resident llama-server, with the same variables.
+    #[tokio::test]
+    #[ignore = "needs llama-server and a translation Model"]
+    async fn translates_with_a_real_resident_llama_server() {
+        let dir = TempDir::new("tl-e2e-resident-preset");
+        translate_on_a_real_llama_server(
+            "tl-e2e-resident",
+            &LlamaServer::Router {
+                resident: &ResidentLlama::default(),
+                preset_dir: dir.path(),
+                keep: Duration::ZERO,
+            },
+        )
+        .await;
     }
 }

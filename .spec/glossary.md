@@ -98,6 +98,10 @@ Taking the first Bundled Variant, in the Build Manifest's order for the platform
 
 A weights file an engine loads, always passed by absolute path. The user points at a file already on disk; Tsuzuri never downloads Models.
 
+### Resident llama-server
+
+The llama-server kept running between translations in router mode, started without a Model: a translation loads the translation Model into it, and it frees the Model again a chosen number of seconds after the translation ends, or at once when a transcription starts, so only one Model is loaded at a time.
+
 ### Batch
 
 The Segments one request asks the Model to translate, each sent with its position as an index so every translation in the answer is matched back by index rather than by order.

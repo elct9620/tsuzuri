@@ -72,7 +72,7 @@ impl Processes {
     pub fn kill(&self, pid: u32) {
         let running = self.running.lock().unwrap().remove(&pid);
         if let Some(running) = running {
-            let _ = running.child.kill();
+            end(running);
         }
         self.write_record();
     }
@@ -86,7 +86,7 @@ impl Processes {
             .map(|(_, running)| running)
             .collect();
         for running in running {
-            let _ = running.child.kill();
+            end(running);
         }
         self.write_record();
     }
@@ -179,6 +179,14 @@ impl<R: Runtime> Steps for AppPorts<'_, R> {
     fn stop(&self, pid: u32) {
         self.processes.kill(pid);
     }
+}
+
+/// Ends a running process with the processes it started: a llama-server router starts one per Model,
+/// and Windows ends only the process it is told to.
+fn end(running: RunningProcess) {
+    #[cfg(windows)]
+    kill_tree(running.child.pid());
+    let _ = running.child.kill();
 }
 
 /// The file name of an executable without its directory, as both `ps` and `tasklist` report it.

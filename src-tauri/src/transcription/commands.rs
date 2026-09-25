@@ -9,6 +9,7 @@ use crate::progress::Progress;
 use crate::project::CurrentProject;
 use crate::timing::Phases;
 use crate::toolchain::{self, settings};
+use crate::translation::ResidentLlama;
 
 #[tauri::command]
 pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription, Failure> {
@@ -17,6 +18,8 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
         .transcription_target(overwrite)?;
     let phases = Phases::start("transcribe", "prepare");
     app.report("prepare", None);
+    // Only one Model is loaded at a time, so the translation Model makes way for whisper's.
+    app.state::<ResidentLlama>().release().await;
     let [ffmpeg, whisper] =
         toolchain::find_ready_executables(settings::resolver(&app)?, ["ffmpeg", "whisper"]).await?;
     let tools = Tools { ffmpeg, whisper };

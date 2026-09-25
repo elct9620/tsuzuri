@@ -22,7 +22,7 @@ impl Processes {
 
 ## `Processes::kill_all`
 
-Kill every process still running; called when the app exits.
+Kill every process still running, with the processes each of them started; called when the app exits.
 
 | Attribute | Value |
 | --- | --- |

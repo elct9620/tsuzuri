@@ -24,6 +24,7 @@ use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 use logs::{LogDirInUse, LogSettings};
 use processes::Processes;
 use project::CurrentProject;
+use translation::ResidentLlama;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -63,6 +64,8 @@ pub fn run() {
             processes::reap_strays(&record);
             app.manage(Processes::new(record));
             app.manage(CurrentProject::default());
+            app.manage(ResidentLlama::default());
+            translation::commands::start_resident_llama(app.handle());
             window::size_first_window(app)?;
             Ok(())
         })

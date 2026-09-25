@@ -24,9 +24,11 @@ use crate::language::{Language, LanguagePair};
 pub const READY_TIMEOUT: Duration = Duration::from_secs(180);
 const HEALTH_POLL: Duration = Duration::from_millis(500);
 /// A Batch and its reference lines fit in a small context, which keeps the KV cache inside 4 GB of VRAM.
-const CONTEXT_SIZE: &str = "4096";
+pub(super) const CONTEXT_SIZE: &str = "4096";
 /// Subtitles need no reasoning, and a thinking Model spends most of each request on it.
-const CHAT_TEMPLATE_KWARGS: &str = r#"{"enable_thinking":false}"#;
+pub(super) const CHAT_TEMPLATE_KWARGS: &str = r#"{"enable_thinking":false}"#;
+/// The name every request asks for, which the Resident llama-server's preset gives the translation Model.
+pub(super) const MODEL_NAME: &str = "tsuzuri";
 
 /// How llama-server is started for one translation: the Model, on a local `port`, answering no one else.
 pub fn server_args(model: &Path, port: u16) -> Vec<String> {
@@ -202,7 +204,7 @@ impl TranslationModel {
         schema: serde_json::Value,
     ) -> Result<T, AnswerError> {
         let request = CreateChatCompletionRequestArgs::default()
-            .model("tsuzuri")
+            .model(MODEL_NAME)
             .messages([
                 ChatCompletionRequestSystemMessage::from(system).into(),
                 ChatCompletionRequestUserMessage::from(user).into(),

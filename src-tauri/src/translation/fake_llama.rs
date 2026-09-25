@@ -15,6 +15,8 @@ type Reply<T> = Box<dyn Fn(T) -> Response + Send + Sync>;
 pub struct Replies {
     /// `/health` answers as not ready this many times first.
     pub loading_checks: usize,
+    /// As a router, whether loading the Model fails.
+    pub has_load_failure: bool,
     /// Answers the n-th translation request, counting from 0.
     pub translation: Reply<(usize, Lines)>,
     /// Answers each window looked at for Split Sentences.
@@ -30,6 +32,7 @@ impl Default for Replies {
     fn default() -> Replies {
         Replies {
             loading_checks: 0,
+            has_load_failure: false,
             translation: Box::new(|(_, lines)| translations(echo_lines(lines))),
             split_sentences: Box::new(|_| completion(&json!({"clusters": []}).to_string())),
             summary: Box::new(numbered_summary),
@@ -63,6 +66,7 @@ impl FakeLlama {
             Arc::clone(&review_requests),
         );
         let health_checks = Mutex::new(0);
+        let model = Mutex::new(("unloaded", false));
         let translation_requests = AtomicUsize::new(0);
         let server = FakeHttp::serve(move |request| {
             if request.path == "/health" {
@@ -77,6 +81,28 @@ impl FakeLlama {
                     status: if ready { 200 } else { 503 },
                     body: Vec::new(),
                 };
+            }
+            if request.path.starts_with("/models") {
+                let mut model = model.lock().unwrap();
+                match request.path.as_str() {
+                    "/models/load" => {
+                        log_sink.lock().unwrap().push("load".to_string());
+                        *model = if replies.has_load_failure {
+                            ("unloaded", true)
+                        } else {
+                            ("loaded", false)
+                        };
+                    }
+                    "/models/unload" => {
+                        log_sink.lock().unwrap().push("unload".to_string());
+                        *model = ("unloaded", false);
+                    }
+                    _ => {}
+                }
+                return json_response(&json!({"data": [{
+                    "id": "tsuzuri",
+                    "status": {"value": model.0, "failed": model.1},
+                }]}));
             }
             log_sink.lock().unwrap().push("chat".to_string());
             let body: serde_json::Value = serde_json::from_slice(&request.body).unwrap();
@@ -277,4 +303,12 @@ pub fn batch_lines(body: &serde_json::Value) -> Lines {
             )
         })
         .collect()
+}
+
+/// A 200 response carrying `value` as JSON.
+fn json_response(value: &serde_json::Value) -> Response {
+    Response {
+        status: 200,
+        body: value.to_string().into_bytes(),
+    }
 }

@@ -6,6 +6,7 @@ import {
   type UnlistenFn,
 } from "../backend/progress";
 import { t } from "../i18n";
+import { iconElement } from "../ui/icons";
 import { notifyFailure } from "../ui/notification";
 import { phaseLabel, progressLine } from "../ui/progress";
 
@@ -17,6 +18,28 @@ const PHASES_BY_TASK: Record<TaskKind, string[]> = {
   transcribe: ["prepare", "convert", "load", "transcribe"],
   translate: ["prepare", "load", "detect", "translate"],
 };
+
+/**
+ * Marks a step by where it stands from the Phase running: before it done with a check, at it
+ * running with a spinner and `aria-current`, after it plain.
+ */
+function markStep(step: HTMLElement, fromRunning: number): void {
+  step.classList.toggle("step-primary", fromRunning <= 0);
+  step.querySelector(".step-icon")?.remove();
+  if (fromRunning === 0) step.setAttribute("aria-current", "step");
+  else step.removeAttribute("aria-current");
+  if (fromRunning > 0) return;
+  const icon = document.createElement("span");
+  icon.className = "step-icon";
+  if (fromRunning === 0) {
+    const spinner = document.createElement("span");
+    spinner.className = "loading loading-spinner loading-xs";
+    icon.append(spinner);
+  } else {
+    icon.append(iconElement("Check", "size-3"));
+  }
+  step.prepend(icon);
+}
 
 /** The running task's progress above the editor, which the task dialogs report to; how it ended is a Notification. */
 export default class ProgressController extends Controller {
@@ -72,7 +95,7 @@ export default class ProgressController extends Controller {
     notifyFailure(t(`${this.task}.failed`), error);
   }
 
-  /** Shows the Phase just reported, marking it and every Phase before it as reached. */
+  /** Shows the Phase just reported as the one running, every Phase before it as done. */
   private show(progress: PipelineProgress): void {
     if (!this.isRunning) return;
     this.statusTarget.textContent = progressLine(progress);
@@ -83,9 +106,7 @@ export default class ProgressController extends Controller {
     const reached = steps.findIndex(
       (step) => step.dataset.phase === progress.phase,
     );
-    steps.forEach((step, index) =>
-      step.classList.toggle("step-primary", index <= reached),
-    );
+    steps.forEach((step, index) => markStep(step, index - reached));
   }
 
   private end(): void {

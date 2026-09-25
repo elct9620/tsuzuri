@@ -261,6 +261,6 @@ A subtitle has no formatting, so what is pasted or typed into a text field stays
 | Step | Statement |
 | --- | --- |
 | Given | a text field where an input method is composing text |
-| When | Enter is pressed to pick a candidate |
+| When | Enter is pressed to pick a candidate, even where the platform ends the composition before the key arrives |
 | Then | no line break is typed and the input method keeps the key |
 

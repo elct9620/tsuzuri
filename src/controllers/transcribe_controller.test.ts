@@ -32,11 +32,18 @@ describe("TranscribeController", () => {
     document.querySelector<T>(`[data-transcribe-target="${name}"]`)!;
   const status = () =>
     document.querySelector('[data-progress-target="status"]')!.textContent;
-  /** Each listed Phase, with a mark when it has been reached. */
+  /** Each listed Phase, marked ✓ once done, ◌ while it runs, ○ before it. */
   const steps = () =>
     [...document.querySelectorAll('[data-progress-target="steps"] > li')].map(
-      (step) =>
-        `${step.classList.contains("step-primary") ? "●" : "○"}${step.textContent}`,
+      (step) => {
+        const mark =
+          step.getAttribute("aria-current") === "step"
+            ? "◌"
+            : step.classList.contains("step-primary")
+              ? "✓"
+              : "○";
+        return `${mark}${step.textContent}`;
+      },
     );
   const bar = () =>
     document.querySelector<HTMLProgressElement>(
@@ -146,7 +153,7 @@ describe("TranscribeController", () => {
     await emit("pipeline-progress", { phase: "load", percent: null });
     await settle();
 
-    expect(steps()).toEqual(["●準備元件", "●轉檔", "●載入模型", "○轉錄"]);
+    expect(steps()).toEqual(["✓準備元件", "✓轉檔", "◌載入模型", "○轉錄"]);
   });
 
   // @behavior TL-066

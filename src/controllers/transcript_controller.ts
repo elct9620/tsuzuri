@@ -146,6 +146,8 @@ function item(
   isTranslationShown: boolean,
 ): HTMLLIElement {
   const li = document.createElement("li");
+  li.dataset.action = "click->transcript#makeCurrent";
+  li.dataset.transcriptIndexParam = String(index);
   const selection = document.createElement("input");
   selection.type = "checkbox";
   selection.className = "selection checkbox checkbox-xs mt-1.5";
@@ -193,6 +195,10 @@ export default class TranscriptController extends Controller {
   private runningTask: TaskKind | null = null;
   /** The Project shown now, whose Primary Language and glossary Speakers a new Speaker is checked against. */
   private project: ProjectView | null = null;
+  /** The Current Segment's position, held by the webview alone. */
+  private currentIndex: number | null = null;
+  /** The position of the Segment the Preview is playing. */
+  private playingIndex: number | null = null;
 
   async connect(): Promise<void> {
     this.unlisten = await followProject((project) => this.show(project));
@@ -276,6 +282,50 @@ export default class TranscriptController extends Controller {
     }
   }
 
+  makeCurrent({ params }: { params: { index: number } }): void {
+    if (params.index === this.currentIndex) return;
+    this.markCurrent(params.index);
+    this.dispatch("current", { detail: { index: params.index } });
+  }
+
+  /** Marks the Segment made current elsewhere, bringing its row into view. */
+  showCurrent({ detail }: CustomEvent<{ index: number }>): void {
+    this.markCurrent(detail.index);
+    this.rowAt(detail.index)?.scrollIntoView({ block: "nearest" });
+  }
+
+  /** Marks the Segment the Preview is playing, keeping its row in view. */
+  markPlaying({ detail }: CustomEvent<{ index: number | null }>): void {
+    this.playingIndex = detail.index;
+    this.markRows();
+    if (detail.index !== null)
+      this.rowAt(detail.index)?.scrollIntoView({ block: "nearest" });
+  }
+
+  private markCurrent(index: number | null): void {
+    this.currentIndex = index;
+    this.markRows();
+  }
+
+  private markRows(): void {
+    this.segmentRows().forEach((row, index) => {
+      row.toggleAttribute("aria-current", index === this.currentIndex);
+      row.toggleAttribute("data-playing", index === this.playingIndex);
+    });
+  }
+
+  private segmentRows(): HTMLLIElement[] {
+    return [
+      ...this.listTarget.querySelectorAll<HTMLLIElement>(
+        ":scope > li:not([data-ghost]):not([data-placeholder])",
+      ),
+    ];
+  }
+
+  private rowAt(index: number): HTMLLIElement | undefined {
+    return this.segmentRows()[index];
+  }
+
   async showTranslation(): Promise<void> {
     await showTranslation(this.translationLanguageTarget.value || null);
   }
@@ -297,6 +347,8 @@ export default class TranscriptController extends Controller {
   }
 
   private show(project: ProjectView | null): void {
+    if (project?.current_resource !== this.project?.current_resource)
+      this.markCurrent(null);
     this.project = project;
     const segments = project?.segments ?? [];
     const isTranslationShown = (project?.shown_translation ?? null) !== null;
@@ -366,6 +418,7 @@ export default class TranscriptController extends Controller {
       });
     }
     this.showPendingTranslations();
+    this.markRows();
   }
 
   /** Disables each field whose subtitle the Mode running on the Current Resource writes. */

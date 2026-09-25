@@ -31,6 +31,7 @@ export default class PreviewController extends Controller {
 
   private media: string | null = null;
   private segments: Segment[] = [];
+  private playingIndex: number | null = null;
   private unlisten?: UnlistenFn;
 
   async connect(): Promise<void> {
@@ -61,10 +62,11 @@ export default class PreviewController extends Controller {
   follow(): void {
     this.showTime();
     const at = this.mediaTarget.currentTime * 1000;
-    const playing = this.segments.find(
+    const index = this.segments.findIndex(
       (segment) => segment.start_ms <= at && at < segment.end_ms,
     );
-    this.captionTarget.textContent = playing?.text ?? "";
+    this.captionTarget.textContent = this.segments[index]?.text ?? "";
+    this.markPlaying(index === -1 ? null : index);
   }
 
   showPlaying(): void {
@@ -81,6 +83,13 @@ export default class PreviewController extends Controller {
     this.hintTarget.hidden = false;
   }
 
+  /** Tells the editor which Segment is being played, each time that changes. */
+  private markPlaying(index: number | null): void {
+    if (index === this.playingIndex) return;
+    this.playingIndex = index;
+    this.dispatch("playing", { detail: { index } });
+  }
+
   private show(project: ProjectView | null): void {
     this.segments = project?.segments ?? [];
     const media = project?.media ?? null;
@@ -91,6 +100,7 @@ export default class PreviewController extends Controller {
     this.mediaTarget.hidden = false;
     this.hintTarget.hidden = true;
     this.captionTarget.textContent = "";
+    this.markPlaying(null);
     if (media === null) this.mediaTarget.removeAttribute("src");
     else this.mediaTarget.src = convertFileSrc(media);
   }

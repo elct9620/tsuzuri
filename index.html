@@ -17,7 +17,7 @@
       class="flex h-dvh flex-col"
       data-controller="project transcript segment-changes dialog comparison"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->comparison#mark versions:compare-with->comparison#compareWith"
+      data-action="progress:task->transcript#followTask timeline:current->transcript#showCurrent preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark versions:compare-with->comparison#compareWith"
     >
       <section class="hero flex-1" data-project-target="start">
         <div class="hero-content flex-col text-center">
@@ -382,6 +382,7 @@
           <div
             class="grid grid-cols-[auto_1fr] content-start border-base-300 has-[>:not([hidden])]:border-b"
             data-controller="preview timeline"
+            data-action="transcript:current@window->timeline#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent"
           >
             <div
               class="relative row-span-2 aspect-video h-45 bg-black"
@@ -470,7 +471,7 @@
               ></progress>
             </div>
             <div
-              class="col-span-2 h-19 w-full"
+              class="col-span-2 h-19 w-full [--segment-even:color-mix(in_oklab,var(--color-primary)_22%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-secondary)_22%,transparent)] [--segment-even-current:color-mix(in_oklab,var(--color-primary)_55%,transparent)] [--segment-odd-current:color-mix(in_oklab,var(--color-secondary)_55%,transparent)]"
               data-timeline-target="waveform"
               data-action="wheel->timeline#scroll:prevent"
               hidden
@@ -543,7 +544,7 @@
               </form>
             </dialog>
             <ol
-              class="list text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row"
+              class="list text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-base-200 [&>li[data-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
               data-transcript-target="list"
               data-comparison-target="list"
             ></ol>

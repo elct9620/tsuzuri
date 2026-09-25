@@ -15,7 +15,9 @@ import PreviewController from "./controllers/preview_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
-import TimelineController from "./controllers/timeline_controller";
+import TimelineController, {
+  controlOption,
+} from "./controllers/timeline_controller";
 import TooltipController from "./controllers/tooltip_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
@@ -34,6 +36,7 @@ async function start(): Promise<void> {
   showIcons();
   const application = Application.start();
   application.registerActionOption("composing", composingOption);
+  application.registerActionOption("control", controlOption);
   application.registerActionOption("typing", typingOption);
   application.register("comparison", ComparisonController);
   application.register("components", ComponentsController);

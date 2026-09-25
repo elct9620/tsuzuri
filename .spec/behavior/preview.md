@@ -9,6 +9,7 @@ Hearing and watching the Current Resource's media above the editor while its sub
 - `src-tauri/src/waveform/*.rs`
 - `src/controllers/preview_controller.test.ts`
 - `src/controllers/timeline_controller.test.ts`
+- `src/controllers/current_segment.test.ts`
 
 ## `PV-001` Letting the webview read a media file of the Project
 
@@ -201,3 +202,67 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | a Current Resource with a media file and three Segments |
 | When | the Project is shown |
 | Then | the first and third regions share one colour and the second has another |
+
+## `PV-025` Making a Segment current from the editor
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments |
+| When | the second Segment's row is clicked |
+| Then | that row alone is marked as the Current Segment |
+
+## `PV-026` Making a Segment current from the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments |
+| When | the second Segment's region is clicked |
+| Then | that Segment's row alone is marked as the Current Segment |
+
+## `PV-027` Showing the Current Segment on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments |
+| When | the second Segment's row is clicked |
+| Then | its region is coloured more strongly than the other |
+
+## `PV-028` Playing the Current Segment with Space
+
+| Step | Statement |
+| --- | --- |
+| Given | a paused Current Resource whose Current Segment runs from 1 to 2 s |
+| When | Space is pressed outside a field or button |
+| Then | the media plays from 1 s |
+
+## `PV-029` Stopping at the end of the Current Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | the Current Segment from 1 to 2 s playing after Space |
+| When | the media reaches 2 s |
+| Then | the media pauses |
+
+## `PV-030` Stopping the media with Space
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media is playing |
+| When | Space is pressed outside a field or button |
+| Then | the media pauses |
+
+## `PV-031` Leaving Space to the field being typed in
+
+| Step | Statement |
+| --- | --- |
+| Given | a paused Current Resource with a Current Segment |
+| When | Space is pressed in a Segment's text field |
+| Then | the media stays paused |
+
+## `PV-032` Marking the Segment being played in the editor
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s |
+| When | the media plays to 1.5 s |
+| Then | the second Segment's row alone is marked as playing |

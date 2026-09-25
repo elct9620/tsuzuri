@@ -58,6 +58,10 @@ What the user sets for one Project in the settings, beside its Primary Language:
 
 The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. It appears only for a Resource with a media file.
 
+### Current Segment
+
+The one Segment the user last clicked in the editor or on the timeline, shown with its own background; Space plays it alone. It is the webview's to hold and changes nothing in the Project, unlike the Segments checked to merge or shift.
+
 ### Waveform
 
 How loud the Current Resource's media is over time, as one Peak for every 10 ms. Rust takes it from the media with ffmpeg, so the webview never decodes the whole audio.

@@ -2,9 +2,10 @@
 import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView, Segment } from "../backend/project";
 import type { Waveform } from "../backend/waveform";
+import { layOutTimeline } from "../test_layout";
 import { projectOf } from "../test_project";
 import TimelineController, { regionColor } from "./timeline_controller";
 
@@ -40,27 +41,10 @@ describe("TimelineController", () => {
     document.querySelector<HTMLElement>(`[data-action="${action}"]`)!.click();
   }
 
-  /** happy-dom lays nothing out; the timeline shows only regions inside its width, so give every element one. */
-  const LAID_OUT_WIDTH = 50;
-  /** happy-dom has no canvas; painting the Waveform onto this does nothing. */
-  const PAINTLESS_CONTEXT = new Proxy(
-    {},
-    { get: () => () => undefined, set: () => true },
-  ) as unknown as RenderingContext;
-  let clientWidthDescriptor: PropertyDescriptor | undefined;
+  let takeLayoutBack: () => void;
 
   beforeEach(async () => {
-    clientWidthDescriptor = Object.getOwnPropertyDescriptor(
-      HTMLElement.prototype,
-      "clientWidth",
-    );
-    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
-      configurable: true,
-      get: () => LAID_OUT_WIDTH,
-    });
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
-      PAINTLESS_CONTEXT,
-    );
+    takeLayoutBack = layOutTimeline();
     project = null;
     waveform = {
       media: "/talks/ep01.mp4",
@@ -91,13 +75,7 @@ describe("TimelineController", () => {
   afterEach(() => {
     application.stop();
     clearMocks();
-    if (clientWidthDescriptor)
-      Object.defineProperty(
-        HTMLElement.prototype,
-        "clientWidth",
-        clientWidthDescriptor,
-      );
-    vi.restoreAllMocks();
+    takeLayoutBack();
   });
 
   // @behavior PV-017
@@ -136,7 +114,7 @@ describe("TimelineController", () => {
 
   // @behavior PV-024
   it("colours neighbouring Segments differently", () => {
-    const colors = [0, 1, 2].map(regionColor);
+    const colors = [0, 1, 2].map((index) => regionColor(index));
 
     expect([colors[0] === colors[2], colors[0] === colors[1]]).toEqual([
       true,

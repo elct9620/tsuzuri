@@ -331,7 +331,18 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `undo` | 全頁的復原與重做：欄位裡交給欄位自己，其餘交給 Rust |
 | `field` | 每個編輯欄位一個：接上 `editor/`，離開時以事件交出新的文字 |
 
-畫面配置見 `docs/ui.md`。`progress` 以 `progress:task` 事件、`project` 以 `project:select` 事件告訴字幕編輯要顯示 skeleton；字幕編輯每次畫好段落後以 `transcript:shown` 讓 `comparison` 重新標記。`comparison` 以 outlet 開啟版本 dialog，`versions` 以 `versions:compare-with` 交回設為對照的備份。`preview` 與 `timeline` 掛在同一個元素，各以自己的 target 共用同一個 `<video>`。
+畫面配置見 `docs/ui.md`。controller 之間以事件或 outlet 往來，目前段落只由 webview 持有。`preview` 與 `timeline` 掛在同一個元素，各以自己的 target 共用同一個 `<video>`。
+
+| 事件或 outlet | 送出者 | 接收者與用途 |
+|---|---|---|
+| `progress:task` | `progress` | 字幕編輯顯示 skeleton |
+| `project:select` | `project` | 字幕編輯顯示 skeleton |
+| `transcript:shown` | 字幕編輯 | `comparison` 重新標記 |
+| `versions` outlet | `comparison` | 開啟版本 dialog |
+| `versions:compare-with` | `versions` | `comparison` 換對照 |
+| `transcript:current` | 字幕編輯 | 時間軸標出目前段落 |
+| `timeline:current` | 時間軸 | 字幕編輯標出目前段落 |
+| `preview:playing` | `preview` | 字幕編輯標出播放中 |
 
 ### 4.3 backend
 

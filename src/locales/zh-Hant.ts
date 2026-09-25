@@ -114,6 +114,9 @@ const zhHant: typeof en = {
   },
   versions: {
     open: "版本",
+    onlyDifferences: "只看差異",
+    previousDifference: "上一個差異",
+    nextDifference: "下一個差異",
     title: "版本",
     subtitle: "字幕",
     original: "原文",

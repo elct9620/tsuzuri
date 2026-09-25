@@ -332,6 +332,31 @@
                         data-versions-target="right"
                         data-action="change->versions#showComparison"
                       ></select>
+                      <label class="ml-auto flex items-center gap-1 text-sm">
+                        <input
+                          type="checkbox"
+                          class="checkbox checkbox-sm"
+                          data-versions-target="onlyDifferences"
+                          data-action="change->versions#showOnlyDifferences"
+                        />
+                        <span data-i18n="versions.onlyDifferences"></span>
+                      </label>
+                      <button
+                        type="button"
+                        class="btn btn-sm"
+                        data-action="versions#moveToPreviousDifference"
+                        data-i18n-label="versions.previousDifference"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm"
+                        data-action="versions#moveToNextDifference"
+                        data-i18n-label="versions.nextDifference"
+                      >
+                        ↓
+                      </button>
                     </div>
                     <div class="max-h-96 overflow-y-auto">
                       <table class="table table-sm">

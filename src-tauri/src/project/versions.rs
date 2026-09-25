@@ -40,6 +40,24 @@ pub struct ComparedRow {
     pub right: Vec<ComparedCue>,
     pub is_text_changed: bool,
     pub is_time_changed: bool,
+    /// For a Pair whose text changed, its text character by character: what both keep, what
+    /// only the earlier Version has, and what only the later one has.
+    pub text_spans: Vec<TextSpan>,
+}
+
+/// A run of characters of a Pair's text, and which Version has it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TextSpan {
+    pub kind: SpanKind,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SpanKind {
+    Common,
+    Removal,
+    Addition,
 }
 
 /// The cues of `left` and `right` lined up as Comparison Rows, in time order.
@@ -197,13 +215,59 @@ fn row_of(left: Vec<ComparedCue>, right: Vec<ComparedCue>) -> ComparedRow {
         _ => RowKind::Merge,
     };
     let is_paired = !left.is_empty() && !right.is_empty();
+    let is_text_changed = is_paired && is_text_different(kind, &left, &right);
+    let text_spans = match (kind, left.as_slice(), right.as_slice()) {
+        (RowKind::Pair, [before], [after]) if is_text_changed => {
+            text_spans(&before.text, &after.text)
+        }
+        _ => Vec::new(),
+    };
     ComparedRow {
         kind,
-        is_text_changed: is_paired && is_text_different(kind, &left, &right),
+        is_text_changed,
         is_time_changed: is_paired && span(&left) != span(&right),
         left,
         right,
+        text_spans,
     }
+}
+
+/// `before` and `after` character by character, along their longest common subsequence.
+fn text_spans(before: &str, after: &str) -> Vec<TextSpan> {
+    let before: Vec<char> = before.chars().collect();
+    let after: Vec<char> = after.chars().collect();
+    // lengths[i][j]: the longest common subsequence of before[i..] and after[j..].
+    let mut lengths = vec![vec![0usize; after.len() + 1]; before.len() + 1];
+    for i in (0..before.len()).rev() {
+        for j in (0..after.len()).rev() {
+            lengths[i][j] = match before[i] == after[j] {
+                true => lengths[i + 1][j + 1] + 1,
+                false => lengths[i + 1][j].max(lengths[i][j + 1]),
+            };
+        }
+    }
+    let mut spans: Vec<TextSpan> = Vec::new();
+    let mut push = |kind: SpanKind, character: char| match spans.last_mut() {
+        Some(last) if last.kind == kind => last.text.push(character),
+        _ => spans.push(TextSpan {
+            kind,
+            text: character.to_string(),
+        }),
+    };
+    let (mut i, mut j) = (0, 0);
+    while i < before.len() || j < after.len() {
+        if i < before.len() && j < after.len() && before[i] == after[j] {
+            push(SpanKind::Common, before[i]);
+            (i, j) = (i + 1, j + 1);
+        } else if i < before.len() && (j == after.len() || lengths[i + 1][j] >= lengths[i][j + 1]) {
+            push(SpanKind::Removal, before[i]);
+            i += 1;
+        } else {
+            push(SpanKind::Addition, after[j]);
+            j += 1;
+        }
+    }
+    spans
 }
 
 /// Whether the texts of the two sides differ. A Split or Merge breaks or joins lines, so there
@@ -326,6 +390,20 @@ mod tests {
                     right: vec![cue(0, 1_000, "您好")],
                     is_text_changed: true,
                     is_time_changed: false,
+                    text_spans: vec![
+                        TextSpan {
+                            kind: SpanKind::Removal,
+                            text: "你".to_string(),
+                        },
+                        TextSpan {
+                            kind: SpanKind::Addition,
+                            text: "您".to_string(),
+                        },
+                        TextSpan {
+                            kind: SpanKind::Common,
+                            text: "好".to_string(),
+                        },
+                    ],
                 },
                 ComparedRow {
                     kind: RowKind::Removal,
@@ -333,6 +411,7 @@ mod tests {
                     right: vec![],
                     is_text_changed: false,
                     is_time_changed: false,
+                    text_spans: vec![],
                 },
                 ComparedRow {
                     kind: RowKind::Addition,
@@ -340,6 +419,7 @@ mod tests {
                     right: vec![cue(2_000, 3_000, "再見")],
                     is_text_changed: false,
                     is_time_changed: false,
+                    text_spans: vec![],
                 },
             ]
         );
@@ -401,5 +481,28 @@ mod tests {
         );
 
         assert_eq!(kinds_and_changes(&rows), [(RowKind::Pair, false, true)]);
+    }
+
+    // @behavior VR-031
+    #[test]
+    fn marks_the_characters_that_changed_within_a_cue() {
+        let rows = compare(
+            &transcript(&[(0, 1_000, "資料不上傳")]),
+            &transcript(&[(0, 1_000, "資料不會上傳")]),
+        );
+
+        let spans: Vec<(SpanKind, &str)> = rows[0]
+            .text_spans
+            .iter()
+            .map(|span| (span.kind, span.text.as_str()))
+            .collect();
+        assert_eq!(
+            spans,
+            [
+                (SpanKind::Common, "資料不"),
+                (SpanKind::Addition, "會"),
+                (SpanKind::Common, "上傳")
+            ]
+        );
     }
 }

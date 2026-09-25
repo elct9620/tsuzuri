@@ -114,6 +114,9 @@ const en = {
   },
   versions: {
     open: "Versions",
+    onlyDifferences: "Only differences",
+    previousDifference: "Previous difference",
+    nextDifference: "Next difference",
     title: "Versions",
     subtitle: "Subtitle",
     original: "Original",

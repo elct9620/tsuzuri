@@ -37,6 +37,7 @@ describe("ComparisonController", () => {
     is_text_changed: left.text !== right.text,
     is_time_changed:
       left.start_ms !== right.start_ms || left.end_ms !== right.end_ms,
+    text_spans: [],
   });
   const marks = () =>
     [...document.querySelectorAll("ol > li:not([data-ghost])")].map((item) =>
@@ -82,6 +83,7 @@ describe("ComparisonController", () => {
         right: [],
         is_text_changed: false,
         is_time_changed: false,
+        text_spans: [],
       },
       {
         kind: "addition",
@@ -89,6 +91,7 @@ describe("ComparisonController", () => {
         right: [cue(2000, 3000, "再見")],
         is_text_changed: false,
         is_time_changed: false,
+        text_spans: [],
       },
     ];
     document.body.innerHTML = `
@@ -148,6 +151,7 @@ describe("ComparisonController", () => {
         right: [cue(2000, 3000, "再見")],
         is_text_changed: false,
         is_time_changed: false,
+        text_spans: [],
       },
     ];
     const timesChanged = marks();

@@ -207,6 +207,14 @@ export interface ComparedRow {
   right: ComparedCue[];
   is_text_changed: boolean;
   is_time_changed: boolean;
+  /** A Pair's changed text character by character; empty otherwise. */
+  text_spans: TextSpan[];
+}
+
+/** A run of characters of a Pair's text: in both Versions, only the earlier, or only the later. */
+export interface TextSpan {
+  kind: "common" | "removal" | "addition";
+  text: string;
 }
 
 export function subtitleVersions(): Promise<SubtitleVersions[]> {

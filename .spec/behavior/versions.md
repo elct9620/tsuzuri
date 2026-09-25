@@ -251,3 +251,51 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | When | the `en` translation is shown |
 | Then | that Output is offered to compare |
 
+## `VR-031` Marking the characters that changed within a cue
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `資料不上傳` from 0 to 1 second, and the subtitle now `資料不會上傳` |
+| When | the two are compared |
+| Then | the Pair's text is `資料不` kept, `會` added, and `上傳` kept |
+
+## `VR-032` Saying which kind each Backup is
+
+| Step | Statement |
+| --- | --- |
+| Given | the Versions dialog of a subtitle with an Output and an Overwrite |
+| When | its Backups are listed |
+| Then | each is labelled as an Output or as kept before an overwrite |
+
+## `VR-033` Showing only the rows that differ
+
+| Step | Statement |
+| --- | --- |
+| Given | a comparison in the Versions dialog of one row that differs and one that does not |
+| When | only the differences are asked for |
+| Then | only the row that differs is shown |
+
+## `VR-034` Moving to the next difference
+
+| Step | Statement |
+| --- | --- |
+| Given | a comparison in the Versions dialog whose second row is the first to differ |
+| When | the next difference is asked for |
+| Then | the second row is the one marked current |
+
+## `VR-035` Taking back a row from the Versions dialog
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup compared with the subtitle now in the Versions dialog |
+| When | a row that differs is taken back |
+| Then | the Project is asked to take back that whole row of that Backup |
+
+## `VR-036` Showing the characters that changed
+
+| Step | Statement |
+| --- | --- |
+| Given | a comparison whose Pair adds `會` to `資料不上傳` |
+| When | the Versions dialog shows it |
+| Then | `會` is marked as added on the side of the subtitle now |
+

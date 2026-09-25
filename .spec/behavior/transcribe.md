@@ -204,3 +204,13 @@ The progress belongs to a running task, so what is left to say afterwards goes t
 | Given | a Current Resource transcribed with translating afterwards chosen |
 | When | the transcription and then the translation finish |
 | Then | one Notification says the transcription finished and another says the translation finished |
+
+## `TX-027` Listing the Phases a transcription goes through
+
+The whole run is laid out ahead, so how far along it is reads at a glance.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource being transcribed |
+| When | a load progress event arrives |
+| Then | the editor lists preparing the Components, converting, loading the Model and transcribing, with the first three marked as reached |

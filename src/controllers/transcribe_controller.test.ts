@@ -23,6 +23,7 @@ describe("TranscribeController", () => {
   let application: Application;
   let project: ProjectView | null;
   let transcription: () => Promise<unknown>;
+  let translation: () => Promise<unknown>;
   let translateArgs: unknown;
   let transcribeArgs: unknown;
 
@@ -31,6 +32,12 @@ describe("TranscribeController", () => {
     document.querySelector<T>(`[data-transcribe-target="${name}"]`)!;
   const status = () =>
     document.querySelector('[data-progress-target="status"]')!.textContent;
+  /** Each listed Phase, with a mark when it has been reached. */
+  const steps = () =>
+    [...document.querySelectorAll('[data-progress-target="steps"] > li')].map(
+      (step) =>
+        `${step.classList.contains("step-primary") ? "●" : "○"}${step.textContent}`,
+    );
   const bar = () =>
     document.querySelector<HTMLProgressElement>(
       '[data-progress-target="bar"]',
@@ -56,6 +63,7 @@ describe("TranscribeController", () => {
   beforeEach(async () => {
     project = null;
     transcription = () => new Promise(() => {});
+    translation = async () => ({ phases: [] });
     translateArgs = undefined;
     transcribeArgs = undefined;
     document.body.innerHTML = `
@@ -74,6 +82,7 @@ describe("TranscribeController", () => {
         </dialog>
       </div>
       <div id="progress" data-controller="progress" hidden>
+        <ul data-progress-target="steps"></ul>
         <p data-progress-target="status"></p>
         <progress max="100" data-progress-target="bar" hidden></progress>
       </div>
@@ -90,7 +99,7 @@ describe("TranscribeController", () => {
         }
         if (command === "translate") {
           translateArgs = args;
-          return { phases: [] };
+          return translation();
         }
       },
       { shouldMockEvents: true },
@@ -127,6 +136,38 @@ describe("TranscribeController", () => {
     await settle();
 
     expect([bar().hidden, bar().hasAttribute("value")]).toEqual([false, false]);
+  });
+
+  // @behavior TX-027
+  it("lists the Phases of a transcription, marking the ones reached", async () => {
+    await hold(media);
+    await start();
+
+    await emit("pipeline-progress", { phase: "load", percent: null });
+    await settle();
+
+    expect(steps()).toEqual(["●準備元件", "●轉檔", "●載入模型", "○轉錄"]);
+  });
+
+  // @behavior TL-066
+  it("lists the Phases of the translation once a transcription goes on to it", async () => {
+    await hold(media);
+    transcription = async () => ({
+      audio_seconds: 60,
+      transcribe_seconds: 30,
+      phases: [],
+    });
+    translation = () => new Promise(() => {});
+    target<HTMLInputElement>("translate").checked = true;
+
+    await start();
+
+    expect(steps()).toEqual([
+      "○準備元件",
+      "○載入模型",
+      "○找出被切開的句子",
+      "○翻譯",
+    ]);
   });
 
   // @behavior TX-011

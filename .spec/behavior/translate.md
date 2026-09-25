@@ -491,3 +491,19 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Given | a ready llama-server and three Segments searched in windows of two |
 | When | the Split Sentences are searched for |
 | Then | the detect progress carries how many windows are done of how many |
+
+## `TL-065` Showing how many Segments are translated
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource being translated |
+| When | a translate progress event of 63% with 132 done of 210 arrives |
+| Then | the editor shows the Phase, its percentage and 132 / 210 |
+
+## `TL-066` Listing the Phases of a translation that follows a transcription
+
+| Step | Statement |
+| --- | --- |
+| Given | a transcription that goes on to translate once it finishes |
+| When | the translation starts |
+| Then | the editor lists preparing the Components, loading the Model, searching for Split Sentences and translating instead |

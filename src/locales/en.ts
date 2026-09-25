@@ -214,6 +214,7 @@ const en = {
     translate: "Translating",
     firstLoad: "{{phase}} (slower the first time)",
     percent: "{{phase}} {{percent}}%",
+    count: "{{phase}} {{percent}}%, {{done}} / {{total}}",
     seconds: "{{seconds}} s",
   },
   failures: {

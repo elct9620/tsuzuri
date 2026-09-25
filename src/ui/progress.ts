@@ -1,54 +1,30 @@
-import {
-  listenProgress,
-  type PhaseTiming,
-  type UnlistenFn,
-} from "../backend/progress";
+import type { PhaseTiming, PipelineProgress } from "../backend/progress";
 import { t } from "../i18n";
 
-function label(phase: string): string {
+/** A Phase's name in the Interface Language. */
+export function phaseLabel(phase: string): string {
   return t(`phases.${phase}`, { defaultValue: phase });
 }
 
-/** Calls `show` with a readable line and the percentage, if any, for every `pipeline-progress` event. */
-function listenProgressLines(
-  show: (line: string, percent: number | null) => void,
-): Promise<UnlistenFn> {
-  return listenProgress(({ phase, percent }) => {
-    // Loading a Model compiles its GPU shaders on first use, which can take half a minute.
-    const line =
-      percent !== null
-        ? t("phases.percent", { phase: label(phase), percent })
-        : phase === "load"
-          ? t("phases.firstLoad", { phase: label(phase) })
-          : label(phase);
-    show(line, percent);
-  });
-}
-
-/** Shows `percent` on `bar`, or leaves it without a value - which draws it indeterminate - when there is none. */
-function showProgress(bar: HTMLProgressElement, percent: number | null): void {
-  bar.hidden = false;
-  if (percent === null) bar.removeAttribute("value");
-  else bar.value = percent;
-}
-
-/** Shows each `pipeline-progress` event on `status` and `bar` while `isRunning` answers true. */
-export function followProgress(
-  status: HTMLElement,
-  bar: HTMLProgressElement | undefined,
-  isRunning: () => boolean,
-): Promise<UnlistenFn> {
-  return listenProgressLines((line, percent) => {
-    if (!isRunning()) return;
-    status.textContent = line;
-    if (bar) showProgress(bar, percent);
-  });
+/** A readable line for one `pipeline-progress` event: the Phase with its percentage and count, when it has them. */
+export function progressLine({
+  phase,
+  percent,
+  count,
+}: PipelineProgress): string {
+  const label = phaseLabel(phase);
+  if (percent !== null && count)
+    return t("phases.count", { phase: label, percent, ...count });
+  if (percent !== null) return t("phases.percent", { phase: label, percent });
+  // Loading a Model compiles its GPU shaders on first use, which can take half a minute.
+  if (phase === "load") return t("phases.firstLoad", { phase: label });
+  return label;
 }
 
 /** Each Phase with its seconds, in the order it ran, as rows of a Notification. */
 export function phaseItems(phases: PhaseTiming[]): [string, string][] {
   return phases.map(({ phase, seconds }) => [
-    label(phase),
+    phaseLabel(phase),
     t("phases.seconds", { seconds: seconds.toFixed(1) }),
   ]);
 }

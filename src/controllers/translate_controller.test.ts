@@ -21,6 +21,7 @@ import TranslationOptionsController from "./translation_options_controller";
 describe("TranslateController", () => {
   let application: Application;
   let translateArgs: unknown;
+  let translation: () => Promise<unknown>;
   let project: ProjectView | null;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -54,6 +55,13 @@ describe("TranslateController", () => {
   beforeEach(async () => {
     project = null;
     translateArgs = undefined;
+    translation = async () => ({
+      phases: [
+        { phase: "prepare", seconds: 0.01 },
+        { phase: "load", seconds: 2.17 },
+        { phase: "translate", seconds: 0.61 },
+      ],
+    });
     document.body.innerHTML = `
       ${translationOptionsTemplate}
       <div data-controller="translate" data-translate-progress-outlet="#progress"
@@ -66,6 +74,7 @@ describe("TranslateController", () => {
         </dialog>
       </div>
       <div id="progress" data-controller="progress" hidden>
+        <ul data-progress-target="steps"></ul>
         <p data-progress-target="status"></p>
         <progress max="100" data-progress-target="bar" hidden></progress>
       </div>
@@ -76,13 +85,7 @@ describe("TranslateController", () => {
         if (command === "current_project") return project;
         if (command === "translate") {
           translateArgs = args;
-          return {
-            phases: [
-              { phase: "prepare", seconds: 0.01 },
-              { phase: "load", seconds: 2.17 },
-              { phase: "translate", seconds: 0.61 },
-            ],
-          };
+          return translation();
         }
       },
       { shouldMockEvents: true },
@@ -97,6 +100,24 @@ describe("TranslateController", () => {
   afterEach(() => {
     application.stop();
     clearMocks();
+  });
+
+  // @behavior TL-065
+  it("shows how many Segments are translated beside the percentage", async () => {
+    await hold(projectOf());
+    translation = () => new Promise(() => {});
+    await start();
+
+    await emit("pipeline-progress", {
+      phase: "translate",
+      percent: 63,
+      count: { done: 132, total: 210 },
+    });
+    await settle();
+
+    expect(
+      document.querySelector('[data-progress-target="status"]')!.textContent,
+    ).toBe("翻譯 63%，132 / 210");
   });
 
   // @behavior TL-005

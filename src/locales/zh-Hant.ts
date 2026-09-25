@@ -211,6 +211,7 @@ const zhHant: typeof en = {
     translate: "翻譯",
     firstLoad: "{{phase}}（第一次使用會比較久）",
     percent: "{{phase}} {{percent}}%",
+    count: "{{phase}} {{percent}}%，{{done}} / {{total}}",
     seconds: "{{seconds}} 秒",
   },
   failures: {

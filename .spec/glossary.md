@@ -168,7 +168,7 @@ A copy of a subtitle kept in the Project's `.tsuzuri/history/`, of one of two ki
 
 ### Version
 
-A subtitle of the Current Resource as it stands now, or as one of its Backups kept it. Versions of one subtitle can be compared cue by cue, matched by their times, and a Backup can be restored over the subtitle, which is itself kept as a Backup first.
+A subtitle of the Current Resource as it stands now, or as one of its Backups kept it. Two Versions of one subtitle are compared as Comparison Rows; a Backup can be restored over the subtitle, which is itself kept as an Overwrite first, or taken back one row at a time.
 
 ### Comparison Row
 

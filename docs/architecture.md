@@ -316,4 +316,5 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `ui/failure.ts` | 依錯誤碼產生介面語言的訊息 |
 | `ui/progress.ts` | 進度文字與各 Phase 耗時的列 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
+| `ui/icons.ts` | 介面用到的 Lucide 圖示：只打包列出的幾個，markup 以 `data-lucide` 標出，程式以 `iconElement` 建立 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |

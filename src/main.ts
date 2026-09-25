@@ -19,11 +19,13 @@ import TranslationSettingsController from "./controllers/translation_settings_co
 import UndoController from "./controllers/undo_controller";
 import VersionsController from "./controllers/versions_controller";
 import { setInterfaceLanguage, translatePage } from "./i18n";
+import { showIcons } from "./ui/icons";
 
 /** Controllers write text as they connect, so the language is settled before any of them starts. */
 async function start(): Promise<void> {
   await setInterfaceLanguage(await locale());
   translatePage();
+  showIcons();
   const application = Application.start();
   application.register("comparison", ComparisonController);
   application.register("components", ComponentsController);

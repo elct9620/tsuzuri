@@ -39,8 +39,7 @@ case "$file" in
 	;;
 *.ts)
 	# Types span the whole frontend, so one file is checked through the project
-	[ -x "$TSC" ] || exit 0
-	if ! out="$(cd "$ROOT" && "$TSC" --noEmit 2>&1)"; then
+	if [ -x "$TSC" ] && ! out="$(cd "$ROOT" && "$TSC" --noEmit 2>&1)"; then
 		printf 'Type check failed:\n%s\n' "$out" >&2
 		exit 2
 	fi
@@ -62,5 +61,21 @@ case "$file" in
 	fi
 	;;
 esac
+
+# Interface text answers to the same zh-TW wording check as the documents.
+# Only the string values are linted, one paragraph each, since the source's
+# quotes would read as punctuation and adjacent strings as one sentence
+if [ "$file" = "$ROOT/src/locales/zh-Hant.ts" ] &&
+	command -v zhtw-mcp >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
+	if ! out="$(node --input-type=module -e '
+		const { default: locale } = await import(process.argv[1]);
+		const strings = (value) =>
+			typeof value === "string" ? [value] : Object.values(value).flatMap(strings);
+		console.log(strings(locale).join("\n\n"));
+	' "$file" | zhtw-mcp lint --max-warnings 0 -- 2>&1)"; then
+		printf 'zhtw-mcp lint reports interface text in %s:\n%s\n' "${file#"$ROOT"/}" "$out" >&2
+		exit 2
+	fi
+fi
 
 exit 0

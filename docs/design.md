@@ -261,6 +261,7 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 | whisper.cpp、llama.cpp | MIT | 附上授權聲明 |
 | ffmpeg | LGPL 2.1+ | 不開 GPL、nonfree；隨版本附上對應的原始程式碼；標示 FFmpeg 授權 |
 | Rust 相依套件 | 見 `deny.toml` | cargo-deny 檢查、cargo-about 產生授權聲明 |
+| Webview 打包的套件 | 與 Rust 相同的允許清單（`about.toml`） | `scripts/webview-licenses.ts` 檢查並產生 `THIRD-PARTY-LICENSES-WEBVIEW.html`，含只在建置時用到、CSS 卻打包進去的 daisyUI 與 Tailwind |
 
 ffmpeg 是獨立執行檔，Tsuzuri 不連結它的函式庫，使用者也能改用自己的 ffmpeg。純音訊版不含視訊解碼器。
 
@@ -626,9 +627,9 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | Windows | `tsuzuri.exe`、NSIS 安裝檔、MSI |
 | macOS | dmg、`.app` |
 | Linux | 各種安裝包 |
-| 全部 | `THIRD-PARTY-LICENSES.html` |
+| 全部 | `THIRD-PARTY-LICENSES.html`、`THIRD-PARTY-LICENSES-WEBVIEW.html` |
 
-授權聲明目前只涵蓋 Rust 相依，前端打包進 App 的 JS 相依尚缺。
+兩份授權聲明分別涵蓋 Rust 相依與 webview 打包的套件（4.4）。
 
 ### 13.3 釋出流程
 

@@ -28,5 +28,6 @@ dist-ssr
 # Vendored Components built by scripts/vendor.sh
 vendor/
 
-# Generated in CI by cargo about
+# Generated in CI by cargo about and scripts/webview-licenses.ts
 THIRD-PARTY-LICENSES.html
+THIRD-PARTY-LICENSES-WEBVIEW.html

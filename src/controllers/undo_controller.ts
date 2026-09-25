@@ -20,13 +20,18 @@ function isTextField(element: EventTarget | null): boolean {
   );
 }
 
-/** Ctrl+Z undoes, Ctrl+Shift+Z and Ctrl+Y redo; ⌘ stands for Ctrl where the menu leaves it. */
-function editCommand(event: KeyboardEvent): EditCommand | null {
-  if (!(event.ctrlKey || event.metaKey) || event.altKey) return null;
-  const key = event.key.toLowerCase();
-  if (key === "z") return event.shiftKey ? "redo" : "undo";
-  if (key === "y" && !event.shiftKey) return "redo";
-  return null;
+/**
+ * Routes a key event by whether it was typed in a text field: `:typing` routes only those,
+ * `:!typing` only the others, so an undo shortcut in a field stays the field's own.
+ */
+export function typingOption({
+  event,
+  value,
+}: {
+  event: Event;
+  value: boolean;
+}): boolean {
+  return isTextField(event.target) === value;
 }
 
 /** Sends Undo and Redo to the text field in focus, which keeps its own typing, or else to the Project. */
@@ -47,12 +52,14 @@ export default class UndoController extends Controller {
     this.unlisten?.();
   }
 
-  /** The shortcuts where no menu takes them first; a text field keeps its own. */
-  press(event: KeyboardEvent): void {
-    const command = editCommand(event);
-    if (command === null || isTextField(event.target)) return;
-    event.preventDefault();
-    void this.applyToProject(command);
+  /** Ctrl/⌘+Z where no menu takes it first; bound with `:!typing:prevent`. */
+  undoInProject(): void {
+    void this.applyToProject("undo");
+  }
+
+  /** Ctrl/⌘+Shift+Z or Ctrl/⌘+Y where no menu takes them first; bound with `:!typing:prevent`. */
+  redoInProject(): void {
+    void this.applyToProject("redo");
   }
 
   private async applyToProject(command: EditCommand): Promise<void> {

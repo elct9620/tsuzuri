@@ -3,7 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import UndoController from "./undo_controller";
+import UndoController, { typingOption } from "./undo_controller";
 
 describe("UndoController", () => {
   let application: Application;
@@ -25,7 +25,7 @@ describe("UndoController", () => {
   beforeEach(async () => {
     commands = [];
     document.body.innerHTML = `
-      <main data-controller="undo" data-action="keydown@window->undo#press">
+      <main data-controller="undo" data-action="keydown.ctrl+z@window->undo#undoInProject:!typing:prevent keydown.meta+z@window->undo#undoInProject:!typing:prevent keydown.ctrl+shift+z@window->undo#redoInProject:!typing:prevent keydown.meta+shift+z@window->undo#redoInProject:!typing:prevent keydown.ctrl+y@window->undo#redoInProject:!typing:prevent keydown.meta+y@window->undo#redoInProject:!typing:prevent">
         <div class="field text" contenteditable="plaintext-only" tabindex="0"></div>
         <button type="button">⋮</button>
       </main>
@@ -37,6 +37,7 @@ describe("UndoController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
+    application.registerActionOption("typing", typingOption);
     application.register("undo", UndoController);
     await settle();
   });

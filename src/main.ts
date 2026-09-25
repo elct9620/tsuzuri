@@ -19,7 +19,7 @@ import TranscriptController from "./controllers/transcript_controller";
 import TranslateController from "./controllers/translate_controller";
 import TranslationOptionsController from "./controllers/translation_options_controller";
 import TranslationSettingsController from "./controllers/translation_settings_controller";
-import UndoController from "./controllers/undo_controller";
+import UndoController, { typingOption } from "./controllers/undo_controller";
 import VersionsController from "./controllers/versions_controller";
 import { setInterfaceLanguage, translatePage } from "./i18n";
 import { showIcons } from "./ui/icons";
@@ -31,6 +31,7 @@ async function start(): Promise<void> {
   showIcons();
   const application = Application.start();
   application.registerActionOption("composing", composingOption);
+  application.registerActionOption("typing", typingOption);
   application.register("comparison", ComparisonController);
   application.register("components", ComponentsController);
   application.register("dialog", DialogController);

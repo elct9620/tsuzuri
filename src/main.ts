@@ -1,6 +1,7 @@
 import { Application } from "@hotwired/stimulus";
 
 import { locale } from "./backend/system";
+import ComparisonController from "./controllers/comparison_controller";
 import ComponentsController from "./controllers/components_controller";
 import DialogController from "./controllers/dialog_controller";
 import GlossaryController from "./controllers/glossary_controller";
@@ -23,6 +24,7 @@ async function start(): Promise<void> {
   await setInterfaceLanguage(await locale());
   translatePage();
   const application = Application.start();
+  application.register("comparison", ComparisonController);
   application.register("components", ComponentsController);
   application.register("dialog", DialogController);
   application.register("glossary", GlossaryController);

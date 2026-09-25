@@ -7,6 +7,7 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
 - `src/controllers/versions_controller.test.ts`
+- `src/controllers/comparison_controller.test.ts`
 
 ## `VR-001` Listing a subtitle's Backups newest first
 
@@ -185,4 +186,68 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | Given | a comparison of a Backup with `ep01.srt` of one row |
 | When | its second row is taken back |
 | Then | it is refused as `no-row` and `ep01.srt` is left as it was |
+
+## `VR-023` Comparing the editor with the newest Output
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose original has an Output taken at 02:30 and an Overwrite at 03:00 |
+| When | the editor shows it |
+| Then | its comparison is of the 02:30 Output with the original now |
+
+## `VR-024` Marking what changed on each row
+
+| Step | Statement |
+| --- | --- |
+| Given | a comparison whose rows are a Pair with its text changed, a Pair with its times changed, and an Addition |
+| When | the editor shows the Segments |
+| Then | the rows are marked as changed in text, changed in times, and added |
+
+## `VR-025` Showing what a changed text read before
+
+| Step | Statement |
+| --- | --- |
+| Given | a comparison whose Pair reads `你好` in the Backup and `您好` now |
+| When | the editor shows the Segments |
+| Then | the row shows `你好` beneath its text |
+
+## `VR-026` Showing a removed cue in its place
+
+| Step | Statement |
+| --- | --- |
+| Given | a comparison with a Removal of `世界` from 1 to 2 seconds, between two Segments |
+| When | the editor shows the Segments |
+| Then | a row saying `世界` was removed stands between them |
+
+## `VR-027` Taking back a row from the editor
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor comparing a Backup, with a Pair whose text changed |
+| When | taking back only its text is chosen |
+| Then | the Project is asked to take back the text of that row of that Backup |
+
+## `VR-028` Comparing with nothing
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor comparing a Backup |
+| When | no Backup is chosen to compare |
+| Then | no row is marked |
+
+## `VR-029` Moving the comparison to a newer Output
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor comparing the original's Output taken at 02:30 |
+| When | a transcription keeps a newer Output of the original |
+| Then | its comparison is of the newer Output |
+
+## `VR-030` Offering the Backups of the translation shown
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor showing only the original of a Current Resource whose `en` translation has an Output |
+| When | the `en` translation is shown |
+| Then | that Output is offered to compare |
 

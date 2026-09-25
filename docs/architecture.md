@@ -282,6 +282,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | Controller | 畫面區域 |
 |---|---|
 | `project`、`transcript`、`segment-changes`、`dialog` | 整頁：資源清單、字幕編輯、段落變更、設定 modal |
+| `comparison` | 字幕編輯的對照：依備份標記每段的差異、插入已刪除的段落、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
 | `progress` | 編輯畫面上方的任務進度 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
@@ -289,7 +290,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `tooltip` | 全頁共用的 tooltip |
 | `undo` | 全頁的復原與重做：文字框裡交給欄位自己，其餘交給 Rust |
 
-畫面配置見 `docs/ui.md`。`progress` 以 `progress:task` 事件、`project` 以 `project:select` 事件告訴字幕編輯要顯示 skeleton。
+畫面配置見 `docs/ui.md`。`progress` 以 `progress:task` 事件、`project` 以 `project:select` 事件告訴字幕編輯要顯示 skeleton；字幕編輯每次畫好段落後以 `transcript:shown` 讓 `comparison` 重新標記。
 
 ### 4.3 backend
 

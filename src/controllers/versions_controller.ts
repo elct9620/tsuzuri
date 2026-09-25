@@ -9,18 +9,9 @@ import {
   type ComparedRow,
   type SubtitleVersions,
 } from "../backend/project";
-import { interfaceLanguageCode, t } from "../i18n";
+import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
-import { formatTime } from "../ui/time";
-
-/** `taken_at` in the local time of the interface language, as a person reads the time. */
-export function localTime(takenAt: string): string {
-  const [, year, month, day, hour, minute, second] =
-    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(takenAt)!.map(Number);
-  return new Date(
-    Date.UTC(year, month - 1, day, hour, minute, second),
-  ).toLocaleString(interfaceLanguageCode());
-}
+import { formatTime, localTime } from "../ui/time";
 
 function option(value: string, label: string): HTMLOptionElement {
   const choice = document.createElement("option");

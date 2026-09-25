@@ -301,6 +301,7 @@ export default class TranscriptController extends Controller {
       target.disabled =
         segments.length === 0 || (needsTranslation && !hasTranslation);
     }
+    this.dispatch("shown", { detail: { project } });
   }
 
   /** Offers no translation and each Language the Current Resource has, or is being translated into. */
@@ -329,9 +330,11 @@ export default class TranscriptController extends Controller {
       segment.text,
       ...(isTranslationShown ? [segment.translation ?? ""] : []),
     ]);
+    const rows = this.listTarget.querySelectorAll(
+      ":scope > li:not([data-ghost])",
+    );
     const sameShape =
-      this.listTarget.children.length === segments.length &&
-      editors.length === values.length;
+      rows.length === segments.length && editors.length === values.length;
     if (!sameShape) {
       this.listTarget.replaceChildren(
         ...segments.map((segment, index) =>

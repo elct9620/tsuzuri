@@ -1,3 +1,5 @@
+import { interfaceLanguageCode } from "../i18n";
+
 /** `ms` as the editor writes a time: `HH:MM:SS.mmm`. */
 export function formatTime(ms: number): string {
   const pad = (value: number, width = 2) => String(value).padStart(width, "0");
@@ -24,4 +26,13 @@ export function parseTime(text: string): number | null {
     Number(seconds) * 1000 +
     Number(fraction.padEnd(3, "0"))
   );
+}
+
+/** A Backup's `taken_at` in the local time of the interface language, as a person reads the time. */
+export function localTime(takenAt: string): string {
+  const [, year, month, day, hour, minute, second] =
+    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(takenAt)!.map(Number);
+  return new Date(
+    Date.UTC(year, month - 1, day, hour, minute, second),
+  ).toLocaleString(interfaceLanguageCode());
 }

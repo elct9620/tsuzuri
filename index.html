@@ -15,8 +15,8 @@
   >
     <main
       class="flex h-dvh flex-col"
-      data-controller="project transcript segment-changes dialog"
-      data-action="progress:task->transcript#followTask project:select->transcript#showLoading"
+      data-controller="project transcript segment-changes dialog comparison"
+      data-action="progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->comparison#mark"
     >
       <section class="hero flex-1" data-project-target="start">
         <div class="hero-content flex-col text-center">
@@ -282,6 +282,14 @@
                 data-action="change->transcript#showTranslation"
               ></select>
             </label>
+            <label class="flex items-center gap-2 text-sm"
+              ><span data-i18n="compare.label"></span>
+              <select
+                class="select select-sm w-auto"
+                data-comparison-target="choice"
+                data-action="change->comparison#choose"
+              ></select>
+            </label>
             <div class="contents" data-controller="versions">
               <button
                 type="button"
@@ -429,6 +437,7 @@
             <ol
               class="list text-[15px] [&_textarea]:block [&_textarea]:w-full [&_textarea]:resize-y [&_textarea]:rounded-field [&_textarea]:border [&_textarea]:border-transparent [&_textarea]:px-1.5 [&_textarea]:py-1 [&_textarea]:hover:border-base-300 [&_textarea]:focus:border-base-content/40 [&_textarea]:focus:outline-none [&_textarea.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row"
               data-transcript-target="list"
+              data-comparison-target="list"
             ></ol>
             <datalist
               id="speakers"

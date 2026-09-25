@@ -48,3 +48,17 @@ impl Transcript {
 }
 ```
 
+## `Transcript::from_srt_as_written`
+
+Parse SRT text into a Transcript keeping every line as written, Speaker Labels included, for a translation whose labels are known from its original rather than guessed.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+impl Transcript {
+    pub fn from_srt_as_written(input: &str) -> Result<Transcript, SrtError> {}
+}
+```
+

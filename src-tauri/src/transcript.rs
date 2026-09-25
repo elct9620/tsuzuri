@@ -56,15 +56,11 @@ impl std::error::Error for SrtError {}
 
 impl Transcript {
     pub fn from_srt(input: &str) -> Result<Transcript, SrtError> {
-        let normalized = input.replace("\r\n", "\n");
-        let segments = normalized
-            .split("\n\n")
-            .map(str::trim)
-            .filter(|block| !block.is_empty())
-            .enumerate()
-            .map(|(index, block)| parse_cue(index + 1, block))
-            .collect::<Result<_, _>>()?;
-        Ok(Transcript { segments })
+        parse_srt(input, split_speaker)
+    }
+
+    pub fn from_srt_as_written(input: &str) -> Result<Transcript, SrtError> {
+        parse_srt(input, |lines| (None, lines.join("\n")))
     }
 
     pub fn to_srt(&self, content: SrtContent) -> String {
@@ -126,7 +122,27 @@ fn cue_lines(text: &str) -> String {
         .join("\n")
 }
 
-fn parse_cue(cue: usize, block: &str) -> Result<Segment, SrtError> {
+/// The cues of `input`, each cue's lines read into its Speaker and text by `read_lines`.
+fn parse_srt(
+    input: &str,
+    read_lines: fn(Vec<&str>) -> (Option<String>, String),
+) -> Result<Transcript, SrtError> {
+    let normalized = input.replace("\r\n", "\n");
+    let segments = normalized
+        .split("\n\n")
+        .map(str::trim)
+        .filter(|block| !block.is_empty())
+        .enumerate()
+        .map(|(index, block)| parse_cue(index + 1, block, read_lines))
+        .collect::<Result<_, _>>()?;
+    Ok(Transcript { segments })
+}
+
+fn parse_cue(
+    cue: usize,
+    block: &str,
+    read_lines: fn(Vec<&str>) -> (Option<String>, String),
+) -> Result<Segment, SrtError> {
     let error = |reason: &str| SrtError {
         cue,
         reason: reason.to_string(),
@@ -139,7 +155,7 @@ fn parse_cue(cue: usize, block: &str) -> Result<Segment, SrtError> {
         .ok_or_else(|| error("timing line has no -->"))?;
     let start_ms = parse_timestamp(start.trim()).ok_or_else(|| error("unreadable start time"))?;
     let end_ms = parse_timestamp(end.trim()).ok_or_else(|| error("unreadable end time"))?;
-    let (speaker, text) = split_speaker(lines.collect());
+    let (speaker, text) = read_lines(lines.collect());
     Ok(Segment {
         start_ms,
         end_ms,

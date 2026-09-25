@@ -9,8 +9,8 @@ use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 use super::versions::SubtitleVersions;
 use super::{
-    carry_speakers, translation_srt, CurrentResource, Project, ProjectConfig, ProjectOptions,
-    SegmentField, SubtitleDigest, TranscriptionTarget, TranslationSource,
+    translation_srt, translation_with_speakers, CurrentResource, Project, ProjectConfig,
+    ProjectOptions, SegmentField, SubtitleDigest, TranscriptionTarget, TranslationSource,
 };
 use crate::failure::Failure;
 use crate::language::Language;
@@ -51,9 +51,10 @@ impl Project {
             .translation_language
             .filter(|language| resource.translation_path(*language).is_some())
             .or(resource.translations.first().map(|(language, _)| *language));
+        let transcript = resource.transcript(translation, &self.speaker_names(translation))?;
         self.current = Some(CurrentResource {
             name: name.to_string(),
-            transcript: resource.transcript(translation)?,
+            transcript,
             translation,
             subtitle_digests: Vec::new(),
         });
@@ -62,13 +63,14 @@ impl Project {
 
     /// Shows the Current Resource's translation into `language` from the directory, or none.
     pub fn show_translation(&mut self, language: Option<Language>) -> Result<(), Failure> {
+        let speaker_names = self.speaker_names(language);
         let current = self.current.as_mut().ok_or(Failure::NoResource)?;
         let resource = self
             .resources
             .iter()
             .find(|resource| resource.name == current.name)
             .ok_or(Failure::NoResource)?;
-        resource.carry_translations(&mut current.transcript.segments, language)?;
+        resource.carry_translations(&mut current.transcript.segments, language, &speaker_names)?;
         current.translation = language;
         self.remember_subtitles()
     }
@@ -136,8 +138,8 @@ impl Project {
     }
 
     /// Writes the Current Resource's subtitles that `field` belongs to back to the directory, and
-    /// the Bilingual SRTs they feed.
-    fn write_back(&mut self, field: SegmentField) -> Result<(), Failure> {
+    /// the Bilingual SRTs they feed; `previous` is the Current Resource as it was before the edit.
+    fn write_back(&mut self, field: SegmentField, previous: &Transcript) -> Result<(), Failure> {
         let current = self.current()?;
         let name = current.name.clone();
         let content = match field {
@@ -151,7 +153,7 @@ impl Project {
         self.write_subtitle(content)?;
         self.resources = files::resources_in(&self.directory, self.language)?;
         if field == SegmentField::Speaker {
-            self.write_speakers_to_translations(&name, false)?;
+            self.write_speakers_to_translations(&name, previous, false)?;
         }
         self.write_bilingual_subtitles(&name, written_translation)?;
         self.remember_subtitles()
@@ -183,11 +185,13 @@ impl Project {
     }
 
     /// Gives each cue of the named Resource's translations the Speaker of its original's Segment with
-    /// the same times, named as the Translation Glossary names it in that Language, first keeping
-    /// each translation it changes as a Backup when `is_backed_up`.
+    /// the same times, named as the Translation Glossary names it in that Language, in place of the
+    /// label it carried for that Segment in `previous`; first keeps each translation it changes as a
+    /// Backup when `is_backed_up`.
     fn write_speakers_to_translations(
         &self,
         name: &str,
+        previous: &Transcript,
         is_backed_up: bool,
     ) -> Result<(), Failure> {
         let resource = self.resource(name)?;
@@ -196,16 +200,17 @@ impl Project {
         };
         let original = files::transcript_at(subtitle)?;
         for (language, path) in &resource.translations {
-            let mut translation = files::transcript_at(path)?;
+            let translation = files::translation_at(path)?;
             let as_read = translation.to_srt(SrtContent::Original);
-            carry_speakers(&original.segments, &mut translation.segments);
-            let srt = translation.to_srt_with(
-                SrtContent::Original,
-                &SpeakerNames {
-                    text: self.speaker_names(Some(*language)),
-                    ..SpeakerNames::default()
-                },
-            );
+            let speaker_names = self.speaker_names(Some(*language));
+            let srt = translation_with_speakers(&translation, &original, previous, &speaker_names)
+                .to_srt_with(
+                    SrtContent::Original,
+                    &SpeakerNames {
+                        text: speaker_names,
+                        ..SpeakerNames::default()
+                    },
+                );
             if srt == as_read {
                 continue;
             }
@@ -227,7 +232,8 @@ impl Project {
         let resource = self.resource(&name)?;
         let mut translations = Vec::new();
         for (language, path) in &resource.translations {
-            let mut translation = resource.transcript(Some(*language))?;
+            let mut translation =
+                resource.transcript(Some(*language), &self.speaker_names(Some(*language)))?;
             change.apply(&mut translation.segments)?;
             translations.push((
                 path.clone(),
@@ -312,7 +318,8 @@ impl Project {
             if only.is_some_and(|only| only != *language) {
                 continue;
             }
-            let transcript = resource.transcript(Some(*language))?;
+            let transcript =
+                resource.transcript(Some(*language), &self.speaker_names(Some(*language)))?;
             files::write_srt(
                 &self
                     .directory
@@ -607,6 +614,7 @@ impl CurrentProject {
         job: &TranscriptionTarget,
         srt: String,
     ) -> Result<(), Failure> {
+        let previous = files::transcript_at(&job.subtitle)?;
         self.back_up_before_overwrite(&job.directory, &job.subtitle)?;
         files::write_srt(&job.subtitle, srt)?;
         self.refresh_resources(&job.directory)?;
@@ -614,6 +622,7 @@ impl CurrentProject {
             Some(project) if project.directory == job.directory => project
                 .write_speakers_to_translations(
                     &job.name,
+                    &previous,
                     project.options.is_overwrite_backed_up,
                 )?,
             _ => {}
@@ -713,6 +722,7 @@ impl CurrentProject {
                 project.read_current_again()?;
                 return Err(Failure::ChangedElsewhere);
             }
+            let previous = project.current()?.transcript.clone();
             let segment = project
                 .current_mut()?
                 .transcript
@@ -729,7 +739,7 @@ impl CurrentProject {
                     segment.speaker = (!speaker.is_empty()).then(|| speaker.to_string());
                 }
             }
-            project.write_back(field)
+            project.write_back(field, &previous)
         })
     }
 
@@ -2290,5 +2300,79 @@ mod tests {
             read(&dir, "ep01.en.srt"),
             "1\n00:00:00,500 --> 00:00:01,500\nChristopher Nolan Jr.: Hello\n"
         );
+    }
+
+    fn shown_translation(current: &CurrentProject) -> Option<String> {
+        segments(current)[0].translation.clone()
+    }
+
+    // @behavior PJ-084
+    #[test]
+    fn reads_a_translations_dialogue_that_opens_like_a_label() {
+        let dir = directory_of(
+            "pj-translation-colon",
+            &[
+                ("ep01.srt", &cue("你好")),
+                ("ep01.en.srt", &cue("Note: hi")),
+            ],
+        );
+
+        let current = project_in(&dir);
+
+        assert_eq!(shown_translation(&current).as_deref(), Some("Note: hi"));
+    }
+
+    // @behavior PJ-085
+    #[test]
+    fn takes_off_only_the_label_a_translations_speaker_has() {
+        let dir = directory_of(
+            "pj-translation-expected-label",
+            &[
+                ("glossary.csv", "zh-TW,en,type\n小明,Xiao Ming,speaker\n"),
+                ("ep01.srt", &cue("小明: 你好")),
+                ("ep01.en.srt", &cue("Xiao Ming: Note: hi")),
+            ],
+        );
+
+        let current = project_in(&dir);
+
+        assert_eq!(shown_translation(&current).as_deref(), Some("Note: hi"));
+    }
+
+    // @behavior PJ-086
+    #[test]
+    fn puts_a_new_speaker_before_a_translations_dialogue_as_written() {
+        let dir = directory_of(
+            "pj-translation-new-speaker",
+            &[
+                ("ep01.srt", &cue("你好")),
+                ("ep01.en.srt", &cue("Note: hi")),
+                ("ep01.ja.srt", &cue("メモ：やあ")),
+            ],
+        );
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Speaker, "co".to_string())
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.ja.srt"), cue("co: メモ：やあ"));
+    }
+
+    // @behavior PJ-087
+    #[test]
+    fn takes_off_a_speakers_former_name_in_a_translation() {
+        let dir = directory_of(
+            "pj-translation-former-name",
+            &[
+                ("glossary.csv", "zh-TW,en,type\n小明,Ming,speaker\n"),
+                ("ep01.srt", &cue("小明: 你好")),
+                ("ep01.en.srt", &cue("Xiao Ming: Hello")),
+            ],
+        );
+
+        let current = project_in(&dir);
+
+        assert_eq!(shown_translation(&current).as_deref(), Some("Hello"));
     }
 }

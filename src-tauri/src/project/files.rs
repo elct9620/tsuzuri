@@ -1,11 +1,13 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use super::{Backup, Project, ProjectConfig, Resource, SubtitleDigest};
+use super::{
+    segment_at_times, translated_dialogue, Backup, Project, ProjectConfig, Resource, SubtitleDigest,
+};
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::transcript::{Segment, SrtContent, Transcript};
@@ -43,6 +45,15 @@ pub fn write_srt(path: &Path, srt: String) -> Result<(), Failure> {
 pub fn copy(from: &Path, to: &Path) -> Result<(), Failure> {
     fs::copy(from, to)?;
     Ok(())
+}
+
+/// The cues of the translation at `path` as written, none when there is no such file.
+pub fn translation_at(path: &Path) -> Result<Transcript, Failure> {
+    match fs::read_to_string(path) {
+        Ok(srt) => Ok(Transcript::from_srt_as_written(&srt)?),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Transcript::default()),
+        Err(error) => Err(error.into()),
+    }
 }
 
 /// The Segments of the subtitle at `path`, none when there is no such file.
@@ -91,32 +102,37 @@ const MEDIA_EXTENSIONS: [&str; 11] = [
 ];
 
 impl Resource {
-    /// The Segments of its subtitle, none without one, carrying their translations into `translation`.
-    pub fn transcript(&self, translation: Option<Language>) -> Result<Transcript, Failure> {
+    /// The Segments of its subtitle, none without one, carrying their translations into
+    /// `translation`, where each Speaker is named as `speaker_names` gives.
+    pub fn transcript(
+        &self,
+        translation: Option<Language>,
+        speaker_names: &HashMap<String, String>,
+    ) -> Result<Transcript, Failure> {
         let mut transcript = match &self.subtitle {
             Some(path) => srt_transcript(path)?,
             None => Transcript::default(),
         };
-        self.carry_translations(&mut transcript.segments, translation)?;
+        self.carry_translations(&mut transcript.segments, translation, speaker_names)?;
         Ok(transcript)
     }
 
-    /// Gives each Segment the text of the cue of its translation into `translation` that has the
-    /// same start and end, and none where no cue does or `translation` is none.
+    /// Gives each Segment the dialogue of the cue of its translation into `translation` that has
+    /// the same start and end, and none where no cue does or `translation` is none.
     pub fn carry_translations(
         &self,
         segments: &mut [Segment],
         translation: Option<Language>,
+        speaker_names: &HashMap<String, String>,
     ) -> Result<(), Failure> {
         let cues = match translation.and_then(|language| self.translation_path(language)) {
-            Some(path) => srt_transcript(path)?.segments,
+            Some(path) => translation_at(path)?.segments,
             None => vec![],
         };
-        for segment in segments {
-            segment.translation = cues
-                .iter()
-                .find(|cue| (cue.start_ms, cue.end_ms) == (segment.start_ms, segment.end_ms))
-                .map(|cue| cue.text.clone());
+        for segment in segments.iter_mut() {
+            segment.translation = segment_at_times(&cues, segment).map(|cue| {
+                translated_dialogue(&cue.text, segment.speaker.as_deref(), speaker_names)
+            });
         }
         Ok(())
     }
@@ -433,7 +449,7 @@ mod tests {
         let resources = resources_in(dir.path(), Language::TraditionalChinese).unwrap();
 
         assert_eq!(
-            texts(&resources[0].transcript(None).unwrap()),
+            texts(&resources[0].transcript(None, &HashMap::new()).unwrap()),
             vec![("你好", None)]
         );
     }
@@ -505,7 +521,9 @@ mod tests {
         );
         let resources = resources_in(dir.path(), Language::TraditionalChinese).unwrap();
 
-        let transcript = resources[0].transcript(Some(Language::English)).unwrap();
+        let transcript = resources[0]
+            .transcript(Some(Language::English), &HashMap::new())
+            .unwrap();
 
         assert_eq!(
             texts(&transcript),

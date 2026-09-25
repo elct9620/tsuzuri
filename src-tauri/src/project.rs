@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::language::{Language, LanguagePair};
-use crate::transcript::{Segment, SpeakerNames, SrtContent, Transcript};
+use crate::transcript::{split_label, Segment, SpeakerNames, SrtContent, Transcript};
 
 pub mod commands;
 mod current;
@@ -173,16 +173,63 @@ fn translation_srt(transcript: &Transcript, speaker_names: HashMap<String, Strin
     )
 }
 
-/// Gives each cue of a translation the Speaker of the original's Segment with the same times; a
-/// cue with other times belongs to no Segment and keeps its own.
-fn carry_speakers(original: &[Segment], translation: &mut [Segment]) {
-    for cue in translation {
-        let matching = original
+/// The Segment of `segments` with the times of `cue`, the one a translation's cue belongs to.
+fn segment_at_times<'a>(segments: &'a [Segment], cue: &Segment) -> Option<&'a Segment> {
+    segments
+        .iter()
+        .find(|segment| (segment.start_ms, segment.end_ms) == (cue.start_ms, cue.end_ms))
+}
+
+/// The dialogue of a translation's cue, as written, for a Segment said by `speaker`. Tsuzuri
+/// writes that Speaker's label before it, named as `names` gives, so that label is taken off, or
+/// whatever label the line opens with when the name has changed since; a Segment with no Speaker
+/// has no label to take off, so a line that only looks like one stays dialogue.
+fn translated_dialogue(
+    text: &str,
+    speaker: Option<&str>,
+    names: &HashMap<String, String>,
+) -> String {
+    let Some(speaker) = speaker else {
+        return text.to_string();
+    };
+    let name = names.get(speaker).map_or(speaker, String::as_str);
+    let dialogue = text
+        .strip_prefix(name)
+        .and_then(|rest| rest.strip_prefix([':', '：']))
+        .map(|rest| rest.trim_start_matches([' ', '\t']))
+        .or_else(|| match split_label(text) {
+            (Some(_), dialogue) => Some(dialogue),
+            (None, _) => None,
+        });
+    dialogue.unwrap_or(text).to_string()
+}
+
+/// `translation`'s cues, each with the Speaker of the Segment of `original` with its times in
+/// place of the label it carried for that Segment of `previous`; a cue with other times belongs to
+/// no Segment and stays as written.
+fn translation_with_speakers(
+    translation: &Transcript,
+    original: &Transcript,
+    previous: &Transcript,
+    speaker_names: &HashMap<String, String>,
+) -> Transcript {
+    Transcript {
+        segments: translation
+            .segments
             .iter()
-            .find(|segment| (segment.start_ms, segment.end_ms) == (cue.start_ms, cue.end_ms));
-        if let Some(segment) = matching {
-            cue.speaker = segment.speaker.clone();
-        }
+            .map(|cue| {
+                let Some(segment) = segment_at_times(&original.segments, cue) else {
+                    return cue.clone();
+                };
+                let before = segment_at_times(&previous.segments, cue)
+                    .and_then(|segment| segment.speaker.as_deref());
+                Segment {
+                    speaker: segment.speaker.clone(),
+                    text: translated_dialogue(&cue.text, before, speaker_names),
+                    ..cue.clone()
+                }
+            })
+            .collect(),
     }
 }
 

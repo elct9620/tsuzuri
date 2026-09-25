@@ -660,3 +660,40 @@ A cue with other times belongs to no Segment, so a Speaker has nowhere to come f
 | Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Christopher Nolan Jr.` in `en`, whose `ep01.srt` reads `小明: 你好` from 0 to 1 second and `ep01.en.srt` `Christopher Nolan Jr.: Hello` |
 | When | its times are changed to 0.5 to 1.5 seconds |
 | Then | `ep01.en.srt` reads `Christopher Nolan Jr.: Hello` from 0.5 to 1.5 seconds |
+
+## `PJ-084` Reading a translation's dialogue that opens like a label
+
+A translation's labels come from its original, so a line that only looks like one is dialogue.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` reads `你好` and `ep01.en.srt` `Note: hi` |
+| When | `ep01.en.srt` is shown |
+| Then | its Segment's translation reads `Note: hi` |
+
+## `PJ-085` Taking off only the label a translation's Speaker has
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, whose `ep01.srt` reads `小明: 你好` and `ep01.en.srt` `Xiao Ming: Note: hi` |
+| When | `ep01.en.srt` is shown |
+| Then | its Segment's translation reads `Note: hi` |
+
+## `PJ-086` Putting a new Speaker before a translation's dialogue as written
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` reads `你好`, `ep01.en.srt` `Note: hi` and `ep01.ja.srt` `メモ：やあ`, with `ep01.en.srt` shown |
+| When | the Speaker of its Segment is set to `co` |
+| Then | `ep01.ja.srt` reads `co: メモ：やあ` |
+
+
+## `PJ-087` Taking off a Speaker's former name in a translation
+
+A name changed in the Translation Glossary since a translation was written leaves the former one on its labels.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Ming` in `en`, whose `ep01.srt` reads `小明: 你好` and `ep01.en.srt` `Xiao Ming: Hello` |
+| When | `ep01.en.srt` is shown |
+| Then | its Segment's translation reads `Hello` |

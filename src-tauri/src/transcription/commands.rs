@@ -7,6 +7,7 @@ use crate::failure::Failure;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
 use crate::project::CurrentProject;
+use crate::steps::ModeLock;
 use crate::timing::Phases;
 use crate::toolchain::{self, settings};
 use crate::translation::ResidentLlama;
@@ -18,6 +19,8 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
         .transcription_target(overwrite)?;
     let phases = Phases::start("transcribe", "prepare");
     app.report("prepare", None);
+    let mode_lock = app.state::<ModeLock>();
+    let _turn = mode_lock.wait_turn().await;
     let processes = app.state::<Processes>().inner().clone();
     let ports = AppPorts {
         app: &app,

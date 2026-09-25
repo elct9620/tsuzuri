@@ -5,6 +5,7 @@ Launching Components as child processes so that none outlives the app: those ali
 ## Includes
 
 - `src-tauri/src/processes.rs`
+- `src-tauri/src/steps.rs`
 
 ## `PR-001` Recording a launched process
 
@@ -45,3 +46,14 @@ Launching Components as child processes so that none outlives the app: those ali
 | Given | a Component that writes many lines to stderr and exits at once |
 | When | it is launched |
 | Then | every line arrives before its exit status |
+
+## `PR-006` Running one Mode at a time
+
+A second Mode waits rather than unloading or stopping the Model the first one is using.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Mode running |
+| When | another Mode waits for its turn |
+| Then | it starts only once the first one has ended |
+

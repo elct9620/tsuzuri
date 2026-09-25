@@ -10,6 +10,7 @@ use crate::language::Language;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
 use crate::project::CurrentProject;
+use crate::steps::ModeLock;
 use crate::timing::Phases;
 use crate::toolchain::{self, settings, ModelSlot};
 
@@ -19,6 +20,8 @@ pub async fn translate(
     target: Language,
     options: TranslationOptions,
 ) -> Result<Translation, Failure> {
+    let mode_lock = app.state::<ModeLock>();
+    let _turn = mode_lock.wait_turn().await;
     let phases = Phases::start("translate", "prepare");
     app.report("prepare", None);
     let [llama] = toolchain::find_ready_executables(settings::resolver(&app)?, ["llama"]).await?;
@@ -63,6 +66,9 @@ pub async fn save_translation_settings(
     if saved_settings.has_resident_llama {
         start_resident_llama(&app);
     } else {
+        // A translation still running keeps its llama-server until it ends.
+        let mode_lock = app.state::<ModeLock>();
+        let _turn = mode_lock.wait_turn().await;
         let processes = app.state::<Processes>().inner().clone();
         app.state::<ResidentLlama>()
             .stop(&AppPorts {

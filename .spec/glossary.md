@@ -56,7 +56,7 @@ What the user sets for one Project in the settings, beside its Primary Language:
 
 ### Mode
 
-What the user starts on the Current Resource from a task dialog: Transcribe (its media file to its Primary Language subtitle), Translate (its Primary Language subtitle into another Language), or Transcribe and Translate (both, in that order). Its results appear in the editor as they arrive. While a Mode runs on a Resource, nothing else changes the subtitles it writes: a transcription holds every subtitle of the Resource, a translation only the one it writes.
+What the user starts on the Current Resource from a task dialog: Transcribe (its media file to its Primary Language subtitle), Translate (its Primary Language subtitle into another Language), or Transcribe and Translate (both, in that order). Its results appear in the editor as they arrive. While a Mode runs on a Resource, nothing else changes the subtitles it writes: a transcription holds every subtitle of the Resource, a translation only the one it writes. One Mode runs at a time; another started meanwhile waits for it to end.
 
 #### Rejected
 

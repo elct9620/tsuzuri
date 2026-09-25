@@ -244,7 +244,7 @@ transcribe 指令                       translate 指令
 回答各 Phase 耗時                      回答各 Phase 耗時
 ```
 
-任務一次只跑一個；每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
+任務一次只跑一個：轉錄、翻譯與關掉常駐 llama-server 都先取得 `ModeLock`，後來的等前一個結束。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
 
 ### 3.8 行程
 

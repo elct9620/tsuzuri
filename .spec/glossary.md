@@ -100,7 +100,7 @@ The `name:` or `name：` before a line of dialogue, up to twenty characters with
 
 ### Translation Glossary
 
-The terms the user gives, as a CSV of `source,target` rows such as names and titles, whose target term each translation of a line using the source term must contain. It is the Project's `glossary.csv`, read when the Project opens and again before each translation; without the file there is none. Unrelated to this file.
+The terms the user gives, such as names and titles, as a CSV with one column per Language headed by its code, like `zh-TW,en,ja`, and one row per term. Translating uses the Primary Language column as the source term and the target Language column as the term each translation of a line using the source must contain. A `source,target` header stands for the Primary Language and the Project's translation Language, and is refused while the Project has none. It is the Project's `glossary.csv`, read when the Project opens and again before each translation, and written with Language codes when edited; without the file there is none. Unrelated to this file.
 
 ### Rolling Summary
 

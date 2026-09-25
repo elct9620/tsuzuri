@@ -142,6 +142,30 @@ Make a Segment Change to the Current Resource, by position, and write its origin
 pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Failure> {}
 ```
 
+## `subtitle_versions`
+
+The Backups of each subtitle of the Current Resource, its original first and then each translation, newest Backup first.
+
+```rust
+pub fn subtitle_versions(app: AppHandle) -> Result<Vec<SubtitleVersions>, Failure> {}
+```
+
+## `compare_versions`
+
+Two Versions of the Current Resource's original, or of its translation into `language`, row by row in time order, a Version being a Backup by file name or, as none, the subtitle now.
+
+```rust
+pub fn compare_versions(app: AppHandle, language: Option<Language>, left: Option<String>, right: Option<String>) -> Result<Vec<ComparedRow>, Failure> {}
+```
+
+## `restore_version`
+
+Keep the subtitle as a Backup, then put the named Backup in its place and read the Current Resource again, emitting `project-changed`. A name the subtitle's Backups do not hold is refused as `no-backup`.
+
+```rust
+pub fn restore_version(app: AppHandle, language: Option<Language>, backup: String) -> Result<(), Failure> {}
+```
+
 ## `export_path`
 
 Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone, a Bilingual SRT's in its Bilingual Order.

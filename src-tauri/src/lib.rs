@@ -13,6 +13,7 @@ pub mod timing;
 pub mod transcript;
 pub mod translation;
 pub mod translation_glossary;
+pub mod versions;
 pub mod window;
 
 #[cfg(test)]
@@ -64,6 +65,9 @@ pub fn run() {
             project::current_project,
             project::edit_segment,
             project::change_segments,
+            versions::subtitle_versions,
+            versions::compare_versions,
+            versions::restore_version,
             project::export_path,
             project::open_project,
             project::open_srt,

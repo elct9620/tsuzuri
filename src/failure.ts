@@ -13,6 +13,7 @@ export type Failure =
   | { code: "no-media" }
   | { code: "changed-elsewhere" }
   | { code: "invalid-times" }
+  | { code: "no-backup"; backup: string }
   | { code: "subtitle-exists"; path: string }
   | { code: "component-not-ready"; component: string }
   | { code: "step-failed"; step: string; detail: string }
@@ -56,6 +57,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.changedElsewhere");
     case "invalid-times":
       return t("failures.invalidTimes");
+    case "no-backup":
+      return t("failures.noBackup", { backup: error.backup });
     case "subtitle-exists":
       return t("failures.subtitleExists", { path: error.path });
     case "component-not-ready":

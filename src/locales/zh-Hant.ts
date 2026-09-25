@@ -77,11 +77,21 @@ const zhHant: typeof en = {
     unreadableTime: "時間要寫成 00:00:01.000 的格式",
     selected: "已選 {{count}} 段",
     merge: "合併",
-    shift: "平移…",
+    shift: "平移……",
     shiftTitle: "平移時間",
     offset: "毫秒，負數往前",
     shiftStart: "平移",
     cancelSelection: "取消選取",
+  },
+  versions: {
+    open: "版本",
+    title: "版本",
+    subtitle: "字幕",
+    original: "原文",
+    now: "目前",
+    compare: "比較",
+    restore: "還原",
+    restored: "已還原，原本的字幕已留作備份",
   },
   settings: {
     project: "專案",
@@ -95,7 +105,7 @@ const zhHant: typeof en = {
       "開啟後，每次寫出原文或譯文，都會在旁邊更新雙語 SRT（例如 ep01.zh-TW.en.srt），不必每次手動匯出。只影響這個專案。",
     overwriteBackup: "覆蓋前備份",
     overwriteBackupHelp:
-      "開啟後，轉錄或翻譯要覆蓋已有的字幕前，會先把舊檔複製到專案的 .tsuzuri/history 資料夾，檔名加上時間。只影響這個專案。",
+      "開啟後，轉錄或翻譯要覆蓋已有的字幕前，會先把舊檔複製到專案的 .tsuzuri/history 資料夾，檔名加上時間；可在編輯區的「版本」比較或還原。只影響這個專案。",
     ffmpegHelp:
       "把影片或音訊轉成轉錄用的音檔。按「指定」選擇自己安裝的執行檔；沒有指定時，依序使用偵測到的和內建的版本。",
     whisperHelp:
@@ -167,6 +177,7 @@ const zhHant: typeof en = {
     noProject: "請先開啟目錄或 SRT 檔",
     noResource: "目錄裡沒有可處理的媒體檔或 SRT 檔",
     noMedia: "這個資源沒有可轉錄的影片或音訊",
+    noBackup: "找不到這份備份：{{backup}}",
     invalidTimes: "結束時間不能早於開始時間",
     changedElsewhere: "字幕已在其他程式修改過，已重新讀取，這次的修改沒有寫入",
     subtitleExists: "{{path}} 已存在，確認覆蓋後才能轉錄",

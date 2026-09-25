@@ -14,6 +14,7 @@ use crate::resource::{self, Resource};
 use crate::segment_change::SegmentChange;
 use crate::transcript::{Segment, SrtContent, Transcript};
 use crate::translation_glossary::{GlossaryTable, TranslationGlossary, TranslationGlossaryView};
+use crate::versions::SubtitleVersions;
 
 /// The opened directory: its Primary Language, the Language of its last translation,
 /// its Resources, the Current Resource and the Translation Glossary once loaded.
@@ -252,6 +253,78 @@ impl Project {
         self.select(&name)?;
         self.show_translation(shown)?;
         self.write_bilingual_subtitles(&name, None)
+    }
+
+    /// Where the Current Resource keeps its original, or its translation into `language`, whether
+    /// or not the file exists yet.
+    fn subtitle_path(&self, language: Option<Language>) -> Result<PathBuf, Failure> {
+        let current = self.current()?;
+        let resource = self.resource(&current.name)?;
+        let found = match language {
+            Some(language) => resource.translation_path(language).map(Path::to_path_buf),
+            None => resource.subtitle.clone(),
+        };
+        Ok(found.unwrap_or_else(|| self.directory.join(file_name(&current.name, [language]))))
+    }
+
+    fn subtitle_versions(&self) -> Result<Vec<SubtitleVersions>, Failure> {
+        let current = self.current()?;
+        let resource = self.resource(&current.name)?;
+        std::iter::once(None)
+            .chain(
+                resource
+                    .translations
+                    .iter()
+                    .map(|(language, _)| Some(*language)),
+            )
+            .map(|language| {
+                Ok(SubtitleVersions {
+                    language,
+                    backups: history::backups_of(&self.directory, &self.subtitle_path(language)?)?,
+                })
+            })
+            .collect()
+    }
+
+    /// Where the Backup named `backup` of the subtitle in `language` is, refused unless that
+    /// subtitle's own Backups hold the name.
+    fn backup_of(&self, language: Option<Language>, backup: &str) -> Result<PathBuf, Failure> {
+        let backups = history::backups_of(&self.directory, &self.subtitle_path(language)?)?;
+        if !backups.iter().any(|each| each.file == backup) {
+            return Err(Failure::NoBackup {
+                backup: backup.to_string(),
+            });
+        }
+        Ok(history::backup_path(&self.directory, backup))
+    }
+
+    /// The subtitle in `language` as the named Backup kept it, or as it is now without one.
+    fn version_transcript(
+        &self,
+        language: Option<Language>,
+        backup: Option<&str>,
+    ) -> Result<Transcript, Failure> {
+        let path = match backup {
+            Some(backup) => self.backup_of(language, backup)?,
+            None => self.subtitle_path(language)?,
+        };
+        match std::fs::read_to_string(path) {
+            Ok(srt) => Ok(Transcript::from_srt(&srt)?),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(Transcript::default()),
+            Err(error) => Err(error.into()),
+        }
+    }
+
+    /// Keeps the subtitle in `language` as a Backup, puts the named Backup in its place and reads
+    /// the Current Resource again.
+    fn restore_version(&mut self, language: Option<Language>, backup: &str) -> Result<(), Failure> {
+        let restored = self.backup_of(language, backup)?;
+        let subtitle = self.subtitle_path(language)?;
+        let name = self.current()?.name.clone();
+        history::back_up(&self.directory, &subtitle, SystemTime::now())?;
+        std::fs::copy(restored, &subtitle)?;
+        self.read_current_again()?;
+        self.write_bilingual_subtitles(&name, language)
     }
 
     /// Writes the Bilingual SRT beside each translation of the named Resource, or beside its
@@ -811,6 +884,22 @@ impl CurrentProject {
             }
             project.write_back(field)
         })
+    }
+
+    pub fn subtitle_versions(&self) -> Result<Vec<SubtitleVersions>, Failure> {
+        self.update_project(|project| project.subtitle_versions())
+    }
+
+    pub fn version_transcript(
+        &self,
+        language: Option<Language>,
+        backup: Option<&str>,
+    ) -> Result<Transcript, Failure> {
+        self.update_project(|project| project.version_transcript(language, backup))
+    }
+
+    pub fn restore_version(&self, language: Option<Language>, backup: &str) -> Result<(), Failure> {
+        self.update_project(|project| project.restore_version(language, backup))
     }
 
     pub fn change_segments(&self, change: SegmentChange) -> Result<(), Failure> {
@@ -1863,6 +1952,119 @@ mod tests {
         let current = project_in(&dir);
 
         assert_eq!(current.view().unwrap().resource_names(), ["ep01"]);
+    }
+
+    /// Writes a Backup named `file` into the history of `dir` holding `content`.
+    fn write_backup(dir: &TempDir, file: &str, content: &str) {
+        let history = dir.path().join(crate::history::HISTORY_DIR);
+        std::fs::create_dir_all(&history).unwrap();
+        std::fs::write(history.join(file), content).unwrap();
+    }
+
+    /// The files of each subtitle's Backups, the original first.
+    fn backup_files(current: &CurrentProject) -> Vec<(Option<Language>, Vec<String>)> {
+        current
+            .subtitle_versions()
+            .unwrap()
+            .into_iter()
+            .map(|versions| {
+                let files = versions.backups.into_iter().map(|backup| backup.file);
+                (versions.language, files.collect())
+            })
+            .collect()
+    }
+
+    // @behavior VR-001
+    #[test]
+    fn lists_a_subtitles_backups_newest_first() {
+        let dir = directory_of(
+            "vr-newest-first",
+            &[("ep01.srt", &cue("你好")), ("ep01.en.srt", &cue("Hello"))],
+        );
+        write_backup(&dir, "ep01.en.20260925T023000Z.srt", &cue("Hi"));
+        write_backup(&dir, "ep01.en.20260925T030000Z.srt", &cue("Hey"));
+        let current = project_in(&dir);
+
+        assert_eq!(
+            backup_files(&current)[1],
+            (
+                Some(Language::English),
+                vec![
+                    "ep01.en.20260925T030000Z.srt".to_string(),
+                    "ep01.en.20260925T023000Z.srt".to_string()
+                ]
+            )
+        );
+    }
+
+    // @behavior VR-002
+    #[test]
+    fn keeps_each_subtitles_backups_apart() {
+        let dir = directory_of(
+            "vr-apart",
+            &[("ep01.srt", &cue("你好")), ("ep01.en.srt", &cue("Hello"))],
+        );
+        write_backup(&dir, "ep01.20260925T023000Z.srt", &cue("您好"));
+        write_backup(&dir, "ep01.en.20260925T023000Z.srt", &cue("Hi"));
+        let current = project_in(&dir);
+
+        assert_eq!(
+            backup_files(&current)[0],
+            (None, vec!["ep01.20260925T023000Z.srt".to_string()])
+        );
+    }
+
+    // @behavior VR-004
+    #[test]
+    fn restores_a_backup() {
+        let dir = directory_of("vr-restore", &[("ep01.srt", &cue("新的"))]);
+        write_backup(&dir, "ep01.20260925T023000Z.srt", &cue("舊的"));
+        let current = project_in(&dir);
+
+        current
+            .restore_version(None, "ep01.20260925T023000Z.srt")
+            .unwrap();
+
+        assert_eq!(
+            (read(&dir, "ep01.srt"), texts(&current)),
+            (cue("舊的"), vec!["舊的".to_string()])
+        );
+    }
+
+    // @behavior VR-005
+    #[test]
+    fn keeps_the_subtitle_a_restore_replaces() {
+        let dir = directory_of("vr-restore-kept", &[("ep01.srt", &cue("新的"))]);
+        write_backup(&dir, "ep01.20260925T023000Z.srt", &cue("舊的"));
+        let current = project_in(&dir);
+
+        current
+            .restore_version(None, "ep01.20260925T023000Z.srt")
+            .unwrap();
+
+        let backups = backups_in(dir.path());
+        assert!(backups.iter().any(|(file, content)| {
+            file != "ep01.20260925T023000Z.srt" && content == &cue("新的")
+        }));
+    }
+
+    // @behavior VR-006
+    #[test]
+    fn refuses_a_backup_the_subtitle_does_not_have() {
+        let dir = directory_of("vr-no-backup", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+
+        let refused = current.restore_version(None, "../ep01.srt");
+
+        assert_eq!(
+            (refused, read(&dir, "ep01.srt")),
+            (
+                Err(Failure::NoBackup {
+                    backup: "../ep01.srt".to_string()
+                }),
+                cue("你好")
+            )
+        );
     }
 
     // @behavior PJ-054

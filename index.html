@@ -278,6 +278,66 @@
                 data-action="change->transcript#showTranslation"
               ></select>
             </label>
+            <div class="contents" data-controller="versions">
+              <button
+                type="button"
+                class="btn btn-sm"
+                data-action="versions#open"
+                data-i18n="versions.open"
+              ></button>
+              <dialog class="modal" data-versions-target="dialog">
+                <div class="modal-box max-w-4xl">
+                  <h3
+                    class="mb-2 text-lg font-bold"
+                    data-i18n="versions.title"
+                  ></h3>
+                  <label class="mb-2 flex items-center gap-2 text-sm"
+                    ><span data-i18n="versions.subtitle"></span>
+                    <select
+                      class="select select-sm w-auto"
+                      data-versions-target="subtitle"
+                      data-action="change->versions#showBackups"
+                    ></select>
+                  </label>
+                  <ul
+                    class="list rounded-box border border-base-300 text-sm"
+                    data-versions-target="backups"
+                  ></ul>
+                  <section
+                    class="mt-4"
+                    data-versions-target="comparison"
+                    hidden
+                  >
+                    <div class="mb-2 flex items-center gap-2">
+                      <select
+                        class="select select-sm w-auto"
+                        data-versions-target="left"
+                        data-action="change->versions#showComparison"
+                      ></select>
+                      <span>↔</span>
+                      <select
+                        class="select select-sm w-auto"
+                        data-versions-target="right"
+                        data-action="change->versions#showComparison"
+                      ></select>
+                    </div>
+                    <div class="max-h-96 overflow-y-auto">
+                      <table class="table table-sm">
+                        <tbody data-versions-target="rows"></tbody>
+                      </table>
+                    </div>
+                  </section>
+                  <div class="modal-action">
+                    <form method="dialog">
+                      <button class="btn" data-i18n="work.close"></button>
+                    </form>
+                  </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                  <button>close</button>
+                </form>
+              </dialog>
+            </div>
           </div>
           <div
             id="progress"

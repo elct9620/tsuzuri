@@ -40,6 +40,10 @@ pub enum Failure {
     ChangedElsewhere,
     /// A Segment Change that would leave a Segment ending before it starts.
     InvalidTimes,
+    /// A restore that named no Backup of the subtitle it was asked for.
+    NoBackup {
+        backup: String,
+    },
     /// Transcribing over an original subtitle the user did not ask to overwrite.
     SubtitleExists {
         path: PathBuf,

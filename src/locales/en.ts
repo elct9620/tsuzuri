@@ -83,6 +83,16 @@ const en = {
     shiftStart: "Shift",
     cancelSelection: "Clear selection",
   },
+  versions: {
+    open: "Versions",
+    title: "Versions",
+    subtitle: "Subtitle",
+    original: "Original",
+    now: "Now",
+    compare: "Compare",
+    restore: "Restore",
+    restored: "Restored; the subtitle it replaced was kept as a backup",
+  },
   settings: {
     project: "Project",
     general: "General",
@@ -95,7 +105,7 @@ const en = {
       "When on, each time the original or a translation is written, the bilingual SRT beside it (such as ep01.zh-TW.en.srt) is updated too, so it never needs exporting by hand. Applies to this project only.",
     overwriteBackup: "Back up before overwrite",
     overwriteBackupHelp:
-      "When on, a subtitle a transcription or translation is about to overwrite is first copied to the project’s .tsuzuri/history folder with the time in its name. Applies to this project only.",
+      "When on, a subtitle a transcription or translation is about to overwrite is first copied to the project’s .tsuzuri/history folder with the time in its name; Versions in the editor compares or restores it. Applies to this project only.",
     ffmpegHelp:
       "Turns video or audio into the audio file transcription reads. Choose an executable you installed; without one, the detected and then the bundled version is used.",
     whisperHelp:
@@ -170,6 +180,7 @@ const en = {
     noProject: "Open a directory or an SRT file first",
     noResource: "The directory has no media file or SRT file to work on",
     noMedia: "This resource has no video or audio file to transcribe",
+    noBackup: "No such backup: {{backup}}",
     invalidTimes: "A segment cannot end before it starts",
     changedElsewhere:
       "The subtitle was changed in another program and has been read again; this edit was not written",

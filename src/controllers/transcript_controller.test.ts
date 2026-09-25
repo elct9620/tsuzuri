@@ -7,6 +7,7 @@ import type { GlossaryTable, ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import { fieldValue, isFieldHeld } from "../editor/field";
 import FieldController from "./field_controller";
+import NotificationController from "./notification_controller";
 import ProgressController from "./progress_controller";
 import {
   NOTIFICATION_STACK,
@@ -122,6 +123,7 @@ describe("TranscriptController", () => {
     );
     application = Application.start();
     application.register("field", FieldController);
+    application.register("notification", NotificationController);
     application.register("progress", ProgressController);
     application.register("transcript", TranscriptController);
     await settle();

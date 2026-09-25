@@ -8,7 +8,7 @@ import { phaseItems } from "./progress";
 export const NOTIFICATION_MS = 6000;
 
 /** How often a countdown bar moves. */
-const TICK_MS = 100;
+export const TICK_MS = 100;
 
 /** How long a Notification takes to fade away, the `duration-200` of its transition. */
 const LEAVING_MS = 200;
@@ -90,23 +90,31 @@ function content({ title, detail, items }: Notification): HTMLElement {
   return container;
 }
 
+/** What each Notification offering an action does when it is taken. */
+const actionByAlert = new WeakMap<HTMLElement, () => void>();
+
+/** Does what the Notification `alert` offers. */
+export function runAction(alert: HTMLElement): void {
+  actionByAlert.get(alert)?.();
+}
+
 /** Takes `alert` away, fading it out first. */
-function leave(alert: HTMLElement): void {
+export function leave(alert: HTMLElement): void {
   alert.dataset.leaving = "";
   setTimeout(() => alert.remove(), LEAVING_MS);
 }
 
-/** A small button after the content, as daisyUI lays out an alert's buttons. */
+/** A small button after the content, as daisyUI lays out an alert's buttons, pressing `notification#<method>`. */
 function button(
   label: string,
   className: string,
-  press: () => void,
+  method: "act" | "close",
 ): HTMLButtonElement {
   const element = document.createElement("button");
   element.type = "button";
   element.className = className;
   element.textContent = label;
-  element.addEventListener("click", press);
+  element.dataset.action = `notification#${method}`;
   return element;
 }
 
@@ -114,16 +122,11 @@ function button(
 function buttons(alert: HTMLElement, { action }: Notification): HTMLElement {
   const group = document.createElement("div");
   group.className = "flex items-center gap-1";
-  if (action)
-    group.append(
-      button(action.label, "btn btn-sm", () => {
-        action.run();
-        leave(alert);
-      }),
-    );
-  const close = button("", "btn btn-sm btn-circle btn-ghost", () =>
-    leave(alert),
-  );
+  if (action) {
+    actionByAlert.set(alert, action.run);
+    group.append(button(action.label, "btn btn-sm", "act"));
+  }
+  const close = button("", "btn btn-sm btn-circle btn-ghost", "close");
   close.append(iconElement("X"));
   close.dataset.close = "";
   close.setAttribute("aria-label", t("work.close"));
@@ -131,27 +134,16 @@ function buttons(alert: HTMLElement, { action }: Notification): HTMLElement {
   return group;
 }
 
-/** Counts down `NOTIFICATION_MS` on a bar under the content, pausing while the pointer or focus rests on `alert`, then takes it away. */
+/** A bar under the content counting down `NOTIFICATION_MS`, which `notification` moves while nothing rests on `alert`. */
 function countDown(alert: HTMLElement, content: HTMLElement): void {
   const bar = document.createElement("progress");
   bar.className = "progress h-1";
   bar.max = NOTIFICATION_MS;
   bar.value = NOTIFICATION_MS;
+  bar.dataset.notificationTarget = "bar";
   content.append(bar);
-  const resting = { pointer: false, focus: false };
-  alert.addEventListener("mouseenter", () => (resting.pointer = true));
-  alert.addEventListener("mouseleave", () => (resting.pointer = false));
-  alert.addEventListener("focusin", () => (resting.focus = true));
-  alert.addEventListener("focusout", () => (resting.focus = false));
-  const timer = setInterval(() => {
-    if (!alert.isConnected || "leaving" in alert.dataset)
-      return clearInterval(timer);
-    if (resting.pointer || resting.focus) return;
-    bar.value -= TICK_MS;
-    if (bar.value > 0) return;
-    clearInterval(timer);
-    leave(alert);
-  }, TICK_MS);
+  alert.dataset.action =
+    "mouseenter->notification#rest mouseleave->notification#resume focusin->notification#rest focusout->notification#resume";
 }
 
 /** Takes away the oldest Notification that would go on its own while more than `MOST_SHOWN` are shown. */
@@ -173,6 +165,7 @@ export function notify(notification: Notification): void {
   const { kind, action } = notification;
   const alert = document.createElement("div");
   alert.setAttribute("role", "alert");
+  alert.dataset.controller = "notification";
   alert.className = `${ALERT_CLASSES} ${KIND_CLASSES[kind]}`;
   const body = content(notification);
   alert.append(icon(kind), body);

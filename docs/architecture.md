@@ -306,6 +306,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `versions`、`glossary` | 版本與詞彙表 modal |
 | `components`、`models`、`translation-settings`、`logs` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |
+| `notification` | 每則通知的倒數、暫停與按鈕 |
 | `undo` | 全頁的復原與重做：欄位裡交給欄位自己，其餘交給 Rust |
 | `field` | 每個編輯欄位一個：接上 `editor/`，離開時以事件交出新的文字 |
 
@@ -327,7 +328,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 
 | 模組 | 內容 |
 |---|---|
-| `ui/notification.ts` | toast 通知，失敗的留到點一下才關閉 |
+| `ui/notification.ts` | 產生 toast 通知，互動交給 `notification` |
 | `ui/failure.ts` | 依錯誤碼產生介面語言的訊息 |
 | `ui/progress.ts` | 進度文字與各 Phase 耗時的列 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |

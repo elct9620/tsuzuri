@@ -399,22 +399,24 @@
                 </div>
                 <div
                   tabindex="-1"
-                  class="dropdown-content z-20 flex w-96 flex-col gap-2 rounded-box bg-base-100 p-4 shadow-md"
+                  class="dropdown-content card card-sm z-20 w-96 bg-base-100 shadow-md"
                 >
-                  <ul
-                    class="steps w-full text-xs"
-                    data-progress-target="steps"
-                  ></ul>
-                  <p
-                    class="whitespace-pre-line text-sm text-base-content/70"
-                    data-progress-target="status"
-                  ></p>
-                  <progress
-                    class="progress progress-primary w-full"
-                    max="100"
-                    data-progress-target="bar"
-                    hidden
-                  ></progress>
+                  <div class="card-body">
+                    <ul
+                      class="steps w-full text-xs"
+                      data-progress-target="steps"
+                    ></ul>
+                    <p
+                      class="whitespace-pre-line text-sm text-base-content/70"
+                      data-progress-target="status"
+                    ></p>
+                    <progress
+                      class="progress progress-primary w-full"
+                      max="100"
+                      data-progress-target="bar"
+                      hidden
+                    ></progress>
+                  </div>
                 </div>
               </div>
               <button
@@ -462,7 +464,7 @@
                     <span data-i18n="preview.unplayable"></span>
                   </div>
                 </div>
-                <div class="card card-sm min-w-0 flex-3 bg-base-100">
+                <div class="card card-sm min-w-0 flex-3 bg-base-100 shadow-sm">
                   <div class="card-body">
                     <div class="flex items-center gap-3">
                       <button

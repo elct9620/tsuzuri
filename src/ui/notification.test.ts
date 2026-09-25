@@ -78,4 +78,17 @@ describe("notify", () => {
       ["翻譯", "0.6 秒"],
     ]);
   });
+
+  // @behavior IF-020
+  it("keeps a Notification that offers something to do", () => {
+    notify({
+      title: "已存檔",
+      kind: "success",
+      action: { label: "加入詞彙表", run: () => {} },
+    });
+
+    vi.advanceTimersByTime(NOTIFICATION_MS);
+
+    expect(notifications()).toEqual(["已存檔"]);
+  });
 });

@@ -173,3 +173,14 @@ Saving after every edit would otherwise pile up one Notification per edit.
 | Given | a Notification of a finished task with the seconds of two Phases |
 | When | it shows |
 | Then | each Phase is a row under the title with its seconds beside it |
+
+## `IF-020` Keeping a Notification that offers something to do
+
+A Notification that went on its own would take its offer with it before it could be taken.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that an edit was saved, offering to add a Speaker to the Translation Glossary |
+| When | a few seconds pass |
+| Then | it is still shown |
+

@@ -29,3 +29,8 @@ export function notificationItems(index: number): [string, string][] {
     at % 2 === 0 ? [[cell, cells[at + 1]] as [string, string]] : [],
   );
 }
+
+/** The button the Notification at `index` offers, or none. */
+export function notificationAction(index: number): HTMLButtonElement | null {
+  return shown()[index]?.querySelector("button") ?? null;
+}

@@ -177,3 +177,38 @@ A change redraws the rows, so a selection kept across it would name rows that mo
 | Given | a Project in the panel with its first two Segments selected |
 | When | the third Segment is deleted from its menu |
 | Then | no Segment is selected and the selection bar is hidden |
+
+## `ED-022` Offering to add a new Speaker to the Translation Glossary
+
+Registering a Speaker gives it a name in every Language and lets the editor offer it later.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Translation Glossary names no Speaker `co` |
+| When | the first Segment's Speaker is set to `co` |
+| Then | the notice that the edit was saved offers to add `co` to the Translation Glossary |
+
+## `ED-023` Not offering a Speaker the Translation Glossary names
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Translation Glossary names the Speaker `小明` |
+| When | the first Segment's Speaker is set to `小明` |
+| Then | the notice that the edit was saved offers nothing |
+
+## `ED-024` Adding a new Speaker to the Translation Glossary
+
+| Step | Statement |
+| --- | --- |
+| Given | the offer to add `co`, in a Project in `zh-TW` whose Translation Glossary holds the row `東京`, `Tokyo`, empty |
+| When | it is accepted |
+| Then | the rows are sent to be saved with `co` in the `zh-TW` column, naming a Speaker, after `東京` |
+
+## `ED-025` Marking a term already in the Translation Glossary as a Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | the offer to add `co`, in a Project in `zh-TW` whose Translation Glossary holds the row `co`, empty, empty naming no Speaker |
+| When | it is accepted |
+| Then | the rows are sent to be saved with that row naming a Speaker and no other |
+

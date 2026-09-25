@@ -3,11 +3,12 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ProjectView } from "../backend/project";
+import type { GlossaryTable, ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import ProgressController from "./progress_controller";
 import {
   NOTIFICATION_STACK,
+  notificationAction,
   notificationDetail,
   notifications,
 } from "../ui/test_notification";
@@ -18,6 +19,7 @@ describe("TranscriptController", () => {
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
   let editFailure: unknown;
+  let glossaryTable: GlossaryTable;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -70,6 +72,11 @@ describe("TranscriptController", () => {
     project = null;
     calls = [];
     editFailure = undefined;
+    glossaryTable = {
+      languages: ["zh-TW", "en", "ja"],
+      rows: [],
+      has_source_target_header: false,
+    };
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
       <section data-controller="transcript"
@@ -96,6 +103,7 @@ describe("TranscriptController", () => {
         calls.push({ command, args });
         if (command === "current_project") return project;
         if (command === "export_path") return "/talks/lecture.en.srt";
+        if (command === "translation_glossary_table") return glossaryTable;
         if (command === "edit_segment" && editFailure !== undefined)
           return Promise.reject(editFailure);
         if (command === "plugin:dialog|save") return "/subtitles/out.srt";
@@ -345,5 +353,71 @@ describe("TranscriptController", () => {
       offered,
       document.querySelector("input.speaker")!.getAttribute("list"),
     ]).toEqual([["cl", "co", "小明"], "speakers"]);
+  });
+
+  /** A Project in `zh-TW` of one Segment, whose Translation Glossary names `speakers`. */
+  function projectNaming(speakers: string[]): ProjectView {
+    return projectOf({
+      segments: [{ start_ms: 0, end_ms: 1000, text: "你好" }],
+      translation_glossary: {
+        file: "/talks/glossary.csv",
+        term_count: speakers.length,
+        speakers,
+      },
+    });
+  }
+
+  async function nameSpeaker(name: string): Promise<void> {
+    edit("input.speaker", name);
+    await settle();
+  }
+
+  // @behavior ED-022
+  it("offers to add a new Speaker to the Translation Glossary", async () => {
+    await hold(projectNaming([]));
+
+    await nameSpeaker("co");
+
+    expect(notificationAction(0)?.textContent).toBe("加入詞彙表");
+  });
+
+  // @behavior ED-023
+  it("offers nothing for a Speaker the Translation Glossary names", async () => {
+    await hold(projectNaming(["小明"]));
+
+    await nameSpeaker("小明");
+
+    expect(notificationAction(0)).toBeNull();
+  });
+
+  // @behavior ED-024
+  it("adds a new Speaker to the Translation Glossary", async () => {
+    glossaryTable.rows = [{ words: ["東京", "Tokyo", ""], is_speaker: false }];
+    await hold(projectNaming([]));
+    await nameSpeaker("co");
+
+    notificationAction(0)!.click();
+    await settle();
+
+    expect(sent("save_translation_glossary")).toEqual({
+      rows: [
+        { words: ["東京", "Tokyo", ""], is_speaker: false },
+        { words: ["co", "", ""], is_speaker: true },
+      ],
+    });
+  });
+
+  // @behavior ED-025
+  it("marks a term already in the Translation Glossary as a Speaker", async () => {
+    glossaryTable.rows = [{ words: ["co", "", ""], is_speaker: false }];
+    await hold(projectNaming([]));
+    await nameSpeaker("co");
+
+    notificationAction(0)!.click();
+    await settle();
+
+    expect(sent("save_translation_glossary")).toEqual({
+      rows: [{ words: ["co", "", ""], is_speaker: true }],
+    });
   });
 });

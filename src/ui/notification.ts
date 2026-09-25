@@ -18,6 +18,8 @@ export interface Notification {
   items?: [string, string][];
   /** Replaces the Notification already shown with this key, so something said after every edit is said once. */
   key?: string;
+  /** Something the user may do about it; the Notification stays until clicked so it can be done. */
+  action?: { label: string; run: () => void };
 }
 
 /**
@@ -84,7 +86,20 @@ function content({ title, detail, items }: Notification): HTMLElement {
   return container;
 }
 
-/** Shows `notification` in the corner of the window. A failure stays until it is clicked; anything else goes after `NOTIFICATION_MS`. */
+/** The button of an alert's action, placed after its content as daisyUI lays one out. */
+function actionButton({
+  label,
+  run,
+}: NonNullable<Notification["action"]>): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn btn-sm";
+  button.textContent = label;
+  button.addEventListener("click", run);
+  return button;
+}
+
+/** Shows `notification` in the corner of the window. A failure, or one offering an action, stays until it is clicked; anything else goes after `NOTIFICATION_MS`. */
 export function notify(notification: Notification): void {
   const stack = document.querySelector<HTMLElement>("[data-notifications]");
   if (!stack) return;
@@ -93,13 +108,15 @@ export function notify(notification: Notification): void {
   alert.setAttribute("role", "alert");
   alert.className = `alert w-80 cursor-pointer items-start border border-l-4 border-base-300 bg-base-100 text-sm shadow-lg ${KIND_CLASSES[kind]}`;
   alert.append(icon(kind), content(notification));
+  if (notification.action) alert.append(actionButton(notification.action));
   alert.addEventListener("click", () => alert.remove());
   if (key) {
     alert.dataset.key = key;
     stack.querySelector(`[data-key="${key}"]`)?.remove();
   }
   stack.append(alert);
-  if (kind !== "error") setTimeout(() => alert.remove(), NOTIFICATION_MS);
+  if (kind !== "error" && !notification.action)
+    setTimeout(() => alert.remove(), NOTIFICATION_MS);
 }
 
 /** Says `title` did not happen and why; one refused over a change made elsewhere is a warning. */

@@ -8,7 +8,9 @@ import {
   exportPath,
   followProject,
   saveSrt,
+  saveTranslationGlossary,
   showTranslation,
+  translationGlossaryTable,
   type ProjectView,
   type Segment,
   type SegmentField,
@@ -17,7 +19,7 @@ import {
 } from "../backend/project";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
-import { notify, notifyFailure } from "../ui/notification";
+import { notify, notifyFailure, type Notification } from "../ui/notification";
 import { formatTime } from "../ui/time";
 import type { TaskKind } from "./progress_controller";
 
@@ -172,6 +174,8 @@ export default class TranscriptController extends Controller {
   private unlisten?: UnlistenFn;
   /** The task running now, whose results the editor holds Placeholders for. */
   private runningTask: TaskKind | null = null;
+  /** The Project shown now, whose Primary Language and glossary Speakers a new Speaker is checked against. */
+  private project: ProjectView | null = null;
 
   async connect(): Promise<void> {
     this.unlisten = await followProject((project) => this.show(project));
@@ -202,9 +206,57 @@ export default class TranscriptController extends Controller {
         field.dataset.field as SegmentField,
         field.value,
       );
-      notify({ title: t("edit.saved"), kind: "success", key: "saved" });
+      notify({
+        title: t("edit.saved"),
+        kind: "success",
+        key: "saved",
+        ...this.speakerOffer(field),
+      });
     } catch (error) {
       notifyFailure(t("edit.notSaved"), error);
+    }
+  }
+
+  /** An offer to add the Speaker just named to the Translation Glossary, when it names none such. */
+  private speakerOffer(
+    field: HTMLInputElement | HTMLTextAreaElement,
+  ): Pick<Notification, "detail" | "action"> {
+    const name = field.value.trim();
+    const glossarySpeakers = this.project?.translation_glossary?.speakers ?? [];
+    if (field.dataset.field !== "speaker" || name === "") return {};
+    if (glossarySpeakers.includes(name)) return {};
+    return {
+      detail: t("edit.newSpeaker", { name }),
+      action: {
+        label: t("edit.addSpeaker"),
+        run: () => void this.addSpeaker(name),
+      },
+    };
+  }
+
+  /** Marks the term `name` in the Primary Language column as a Speaker, adding the term when the glossary has none. */
+  private async addSpeaker(name: string): Promise<void> {
+    try {
+      const table = await translationGlossaryTable();
+      const column = table.languages.indexOf(this.project?.language ?? "");
+      const term = table.rows.find((row) => row.words[column] === name);
+      const rows = term
+        ? table.rows.map((row) =>
+            row === term ? { ...row, is_speaker: true } : row,
+          )
+        : [
+            ...table.rows,
+            {
+              words: table.languages.map((_, at) =>
+                at === column ? name : "",
+              ),
+              is_speaker: true,
+            },
+          ];
+      await saveTranslationGlossary(rows);
+      notify({ title: t("edit.speakerAdded", { name }), kind: "success" });
+    } catch (error) {
+      notifyFailure(t("edit.speakerNotAdded"), error);
     }
   }
 
@@ -229,6 +281,7 @@ export default class TranscriptController extends Controller {
   }
 
   private show(project: ProjectView | null): void {
+    this.project = project;
     const segments = project?.segments ?? [];
     const isTranslationShown = (project?.shown_translation ?? null) !== null;
     this.headingTarget.textContent = project?.current_resource ?? "";

@@ -15,8 +15,7 @@ describe("PreviewController", () => {
   const target = (name: string) =>
     document.querySelector<HTMLElement>(`[data-preview-target="${name}"]`)!;
   const media = () => target("media") as HTMLVideoElement;
-  const preview = () =>
-    document.querySelector<HTMLElement>('[data-controller="preview"]')!;
+  const panel = () => target("panel");
   const projectWithMedia = (changes: Partial<ProjectView> = {}) =>
     projectOf({ media: "/talks/ep01.mp4", ...changes });
 
@@ -41,13 +40,16 @@ describe("PreviewController", () => {
   }
 
   beforeEach(async () => {
+    localStorage.clear();
     project = null;
     mockConvertFileSrc("macos");
     mockIPC((command) => (command === "current_project" ? project : null), {
       shouldMockEvents: true,
     });
     document.body.innerHTML = `
-      <div data-controller="preview" hidden>
+      <div data-controller="preview">
+        <button id="fold" data-preview-target="fold" data-action="preview#toggleFold" hidden><span data-preview-target="foldIcon"></span></button>
+        <div data-preview-target="panel" hidden>
         <div data-preview-target="screen">
           <video data-preview-target="media" data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"></video>
           <p data-preview-target="caption"></p>
@@ -55,6 +57,7 @@ describe("PreviewController", () => {
         </div>
         <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playback"></span></button>
         <span data-preview-target="time"></span>
+        </div>
       </div>
     `;
     application = Application.start();
@@ -80,7 +83,7 @@ describe("PreviewController", () => {
   it("shows no player or controls for a Resource without media", async () => {
     await show(projectOf());
 
-    expect(preview().hidden).toBe(true);
+    expect(panel().hidden).toBe(true);
   });
 
   // @behavior PV-010
@@ -90,7 +93,7 @@ describe("PreviewController", () => {
 
     media().dispatchEvent(new Event("loadedmetadata"));
 
-    expect([target("screen").hidden, preview().hidden]).toEqual([true, false]);
+    expect([target("screen").hidden, panel().hidden]).toEqual([true, false]);
   });
 
   // @behavior PV-011
@@ -157,5 +160,28 @@ describe("PreviewController", () => {
     playTo(1.5);
 
     expect(target("caption").textContent).toBe("");
+  });
+
+  // @behavior PV-034
+  it("hides the Preview when its fold button is pressed", async () => {
+    await show(projectWithMedia());
+
+    document.querySelector<HTMLElement>("#fold")!.click();
+
+    expect(panel().hidden).toBe(true);
+  });
+
+  // @behavior PV-035
+  it("keeps the Preview folded for the next Resource with media", async () => {
+    await show(projectWithMedia());
+    document.querySelector<HTMLElement>("#fold")!.click();
+    application.stop();
+    application = Application.start();
+    application.register("preview", PreviewController);
+    await settle();
+
+    await show(projectOf({ media: "/talks/ep02.mp4" }));
+
+    expect(panel().hidden).toBe(true);
   });
 });

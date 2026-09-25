@@ -8,7 +8,7 @@ import {
 import { t } from "../i18n";
 import { iconElement } from "../ui/icons";
 import { notifyFailure } from "../ui/notification";
-import { phaseLabel, progressLine } from "../ui/progress";
+import { phaseLabel, progressLine, progressSummary } from "../ui/progress";
 
 /** The kind of task running, which the editor shows Placeholders for. */
 export type TaskKind = "transcribe" | "translate";
@@ -43,8 +43,10 @@ function markStep(step: HTMLElement, fromRunning: number): void {
 
 /** The running task's progress above the editor, which the task dialogs report to; how it ended is a Notification. */
 export default class ProgressController extends Controller {
-  static targets = ["steps", "status", "bar"];
+  static targets = ["summary", "steps", "status", "bar"];
 
+  /** The Phase and percentage the heading shows while the details stay folded. */
+  declare readonly summaryTarget: HTMLElement;
   declare readonly stepsTarget: HTMLUListElement;
   declare readonly statusTarget: HTMLElement;
   declare readonly barTarget: HTMLProgressElement;
@@ -73,6 +75,7 @@ export default class ProgressController extends Controller {
     this.task = task;
     this.element.removeAttribute("hidden");
     this.statusTarget.textContent = t("work.preparing");
+    this.summaryTarget.textContent = t("work.preparing");
     this.stepsTarget.replaceChildren(
       ...PHASES_BY_TASK[task].map((phase) => {
         const step = document.createElement("li");
@@ -99,6 +102,7 @@ export default class ProgressController extends Controller {
   private show(progress: PipelineProgress): void {
     if (!this.isRunning) return;
     this.statusTarget.textContent = progressLine(progress);
+    this.summaryTarget.textContent = progressSummary(progress);
     this.barTarget.hidden = false;
     if (progress.percent === null) this.barTarget.removeAttribute("value");
     else this.barTarget.value = progress.percent;

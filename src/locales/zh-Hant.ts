@@ -94,6 +94,7 @@ const zhHant: typeof en = {
     notRedone: "沒有重做",
   },
   preview: {
+    fold: "顯示或收起預覽",
     zoomIn: "放大",
     zoomOut: "縮小",
     noWaveform: "無法畫出波形",

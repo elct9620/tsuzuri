@@ -94,6 +94,7 @@ const en = {
     notRedone: "Change not redone",
   },
   preview: {
+    fold: "Show or fold the preview",
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",
     noWaveform: "Could not draw the waveform",

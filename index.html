@@ -265,213 +265,247 @@
             </div>
           </header>
           <div
-            class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
-          >
-            <h2
-              class="grow truncate font-semibold"
-              data-transcript-target="heading"
-            ></h2>
-            <label class="flex items-center gap-2 text-sm"
-              ><span data-i18n="edit.translation"></span>
-              <select
-                class="select select-sm w-auto"
-                data-transcript-target="translationLanguage"
-                data-action="change->transcript#showTranslation"
-              ></select>
-            </label>
-            <div class="dropdown dropdown-end">
-              <div tabindex="0" role="button" class="btn btn-sm">
-                <span data-i18n="compare.label"></span>
-                <i data-lucide="chevron-down" class="size-4"></i>
-              </div>
-              <div
-                tabindex="-1"
-                class="dropdown-content z-20 w-64 rounded-box bg-base-100 shadow-md"
-                data-comparison-target="menu"
-              ></div>
-            </div>
-            <div class="contents" data-controller="versions">
-              <button
-                type="button"
-                class="btn btn-sm"
-                data-action="versions#open"
-                data-i18n="versions.open"
-              ></button>
-              <dialog class="modal" data-versions-target="dialog">
-                <div class="modal-box max-w-4xl">
-                  <h3
-                    class="mb-2 text-lg font-bold"
-                    data-i18n="versions.title"
-                  ></h3>
-                  <label class="mb-2 flex items-center gap-2 text-sm"
-                    ><span data-i18n="versions.subtitle"></span>
-                    <select
-                      class="select select-sm w-auto"
-                      data-versions-target="subtitle"
-                      data-action="change->versions#showBackups"
-                    ></select>
-                  </label>
-                  <ul
-                    class="list rounded-box border border-base-300 text-sm"
-                    data-versions-target="backups"
-                  ></ul>
-                  <section
-                    class="mt-4"
-                    data-versions-target="comparison"
-                    hidden
-                  >
-                    <div class="mb-2 flex items-center gap-2">
-                      <select
-                        class="select select-sm w-auto"
-                        data-versions-target="left"
-                        data-action="change->versions#showComparison"
-                      ></select>
-                      <i
-                        data-lucide="arrow-left-right"
-                        class="size-4 text-base-content/60"
-                      ></i>
-                      <select
-                        class="select select-sm w-auto"
-                        data-versions-target="right"
-                        data-action="change->versions#showComparison"
-                      ></select>
-                      <label class="ml-auto flex items-center gap-1 text-sm">
-                        <input
-                          type="checkbox"
-                          class="checkbox checkbox-sm"
-                          data-versions-target="onlyDifferences"
-                          data-action="change->versions#showOnlyDifferences"
-                        />
-                        <span data-i18n="versions.onlyDifferences"></span>
-                      </label>
-                      <button
-                        type="button"
-                        class="btn btn-square btn-sm"
-                        data-action="versions#moveToPreviousDifference"
-                        data-i18n-label="versions.previousDifference"
-                      >
-                        <i data-lucide="chevron-up" class="size-4"></i>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-square btn-sm"
-                        data-action="versions#moveToNextDifference"
-                        data-i18n-label="versions.nextDifference"
-                      >
-                        <i data-lucide="chevron-down" class="size-4"></i>
-                      </button>
-                    </div>
-                    <div class="max-h-96 overflow-y-auto">
-                      <table class="table table-sm">
-                        <tbody data-versions-target="rows"></tbody>
-                      </table>
-                    </div>
-                  </section>
-                  <div class="modal-action">
-                    <form method="dialog">
-                      <button class="btn" data-i18n="work.close"></button>
-                    </form>
-                  </div>
-                </div>
-                <form method="dialog" class="modal-backdrop">
-                  <button>close</button>
-                </form>
-              </dialog>
-            </div>
-          </div>
-          <div
-            class="flex h-[33vh] min-h-40 border-b border-base-300"
+            class="contents"
             data-controller="preview timeline"
             data-action="transcript:current@window->timeline#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent"
-            hidden
           >
             <div
-              class="relative min-w-0 flex-2 bg-black"
-              data-preview-target="screen"
+              class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
             >
-              <video
-                class="size-full object-contain"
-                preload="metadata"
-                data-preview-target="media"
-                data-timeline-target="media"
-                data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"
-              ></video>
-              <p
-                class="pointer-events-none absolute inset-x-2 bottom-2 text-center text-sm whitespace-pre-line text-white [text-shadow:0_1px_2px_black]"
-                data-preview-target="caption"
-              ></p>
-              <div
-                role="alert"
-                class="alert alert-warning alert-soft absolute inset-2 text-sm"
-                data-preview-target="hint"
-                hidden
-              >
-                <i data-lucide="triangle-alert" class="size-4"></i>
-                <span data-i18n="preview.unplayable"></span>
-              </div>
-            </div>
-            <div class="flex min-w-0 flex-3 flex-col">
-              <div class="flex items-center gap-2 px-3 py-2">
-                <button
-                  type="button"
-                  class="btn btn-square btn-sm"
-                  data-action="preview#togglePlayback"
-                  data-i18n-label="preview.play"
-                >
-                  <span class="swap" data-preview-target="playback">
-                    <i data-lucide="pause" class="swap-on size-4"></i>
-                    <i data-lucide="play" class="swap-off size-4"></i>
-                  </span>
-                </button>
-                <span
-                  class="text-sm whitespace-nowrap tabular-nums text-base-content/70"
-                  data-preview-target="time"
-                ></span>
-                <div class="join ml-auto">
-                  <button
-                    type="button"
-                    class="btn btn-square btn-sm join-item"
-                    data-action="timeline#zoomOut"
-                    data-i18n-label="preview.zoomOut"
-                  >
-                    <i data-lucide="zoom-out" class="size-4"></i>
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-square btn-sm join-item"
-                    data-action="timeline#zoomIn"
-                    data-i18n-label="preview.zoomIn"
-                  >
-                    <i data-lucide="zoom-in" class="size-4"></i>
-                  </button>
+              <h2
+                class="grow truncate font-semibold"
+                data-transcript-target="heading"
+              ></h2>
+              <label class="flex items-center gap-2 text-sm"
+                ><span data-i18n="edit.translation"></span>
+                <select
+                  class="select select-sm w-auto"
+                  data-transcript-target="translationLanguage"
+                  data-action="change->transcript#showTranslation"
+                ></select>
+              </label>
+              <div class="dropdown dropdown-end">
+                <div tabindex="0" role="button" class="btn btn-sm">
+                  <span data-i18n="compare.label"></span>
+                  <i data-lucide="chevron-down" class="size-4"></i>
                 </div>
-              </div>
-              <div class="min-h-0 flex-1 pb-5">
                 <div
-                  class="h-full [--segment-even:color-mix(in_oklab,var(--color-primary)_22%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-secondary)_22%,transparent)] [--segment-even-current:color-mix(in_oklab,var(--color-primary)_55%,transparent)] [--segment-odd-current:color-mix(in_oklab,var(--color-secondary)_55%,transparent)]"
-                  data-timeline-target="waveform"
-                  data-action="wheel->timeline#scrollOrZoom:prevent"
+                  tabindex="-1"
+                  class="dropdown-content z-20 w-64 rounded-box bg-base-100 shadow-md"
+                  data-comparison-target="menu"
                 ></div>
               </div>
+              <div class="contents" data-controller="versions">
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  data-action="versions#open"
+                  data-i18n="versions.open"
+                ></button>
+                <dialog class="modal" data-versions-target="dialog">
+                  <div class="modal-box max-w-4xl">
+                    <h3
+                      class="mb-2 text-lg font-bold"
+                      data-i18n="versions.title"
+                    ></h3>
+                    <label class="mb-2 flex items-center gap-2 text-sm"
+                      ><span data-i18n="versions.subtitle"></span>
+                      <select
+                        class="select select-sm w-auto"
+                        data-versions-target="subtitle"
+                        data-action="change->versions#showBackups"
+                      ></select>
+                    </label>
+                    <ul
+                      class="list rounded-box border border-base-300 text-sm"
+                      data-versions-target="backups"
+                    ></ul>
+                    <section
+                      class="mt-4"
+                      data-versions-target="comparison"
+                      hidden
+                    >
+                      <div class="mb-2 flex items-center gap-2">
+                        <select
+                          class="select select-sm w-auto"
+                          data-versions-target="left"
+                          data-action="change->versions#showComparison"
+                        ></select>
+                        <i
+                          data-lucide="arrow-left-right"
+                          class="size-4 text-base-content/60"
+                        ></i>
+                        <select
+                          class="select select-sm w-auto"
+                          data-versions-target="right"
+                          data-action="change->versions#showComparison"
+                        ></select>
+                        <label class="ml-auto flex items-center gap-1 text-sm">
+                          <input
+                            type="checkbox"
+                            class="checkbox checkbox-sm"
+                            data-versions-target="onlyDifferences"
+                            data-action="change->versions#showOnlyDifferences"
+                          />
+                          <span data-i18n="versions.onlyDifferences"></span>
+                        </label>
+                        <button
+                          type="button"
+                          class="btn btn-square btn-sm"
+                          data-action="versions#moveToPreviousDifference"
+                          data-i18n-label="versions.previousDifference"
+                        >
+                          <i data-lucide="chevron-up" class="size-4"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-square btn-sm"
+                          data-action="versions#moveToNextDifference"
+                          data-i18n-label="versions.nextDifference"
+                        >
+                          <i data-lucide="chevron-down" class="size-4"></i>
+                        </button>
+                      </div>
+                      <div class="max-h-96 overflow-y-auto">
+                        <table class="table table-sm">
+                          <tbody data-versions-target="rows"></tbody>
+                        </table>
+                      </div>
+                    </section>
+                    <div class="modal-action">
+                      <form method="dialog">
+                        <button class="btn" data-i18n="work.close"></button>
+                      </form>
+                    </div>
+                  </div>
+                  <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                  </form>
+                </dialog>
+              </div>
+              <div
+                id="progress"
+                class="dropdown dropdown-end"
+                data-controller="progress"
+                hidden
+              >
+                <div tabindex="0" role="button" class="btn btn-sm">
+                  <span class="loading loading-spinner loading-xs"></span>
+                  <span
+                    class="tabular-nums"
+                    data-progress-target="summary"
+                  ></span>
+                  <i data-lucide="chevron-down" class="size-4"></i>
+                </div>
+                <div
+                  tabindex="-1"
+                  class="dropdown-content z-20 flex w-96 flex-col gap-2 rounded-box bg-base-100 p-4 shadow-md"
+                >
+                  <ul
+                    class="steps w-full text-xs"
+                    data-progress-target="steps"
+                  ></ul>
+                  <p
+                    class="whitespace-pre-line text-sm text-base-content/70"
+                    data-progress-target="status"
+                  ></p>
+                  <progress
+                    class="progress progress-primary w-full"
+                    max="100"
+                    data-progress-target="bar"
+                    hidden
+                  ></progress>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn btn-square btn-sm"
+                data-preview-target="fold"
+                data-action="preview#toggleFold"
+                data-i18n-label="preview.fold"
+                hidden
+              >
+                <span class="swap" data-preview-target="foldIcon">
+                  <i data-lucide="panel-top-open" class="swap-on size-4"></i>
+                  <i data-lucide="panel-top-close" class="swap-off size-4"></i>
+                </span>
+              </button>
             </div>
-          </div>
-          <div
-            id="progress"
-            class="flex flex-col gap-2 border-b border-base-300 px-4 py-2"
-            data-controller="progress"
-            hidden
-          >
-            <ul class="steps w-full text-xs" data-progress-target="steps"></ul>
-            <p
-              class="whitespace-pre-line text-sm text-base-content/70"
-              data-progress-target="status"
-            ></p>
-            <progress
-              class="progress progress-primary w-full"
-              max="100"
-              data-progress-target="bar"
+            <div
+              class="flex h-[33vh] min-h-40 border-b border-base-300"
+              data-preview-target="panel"
               hidden
-            ></progress>
+            >
+              <div
+                class="relative min-w-0 flex-2 bg-black"
+                data-preview-target="screen"
+              >
+                <video
+                  class="size-full object-contain"
+                  preload="metadata"
+                  data-preview-target="media"
+                  data-timeline-target="media"
+                  data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"
+                ></video>
+                <p
+                  class="pointer-events-none absolute inset-x-2 bottom-2 text-center text-sm whitespace-pre-line text-white [text-shadow:0_1px_2px_black]"
+                  data-preview-target="caption"
+                ></p>
+                <div
+                  role="alert"
+                  class="alert alert-warning alert-soft absolute inset-2 text-sm"
+                  data-preview-target="hint"
+                  hidden
+                >
+                  <i data-lucide="triangle-alert" class="size-4"></i>
+                  <span data-i18n="preview.unplayable"></span>
+                </div>
+              </div>
+              <div class="flex min-w-0 flex-3 flex-col">
+                <div class="flex items-center gap-2 px-3 py-2">
+                  <button
+                    type="button"
+                    class="btn btn-square btn-sm"
+                    data-action="preview#togglePlayback"
+                    data-i18n-label="preview.play"
+                  >
+                    <span class="swap" data-preview-target="playback">
+                      <i data-lucide="pause" class="swap-on size-4"></i>
+                      <i data-lucide="play" class="swap-off size-4"></i>
+                    </span>
+                  </button>
+                  <span
+                    class="text-sm whitespace-nowrap tabular-nums text-base-content/70"
+                    data-preview-target="time"
+                  ></span>
+                  <div class="join ml-auto">
+                    <button
+                      type="button"
+                      class="btn btn-square btn-sm join-item"
+                      data-action="timeline#zoomOut"
+                      data-i18n-label="preview.zoomOut"
+                    >
+                      <i data-lucide="zoom-out" class="size-4"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-square btn-sm join-item"
+                      data-action="timeline#zoomIn"
+                      data-i18n-label="preview.zoomIn"
+                    >
+                      <i data-lucide="zoom-in" class="size-4"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="min-h-0 flex-1 pb-5">
+                  <div
+                    class="h-full [--segment-even:color-mix(in_oklab,var(--color-primary)_22%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-secondary)_22%,transparent)] [--segment-even-current:color-mix(in_oklab,var(--color-primary)_55%,transparent)] [--segment-odd-current:color-mix(in_oklab,var(--color-secondary)_55%,transparent)]"
+                    data-timeline-target="waveform"
+                    data-action="wheel->timeline#scrollOrZoom:prevent"
+                  ></div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="flex-1 overflow-y-auto p-4">
             <p

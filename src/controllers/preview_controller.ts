@@ -10,9 +10,42 @@ import {
 import { formatClock } from "../ui/time";
 
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
-export default class PreviewController extends Controller<HTMLElement> {
-  static targets = ["screen", "media", "caption", "hint", "playback", "time"];
+/** Where the webview remembers the Preview folded away, a choice of this machine's alone. */
+const FOLDED_KEY = "tsuzuri.preview-folded";
 
+function readFolded(): boolean {
+  try {
+    return localStorage.getItem(FOLDED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeFolded(isFolded: boolean): void {
+  try {
+    localStorage.setItem(FOLDED_KEY, String(isFolded));
+  } catch {
+    // A webview without storage forgets the choice when it closes.
+  }
+}
+
+export default class PreviewController extends Controller {
+  static targets = [
+    "panel",
+    "fold",
+    "foldIcon",
+    "screen",
+    "media",
+    "caption",
+    "hint",
+    "playback",
+    "time",
+  ];
+
+  declare readonly panelTarget: HTMLElement;
+  /** Hides or shows the panel; only a Resource with media has one to fold. */
+  declare readonly foldTarget: HTMLButtonElement;
+  declare readonly foldIconTarget: HTMLElement;
   declare readonly screenTarget: HTMLElement;
   declare readonly mediaTarget: HTMLVideoElement;
   declare readonly captionTarget: HTMLElement;
@@ -23,6 +56,7 @@ export default class PreviewController extends Controller<HTMLElement> {
   private media: string | null = null;
   private segments: Segment[] = [];
   private playingIndex: number | null = null;
+  private isFolded = readFolded();
   private unlisten?: UnlistenFn;
 
   async connect(): Promise<void> {
@@ -31,6 +65,12 @@ export default class PreviewController extends Controller<HTMLElement> {
 
   disconnect(): void {
     this.unlisten?.();
+  }
+
+  toggleFold(): void {
+    this.isFolded = !this.isFolded;
+    writeFolded(this.isFolded);
+    this.showPanel();
   }
 
   togglePlayback(): void {
@@ -74,6 +114,14 @@ export default class PreviewController extends Controller<HTMLElement> {
     this.hintTarget.hidden = false;
   }
 
+  private showPanel(): void {
+    const hasMedia = this.media !== null;
+    this.foldTarget.hidden = !hasMedia;
+    this.panelTarget.hidden = !hasMedia || this.isFolded;
+    this.foldIconTarget.classList.toggle("swap-active", this.isFolded);
+    this.foldTarget.setAttribute("aria-pressed", String(this.isFolded));
+  }
+
   /** Tells the editor which Segment is being played, each time that changes. */
   private markPlaying(index: number | null): void {
     if (index === this.playingIndex) return;
@@ -86,7 +134,7 @@ export default class PreviewController extends Controller<HTMLElement> {
     const media = project?.media ?? null;
     if (media === this.media) return;
     this.media = media;
-    this.element.hidden = media === null;
+    this.showPanel();
     this.screenTarget.hidden = false;
     this.mediaTarget.hidden = false;
     this.hintTarget.hidden = true;

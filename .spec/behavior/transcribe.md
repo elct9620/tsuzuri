@@ -214,3 +214,11 @@ The whole run is laid out ahead, so how far along it is reads at a glance.
 | Given | a Current Resource being transcribed |
 | When | a load progress event arrives |
 | Then | the editor lists preparing the Components, converting, loading the Model and transcribing, the first two marked done and loading the Model marked as the one running |
+
+## `TX-028` Summing up the running Phase in the editor's heading
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource being transcribed |
+| When | a transcribe progress event of 23% arrives |
+| Then | the heading's progress button reads the Phase and 23% |

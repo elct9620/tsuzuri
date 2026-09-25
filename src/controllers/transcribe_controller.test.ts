@@ -89,6 +89,7 @@ describe("TranscribeController", () => {
         </dialog>
       </div>
       <div id="progress" data-controller="progress" hidden>
+        <span data-progress-target="summary"></span>
         <ul data-progress-target="steps"></ul>
         <p data-progress-target="status"></p>
         <progress max="100" data-progress-target="bar" hidden></progress>
@@ -143,6 +144,19 @@ describe("TranscribeController", () => {
     await settle();
 
     expect([bar().hidden, bar().hasAttribute("value")]).toEqual([false, false]);
+  });
+
+  // @behavior TX-028
+  it("sums up the running Phase in the heading's progress button", async () => {
+    await hold(media);
+    await start();
+
+    await emit("pipeline-progress", { phase: "transcribe", percent: 23 });
+    await settle();
+
+    expect(
+      document.querySelector('[data-progress-target="summary"]')!.textContent,
+    ).toBe("轉錄 23%");
   });
 
   // @behavior TX-027

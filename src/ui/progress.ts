@@ -28,3 +28,11 @@ export function phaseItems(phases: PhaseTiming[]): [string, string][] {
     t("phases.seconds", { seconds: seconds.toFixed(1) }),
   ]);
 }
+
+/** The Phase with its percentage when it has one, short enough for a button. */
+export function progressSummary({ phase, percent }: PipelineProgress): string {
+  const label = phaseLabel(phase);
+  return percent === null
+    ? label
+    : t("phases.percent", { phase: label, percent });
+}

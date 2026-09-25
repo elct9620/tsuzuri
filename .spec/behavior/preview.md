@@ -274,3 +274,19 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | a timeline at 100 pixels a second |
 | When | the wheel turns up with Ctrl held, as far as zooming by two takes |
 | Then | the timeline shows 200 pixels a second |
+
+## `PV-034` Folding the Preview away
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, its Preview shown |
+| When | the Preview's fold button is pressed |
+| Then | the Preview is hidden and the Segment list keeps the room |
+
+## `PV-035` Keeping the Preview folded for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview folded away |
+| When | another Resource with a media file becomes current |
+| Then | its Preview stays folded |

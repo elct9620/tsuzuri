@@ -88,6 +88,8 @@ describe("Current Segment", () => {
         data-action="timeline:current->transcript#showCurrent preview:playing->transcript#markPlaying">
         <div data-controller="preview timeline"
           data-action="transcript:current@window->timeline#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent">
+          <button data-preview-target="fold" hidden><span data-preview-target="foldIcon"></span></button>
+          <div data-preview-target="panel">
           <div data-preview-target="screen">
             <video data-preview-target="media" data-timeline-target="media" data-action="timeupdate->preview#follow"></video>
             <p data-preview-target="caption"></p>
@@ -96,6 +98,7 @@ describe("Current Segment", () => {
           <span data-preview-target="playback"></span>
           <span data-preview-target="time"></span>
           <div data-timeline-target="waveform"></div>
+          </div>
         </div>
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>

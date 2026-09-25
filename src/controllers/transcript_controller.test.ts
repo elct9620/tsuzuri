@@ -92,6 +92,7 @@ describe("TranscriptController", () => {
       <section data-controller="transcript"
         data-action="progress:task->transcript#followTask project:select->transcript#showLoading">
         <div id="progress" data-controller="progress" hidden>
+          <span data-progress-target="summary"></span>
           <ul data-progress-target="steps"></ul>
           <p data-progress-target="status"></p>
           <progress data-progress-target="bar" hidden></progress>

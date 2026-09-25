@@ -84,7 +84,7 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 | Rust 擁有 | Webview 擁有 |
 |---|---|
 | 專案、目前資源、段落、譯文 | 畫面上顯示的內容，每次都向 Rust 取得 |
-| 設定檔、備份、翻譯詞彙表 | modal 開關、勾選的段落、捲動位置 |
+| 設定檔、備份、翻譯詞彙表 | modal 開關、勾選的段落、目前段落、捲動位置、預覽收起 |
 | 元件行程、進度、失敗原因 | 介面語言、通知、tooltip |
 
 Rust 是唯一的事實來源。Webview 不另外儲存工作資料的副本，所有變更都寫進 Rust，再依事件重讀。
@@ -321,9 +321,9 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `project`、`transcript`、`segment-changes`、`dialog` | 整頁：資源清單、字幕編輯、段落變更、設定 modal |
 | `comparison` | 字幕編輯的對照：原文與譯文各自比較一份備份並標在各自欄位、插入已刪除的段落、疊上其他譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
-| `preview` | 預覽：播放器、整段播放、疊字 |
+| `preview` | 預覽：播放器、整段播放、疊字、收起 |
 | `timeline` | 預覽的時間軸：波形、段落區段、縮放 |
-| `progress` | 預覽右欄的任務進度 |
+| `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
 | `components`、`models`、`translation-settings`、`logs` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |

@@ -74,6 +74,7 @@ describe("TranslateController", () => {
         </dialog>
       </div>
       <div id="progress" data-controller="progress" hidden>
+        <span data-progress-target="summary"></span>
         <ul data-progress-target="steps"></ul>
         <p data-progress-target="status"></p>
         <progress max="100" data-progress-target="bar" hidden></progress>

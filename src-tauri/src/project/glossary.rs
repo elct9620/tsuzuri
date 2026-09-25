@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -145,12 +146,29 @@ impl TranslationGlossary {
 
     /// The source and target word of each term that has both, for translating between `pair`.
     pub fn terms_for(&self, pair: LanguagePair) -> Vec<(String, String)> {
+        self.word_pairs(pair, |_| true)
+    }
+
+    /// What each Speaker it names in `pair.source` is called in `pair.target`, where it gives both.
+    pub fn speaker_names(&self, pair: LanguagePair) -> HashMap<String, String> {
+        self.word_pairs(pair, |row| row.is_speaker)
+            .into_iter()
+            .collect()
+    }
+
+    /// The source and target word of each row `is_taken` accepts that has both.
+    fn word_pairs(
+        &self,
+        pair: LanguagePair,
+        is_taken: impl Fn(&GlossaryRow) -> bool,
+    ) -> Vec<(String, String)> {
         let column = |language| self.languages.iter().position(|each| *each == language);
         let (Some(source), Some(target)) = (column(pair.source), column(pair.target)) else {
             return Vec::new();
         };
         self.rows
             .iter()
+            .filter(|row| is_taken(row))
             .map(|row| &row.words)
             .filter(|words| !words[source].is_empty() && !words[target].is_empty())
             .map(|words| (words[source].clone(), words[target].clone()))
@@ -524,6 +542,20 @@ mod tests {
         assert_eq!(
             terms_in(&dir, ZH_TO_EN),
             [("小明".to_string(), "Xiao Ming".to_string())]
+        );
+    }
+
+    #[test]
+    fn names_only_the_terms_marked_as_speakers() {
+        let dir = TempDir::new("gl-speaker-names");
+        write_glossary(&dir, "zh-TW,en,type\n小明,Xiao Ming,speaker\n東京,Tokyo,\n");
+        let glossary = TranslationGlossary::from_directory(dir.path(), None)
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            glossary.speaker_names(ZH_TO_EN),
+            HashMap::from([("小明".to_string(), "Xiao Ming".to_string())])
         );
     }
 }

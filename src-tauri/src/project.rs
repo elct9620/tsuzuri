@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
 use crate::language::{Language, LanguagePair};
-use crate::transcript::{Segment, SrtContent, Transcript};
+use crate::transcript::{Segment, SpeakerNames, SrtContent, Transcript};
 
 pub mod commands;
 mod current;
@@ -67,13 +68,37 @@ impl Project {
         }
     }
 
-    /// `transcript` as a Bilingual SRT in the Bilingual Order.
-    fn bilingual_srt(&self, transcript: &Transcript) -> String {
+    /// What the Translation Glossary calls each Speaker in `language`, by its name in the
+    /// Primary Language; none without a glossary.
+    fn speaker_names(&self, language: Option<Language>) -> HashMap<String, String> {
+        let pair = language.map(|target| LanguagePair {
+            source: self.language,
+            target,
+        });
+        match (&self.translation_glossary, pair) {
+            (Some(glossary), Some(pair)) => glossary.speaker_names(pair),
+            _ => HashMap::new(),
+        }
+    }
+
+    /// `transcript` as a Bilingual SRT in the Bilingual Order, its translation into `translation`.
+    fn bilingual_srt(&self, transcript: &Transcript, translation: Option<Language>) -> String {
+        let translated_names = self.speaker_names(translation);
         match self.options.bilingual_order {
-            BilingualOrder::OriginalFirst => transcript.to_srt(SrtContent::Bilingual),
-            BilingualOrder::TranslationFirst => {
-                translation_first(transcript).to_srt(SrtContent::Bilingual)
-            }
+            BilingualOrder::OriginalFirst => transcript.to_srt_with(
+                SrtContent::Bilingual,
+                &SpeakerNames {
+                    translation: translated_names,
+                    ..SpeakerNames::default()
+                },
+            ),
+            BilingualOrder::TranslationFirst => translation_first(transcript).to_srt_with(
+                SrtContent::Bilingual,
+                &SpeakerNames {
+                    text: translated_names,
+                    ..SpeakerNames::default()
+                },
+            ),
         }
     }
 
@@ -87,10 +112,18 @@ impl Project {
 
     /// The Current Resource as SRT, a Bilingual SRT in the Bilingual Order.
     fn to_srt(&self, content: SrtContent) -> Result<String, ProjectError> {
-        let transcript = &self.current()?.transcript;
+        let current = self.current()?;
+        let transcript = &current.transcript;
         Ok(match content {
-            SrtContent::Bilingual => self.bilingual_srt(transcript),
-            _ => transcript.to_srt(content),
+            SrtContent::Bilingual => self.bilingual_srt(transcript, current.translation),
+            SrtContent::Translation => transcript.to_srt_with(
+                content,
+                &SpeakerNames {
+                    translation: self.speaker_names(current.translation),
+                    ..SpeakerNames::default()
+                },
+            ),
+            SrtContent::Original => transcript.to_srt(content),
         })
     }
 
@@ -126,6 +159,18 @@ fn translation_only(transcript: &Transcript) -> Transcript {
             })
             .collect(),
     }
+}
+
+/// The translated Segments of `transcript` as the SRT of its translation, each Speaker called
+/// as `speaker_names` gives.
+fn translation_srt(transcript: &Transcript, speaker_names: HashMap<String, String>) -> String {
+    translation_only(transcript).to_srt_with(
+        SrtContent::Original,
+        &SpeakerNames {
+            text: speaker_names,
+            ..SpeakerNames::default()
+        },
+    )
 }
 
 /// Each translated Segment with its translation as its text and its text as its translation.

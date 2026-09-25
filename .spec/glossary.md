@@ -16,7 +16,7 @@ One piece of speech with a start time, an end time, its text and, when known, it
 
 ### Speaker
 
-Who says a Segment, named by the user and never detected. In an SRT it is the Speaker Label on the cue's first line when no other line carries one, and it is written back as `name: ` before both the original and the translation.
+Who says a Segment, named by the user and never detected. In an SRT it is the Speaker Label on the cue's first line when no other line carries one, and it is written back as `name: ` before the original, and before the translation as the Translation Glossary names that Speaker in the translation's Language, or as it is where the glossary names it no other way.
 
 ### Transcript
 

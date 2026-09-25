@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::SystemTime;
@@ -8,7 +9,7 @@ use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 use super::versions::SubtitleVersions;
 use super::{
-    translation_only, CurrentResource, Project, ProjectConfig, ProjectOptions, SegmentField,
+    translation_srt, CurrentResource, Project, ProjectConfig, ProjectOptions, SegmentField,
     SubtitleDigest, TranscriptionTarget, TranslationSource,
 };
 use crate::failure::Failure;
@@ -162,8 +163,8 @@ impl Project {
         let current = self.current()?;
         let srt = match (content, current.translation) {
             (SrtContent::Translation, None) => return Ok(()),
-            (SrtContent::Translation, Some(_)) => {
-                translation_only(&current.transcript).to_srt(SrtContent::Original)
+            (SrtContent::Translation, Some(language)) => {
+                translation_srt(&current.transcript, self.speaker_names(Some(language)))
             }
             _ => current.transcript.to_srt(SrtContent::Original),
         };
@@ -193,12 +194,15 @@ impl Project {
         for (language, path) in &resource.translations {
             let mut translation = resource.transcript(Some(*language))?;
             change.apply(&mut translation.segments)?;
-            translations.push((path.clone(), translation_only(&translation)));
+            translations.push((
+                path.clone(),
+                translation_srt(&translation, self.speaker_names(Some(*language))),
+            ));
         }
         self.current_mut()?.transcript = original;
         self.write_subtitle(SrtContent::Original)?;
-        for (path, translation) in translations {
-            files::write_srt(&path, translation.to_srt(SrtContent::Original))?;
+        for (path, srt) in translations {
+            files::write_srt(&path, srt)?;
         }
         self.resources = files::resources_in(&self.directory, self.language)?;
         self.select(&name)?;
@@ -278,7 +282,7 @@ impl Project {
                 &self
                     .directory
                     .join(self.bilingual_file_name(name, *language)),
-                self.bilingual_srt(&transcript),
+                self.bilingual_srt(&transcript, Some(*language)),
             )?;
         }
         Ok(())
@@ -586,11 +590,14 @@ impl CurrentProject {
             .directory
             .join(files::file_name(&source.name, [Some(target)]));
         let translation = Transcript { segments };
+        let speaker_names = match self.lock().project.as_ref() {
+            Some(project) if project.directory == source.directory => {
+                project.speaker_names(Some(target))
+            }
+            _ => HashMap::new(),
+        };
         self.back_up_before_overwrite(&source.directory, &path)?;
-        files::write_srt(
-            &path,
-            translation_only(&translation).to_srt(SrtContent::Original),
-        )?;
+        files::write_srt(&path, translation_srt(&translation, speaker_names))?;
         self.refresh_resources(&source.directory)?;
         self.write_bilingual_subtitles(&source.directory, &source.name, Some(target))?;
         self.show_translations(source, target, &translation.segments);
@@ -1958,5 +1965,124 @@ mod tests {
             .unwrap();
 
         assert_eq!(file_text(&dir, "ep01.en.srt"), cue("Hi"));
+    }
+
+    /// A Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`,
+    /// whose `ep01.srt` reads `小明: 你好`, and holding `files` besides.
+    fn xiao_ming_project_in(dir: &TempDir, files: &[(&str, &str)]) -> CurrentProject {
+        std::fs::write(
+            dir.path().join("glossary.csv"),
+            "zh-TW,en,type\n小明,Xiao Ming,speaker\n",
+        )
+        .unwrap();
+        std::fs::write(dir.path().join("ep01.srt"), cue("小明: 你好")).unwrap();
+        for (file_name, content) in files {
+            std::fs::write(dir.path().join(file_name), content).unwrap();
+        }
+        project_in(dir)
+    }
+
+    // @behavior PJ-071
+    #[test]
+    fn names_a_speaker_in_a_translation_as_the_translation_glossary_does() {
+        let dir = TempDir::new("pj-speaker-name");
+        let current = xiao_ming_project_in(&dir, &[("ep01.en.srt", &cue("小明: Hello"))]);
+
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.en.srt"), cue("Xiao Ming: Hi"));
+    }
+
+    // @behavior PJ-072
+    #[test]
+    fn keeps_a_speakers_name_the_translation_glossary_does_not_give() {
+        let dir = directory_of(
+            "pj-speaker-same-name",
+            &[
+                ("ep01.srt", &cue("co: 你好")),
+                ("ep01.en.srt", &cue("co: Hello")),
+            ],
+        );
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.en.srt"), cue("co: Hi"));
+    }
+
+    // @behavior PJ-073
+    #[test]
+    fn names_a_speaker_in_each_text_of_a_bilingual_srt() {
+        let dir = TempDir::new("pj-speaker-bilingual");
+        let current = xiao_ming_project_in(&dir, &[("ep01.en.srt", &cue("小明: Hello"))]);
+        current
+            .set_options(ProjectOptions {
+                is_bilingual_autosaved: true,
+                ..ProjectOptions::default()
+            })
+            .unwrap();
+
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+
+        assert_eq!(
+            read(&dir, "ep01.zh-TW.en.srt"),
+            cue("小明: 你好\nXiao Ming: Hi")
+        );
+    }
+
+    // @behavior PJ-074
+    #[test]
+    fn names_a_speaker_in_a_translation_just_made() {
+        let dir = TempDir::new("pj-speaker-translated");
+        let current = xiao_ming_project_in(&dir, &[]);
+        let source = current.snapshot().unwrap();
+        let translated = Segment {
+            speaker: Some("小明".to_string()),
+            ..segment("你好", Some("Hello"))
+        };
+
+        current
+            .write_translations(&source, Language::English, vec![translated])
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.en.srt"), cue("Xiao Ming: Hello"));
+    }
+
+    // @behavior PJ-075
+    #[test]
+    fn names_a_speaker_in_a_translation_saved_elsewhere() {
+        let dir = TempDir::new("pj-speaker-saved");
+        let current = xiao_ming_project_in(&dir, &[("ep01.en.srt", &cue("Hello"))]);
+        let path = dir.path().join("saved.srt");
+
+        current.save_srt(&path, SrtContent::Translation).unwrap();
+
+        assert_eq!(read(&dir, "saved.srt"), cue("Xiao Ming: Hello"));
+    }
+
+    // @behavior PJ-076
+    #[test]
+    fn names_a_speaker_in_a_translation_a_segment_change_rewrites() {
+        let dir = TempDir::new("pj-speaker-changed");
+        let current = xiao_ming_project_in(&dir, &[("ep01.en.srt", &cue("Hello"))]);
+
+        current
+            .change_segments(SegmentChange::Times {
+                index: 0,
+                start_ms: 500,
+                end_ms: 1_500,
+            })
+            .unwrap();
+
+        assert_eq!(
+            read(&dir, "ep01.en.srt"),
+            "1\n00:00:00,500 --> 00:00:01,500\nXiao Ming: Hello\n"
+        );
     }
 }

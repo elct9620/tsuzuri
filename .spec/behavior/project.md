@@ -553,3 +553,52 @@ What Tsuzuri wrote itself is never taken for a change made elsewhere.
 | Given | a Current Resource `ep01` whose translation into `en` Tsuzuri just wrote to `ep01.en.srt` |
 | When | a Segment's translation is edited |
 | Then | `ep01.en.srt` holds the edit |
+
+## `PJ-071` Naming a Speaker in a translation as the Translation Glossary does
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` with `ep01.en.srt` shown |
+| When | its translation is edited to `Hi` |
+| Then | `ep01.en.srt` reads `Xiao Ming: Hi` |
+
+## `PJ-072` Keeping a Speaker's name the Translation Glossary does not give
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` without `glossary.csv` whose `ep01.srt` reads `co: 你好` with `ep01.en.srt` shown |
+| When | its translation is edited to `Hi` |
+| Then | `ep01.en.srt` reads `co: Hi` |
+
+## `PJ-073` Naming a Speaker in each text of a Bilingual SRT
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好`, saving Bilingual SRTs, with `ep01.en.srt` shown |
+| When | its translation is edited to `Hi` |
+| Then | `ep01.zh-TW.en.srt` reads `小明: 你好` above `Xiao Ming: Hi` |
+
+## `PJ-074` Naming a Speaker in a translation just made
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` |
+| When | a translation into `en` of `Hello` is written |
+| Then | `ep01.en.srt` reads `Xiao Ming: Hello` |
+
+## `PJ-075` Naming a Speaker in a translation saved elsewhere
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` with `ep01.en.srt` shown reading `Hello` |
+| When | its translation is saved as SRT |
+| Then | the file reads `Xiao Ming: Hello` |
+
+## `PJ-076` Naming a Speaker in a translation a Segment Change rewrites
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` from 0 to 1 second, with `ep01.en.srt` reading `Hello` |
+| When | its times are changed to 0.5 to 1.5 seconds |
+| Then | `ep01.en.srt` reads `Xiao Ming: Hello` from 0.5 to 1.5 seconds |
+

@@ -59,12 +59,10 @@
             ></h1>
             <div class="navbar-end w-auto shrink-0 gap-2">
               <div class="dropdown dropdown-end">
-                <div
-                  tabindex="0"
-                  role="button"
-                  class="btn btn-sm"
-                  data-i18n="toolbar.open"
-                ></div>
+                <div tabindex="0" role="button" class="btn btn-sm">
+                  <span data-i18n="toolbar.open"></span>
+                  <i data-lucide="chevron-down" class="size-4"></i>
+                </div>
                 <ul
                   tabindex="-1"
                   class="menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md"
@@ -216,12 +214,10 @@
               </div>
 
               <div class="dropdown dropdown-end">
-                <div
-                  tabindex="0"
-                  role="button"
-                  class="btn btn-sm"
-                  data-i18n="toolbar.export"
-                ></div>
+                <div tabindex="0" role="button" class="btn btn-sm">
+                  <span data-i18n="toolbar.export"></span>
+                  <i data-lucide="chevron-down" class="size-4"></i>
+                </div>
                 <ul
                   tabindex="-1"
                   class="menu dropdown-content z-10 w-44 rounded-box bg-base-100 shadow-md [&_button:disabled]:pointer-events-none [&_button:disabled]:text-base-content/40"
@@ -326,7 +322,10 @@
                         data-versions-target="left"
                         data-action="change->versions#showComparison"
                       ></select>
-                      <span>↔</span>
+                      <i
+                        data-lucide="arrow-left-right"
+                        class="size-4 text-base-content/60"
+                      ></i>
                       <select
                         class="select select-sm w-auto"
                         data-versions-target="right"
@@ -343,19 +342,19 @@
                       </label>
                       <button
                         type="button"
-                        class="btn btn-sm"
+                        class="btn btn-square btn-sm"
                         data-action="versions#moveToPreviousDifference"
                         data-i18n-label="versions.previousDifference"
                       >
-                        ↑
+                        <i data-lucide="chevron-up" class="size-4"></i>
                       </button>
                       <button
                         type="button"
-                        class="btn btn-sm"
+                        class="btn btn-square btn-sm"
                         data-action="versions#moveToNextDifference"
                         data-i18n-label="versions.nextDifference"
                       >
-                        ↓
+                        <i data-lucide="chevron-down" class="size-4"></i>
                       </button>
                     </div>
                     <div class="max-h-96 overflow-y-auto">
@@ -575,8 +574,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.primaryLanguageHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <select
                         class="select select-sm w-auto"
@@ -595,8 +594,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.bilingualOrderHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <select
                         class="select select-sm w-auto"
@@ -620,8 +619,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.bilingualAutosaveHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <input
                         type="checkbox"
@@ -637,8 +636,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.overwriteBackupHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <input
                         type="checkbox"
@@ -673,8 +672,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.ffmpegHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <span
                         class="skeleton h-4 w-48"
@@ -710,8 +709,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.whisperHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <span
                         class="skeleton h-4 w-48"
@@ -747,8 +746,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.llamaHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <span
                         class="skeleton h-4 w-48"
@@ -796,8 +795,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.batchSizeHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <input
                         type="number"
@@ -814,8 +813,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.retriesHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <input
                         type="number"
@@ -832,8 +831,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.referenceLinesHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <input
                         type="number"
@@ -859,8 +858,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.transcriptionModelHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <span
                         class="break-all text-base-content/70 [&.missing]:text-error"
@@ -883,8 +882,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.translationModelHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <span
                         class="break-all text-base-content/70 [&.missing]:text-error"
@@ -916,8 +915,8 @@
                           tabindex="0"
                           class="cursor-help text-base-content/50"
                           data-i18n-tooltip="settings.logDirectoryHelp"
-                          >ⓘ</span
-                        >
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
                       </span>
                       <span
                         class="list-col-grow truncate font-mono text-xs"

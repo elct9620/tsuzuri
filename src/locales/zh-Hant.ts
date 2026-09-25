@@ -2,13 +2,13 @@ import type en from "./en";
 
 const zhHant: typeof en = {
   toolbar: {
-    open: "開啟 ▾",
+    open: "開啟",
     openDirectory: "開啟目錄",
     openSrt: "開啟 SRT",
     transcribe: "轉錄",
     translate: "翻譯",
     settings: "設定",
-    export: "匯出 ▾",
+    export: "匯出",
     original: "另存原文",
     translation: "另存譯文",
     bilingual: "雙語 SRT",

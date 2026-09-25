@@ -7,7 +7,7 @@ describe("closeMenu", () => {
   it("moves focus out of the menu an item was chosen from", () => {
     document.body.innerHTML = `
       <div class="dropdown">
-        <div tabindex="0" role="button">開啟 ▾</div>
+        <div tabindex="0" role="button">開啟</div>
         <ul tabindex="-1" class="dropdown-content menu">
           <li><button type="button">開啟目錄</button></li>
         </ul>

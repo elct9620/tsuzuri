@@ -1,13 +1,13 @@
 /** The interface text in English, which every other language falls back to. */
 const en = {
   toolbar: {
-    open: "Open ▾",
+    open: "Open",
     openDirectory: "Open a folder",
     openSrt: "Open an SRT file",
     transcribe: "Transcribe",
     translate: "Translate",
     settings: "Settings",
-    export: "Export ▾",
+    export: "Export",
     original: "Save original as",
     translation: "Save translation as",
     bilingual: "Bilingual SRT",

@@ -7,6 +7,8 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/transcript_controller.test.ts`
 - `src/controllers/project_controller.test.ts`
 - `src/controllers/segment_changes_controller.test.ts`
+- `src/controllers/field_controller.test.ts`
+- `src/editor/*.test.ts`
 
 ## `ED-001` Writing an edited text to the Project
 
@@ -227,4 +229,38 @@ Registering a Speaker gives it a name in every Language and lets the editor offe
 | Given | a Project whose Current Resource is being translated into the Language it shows |
 | When | the panel shows its Segments |
 | Then | each translation field is disabled and each text field is not |
+
+## `ED-028` Keeping a cue's text plain
+
+A subtitle has no formatting, so what is pasted or typed into a text field stays plain text.
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor showing a Segment |
+| When | its text field is laid out |
+| Then | the field takes plain text only and keeps each line break the text has |
+
+## `ED-029` Writing nothing when a text field is left unchanged
+
+| Step | Statement |
+| --- | --- |
+| Given | a text field the user entered |
+| When | it is left without its text changing |
+| Then | no edit is written |
+
+## `ED-030` Telling where the caret is in a text field
+
+| Step | Statement |
+| --- | --- |
+| Given | a text field of two lines with the caret after the line break |
+| When | the caret's place is asked |
+| Then | it counts every character before the caret, the line break included |
+
+## `ED-031` Leaving Enter to an input method while it composes
+
+| Step | Statement |
+| --- | --- |
+| Given | a text field where an input method is composing text |
+| When | Enter is pressed to pick a candidate |
+| Then | no line break is typed and the input method keeps the key |
 

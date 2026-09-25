@@ -247,7 +247,7 @@ export default class ComparisonController extends Controller {
       reference.className = "px-1.5 text-sm text-base-content/70";
       reference.textContent = cue.text;
       item
-        .querySelector("textarea.text")
+        .querySelector(".field.text")
         ?.insertAdjacentElement("afterend", reference);
     }
   }
@@ -299,7 +299,7 @@ export default class ComparisonController extends Controller {
         text: row.left.map((cue) => cue.text).join(" / ") || "—",
       });
       item
-        .querySelector(`textarea.${field}`)
+        .querySelector(`.field.${field}`)
         ?.insertAdjacentElement("afterend", was);
     }
   }

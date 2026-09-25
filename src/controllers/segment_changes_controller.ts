@@ -5,6 +5,7 @@ import {
   refreshProject,
   type SegmentChange,
 } from "../backend/project";
+import { caretOffset, fieldValue } from "../editor/field";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { notify, notifyFailure } from "../ui/notification";
@@ -77,12 +78,11 @@ export default class SegmentChangesController extends Controller {
   async split({ currentTarget }: Event): Promise<void> {
     closeMenu(currentTarget);
     const index = indexOf(currentTarget);
-    const text = this.element.querySelector<HTMLTextAreaElement>(
-      `textarea[data-index="${index}"][data-field="text"]`,
+    const text = this.element.querySelector<HTMLElement>(
+      `.field[data-index="${index}"][data-field="text"]`,
     );
-    const at = [...(text?.value ?? "").slice(0, text?.selectionStart ?? 0)]
-      .length;
-    if (!text || at === 0 || at >= [...text.value].length) {
+    const at = text ? caretOffset(text) : 0;
+    if (!text || at === 0 || at >= [...fieldValue(text)].length) {
       notify({ title: t("edit.splitWhere"), kind: "warning" });
       return;
     }

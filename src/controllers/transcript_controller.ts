@@ -17,6 +17,13 @@ import {
   type SrtContent,
   type UnlistenFn,
 } from "../backend/project";
+import {
+  createField,
+  fieldValue,
+  isField,
+  setFieldHeld,
+  setFieldValue,
+} from "../editor/field";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
@@ -24,20 +31,28 @@ import { notify, notifyFailure, type Notification } from "../ui/notification";
 import { formatTime } from "../ui/time";
 import type { TaskKind } from "./progress_controller";
 
+/** The text field of one text of a Segment, which hands its text to `transcript#edit` when left changed. */
 function editor(
   index: number,
   field: SegmentField,
   value: string,
-): HTMLTextAreaElement {
-  const textarea = document.createElement("textarea");
-  textarea.className = field;
-  textarea.dataset.index = String(index);
-  textarea.dataset.field = field;
-  textarea.dataset.action = "change->transcript#edit";
-  textarea.rows = Math.max(1, value.split("\n").length);
-  textarea.value = value;
-  if (field === "translation") textarea.placeholder = t("edit.untranslated");
-  return textarea;
+): HTMLElement {
+  const editor = createField(
+    value,
+    field === "translation" ? t("edit.untranslated") : "",
+  );
+  editor.className = `field ${field}`;
+  editor.dataset.index = String(index);
+  editor.dataset.field = field;
+  editor.dataset.controller = "field";
+  editor.dataset.action =
+    "focus->field#remember keydown.enter->field#breakLine:!composing:prevent blur->field#leave field:change->transcript#edit";
+  return editor;
+}
+
+/** What a text field or an input holds. */
+function enteredText(field: HTMLElement): string {
+  return isField(field) ? fieldValue(field) : (field as HTMLInputElement).value;
 }
 
 /** Rows standing for Segments still being made or read. */
@@ -201,12 +216,12 @@ export default class TranscriptController extends Controller {
   }
 
   async edit(event: Event): Promise<void> {
-    const field = event.currentTarget as HTMLInputElement | HTMLTextAreaElement;
+    const field = event.currentTarget as HTMLElement;
     try {
       await editSegment(
         Number(field.dataset.index),
         field.dataset.field as SegmentField,
-        field.value,
+        enteredText(field),
       );
       notify({
         title: t("edit.saved"),
@@ -220,9 +235,9 @@ export default class TranscriptController extends Controller {
 
   /** An offer to add the Speaker just named to the Translation Glossary, when it names none such. */
   private speakerOffer(
-    field: HTMLInputElement | HTMLTextAreaElement,
+    field: HTMLElement,
   ): Pick<Notification, "detail" | "action"> {
-    const name = field.value.trim();
+    const name = enteredText(field).trim();
     const glossarySpeakers = this.project?.translation_glossary?.speakers ?? [];
     if (field.dataset.field !== "speaker" || name === "") return {};
     if (glossarySpeakers.includes(name)) return {};
@@ -321,9 +336,9 @@ export default class TranscriptController extends Controller {
   /** Refreshes the editors in place when the Project keeps its shape, so the one being typed in keeps its focus. */
   private showSegments(segments: Segment[], isTranslationShown: boolean): void {
     const editors = [
-      ...this.listTarget.querySelectorAll<
-        HTMLInputElement | HTMLTextAreaElement
-      >("[data-edge], [data-field]"),
+      ...this.listTarget.querySelectorAll<HTMLElement>(
+        "[data-edge], [data-field]",
+      ),
     ];
     const values = segments.flatMap((segment) => [
       formatTime(segment.start_ms),
@@ -345,7 +360,9 @@ export default class TranscriptController extends Controller {
       );
     } else {
       editors.forEach((field, index) => {
-        if (field !== document.activeElement) field.value = values[index];
+        if (field === document.activeElement) return;
+        if (isField(field)) setFieldValue(field, values[index]);
+        else (field as HTMLInputElement).value = values[index];
       });
     }
     this.showPendingTranslations();
@@ -358,13 +375,18 @@ export default class TranscriptController extends Controller {
       mode?.mode === "translation" &&
       mode.language !== project?.shown_translation;
     for (const field of this.listTarget.querySelectorAll<
-      HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement
-    >("input, textarea, button")) {
+      HTMLInputElement | HTMLButtonElement | HTMLElement
+    >("input, button, [contenteditable]")) {
       const isFree =
         mode === null ||
         (mode.mode === "translation" && field.classList.contains("text")) ||
         (isTranslationFree && field.classList.contains("translation"));
-      field.disabled = !isFree;
+      if (
+        field instanceof HTMLInputElement ||
+        field instanceof HTMLButtonElement
+      )
+        field.disabled = !isFree;
+      else setFieldHeld(field, !isFree);
     }
   }
 
@@ -384,12 +406,12 @@ export default class TranscriptController extends Controller {
   /** Marks each translation still to come while a translation runs. */
   private showPendingTranslations(): void {
     const isTranslating = this.runningTask === "translate";
-    for (const textarea of this.listTarget.querySelectorAll<HTMLTextAreaElement>(
-      "textarea.translation",
+    for (const field of this.listTarget.querySelectorAll<HTMLElement>(
+      ".field.translation",
     )) {
-      textarea.classList.toggle(
+      field.classList.toggle(
         "skeleton",
-        isTranslating && textarea.value === "",
+        isTranslating && fieldValue(field) === "",
       );
     }
   }

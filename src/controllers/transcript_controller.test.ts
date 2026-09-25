@@ -5,6 +5,8 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { GlossaryTable, ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
+import { fieldValue, isFieldHeld } from "../editor/field";
+import FieldController from "./field_controller";
 import ProgressController from "./progress_controller";
 import {
   NOTIFICATION_STACK,
@@ -30,15 +32,22 @@ describe("TranscriptController", () => {
   }
 
   function fields(): string[] {
-    return [
-      ...document.querySelectorAll<HTMLTextAreaElement>("li textarea"),
-    ].map((field) => field.value);
+    return [...document.querySelectorAll<HTMLElement>("li .field")].map(
+      fieldValue,
+    );
   }
 
+  /** Types `value` into the text field or input `selector` names and leaves it, as the user does. */
   function edit(selector: string, value: string): void {
-    const field = document.querySelector<HTMLTextAreaElement>(selector)!;
-    field.value = value;
-    field.dispatchEvent(new Event("change"));
+    const field = document.querySelector<HTMLElement>(selector)!;
+    if (field instanceof HTMLInputElement) {
+      field.value = value;
+      field.dispatchEvent(new Event("change"));
+      return;
+    }
+    field.dispatchEvent(new FocusEvent("focus"));
+    field.textContent = value;
+    field.dispatchEvent(new FocusEvent("blur"));
   }
 
   function progress(): ProgressController {
@@ -112,6 +121,7 @@ describe("TranscriptController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
+    application.register("field", FieldController);
     application.register("progress", ProgressController);
     application.register("transcript", TranscriptController);
     await settle();
@@ -159,7 +169,7 @@ describe("TranscriptController", () => {
     );
     editFailure = { code: "changed-elsewhere" };
 
-    edit("textarea.text", "逐字稿");
+    edit(".field.text", "逐字稿");
     await settle();
 
     expect([notifications(), notificationDetail(0)]).toEqual([
@@ -174,7 +184,7 @@ describe("TranscriptController", () => {
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }] }),
     );
 
-    edit("textarea.text", "逐字稿");
+    edit(".field.text", "逐字稿");
     await settle();
 
     expect(notifications()).toEqual(["已存檔"]);
@@ -186,7 +196,7 @@ describe("TranscriptController", () => {
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }] }),
     );
 
-    edit("textarea.text", "逐字稿");
+    edit(".field.text", "逐字稿");
     await settle();
 
     expect(sent("edit_segment")).toEqual({
@@ -200,7 +210,7 @@ describe("TranscriptController", () => {
   it("writes an edited translation to the Project", async () => {
     await hold(translated);
 
-    edit("textarea.translation", "Hi all");
+    edit(".field.translation", "Hi all");
     await settle();
 
     expect(sent("edit_segment")).toEqual({
@@ -295,7 +305,7 @@ describe("TranscriptController", () => {
     await settle();
 
     expect(
-      [...document.querySelectorAll("textarea.translation")].map((field) =>
+      [...document.querySelectorAll(".field.translation")].map((field) =>
         field.classList.contains("skeleton"),
       ),
     ).toEqual([false, true]);
@@ -425,14 +435,14 @@ describe("TranscriptController", () => {
   it("holds every field while the Current Resource is transcribed", async () => {
     await hold({ ...translated, running_mode: { mode: "transcription" } });
 
-    const fields = [
-      ...document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
-        "li input, li textarea",
-      ),
-    ];
-    expect(fields.length > 0 && fields.every((field) => field.disabled)).toBe(
-      true,
-    );
+    const inputs = [...document.querySelectorAll<HTMLInputElement>("li input")];
+    const textFields = [...document.querySelectorAll<HTMLElement>("li .field")];
+    expect(
+      inputs.length > 0 &&
+        textFields.length > 0 &&
+        inputs.every((input) => input.disabled) &&
+        textFields.every(isFieldHeld),
+    ).toBe(true);
   });
 
   // @behavior ED-027
@@ -442,12 +452,12 @@ describe("TranscriptController", () => {
       running_mode: { mode: "translation", language: "en" },
     });
 
-    const isDisabled = (selector: string) =>
-      document.querySelector<HTMLTextAreaElement>(selector)!.disabled;
-    expect([
-      isDisabled("textarea.translation"),
-      isDisabled("textarea.text"),
-    ]).toEqual([true, false]);
+    const isHeld = (selector: string) =>
+      isFieldHeld(document.querySelector<HTMLElement>(selector)!);
+    expect([isHeld(".field.translation"), isHeld(".field.text")]).toEqual([
+      true,
+      false,
+    ]);
   });
   it("names the icon that opens a Segment's changes", async () => {
     await hold(translated);

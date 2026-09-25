@@ -26,7 +26,7 @@ describe("UndoController", () => {
     commands = [];
     document.body.innerHTML = `
       <main data-controller="undo" data-action="keydown@window->undo#press">
-        <textarea class="text"></textarea>
+        <div class="field text" contenteditable="plaintext-only" tabindex="0"></div>
         <button type="button">⋮</button>
       </main>
     `;
@@ -47,7 +47,7 @@ describe("UndoController", () => {
     vi.restoreAllMocks();
   });
 
-  const textField = () => document.querySelector("textarea")!;
+  const textField = () => document.querySelector<HTMLElement>(".field")!;
   const button = () => document.querySelector("button")!;
   const projectCommands = () =>
     commands.filter((command) => command === "undo" || command === "redo");

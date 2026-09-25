@@ -6,6 +6,7 @@ import {
   type EditCommand,
   type UnlistenFn,
 } from "../backend/project";
+import { isField } from "../editor/field";
 import { t } from "../i18n";
 import { notifyFailure } from "../ui/notification";
 
@@ -14,7 +15,7 @@ const TEXT_INPUT_TYPES = new Set(["text", "search", "url", "email", "tel"]);
 
 function isTextField(element: EventTarget | null): boolean {
   return (
-    element instanceof HTMLTextAreaElement ||
+    isField(element) ||
     (element instanceof HTMLInputElement && TEXT_INPUT_TYPES.has(element.type))
   );
 }

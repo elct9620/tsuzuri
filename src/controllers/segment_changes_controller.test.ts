@@ -131,8 +131,12 @@ describe("SegmentChangesController", () => {
   // @behavior ED-017
   it("asks to split a Segment where its cursor was left", async () => {
     await hold(threeSegments);
-    const text = row(0).querySelector<HTMLTextAreaElement>("textarea.text")!;
-    text.setSelectionRange(2, 2);
+    const text = row(0).querySelector<HTMLElement>(".field.text")!;
+    const caret = document.createRange();
+    caret.setStart(text.firstChild!, 2);
+    caret.collapse(true);
+    document.getSelection()!.removeAllRanges();
+    document.getSelection()!.addRange(caret);
 
     await choose(0, "split");
 

@@ -5,7 +5,7 @@ use std::time::SystemTime;
 use serde::Serialize;
 
 use super::files;
-use super::glossary::{GlossaryTable, TranslationGlossary, TranslationGlossaryView};
+use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 use super::versions::SubtitleVersions;
 use super::{
     translation_only, CurrentResource, Project, ProjectConfig, ProjectOptions, SegmentField,
@@ -623,7 +623,7 @@ impl CurrentProject {
     }
 
     /// Writes an edited table to the directory's `glossary.csv` and holds it as the Project's.
-    pub fn save_translation_glossary(&self, rows: &[Vec<String>]) -> Result<(), Failure> {
+    pub fn save_translation_glossary(&self, rows: &[GlossaryRow]) -> Result<(), Failure> {
         self.update_project(|project| {
             TranslationGlossary::write(&project.directory, rows)?;
             project.translation_glossary =

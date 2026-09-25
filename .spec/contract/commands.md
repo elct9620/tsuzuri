@@ -192,7 +192,7 @@ pub fn save_translation_settings(app: AppHandle, settings: TranslationSettings) 
 
 ## `translation_glossary_table`
 
-The Project's Translation Glossary as a table: a column for every Language, a row of words for every term, and whether its file has a `source,target` header; an empty table when the Project has no `glossary.csv`.
+The Project's Translation Glossary as a table: a column for every Language, a row for every term holding its words and whether it names a Speaker, and whether its file has a `source,target` header; an empty table when the Project has no `glossary.csv`.
 
 ```rust
 pub fn translation_glossary_table(app: AppHandle) -> Result<GlossaryTable, Failure> {}
@@ -200,8 +200,8 @@ pub fn translation_glossary_table(app: AppHandle) -> Result<GlossaryTable, Failu
 
 ## `save_translation_glossary`
 
-Write `rows`, each holding a word for every Language in the order the table gave them, to the Project's `glossary.csv` with a header of Language codes, leaving out empty rows and creating the file when there is none; the Project then holds the Translation Glossary as saved and `project-changed` is emitted.
+Write `rows`, each holding a word for every Language in the order the table gave them and whether it names a Speaker, to the Project's `glossary.csv` with a header of Language codes and `type`, leaving out empty rows and creating the file when there is none; the Project then holds the Translation Glossary as saved and `project-changed` is emitted.
 
 ```rust
-pub fn save_translation_glossary(app: AppHandle, rows: Vec<Vec<String>>) -> Result<(), Failure> {}
+pub fn save_translation_glossary(app: AppHandle, rows: Vec<GlossaryRow>) -> Result<(), Failure> {}
 ```

@@ -28,6 +28,7 @@ const en = {
   glossary: {
     addRow: "Add a row",
     removeRow: "Remove this row",
+    speaker: "Speaker",
     sourceTargetHeader:
       "The header is source,target; saving writes it as Language codes",
     save: "Save",

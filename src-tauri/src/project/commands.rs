@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use tauri::{AppHandle, Manager, Runtime};
 
 use super::current::open_directory_of;
-use super::glossary::GlossaryTable;
+use super::glossary::{GlossaryRow, GlossaryTable};
 use super::versions::{compare, ComparedRow, SubtitleVersions};
 use super::{CurrentProject, Project, ProjectOptions, ProjectView, SegmentField};
 use crate::failure::Failure;
@@ -138,7 +138,7 @@ pub fn translation_glossary_table(app: AppHandle) -> Result<GlossaryTable, Failu
 }
 
 #[tauri::command]
-pub fn save_translation_glossary(app: AppHandle, rows: Vec<Vec<String>>) -> Result<(), Failure> {
+pub fn save_translation_glossary(app: AppHandle, rows: Vec<GlossaryRow>) -> Result<(), Failure> {
     app.state::<CurrentProject>()
         .save_translation_glossary(&rows)?;
     app.announce_project();

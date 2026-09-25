@@ -3,12 +3,13 @@ import { Controller } from "@hotwired/stimulus";
 import {
   saveTranslationGlossary,
   translationGlossaryTable,
+  type GlossaryRow,
   type GlossaryTable,
 } from "../backend/project";
 import { t } from "../i18n";
 import { failureMessage } from "../ui/failure";
 
-/** The glossary dialog: every Language a column and every term a row of fields, saved to `glossary.csv`. */
+/** The glossary dialog: every Language a column and every term a row of fields with whether it names a Speaker, saved to `glossary.csv`. */
 export default class GlossaryController extends Controller {
   static targets = [
     "open",
@@ -47,7 +48,9 @@ export default class GlossaryController extends Controller {
   }
 
   addRow(): void {
-    this.rowsTarget.append(this.row(this.languages.map(() => "")));
+    this.rowsTarget.append(
+      this.row({ words: this.languages.map(() => ""), is_speaker: false }),
+    );
   }
 
   removeRow(event: Event): void {
@@ -55,9 +58,14 @@ export default class GlossaryController extends Controller {
   }
 
   async save(): Promise<void> {
-    const rows = [...this.rowsTarget.querySelectorAll("tr")].map((row) =>
-      [...row.querySelectorAll("input")].map((input) => input.value),
-    );
+    const rows = [...this.rowsTarget.querySelectorAll("tr")].map((row) => ({
+      words: [
+        ...row.querySelectorAll<HTMLInputElement>("input[type=text]"),
+      ].map((input) => input.value),
+      is_speaker:
+        row.querySelector<HTMLInputElement>("input[type=checkbox]")?.checked ??
+        false,
+    }));
     try {
       await saveTranslationGlossary(rows);
       this.dialogTarget.close();
@@ -73,24 +81,36 @@ export default class GlossaryController extends Controller {
       cell.textContent = t(`languages.${code}`);
       return cell;
     });
+    const speaker = document.createElement("th");
+    speaker.textContent = t("glossary.speaker");
     this.languagesTarget.replaceChildren(
       ...cells,
+      speaker,
       document.createElement("th"),
     );
     this.rowsTarget.replaceChildren(...table.rows.map((row) => this.row(row)));
     this.warningTarget.hidden = !table.has_source_target_header;
   }
 
-  private row(words: string[]): HTMLTableRowElement {
+  private row({ words, is_speaker }: GlossaryRow): HTMLTableRowElement {
     const row = document.createElement("tr");
     for (const word of words) {
       const input = document.createElement("input");
+      input.type = "text";
       input.className = "input input-sm w-full min-w-32";
       input.value = word;
       const cell = document.createElement("td");
       cell.append(input);
       row.append(cell);
     }
+    const speaker = document.createElement("input");
+    speaker.type = "checkbox";
+    speaker.className = "checkbox checkbox-sm";
+    speaker.checked = is_speaker;
+    speaker.setAttribute("aria-label", t("glossary.speaker"));
+    const speakerCell = document.createElement("td");
+    speakerCell.append(speaker);
+    row.append(speakerCell);
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "btn btn-ghost btn-sm";

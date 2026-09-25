@@ -29,6 +29,7 @@ const zhHant: typeof en = {
   glossary: {
     addRow: "新增一列",
     removeRow: "刪除這一列",
+    speaker: "說話者",
     sourceTargetHeader: "目前的標頭是 source,target，儲存後改用語言代碼",
     save: "儲存",
   },

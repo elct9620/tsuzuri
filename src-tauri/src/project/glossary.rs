@@ -1,10 +1,13 @@
 use std::path::{Path, PathBuf};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::language::{Language, LanguagePair};
 
 const GLOSSARY_FILE: &str = "glossary.csv";
+/// The header of the last column, which marks the terms that name a Speaker.
+const TYPE_COLUMN: &str = "type";
+const SPEAKER_TYPE: &str = "speaker";
 
 /// The user's terms, such as names and titles, with a word for each Language; a translation must
 /// use the target Language's word wherever the source Language's word appears.
@@ -13,8 +16,8 @@ pub struct TranslationGlossary {
     file: PathBuf,
     /// The Language of each column.
     languages: Vec<Language>,
-    /// Each term's word in every column, empty where the file gives none.
-    rows: Vec<Vec<String>>,
+    /// Each term with its word in every column, empty where the file gives none, and whether it names a Speaker.
+    rows: Vec<GlossaryRow>,
     has_source_target_header: bool,
 }
 
@@ -25,11 +28,18 @@ pub struct TranslationGlossaryView {
     term_count: usize,
 }
 
+/// One term: its word in each Language, and whether it names a Speaker.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GlossaryRow {
+    pub words: Vec<String>,
+    pub is_speaker: bool,
+}
+
 /// A Translation Glossary laid out for editing: a column for every Language and a row per term.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct GlossaryTable {
     languages: Vec<Language>,
-    rows: Vec<Vec<String>>,
+    rows: Vec<GlossaryRow>,
     /// Whether its file has a `source,target` header, which saving rewrites as Language codes.
     has_source_target_header: bool,
 }
@@ -55,12 +65,16 @@ impl TranslationGlossary {
         let mut reader = csv::ReaderBuilder::new()
             .flexible(true)
             .from_reader(std::fs::File::open(path)?);
-        let header: Vec<String> = reader
+        let mut header: Vec<String> = reader
             .headers()
             .map_err(malformed_glossary)?
             .iter()
             .map(|name| name.trim().to_string())
             .collect();
+        let has_type_column = header.last().is_some_and(|name| name == TYPE_COLUMN);
+        if has_type_column {
+            header.pop();
+        }
         let has_source_target_header = header == ["source", "target"];
         let languages = if has_source_target_header {
             let pair = source_target.ok_or(GlossaryError::MissingHeader)?;
@@ -74,11 +88,11 @@ impl TranslationGlossary {
         let mut rows = Vec::new();
         for record in reader.records() {
             let record = record.map_err(malformed_glossary)?;
-            let row: Vec<String> = (0..languages.len())
-                .map(|column| record.get(column).unwrap_or("").trim().to_string())
-                .collect();
-            if row.iter().any(|word| !word.is_empty()) {
-                rows.push(row);
+            let cell = |column| record.get(column).unwrap_or("").trim().to_string();
+            let words: Vec<String> = (0..languages.len()).map(cell).collect();
+            let is_speaker = has_type_column && cell(languages.len()) == SPEAKER_TYPE;
+            if words.iter().any(|word| !word.is_empty()) {
+                rows.push(GlossaryRow { words, is_speaker });
             }
         }
         Ok(TranslationGlossary {
@@ -102,19 +116,27 @@ impl TranslationGlossary {
     }
 
     /// Writes `rows`, each with a word for every Language in `Language::ALL` order, to the
-    /// directory's `glossary.csv` under a header of Language codes, leaving out empty rows.
-    pub fn write(directory: &Path, rows: &[Vec<String>]) -> Result<(), GlossaryError> {
+    /// directory's `glossary.csv` under a header of Language codes and `type`, leaving out empty rows.
+    pub fn write(directory: &Path, rows: &[GlossaryRow]) -> Result<(), GlossaryError> {
         let mut writer =
             csv::Writer::from_path(directory.join(GLOSSARY_FILE)).map_err(malformed_glossary)?;
         writer
-            .write_record(Language::ALL.map(Language::code))
+            .write_record(
+                Language::ALL
+                    .map(Language::code)
+                    .iter()
+                    .chain(&[TYPE_COLUMN]),
+            )
             .map_err(malformed_glossary)?;
         for row in rows {
             let words: Vec<&str> = (0..Language::ALL.len())
-                .map(|column| row.get(column).map_or("", |word| word.trim()))
+                .map(|column| row.words.get(column).map_or("", |word| word.trim()))
                 .collect();
             if words.iter().any(|word| !word.is_empty()) {
-                writer.write_record(words).map_err(malformed_glossary)?;
+                let kind = if row.is_speaker { SPEAKER_TYPE } else { "" };
+                writer
+                    .write_record(words.iter().chain(&[kind]))
+                    .map_err(malformed_glossary)?;
             }
         }
         writer.flush()?;
@@ -129,8 +151,9 @@ impl TranslationGlossary {
         };
         self.rows
             .iter()
-            .filter(|row| !row[source].is_empty() && !row[target].is_empty())
-            .map(|row| (row[source].clone(), row[target].clone()))
+            .map(|row| &row.words)
+            .filter(|words| !words[source].is_empty() && !words[target].is_empty())
+            .map(|words| (words[source].clone(), words[target].clone()))
             .collect()
     }
 
@@ -146,16 +169,17 @@ impl TranslationGlossary {
         let rows = self
             .rows
             .iter()
-            .map(|row| {
-                Language::ALL
+            .map(|row| GlossaryRow {
+                words: Language::ALL
                     .iter()
                     .map(|language| {
                         self.languages
                             .iter()
                             .position(|each| each == language)
-                            .map_or_else(String::new, |column| row[column].clone())
+                            .map_or_else(String::new, |column| row.words[column].clone())
                     })
-                    .collect()
+                    .collect(),
+                is_speaker: row.is_speaker,
             })
             .collect();
         GlossaryTable {
@@ -230,8 +254,18 @@ mod tests {
         std::fs::read_to_string(dir.path().join(GLOSSARY_FILE)).unwrap()
     }
 
-    fn words(row: &[&str]) -> Vec<String> {
-        row.iter().map(|word| word.to_string()).collect()
+    fn term(words: &[&str]) -> GlossaryRow {
+        GlossaryRow {
+            words: words.iter().map(|word| word.to_string()).collect(),
+            is_speaker: false,
+        }
+    }
+
+    fn speaker(words: &[&str]) -> GlossaryRow {
+        GlossaryRow {
+            is_speaker: true,
+            ..term(words)
+        }
     }
 
     fn terms_in(dir: &TempDir, pair: LanguagePair) -> Vec<(String, String)> {
@@ -371,7 +405,7 @@ mod tests {
             table,
             GlossaryTable {
                 languages: Language::ALL.to_vec(),
-                rows: vec![words(&["蝙蝠俠", "Batman", ""])],
+                rows: vec![term(&["蝙蝠俠", "Batman", ""])],
                 has_source_target_header: false,
             }
         );
@@ -384,10 +418,10 @@ mod tests {
         let current = project_in(&dir);
 
         current
-            .save_translation_glossary(&[words(&["蝙蝠俠", "Batman", ""])])
+            .save_translation_glossary(&[term(&["蝙蝠俠", "Batman", ""])])
             .unwrap();
 
-        assert_eq!(glossary_text(&dir), "zh-TW,en,ja\n蝙蝠俠,Batman,\n");
+        assert_eq!(glossary_text(&dir), "zh-TW,en,ja,type\n蝙蝠俠,Batman,,\n");
     }
 
     // @behavior GL-003
@@ -400,7 +434,7 @@ mod tests {
 
         current.save_translation_glossary(&table.rows).unwrap();
 
-        assert_eq!(glossary_text(&dir), "zh-TW,en,ja\n蝙蝠俠,Batman,\n");
+        assert_eq!(glossary_text(&dir), "zh-TW,en,ja,type\n蝙蝠俠,Batman,,\n");
     }
 
     // @behavior GL-004
@@ -410,10 +444,10 @@ mod tests {
         let current = project_in(&dir);
 
         current
-            .save_translation_glossary(&[words(&["", " ", ""]), words(&["阿福", "Alfred", ""])])
+            .save_translation_glossary(&[term(&["", " ", ""]), term(&["阿福", "Alfred", ""])])
             .unwrap();
 
-        assert_eq!(glossary_text(&dir), "zh-TW,en,ja\n阿福,Alfred,\n");
+        assert_eq!(glossary_text(&dir), "zh-TW,en,ja,type\n阿福,Alfred,,\n");
     }
 
     // @behavior GL-005
@@ -423,7 +457,7 @@ mod tests {
         let current = project_in(&dir);
 
         current
-            .save_translation_glossary(&[words(&["阿福", "Alfred", ""])])
+            .save_translation_glossary(&[term(&["阿福", "Alfred", ""])])
             .unwrap();
 
         assert_eq!(
@@ -432,6 +466,64 @@ mod tests {
                 file: dir.path().join(GLOSSARY_FILE),
                 term_count: 1
             })
+        );
+    }
+
+    // @behavior GL-011
+    #[test]
+    fn reads_a_speaker_from_the_type_column() {
+        let dir = TempDir::new("gl-type");
+        write_glossary(&dir, "zh-TW,en,type\n小明,Xiao Ming,speaker\n東京,Tokyo,\n");
+        let current = project_in(&dir);
+
+        let table = current.glossary_table().unwrap();
+
+        assert_eq!(
+            table.rows,
+            [
+                speaker(&["小明", "Xiao Ming", ""]),
+                term(&["東京", "Tokyo", ""])
+            ]
+        );
+    }
+
+    // @behavior GL-012
+    #[test]
+    fn writes_the_type_column() {
+        let dir = TempDir::new("gl-write-type");
+        let current = project_in(&dir);
+
+        current
+            .save_translation_glossary(&[speaker(&["小明", "Xiao Ming", ""])])
+            .unwrap();
+
+        assert_eq!(
+            glossary_text(&dir),
+            "zh-TW,en,ja,type\n小明,Xiao Ming,,speaker\n"
+        );
+    }
+
+    // @behavior GL-013
+    #[test]
+    fn reads_the_type_column_after_a_source_target_header() {
+        let dir = TempDir::new("gl-source-target-type");
+        write_glossary(&dir, "source,target,type\n小明,Xiao Ming,speaker\n");
+        let current = translated_project_in(&dir);
+
+        let table = current.glossary_table().unwrap();
+
+        assert_eq!(table.rows, [speaker(&["小明", "Xiao Ming", ""])]);
+    }
+
+    // @behavior GL-014
+    #[test]
+    fn translates_a_speakers_name_as_a_term() {
+        let dir = TempDir::new("gl-speaker-term");
+        write_glossary(&dir, "zh-TW,en,type\n小明,Xiao Ming,speaker\n");
+
+        assert_eq!(
+            terms_in(&dir, ZH_TO_EN),
+            [("小明".to_string(), "Xiao Ming".to_string())]
         );
     }
 }

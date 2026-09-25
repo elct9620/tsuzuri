@@ -17,7 +17,7 @@ describe("GlossaryController", () => {
   function tableOf(changes: Partial<GlossaryTable> = {}): GlossaryTable {
     return {
       languages: ["zh-TW", "en", "ja"],
-      rows: [["蝙蝠俠", "Batman", ""]],
+      rows: [{ words: ["蝙蝠俠", "Batman", ""], is_speaker: false }],
       has_source_target_header: false,
       ...changes,
     };
@@ -25,8 +25,18 @@ describe("GlossaryController", () => {
 
   function fields(): string[][] {
     return [...target("rows").querySelectorAll("tr")].map((row) =>
-      [...row.querySelectorAll("input")].map((input) => input.value),
+      [...row.querySelectorAll<HTMLInputElement>("input[type=text]")].map(
+        (input) => input.value,
+      ),
     );
+  }
+
+  function speakerChoices(): boolean[] {
+    return [
+      ...target("rows").querySelectorAll<HTMLInputElement>(
+        "input[type=checkbox]",
+      ),
+    ].map((choice) => choice.checked);
   }
 
   async function openDialog(): Promise<void> {
@@ -73,9 +83,10 @@ describe("GlossaryController", () => {
     const languages = [...target("languages").querySelectorAll("th")].map(
       (cell) => cell.textContent,
     );
-    expect([languages.slice(0, 3), fields()]).toEqual([
-      ["繁體中文", "English", "日本語"],
+    expect([languages.slice(0, 4), fields(), speakerChoices()]).toEqual([
+      ["繁體中文", "English", "日本語", "說話者"],
       [["蝙蝠俠", "Batman", ""]],
+      [false],
     ]);
   });
 
@@ -84,7 +95,7 @@ describe("GlossaryController", () => {
     await openDialog();
     document.querySelector<HTMLButtonElement>("#add")!.click();
     const added = target("rows").querySelectorAll<HTMLInputElement>(
-      "tr:last-child input",
+      "tr:last-child input[type=text]",
     );
     added[0].value = "阿福";
     added[1].value = "Alfred";
@@ -94,8 +105,8 @@ describe("GlossaryController", () => {
 
     expect(savedArgs).toEqual({
       rows: [
-        ["蝙蝠俠", "Batman", ""],
-        ["阿福", "Alfred", ""],
+        { words: ["蝙蝠俠", "Batman", ""], is_speaker: false },
+        { words: ["阿福", "Alfred", ""], is_speaker: false },
       ],
     });
   });
@@ -119,5 +130,21 @@ describe("GlossaryController", () => {
       target("failure").hidden,
       target<HTMLButtonElement>("save").disabled,
     ]).toEqual([false, true]);
+  });
+
+  // @behavior GL-015
+  it("sends a row marked as naming a Speaker", async () => {
+    table = tableOf({
+      rows: [{ words: ["小明", "Xiao Ming", ""], is_speaker: false }],
+    });
+    await openDialog();
+    target("rows").querySelector<HTMLInputElement>("input[type=checkbox]")!.click();
+
+    document.querySelector<HTMLButtonElement>("#save")!.click();
+    await settle();
+
+    expect(savedArgs).toEqual({
+      rows: [{ words: ["小明", "Xiao Ming", ""], is_speaker: true }],
+    });
   });
 });

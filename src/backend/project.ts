@@ -183,10 +183,16 @@ export function restoreVersion(
   return invoke("restore_version", { language, backup });
 }
 
+/** One term: its word in each Language, and whether it names a Speaker. */
+export interface GlossaryRow {
+  words: string[];
+  is_speaker: boolean;
+}
+
 /** The Translation Glossary laid out for editing, named as Rust names it. */
 export interface GlossaryTable {
   languages: string[];
-  rows: string[][];
+  rows: GlossaryRow[];
   has_source_target_header: boolean;
 }
 
@@ -194,6 +200,6 @@ export function translationGlossaryTable(): Promise<GlossaryTable> {
   return invoke<GlossaryTable>("translation_glossary_table");
 }
 
-export function saveTranslationGlossary(rows: string[][]): Promise<void> {
+export function saveTranslationGlossary(rows: GlossaryRow[]): Promise<void> {
   return invoke("save_translation_glossary", { rows });
 }

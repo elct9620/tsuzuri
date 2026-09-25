@@ -203,9 +203,9 @@ export default class TranscriptController extends Controller {
         field: field.dataset.field as SegmentField,
         value: field.value,
       });
-      notify(t("edit.saved"), "success", "saved");
+      notify({ title: t("edit.saved"), kind: "success", key: "saved" });
     } catch (error) {
-      notifyFailure(error);
+      notifyFailure(t("edit.notSaved"), error);
     }
   }
 

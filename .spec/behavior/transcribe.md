@@ -195,3 +195,11 @@ The progress belongs to a running task, so what is left to say afterwards goes t
 | Given | a Current Resource being transcribed |
 | When | the transcription finishes |
 | Then | the editor shows no progress |
+
+## `TX-026` Telling a transcription and its translation apart
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource transcribed with translating afterwards chosen |
+| When | the transcription and then the translation finish |
+| Then | one Notification says the transcription finished and another says the translation finished |

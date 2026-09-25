@@ -6,7 +6,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "../project";
 import { projectOf, resourceOf } from "../test_project";
 import ProgressController from "./progress_controller";
-import { NOTIFICATION_STACK, notifications } from "../test_notification";
+import {
+  NOTIFICATION_STACK,
+  notificationDetail,
+  notifications,
+} from "../test_notification";
 import TranscriptController from "./transcript_controller";
 
 describe("TranscriptController", () => {
@@ -149,7 +153,8 @@ describe("TranscriptController", () => {
     edit("textarea.text", "逐字稿");
     await settle();
 
-    expect(notifications()).toEqual([
+    expect([notifications(), notificationDetail(0)]).toEqual([
+      ["修改沒有寫入"],
       "字幕已在其他程式修改過，已重新讀取，這次的修改沒有寫入",
     ]);
   });

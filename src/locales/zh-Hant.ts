@@ -37,7 +37,6 @@ const zhHant: typeof en = {
     cancel: "取消",
     close: "關閉",
     preparing: "準備中",
-    failed: "失敗：{{reason}}",
   },
   transcribe: {
     language: "語言",
@@ -46,9 +45,10 @@ const zhHant: typeof en = {
     start: "開始轉錄",
     overwriteAndStart: "覆蓋並開始",
     translateAfter: "完成後翻譯",
-    done: "完成：音檔 {{audio}} 秒，轉錄 {{seconds}} 秒（RTF {{factor}}）",
-    transcribePhases: "轉錄：{{phases}}",
-    translatePhases: "翻譯：{{phases}}",
+    done: "轉錄完成",
+    audio: "音檔長度",
+    factor: "即時倍率（RTF）",
+    failed: "轉錄失敗",
   },
   translate: {
     source: "來源",
@@ -60,7 +60,8 @@ const zhHant: typeof en = {
     glossaryNone: "無詞彙表",
     glossaryLoaded: "{{file}}（{{count}} 筆）",
     start: "開始翻譯",
-    done: "完成",
+    done: "翻譯完成",
+    failed: "翻譯失敗",
   },
   edit: {
     empty: "尚無內容",
@@ -82,6 +83,7 @@ const zhHant: typeof en = {
     offset: "毫秒，負數往前",
     shiftStart: "平移",
     cancelSelection: "取消選取",
+    notSaved: "修改沒有寫入",
   },
   versions: {
     open: "版本",
@@ -91,7 +93,10 @@ const zhHant: typeof en = {
     now: "目前",
     compare: "比較",
     restore: "還原",
-    restored: "已還原，原本的字幕已留作備份",
+    restored: "已還原",
+    replacedKept: "被取代的字幕已留作備份",
+    unreadable: "無法讀取版本",
+    notRestored: "沒有還原",
   },
   settings: {
     project: "專案",
@@ -164,7 +169,7 @@ const zhHant: typeof en = {
     translate: "翻譯",
     firstLoad: "{{phase}}（第一次使用會比較久）",
     percent: "{{phase}} {{percent}}%",
-    seconds: "{{phase}} {{seconds}} 秒",
+    seconds: "{{seconds}} 秒",
   },
   failures: {
     io: "無法讀寫檔案（{{detail}}）",

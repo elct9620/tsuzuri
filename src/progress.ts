@@ -53,11 +53,10 @@ export function followProgress(
   });
 }
 
-/** Each Phase with its seconds, in the order it ran. */
-export function phasesSummary(phases: PhaseTiming[]): string {
-  return phases
-    .map(({ phase, seconds }) =>
-      t("phases.seconds", { phase: label(phase), seconds: seconds.toFixed(1) }),
-    )
-    .join(" · ");
+/** Each Phase with its seconds, in the order it ran, as rows of a Notification. */
+export function phaseItems(phases: PhaseTiming[]): [string, string][] {
+  return phases.map(({ phase, seconds }) => [
+    label(phase),
+    t("phases.seconds", { seconds: seconds.toFixed(1) }),
+  ]);
 }

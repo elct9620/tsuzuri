@@ -1,9 +1,8 @@
 import { Controller } from "@hotwired/stimulus";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 
-import { failureMessage } from "../failure";
 import { t } from "../i18n";
-import { notify } from "../notification";
+import { notifyFailure } from "../notification";
 import { followProgress } from "../progress";
 
 /** The kind of task running, which the editor shows Placeholders for. */
@@ -18,6 +17,8 @@ export default class ProgressController extends Controller {
 
   private unlisten?: UnlistenFn;
   private isRunning = false;
+  /** The task running now, which a failure is said to belong to. */
+  private task: TaskKind = "transcribe";
 
   async connect(): Promise<void> {
     this.unlisten = await followProgress(
@@ -39,19 +40,20 @@ export default class ProgressController extends Controller {
   /** Starts showing `task`, or moves on to it within the same run, and announces it as `progress:task`. */
   begin(task: TaskKind): void {
     this.isRunning = true;
+    this.task = task;
     this.element.removeAttribute("hidden");
     this.statusTarget.textContent = t("work.preparing");
     this.dispatch("task", { detail: { task } });
   }
 
-  finish(lines: string[]): void {
+  finish(): void {
     this.end();
-    notify(lines.join("\n"), "success");
   }
 
+  /** Ends the run, saying the task running when it failed did not finish, and why. */
   fail(error: unknown): void {
     this.end();
-    notify(t("work.failed", { reason: failureMessage(error) }), "error");
+    notifyFailure(t(`${this.task}.failed`), error);
   }
 
   private end(): void {

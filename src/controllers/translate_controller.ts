@@ -3,7 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 
 import { t } from "../i18n";
-import { phasesSummary, type PhaseTiming } from "../progress";
+import { notify } from "../notification";
+import { phaseItems, type PhaseTiming } from "../progress";
 import { currentResource, followProject, type ProjectView } from "../project";
 import type ProgressController from "./progress_controller";
 import type TranslationOptionsController from "./translation_options_controller";
@@ -19,6 +20,15 @@ export function translateProject(
   options: TranslationOptions,
 ): Promise<Translation> {
   return invoke<Translation>("translate", { target, options });
+}
+
+/** Says a translation finished, with how long each of its Phases took. */
+export function notifyTranslation({ phases }: Translation): void {
+  notify({
+    title: t("translate.done"),
+    kind: "success",
+    items: phaseItems(phases),
+  });
 }
 
 /** The translate dialog: it translates the Current Resource's original subtitle. */
@@ -64,7 +74,8 @@ export default class TranslateController extends Controller {
         choices.language,
         choices.options,
       );
-      progress.finish([t("translate.done"), phasesSummary(translation.phases)]);
+      notifyTranslation(translation);
+      progress.finish();
     } catch (error) {
       progress.fail(error);
     }

@@ -157,3 +157,19 @@ Saving after every edit would otherwise pile up one Notification per edit.
 | Given | a Notification that an edit was saved |
 | When | another edit is saved |
 | Then | one Notification says an edit was saved |
+
+## `IF-018` Marking the kind of a Notification
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task failed |
+| When | it shows |
+| Then | its title is marked with the icon of a failure |
+
+## `IF-019` Listing the details of a Notification
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification of a finished task with the seconds of two Phases |
+| When | it shows |
+| Then | each Phase is a row under the title with its seconds beside it |

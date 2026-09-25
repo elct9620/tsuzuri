@@ -130,7 +130,7 @@ describe("VersionsController", () => {
 
     expect([restored, notifications()]).toEqual([
       { language: "en", backup: "ep01.en.20260925T030000Z.srt" },
-      ["已還原，原本的字幕已留作備份"],
+      ["已還原"],
     ]);
   });
 });

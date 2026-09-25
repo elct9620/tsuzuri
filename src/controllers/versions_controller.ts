@@ -91,7 +91,7 @@ export default class VersionsController extends Controller {
     try {
       this.versions = await invoke<SubtitleVersions[]>("subtitle_versions");
     } catch (error) {
-      notifyFailure(error);
+      notifyFailure(t("versions.unreadable"), error);
       return;
     }
     this.subtitleTarget.replaceChildren(
@@ -152,7 +152,7 @@ export default class VersionsController extends Controller {
         right: this.rightTarget.value || null,
       });
     } catch (error) {
-      notifyFailure(error);
+      notifyFailure(t("versions.unreadable"), error);
       return;
     }
     this.rowsTarget.replaceChildren(
@@ -178,11 +178,15 @@ export default class VersionsController extends Controller {
         backup: (currentTarget as HTMLElement).dataset.file,
       });
     } catch (error) {
-      notifyFailure(error);
+      notifyFailure(t("versions.notRestored"), error);
       return;
     }
     this.dialogTarget.close();
-    notify(t("versions.restored"), "success");
+    notify({
+      title: t("versions.restored"),
+      detail: t("versions.replacedKept"),
+      kind: "success",
+    });
   }
 
   private shownLanguage(): string | null {

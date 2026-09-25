@@ -52,7 +52,7 @@ export default class SegmentChangesController extends Controller {
       );
     const [start_ms, end_ms] = [time("start"), time("end")];
     if (start_ms === null || end_ms === null) {
-      notify(t("edit.unreadableTime"), "error");
+      notify({ title: t("edit.unreadableTime"), kind: "error" });
       await emit("project-changed");
       return;
     }
@@ -90,7 +90,7 @@ export default class SegmentChangesController extends Controller {
     const at = [...(text?.value ?? "").slice(0, text?.selectionStart ?? 0)]
       .length;
     if (!text || at === 0 || at >= [...text.value].length) {
-      notify(t("edit.splitWhere"), "warning");
+      notify({ title: t("edit.splitWhere"), kind: "warning" });
       return;
     }
     await this.change({ kind: "split", index, at });
@@ -157,10 +157,10 @@ export default class SegmentChangesController extends Controller {
   private async change(change: SegmentChange): Promise<void> {
     try {
       await invoke("change_segments", { change });
-      notify(t("edit.saved"), "success", "saved");
+      notify({ title: t("edit.saved"), kind: "success", key: "saved" });
       this.clearSelection();
     } catch (error) {
-      notifyFailure(error);
+      notifyFailure(t("edit.notSaved"), error);
     }
   }
 }

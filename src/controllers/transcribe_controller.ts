@@ -3,10 +3,11 @@ import { invoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 
 import { t } from "../i18n";
-import { phasesSummary, type PhaseTiming } from "../progress";
+import { notify } from "../notification";
+import { phaseItems, type PhaseTiming } from "../progress";
 import { currentResource, followProject, type ProjectView } from "../project";
 import type ProgressController from "./progress_controller";
-import { translateProject } from "./translate_controller";
+import { notifyTranslation, translateProject } from "./translate_controller";
 import type TranslationOptionsController from "./translation_options_controller";
 
 export interface Transcription {
@@ -88,32 +89,33 @@ export default class TranscribeController extends Controller {
       const transcription = await invoke<Transcription>("transcribe", {
         overwrite: currentResource(this.project)?.has_subtitle ?? false,
       });
-      const factor =
-        transcription.transcribe_seconds / transcription.audio_seconds;
-      const lines = [
-        t("transcribe.done", {
-          audio: transcription.audio_seconds.toFixed(1),
-          seconds: transcription.transcribe_seconds.toFixed(1),
-          factor: factor.toFixed(2),
-        }),
-        t("transcribe.transcribePhases", {
-          phases: phasesSummary(transcription.phases),
-        }),
-      ];
+      notify({
+        title: t("transcribe.done"),
+        kind: "success",
+        items: [
+          [
+            t("transcribe.audio"),
+            t("phases.seconds", {
+              seconds: transcription.audio_seconds.toFixed(1),
+            }),
+          ],
+          [
+            t("transcribe.factor"),
+            (
+              transcription.transcribe_seconds / transcription.audio_seconds
+            ).toFixed(2),
+          ],
+          ...phaseItems(transcription.phases),
+        ],
+      });
       if (this.translateTarget.checked) {
         const choices = this.translationOptionsOutlet;
         progress.begin("translate");
-        const translation = await translateProject(
-          choices.language,
-          choices.options,
-        );
-        lines.push(
-          t("transcribe.translatePhases", {
-            phases: phasesSummary(translation.phases),
-          }),
+        notifyTranslation(
+          await translateProject(choices.language, choices.options),
         );
       }
-      progress.finish(lines);
+      progress.finish();
     } catch (error) {
       progress.fail(error);
     }

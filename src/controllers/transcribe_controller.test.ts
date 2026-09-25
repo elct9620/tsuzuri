@@ -10,7 +10,12 @@ import {
   translationOptionsTemplate,
 } from "../test_translation_options";
 import ProgressController from "./progress_controller";
-import { NOTIFICATION_STACK, notifications } from "../test_notification";
+import {
+  NOTIFICATION_STACK,
+  notificationDetail,
+  notificationItems,
+  notifications,
+} from "../test_notification";
 import TranscribeController from "./transcribe_controller";
 import TranslationOptionsController from "./translation_options_controller";
 
@@ -138,7 +143,12 @@ describe("TranscribeController", () => {
 
     await start();
 
-    expect(notifications().join("\n")).toContain("轉檔 1.3 秒 · 轉錄 28.0 秒");
+    expect(notificationItems(0)).toEqual(
+      expect.arrayContaining([
+        ["轉檔", "1.3 秒"],
+        ["轉錄", "28.0 秒"],
+      ]),
+    );
   });
 
   // @behavior TX-025
@@ -168,6 +178,21 @@ describe("TranscribeController", () => {
     await start();
 
     expect(translateArgs).toMatchObject({ target: "ja" });
+  });
+
+  // @behavior TX-026
+  it("says the transcription and its translation finished in Notifications of their own", async () => {
+    await hold(media);
+    transcription = async () => ({
+      audio_seconds: 60,
+      transcribe_seconds: 30,
+      phases: [],
+    });
+    target<HTMLInputElement>("translate").checked = true;
+
+    await start();
+
+    expect(notifications()).toEqual(["轉錄完成", "翻譯完成"]);
   });
 
   // @behavior TX-023
@@ -212,7 +237,10 @@ describe("TranscribeController", () => {
 
     await start();
 
-    expect(notifications()).toEqual(["失敗：這個資源沒有可轉錄的影片或音訊"]);
+    expect([notifications(), notificationDetail(0)]).toEqual([
+      ["轉錄失敗"],
+      "這個資源沒有可轉錄的影片或音訊",
+    ]);
   });
 
   // @behavior TX-021

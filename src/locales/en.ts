@@ -37,7 +37,6 @@ const en = {
     cancel: "Cancel",
     close: "Close",
     preparing: "Preparing",
-    failed: "Failed: {{reason}}",
   },
   transcribe: {
     language: "Language",
@@ -46,9 +45,10 @@ const en = {
     start: "Transcribe",
     overwriteAndStart: "Overwrite and transcribe",
     translateAfter: "Translate once transcribed",
-    done: "Done: {{audio}} s of audio transcribed in {{seconds}} s (RTF {{factor}})",
-    transcribePhases: "Transcribe: {{phases}}",
-    translatePhases: "Translate: {{phases}}",
+    done: "Transcribed",
+    audio: "Audio length",
+    factor: "Real-time factor (RTF)",
+    failed: "Transcription failed",
   },
   translate: {
     source: "From",
@@ -60,7 +60,8 @@ const en = {
     glossaryNone: "No glossary",
     glossaryLoaded: "{{file}} ({{count}} terms)",
     start: "Translate",
-    done: "Done",
+    done: "Translated",
+    failed: "Translation failed",
   },
   edit: {
     empty: "Nothing yet",
@@ -82,6 +83,7 @@ const en = {
     offset: "Milliseconds, negative for earlier",
     shiftStart: "Shift",
     cancelSelection: "Clear selection",
+    notSaved: "Edit not saved",
   },
   versions: {
     open: "Versions",
@@ -91,7 +93,10 @@ const en = {
     now: "Now",
     compare: "Compare",
     restore: "Restore",
-    restored: "Restored; the subtitle it replaced was kept as a backup",
+    restored: "Restored",
+    replacedKept: "The subtitle it replaced was kept as a backup",
+    unreadable: "Could not read the versions",
+    notRestored: "Not restored",
   },
   settings: {
     project: "Project",
@@ -167,7 +172,7 @@ const en = {
     translate: "Translating",
     firstLoad: "{{phase}} (slower the first time)",
     percent: "{{phase}} {{percent}}%",
-    seconds: "{{phase}} {{seconds}} s",
+    seconds: "{{seconds}} s",
   },
   failures: {
     io: "Could not read or write a file ({{detail}})",

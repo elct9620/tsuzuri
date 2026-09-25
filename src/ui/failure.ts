@@ -36,6 +36,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.changedElsewhere");
     case "mode-running":
       return t("failures.modeRunning");
+    case "mode-cancelled":
+      return t("failures.cancelled");
     case "invalid-times":
       return t("failures.invalidTimes");
     case "no-backup":

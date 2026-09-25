@@ -37,6 +37,7 @@ const en = {
     into: "Into",
     cancel: "Cancel",
     close: "Close",
+    cancelTask: "Cancel task",
     preparing: "Preparing",
   },
   transcribe: {
@@ -50,6 +51,7 @@ const en = {
     audio: "Audio length",
     factor: "Real-time factor (RTF)",
     failed: "Transcription failed",
+    cancelled: "Transcription cancelled",
   },
   translate: {
     source: "From",
@@ -66,6 +68,7 @@ const en = {
     overwriteAndStart: "Overwrite and translate",
     done: "Translated",
     failed: "Translation failed",
+    cancelled: "Translation cancelled",
   },
   edit: {
     empty: "Nothing yet",
@@ -277,6 +280,7 @@ const en = {
     invalidTimes: "A segment cannot end before it starts",
     modeRunning:
       "A task running on this Resource is writing this subtitle; try again once it ends",
+    cancelled: "The task was cancelled",
     changedElsewhere:
       "The subtitle was changed in another program and has been read again; this edit was not written",
     subtitleExists:

@@ -26,6 +26,7 @@ describe("TranscribeController", () => {
   let translation: () => Promise<unknown>;
   let translateArgs: unknown;
   let transcribeArgs: unknown;
+  let isCancelAsked: boolean;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = <T extends HTMLElement>(name: string) =>
@@ -73,6 +74,7 @@ describe("TranscribeController", () => {
     translation = async () => ({ phases: [] });
     translateArgs = undefined;
     transcribeArgs = undefined;
+    isCancelAsked = false;
     document.body.innerHTML = `
       ${translationOptionsTemplate}
       <div data-controller="transcribe" data-transcribe-progress-outlet="#progress"
@@ -93,12 +95,14 @@ describe("TranscribeController", () => {
         <ul data-progress-target="steps"></ul>
         <p data-progress-target="status"></p>
         <progress max="100" data-progress-target="bar" hidden></progress>
+        <button id="cancel-task" data-action="progress#cancel">取消任務</button>
       </div>
       ${NOTIFICATION_STACK}
     `;
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
+        if (command === "cancel_task") isCancelAsked = true;
         if (command === "model_settings")
           return { transcription: { path: "/models/breeze.bin" } };
         if (command === "transcribe") {
@@ -310,6 +314,21 @@ describe("TranscribeController", () => {
     expect(translationOption("#transcribe-options", "overwrite").hidden).toBe(
       false,
     );
+  });
+
+  // @behavior TX-029
+  it("cancels a transcription from its progress", async () => {
+    await hold(media);
+    let stop: (failure: unknown) => void = () => {};
+    transcription = () => new Promise((_, reject) => (stop = reject));
+    await start();
+
+    document.querySelector<HTMLButtonElement>("#cancel-task")!.click();
+    await settle();
+    stop({ code: "mode-cancelled" });
+    await settle();
+
+    expect([isCancelAsked, notifications()]).toEqual([true, ["已取消轉錄"]]);
   });
 
   // @behavior TX-014

@@ -1,13 +1,15 @@
 import { Controller } from "@hotwired/stimulus";
 
 import {
+  cancelTask,
   listenProgress,
   type PipelineProgress,
   type UnlistenFn,
 } from "../backend/progress";
 import { t } from "../i18n";
 import { iconElement } from "../ui/icons";
-import { notifyFailure } from "../ui/notification";
+import { failureCode } from "../ui/failure";
+import { notify, notifyFailure } from "../ui/notification";
 import { phaseLabel, progressLine, progressSummary } from "../ui/progress";
 
 /** The kind of task running, which the editor shows Placeholders for. */
@@ -92,10 +94,17 @@ export default class ProgressController extends Controller {
     this.end();
   }
 
-  /** Ends the run, saying the task running when it failed did not finish, and why. */
+  /** Ends the run, saying the task running when it failed did not finish, and why; one given up says only that. */
   fail(error: unknown): void {
     this.end();
-    notifyFailure(t(`${this.task}.failed`), error);
+    if (failureCode(error) === "mode-cancelled")
+      notify({ title: t(`${this.task}.cancelled`), kind: "warning" });
+    else notifyFailure(t(`${this.task}.failed`), error);
+  }
+
+  /** Asks the running task to stop; it ends through `fail` once it has. */
+  async cancel(): Promise<void> {
+    await cancelTask();
   }
 
   /** Shows the Phase just reported as the one running, every Phase before it as done. */

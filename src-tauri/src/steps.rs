@@ -2,8 +2,11 @@ use std::collections::VecDeque;
 use std::path::Path;
 
 use tokio::sync::mpsc::Receiver;
+use tokio::sync::watch;
 
 use crate::failure::Failure;
+
+pub mod commands;
 
 const STDERR_TAIL_LINES: usize = 5;
 
@@ -57,14 +60,56 @@ pub async fn run_step(
 }
 
 /// Lets one Mode run at a time: another waits its turn rather than unloading or stopping the
-/// Model the running one uses.
-#[derive(Default)]
-pub struct ModeLock(tokio::sync::Mutex<()>);
+/// Model the running one uses. The Mode whose turn it is can be asked to stop.
+pub struct ModeLock {
+    turn: tokio::sync::Mutex<()>,
+    cancel: watch::Sender<bool>,
+}
+
+impl Default for ModeLock {
+    fn default() -> ModeLock {
+        ModeLock {
+            turn: tokio::sync::Mutex::default(),
+            cancel: watch::channel(false).0,
+        }
+    }
+}
 
 impl ModeLock {
-    /// Waits until no other Mode runs; the Mode keeps its turn until the answer is dropped.
-    pub async fn wait_turn(&self) -> tokio::sync::MutexGuard<'_, ()> {
-        self.0.lock().await
+    /// Waits until no other Mode runs; the Mode keeps its turn until the answer is dropped. A
+    /// cancel asked before the turn begins is forgotten.
+    pub async fn wait_turn(&self) -> Turn<'_> {
+        let guard = self.turn.lock().await;
+        self.cancel.send_replace(false);
+        Turn {
+            _guard: guard,
+            cancel: self.cancel.subscribe(),
+        }
+    }
+
+    /// Asks the Mode whose turn it is to stop.
+    pub fn cancel(&self) {
+        self.cancel.send_replace(true);
+    }
+}
+
+/// One Mode's turn to run, which it may be asked to give up.
+pub struct Turn<'a> {
+    _guard: tokio::sync::MutexGuard<'a, ()>,
+    cancel: watch::Receiver<bool>,
+}
+
+impl Turn<'_> {
+    /// Resolves once the Mode is asked to stop.
+    pub async fn wait_for_cancel(&mut self) {
+        if self
+            .cancel
+            .wait_for(|is_cancelled| *is_cancelled)
+            .await
+            .is_err()
+        {
+            std::future::pending::<()>().await;
+        }
     }
 }
 
@@ -95,5 +140,20 @@ mod tests {
         waiting.await.unwrap();
 
         assert_eq!(*order.lock().unwrap(), vec!["first ends", "second starts"]);
+    }
+
+    // @behavior PR-008
+    #[tokio::test]
+    async fn clears_a_cancel_once_the_next_mode_takes_its_turn() {
+        let lock = ModeLock::default();
+        lock.cancel();
+
+        let mut turn = lock.wait_turn().await;
+        let is_cancelled = tokio::select! {
+            () = turn.wait_for_cancel() => true,
+            () = tokio::time::sleep(Duration::from_millis(50)) => false,
+        };
+
+        assert!(!is_cancelled);
     }
 }

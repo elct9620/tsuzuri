@@ -642,3 +642,10 @@ Translating keeps the translation it replaces as a Backup, yet saying so before 
 | When | it is translated |
 | Then | the Project names Segments 0 to 1 as the Batch being translated before the first Batch, 2 to 2 after it, and none once the last is done |
 
+## `TL-083` Keeping the translations shown when a translation is cancelled
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation whose first Batch is shown |
+| When | it is cancelled before the next Batch is answered |
+| Then | it fails as `mode-cancelled`, the first Batch stays shown, and no translation file is written |

@@ -134,6 +134,14 @@ Give each Segment of the Current Resource at `indexes` the Speaker `speaker`, wh
 pub fn set_speakers(app: AppHandle, indexes: Vec<usize>, speaker: String) -> Result<(), Failure> {}
 ```
 
+## `cancel_task`
+
+Ask the running transcription or translation to stop. It stops at once, ending the Components it started, and answers the `mode-cancelled` Failure; what it has shown so far stays shown and nothing more is written. With no task running it changes nothing.
+
+```rust
+pub fn cancel_task(app: AppHandle) {}
+```
+
 ## `translate`
 
 Run the Translate Mode on the Current Resource from the Primary Language into the target Language, given by its code, with the options the Translate panel offers and the saved translation settings, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. Each Batch's translations are shown as it finishes, emitting `project-changed`; once all are done they are written to the Resource's translation file and the target is recorded as the Project's translation Language; the answer is the seconds each Phase took.

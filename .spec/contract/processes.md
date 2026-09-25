@@ -34,6 +34,34 @@ impl Processes {
 }
 ```
 
+## `Processes::kill_all_except`
+
+Kill every process still running but those `kept` names, with the processes each of them started; a cancelled Mode stops what it started this way, leaving what ran before it.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+impl Processes {
+    pub fn kill_all_except(&self, kept: &HashSet<u32>) {}
+}
+```
+
+## `Processes::pids`
+
+The PIDs of every process still running.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+impl Processes {
+    pub fn pids(&self) -> HashSet<u32> {}
+}
+```
+
 ## `reap_strays`
 
 Kill the Stray Processes a previous launch recorded, then clear the record.

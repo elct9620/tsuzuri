@@ -7,6 +7,7 @@ use crate::failure::Failure;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
 use crate::project::CurrentProject;
+use crate::steps::commands::run_cancellable;
 use crate::steps::ModeLock;
 use crate::timing::Phases;
 use crate::toolchain::{self, settings};
@@ -20,7 +21,7 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
     let phases = Phases::start("transcribe", "prepare");
     app.report("prepare", None);
     let mode_lock = app.state::<ModeLock>();
-    let _turn = mode_lock.wait_turn().await;
+    let mut turn = mode_lock.wait_turn().await;
     let processes = app.state::<Processes>().inner().clone();
     let ports = AppPorts {
         app: &app,
@@ -40,14 +41,18 @@ pub async fn transcribe(app: AppHandle, overwrite: bool) -> Result<Transcription
         .app_cache_dir()?
         .join("work")
         .join(started_at.to_string());
-    let result = run_transcribe(
-        &ports,
-        &app.state::<CurrentProject>(),
-        &tools,
-        &settings,
-        &job,
-        &work,
-        phases,
+    let result = run_cancellable(
+        &mut turn,
+        &processes,
+        run_transcribe(
+            &ports,
+            &app.state::<CurrentProject>(),
+            &tools,
+            &settings,
+            &job,
+            &work,
+            phases,
+        ),
     )
     .await;
     let _ = std::fs::remove_dir_all(&work);

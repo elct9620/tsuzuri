@@ -222,3 +222,11 @@ The whole run is laid out ahead, so how far along it is reads at a glance.
 | Given | a Current Resource being transcribed |
 | When | a transcribe progress event of 23% arrives |
 | Then | the heading's progress button reads the Phase and 23% |
+
+## `TX-029` Cancelling a transcription
+
+| Step | Statement |
+| --- | --- |
+| Given | the progress of a transcription running |
+| When | cancelling is chosen |
+| Then | the Project is asked to cancel the running task, and once it stops a Notification says it was cancelled |

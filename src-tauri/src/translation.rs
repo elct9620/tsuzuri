@@ -401,6 +401,8 @@ mod tests {
     use super::*;
     use crate::processes::{AppPorts, Processes};
     use crate::project::SegmentField;
+    use crate::steps::commands::run_cancellable;
+    use crate::steps::ModeLock;
     use crate::test_support::Response;
     use crate::test_support::{project_of, TempDir};
     use fake_llama::{
@@ -1420,6 +1422,74 @@ mod tests {
                 Some(SegmentSpan { first: 2, last: 2 }),
                 None
             ]
+        );
+    }
+
+    // @behavior TL-083
+    #[tokio::test]
+    async fn keeps_the_translations_shown_when_cancelled() {
+        let llama = FakeLlama::with_answer_per_request(|asked, lines| {
+            if asked > 0 {
+                std::thread::sleep(Duration::from_secs(2));
+            }
+            translations(echo_lines(lines))
+        });
+        let dir = TempDir::new("tl-cancel");
+        let app = mock_app();
+        let mut project = project_of(three_segments());
+        project.directory = dir.path().to_path_buf();
+        let current = app.state::<CurrentProject>();
+        current.replace(project);
+        let source = current.snapshot().unwrap();
+        let processes = Processes::new(dir.path().join("processes.json"));
+        let lock = ModeLock::default();
+        let mut turn = lock.wait_turn().await;
+        let translated_count = || {
+            current
+                .view()
+                .unwrap()
+                .segments()
+                .iter()
+                .filter(|segment| segment.translation.is_some())
+                .count()
+        };
+        let cancel_once_shown = async {
+            while translated_count() < 2 {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+            lock.cancel();
+        };
+
+        let job = job_in_batches_of_two(&source.transcript.segments);
+        let mut phases = Phases::start("translate", "load");
+        let (result, ()) = tokio::join!(
+            run_cancellable(
+                &mut turn,
+                &processes,
+                translate_once_ready(
+                    app.handle(),
+                    llama.base_url(),
+                    Duration::from_secs(5),
+                    || false,
+                    &job,
+                    &mut phases,
+                    batch_display(app.handle(), &current, &source, Language::Japanese),
+                ),
+            ),
+            cancel_once_shown
+        );
+
+        let written_srts = std::fs::read_dir(dir.path())
+            .unwrap()
+            .filter(|entry| {
+                entry
+                    .as_ref()
+                    .is_ok_and(|entry| entry.path().extension().is_some_and(|ext| ext == "srt"))
+            })
+            .count();
+        assert_eq!(
+            (result.map(|_| ()), translated_count(), written_srts),
+            (Err(Failure::ModeCancelled), 2, 0)
         );
     }
 

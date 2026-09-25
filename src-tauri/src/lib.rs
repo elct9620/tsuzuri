@@ -89,6 +89,7 @@ pub fn run() {
             project::commands::current_project,
             project::commands::edit_segment,
             project::commands::set_speakers,
+            steps::commands::cancel_task,
             project::commands::change_segments,
             project::commands::translation_cues,
             logs::commands::log_directory,

@@ -44,6 +44,8 @@ pub enum Failure {
     /// A change refused because a Mode running on the Current Resource writes the subtitle it
     /// would change.
     ModeRunning,
+    /// The running Mode was asked to stop.
+    ModeCancelled,
     /// A Segment Change that would leave a Segment ending before it starts.
     InvalidTimes,
     /// A restore that named no Backup of the subtitle it was asked for.

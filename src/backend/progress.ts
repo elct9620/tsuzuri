@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 export type { UnlistenFn };
@@ -29,4 +30,9 @@ export function listenProgress(
   return listen<PipelineProgress>("pipeline-progress", ({ payload }) =>
     show(payload),
   );
+}
+
+/** Asks the running transcription or translation to stop; what it has shown stays shown. */
+export function cancelTask(): Promise<void> {
+  return invoke("cancel_task");
 }

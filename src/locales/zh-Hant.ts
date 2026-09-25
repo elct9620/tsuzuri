@@ -37,6 +37,7 @@ const zhHant: typeof en = {
     into: "譯成",
     cancel: "取消",
     close: "關閉",
+    cancelTask: "取消任務",
     preparing: "準備中",
   },
   transcribe: {
@@ -50,6 +51,7 @@ const zhHant: typeof en = {
     audio: "音檔長度",
     factor: "即時倍率（RTF）",
     failed: "轉錄失敗",
+    cancelled: "已取消轉錄",
   },
   translate: {
     source: "來源",
@@ -65,6 +67,7 @@ const zhHant: typeof en = {
     overwriteAndStart: "覆蓋並開始",
     done: "翻譯完成",
     failed: "翻譯失敗",
+    cancelled: "已取消翻譯",
   },
   edit: {
     empty: "尚無內容",
@@ -270,6 +273,7 @@ const zhHant: typeof en = {
     noRow: "比較的內容已經變了，請重新比較後再還原",
     invalidTimes: "結束時間不能早於開始時間",
     modeRunning: "這個資源的任務正在寫入這份字幕，請等任務結束再改",
+    cancelled: "任務已取消",
     changedElsewhere: "字幕已在其他程式修改過，已重新讀取，這次的修改沒有寫入",
     subtitleExists: "{{path}} 已存在，確認覆蓋後才能轉錄",
     componentNotReady: "{{component}} 尚未就緒，請到設定確認",

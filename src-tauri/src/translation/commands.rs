@@ -2,14 +2,15 @@ use tauri::{AppHandle, Manager};
 
 use super::llama::READY_TIMEOUT;
 use super::{
-    llama_server, run_translate, ResidentLlama, Translation, TranslationOptions, TranslationPlan,
-    TranslationSettings,
+    llama_server, run_translate, LlamaServer, ResidentLlama, Translation, TranslationOptions,
+    TranslationPlan, TranslationSettings,
 };
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
 use crate::project::CurrentProject;
+use crate::steps::commands::run_cancellable;
 use crate::steps::ModeLock;
 use crate::timing::Phases;
 use crate::toolchain::{self, settings, ModelSlot};
@@ -21,7 +22,7 @@ pub async fn translate(
     options: TranslationOptions,
 ) -> Result<Translation, Failure> {
     let mode_lock = app.state::<ModeLock>();
-    let _turn = mode_lock.wait_turn().await;
+    let mut turn = mode_lock.wait_turn().await;
     let phases = Phases::start("translate", "prepare");
     app.report("prepare", None);
     let [llama] = toolchain::find_ready_executables(settings::resolver(&app)?, ["llama"]).await?;
@@ -35,20 +36,32 @@ pub async fn translate(
     let preset_dir = app.path().app_data_dir()?;
     let resident = app.state::<ResidentLlama>();
     let server = llama_server(&plan.settings, &resident, &preset_dir);
-    run_translate(
-        &AppPorts {
-            app: &app,
-            processes: &processes,
-        },
-        &app.state::<CurrentProject>(),
-        &llama,
-        &model_settings,
-        &plan,
-        &server,
-        READY_TIMEOUT,
-        phases,
+    let result = run_cancellable(
+        &mut turn,
+        &processes,
+        run_translate(
+            &AppPorts {
+                app: &app,
+                processes: &processes,
+            },
+            &app.state::<CurrentProject>(),
+            &llama,
+            &model_settings,
+            &plan,
+            &server,
+            READY_TIMEOUT,
+            phases,
+        ),
     )
-    .await
+    .await;
+    // A cancelled translation leaves the Resident llama-server running, so its Model is freed as
+    // after any other translation.
+    if let (Err(Failure::ModeCancelled), LlamaServer::Router { resident, keep, .. }) =
+        (&result, &server)
+    {
+        resident.release_after(*keep).await;
+    }
+    result
 }
 
 #[tauri::command]

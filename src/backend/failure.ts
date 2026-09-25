@@ -11,6 +11,7 @@ export type Failure =
   | { code: "no-media" }
   | { code: "changed-elsewhere" }
   | { code: "mode-running" }
+  | { code: "mode-cancelled" }
   | { code: "invalid-times" }
   | { code: "no-backup"; backup: string }
   | { code: "no-row"; row: number }

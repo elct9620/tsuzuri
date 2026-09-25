@@ -6,6 +6,7 @@ Launching Components as child processes so that none outlives the app: those ali
 
 - `src-tauri/src/processes.rs`
 - `src-tauri/src/steps.rs`
+- `src-tauri/src/steps/*.rs`
 
 ## `PR-001` Recording a launched process
 
@@ -57,3 +58,20 @@ A second Mode waits rather than unloading or stopping the Model the first one is
 | When | another Mode waits for its turn |
 | Then | it starts only once the first one has ended |
 
+## `PR-007` Stopping what a cancelled Mode started
+
+A Mode that is given up should free its GPU and memory at once, while a Component that was running before it, such as the Resident llama-server, keeps running for the next Mode.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component running before a Mode starts, and one the Mode started |
+| When | the Mode is cancelled |
+| Then | the Mode fails as `mode-cancelled`, the one it started is stopped, and the other still runs |
+
+## `PR-008` Clearing a cancel once the next Mode takes its turn
+
+| Step | Statement |
+| --- | --- |
+| Given | a cancel asked while no Mode runs |
+| When | the next Mode takes its turn |
+| Then | it runs to its end |

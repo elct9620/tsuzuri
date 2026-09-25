@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -72,6 +72,32 @@ impl Processes {
     pub fn kill(&self, pid: u32) {
         let running = self.running.lock().unwrap().remove(&pid);
         if let Some(running) = running {
+            end(running);
+        }
+        self.write_record();
+    }
+
+    /// The PIDs of every process still running.
+    pub fn pids(&self) -> HashSet<u32> {
+        self.running.lock().unwrap().keys().copied().collect()
+    }
+
+    /// Kills every process still running but those `kept` names; a cancelled Mode stops what it
+    /// started this way, leaving what ran before it.
+    pub fn kill_all_except(&self, kept: &HashSet<u32>) {
+        let running: Vec<RunningProcess> = {
+            let mut running = self.running.lock().unwrap();
+            let started: Vec<u32> = running
+                .keys()
+                .filter(|pid| !kept.contains(pid))
+                .copied()
+                .collect();
+            started
+                .iter()
+                .filter_map(|pid| running.remove(pid))
+                .collect()
+        };
+        for running in running {
             end(running);
         }
         self.write_record();

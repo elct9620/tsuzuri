@@ -330,6 +330,11 @@ describe("TranscriptController", () => {
           { start_ms: 1000, end_ms: 2000, speaker: "cl", text: "嗨" },
           { start_ms: 2000, end_ms: 3000, speaker: "co", text: "再見" },
         ],
+        translation_glossary: {
+          file: "/talks/glossary.csv",
+          term_count: 2,
+          speakers: ["小明"],
+        },
       }),
     );
 
@@ -339,6 +344,6 @@ describe("TranscriptController", () => {
     expect([
       offered,
       document.querySelector("input.speaker")!.getAttribute("list"),
-    ]).toEqual([["cl", "co"], "speakers"]);
+    ]).toEqual([["cl", "co", "小明"], "speakers"]);
   });
 });

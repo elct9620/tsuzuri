@@ -132,3 +132,12 @@ A Speaker is named in dialogue as well as in labels, so its row is a term like a
 | Given | the glossary dialog with the row `小明`, `Xiao Ming`, empty |
 | When | the row is marked as naming a Speaker and saved |
 | Then | the row is sent to be saved as naming a Speaker |
+
+## `GL-016` Naming the Speakers of the Translation Glossary with the Project
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` is `zh-TW,en,type` with the rows `小明,Xiao Ming,speaker` and `東京,Tokyo,` |
+| When | the Project is shown |
+| Then | its Translation Glossary names the Speaker `小明` |
+

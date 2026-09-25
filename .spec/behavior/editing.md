@@ -108,9 +108,9 @@ Correcting the Project in the transcript panel, where every edit is written to R
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource whose Segments are said by `co` and `cl` |
+| Given | a Current Resource whose Segments are said by `co` and `cl`, in a Project whose Translation Glossary names the Speaker `小明` |
 | When | the editor shows it |
-| Then | each Segment's Speaker offers `cl` and `co` to choose from |
+| Then | each Segment's Speaker offers `cl`, `co` and `小明` to choose from |
 
 ## `ED-014` Changing a Segment's times in the editor
 

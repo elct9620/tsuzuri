@@ -148,7 +148,11 @@ describe("TranslateController", () => {
   it("names the Project's glossary.csv and its terms", async () => {
     await hold(
       projectOf({
-        translation_glossary: { file: "/talks/glossary.csv", term_count: 12 },
+        translation_glossary: {
+          file: "/talks/glossary.csv",
+          term_count: 12,
+          speakers: [],
+        },
       }),
     );
 

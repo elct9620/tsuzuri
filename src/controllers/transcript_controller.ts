@@ -233,6 +233,7 @@ export default class TranscriptController extends Controller {
     const isTranslationShown = (project?.shown_translation ?? null) !== null;
     this.headingTarget.textContent = project?.current_resource ?? "";
     this.showLanguages(project);
+    this.showSpeakers(segments, project?.translation_glossary?.speakers ?? []);
     this.showSegments(segments, isTranslationShown);
     const isAwaitingSegments =
       segments.length === 0 && this.runningTask === "transcribe";
@@ -263,7 +264,6 @@ export default class TranscriptController extends Controller {
 
   /** Refreshes the editors in place when the Project keeps its shape, so the one being typed in keeps its focus. */
   private showSegments(segments: Segment[], isTranslationShown: boolean): void {
-    this.showSpeakers(segments);
     const editors = [
       ...this.listTarget.querySelectorAll<
         HTMLInputElement | HTMLTextAreaElement
@@ -293,10 +293,14 @@ export default class TranscriptController extends Controller {
     this.showPendingTranslations();
   }
 
-  private showSpeakers(segments: Segment[]): void {
-    const speakers = new Set(
-      segments.flatMap((segment) => (segment.speaker ? [segment.speaker] : [])),
-    );
+  /** Offers the Speakers the Segments name and those the Translation Glossary names. */
+  private showSpeakers(segments: Segment[], glossarySpeakers: string[]): void {
+    const speakers = new Set([
+      ...segments.flatMap((segment) =>
+        segment.speaker ? [segment.speaker] : [],
+      ),
+      ...glossarySpeakers,
+    ]);
     this.speakersTarget.replaceChildren(
       ...[...speakers].sort().map((speaker) => option(speaker, speaker)),
     );

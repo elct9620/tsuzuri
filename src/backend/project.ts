@@ -55,10 +55,11 @@ export function currentResource(
   );
 }
 
-/** The file a Translation Glossary came from and how many terms it holds. */
+/** The file a Translation Glossary came from, how many terms it holds, and the Speakers it names in the Primary Language. */
 export interface TranslationGlossaryView {
   file: string;
   term_count: number;
+  speakers: string[];
 }
 
 /** The Project Rust holds now, or none before one is made. */

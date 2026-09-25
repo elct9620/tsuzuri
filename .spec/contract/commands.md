@@ -104,7 +104,7 @@ pub fn set_project_options(app: AppHandle, options: ProjectOptions) -> Result<()
 
 ## `current_project`
 
-The Project's directory, Languages, Project Options, Resources and Translation Glossary, with the Current Resource's Segments, or none before one is opened.
+The Project's directory, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments, or none before one is opened.
 
 ```rust
 pub fn current_project(app: AppHandle) -> Option<ProjectView> {}

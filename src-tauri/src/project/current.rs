@@ -453,7 +453,7 @@ impl CurrentProject {
                 translation_glossary: project
                     .translation_glossary
                     .as_ref()
-                    .map(TranslationGlossary::view),
+                    .map(|glossary| glossary.view(project.language)),
                 resources: project
                     .resources
                     .iter()

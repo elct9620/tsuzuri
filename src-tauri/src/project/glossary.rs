@@ -22,11 +22,13 @@ pub struct TranslationGlossary {
     has_source_target_header: bool,
 }
 
-/// What the webview shows of a Translation Glossary: the file it came from and how many terms it holds.
+/// What the webview shows of a Translation Glossary: the file it came from, how many terms it
+/// holds, and the Speakers it names in the Primary Language.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TranslationGlossaryView {
     file: PathBuf,
     term_count: usize,
+    speakers: Vec<String>,
 }
 
 /// One term: its word in each Language, and whether it names a Speaker.
@@ -175,10 +177,20 @@ impl TranslationGlossary {
             .collect()
     }
 
-    pub fn view(&self) -> TranslationGlossaryView {
+    /// Its file and terms, naming its Speakers as `language` does.
+    pub fn view(&self, language: Language) -> TranslationGlossaryView {
+        let column = self.languages.iter().position(|each| *each == language);
+        let speakers = column.map_or_else(Vec::new, |column| {
+            self.rows
+                .iter()
+                .filter(|row| row.is_speaker && !row.words[column].is_empty())
+                .map(|row| row.words[column].clone())
+                .collect()
+        });
         TranslationGlossaryView {
             file: self.file.clone(),
             term_count: self.rows.len(),
+            speakers,
         }
     }
 
@@ -308,7 +320,8 @@ mod tests {
             current.view().unwrap().translation_glossary().cloned(),
             Some(TranslationGlossaryView {
                 file: dir.path().join(GLOSSARY_FILE),
-                term_count: 2
+                term_count: 2,
+                speakers: vec![],
             })
         );
     }
@@ -482,7 +495,8 @@ mod tests {
             current.view().unwrap().translation_glossary().cloned(),
             Some(TranslationGlossaryView {
                 file: dir.path().join(GLOSSARY_FILE),
-                term_count: 1
+                term_count: 1,
+                speakers: vec![],
             })
         );
     }
@@ -556,6 +570,24 @@ mod tests {
         assert_eq!(
             glossary.speaker_names(ZH_TO_EN),
             HashMap::from([("小明".to_string(), "Xiao Ming".to_string())])
+        );
+    }
+
+    // @behavior GL-016
+    #[test]
+    fn names_the_speakers_of_the_translation_glossary_with_the_project() {
+        let dir = TempDir::new("gl-view-speakers");
+        write_glossary(&dir, "zh-TW,en,type\n小明,Xiao Ming,speaker\n東京,Tokyo,\n");
+
+        let current = project_in(&dir);
+
+        assert_eq!(
+            current
+                .view()
+                .unwrap()
+                .translation_glossary()
+                .map(|glossary| glossary.speakers.clone()),
+            Some(vec!["小明".to_string()])
         );
     }
 }

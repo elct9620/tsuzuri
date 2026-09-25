@@ -16,11 +16,12 @@ export function createField(value: string, placeholder = ""): HTMLElement {
   return field;
 }
 
-/** Whether `element` is a field, which keeps its own typing history. */
+/** Whether `element` is a field, held or not, which keeps its own typing history. */
 export function isField(element: EventTarget | null): element is HTMLElement {
   return (
     element instanceof HTMLElement &&
-    element.getAttribute("contenteditable") === EDITABLE
+    element.getAttribute("role") === "textbox" &&
+    element.hasAttribute("contenteditable")
   );
 }
 

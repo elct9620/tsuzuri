@@ -26,7 +26,7 @@ describe("UndoController", () => {
     commands = [];
     document.body.innerHTML = `
       <main data-controller="undo" data-action="keydown.ctrl+z@window->undo#undoInProject:!typing:prevent keydown.meta+z@window->undo#undoInProject:!typing:prevent keydown.ctrl+shift+z@window->undo#redoInProject:!typing:prevent keydown.meta+shift+z@window->undo#redoInProject:!typing:prevent keydown.ctrl+y@window->undo#redoInProject:!typing:prevent keydown.meta+y@window->undo#redoInProject:!typing:prevent">
-        <div class="field text" contenteditable="plaintext-only" tabindex="0"></div>
+        <div class="field text" contenteditable="plaintext-only" role="textbox" aria-multiline="true" tabindex="0"></div>
         <button type="button">⋮</button>
       </main>
     `;

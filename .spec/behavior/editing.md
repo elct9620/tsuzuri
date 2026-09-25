@@ -86,6 +86,16 @@ Only the Batch the Model works on is about to change, so a Placeholder there sho
 | When | the editor shows it |
 | Then | the first two translations are Placeholders and the third is not |
 
+## `ED-041` Showing each Batch's translations as they are written
+
+The translation being written is held from typing, and a held field is still the field its translation is shown in.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of fifteen Segments being translated, shown with no translation yet |
+| When | the first six are translated |
+| Then | the editor shows their translations while the other nine stay empty |
+
 ## `ED-010` Showing Placeholders while another Resource is read
 
 | Step | Statement |

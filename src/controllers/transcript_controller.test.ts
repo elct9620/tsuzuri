@@ -331,6 +331,34 @@ describe("TranscriptController", () => {
     ]);
   });
 
+  // @behavior ED-041
+  it("shows each Batch's translations as they are written", async () => {
+    const texts = Array.from({ length: 15 }, (_, at) => `第${at}句`);
+    const translatedUpTo = (done: number) =>
+      projectOf({
+        shown_translation: "en",
+        running_mode: { mode: "translation", language: "en" },
+        segments: texts.map((text, at) => ({
+          start_ms: at * 1000,
+          end_ms: (at + 1) * 1000,
+          text,
+          ...(at < done ? { translation: `line ${at}` } : {}),
+        })),
+      });
+    progress().begin("translate");
+    await hold(translatedUpTo(0));
+
+    await hold(translatedUpTo(6));
+
+    const translations = [
+      ...document.querySelectorAll(".field.translation"),
+    ].map((field) => field.textContent);
+    expect([translations.slice(0, 6), translations.slice(6)]).toEqual([
+      texts.slice(0, 6).map((_, at) => `line ${at}`),
+      Array(9).fill(""),
+    ]);
+  });
+
   // @behavior ED-010
   it("shows Placeholder rows while another Resource is read", async () => {
     await hold(

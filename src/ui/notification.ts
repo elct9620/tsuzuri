@@ -3,8 +3,25 @@ import { t } from "../i18n";
 import { failureCode, failureMessage } from "./failure";
 import { phaseItems } from "./progress";
 
-/** How long a Notification of anything but a failure stays before it goes on its own. */
-export const NOTIFICATION_MS = 4000;
+/** How long a Notification that goes on its own stays, paused while the pointer or focus rests on it. */
+export const NOTIFICATION_MS = 6000;
+
+/** How often a countdown bar moves. */
+const TICK_MS = 100;
+
+/** How long a Notification takes to fade away, the `duration-200` of its transition. */
+const LEAVING_MS = 200;
+
+/** How many Notifications the corner holds at once. */
+const MOST_SHOWN = 5;
+
+/**
+ * A card sliding in from the right as daisyUI's toast fades it in, and fading away as it slides
+ * back; written out in full so Tailwind finds each class, and still for a system asking for less
+ * motion, as the toast's own animation is.
+ */
+const ALERT_CLASSES =
+  "alert w-80 items-start border border-l-4 border-base-300 bg-base-100 text-sm shadow-lg transition-[opacity,translate] duration-200 ease-out starting:translate-x-8 data-leaving:translate-x-8 data-leaving:opacity-0 motion-reduce:transition-none";
 
 export type NotificationKind = "success" | "warning" | "error";
 
@@ -16,9 +33,7 @@ export interface Notification {
   detail?: string;
   /** Each a name and its value, one row each under the title. */
   items?: [string, string][];
-  /** Replaces the Notification already shown with this key, so something said after every edit is said once. */
-  key?: string;
-  /** Something the user may do about it; the Notification stays until clicked so it can be done. */
+  /** Something the user may do about it; the Notification stays until closed so it can be done. */
   action?: { label: string; run: () => void };
 }
 
@@ -86,37 +101,99 @@ function content({ title, detail, items }: Notification): HTMLElement {
   return container;
 }
 
-/** The button of an alert's action, placed after its content as daisyUI lays one out. */
-function actionButton({
-  label,
-  run,
-}: NonNullable<Notification["action"]>): HTMLButtonElement {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "btn btn-sm";
-  button.textContent = label;
-  button.addEventListener("click", run);
-  return button;
+/** Takes `alert` away, fading it out first. */
+function leave(alert: HTMLElement): void {
+  alert.dataset.leaving = "";
+  setTimeout(() => alert.remove(), LEAVING_MS);
 }
 
-/** Shows `notification` in the corner of the window. A failure, or one offering an action, stays until it is clicked; anything else goes after `NOTIFICATION_MS`. */
+/** A small button after the content, as daisyUI lays out an alert's buttons. */
+function button(
+  label: string,
+  className: string,
+  press: () => void,
+): HTMLButtonElement {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.className = className;
+  element.textContent = label;
+  element.addEventListener("click", press);
+  return element;
+}
+
+/** The buttons of a Notification that stays: its action, if it has one, then a close button. */
+function buttons(alert: HTMLElement, { action }: Notification): HTMLElement {
+  const group = document.createElement("div");
+  group.className = "flex items-center gap-1";
+  if (action)
+    group.append(
+      button(action.label, "btn btn-sm", () => {
+        action.run();
+        leave(alert);
+      }),
+    );
+  const close = button("✕", "btn btn-sm btn-circle btn-ghost", () =>
+    leave(alert),
+  );
+  close.dataset.close = "";
+  close.setAttribute("aria-label", t("work.close"));
+  group.append(close);
+  return group;
+}
+
+/** Counts down `NOTIFICATION_MS` on a bar under the content, pausing while the pointer or focus rests on `alert`, then takes it away. */
+function countDown(alert: HTMLElement, content: HTMLElement): void {
+  const bar = document.createElement("progress");
+  bar.className = "progress h-1";
+  bar.max = NOTIFICATION_MS;
+  bar.value = NOTIFICATION_MS;
+  content.append(bar);
+  const resting = { pointer: false, focus: false };
+  alert.addEventListener("mouseenter", () => (resting.pointer = true));
+  alert.addEventListener("mouseleave", () => (resting.pointer = false));
+  alert.addEventListener("focusin", () => (resting.focus = true));
+  alert.addEventListener("focusout", () => (resting.focus = false));
+  const timer = setInterval(() => {
+    if (!alert.isConnected || "leaving" in alert.dataset)
+      return clearInterval(timer);
+    if (resting.pointer || resting.focus) return;
+    bar.value -= TICK_MS;
+    if (bar.value > 0) return;
+    clearInterval(timer);
+    leave(alert);
+  }, TICK_MS);
+}
+
+/** Takes away the oldest Notification that would go on its own while more than `MOST_SHOWN` are shown. */
+function keepMostShown(stack: HTMLElement): void {
+  const shown = [
+    ...stack.querySelectorAll<HTMLElement>(
+      '[role="alert"]:not([data-leaving])',
+    ),
+  ];
+  if (shown.length <= MOST_SHOWN) return;
+  const oldest = shown.find((alert) => !("stays" in alert.dataset));
+  if (oldest) leave(oldest);
+}
+
+/** Shows `notification` in the corner of the window, stacked under the ones already shown. A failure, or one offering an action, stays until closed; anything else counts down `NOTIFICATION_MS`. */
 export function notify(notification: Notification): void {
   const stack = document.querySelector<HTMLElement>("[data-notifications]");
   if (!stack) return;
-  const { kind, key } = notification;
+  const { kind, action } = notification;
   const alert = document.createElement("div");
   alert.setAttribute("role", "alert");
-  alert.className = `alert w-80 cursor-pointer items-start border border-l-4 border-base-300 bg-base-100 text-sm shadow-lg ${KIND_CLASSES[kind]}`;
-  alert.append(icon(kind), content(notification));
-  if (notification.action) alert.append(actionButton(notification.action));
-  alert.addEventListener("click", () => alert.remove());
-  if (key) {
-    alert.dataset.key = key;
-    stack.querySelector(`[data-key="${key}"]`)?.remove();
+  alert.className = `${ALERT_CLASSES} ${KIND_CLASSES[kind]}`;
+  const body = content(notification);
+  alert.append(icon(kind), body);
+  if (kind === "error" || action) {
+    alert.dataset.stays = "";
+    alert.append(buttons(alert, notification));
+  } else {
+    countDown(alert, body);
   }
   stack.append(alert);
-  if (kind !== "error" && !notification.action)
-    setTimeout(() => alert.remove(), NOTIFICATION_MS);
+  keepMostShown(stack);
 }
 
 /** Says `title` did not happen and why; one refused over a change made elsewhere is a warning. */

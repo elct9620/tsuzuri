@@ -140,23 +140,23 @@ Each setting says what it is for and how to use it, since its name alone rarely 
 | When | a few seconds pass |
 | Then | it is still shown |
 
-## `IF-016` Closing a Notification by clicking it
+## `IF-016` Closing a Notification that stays by its close button
 
 | Step | Statement |
 | --- | --- |
 | Given | a Notification that a task failed |
-| When | it is clicked |
+| When | its close button is clicked |
 | Then | it is no longer shown |
 
-## `IF-017` Saying the same thing once
+## `IF-017` Stacking every Notification
 
-Saving after every edit would otherwise pile up one Notification per edit.
+One replacing another would take away what the earlier one said, or offered, before it could be read.
 
 | Step | Statement |
 | --- | --- |
 | Given | a Notification that an edit was saved |
 | When | another edit is saved |
-| Then | one Notification says an edit was saved |
+| Then | two Notifications say an edit was saved |
 
 ## `IF-018` Marking the kind of a Notification
 
@@ -184,3 +184,53 @@ A Notification that went on its own would take its offer with it before it could
 | When | a few seconds pass |
 | Then | it is still shown |
 
+## `IF-021` Showing how long a Notification stays
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task finished |
+| When | it shows |
+| Then | it has a countdown bar and no close button |
+
+## `IF-022` Offering a close button on a Notification that stays
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task failed |
+| When | it shows |
+| Then | it has a close button and no countdown bar |
+
+## `IF-023` Keeping a Notification open while it is clicked
+
+A click meant for its text or its button should not take it away.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task failed |
+| When | the Notification itself is clicked |
+| Then | it is still shown |
+
+## `IF-024` Pausing a Notification while the pointer rests on it
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task finished, with the pointer resting on it |
+| When | longer than it stays passes |
+| Then | it is still shown, and goes once the pointer has left it for the time it had left |
+
+## `IF-025` Keeping at most five Notifications
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task failed, then four that tasks finished |
+| When | another task finishes |
+| Then | five are shown: the failure and the four latest that tasks finished |
+
+
+## `IF-026` Pausing a Notification while focus is within it
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task finished, with focus within it |
+| When | longer than it stays passes |
+| Then | it is still shown |

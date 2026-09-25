@@ -209,7 +209,6 @@ export default class TranscriptController extends Controller {
       notify({
         title: t("edit.saved"),
         kind: "success",
-        key: "saved",
         ...this.speakerOffer(field),
       });
     } catch (error) {

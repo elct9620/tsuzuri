@@ -1,8 +1,13 @@
 /** Where `notify` puts Notifications, for a test page to include. */
 export const NOTIFICATION_STACK = `<div data-notifications></div>`;
 
+/** The Notifications shown, leaving out one already fading away. */
 function shown(): HTMLElement[] {
-  return [...document.querySelectorAll<HTMLElement>('[role="alert"]')];
+  return [
+    ...document.querySelectorAll<HTMLElement>(
+      '[role="alert"]:not([data-leaving])',
+    ),
+  ];
 }
 
 /** The title of each Notification shown, oldest first. */
@@ -32,5 +37,22 @@ export function notificationItems(index: number): [string, string][] {
 
 /** The button the Notification at `index` offers, or none. */
 export function notificationAction(index: number): HTMLButtonElement | null {
-  return shown()[index]?.querySelector("button") ?? null;
+  return shown()[index]?.querySelector("button:not([data-close])") ?? null;
+}
+
+/** The close button of the Notification at `index`, or none. */
+export function notificationClose(index: number): HTMLButtonElement | null {
+  return shown()[index]?.querySelector("button[data-close]") ?? null;
+}
+
+/** The countdown bar of the Notification at `index`, or none. */
+export function notificationCountdown(
+  index: number,
+): HTMLProgressElement | null {
+  return shown()[index]?.querySelector("progress") ?? null;
+}
+
+/** The Notification at `index`. */
+export function notificationAt(index: number): HTMLElement {
+  return shown()[index];
 }

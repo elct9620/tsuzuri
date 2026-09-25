@@ -150,7 +150,7 @@ export default class SegmentChangesController extends Controller {
   private async change(change: SegmentChange): Promise<void> {
     try {
       await changeSegments(change);
-      notify({ title: t("edit.saved"), kind: "success", key: "saved" });
+      notify({ title: t("edit.saved"), kind: "success" });
       this.clearSelection();
     } catch (error) {
       notifyFailure(t("edit.notSaved"), error);

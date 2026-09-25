@@ -1,11 +1,12 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
+Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
 - `src/i18n.test.ts`
 - `src/menu.test.ts`
+- `src/controllers/tooltip_controller.test.ts`
 - `src-tauri/src/window.rs`
 
 ## `IF-001` Following the system language
@@ -75,3 +76,31 @@ A menu stays open only while focus is inside it, so clicking anywhere else close
 | Given | a screen that reports no size |
 | When | the window opens for the first time |
 | Then | it is 1200×900 |
+
+## `IF-009` Showing a tooltip beside what the pointer is on
+
+The tooltip is drawn outside the element that holds it, so a list that scrolls or clips its rows does not cut it off.
+
+| Step | Statement |
+| --- | --- |
+| Given | an element with a tooltip |
+| When | the pointer moves onto it |
+| Then | a tooltip shows its text |
+
+## `IF-010` Hiding the tooltip once the pointer leaves
+
+| Step | Statement |
+| --- | --- |
+| Given | a tooltip shown for an element |
+| When | the pointer leaves it |
+| Then | no tooltip is shown |
+
+## `IF-011` Showing a tooltip over an open dialog
+
+A dialog is drawn above the whole page, so the tooltip of an element inside it is drawn inside the dialog too.
+
+| Step | Statement |
+| --- | --- |
+| Given | an element with a tooltip in an open dialog |
+| When | the pointer moves onto it |
+| Then | the tooltip is shown inside that dialog |

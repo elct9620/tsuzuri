@@ -150,7 +150,7 @@ describe("ProjectController", () => {
     );
 
     const button = target("resources").querySelector("button");
-    expect(button?.title).toBe("[SHANA]C0220260514.zh-TW.mix");
+    expect(button?.dataset.tooltip).toBe("[SHANA]C0220260514.zh-TW.mix");
   });
 
   // @behavior GL-006

@@ -7,6 +7,7 @@ import GlossaryController from "./controllers/glossary_controller";
 import ModelsController from "./controllers/models_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
+import TooltipController from "./controllers/tooltip_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
 import TranslateController from "./controllers/translate_controller";
@@ -25,6 +26,7 @@ async function start(): Promise<void> {
   application.register("models", ModelsController);
   application.register("progress", ProgressController);
   application.register("project", ProjectController);
+  application.register("tooltip", TooltipController);
   application.register("transcribe", TranscribeController);
   application.register("transcript", TranscriptController);
   application.register("translate", TranslateController);

@@ -8,7 +8,7 @@
     <script type="module" src="/src/main.ts" defer></script>
   </head>
 
-  <body class="text-[15px]">
+  <body class="text-[15px]" data-controller="tooltip">
     <main
       class="flex h-dvh flex-col"
       data-controller="project transcript dialog"
@@ -695,5 +695,10 @@
         <span data-i18n="translate.words"></span>
       </label>
     </template>
+    <div
+      class="tooltip tooltip-open tooltip-right pointer-events-none fixed z-50"
+      data-tooltip-target="bubble"
+      hidden
+    ></div>
   </body>
 </html>

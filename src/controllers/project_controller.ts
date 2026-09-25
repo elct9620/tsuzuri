@@ -21,7 +21,7 @@ function resourceItem(
   button.type = "button";
   button.dataset.action = "project#select";
   button.dataset.name = resource.name;
-  button.title = resource.name;
+  button.dataset.tooltip = resource.name;
   button.className = "flex-col items-start gap-1";
   button.classList.toggle("menu-active", isCurrent);
   const name = document.createElement("span");
@@ -32,7 +32,7 @@ function resourceItem(
   if (!resource.has_subtitle) {
     const status = document.createElement("span");
     status.className = "status status-warning";
-    status.title = t("resources.noSubtitle");
+    status.dataset.tooltip = t("resources.noSubtitle");
     marks.push(status);
   }
   for (const code of resource.translation_languages) {

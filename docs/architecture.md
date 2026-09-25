@@ -116,14 +116,15 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 ### 2.4 錯誤與通知
 
 ```
-Rust 各層 ──From──▶ Failure { code, … } ──serde──▶ backend/failure.ts（型別）
-                                                   │
-                         ui/failure.ts（依 code 產生訊息）◀┘
-                                                   │
-                         ui/notification.ts（toast）◀┘
+領域的錯誤 ─┐  SrtError、SegmentChangeError、ProjectError、GlossaryError、ModelError
+函式庫的錯誤 ┼─From─▶ Failure { code, … } ──serde──▶ backend/failure.ts（型別）
+             │        （failure.rs，應用層）                  │
+             │                        ui/failure.ts（依 code 產生訊息）◀┘
+             │                                                │
+             │                        ui/notification.ts（toast）◀┘
 ```
 
-`Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。外部函式庫的錯誤由各轉接以 `From` 轉成 `Failure`，例如 `llama.rs` 轉換 reqwest 的錯誤。
+`Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤則由 `llama.rs` 轉換。
 
 ## 3 Rust 端
 
@@ -131,7 +132,7 @@ Rust 各層 ──From──▶ Failure { code, … } ──serde──▶ backe
 
 | 層 | 可以依賴 | 不可以依賴 |
 |---|---|---|
-| 領域 | 標準函式庫、serde、`Failure` | Tauri、檔案系統、行程、HTTP |
+| 領域 | 標準函式庫、serde、同情境與字幕核心的領域 | `Failure`、Tauri、檔案系統、行程、HTTP |
 | 應用 | 領域、Port | Tauri、`AppHandle` |
 | 轉接 | 應用的 Port、領域 | 其他情境的轉接 |
 | 介面 | 應用、轉接的設定讀取 | 直接操作專案目錄或行程 |

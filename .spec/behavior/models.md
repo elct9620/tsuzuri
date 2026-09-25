@@ -47,3 +47,11 @@ Pointing each Model Slot at a Model file, remembering the choice, and refusing t
 | Given | a Model chosen for the translation slot whose file was since deleted |
 | When | the models panel loads |
 | Then | the translation slot asks the user to choose the file again |
+
+## `MD-006` Choosing a Model in the models panel
+
+| Step | Statement |
+| --- | --- |
+| Given | no Model chosen for the translation slot |
+| When | the user picks a GGUF file for the translation slot in the models panel |
+| Then | Rust remembers that file for the translation slot, and the slot shows its path |

@@ -7,11 +7,20 @@ import ModelsController from "./models_controller";
 describe("ModelsController", () => {
   let application: Application;
 
-  async function mountWith(settings: unknown): Promise<void> {
-    mockIPC((command) => (command === "model_settings" ? settings : undefined));
+  function settle(): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  async function mountWith(
+    settings: unknown,
+    handlers: Record<string, (args: unknown) => unknown> = {},
+  ): Promise<void> {
+    mockIPC((command, args) =>
+      command === "model_settings" ? settings : handlers[command]?.(args),
+    );
     application = Application.start();
     application.register("models", ModelsController);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await settle();
   }
 
   function statusOf(slot: string): string {
@@ -25,6 +34,7 @@ describe("ModelsController", () => {
       <dl data-controller="models">
         <dd data-models-target="status" data-slot="transcription"></dd>
         <dd data-models-target="status" data-slot="translation"></dd>
+        <button data-slot="translation" data-action="models#choose"></button>
       </dl>
     `;
   });
@@ -52,5 +62,35 @@ describe("ModelsController", () => {
     });
 
     expect(statusOf("translation")).toContain("請重新指定");
+  });
+
+  // @behavior MD-006
+  it("remembers a model chosen in the panel and shows its path", async () => {
+    let chosen: unknown;
+    await mountWith(
+      {
+        transcription: { path: null, has_file: false },
+        translation: { path: null, has_file: false },
+      },
+      {
+        "plugin:dialog|open": () => "/models/qwen3-4b.gguf",
+        choose_model: (args) => {
+          chosen = args;
+          return {
+            transcription: { path: null, has_file: false },
+            translation: { path: "/models/qwen3-4b.gguf", has_file: true },
+          };
+        },
+      },
+    );
+
+    document.querySelector<HTMLButtonElement>("button")!.click();
+    await settle();
+
+    expect(chosen).toEqual({
+      slot: "translation",
+      path: "/models/qwen3-4b.gguf",
+    });
+    expect(statusOf("translation")).toBe("/models/qwen3-4b.gguf");
   });
 });

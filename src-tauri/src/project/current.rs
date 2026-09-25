@@ -9,8 +9,9 @@ use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 use super::versions::SubtitleVersions;
 use super::{
-    translation_srt, translation_with_speakers, CurrentResource, Project, ProjectConfig,
-    ProjectOptions, SegmentField, SubtitleDigest, TranscriptionTarget, TranslationSource,
+    translation_srt, translation_with_speakers, BackupKind, CurrentResource, Project,
+    ProjectConfig, ProjectOptions, SegmentField, SubtitleDigest, TranscriptionTarget,
+    TranslationSource,
 };
 use crate::failure::Failure;
 use crate::language::Language;
@@ -215,7 +216,12 @@ impl Project {
                 continue;
             }
             if is_backed_up {
-                files::back_up(&self.directory, path, SystemTime::now())?;
+                files::back_up(
+                    &self.directory,
+                    path,
+                    SystemTime::now(),
+                    BackupKind::Overwrite,
+                )?;
             }
             files::write_srt(path, srt)?;
         }
@@ -301,7 +307,12 @@ impl Project {
         let restored = self.backup_of(language, backup)?;
         let subtitle = self.subtitle_path(language)?;
         let name = self.current()?.name.clone();
-        files::back_up(&self.directory, &subtitle, SystemTime::now())?;
+        files::back_up(
+            &self.directory,
+            &subtitle,
+            SystemTime::now(),
+            BackupKind::Overwrite,
+        )?;
         files::copy(&restored, &subtitle)?;
         self.read_current_again()?;
         self.write_bilingual_subtitles(&name, language)
@@ -531,7 +542,12 @@ impl CurrentProject {
             Some(project) if project.directory == directory && project.options.is_overwrite_backed_up
         );
         if is_backed_up {
-            files::back_up(directory, subtitle, SystemTime::now())?;
+            files::back_up(
+                directory,
+                subtitle,
+                SystemTime::now(),
+                BackupKind::Overwrite,
+            )?;
         }
         Ok(())
     }
@@ -617,6 +633,12 @@ impl CurrentProject {
         let previous = files::transcript_at(&job.subtitle)?;
         self.back_up_before_overwrite(&job.directory, &job.subtitle)?;
         files::write_srt(&job.subtitle, srt)?;
+        files::back_up(
+            &job.directory,
+            &job.subtitle,
+            SystemTime::now(),
+            BackupKind::Output,
+        )?;
         self.refresh_resources(&job.directory)?;
         match self.lock().project.as_ref() {
             Some(project) if project.directory == job.directory => project
@@ -651,6 +673,12 @@ impl CurrentProject {
         };
         self.back_up_before_overwrite(&source.directory, &path)?;
         files::write_srt(&path, translation_srt(&translation, speaker_names))?;
+        files::back_up(
+            &source.directory,
+            &path,
+            SystemTime::now(),
+            BackupKind::Output,
+        )?;
         self.refresh_resources(&source.directory)?;
         self.write_bilingual_subtitles(&source.directory, &source.name, Some(target))?;
         self.show_translations(source, target, &translation.segments);
@@ -850,7 +878,7 @@ pub(super) fn open_directory_of(path: &Path, language: Language) -> Result<Proje
 mod tests {
     use super::*;
     use crate::project::{BilingualOrder, ProjectConfig};
-    use crate::test_support::{backups_in, project_of, TempDir};
+    use crate::test_support::{backups, output_backups, overwrite_backups, project_of, TempDir};
 
     fn segment(text: &str, translation: Option<&str>) -> Segment {
         Segment {
@@ -1686,7 +1714,7 @@ mod tests {
             .unwrap();
 
         assert!(is_one_backup_of(
-            &backups_in(dir.path()),
+            &overwrite_backups(dir.path()),
             "ep01.en",
             &cue("Hello")
         ));
@@ -1694,7 +1722,7 @@ mod tests {
 
     // @behavior PJ-068
     #[test]
-    fn keeps_no_backup_unless_asked() {
+    fn keeps_no_overwrite_unless_asked() {
         let dir = TempDir::new("pj-backup-off");
         let current = backup_project_in(&dir, false);
         let source = current.snapshot().unwrap();
@@ -1707,7 +1735,49 @@ mod tests {
             )
             .unwrap();
 
-        assert!(!dir.path().join(".tsuzuri").exists());
+        let files: Vec<String> = backups(dir.path())
+            .into_iter()
+            .map(|(file, _)| file)
+            .collect();
+        assert!(
+            matches!(files.as_slice(), [file] if file.starts_with("ep01.en.") && file.ends_with(".output.srt"))
+        );
+    }
+
+    // @behavior PJ-088
+    #[test]
+    fn keeps_what_a_transcription_wrote_as_an_output() {
+        let dir = directory_of("pj-output-transcribed", &[("lecture.mp4", "")]);
+        let current = project_in(&dir);
+        let target = current.transcription_target(true).unwrap();
+
+        current.write_transcription(&target, cue("你好")).unwrap();
+
+        let contents: Vec<String> = output_backups(dir.path())
+            .into_iter()
+            .map(|(_, content)| content)
+            .collect();
+        assert_eq!(contents, [cue("你好")]);
+    }
+
+    // @behavior PJ-089
+    #[test]
+    fn keeps_what_a_translation_wrote_as_an_output() {
+        let dir = directory_of("pj-output-translated", &[("ep01.srt", &cue("大家好"))]);
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("大家好", Some("Hello"))],
+            )
+            .unwrap();
+
+        assert!(output_backups(dir.path())
+            .iter()
+            .any(|(file, content)| file.starts_with("ep01.en.") && *content == cue("Hello")));
     }
 
     // @behavior PJ-069
@@ -1717,6 +1787,11 @@ mod tests {
         let history = dir.path().join(files::HISTORY_DIR);
         std::fs::create_dir_all(&history).unwrap();
         std::fs::write(history.join("ep01.20260925T023000Z.srt"), cue("舊的")).unwrap();
+        std::fs::write(
+            history.join("ep01.20260925T023001Z.output.srt"),
+            cue("你好"),
+        )
+        .unwrap();
 
         let current = project_in(&dir);
 
@@ -1783,6 +1858,29 @@ mod tests {
         );
     }
 
+    // @behavior VR-010
+    #[test]
+    fn tells_an_output_from_an_overwrite() {
+        let dir = directory_of("vr-kinds", &[("ep01.srt", &cue("你好"))]);
+        write_backup(&dir, "ep01.20260925T023000Z.output.srt", &cue("您好"));
+        write_backup(&dir, "ep01.20260925T030000Z.srt", &cue("妳好"));
+        let current = project_in(&dir);
+
+        let kinds: Vec<(String, BackupKind)> = current.subtitle_versions().unwrap()[0]
+            .backups
+            .iter()
+            .map(|backup| (backup.taken_at.clone(), backup.kind))
+            .collect();
+
+        assert_eq!(
+            kinds,
+            [
+                ("20260925T030000Z".to_string(), BackupKind::Overwrite),
+                ("20260925T023000Z".to_string(), BackupKind::Output)
+            ]
+        );
+    }
+
     // @behavior VR-004
     #[test]
     fn restores_a_backup() {
@@ -1811,8 +1909,7 @@ mod tests {
             .restore_version(None, "ep01.20260925T023000Z.srt")
             .unwrap();
 
-        let backups = backups_in(dir.path());
-        assert!(backups.iter().any(|(file, content)| {
+        assert!(backups(dir.path()).iter().any(|(file, content)| {
             file != "ep01.20260925T023000Z.srt" && content == &cue("新的")
         }));
     }
@@ -2255,7 +2352,7 @@ mod tests {
 
         transcribe_over_speakers(&dir, true);
 
-        assert!(backups_in(dir.path())
+        assert!(overwrite_backups(dir.path())
             .iter()
             .any(|(file, text)| file.starts_with("ep01.en.") && *text == cue("co: Hello")));
     }
@@ -2267,7 +2364,7 @@ mod tests {
 
         transcribe_over(&dir, "", true);
 
-        assert!(!backups_in(dir.path())
+        assert!(!overwrite_backups(dir.path())
             .iter()
             .any(|(file, _)| file.starts_with("ep01.en.")));
     }

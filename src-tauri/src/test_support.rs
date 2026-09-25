@@ -220,7 +220,7 @@ mod tests {
 }
 
 /// The content of each Backup in `directory`'s history, with its file name, in name order.
-pub fn backups_in(directory: &std::path::Path) -> Vec<(String, String)> {
+pub fn backups(directory: &std::path::Path) -> Vec<(String, String)> {
     let Ok(entries) = std::fs::read_dir(directory.join(crate::project::HISTORY_DIR)) else {
         return Vec::new();
     };
@@ -235,4 +235,20 @@ pub fn backups_in(directory: &std::path::Path) -> Vec<(String, String)> {
         .collect();
     backups.sort();
     backups
+}
+
+/// The Backups in the history of `directory` that keep a subtitle written over, as `backups` reads them.
+pub fn overwrite_backups(directory: &std::path::Path) -> Vec<(String, String)> {
+    backups(directory)
+        .into_iter()
+        .filter(|(file, _)| !file.ends_with(".output.srt"))
+        .collect()
+}
+
+/// The Backups in the history of `directory` that keep what a Mode wrote, as `backups` reads them.
+pub fn output_backups(directory: &std::path::Path) -> Vec<(String, String)> {
+    backups(directory)
+        .into_iter()
+        .filter(|(file, _)| file.ends_with(".output.srt"))
+        .collect()
 }

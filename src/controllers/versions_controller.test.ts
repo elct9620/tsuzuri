@@ -55,6 +55,7 @@ describe("VersionsController", () => {
               {
                 file: "ep01.20260925T023000Z.srt",
                 taken_at: "20260925T023000Z",
+                kind: "overwrite",
               },
             ],
           },

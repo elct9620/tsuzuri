@@ -460,7 +460,7 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | --- | --- |
 | Given | a Project keeping Backups, whose `lecture.srt` reads `舊的` |
 | When | `lecture` is transcribed again |
-| Then | `.tsuzuri/history/` holds a Backup of `lecture.srt` reading `舊的` |
+| Then | `.tsuzuri/history/` holds an Overwrite of `lecture.srt` reading `舊的` |
 
 ## `PJ-067` Backing up a translation before it is written again
 
@@ -468,21 +468,37 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | --- | --- |
 | Given | a Project keeping Backups, whose `ep01.en.srt` reads `Hello` |
 | When | its translation into `en` is written again |
-| Then | `.tsuzuri/history/` holds a Backup of `ep01.en.srt` reading `Hello` |
+| Then | `.tsuzuri/history/` holds an Overwrite of `ep01.en.srt` reading `Hello` |
 
-## `PJ-068` Keeping no Backup unless asked
+## `PJ-068` Keeping no Overwrite unless asked
 
 | Step | Statement |
 | --- | --- |
 | Given | a Project not keeping Backups, whose `ep01.en.srt` exists |
 | When | its translation into `en` is written again |
-| Then | the Project has no `.tsuzuri/history/` |
+| Then | `.tsuzuri/history/` holds only the Output of `ep01.en.srt` |
+
+## `PJ-088` Keeping what a transcription wrote as an Output
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project not keeping Backups, whose `lecture` has only a media file |
+| When | `lecture` is transcribed as `你好` |
+| Then | `.tsuzuri/history/` holds an Output of `lecture.srt` reading `你好` |
+
+## `PJ-089` Keeping what a translation wrote as an Output
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project not keeping Backups, whose `ep01.srt` has no translation |
+| When | its translation into `en` is written as `Hello` |
+| Then | `.tsuzuri/history/` holds an Output of `ep01.en.srt` reading `Hello` |
 
 ## `PJ-069` Leaving Backups out of the Resources
 
 | Step | Statement |
 | --- | --- |
-| Given | a directory holding `ep01.srt` and `.tsuzuri/history/ep01.20260925T023000Z.srt` |
+| Given | a directory holding `ep01.srt`, `.tsuzuri/history/ep01.20260925T023000Z.srt` and `.tsuzuri/history/ep01.20260925T023001Z.output.srt` |
 | When | it is opened |
 | Then | the Project lists only `ep01` |
 
@@ -642,7 +658,7 @@ A cue with other times belongs to no Segment, so a Speaker has nowhere to come f
 | --- | --- |
 | Given | a Project keeping Backups whose `ep01` has a media file, `ep01.srt` reading `co: 你好` and `ep01.en.srt` reading `co: Hello` |
 | When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
-| Then | the history holds a Backup of `ep01.en.srt` reading `co: Hello` |
+| Then | the history holds an Overwrite of `ep01.en.srt` reading `co: Hello` |
 
 
 ## `PJ-082` Keeping no Backup of a translation a transcription leaves as it is
@@ -651,7 +667,7 @@ A cue with other times belongs to no Segment, so a Speaker has nowhere to come f
 | --- | --- |
 | Given | a Project keeping Backups whose `ep01` has a media file, `ep01.srt` reading `你好` and `ep01.en.srt` reading `Hello` |
 | When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
-| Then | the history holds no Backup of `ep01.en.srt` |
+| Then | the history holds no Overwrite of `ep01.en.srt` |
 
 ## `PJ-083` Keeping one label on a translation with a long Speaker name
 

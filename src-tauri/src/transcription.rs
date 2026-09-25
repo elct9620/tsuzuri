@@ -411,7 +411,7 @@ mod tests {
 
         fixture.run(&target).await.unwrap();
 
-        let backups = crate::test_support::backups_in(&dir);
+        let backups = crate::test_support::overwrite_backups(&dir);
         assert_eq!(
             backups
                 .iter()

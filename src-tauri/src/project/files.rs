@@ -6,7 +6,8 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use super::{
-    segment_at_times, translated_dialogue, Backup, Project, ProjectConfig, Resource, SubtitleDigest,
+    segment_at_times, translated_dialogue, Backup, BackupKind, Project, ProjectConfig, Resource,
+    SubtitleDigest,
 };
 use crate::failure::Failure;
 use crate::language::Language;
@@ -270,9 +271,17 @@ impl ProjectConfig {
 /// Where a Project keeps its Backups, in a directory the Resource list never reads.
 pub const HISTORY_DIR: &str = ".tsuzuri/history";
 
-/// Copies `subtitle` into the history of `directory` as a Backup taken `at`, when it exists. A
-/// Backup already taken that second is left alone and this one takes the next free second.
-pub fn back_up(directory: &Path, subtitle: &Path, at: SystemTime) -> io::Result<()> {
+/// Where an Output's name carries its kind, after the time it was taken.
+const OUTPUT_MARK: &str = ".output";
+
+/// Copies `subtitle` into the history of `directory` as a Backup of `kind` taken `at`, when it
+/// exists. A Backup already taken that second is left alone and this one takes the next free second.
+pub fn back_up(
+    directory: &Path,
+    subtitle: &Path,
+    at: SystemTime,
+    kind: BackupKind,
+) -> io::Result<()> {
     let Some(stem) = subtitle_stem(subtitle) else {
         return Ok(());
     };
@@ -283,7 +292,11 @@ pub fn back_up(directory: &Path, subtitle: &Path, at: SystemTime) -> io::Result<
     fs::create_dir_all(&history)?;
     let mut at = at;
     let backup = loop {
-        let backup = history.join(format!("{stem}.{}.srt", utc_stamp(at)));
+        let mark = match kind {
+            BackupKind::Output => OUTPUT_MARK,
+            BackupKind::Overwrite => "",
+        };
+        let backup = history.join(format!("{stem}.{}{mark}.srt", utc_stamp(at)));
         if !backup.exists() {
             break backup;
         }
@@ -306,14 +319,24 @@ pub fn backups_of(directory: &Path, subtitle: &Path) -> io::Result<Vec<Backup>> 
     let mut backups: Vec<Backup> = entries
         .filter_map(|entry| entry.ok()?.file_name().into_string().ok())
         .filter_map(|file| {
-            let (named, taken_at) = file.strip_suffix(".srt")?.rsplit_once('.')?;
+            let named = file.strip_suffix(".srt")?;
+            let (named, kind) = match named.strip_suffix(OUTPUT_MARK) {
+                Some(named) => (named, BackupKind::Output),
+                None => (named, BackupKind::Overwrite),
+            };
+            let (named, taken_at) = named.rsplit_once('.')?;
             (named == stem && is_utc_stamp(taken_at)).then(|| Backup {
                 taken_at: taken_at.to_string(),
                 file: file.clone(),
+                kind,
             })
         })
         .collect();
-    backups.sort_by(|a, b| b.taken_at.cmp(&a.taken_at));
+    // An Output is written after the Overwrite it replaces, so within one second it is the newer.
+    backups.sort_by(|a, b| {
+        (&b.taken_at, b.kind == BackupKind::Output)
+            .cmp(&(&a.taken_at, a.kind == BackupKind::Output))
+    });
     Ok(backups)
 }
 
@@ -592,10 +615,10 @@ mod tests {
         let subtitle = dir.path().join("ep01.srt");
         let at = UNIX_EPOCH + Duration::from_secs(1_790_303_400);
         std::fs::write(&subtitle, "first").unwrap();
-        back_up(dir.path(), &subtitle, at).unwrap();
+        back_up(dir.path(), &subtitle, at, BackupKind::Overwrite).unwrap();
         std::fs::write(&subtitle, "second").unwrap();
 
-        back_up(dir.path(), &subtitle, at).unwrap();
+        back_up(dir.path(), &subtitle, at, BackupKind::Overwrite).unwrap();
 
         let taken: Vec<String> = backups_of(dir.path(), &subtitle)
             .unwrap()

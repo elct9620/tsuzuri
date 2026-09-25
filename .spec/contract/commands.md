@@ -144,7 +144,7 @@ pub fn change_segments(app: AppHandle, change: SegmentChange) -> Result<(), Fail
 
 ## `subtitle_versions`
 
-The Backups of each subtitle of the Current Resource, its original first and then each translation, newest Backup first.
+The Backups of each subtitle of the Current Resource, its original first and then each translation, newest Backup first, each saying whether it is an Output or an Overwrite.
 
 ```rust
 pub fn subtitle_versions(app: AppHandle) -> Result<Vec<SubtitleVersions>, Failure> {}
@@ -160,7 +160,7 @@ pub fn compare_versions(app: AppHandle, language: Option<Language>, left: Option
 
 ## `restore_version`
 
-Keep the subtitle as a Backup, then put the named Backup in its place and read the Current Resource again, emitting `project-changed`. A name the subtitle's Backups do not hold is refused as `no-backup`.
+Keep the subtitle as an Overwrite Backup, then put the named Backup in its place and read the Current Resource again, emitting `project-changed`. A name the subtitle's Backups do not hold is refused as `no-backup`.
 
 ```rust
 pub fn restore_version(app: AppHandle, language: Option<Language>, backup: String) -> Result<(), Failure> {}

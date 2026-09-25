@@ -52,7 +52,7 @@ The Language a Project's Resources are spoken and transcribed in, and the one ev
 
 ### Project Options
 
-What the user sets for one Project in the settings, beside its Primary Language: its Bilingual Order, whether a Bilingual SRT is saved beside each translation, and whether a subtitle about to be overwritten is kept as a Backup. Each has a default the Project keeps until it is changed.
+What the user sets for one Project in the settings, beside its Primary Language: its Bilingual Order, whether a Bilingual SRT is saved beside each translation, and whether a subtitle about to be overwritten is kept as an Overwrite Backup. Each has a default the Project keeps until it is changed.
 
 ### Mode
 
@@ -160,7 +160,11 @@ A change to the Segments themselves rather than to a text: new times for one, on
 
 ### Backup
 
-A copy of a subtitle kept in the Project's `.tsuzuri/history/` just before Tsuzuri overwrites it, named `[name].srt` or `[name].[lang].srt` with the UTC time it was taken before `.srt`, such as `ep01.en.20260925T023000Z.srt`. Only taken when the Project Options ask for it; the Resource list never shows one.
+A copy of a subtitle kept in the Project's `.tsuzuri/history/`, of one of two kinds. An Output is what a transcription or translation has just written, always kept, so the edits after it can be compared with what the Mode made. An Overwrite is a subtitle just before Tsuzuri writes over it, kept when the Project Options ask for it and always before a restore. Each is named `[name].srt` or `[name].[lang].srt` with the UTC time it was taken before `.srt`, and an Output with `.output` after the time, such as `ep01.en.20260925T023000Z.output.srt`; the Resource list never shows one.
+
+#### Rejected
+
+- `Baseline` - an Output is what a comparison starts from; a second name would split one kept file into two ideas.
 
 ### Version
 

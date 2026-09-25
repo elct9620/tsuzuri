@@ -143,12 +143,16 @@ export function saveSrt(path: string, content: SrtContent): Promise<void> {
   return invoke("save_srt", { path, content });
 }
 
-/** A Backup as Rust lists it: its file name in the history and the UTC time it was taken. */
+/** A Backup as Rust lists it: its file name in the history, the UTC time it was taken and its kind. */
 export interface Backup {
   file: string;
   /** `YYYYMMDDTHHMMSSZ` */
   taken_at: string;
+  kind: BackupKind;
 }
+
+/** What a Mode has just written, or a subtitle just before it was written over. */
+export type BackupKind = "output" | "overwrite";
 
 /** The Backups of the original, with no Language, or of one translation. */
 export interface SubtitleVersions {

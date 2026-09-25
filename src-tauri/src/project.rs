@@ -338,10 +338,19 @@ pub enum BilingualOrder {
     TranslationFirst,
 }
 
-/// A Backup of one subtitle, by its file name in the history and the UTC time it was taken.
+/// A Backup of one subtitle, by its file name in the history, the UTC time it was taken and its kind.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Backup {
     pub file: String,
     /// `YYYYMMDDTHHMMSSZ`
     pub taken_at: String,
+    pub kind: BackupKind,
+}
+
+/// What a Backup keeps: what a Mode has just written, or a subtitle just before it was written over.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BackupKind {
+    Output,
+    Overwrite,
 }

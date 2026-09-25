@@ -32,6 +32,14 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 | When | the Backup is compared with the subtitle now |
 | Then | the rows are 0 to 1 changed from `你好` to `您好`, 1 to 2 only in the Backup, and 2 to 3 only now |
 
+## `VR-010` Telling an Output from an Overwrite
+
+| Step | Statement |
+| --- | --- |
+| Given | an Output of `ep01.srt` taken at 02:30 and an Overwrite of it taken at 03:00 |
+| When | the Versions of the Current Resource `ep01` are read |
+| Then | its original lists the 03:00 Backup as an Overwrite and the 02:30 one as an Output |
+
 ## `VR-004` Restoring a Backup
 
 | Step | Statement |
@@ -46,7 +54,7 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 | --- | --- |
 | Given | a Current Resource whose `ep01.srt` reads `新的` and a Backup of it reading `舊的` |
 | When | the Backup is restored |
-| Then | a new Backup of `ep01.srt` reads `新的` |
+| Then | a new Overwrite of `ep01.srt` reads `新的` |
 
 ## `VR-006` Refusing a Backup the subtitle does not have
 

@@ -8,15 +8,13 @@ Transcribe video and audio into subtitles, translate them, and proofread the res
 
 Download the build for your platform. Until the first release is published, builds are available as artifacts of the latest successful [CI run](https://github.com/elct9620/tsuzuri/actions/workflows/ci.yml) on `main`.
 
-| Platform | Download |
-|---|---|
-| Windows x64 | NSIS installer (`*-setup.exe`) or MSI |
-| macOS (Apple Silicon) | `.dmg` |
-| Linux x64 | `.deb`, `.rpm` or `.AppImage` |
+| Platform | Download | Bundled whisper.cpp and llama.cpp |
+|---|---|---|
+| Windows x64 | NSIS installer (`*-setup.exe`) or MSI | Vulkan build |
+| macOS (Apple Silicon) | `.dmg` | Metal build |
+| Linux x64 | `.deb`, `.rpm` or `.AppImage` | Vulkan build |
 
-The installer includes ffmpeg, whisper.cpp and llama.cpp, built for Vulkan on Windows and Linux and for Metal on macOS. Without a Vulkan-capable GPU driver, or to use another build such as CUDA, choose its executable in the app.
-
-Tsuzuri is not code-signed, so each system warns the first time it opens.
+The installer includes ffmpeg as well. Without a Vulkan-capable GPU driver, or to use another build such as CUDA, choose its executable in the app. Tsuzuri is not code-signed, so the system warns the first time it opens.
 
 ### macOS
 
@@ -28,7 +26,10 @@ xattr -dr com.apple.quarantine /Applications/tsuzuri.app
 
 ### Windows
 
-When SmartScreen shows "Windows protected your PC", choose **More info**, then **Run anyway**. If the app does not start, install the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) (built into Windows 11).
+| When | Do |
+|---|---|
+| SmartScreen shows "Windows protected your PC" | Choose **More info**, then **Run anyway** |
+| The app does not start | Install the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) (built into Windows 11) |
 
 ### Linux
 
@@ -49,7 +50,7 @@ Tsuzuri does not download models; point it at files you already have.
 
 ## Development
 
-Requires Rust, Node.js and pnpm.
+Requires Rust, Node.js and pnpm. The architecture is in [docs/architecture.md](docs/architecture.md) and the design in [docs/design.md](docs/design.md).
 
 ```bash
 pnpm install
@@ -59,18 +60,30 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # check code against .spec/
 ```
 
-Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else the one bundled with the installer. Development builds bundle nothing; build the Components into `vendor/<component>/<variant>/`, which debug builds look in first. `scripts/vendor.sh` builds whisper-cli, llama-server and ffmpeg from the source [`components.json`](components.json) pins, each as the first Variant it lists for the platform unless one is named. It needs cmake, make and jq; Linux OpenBLAS and Vulkan builds also need pkg-config, libopenblas-dev, libvulkan-dev, glslc and spirv-headers, and Windows builds run in MSYS2 UCRT64:
+### Components
 
 ```bash
 scripts/vendor.sh               # every Component
 scripts/vendor.sh whisper cpu   # one Component, one Variant
 ```
 
-Packaging merges `src-tauri/tauri.bundle.conf.json`, which bundles `vendor/` into the installer; the app takes the first bundled Variant that runs, in the order `components.json` lists them. CI builds the first Variant listed for each platform the same way, caching each by its pin, before it runs `pnpm tauri build --config src-tauri/tauri.bundle.conf.json`.
+| Building on | Needs |
+|---|---|
+| Every platform | cmake, make and jq |
+| Linux, OpenBLAS and Vulkan builds | pkg-config, libopenblas-dev, libvulkan-dev, glslc and spirv-headers |
+| Windows | MSYS2 UCRT64 |
 
-The frontend is plain TypeScript with [Stimulus](https://stimulus.hotwired.dev/) controllers under `src/controllers/`. The design is in [docs/design.md](docs/design.md).
+Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else the bundled one. Development builds bundle nothing: `scripts/vendor.sh` builds from the source [`components.json`](components.json) pins into `vendor/<component>/<variant>/`, which debug builds look in first, taking the first Variant listed for the platform unless one is named.
 
-Two ignored tests run the real engines end to end:
+### Packaging
+
+```bash
+pnpm tauri build --config src-tauri/tauri.bundle.conf.json
+```
+
+This configuration bundles `vendor/` into the installer, and the app takes the first bundled Variant that runs, in the order `components.json` lists them. CI builds the first Variant listed for each platform the same way, caching each by its pin.
+
+### Tests that run the engines
 
 ```bash
 cd src-tauri
@@ -79,8 +92,15 @@ TSUZURI_E2E_LLAMA=<llama-server> TSUZURI_E2E_TRANSLATION_MODEL=<gguf> \
   cargo test -- --ignored --nocapture
 ```
 
+These two tests are skipped by default and need Models and a media file.
+
 ## License
 
-Copyright 2026 ZhengXian Qiu. Licensed under the [Apache License 2.0](LICENSE).
+| Part | License |
+|---|---|
+| Tsuzuri | [Apache License 2.0](LICENSE), Copyright 2026 ZhengXian Qiu |
+| [FFmpeg](https://ffmpeg.org) | LGPLv2.1 |
+| [whisper.cpp](https://github.com/ggml-org/whisper.cpp), [llama.cpp](https://github.com/ggml-org/llama.cpp) | MIT |
+| Rust dependencies | The licenses `src-tauri/deny.toml` allows |
 
-The installers bundle [FFmpeg](https://ffmpeg.org) (LGPLv2.1), [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (MIT) and [llama.cpp](https://github.com/ggml-org/llama.cpp) (MIT), built from their source by `scripts/vendor.sh` and run as separate programs, which an executable you choose can replace. Rust dependencies are limited to the licenses allowed in `src-tauri/deny.toml`; CI generates their full license texts as `THIRD-PARTY-LICENSES.html` with cargo-about and ships it with every build.
+The bundled engines are built from their source by `scripts/vendor.sh` and run as separate programs, which an executable you choose can replace. CI generates the full license texts as `THIRD-PARTY-LICENSES.html` with cargo-about and ships it with every build.

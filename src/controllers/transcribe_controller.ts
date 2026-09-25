@@ -1,24 +1,19 @@
 import { Controller } from "@hotwired/stimulus";
-import { invoke } from "@tauri-apps/api/core";
-import type { UnlistenFn } from "@tauri-apps/api/event";
 
+import {
+  currentResource,
+  followProject,
+  type ProjectView,
+  type UnlistenFn,
+} from "../backend/project";
+import { modelSettings } from "../backend/toolchain";
+import { transcribe } from "../backend/transcription";
+import { translate } from "../backend/translation";
 import { t } from "../i18n";
-import { notify } from "../notification";
-import { phaseItems, type PhaseTiming } from "../progress";
-import { currentResource, followProject, type ProjectView } from "../project";
+import { notify, notifyTranslation } from "../ui/notification";
+import { phaseItems } from "../ui/progress";
 import type ProgressController from "./progress_controller";
-import { notifyTranslation, translateProject } from "./translate_controller";
 import type TranslationOptionsController from "./translation_options_controller";
-
-export interface Transcription {
-  audio_seconds: number;
-  transcribe_seconds: number;
-  phases: PhaseTiming[];
-}
-
-interface ModelSettingsView {
-  transcription: { path: string | null };
-}
 
 /** The transcribe dialog: it transcribes the Current Resource into its original subtitle. */
 export default class TranscribeController extends Controller {
@@ -72,7 +67,7 @@ export default class TranscribeController extends Controller {
     }
     this.showTranslationOptions();
     this.dialogTarget.showModal();
-    const models = await invoke<ModelSettingsView | null>("model_settings");
+    const models = await modelSettings();
     const path = models?.transcription.path ?? null;
     this.modelTarget.textContent =
       path === null
@@ -86,9 +81,9 @@ export default class TranscribeController extends Controller {
     this.dialogTarget.close();
     progress.begin("transcribe");
     try {
-      const transcription = await invoke<Transcription>("transcribe", {
-        overwrite: currentResource(this.project)?.has_subtitle ?? false,
-      });
+      const transcription = await transcribe(
+        currentResource(this.project)?.has_subtitle ?? false,
+      );
       notify({
         title: t("transcribe.done"),
         kind: "success",
@@ -111,9 +106,7 @@ export default class TranscribeController extends Controller {
       if (this.translateTarget.checked) {
         const choices = this.translationOptionsOutlet;
         progress.begin("translate");
-        notifyTranslation(
-          await translateProject(choices.language, choices.options),
-        );
+        notifyTranslation(await translate(choices.language, choices.options));
       }
       progress.finish();
     } catch (error) {

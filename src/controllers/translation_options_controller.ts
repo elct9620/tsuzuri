@@ -1,14 +1,8 @@
 import { Controller } from "@hotwired/stimulus";
 
 import { t, translatePage } from "../i18n";
-import type { ProjectView, TranslationGlossaryView } from "../project";
-
-/** The choices a translation is started with, named as Rust names them. */
-export interface TranslationOptions {
-  has_speaker_labels: boolean;
-  has_self_review: boolean;
-  summary_word_limit: number | null;
-}
+import type { ProjectView, TranslationGlossaryView } from "../backend/project";
+import type { TranslationOptions } from "../backend/translation";
 
 function glossaryLabel(glossary: TranslationGlossaryView | null): string {
   if (glossary === null) return t("translate.glossaryNone");

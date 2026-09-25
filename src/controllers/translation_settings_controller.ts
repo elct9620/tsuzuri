@@ -1,12 +1,9 @@
 import { Controller } from "@hotwired/stimulus";
-import { invoke } from "@tauri-apps/api/core";
-
-/** How a translation is batched and repaired, as Rust saves it. */
-export interface TranslationSettings {
-  batch_size: number;
-  retries: number;
-  reference_lines: number;
-}
+import {
+  saveTranslationSettings,
+  translationSettings,
+  type TranslationSettings,
+} from "../backend/translation";
 
 export default class TranslationSettingsController extends Controller {
   static targets = ["batchSize", "retries", "referenceLines"];
@@ -16,7 +13,7 @@ export default class TranslationSettingsController extends Controller {
   declare readonly referenceLinesTarget: HTMLInputElement;
 
   async connect(): Promise<void> {
-    this.show(await invoke<TranslationSettings>("translation_settings"));
+    this.show(await translationSettings());
   }
 
   async save(): Promise<void> {
@@ -25,11 +22,7 @@ export default class TranslationSettingsController extends Controller {
       retries: Number(this.retriesTarget.value),
       reference_lines: Number(this.referenceLinesTarget.value),
     };
-    this.show(
-      await invoke<TranslationSettings>("save_translation_settings", {
-        settings,
-      }),
-    );
+    this.show(await saveTranslationSettings(settings));
   }
 
   private show(settings: TranslationSettings): void {

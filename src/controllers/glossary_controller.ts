@@ -1,15 +1,12 @@
 import { Controller } from "@hotwired/stimulus";
-import { invoke } from "@tauri-apps/api/core";
 
-import { failureMessage } from "../failure";
+import {
+  saveTranslationGlossary,
+  translationGlossaryTable,
+  type GlossaryTable,
+} from "../backend/project";
 import { t } from "../i18n";
-
-/** The Translation Glossary laid out for editing, named as Rust names it. */
-export interface GlossaryTable {
-  languages: string[];
-  rows: string[][];
-  has_source_target_header: boolean;
-}
+import { failureMessage } from "../ui/failure";
 
 /** The glossary dialog: every Language a column and every term a row of fields, saved to `glossary.csv`. */
 export default class GlossaryController extends Controller {
@@ -39,7 +36,7 @@ export default class GlossaryController extends Controller {
   async open(): Promise<void> {
     this.failureTarget.hidden = true;
     try {
-      this.show(await invoke<GlossaryTable>("translation_glossary_table"));
+      this.show(await translationGlossaryTable());
       this.saveTarget.disabled = false;
     } catch (error) {
       this.show({ languages: [], rows: [], has_source_target_header: false });
@@ -62,7 +59,7 @@ export default class GlossaryController extends Controller {
       [...row.querySelectorAll("input")].map((input) => input.value),
     );
     try {
-      await invoke("save_translation_glossary", { rows });
+      await saveTranslationGlossary(rows);
       this.dialogTarget.close();
     } catch (error) {
       this.fail(error);

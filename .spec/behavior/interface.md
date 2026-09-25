@@ -5,9 +5,9 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 ## Includes
 
 - `src/i18n.test.ts`
-- `src/menu.test.ts`
+- `src/ui/menu.test.ts`
 - `src/controllers/tooltip_controller.test.ts`
-- `src/notification.test.ts`
+- `src/ui/notification.test.ts`
 - `src-tauri/src/window.rs`
 
 ## `IF-001` Following the system language

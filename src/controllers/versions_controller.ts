@@ -1,30 +1,16 @@
 import { Controller } from "@hotwired/stimulus";
-import { invoke } from "@tauri-apps/api/core";
 
+import {
+  compareVersions,
+  restoreVersion,
+  subtitleVersions,
+  type Backup,
+  type ComparedRow,
+  type SubtitleVersions,
+} from "../backend/project";
 import { interfaceLanguageCode, t } from "../i18n";
-import { notify, notifyFailure } from "../notification";
-import { formatTime } from "../time";
-
-/** A Backup as Rust lists it: its file name in the history and the UTC time it was taken. */
-interface Backup {
-  file: string;
-  /** `YYYYMMDDTHHMMSSZ` */
-  taken_at: string;
-}
-
-/** The Backups of the original, with no Language, or of one translation. */
-interface SubtitleVersions {
-  language: string | null;
-  backups: Backup[];
-}
-
-interface ComparedRow {
-  start_ms: number;
-  end_ms: number;
-  left: string | null;
-  right: string | null;
-  is_changed: boolean;
-}
+import { notify, notifyFailure } from "../ui/notification";
+import { formatTime } from "../ui/time";
 
 /** `taken_at` in the local time of the interface language, as a person reads the time. */
 export function localTime(takenAt: string): string {
@@ -89,7 +75,7 @@ export default class VersionsController extends Controller {
 
   async open(): Promise<void> {
     try {
-      this.versions = await invoke<SubtitleVersions[]>("subtitle_versions");
+      this.versions = await subtitleVersions();
     } catch (error) {
       notifyFailure(t("versions.unreadable"), error);
       return;
@@ -146,11 +132,11 @@ export default class VersionsController extends Controller {
   async showComparison(): Promise<void> {
     let rows: ComparedRow[];
     try {
-      rows = await invoke<ComparedRow[]>("compare_versions", {
-        language: this.shownLanguage(),
-        left: this.leftTarget.value || null,
-        right: this.rightTarget.value || null,
-      });
+      rows = await compareVersions(
+        this.shownLanguage(),
+        this.leftTarget.value || null,
+        this.rightTarget.value || null,
+      );
     } catch (error) {
       notifyFailure(t("versions.unreadable"), error);
       return;
@@ -173,10 +159,10 @@ export default class VersionsController extends Controller {
 
   async restore({ currentTarget }: Event): Promise<void> {
     try {
-      await invoke("restore_version", {
-        language: this.shownLanguage(),
-        backup: (currentTarget as HTMLElement).dataset.file,
-      });
+      await restoreVersion(
+        this.shownLanguage(),
+        (currentTarget as HTMLElement).dataset.file,
+      );
     } catch (error) {
       notifyFailure(t("versions.notRestored"), error);
       return;

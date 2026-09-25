@@ -1,35 +1,16 @@
 import { Controller } from "@hotwired/stimulus";
-import { invoke } from "@tauri-apps/api/core";
-import type { UnlistenFn } from "@tauri-apps/api/event";
 
+import {
+  currentResource,
+  followProject,
+  type ProjectView,
+  type UnlistenFn,
+} from "../backend/project";
+import { translate } from "../backend/translation";
 import { t } from "../i18n";
-import { notify } from "../notification";
-import { phaseItems, type PhaseTiming } from "../progress";
-import { currentResource, followProject, type ProjectView } from "../project";
+import { notifyTranslation } from "../ui/notification";
 import type ProgressController from "./progress_controller";
 import type TranslationOptionsController from "./translation_options_controller";
-import type { TranslationOptions } from "./translation_options_controller";
-
-export interface Translation {
-  phases: PhaseTiming[];
-}
-
-/** Translates the Current Resource from the Primary Language; the translations land in the Project, not in the answer. */
-export function translateProject(
-  target: string,
-  options: TranslationOptions,
-): Promise<Translation> {
-  return invoke<Translation>("translate", { target, options });
-}
-
-/** Says a translation finished, with how long each of its Phases took. */
-export function notifyTranslation({ phases }: Translation): void {
-  notify({
-    title: t("translate.done"),
-    kind: "success",
-    items: phaseItems(phases),
-  });
-}
 
 /** The translate dialog: it translates the Current Resource's original subtitle. */
 export default class TranslateController extends Controller {
@@ -70,10 +51,7 @@ export default class TranslateController extends Controller {
     progress.begin("translate");
     try {
       const choices = this.translationOptionsOutlet;
-      const translation = await translateProject(
-        choices.language,
-        choices.options,
-      );
+      const translation = await translate(choices.language, choices.options);
       notifyTranslation(translation);
       progress.finish();
     } catch (error) {

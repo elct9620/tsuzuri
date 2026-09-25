@@ -1,26 +1,25 @@
 import { Controller } from "@hotwired/stimulus";
-import { invoke } from "@tauri-apps/api/core";
-import type { UnlistenFn } from "@tauri-apps/api/event";
-import { save } from "@tauri-apps/plugin-dialog";
 
-import { t } from "../i18n";
-import { notify, notifyFailure } from "../notification";
-import { closeMenu } from "../menu";
-import { formatTime } from "../time";
-import type { TaskKind } from "./progress_controller";
+import { save } from "../backend/dialog";
 import {
   currentProject,
   currentResource,
+  editSegment,
+  exportPath,
   followProject,
+  saveSrt,
+  showTranslation,
   type ProjectView,
   type Segment,
-} from "../project";
-
-/** Which text of a Segment an editor holds, named as Rust names it. */
-type SegmentField = "text" | "translation" | "speaker";
-
-/** Which text the saved SRT's cues carry; the backend writes each one. */
-type SrtContent = "original" | "translation" | "bilingual";
+  type SegmentField,
+  type SrtContent,
+  type UnlistenFn,
+} from "../backend/project";
+import { t } from "../i18n";
+import { closeMenu } from "../ui/menu";
+import { notify, notifyFailure } from "../ui/notification";
+import { formatTime } from "../ui/time";
+import type { TaskKind } from "./progress_controller";
 
 function editor(
   index: number,
@@ -198,11 +197,11 @@ export default class TranscriptController extends Controller {
   async edit(event: Event): Promise<void> {
     const field = event.currentTarget as HTMLInputElement | HTMLTextAreaElement;
     try {
-      await invoke("edit_segment", {
-        index: Number(field.dataset.index),
-        field: field.dataset.field as SegmentField,
-        value: field.value,
-      });
+      await editSegment(
+        Number(field.dataset.index),
+        field.dataset.field as SegmentField,
+        field.value,
+      );
       notify({ title: t("edit.saved"), kind: "success", key: "saved" });
     } catch (error) {
       notifyFailure(t("edit.notSaved"), error);
@@ -210,9 +209,7 @@ export default class TranscriptController extends Controller {
   }
 
   async showTranslation(): Promise<void> {
-    await invoke("show_translation", {
-      language: this.translationLanguageTarget.value || null,
-    });
+    await showTranslation(this.translationLanguageTarget.value || null);
   }
 
   async save({
@@ -224,13 +221,11 @@ export default class TranscriptController extends Controller {
   }): Promise<void> {
     closeMenu(currentTarget);
     const path = await save({
-      defaultPath: await invoke<string>("export_path", {
-        content: params.content,
-      }),
+      defaultPath: await exportPath(params.content),
       filters: [{ name: "SRT", extensions: ["srt"] }],
     });
     if (path === null) return;
-    await invoke("save_srt", { path, content: params.content });
+    await saveSrt(path, params.content);
   }
 
   private show(project: ProjectView | null): void {

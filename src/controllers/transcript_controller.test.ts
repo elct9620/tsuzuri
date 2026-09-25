@@ -3,14 +3,14 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ProjectView } from "../project";
+import type { ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import ProgressController from "./progress_controller";
 import {
   NOTIFICATION_STACK,
   notificationDetail,
   notifications,
-} from "../test_notification";
+} from "../ui/test_notification";
 import TranscriptController from "./transcript_controller";
 
 describe("TranscriptController", () => {

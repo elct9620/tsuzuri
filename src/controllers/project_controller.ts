@@ -1,17 +1,21 @@
 import { Controller } from "@hotwired/stimulus";
-import { invoke } from "@tauri-apps/api/core";
-import { emit, type UnlistenFn } from "@tauri-apps/api/event";
-import { message, open } from "@tauri-apps/plugin-dialog";
 
-import { failureMessage } from "../failure";
-import { interfaceLanguageCode, t } from "../i18n";
-import { closeMenu } from "../menu";
+import { message, open } from "../backend/dialog";
 import {
   followProject,
+  openProject,
+  refreshProject,
+  selectResource,
+  setPrimaryLanguage,
+  setProjectOptions,
   type ProjectOptions,
   type ProjectView,
   type ResourceView,
-} from "../project";
+  type UnlistenFn,
+} from "../backend/project";
+import { interfaceLanguageCode, t } from "../i18n";
+import { failureMessage } from "../ui/failure";
+import { closeMenu } from "../ui/menu";
 
 function resourceItem(
   resource: ResourceView,
@@ -98,7 +102,7 @@ export default class ProjectController extends Controller {
   async openDirectory({ currentTarget }: Event): Promise<void> {
     closeMenu(currentTarget);
     const path = await open({ multiple: false, directory: true });
-    if (path !== null) await this.run("open_project", { path });
+    if (path !== null) await this.run("open_project", path);
   }
 
   async openSrt({ currentTarget }: Event): Promise<void> {
@@ -108,23 +112,19 @@ export default class ProjectController extends Controller {
       directory: false,
       filters: [{ name: "SRT", extensions: ["srt"] }],
     });
-    if (path !== null) await this.run("open_srt", { path });
+    if (path !== null) await this.run("open_srt", path);
   }
 
   async select({ currentTarget }: Event): Promise<void> {
     const name = (currentTarget as HTMLElement).dataset.name;
     this.dispatch("select");
-    const isSelected = await this.report(() =>
-      invoke("select_resource", { name }),
-    );
+    const isSelected = await this.report(() => selectResource(name));
     // Rust announces nothing when it could not select, so the editor is told to read what it holds.
-    if (!isSelected) await emit("project-changed");
+    if (!isSelected) await refreshProject();
   }
 
   async setLanguage(): Promise<void> {
-    await this.report(() =>
-      invoke("set_primary_language", { language: this.languageTarget.value }),
-    );
+    await this.report(() => setPrimaryLanguage(this.languageTarget.value));
   }
 
   async setOptions(): Promise<void> {
@@ -134,13 +134,16 @@ export default class ProjectController extends Controller {
       is_bilingual_autosaved: this.bilingualAutosaveTarget.checked,
       is_overwrite_backed_up: this.overwriteBackupTarget.checked,
     };
-    await this.report(() => invoke("set_project_options", { options }));
+    await this.report(() => setProjectOptions(options));
   }
 
   /** Opens `path` with the Interface Language for a directory that records none. */
-  private async run(command: string, args: { path: string }): Promise<void> {
+  private async run(
+    command: "open_project" | "open_srt",
+    path: string,
+  ): Promise<void> {
     await this.report(() =>
-      invoke(command, { ...args, language: interfaceLanguageCode() }),
+      openProject(command, path, interfaceLanguageCode()),
     );
   }
 

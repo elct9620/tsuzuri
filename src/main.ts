@@ -1,6 +1,6 @@
 import { Application } from "@hotwired/stimulus";
-import { locale } from "@tauri-apps/plugin-os";
 
+import { locale } from "./backend/system";
 import ComponentsController from "./controllers/components_controller";
 import DialogController from "./controllers/dialog_controller";
 import GlossaryController from "./controllers/glossary_controller";

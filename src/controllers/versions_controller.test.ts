@@ -2,7 +2,7 @@
 import { Application } from "@hotwired/stimulus";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { NOTIFICATION_STACK, notifications } from "../test_notification";
+import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 import VersionsController, { localTime } from "./versions_controller";
 
 describe("VersionsController", () => {

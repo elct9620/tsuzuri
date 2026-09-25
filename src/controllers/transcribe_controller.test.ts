@@ -3,7 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ProjectView } from "../project";
+import type { ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import {
   translationOption,
@@ -15,7 +15,7 @@ import {
   notificationDetail,
   notificationItems,
   notifications,
-} from "../test_notification";
+} from "../ui/test_notification";
 import TranscribeController from "./transcribe_controller";
 import TranslationOptionsController from "./translation_options_controller";
 

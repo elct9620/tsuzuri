@@ -1,17 +1,12 @@
 import { Controller } from "@hotwired/stimulus";
-import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
-
+import { open } from "../backend/dialog";
+import {
+  chooseModel,
+  modelSettings,
+  type ModelSettingsView,
+  type ModelSlot,
+} from "../backend/toolchain";
 import { t } from "../i18n";
-
-type ModelSlot = "transcription" | "translation";
-
-interface SlotView {
-  path: string | null;
-  has_file: boolean;
-}
-
-type ModelSettingsView = Record<ModelSlot, SlotView>;
 
 const MODEL_EXTENSIONS: Record<ModelSlot, string[]> = {
   transcription: ["bin"],
@@ -24,7 +19,7 @@ export default class ModelsController extends Controller {
   declare readonly statusTargets: HTMLElement[];
 
   async connect(): Promise<void> {
-    this.render(await invoke<ModelSettingsView>("model_settings"));
+    this.render(await modelSettings());
   }
 
   async choose(event: Event): Promise<void> {
@@ -36,9 +31,7 @@ export default class ModelsController extends Controller {
     });
     if (path === null) return;
 
-    this.render(
-      await invoke<ModelSettingsView>("choose_model", { slot, path }),
-    );
+    this.render(await chooseModel(slot, path));
   }
 
   private render(settings: ModelSettingsView): void {

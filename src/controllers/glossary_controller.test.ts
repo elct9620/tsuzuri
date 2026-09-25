@@ -2,7 +2,8 @@
 import { Application } from "@hotwired/stimulus";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import GlossaryController, { type GlossaryTable } from "./glossary_controller";
+import type { GlossaryTable } from "../backend/project";
+import GlossaryController from "./glossary_controller";
 
 describe("GlossaryController", () => {
   let application: Application;

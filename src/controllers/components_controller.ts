@@ -1,21 +1,13 @@
 import { Controller } from "@hotwired/stimulus";
-import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
-
+import { open } from "../backend/dialog";
+import {
+  chooseComponent,
+  componentStatuses,
+  forgetComponent,
+  type ComponentStatus,
+  type Origin,
+} from "../backend/toolchain";
 import { t } from "../i18n";
-
-type Origin = "choice" | "detection" | "bundled-variant";
-
-interface ComponentStatus {
-  name: string;
-  is_ready: boolean;
-  path: string | null;
-  origin: Origin | null;
-  variant: string | null;
-  problem: "not-installed" | "does-not-run" | null;
-  /** The command that installs it, where the platform has one to name. */
-  install: string | null;
-}
 
 const ORIGIN_LABELS: Record<Origin, string> = {
   choice: "components.choice",
@@ -53,7 +45,7 @@ export default class ComponentsController extends Controller {
   declare readonly placeholderTargets: HTMLElement[];
 
   async connect(): Promise<void> {
-    this.render(await invoke<ComponentStatus[]>("component_statuses"));
+    this.render(await componentStatuses());
   }
 
   async choose(event: Event): Promise<void> {
@@ -61,16 +53,14 @@ export default class ComponentsController extends Controller {
     const path = await open({ multiple: false, directory: false });
     if (!name || path === null) return;
 
-    this.render(
-      await invoke<ComponentStatus[]>("choose_component", { name, path }),
-    );
+    this.render(await chooseComponent(name, path));
   }
 
   async restore(event: Event): Promise<void> {
     const name = (event.currentTarget as HTMLElement).dataset.component;
     if (!name) return;
 
-    this.render(await invoke<ComponentStatus[]>("forget_component", { name }));
+    this.render(await forgetComponent(name));
   }
 
   private render(statuses: ComponentStatus[]): void {

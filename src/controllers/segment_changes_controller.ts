@@ -1,21 +1,14 @@
 import { Controller } from "@hotwired/stimulus";
-import { invoke } from "@tauri-apps/api/core";
-import { emit } from "@tauri-apps/api/event";
 
+import {
+  changeSegments,
+  refreshProject,
+  type SegmentChange,
+} from "../backend/project";
 import { t } from "../i18n";
-import { closeMenu } from "../menu";
-import { notify, notifyFailure } from "../notification";
-import { parseTime } from "../time";
-
-/** A Segment Change as Rust takes it, by position. */
-type SegmentChange =
-  | { kind: "times"; index: number; start_ms: number; end_ms: number }
-  | { kind: "insertion-before"; index: number }
-  | { kind: "insertion-after"; index: number }
-  | { kind: "deletion"; index: number }
-  | { kind: "split"; index: number; at: number }
-  | { kind: "merge"; first: number; last: number }
-  | { kind: "shift"; first: number; last: number; offset_ms: number };
+import { closeMenu } from "../ui/menu";
+import { notify, notifyFailure } from "../ui/notification";
+import { parseTime } from "../ui/time";
 
 function indexOf(element: EventTarget | null): number {
   return Number((element as HTMLElement).dataset.index);
@@ -53,7 +46,7 @@ export default class SegmentChangesController extends Controller {
     const [start_ms, end_ms] = [time("start"), time("end")];
     if (start_ms === null || end_ms === null) {
       notify({ title: t("edit.unreadableTime"), kind: "error" });
-      await emit("project-changed");
+      await refreshProject();
       return;
     }
     await this.change({ kind: "times", index, start_ms, end_ms });
@@ -156,7 +149,7 @@ export default class SegmentChangesController extends Controller {
 
   private async change(change: SegmentChange): Promise<void> {
     try {
-      await invoke("change_segments", { change });
+      await changeSegments(change);
       notify({ title: t("edit.saved"), kind: "success", key: "saved" });
       this.clearSelection();
     } catch (error) {

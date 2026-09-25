@@ -1,4 +1,7 @@
+import type { Translation } from "../backend/translation";
+import { t } from "../i18n";
 import { failureCode, failureMessage } from "./failure";
+import { phaseItems } from "./progress";
 
 /** How long a Notification of anything but a failure stays before it goes on its own. */
 export const NOTIFICATION_MS = 4000;
@@ -105,5 +108,14 @@ export function notifyFailure(title: string, error: unknown): void {
     title,
     detail: failureMessage(error),
     kind: failureCode(error) === "changed-elsewhere" ? "warning" : "error",
+  });
+}
+
+/** Says a translation finished, with how long each of its Phases took. */
+export function notifyTranslation({ phases }: Translation): void {
+  notify({
+    title: t("translate.done"),
+    kind: "success",
+    items: phaseItems(phases),
   });
 }

@@ -1,9 +1,9 @@
 import { Controller } from "@hotwired/stimulus";
-import type { UnlistenFn } from "@tauri-apps/api/event";
 
+import type { UnlistenFn } from "../backend/progress";
 import { t } from "../i18n";
-import { notifyFailure } from "../notification";
-import { followProgress } from "../progress";
+import { notifyFailure } from "../ui/notification";
+import { followProgress } from "../ui/progress";
 
 /** The kind of task running, which the editor shows Placeholders for. */
 export type TaskKind = "transcribe" | "translate";

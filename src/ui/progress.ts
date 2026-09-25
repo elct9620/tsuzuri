@@ -1,27 +1,19 @@
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-
-import { t } from "./i18n";
-
-interface PipelineProgress {
-  phase: string;
-  percent: number | null;
-}
-
-export interface PhaseTiming {
-  phase: string;
-  seconds: number;
-}
+import {
+  listenProgress,
+  type PhaseTiming,
+  type UnlistenFn,
+} from "../backend/progress";
+import { t } from "../i18n";
 
 function label(phase: string): string {
   return t(`phases.${phase}`, { defaultValue: phase });
 }
 
 /** Calls `show` with a readable line and the percentage, if any, for every `pipeline-progress` event. */
-function listenProgress(
+function listenProgressLines(
   show: (line: string, percent: number | null) => void,
 ): Promise<UnlistenFn> {
-  return listen<PipelineProgress>("pipeline-progress", ({ payload }) => {
-    const { phase, percent } = payload;
+  return listenProgress(({ phase, percent }) => {
     // Loading a Model compiles its GPU shaders on first use, which can take half a minute.
     const line =
       percent !== null
@@ -46,7 +38,7 @@ export function followProgress(
   bar: HTMLProgressElement | undefined,
   isRunning: () => boolean,
 ): Promise<UnlistenFn> {
-  return listenProgress((line, percent) => {
+  return listenProgressLines((line, percent) => {
     if (!isRunning()) return;
     status.textContent = line;
     if (bar) showProgress(bar, percent);

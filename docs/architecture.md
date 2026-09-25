@@ -235,10 +235,11 @@ CurrentProject(Mutex<HeldProject>)
 ```
 transcribe 指令                       translate 指令
   │ transcription_target               │ snapshot、讀取詞彙表
-  │ Steps：ffmpeg 轉成 WAV              │ Steps：啟動 llama-server
-  │ Steps：whisper-cli，段落逐行出現    │ health 等待載入
-  │   └─ push_segment ＋ project-changed│ 分批翻譯 ─▶ show_translations ＋ project-changed
-  │ write_transcription（備份、寫檔）   │ Steps：停止 llama-server
+  │ 釋放常駐 llama-server 的模型        │ 常駐 router 載入模型（關掉常駐時啟動單一模型的行程）
+  │ Steps：ffmpeg 轉成 WAV              │ 等待載入完成
+  │ Steps：whisper-cli，段落逐行出現    │ 分批翻譯 ─▶ show_translations ＋ project-changed
+  │   └─ push_segment ＋ project-changed│ 保留 N 秒後釋放（或停止行程）
+  │ write_transcription（備份、寫檔）   │
   ▼                                    ▼ write_translations（備份、寫檔）
 回答各 Phase 耗時                      回答各 Phase 耗時
 ```
@@ -252,7 +253,8 @@ transcribe 指令                       translate 指令
 | 啟動元件 | 以絕對路徑經 shell plugin 啟動，把 PID 與名稱寫進 `processes.json` |
 | 元件輸出 | 每行寫進 log，結束狀態排在所有輸出之後才送出 |
 | 元件結束 | 從紀錄移除 |
-| App 結束 | `kill_all` |
+| 常駐 router | App 啟動後在背景啟動，常駐關掉時停止；它開的模型行程由 router 管理 |
+| App 結束 | `kill_all`，連同 router 開的模型行程 |
 | 下次啟動 | `reap_strays` 只結束 PID 與名稱都相符的行程 |
 
 介面以 `.spec/contract/processes.md` 為準。
@@ -276,7 +278,8 @@ transcribe 指令                       translate 指令
 index.html（data-controller、data-action）
    │
 controllers/  讀寫 DOM；彼此只經 outlet 與 Stimulus 事件協作
-   │     └──────────▶ ui/     通知、錯誤訊息、進度文字、時間、選單
+   │     ├──────────▶ ui/     通知、錯誤訊息、進度文字、時間、選單
+   │     └──────────▶ editor/ 編輯欄位：值、游標位置、Highlight；不依賴框架
    ▼
 backend/      唯一碰 Tauri API 的地方：指令、事件、系統對話方塊、系統語系
 ```
@@ -294,7 +297,8 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `versions`、`glossary` | 版本與詞彙表 modal |
 | `components`、`models`、`translation-settings`、`logs` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |
-| `undo` | 全頁的復原與重做：文字框裡交給欄位自己，其餘交給 Rust |
+| `undo` | 全頁的復原與重做：欄位裡交給欄位自己，其餘交給 Rust |
+| `field` | 每個編輯欄位一個：接上 `editor/`，離開時以事件交出新的文字 |
 
 畫面配置見 `docs/ui.md`。`progress` 以 `progress:task` 事件、`project` 以 `project:select` 事件告訴字幕編輯要顯示 skeleton；字幕編輯每次畫好段落後以 `transcript:shown` 讓 `comparison` 重新標記。
 
@@ -320,3 +324,4 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
 | `ui/icons.ts` | 介面用到的 Lucide 圖示：只打包列出的幾個，markup 以 `data-lucide` 標出，程式以 `iconElement` 建立 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
+| `editor/` | 編輯欄位的基礎：純文字的值、游標位置、以 CSS Custom Highlight 標記範圍；不 import Stimulus 與 Tauri |

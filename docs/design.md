@@ -199,7 +199,7 @@ SRT 是 Transcript 交換的唯一格式：whisper-cli 輸出它、使用者提�
     └ 行程結束 → 從紀錄移除
 ```
 
-一律以絕對路徑啟動，不用 Tauri 的 sidecar，因為元件不一定來自安裝檔。元件由 App 直接啟動，不再開子行程，所以紀錄涵蓋全部行程。log 同時印到終端機與寫入檔案，macOS 上在 `~/Library/Logs/me.aotoki.tsuzuri/`。
+一律以絕對路徑啟動，不用 Tauri 的 sidecar，因為元件不一定來自安裝檔。元件由 App 直接啟動，不再開子行程，所以紀錄涵蓋全部行程。log 同時印到終端機與寫入檔案，預設在系統的 log 目錄，macOS 上是 `~/Library/Logs/me.aotoki.tsuzuri/`；設定頁可以改用別的目錄，重新啟動後生效。
 
 ### 3.2 清理
 

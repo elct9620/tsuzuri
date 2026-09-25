@@ -6,6 +6,8 @@ What a run leaves in the log, so a slow or failed run can be diagnosed afterward
 
 - `src-tauri/src/timing.rs`
 - `src-tauri/src/processes.rs`
+- `src-tauri/src/log_settings.rs`
+- `src/controllers/logs_controller.test.ts`
 
 ## `OB-001` Logging how long a Phase took
 
@@ -30,3 +32,52 @@ What a run leaves in the log, so a slow or failed run can be diagnosed afterward
 | Given | a launched Component process |
 | When | it writes a line to stderr |
 | Then | the log holds that line under the executable's name |
+
+## `OB-004` Writing the log to the OS log directory until another is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | log settings that choose no directory |
+| When | the app starts |
+| Then | the log is written to the OS log directory of the app |
+
+## `OB-005` Writing the log to the chosen directory from the next launch
+
+| Step | Statement |
+| --- | --- |
+| Given | log settings that choose `/logs` |
+| When | the app starts |
+| Then | the log is written to `/logs` |
+
+## `OB-006` Remembering the chosen log directory across launches
+
+| Step | Statement |
+| --- | --- |
+| Given | `/logs` chosen as the log directory |
+| When | the log settings are read again |
+| Then | they choose `/logs` |
+
+## `OB-007` Choosing the log directory in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the general settings |
+| When | a directory is chosen for the log |
+| Then | it is recorded as the log directory, and the settings say it takes effect after a restart |
+
+## `OB-008` Opening the log directory
+
+| Step | Statement |
+| --- | --- |
+| Given | the general settings |
+| When | opening the log directory is chosen |
+| Then | the directory the log is written to now is opened |
+
+## `OB-009` Falling back to the OS log directory when the chosen one cannot be made
+
+| Step | Statement |
+| --- | --- |
+| Given | log settings that choose a directory which can no longer be made, as on a drive gone |
+| When | the app starts |
+| Then | the log is written to the OS log directory of the app |
+

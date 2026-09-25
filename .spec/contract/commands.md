@@ -237,3 +237,28 @@ Write `rows`, each holding a word for every Language in the order the table gave
 ```rust
 pub fn save_translation_glossary(app: AppHandle, rows: Vec<GlossaryRow>) -> Result<(), Failure> {}
 ```
+
+## `log_directory`
+
+The directory the log is written to in this launch, and the one chosen for the next.
+
+```rust
+pub fn log_directory(app: AppHandle) -> Result<LogDirectory, Failure> {}
+```
+
+## `choose_log_directory`
+
+Record `path` as the directory to write the log to from the next launch, and answer both directories as `log_directory` does.
+
+```rust
+pub fn choose_log_directory(app: AppHandle, path: PathBuf) -> Result<LogDirectory, Failure> {}
+```
+
+## `open_log_directory`
+
+Open the directory the log is written to in this launch with the system's file manager.
+
+```rust
+pub fn open_log_directory(app: AppHandle) -> Result<(), Failure> {}
+```
+

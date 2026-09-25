@@ -131,6 +131,16 @@ const zhHant: typeof en = {
   },
   settings: {
     project: "專案",
+    logs: "日誌",
+    logDirectory: "目錄",
+    logDirectoryHelp:
+      "每次執行的元件輸出與各階段耗時都寫在這裡，回報問題時可以附上；換了目錄要重新啟動才會生效",
+    chooseLogs: "切換目錄",
+    openLogs: "開啟目錄",
+    logsAfterRestart: "重新啟動後改寫到 {{path}}",
+    logsUnreadable: "讀不到日誌目錄",
+    logsNotChosen: "沒有切換日誌目錄",
+    logsNotOpened: "沒有開啟日誌目錄",
     general: "整體",
     primaryLanguageHelp:
       "影音裡說的語言。轉錄用它辨識語音，翻譯從它譯出；改了之後會依這個語言重新配對字幕檔。只影響這個專案。",

@@ -170,6 +170,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | 檔案 | 層 | 負責 |
 |---|---|---|
 | `menu.rs` | 轉接 | macOS 編輯選單：復原與重做改由 webview 決定交給誰 |
+| `log_settings.rs` | 轉接 | log 寫入的目錄：軟體設定裡選的，或系統的 log 目錄；啟動時決定 |
 | `transcript.rs`、`segment_change.rs`、`language.rs` | 領域 | Segment、Transcript、SRT、段落變更、語言 |
 | `project.rs` | 領域 | Project 聚合、雙語順序、編輯要寫回哪些字幕 |
 | `project/versions.rs` | 領域 | 逐 cue 比較兩個版本 |
@@ -286,7 +287,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
 | `progress` | 編輯畫面上方的任務進度 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
-| `components`、`models`、`translation-settings` | 設定頁 |
+| `components`、`models`、`translation-settings`、`logs` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |
 | `undo` | 全頁的復原與重做：文字框裡交給欄位自己，其餘交給 Rust |
 
@@ -299,6 +300,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `project.ts` | 專案、版本、詞彙表的指令與型別；`followProject`、`refreshProject` |
 | `transcription.ts`、`translation.ts` | 任務指令、翻譯選項與設定的型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
+| `logs.ts` | log 目錄的指令與型別 |
 | `progress.ts` | `pipeline-progress` 與 Phase 耗時的型別 |
 | `failure.ts` | `Failure` 型別 |
 | `dialog.ts`、`system.ts` | 檔案與訊息的系統對話方塊、系統語系 |

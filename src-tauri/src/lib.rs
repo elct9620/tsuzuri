@@ -1,5 +1,6 @@
 pub mod failure;
 pub mod language;
+pub mod log_settings;
 #[cfg(target_os = "macos")]
 pub mod menu;
 pub mod processes;
@@ -18,8 +19,9 @@ pub mod window;
 mod test_support;
 
 use tauri::{Manager, RunEvent, WindowEvent};
-use tauri_plugin_log::{RotationStrategy, TimezoneStrategy};
+use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 
+use log_settings::{LogDirInUse, LogSettings};
 use processes::Processes;
 use project::CurrentProject;
 
@@ -31,20 +33,32 @@ pub fn run() {
         .menu(menu::build_app_menu)
         .on_menu_event(menu::forward_edit_command);
     builder
-        .plugin(
-            tauri_plugin_log::Builder::new()
-                .level(log::LevelFilter::Info)
-                .timezone_strategy(TimezoneStrategy::UseLocal)
-                // Room for several whole runs, so the slow one is still there when someone looks.
-                .max_file_size(1_000_000)
-                .rotation_strategy(RotationStrategy::KeepSome(5))
-                .build(),
-        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .setup(|app| {
+            let log_dir = LogSettings::load(&app.path().app_config_dir()?)?
+                .log_dir(app.path().app_log_dir()?);
+            app.handle().plugin(
+                tauri_plugin_log::Builder::new()
+                    .level(log::LevelFilter::Info)
+                    .timezone_strategy(TimezoneStrategy::UseLocal)
+                    // Room for several whole runs, so the slow one is still there when someone looks.
+                    .max_file_size(1_000_000)
+                    .rotation_strategy(RotationStrategy::KeepSome(5))
+                    .clear_targets()
+                    .targets([
+                        Target::new(TargetKind::Stdout),
+                        Target::new(TargetKind::Folder {
+                            path: log_dir.clone(),
+                            file_name: None,
+                        }),
+                    ])
+                    .build(),
+            )?;
+            log::info!("log written to {}", log_dir.display());
+            app.manage(LogDirInUse(log_dir));
             let record = app.path().app_data_dir()?.join("processes.json");
             processes::reap_strays(&record);
             app.manage(Processes::new(record));
@@ -69,6 +83,9 @@ pub fn run() {
             project::commands::edit_segment,
             project::commands::change_segments,
             project::commands::translation_cues,
+            log_settings::commands::log_directory,
+            log_settings::commands::choose_log_directory,
+            log_settings::commands::open_log_directory,
             project::commands::revert_row,
             project::commands::undo,
             project::commands::redo,

@@ -131,6 +131,16 @@ const en = {
   },
   settings: {
     project: "Project",
+    logs: "Log",
+    logDirectory: "Directory",
+    logDirectoryHelp:
+      "Each run writes what its components print and how long each phase took here, worth attaching to a report; a new directory takes effect after a restart",
+    chooseLogs: "Change directory",
+    openLogs: "Open directory",
+    logsAfterRestart: "Written to {{path}} after a restart",
+    logsUnreadable: "Log directory not read",
+    logsNotChosen: "Log directory not changed",
+    logsNotOpened: "Log directory not opened",
     general: "General",
     primaryLanguageHelp:
       "The language spoken in the media. Transcription listens for it and translation starts from it; changing it pairs the subtitle files again. Applies to this project only.",

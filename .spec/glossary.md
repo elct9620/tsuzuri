@@ -170,6 +170,10 @@ A copy of a subtitle kept in the Project's `.tsuzuri/history/`, of one of two ki
 
 A subtitle of the Current Resource as it stands now, or as one of its Backups kept it. Versions of one subtitle can be compared cue by cue, matched by their times, and a Backup can be restored over the subtitle, which is itself kept as a Backup first.
 
+### Comparison Row
+
+One place where two Versions of a subtitle are lined up: the cues of each that cover the same speech. Cues pair when they overlap by at least half of the shorter one, so cues that only touch at their edges stay apart; a cue that pairs with none takes the unpaired cue of the other Version with the same text, as a cue moved in time does. A row is a Pair of one cue each, an Addition only in the later Version, a Removal only in the earlier, a Split of one cue into several, or a Merge of several into one, and it says whether its text changed, its times changed, or both.
+
 ### Undo History
 
 What can be undone and redone for one Resource since the Project was opened: its subtitles as they were before each change Tsuzuri made to them - an edit, a Segment Change, a restore, or what a transcription or translation wrote - at most 100 back. It is kept only while the Project stays open, and forgotten once a subtitle of the Resource is changed elsewhere; undoing and redoing write the subtitles back without a Backup.

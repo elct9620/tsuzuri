@@ -30,7 +30,47 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 | --- | --- |
 | Given | a Backup reading `你好` from 0 to 1 and `世界` from 1 to 2 seconds, and a subtitle now reading `您好` from 0 to 1 and `再見` from 2 to 3 seconds |
 | When | the Backup is compared with the subtitle now |
-| Then | the rows are 0 to 1 changed from `你好` to `您好`, 1 to 2 only in the Backup, and 2 to 3 only now |
+| Then | the rows are a Pair from `你好` to `您好` with its text changed, a Removal of `世界`, and an Addition of `再見` |
+
+## `VR-011` Pairing a retimed cue by its overlap
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好` from 0 to 1 second, and the subtitle now reading `你好` from 0 to 1.2 seconds |
+| When | the two are compared |
+| Then | the one row is a Pair with its times changed and its text not |
+
+## `VR-012` Keeping apart cues that only touch
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `一` from 0 to 1 and `二` from 1 to 2 seconds, and the subtitle now `一` from 0 to 1.05 and `二` from 1.05 to 2 seconds |
+| When | the two are compared |
+| Then | the rows are two Pairs, each with its times changed |
+
+## `VR-013` Lining up a split cue with its parts
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好世界` from 0 to 2 seconds, and the subtitle now `你好` from 0 to 1 and `世界` from 1 to 2 seconds |
+| When | the two are compared |
+| Then | the one row is a Split of the one cue into the two, with neither its text nor its times changed |
+
+## `VR-014` Lining up merged cues with their whole
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好` from 0 to 1 and `世界` from 1 to 2 seconds, and the subtitle now `你好世界` from 0 to 2 seconds |
+| When | the two are compared |
+| Then | the one row is a Merge of the two cues into the one |
+
+## `VR-015` Pairing a cue moved in time by its text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好` from 0 to 1 second, and the subtitle now `你好` from 5 to 6 seconds |
+| When | the two are compared |
+| Then | the one row is a Pair with its times changed |
 
 ## `VR-010` Telling an Output from an Overwrite
 

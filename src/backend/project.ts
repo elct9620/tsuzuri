@@ -190,12 +190,23 @@ export interface SubtitleVersions {
   backups: Backup[];
 }
 
-export interface ComparedRow {
+/** One cue of a Version as a Comparison Row shows it. */
+export interface ComparedCue {
   start_ms: number;
   end_ms: number;
-  left: string | null;
-  right: string | null;
-  is_changed: boolean;
+  text: string;
+}
+
+/** How the cues of a Comparison Row stand to each other. */
+export type RowKind = "pair" | "addition" | "removal" | "split" | "merge";
+
+/** The cues of two Versions that cover the same speech, and what changed between them. */
+export interface ComparedRow {
+  kind: RowKind;
+  left: ComparedCue[];
+  right: ComparedCue[];
+  is_text_changed: boolean;
+  is_time_changed: boolean;
 }
 
 export function subtitleVersions(): Promise<SubtitleVersions[]> {

@@ -152,7 +152,7 @@ pub fn subtitle_versions(app: AppHandle) -> Result<Vec<SubtitleVersions>, Failur
 
 ## `compare_versions`
 
-Two Versions of the Current Resource's original, or of its translation into `language`, row by row in time order, a Version being a Backup by file name or, as none, the subtitle now.
+Two Versions of the Current Resource's original, or of its translation into `language`, as Comparison Rows in time order, a Version being a Backup by file name or, as none, the subtitle now; `left` is the earlier of the two as given.
 
 ```rust
 pub fn compare_versions(app: AppHandle, language: Option<Language>, left: Option<String>, right: Option<String>) -> Result<Vec<ComparedRow>, Failure> {}

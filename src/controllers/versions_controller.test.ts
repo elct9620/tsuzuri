@@ -72,18 +72,18 @@ describe("VersionsController", () => {
       if (command === "compare_versions")
         return [
           {
-            start_ms: 0,
-            end_ms: 1000,
-            left: "你好",
-            right: "您好",
-            is_changed: true,
+            kind: "pair",
+            left: [{ start_ms: 0, end_ms: 1000, text: "你好" }],
+            right: [{ start_ms: 0, end_ms: 1000, text: "您好" }],
+            is_text_changed: true,
+            is_time_changed: false,
           },
           {
-            start_ms: 1000,
-            end_ms: 2000,
-            left: "世界",
-            right: "世界",
-            is_changed: false,
+            kind: "pair",
+            left: [{ start_ms: 1000, end_ms: 2000, text: "世界" }],
+            right: [{ start_ms: 1000, end_ms: 2000, text: "世界" }],
+            is_text_changed: false,
+            is_time_changed: false,
           },
         ];
       if (command === "restore_version") restored = args;

@@ -5,6 +5,7 @@ import {
   restoreVersion,
   subtitleVersions,
   type Backup,
+  type ComparedCue,
   type ComparedRow,
   type SubtitleVersions,
 } from "../backend/project";
@@ -40,6 +41,11 @@ function button(
   control.dataset.action = `versions#${action}`;
   control.textContent = t(label);
   return control;
+}
+
+/** The texts of one side of a row, a line each, or a dash where that side has none. */
+function texts(cues: ComparedCue[]): string {
+  return cues.length === 0 ? "—" : cues.map((cue) => cue.text).join("\n");
 }
 
 function cell(text: string): HTMLTableCellElement {
@@ -143,13 +149,21 @@ export default class VersionsController extends Controller {
     }
     this.rowsTarget.replaceChildren(
       ...rows.map((row) => {
+        const isChanged =
+          row.kind !== "pair" || row.is_text_changed || row.is_time_changed;
         const tr = document.createElement("tr");
-        tr.classList.toggle("changed", row.is_changed);
-        tr.classList.toggle("bg-warning/15", row.is_changed);
+        tr.classList.toggle("changed", isChanged);
+        tr.classList.toggle("bg-warning/15", isChanged);
         tr.append(
-          cell(formatTime(row.start_ms)),
-          cell(row.left ?? "—"),
-          cell(row.right ?? "—"),
+          cell(
+            formatTime(
+              Math.min(
+                ...[...row.left, ...row.right].map((cue) => cue.start_ms),
+              ),
+            ),
+          ),
+          cell(texts(row.left)),
+          cell(texts(row.right)),
         );
         return tr;
       }),

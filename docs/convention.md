@@ -1,6 +1,6 @@
 # Tsuzuri 專案慣例
 
-這份文件記錄程式碼共同遵守的慣例。寫新程式碼或改名之前先讀這裡，慣例改變時先改這份文件。
+這份文件記錄程式碼與文件共同遵守的慣例。寫新程式碼或改名之前先讀這裡，慣例改變時先改這份文件。
 
 ## 1 命名
 
@@ -85,3 +85,19 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | Rust API Guidelines C-CONV、C-CTOR | `as_`／`to_`／`into_`；建構用 `new`／`with_`／`from_` |
 | JavaScript 標準函式庫 | 查詢用名詞 `Map.prototype.size`；問句用 `Array.isArray`、`Number.isNaN`；轉換用 `Array.from`、`toISOString` |
 | Godot API | 依鍵尋找用 `_by_`，不用 `_named` |
+
+## 2 文件
+
+`docs/` 與 `.spec/` 的文件共同遵守下列規則，撰寫或改動章節之前先讀這裡。
+
+| 規則 | 限制 |
+|---|---|
+| 章節順序 | 依相依關係，由大到小 |
+| 每節 | 至少一個表或圖 |
+| 圖 | ASCII，不用 Mermaid |
+| 表格每格 | 15 字內 |
+| 每節內文 | 100 字內 |
+| 用字 | `zhtw-mcp lint` 零結果 |
+
+表格用來快速掃過，細節寫進該節內文；內文超過 100 字就拆成小節。README 以英文與正體中文兩份提供，互相連結。
+

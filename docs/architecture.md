@@ -149,6 +149,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `project/glossary.rs` 同時是規則與 csv 讀寫 | 詞彙表的格式就是它的規則 |
 | `progress.rs` 與 `Progress` 放在同一檔的 `AppHandle` 實作 | 實作只有發出兩個事件，與 Port 一起讀最清楚 |
 | `failure.rs` 把 `tauri::Error` 轉成 `Failure` | 指令取得路徑或狀態時的錯誤由它統一轉換 |
+| 轉錄指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（design 6.4） |
 
 ### 3.2 情境
 
@@ -182,9 +183,10 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `translation.rs`、`translation/{batching,repair,speaker_labels}.rs` | 應用、領域 | 翻譯用例、分批、修復、說話者標籤 |
 | `translation/prompt.rs` | 領域 | 請求內容與回答格式 |
 | `translation/{llama,settings}.rs` | 轉接 | llama-server、翻譯設定檔 |
+| `translation/resident.rs` | 轉接 | 常駐的 llama-server |
 | `transcription.rs`、`transcription/whisper.rs` | 應用、轉接 | 轉錄用例；ffmpeg 與 whisper-cli 的參數與輸出 |
 | `toolchain.rs`、`toolchain/{detection,settings}.rs` | 應用、轉接 | 尋找元件、模型設定；偵測、設定檔 |
-| `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、Phase 計時、錯誤碼 |
+| `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、`ModeLock`、Phase 計時、錯誤碼 |
 | `processes.rs` | 轉接 | 子行程的啟動、紀錄與清理，以及 `AppPorts` |
 | `*/commands.rs`、`window.rs`、`lib.rs` | 介面 | 指令、視窗大小、組裝 |
 
@@ -285,6 +287,13 @@ backend/      唯一碰 Tauri API 的地方：指令、事件、系統對話方�
 ```
 
 Controller 之間不 import 彼此的函式，只 import outlet 的型別。對應 Rust 的型別只定義在 `backend/`。
+
+| 選擇 | 原因 |
+|---|---|
+| 畫面維持單一 `index.html` | 拆檔要加 plugin |
+| 不改成 custom element | 翻譯與圖示靠靜態掃描 |
+
+頁面 markup 都在 `index.html`，i18n 與 Lucide 圖示在啟動時掃描整頁。拆成片段或 custom element 會讓掃描改在執行期進行，目前的規模還不值得。
 
 ### 4.2 Controller
 

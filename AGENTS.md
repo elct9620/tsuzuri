@@ -15,6 +15,7 @@ Read the source for how things work; read these for what they are meant to be.
 | Runtime structure and layer rules | `docs/architecture.md` |
 | Screen layout | `docs/ui.md` |
 | Code conventions, naming first | `docs/convention.md` |
+| Document conventions | `docs/convention.md` § 2 |
 | Component source pins and Variants | `components.json` |
 | Build, run and test | `README.md` § Development |
 | Quality gates | `.github/workflows/ci.yml`, `.claude/hooks/` |

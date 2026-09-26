@@ -26,8 +26,12 @@ import {
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
+import { preference, savePreference } from "../ui/preferences";
+import type { TaskKind } from "../ui/progress";
 import { formatTime } from "../ui/time";
-import type { TaskKind } from "./progress_controller";
+
+/** Where the webview remembers whether the editor follows playback. */
+const FOLLOWING_KEY = "tsuzuri.transcript-following";
 
 /** Ctrl+Alt+Enter, or ⌘+Option+Enter, splits a Segment at the Cursor in its text, as subtitle editors bind splitting to a modified line break. */
 const SPLIT_SHORTCUTS = [
@@ -218,6 +222,7 @@ export default class TranscriptController extends Controller {
     "export",
     "heading",
     "translationLanguage",
+    "following",
   ];
 
   declare readonly listTarget: HTMLOListElement;
@@ -228,6 +233,9 @@ export default class TranscriptController extends Controller {
   declare readonly translationLanguageTarget: HTMLSelectElement;
   /** Each export, enabled once the Project has the text it writes. */
   declare readonly exportTargets: HTMLButtonElement[];
+  /** Whether the editor scrolls to the row being played, pressed to turn it on or off. */
+  declare readonly followingTarget: HTMLButtonElement;
+  declare readonly hasFollowingTarget: boolean;
 
   declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
@@ -239,8 +247,11 @@ export default class TranscriptController extends Controller {
   private project: ProjectView | null = null;
   /** The position of the Segment the Preview is playing. */
   private playingIndex: number | null = null;
+  /** Whether the row being played is scrolled into view; the user turns it off to work elsewhere while it plays. */
+  private isFollowing = preference(FOLLOWING_KEY) !== "false";
 
   connect(): void {
+    this.showFollowing();
     this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
@@ -290,12 +301,30 @@ export default class TranscriptController extends Controller {
       check.checked = checked.has(Number(check.dataset.index));
   }
 
-  /** Marks the Segment the Preview is playing, keeping its row in view. */
+  /** Marks the Segment the Preview is playing, keeping its row in view while following playback. */
   markPlaying({ detail }: CustomEvent<{ index: number | null }>): void {
     this.playingIndex = detail.index;
     this.markRows();
-    if (detail.index !== null)
-      this.rowAt(detail.index)?.scrollIntoView({ block: "nearest" });
+    this.scrollToPlaying();
+  }
+
+  /** Turns following playback on or off, catching up with the row being played as it comes on. */
+  toggleFollowing(): void {
+    this.isFollowing = !this.isFollowing;
+    savePreference(FOLLOWING_KEY, String(this.isFollowing));
+    this.showFollowing();
+    this.scrollToPlaying();
+  }
+
+  private scrollToPlaying(): void {
+    if (!this.isFollowing || this.playingIndex === null) return;
+    this.rowAt(this.playingIndex)?.scrollIntoView({ block: "nearest" });
+  }
+
+  private showFollowing(): void {
+    if (!this.hasFollowingTarget) return;
+    this.followingTarget.setAttribute("aria-pressed", `${this.isFollowing}`);
+    this.followingTarget.classList.toggle("btn-active", this.isFollowing);
   }
 
   private drawCursor(): void {

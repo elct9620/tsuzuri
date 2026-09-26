@@ -140,6 +140,9 @@ const zhHant: typeof en = {
     space: "空白鍵",
     playCurrent: "播放這段",
     fold: "顯示或收起預覽",
+    following: "段落清單跟隨播放",
+    followingHint:
+      "清單會捲到正在播放的段落。播放時要處理其他段落就關掉；也可以按 ⌘L 或 Ctrl+L 切換。",
     zoomIn: "放大",
     zoomOut: "縮小",
     noWaveform: "無法畫出波形",

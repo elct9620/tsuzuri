@@ -143,6 +143,9 @@ const en = {
     space: "Space",
     playCurrent: "plays this Segment",
     fold: "Show or fold the preview",
+    following: "Follow playback in the Segment list",
+    followingHint:
+      "Scrolls the list to the Segment being played. Turn it off to work on other Segments while the media plays; ⌘L or Ctrl+L also switches it.",
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",
     noWaveform: "Could not draw the waveform",

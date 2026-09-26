@@ -1,6 +1,9 @@
 import type { PhaseTiming, PipelineProgress } from "../backend/progress";
 import { t } from "../i18n";
 
+/** The kind of task running, which the editor shows Placeholders for. */
+export type TaskKind = "transcribe" | "translate";
+
 /** A Phase's name in the Interface Language. */
 export function phaseLabel(phase: string): string {
   return t(`phases.${phase}`, { defaultValue: phase });

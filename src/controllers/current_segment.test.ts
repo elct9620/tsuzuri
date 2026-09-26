@@ -2,7 +2,7 @@
 import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView, Segment } from "../backend/project";
 import type { Waveform } from "../backend/waveform";
@@ -67,8 +67,33 @@ describe("Current Segment", () => {
     media().dispatchEvent(new Event("timeupdate"));
   }
 
+  const following = () =>
+    document.querySelector<HTMLButtonElement>(
+      '[data-transcript-target="following"]',
+    )!;
+
+  /** The rows scrolled into view since `watchScrolls` began watching. */
+  let scrolled: () => HTMLElement[];
+
+  function watchScrolls(): void {
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
+    scrolled = () => scroll.mock.contexts as HTMLElement[];
+  }
+
+  async function startApplication(): Promise<void> {
+    application = Application.start();
+    application.registerActionOption("control", controlOption);
+    await assemble(application, {
+      transcript: TranscriptController,
+      preview: PreviewController,
+      timeline: TimelineController,
+    }).start();
+    await settle();
+  }
+
   beforeEach(async () => {
     takeLayoutBack = layOutTimeline();
+    localStorage.clear();
     project = null;
     const waveform: Waveform = {
       media: "/talks/ep01.mp4",
@@ -86,7 +111,7 @@ describe("Current Segment", () => {
     );
     document.body.innerHTML = `
       <main data-controller="transcript"
-        data-action="editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying">
+        data-action="editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
         <div data-controller="preview timeline"
           data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor keydown.space@window->timeline#playCurrent:!control:prevent">
           <button data-preview-target="fold" hidden><span data-preview-target="foldIcon"></span></button>
@@ -97,6 +122,7 @@ describe("Current Segment", () => {
             <div data-preview-target="hint" hidden></div>
           </div>
           <span data-preview-target="playback"></span>
+          <button data-transcript-target="following" data-action="transcript#toggleFollowing"></button>
           <span data-preview-target="time"></span>
           <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"></div>
           <p data-preview-target="currentEmpty"></p>
@@ -110,17 +136,11 @@ describe("Current Segment", () => {
         <ol data-transcript-target="list"></ol>
       </main>
     `;
-    application = Application.start();
-    application.registerActionOption("control", controlOption);
-    await assemble(application, {
-      transcript: TranscriptController,
-      preview: PreviewController,
-      timeline: TimelineController,
-    }).start();
-    await settle();
+    await startApplication();
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     application.stop();
     clearMocks();
     takeLayoutBack();
@@ -264,5 +284,70 @@ describe("Current Segment", () => {
     playTo(1);
 
     expect(isMarked("data-playing")).toEqual([false, false]);
+  });
+
+  // @behavior PV-075
+  it("scrolls the row being played into view by default", async () => {
+    await show(twoSegments);
+    await media().play();
+    watchScrolls();
+
+    playTo(1.5);
+
+    expect(scrolled()).toEqual([rows()[1]]);
+  });
+
+  // @behavior PV-076
+  it("marks the row being played without scrolling to it while not following playback", async () => {
+    await show(twoSegments);
+    following().click();
+    await media().play();
+    watchScrolls();
+
+    playTo(1.5);
+
+    expect([isMarked("data-playing"), scrolled()]).toEqual([[false, true], []]);
+  });
+
+  // @behavior PV-077
+  it("turns following playback off with Ctrl+L, leaving the focus in the field", async () => {
+    await show(twoSegments);
+    await media().play();
+    const field = rows()[1].querySelector<HTMLElement>(".field")!;
+    field.focus();
+
+    field.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "l", ctrlKey: true, bubbles: true }),
+    );
+
+    expect([
+      following().getAttribute("aria-pressed"),
+      document.activeElement,
+    ]).toEqual(["false", field]);
+  });
+
+  // @behavior PV-078
+  it("scrolls to the row being played as following playback is turned on", async () => {
+    await show(twoSegments);
+    following().click();
+    await media().play();
+    playTo(1.5);
+    watchScrolls();
+
+    following().click();
+
+    expect(scrolled()).toEqual([rows()[1]]);
+  });
+
+  // @behavior PV-079
+  it("keeps following playback off for the next Resource", async () => {
+    await show(twoSegments);
+    following().click();
+    application.stop();
+    await startApplication();
+
+    await show({ ...twoSegments, media: "/talks/ep02.mp4" });
+
+    expect(following().classList.contains("btn-active")).toBe(false);
   });
 });

@@ -10,10 +10,12 @@ import { t } from "../i18n";
 import { iconElement } from "../ui/icons";
 import { failureCode } from "../ui/failure";
 import { notify, notifyFailure } from "../ui/notification";
-import { phaseLabel, progressLine, progressSummary } from "../ui/progress";
-
-/** The kind of task running, which the editor shows Placeholders for. */
-export type TaskKind = "transcribe" | "translate";
+import {
+  phaseLabel,
+  progressLine,
+  progressSummary,
+  type TaskKind,
+} from "../ui/progress";
 
 /** The Phases each task goes through, in the order Rust enters them. */
 const PHASES_BY_TASK: Record<TaskKind, string[]> = {

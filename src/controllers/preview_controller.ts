@@ -8,74 +8,31 @@ import type {
   Segment,
 } from "../backend/project";
 import type { EditingSession } from "../editor";
+import { preference, savePreference } from "../ui/preferences";
 import { formatClock, formatTime } from "../ui/time";
 
-/** Where the webview remembers the Preview folded away, a choice of this machine's alone. */
+/** Where the webview remembers the Preview folded away. */
 const FOLDED_KEY = "tsuzuri.preview-folded";
-
-function readFolded(): boolean {
-  try {
-    return localStorage.getItem(FOLDED_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function writeFolded(isFolded: boolean): void {
-  try {
-    localStorage.setItem(FOLDED_KEY, String(isFolded));
-  } catch {
-    // A webview without storage forgets the choice when it closes.
-  }
-}
 
 /** Which text of the Segment being played is shown over the video. */
 type CaptionLanguage = "original" | "translation" | "bilingual";
 
-/** Where the webview remembers what is shown over the video, a choice of this machine's alone. */
+/** Where the webview remembers what is shown over the video. */
 const CAPTION_KEY = "tsuzuri.preview-caption";
 
-function readCaptionLanguage(): CaptionLanguage {
-  try {
-    const value = localStorage.getItem(CAPTION_KEY);
-    return value === "translation" || value === "bilingual"
-      ? value
-      : "original";
-  } catch {
-    return "original";
-  }
-}
-
-function writeCaptionLanguage(language: CaptionLanguage): void {
-  try {
-    localStorage.setItem(CAPTION_KEY, language);
-  } catch {
-    // A webview without storage forgets the choice when it closes.
-  }
+function captionLanguageOf(value: string | null): CaptionLanguage {
+  return value === "translation" || value === "bilingual" ? value : "original";
 }
 
 /** What the text over the video sits on: a shadow alone, a translucent black or an opaque one. */
 type CaptionBackdrop = "none" | "translucent" | "opaque";
 
-/** Where the webview remembers the backdrop over the video, a choice of this machine's alone. */
+/** Where the webview remembers the backdrop over the video. */
 const BACKDROP_KEY = "tsuzuri.preview-backdrop";
 
 /** A shadow alone is lost on a bright picture, so a caption sits on a backdrop until taken away. */
-function readCaptionBackdrop(): CaptionBackdrop {
-  try {
-    const value = localStorage.getItem(BACKDROP_KEY);
-    return value === "none" || value === "opaque" ? value : "translucent";
-  } catch {
-    return "translucent";
-  }
-}
-
-function writeCaptionBackdrop(backdrop: CaptionBackdrop): void {
-  try {
-    localStorage.setItem(BACKDROP_KEY, backdrop);
-  } catch {
-    // A webview without storage forgets the choice when it closes.
-  }
+function captionBackdropOf(value: string | null): CaptionBackdrop {
+  return value === "none" || value === "opaque" ? value : "translucent";
 }
 
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
@@ -131,9 +88,9 @@ export default class PreviewController extends Controller {
   private playingIndex: number | null = null;
   private hasTranslation = false;
   private bilingualOrder: ProjectOptions["bilingual_order"] = "original-first";
-  private captionLanguage = readCaptionLanguage();
-  private captionBackdrop = readCaptionBackdrop();
-  private isFolded = readFolded();
+  private captionLanguage = captionLanguageOf(preference(CAPTION_KEY));
+  private captionBackdrop = captionBackdropOf(preference(BACKDROP_KEY));
+  private isFolded = preference(FOLDED_KEY) === "true";
   private unfollow?: () => void;
 
   connect(): void {
@@ -152,21 +109,21 @@ export default class PreviewController extends Controller {
 
   toggleFold(): void {
     this.isFolded = !this.isFolded;
-    writeFolded(this.isFolded);
+    savePreference(FOLDED_KEY, String(this.isFolded));
     this.showPanel();
   }
 
   chooseCaptionLanguage({ target }: Event): void {
     this.captionLanguage = (target as HTMLInputElement)
       .value as CaptionLanguage;
-    writeCaptionLanguage(this.captionLanguage);
+    savePreference(CAPTION_KEY, this.captionLanguage);
     this.showCaption(this.segmentIndexAtTime());
   }
 
   chooseCaptionBackdrop({ target }: Event): void {
     this.captionBackdrop = (target as HTMLInputElement)
       .value as CaptionBackdrop;
-    writeCaptionBackdrop(this.captionBackdrop);
+    savePreference(BACKDROP_KEY, this.captionBackdrop);
     this.showCaptionBackdrop();
   }
 

@@ -615,3 +615,47 @@ A time typed into a Segment is found on the waveform first, so the timeline tell
 | Given | a timeline with a range drawn from 1 to 1.5 s |
 | When | Esc is pressed |
 | Then | no times are shown |
+
+### Following playback in the editor
+
+The editor scrolls to the row being played, unless the user turns that off to read or correct another Segment while the media plays, as Subtitle Edit's "Select current subtitle while playing" can be. Only the scrolling stops; the row is still marked.
+
+## `PV-075` Bringing the row being played into view
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing, and no choice about following playback ever made on this machine |
+| When | the media plays to 1.5 s |
+| Then | the second Segment's row is scrolled into view |
+
+## `PV-076` Leaving the editor where it is while not following playback
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing, and following playback turned off |
+| When | the media plays to 1.5 s |
+| Then | the second Segment's row alone is marked as playing, and no row is scrolled into view |
+
+## `PV-077` Turning following playback off with Ctrl+L while typing
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media is playing, with the Cursor in a Segment's text field |
+| When | Ctrl+L is pressed |
+| Then | following playback is turned off, and the field keeps the focus |
+
+## `PV-078` Bringing the row being played into view as following playback is turned on
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment's row marked as playing, with following playback turned off |
+| When | following playback is turned on |
+| Then | the second Segment's row is scrolled into view |
+
+## `PV-079` Keeping following playback off for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | following playback turned off |
+| When | another Resource with a media file becomes current |
+| Then | following playback stays off |

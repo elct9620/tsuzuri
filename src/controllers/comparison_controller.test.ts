@@ -148,7 +148,7 @@ describe("ComparisonController", () => {
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <div data-comparison-target="menu"></div>
-        <p data-transcript-target="empty"></p>
+        <p data-transcript-target="emptyHint"></p>
         <ol data-transcript-target="list" data-comparison-target="list"></ol>
       </main>
       ${NOTIFICATION_STACK}
@@ -226,7 +226,7 @@ describe("ComparisonController", () => {
   it("shows what a changed text read before", async () => {
     await show();
 
-    expect(document.querySelector("li [data-was]")?.textContent).toBe(
+    expect(document.querySelector("li [data-earlier-text]")?.textContent).toBe(
       "原：你好",
     );
   });
@@ -497,7 +497,7 @@ describe("ComparisonController", () => {
 
     expect([
       highlights.get("compare-addition")?.ranges.map(String),
-      document.querySelector("[data-was]")?.textContent,
+      document.querySelector("[data-earlier-text]")?.textContent,
     ]).toEqual([["會"], "原：資料不上傳"]);
   });
 

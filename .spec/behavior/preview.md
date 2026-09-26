@@ -323,6 +323,50 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | When | the media is moved to 1 s, the end of the first |
 | Then | no row is marked as playing |
 
+### Choosing another Segment
+
+Another Segment chosen is the one to be heard next, so the media pauses there for Space: a row at its start, a region where it was clicked, as the waveform does elsewhere. Staying in the Current Segment, or a Segment Change moving it, plays on, so a text is corrected while heard.
+
+## `PV-075` Pausing at the start of a Segment whose row is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s |
+| When | the second Segment's row is clicked |
+| Then | the media pauses at 1 s |
+
+## `PV-076` Moving the paused media to a Segment whose row is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media paused at 0.5 s |
+| When | the second Segment's row is clicked |
+| Then | the media stays paused at 1 s |
+
+## `PV-077` Pausing where a Segment's region is clicked
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s |
+| When | the second Segment's region is clicked at 1.5 s |
+| Then | the media pauses at 1.5 s |
+
+## `PV-078` Playing on when the Current Segment's row is clicked
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose second Segment is current, its media playing |
+| When | the second Segment's row is clicked |
+| Then | the media keeps playing |
+
+## `PV-079` Playing on when a Segment Change moves the Current Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose first Segment is current, its media playing |
+| When | a Segment is inserted after it from its menu |
+| Then | the media keeps playing |
+
 ## `PV-040` Zooming the timeline with Alt and the wheel
 
 | Step | Statement |

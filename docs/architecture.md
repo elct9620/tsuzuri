@@ -389,7 +389,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
   |-- feed = new ProjectFeed()        每次變更讀一次 current_project
   |-- session = new EditingSession(editingPort)
   |-- feed -> session.follow -> 各 controller -> session.announce
-  |-- session.onChange -> window 的 editor:cursor、editor:checked
+  |-- session.onChange -> window 的 editor:cursor、editor:choice、editor:checks
   +-- application.register(名稱, class extends X { session, feed })
 ```
 
@@ -456,8 +456,9 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
 | `versions` outlet | `comparison` | 開啟版本 dialog |
 | `versions:compare-with` | `versions` | `comparison` 換對照 |
-| `editor:cursor` | session，經 `main.ts` | 標出 Current Segment 與 Cursor |
-| `editor:checked` | session，經 `main.ts` | 顯示勾選工具列 |
+| `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
+| `editor:choice` | session，經 `assembly.ts` | `timeline` 暫停在選的段落 |
+| `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |

@@ -2,9 +2,10 @@
 import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView, Segment } from "../backend/project";
+import type { EditingSession } from "../editor";
 import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test_layout";
 import { projectOf } from "../test_project";
@@ -18,6 +19,7 @@ import TranscriptController from "./transcript_controller";
 describe("Current Segment", () => {
   let application: Application;
   let project: ProjectView | null;
+  let session: EditingSession;
   let takeLayoutBack: () => void;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -88,8 +90,8 @@ describe("Current Segment", () => {
       <main data-controller="transcript"
         data-action="editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying">
         <div data-controller="preview timeline"
-          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor keydown.space@window->timeline#playCurrent:!control:prevent">
-          <button data-preview-target="fold" hidden><span data-preview-target="foldIcon"></span></button>
+          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playCurrent:!control:prevent">
+          <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">
             <video data-preview-target="media" data-timeline-target="media" data-action="timeupdate->preview#follow pause->preview#showPaused"></video>
@@ -99,30 +101,33 @@ describe("Current Segment", () => {
           <span data-preview-target="playback"></span>
           <span data-preview-target="time"></span>
           <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"></div>
-          <p data-preview-target="currentEmpty"></p>
-          <div data-preview-target="current" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
-          <button data-timeline-target="snapping"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
+          <p data-preview-target="currentHint"></p>
+          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
+          <button data-timeline-target="snapButton"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
           </div>
         </div>
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
-        <p data-transcript-target="empty"></p>
+        <p data-transcript-target="emptyHint"></p>
         <ol data-transcript-target="list"></ol>
       </main>
     `;
     application = Application.start();
     application.registerActionOption("control", controlOption);
-    await assemble(application, {
+    const assembly = assemble(application, {
       transcript: TranscriptController,
       preview: PreviewController,
       timeline: TimelineController,
-    }).start();
+    });
+    session = assembly.session;
+    await assembly.start();
     await settle();
   });
 
   afterEach(() => {
     application.stop();
     clearMocks();
+    vi.restoreAllMocks();
     takeLayoutBack();
   });
 
@@ -207,7 +212,77 @@ describe("Current Segment", () => {
 
     playTo(1.5);
 
-    expect(isMarked("data-playing")).toEqual([false, true]);
+    expect(isMarked("data-is-playing")).toEqual([false, true]);
+  });
+
+  // @behavior PV-075
+  it("pauses at the start of a Segment whose row is chosen while the media plays", async () => {
+    await show(twoSegments);
+    await media().play();
+    playTo(0.5);
+
+    rows()[1].click();
+
+    expect([media().paused, media().currentTime]).toEqual([true, 1]);
+  });
+
+  // @behavior PV-076
+  it("moves the paused media to the start of a Segment whose row is chosen", async () => {
+    await show(twoSegments);
+    playTo(0.5);
+
+    rows()[1].click();
+
+    expect([media().paused, media().currentTime]).toEqual([true, 1]);
+  });
+
+  // @behavior PV-077
+  it("pauses where a Segment's region is clicked while the media plays", async () => {
+    // The waveform takes a click's time from its width: 200 pixels over two seconds of Peaks
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 200, height: 100 }),
+    );
+    await show(twoSegments);
+    // The waveform moves only media ready to play there, which happy-dom never is
+    Object.defineProperty(media(), "readyState", {
+      value: HTMLMediaElement.HAVE_ENOUGH_DATA,
+    });
+    await media().play();
+    playTo(0.5);
+
+    regions()[1].dispatchEvent(
+      new MouseEvent("click", { bubbles: true, clientX: 150 }),
+    );
+
+    expect([media().paused, media().currentTime]).toEqual([true, 1.5]);
+  });
+
+  // @behavior PV-078
+  it("plays on when the Current Segment's row is clicked", async () => {
+    await show(twoSegments);
+    rows()[1].click();
+    await media().play();
+    playTo(1.5);
+
+    rows()[1].click();
+
+    expect([media().paused, media().currentTime]).toEqual([false, 1.5]);
+  });
+
+  // @behavior PV-079
+  it("plays on when a Segment Change moves the Current Segment", async () => {
+    await show(twoSegments);
+    rows()[0].click();
+    await media().play();
+    playTo(0.5);
+
+    await session.change({ kind: "insertion-after", index: 0 });
+    await show({
+      ...twoSegments,
+      segments: [segmentAt(0, 1), segmentAt(1, 1), segmentAt(1, 2)],
+    });
+
+    expect([session.cursor.index, media().paused]).toEqual([1, false]);
   });
 
   // @behavior PV-036
@@ -254,7 +329,7 @@ describe("Current Segment", () => {
 
     media().pause();
 
-    expect(isMarked("data-playing")).toEqual([false, false]);
+    expect(isMarked("data-is-playing")).toEqual([false, false]);
   });
 
   // @behavior PV-039
@@ -263,6 +338,6 @@ describe("Current Segment", () => {
 
     playTo(1);
 
-    expect(isMarked("data-playing")).toEqual([false, false]);
+    expect(isMarked("data-is-playing")).toEqual([false, false]);
   });
 });

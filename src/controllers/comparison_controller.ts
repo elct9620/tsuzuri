@@ -90,26 +90,26 @@ function isSameCue(cue: ComparedCue, item: HTMLLIElement): boolean {
 
 /** What a changed text read in the Backup, with the characters since removed struck out. */
 function earlierText(row: ComparedRow): HTMLParagraphElement {
-  const was = document.createElement("p");
-  was.dataset.was = "";
-  was.className = "px-1.5 text-xs text-base-content/60";
-  was.append(t("compare.wasPrefix"));
+  const paragraph = document.createElement("p");
+  paragraph.dataset.earlierText = "";
+  paragraph.className = "px-1.5 text-xs text-base-content/60";
+  paragraph.append(t("compare.wasPrefix"));
   if (row.text_spans.length === 0) {
-    was.append(row.left.map((cue) => cue.text).join(" / ") || "—");
-    return was;
+    paragraph.append(row.left.map((cue) => cue.text).join(" / ") || "—");
+    return paragraph;
   }
   for (const span of row.text_spans) {
     if (span.kind === "addition") continue;
     if (span.kind === "common") {
-      was.append(span.text);
+      paragraph.append(span.text);
       continue;
     }
-    const removed = document.createElement("del");
-    removed.className = "text-error";
-    removed.textContent = span.text;
-    was.append(removed);
+    const removal = document.createElement("del");
+    removal.className = "text-error";
+    removal.textContent = span.text;
+    paragraph.append(removal);
   }
-  return was;
+  return paragraph;
 }
 
 /** The ranges of `field` holding the characters a Pair's text gained, while the field still reads that text. */
@@ -226,10 +226,10 @@ export default class ComparisonController extends Controller {
   /** Compares with what the menu now has chosen. */
   async choose(): Promise<void> {
     for (const side of ["original", "translation"] as Side[]) {
-      const checked = this.menuTarget.querySelector<HTMLInputElement>(
+      const choice = this.menuTarget.querySelector<HTMLInputElement>(
         `input[name="compare-${side}"]:checked`,
       );
-      this.fileBySide[side] = checked?.value || null;
+      this.fileBySide[side] = choice?.value || null;
     }
     this.references = [
       ...this.menuTarget.querySelectorAll<HTMLInputElement>(
@@ -410,7 +410,7 @@ export default class ComparisonController extends Controller {
   /** Clears the marks of the last comparison and puts those of each side's comparison on the rows. */
   private decorate(rowsBySide: Record<Side, ComparedRow[]>): void {
     for (const stale of this.listTarget.querySelectorAll(
-      "[data-ghost], [data-marks], [data-was], [data-reference]",
+      "[data-ghost], [data-marks], [data-earlier-text], [data-reference]",
     ))
       stale.remove();
     const items = [
@@ -418,7 +418,7 @@ export default class ComparisonController extends Controller {
         ":scope > li:not([data-ghost])",
       ),
     ];
-    const added: Range[] = [];
+    const additionRanges: Range[] = [];
     for (const side of ["original", "translation"] as Side[]) {
       rowsBySide[side].forEach((row, index) => {
         if (row.kind === "removal") {
@@ -427,11 +427,12 @@ export default class ComparisonController extends Controller {
         }
         for (const cue of row.right) {
           const item = items.find((each) => isSameCue(cue, each));
-          if (item) added.push(...this.markItem(item, row, index, side));
+          if (item)
+            additionRanges.push(...this.markItem(item, row, index, side));
         }
       });
     }
-    markRanges(ADDED_HIGHLIGHT, added);
+    markRanges(ADDED_HIGHLIGHT, additionRanges);
   }
 
   /** Marks the row beside its side's text field, answering the ranges its text gained. */

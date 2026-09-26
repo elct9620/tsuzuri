@@ -34,7 +34,7 @@ describe("nextCursor", () => {
   it("makes a Segment current with a live caret when its text is entered", () => {
     expect(
       nextCursor(NO_CURSOR, {
-        kind: "enter",
+        kind: "entry",
         index: 0,
         field: "text",
         range: { start: 2, end: 2 },
@@ -46,7 +46,7 @@ describe("nextCursor", () => {
   it("makes a Segment current without a caret when a time of it is entered", () => {
     expect(
       nextCursor(kept, {
-        kind: "enter",
+        kind: "entry",
         index: 1,
         field: null,
         range: null,
@@ -58,7 +58,7 @@ describe("nextCursor", () => {
   it("keeps the caret when a time of the Current Segment is entered", () => {
     expect(
       nextCursor(kept, {
-        kind: "enter",
+        kind: "entry",
         index: 0,
         field: null,
         range: null,
@@ -70,7 +70,7 @@ describe("nextCursor", () => {
   it("follows a live caret as the selection moves", () => {
     expect(
       nextCursor(live, {
-        kind: "select",
+        kind: "selection",
         range: { start: 1, end: 3 },
         text: "你好世界",
       }).caret,
@@ -80,7 +80,7 @@ describe("nextCursor", () => {
   it("keeps the caret where it was left, with the text it was left in", () => {
     expect(
       nextCursor(live, {
-        kind: "leave",
+        kind: "exit",
         range: null,
         text: "你好世界啊",
       }).caret,
@@ -94,14 +94,14 @@ describe("nextCursor", () => {
   });
 
   it("drops the caret when another Segment is made current", () => {
-    expect(nextCursor(kept, { kind: "make-current", index: 1 })).toEqual({
+    expect(nextCursor(kept, { kind: "current-segment", index: 1 })).toEqual({
       index: 1,
       caret: null,
     });
   });
 
   it("keeps the caret when its own Segment is made current again", () => {
-    expect(nextCursor(kept, { kind: "make-current", index: 0 })).toBe(kept);
+    expect(nextCursor(kept, { kind: "current-segment", index: 0 })).toBe(kept);
   });
 });
 

@@ -24,7 +24,7 @@ const MOST_SHOWN = 5;
  * motion, as the toast's own animation is.
  */
 const ALERT_CLASSES =
-  "alert w-80 items-start border border-l-4 border-base-300 bg-base-100 text-sm shadow-lg transition-[opacity,translate] duration-200 ease-out starting:translate-x-8 data-leaving:translate-x-8 data-leaving:opacity-0 motion-reduce:transition-none";
+  "alert w-80 items-start border border-l-4 border-base-300 bg-base-100 text-sm shadow-lg transition-[opacity,translate] duration-200 ease-out starting:translate-x-8 data-is-leaving:translate-x-8 data-is-leaving:opacity-0 motion-reduce:transition-none";
 
 export type NotificationKind = "success" | "warning" | "error";
 
@@ -102,7 +102,7 @@ export function runAction(alert: HTMLElement): void {
 
 /** Takes `alert` away, fading it out first. */
 export function leave(alert: HTMLElement): void {
-  alert.dataset.leaving = "";
+  alert.dataset.isLeaving = "";
   setTimeout(() => alert.remove(), LEAVING_MS);
 }
 
@@ -135,7 +135,7 @@ function buttons(
   if (isStaying) {
     const close = button("", "btn btn-sm btn-circle btn-ghost", "close");
     close.append(iconElement("X"));
-    close.dataset.close = "";
+    close.dataset.closeButton = "";
     close.setAttribute("aria-label", t("work.close"));
     group.append(close);
   }
@@ -157,7 +157,7 @@ function countDown(alert: HTMLElement, content: HTMLElement): void {
 /** Takes away the oldest Notification while more than `MOST_SHOWN` are shown. */
 function keepMostShown(stack: HTMLElement): void {
   const shown = stack.querySelectorAll<HTMLElement>(
-    '[role="alert"]:not([data-leaving])',
+    '[role="alert"]:not([data-is-leaving])',
   );
   if (shown.length > MOST_SHOWN) leave(shown[0]);
 }

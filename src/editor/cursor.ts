@@ -41,16 +41,16 @@ export const NO_CURSOR: Cursor = { index: null, caret: null };
 /** What moves the Cursor: the user in a row, a Segment Change the editor made, or a Transcript changed elsewhere. */
 export type CursorEvent =
   | {
-      kind: "enter";
+      kind: "entry";
       index: number;
       /** The field entered, or none for a time or a Speaker. */
       field: CursorField | null;
       range: TextRange | null;
       text: string;
     }
-  | { kind: "select"; range: TextRange; text: string }
-  | { kind: "leave"; range: TextRange | null; text: string }
-  | { kind: "make-current"; index: number }
+  | { kind: "selection"; range: TextRange; text: string }
+  | { kind: "exit"; range: TextRange | null; text: string }
+  | { kind: "current-segment"; index: number }
   | { kind: "change"; change: SegmentChange; before: Segment[] }
   | { kind: "view"; before: TranscriptView | null; after: TranscriptView };
 
@@ -62,7 +62,7 @@ function caretAt(start: number, text: string): LiveCaret {
 /** The Cursor after `event`. */
 export function nextCursor(cursor: Cursor, event: CursorEvent): Cursor {
   switch (event.kind) {
-    case "enter":
+    case "entry":
       if (event.field === null)
         return event.index === cursor.index
           ? cursor
@@ -76,13 +76,13 @@ export function nextCursor(cursor: Cursor, event: CursorEvent): Cursor {
           text: event.text,
         },
       };
-    case "select":
+    case "selection":
       if (cursor.caret?.kind !== "live") return cursor;
       return {
         ...cursor,
         caret: { ...cursor.caret, ...event.range, text: event.text },
       };
-    case "leave":
+    case "exit":
       if (cursor.caret?.kind !== "live") return cursor;
       return {
         ...cursor,
@@ -93,7 +93,7 @@ export function nextCursor(cursor: Cursor, event: CursorEvent): Cursor {
           text: event.text,
         },
       };
-    case "make-current":
+    case "current-segment":
       return event.index === cursor.index
         ? cursor
         : { index: event.index, caret: null };

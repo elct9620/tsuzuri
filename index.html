@@ -18,9 +18,9 @@
       data-controller="project transcript segment-changes dialog comparison speakers retranslation"
       data-retranslation-progress-outlet="#progress"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent"
+      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent"
     >
-      <section class="hero flex-1" data-project-target="start">
+      <section class="hero flex-1" data-project-target="startScreen">
         <div class="hero-content flex-col text-center">
           <h1 class="text-2xl font-semibold">Tsuzuri</h1>
           <p class="text-base-content/70" data-i18n="start.title"></p>
@@ -96,7 +96,7 @@
                 <button
                   type="button"
                   class="btn btn-sm"
-                  data-transcribe-target="open"
+                  data-transcribe-target="openButton"
                   data-action="transcribe#open"
                   data-i18n="toolbar.transcribe"
                   disabled
@@ -123,7 +123,7 @@
                         <input
                           type="checkbox"
                           class="checkbox checkbox-sm"
-                          data-transcribe-target="translate"
+                          data-transcribe-target="translationToggle"
                           data-action="transcribe#showTranslationOptions"
                         />
                         <span data-i18n="transcribe.translateAfter"></span>
@@ -143,7 +143,7 @@
                     <div
                       role="alert"
                       class="alert alert-warning mt-2"
-                      data-transcribe-target="overwrite"
+                      data-transcribe-target="overwriteWarning"
                       hidden
                     >
                       <span data-transcribe-target="overwriteMessage"></span>
@@ -155,7 +155,7 @@
                       <button
                         type="button"
                         class="btn btn-primary"
-                        data-transcribe-target="start"
+                        data-transcribe-target="startButton"
                         data-action="transcribe#start"
                         data-i18n="transcribe.start"
                       ></button>
@@ -177,7 +177,7 @@
                 <button
                   type="button"
                   class="btn btn-sm"
-                  data-translate-target="open"
+                  data-translate-target="openButton"
                   data-action="translate#open"
                   data-i18n="toolbar.translate"
                   disabled
@@ -202,7 +202,7 @@
                     <div
                       role="alert"
                       class="alert alert-warning mt-2"
-                      data-translate-target="overwrite"
+                      data-translate-target="overwriteWarning"
                       hidden
                     >
                       <span data-i18n="translate.overwrite"></span>
@@ -214,7 +214,7 @@
                       <button
                         type="button"
                         class="btn btn-primary"
-                        data-translate-target="start"
+                        data-translate-target="startButton"
                         data-action="translate#start"
                         data-i18n="translate.start"
                       ></button>
@@ -238,7 +238,7 @@
                   <li>
                     <button
                       type="button"
-                      data-transcript-target="export"
+                      data-transcript-target="exportButton"
                       data-action="transcript#save"
                       data-transcript-content-param="bilingual"
                       disabled
@@ -248,7 +248,7 @@
                   <li>
                     <button
                       type="button"
-                      data-transcript-target="export"
+                      data-transcript-target="exportButton"
                       data-action="transcript#save"
                       data-transcript-content-param="original"
                       disabled
@@ -258,7 +258,7 @@
                   <li>
                     <button
                       type="button"
-                      data-transcript-target="export"
+                      data-transcript-target="exportButton"
                       data-action="transcript#save"
                       data-transcript-content-param="translation"
                       disabled
@@ -279,7 +279,7 @@
           <div
             class="contents"
             data-controller="preview timeline"
-            data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor keydown.space@window->timeline#playCurrent:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange:!control"
+            data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playCurrent:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange:!control"
           >
             <div
               class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
@@ -340,7 +340,7 @@
                       <div class="mb-2 flex items-center gap-2">
                         <select
                           class="select select-sm w-auto"
-                          data-versions-target="left"
+                          data-versions-target="leftVersion"
                           data-action="change->versions#showComparison"
                         ></select>
                         <i
@@ -349,14 +349,14 @@
                         ></i>
                         <select
                           class="select select-sm w-auto"
-                          data-versions-target="right"
+                          data-versions-target="rightVersion"
                           data-action="change->versions#showComparison"
                         ></select>
                         <label class="ml-auto flex items-center gap-1 text-sm">
                           <input
                             type="checkbox"
                             class="checkbox checkbox-sm"
-                            data-versions-target="onlyDifferences"
+                            data-versions-target="differenceFilter"
                             data-action="change->versions#showOnlyDifferences"
                           />
                           <span data-i18n="versions.onlyDifferences"></span>
@@ -414,12 +414,12 @@
                     ></legend>
                     <label
                       class="flex items-center gap-2"
-                      data-speakers-target="checked"
+                      data-speakers-target="checkedChoice"
                     >
                       <input
                         type="radio"
                         name="speaker-scope"
-                        value="checked"
+                        value="checked-segments"
                         class="radio radio-sm"
                         data-speakers-target="scope"
                       />
@@ -429,7 +429,7 @@
                       <input
                         type="radio"
                         name="speaker-scope"
-                        value="every"
+                        value="all-segments"
                         class="radio radio-sm"
                         data-speakers-target="scope"
                       />
@@ -439,7 +439,7 @@
                       <input
                         type="radio"
                         name="speaker-scope"
-                        value="unnamed"
+                        value="unnamed-segments"
                         class="radio radio-sm"
                         data-speakers-target="scope"
                       />
@@ -449,14 +449,14 @@
                       <input
                         type="radio"
                         name="speaker-scope"
-                        value="named"
+                        value="named-segments"
                         class="radio radio-sm"
                         data-speakers-target="scope"
                       />
                       <span data-i18n="edit.speakersNamedBefore"></span>
                       <select
                         class="select select-xs w-auto"
-                        data-speakers-target="from"
+                        data-speakers-target="renamedSpeaker"
                       ></select>
                       <span data-i18n="edit.speakersNamedAfter"></span>
                     </label>
@@ -466,7 +466,10 @@
                       class="fieldset-legend"
                       data-i18n="edit.speakersTo"
                     ></legend>
-                    <input class="input input-sm" data-speakers-target="to" />
+                    <input
+                      class="input input-sm"
+                      data-speakers-target="newSpeaker"
+                    />
                     <div
                       class="flex flex-wrap gap-1"
                       data-speakers-target="names"
@@ -535,7 +538,7 @@
               <button
                 type="button"
                 class="btn btn-square btn-sm"
-                data-preview-target="fold"
+                data-preview-target="foldButton"
                 data-action="preview#toggleFold"
                 data-i18n-label="preview.fold"
                 hidden
@@ -686,12 +689,12 @@
                     <div class="divider my-0"></div>
                     <p
                       class="text-sm text-base-content/60"
-                      data-preview-target="currentEmpty"
+                      data-preview-target="currentHint"
                       data-i18n="preview.pickSegment"
                     ></p>
                     <div
                       class="flex min-h-0 flex-col gap-1"
-                      data-preview-target="current"
+                      data-preview-target="currentCard"
                       hidden
                     >
                       <h3 class="card-title text-sm">
@@ -746,7 +749,7 @@
                   <button
                     type="button"
                     class="btn btn-square btn-xs"
-                    data-timeline-target="snapping"
+                    data-timeline-target="snapButton"
                     data-action="timeline#toggleSnapping"
                     data-i18n-label="preview.snapping"
                     data-i18n-tooltip="preview.snappingHint"
@@ -792,19 +795,19 @@
           <div class="flex-1 overflow-y-auto p-4">
             <p
               class="text-base-content/60"
-              data-transcript-target="empty"
+              data-transcript-target="emptyHint"
               data-i18n="edit.empty"
             ></p>
             <div
               class="mb-2 flex items-center gap-2 rounded-box bg-base-200 px-3 py-1.5 text-sm"
-              data-segment-changes-target="checked"
+              data-segment-changes-target="checkedBar"
               hidden
             >
               <span data-segment-changes-target="checkedCount"></span>
               <button
                 type="button"
                 class="btn btn-xs"
-                data-segment-changes-target="merge"
+                data-segment-changes-target="mergeButton"
                 data-action="segment-changes#merge"
                 data-i18n="edit.merge"
               ></button>
@@ -823,7 +826,7 @@
               <button
                 type="button"
                 class="btn btn-xs"
-                data-retranslation-target="checked"
+                data-retranslation-target="checkedButton"
                 data-action="segment-changes#retranslate"
                 data-i18n="edit.retranslate"
               ></button>
@@ -869,7 +872,7 @@
               </form>
             </dialog>
             <ol
-              class="list text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
+              class="list text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
               data-transcript-target="list"
               data-comparison-target="list"
             ></ol>
@@ -906,7 +909,6 @@
                   <button
                     type="button"
                     data-project-target="glossary"
-                    data-glossary-target="open"
                     data-action="glossary#open"
                   ></button>
                 </li>
@@ -952,7 +954,7 @@
                     <button
                       type="button"
                       class="btn btn-primary"
-                      data-glossary-target="save"
+                      data-glossary-target="saveButton"
                       data-action="glossary#save"
                       data-i18n="glossary.save"
                     ></button>
@@ -1181,7 +1183,7 @@
                         <button
                           type="button"
                           class="btn btn-ghost btn-sm"
-                          data-project-target="followModel"
+                          data-project-target="generalModelButton"
                           data-slot="transcription"
                           data-action="project#followModel"
                           data-i18n="settings.useGeneral"
@@ -1216,7 +1218,7 @@
                         <button
                           type="button"
                           class="btn btn-ghost btn-sm"
-                          data-project-target="followModel"
+                          data-project-target="generalModelButton"
                           data-slot="translation"
                           data-action="project#followModel"
                           data-i18n="settings.useGeneral"
@@ -1273,7 +1275,7 @@
                       <button
                         type="button"
                         class="btn btn-sm btn-ghost"
-                        data-components-target="restore"
+                        data-components-target="restoreButton"
                         data-component="ffmpeg"
                         data-action="components#restore"
                         data-i18n="settings.restoreDefault"
@@ -1310,7 +1312,7 @@
                       <button
                         type="button"
                         class="btn btn-sm btn-ghost"
-                        data-components-target="restore"
+                        data-components-target="restoreButton"
                         data-component="whisper"
                         data-action="components#restore"
                         data-i18n="settings.restoreDefault"
@@ -1347,7 +1349,7 @@
                       <button
                         type="button"
                         class="btn btn-sm btn-ghost"
-                        data-components-target="restore"
+                        data-components-target="restoreButton"
                         data-component="llama"
                         data-action="components#restore"
                         data-i18n="settings.restoreDefault"
@@ -1641,7 +1643,7 @@
                   <div
                     role="alert"
                     class="alert alert-info text-sm"
-                    data-logs-target="pending"
+                    data-logs-target="pendingHint"
                     hidden
                   ></div>
                 </fieldset>

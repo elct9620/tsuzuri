@@ -23,7 +23,7 @@ describe("LogsController", () => {
         <span data-logs-target="path"></span>
         <button id="choose" data-action="logs#choose">切換目錄</button>
         <button id="open" data-action="logs#openDirectory">開啟目錄</button>
-        <div data-logs-target="pending" hidden></div>
+        <div data-logs-target="pendingHint" hidden></div>
       </fieldset>
     `;
     mockIPC((command, args) => {
@@ -53,7 +53,7 @@ describe("LogsController", () => {
 
     expect([
       sent("choose_log_directory"),
-      target("pending").hidden,
+      target("pendingHint").hidden,
       target("path").textContent,
     ]).toEqual([[{ path: "/logs" }], false, "/os/logs"]);
   });

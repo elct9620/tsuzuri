@@ -214,20 +214,20 @@ function item(
 export default class TranscriptController extends Controller {
   static targets = [
     "list",
-    "empty",
-    "export",
+    "emptyHint",
+    "exportButton",
     "heading",
     "translationLanguage",
   ];
 
   declare readonly listTarget: HTMLOListElement;
-  declare readonly emptyTarget: HTMLElement;
+  declare readonly emptyHintTarget: HTMLElement;
   /** Names the Current Resource. */
   declare readonly headingTarget: HTMLElement;
   /** Which of the Current Resource's translations the editor shows, or none. */
   declare readonly translationLanguageTarget: HTMLSelectElement;
   /** Each export, enabled once the Project has the text it writes. */
-  declare readonly exportTargets: HTMLButtonElement[];
+  declare readonly exportButtonTargets: HTMLButtonElement[];
 
   declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
@@ -256,7 +256,7 @@ export default class TranscriptController extends Controller {
   /** Stands Placeholders in for the Segments of a Resource being read. */
   showLoading(): void {
     this.listTarget.replaceChildren(...placeholderRows());
-    this.emptyTarget.hidden = true;
+    this.emptyHintTarget.hidden = true;
   }
 
   /** Makes the Segment of a row current as the row is clicked or anything in it gets focus. */
@@ -283,11 +283,11 @@ export default class TranscriptController extends Controller {
 
   /** Checks the rows of the Checked Segments and no others. */
   showChecked(): void {
-    const checked = new Set(this.session.checkedIndexes);
+    const checkedIndexes = new Set(this.session.checkedIndexes);
     for (const check of this.listTarget.querySelectorAll<HTMLInputElement>(
       "input.check",
     ))
-      check.checked = checked.has(Number(check.dataset.index));
+      check.checked = checkedIndexes.has(Number(check.dataset.index));
   }
 
   /** Marks the Segment the Preview is playing, keeping its row in view. */
@@ -310,7 +310,7 @@ export default class TranscriptController extends Controller {
     const current = this.session.cursor.index;
     this.segmentRows().forEach((row, index) => {
       row.toggleAttribute("aria-current", index === current);
-      row.toggleAttribute("data-playing", index === this.playingIndex);
+      row.toggleAttribute("data-is-playing", index === this.playingIndex);
     });
   }
 
@@ -363,13 +363,13 @@ export default class TranscriptController extends Controller {
     this.showChecked();
     this.drawCursor();
     const isAwaitingSegments =
-      segments.length === 0 && this.runningTask === "transcribe";
+      segments.length === 0 && this.runningTask === "transcription";
     if (isAwaitingSegments) this.showLoading();
     const hasTranslation = segments.some(
       (segment) => segment.translation !== undefined,
     );
-    this.emptyTarget.hidden = segments.length > 0 || isAwaitingSegments;
-    for (const target of this.exportTargets) {
+    this.emptyHintTarget.hidden = segments.length > 0 || isAwaitingSegments;
+    for (const target of this.exportButtonTargets) {
       const needsTranslation =
         target.dataset.transcriptContentParam !== "original";
       target.disabled =
@@ -472,7 +472,7 @@ export default class TranscriptController extends Controller {
       ":scope > li[data-placeholder]",
     ))
       row.remove();
-    if (this.runningTask === "transcribe" && count > 0)
+    if (this.runningTask === "transcription" && count > 0)
       this.listTarget.append(...placeholderRows(1));
   }
 }

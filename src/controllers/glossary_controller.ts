@@ -13,13 +13,12 @@ import { failureMessage } from "../ui/failure";
 /** The glossary dialog: every Language a column and every term a row of fields with whether it names a Speaker, saved to `glossary.csv`. */
 export default class GlossaryController extends Controller {
   static targets = [
-    "open",
     "dialog",
     "languages",
     "rows",
     "warning",
     "failure",
-    "save",
+    "saveButton",
   ];
 
   declare readonly dialogTarget: HTMLDialogElement;
@@ -31,7 +30,7 @@ export default class GlossaryController extends Controller {
   /** Says why the glossary could not be read or saved. */
   declare readonly failureTarget: HTMLElement;
   /** Usable only once the glossary was read, so a file that could not be read is never saved over. */
-  declare readonly saveTarget: HTMLButtonElement;
+  declare readonly saveButtonTarget: HTMLButtonElement;
 
   private languages: string[] = [];
 
@@ -39,10 +38,10 @@ export default class GlossaryController extends Controller {
     this.failureTarget.hidden = true;
     try {
       this.show(await translationGlossaryTable());
-      this.saveTarget.disabled = false;
+      this.saveButtonTarget.disabled = false;
     } catch (error) {
       this.show({ languages: [], rows: [], has_source_target_header: false });
-      this.saveTarget.disabled = true;
+      this.saveButtonTarget.disabled = true;
       this.fail(error);
     }
     this.dialogTarget.showModal();

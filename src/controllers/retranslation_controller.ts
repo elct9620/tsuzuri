@@ -8,16 +8,16 @@ import type ProgressController from "./progress_controller";
 
 /** Translates chosen Segments again into the translation shown, one row's or the Checked Segments. */
 export default class RetranslationController extends Controller {
-  static targets = ["checked"];
+  static targets = ["checkedButton"];
   static outlets = ["progress"];
 
   declare readonly session: EditingSession;
   /** The button on the bar for Checked Segments, usable only while a translation is shown. */
-  declare readonly checkedTarget: HTMLButtonElement;
+  declare readonly checkedButtonTarget: HTMLButtonElement;
   declare readonly progressOutlet: ProgressController;
 
   follow({ detail }: CustomEvent<{ project: ProjectView | null }>): void {
-    this.checkedTarget.disabled =
+    this.checkedButtonTarget.disabled =
       (detail.project?.shown_translation ?? null) === null;
   }
 
@@ -36,7 +36,7 @@ export default class RetranslationController extends Controller {
   private async translate(indexes: number[]): Promise<void> {
     const progress = this.progressOutlet;
     if (progress.isBusy) return;
-    progress.begin("translate");
+    progress.begin("translation");
     try {
       notifyTranslation(await retranslate(indexes));
       progress.finish();

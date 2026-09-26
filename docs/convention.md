@@ -37,6 +37,8 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | 新值或轉換 | `new`、`try_new`、`with_*`、`from_*`、`into_*`／`to_*`／`as_*`，或動詞＋名詞 | `from_srt`、`to_srt`、`parse_timestamp` | `formatTime` |
 | 動作（有副作用） | 動詞開頭，後面可接狀態 | `write_translations`、`probe`、`kill_all` | `notifyFailure`、`translatePage` |
 | 建構錯誤或訊息 | 所建構之物的名詞 | — | `failureMessage`、`phasesSummary` |
+| 畫面元素（target） | 元素的名詞，不用動作 | — | `startButton`、`emptyHint` |
+| 標記元素的 data 屬性 | 狀態用問句，身分用名詞 | — | `data-is-playing`、`data-ghost` |
 
 ### 1.3 分詞與 -ing
 
@@ -67,13 +69,14 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 
 ### 1.5 加入名稱之前
 
-先看同一個模組裡的同類名稱，照它們遵守的規則取名。模組裡的規則不一致時，先把模組修正。兩個東西同名，只在同一個檔案相遇時才需要區分。
+先照同模組同類名稱遵守的規則取名，規則不一致就先修正模組。兩個東西同名，只在同一個檔案相遇時才區分。Stimulus 為 target 產生 `xTarget`、`xTargets` 與 `hasXTarget`，會蓋掉同名的成員。
 
 | 情境 | 做法 |
 |---|---|
 | 加入新名稱 | 照同模組的同類名稱 |
 | 規則不一致 | 先統一模組 |
 | 兩個東西同名 | 同檔才區分，否則依角色 |
+| Stimulus target | 不與產生的成員同名 |
 
 ### 1.6 依據
 

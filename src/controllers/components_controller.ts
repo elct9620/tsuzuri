@@ -37,10 +37,10 @@ function statusMessage({
 }
 
 export default class ComponentsController extends Controller {
-  static targets = ["status", "restore", "placeholder"];
+  static targets = ["status", "restoreButton", "placeholder"];
 
   declare readonly statusTargets: HTMLElement[];
-  declare readonly restoreTargets: HTMLElement[];
+  declare readonly restoreButtonTargets: HTMLElement[];
   /** Stand in for the statuses until they are found. */
   declare readonly placeholderTargets: HTMLElement[];
 
@@ -72,7 +72,10 @@ export default class ComponentsController extends Controller {
         status.textContent = statusMessage(component);
         status.hidden = false;
       }
-      const restore = this.targetByName(this.restoreTargets, component.name);
+      const restore = this.targetByName(
+        this.restoreButtonTargets,
+        component.name,
+      );
       if (restore) restore.hidden = component.origin !== "choice";
     }
   }

@@ -7,12 +7,3 @@
 @theme {
   --font-sans: system-ui, -apple-system, "Noto Sans TC", sans-serif;
 }
-
-/* A soft alert writes in its status colour, which on a light background is too faint to read (yellow on white is near 1.6:1); mixing in the text colour keeps the hue and reads in either theme. */
-.alert-soft {
-  color: color-mix(
-    in oklab,
-    var(--alert-color, var(--color-base-content)) 40%,
-    var(--color-base-content)
-  );
-}

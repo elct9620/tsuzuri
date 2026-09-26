@@ -330,7 +330,7 @@ index.html（data-controller、data-action）
    │
 controllers/  讀寫 DOM；彼此只經 outlet 與 Stimulus 事件協作
    │     ├──────────▶ ui/     通知、錯誤訊息、進度文字、時間、選單
-   │     └──────────▶ editor/ 編輯欄位：值、游標位置、Highlight；不依賴框架
+   │     └──────────▶ editor/ 編輯欄位：值、選取範圍、Highlight；不依賴框架
    ▼
 backend/      唯一碰 Tauri API 的地方：指令、事件、系統對話方塊、系統語系
 ```
@@ -401,6 +401,6 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
-| `editor/` | 欄位的值、游標與標記 |
+| `editor/` | 欄位的值、選取範圍與標記 |
 
 圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。`editor/` 以 CSS Custom Highlight 標記範圍，不 import Stimulus 與 Tauri。

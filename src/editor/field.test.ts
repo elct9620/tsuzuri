@@ -1,6 +1,11 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from "vitest";
-import { caretOffset, createField, fieldValue } from "./field";
+import {
+  createField,
+  fieldSelection,
+  fieldValue,
+  keepSelection,
+} from "./field";
 
 describe("field", () => {
   afterEach(() => {
@@ -17,16 +22,42 @@ describe("field", () => {
     ]);
   });
 
+  /** Selects the characters of `field` from `start` to `end`. */
+  function select(field: HTMLElement, start: number, end = start): void {
+    const range = document.createRange();
+    range.setStart(field.firstChild!, start);
+    range.setEnd(field.firstChild!, end);
+    document.getSelection()!.removeAllRanges();
+    document.getSelection()!.addRange(range);
+  }
+
   // @behavior ED-030
-  it("counts the characters before the caret, the line break included", () => {
+  it("counts the characters before each end of the selection, the line break included", () => {
     const field = createField("你好\n世界");
     document.body.append(field);
-    const caret = document.createRange();
-    caret.setStart(field.firstChild!, 4);
-    caret.collapse(true);
-    document.getSelection()!.removeAllRanges();
-    document.getSelection()!.addRange(caret);
 
-    expect(caretOffset(field)).toBe(4);
+    select(field, 1, 4);
+
+    expect(fieldSelection(field)).toEqual({ start: 1, end: 4 });
+  });
+
+  // @behavior ED-042
+  it("keeps its selection once the document's moves elsewhere", () => {
+    const field = createField("你好世界");
+    const menu = document.createElement("button");
+    document.body.append(field, menu);
+    select(field, 2);
+
+    keepSelection(field);
+    document.getSelection()!.selectAllChildren(menu);
+
+    expect(fieldSelection(field)).toEqual({ start: 2, end: 2 });
+  });
+
+  it("puts the caret after its text when it never held the selection", () => {
+    const field = createField("你好");
+    document.body.append(field);
+
+    expect(fieldSelection(field)).toEqual({ start: 2, end: 2 });
   });
 });

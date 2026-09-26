@@ -29,6 +29,12 @@ import { notify, notifyFailure } from "../ui/notification";
 import { formatTime } from "../ui/time";
 import type { TaskKind } from "./progress_controller";
 
+/** Ctrl+Alt+Enter, or ⌘+Option+Enter, splits a Segment at the caret in its text, as subtitle editors bind splitting to a modified line break. */
+const SPLIT_SHORTCUTS = [
+  "keydown.ctrl+alt+enter->segment-changes#split:!composing:prevent",
+  "keydown.meta+alt+enter->segment-changes#split:!composing:prevent",
+].join(" ");
+
 /** The text field of one text of a Segment, which hands its text to `transcript#edit` when left changed. */
 function editor(
   index: number,
@@ -45,6 +51,7 @@ function editor(
   editor.dataset.controller = "field";
   editor.dataset.action =
     "focus->field#remember compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent blur->field#leave field:change->transcript#edit";
+  if (field === "text") editor.dataset.action += ` ${SPLIT_SHORTCUTS}`;
   return editor;
 }
 

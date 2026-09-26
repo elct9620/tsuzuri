@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { fieldValue, insertLineBreak } from "../editor/field";
+import { fieldValue, insertLineBreak, keepSelection } from "../editor/field";
 
 /**
  * Routes a key event by whether an input method is still composing text: `:composing` routes only
@@ -24,7 +24,7 @@ export function composingOption({
   return isComposing === value;
 }
 
-/** One text field of the editor: hands over its text as `field:change` when it is left changed. */
+/** One text field of the editor: hands over its text as `field:change` when it is left changed, and keeps its selection. */
 export default class FieldController extends Controller<HTMLElement> {
   private valueOnEntry = "";
   private hasComposition = false;
@@ -52,7 +52,9 @@ export default class FieldController extends Controller<HTMLElement> {
     insertLineBreak();
   }
 
+  /** Keeps where the selection was, which a click elsewhere moves away, and hands over the text if it changed. */
   leave(): void {
+    keepSelection(this.element);
     const value = fieldValue(this.element);
     if (value === this.valueOnEntry) return;
     this.valueOnEntry = value;

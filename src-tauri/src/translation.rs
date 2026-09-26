@@ -1457,9 +1457,9 @@ mod tests {
                 indexes: None,
             },
         );
-        let shown = Arc::new(Mutex::new(Vec::new()));
+        let shown_counts = Arc::new(Mutex::new(Vec::new()));
         app.listen_any("project-changed", {
-            let shown = Arc::clone(&shown);
+            let shown_counts = Arc::clone(&shown_counts);
             let handle = app.handle().clone();
             move |_| {
                 let view = handle.state::<CurrentProject>().view().unwrap();
@@ -1468,7 +1468,7 @@ mod tests {
                     .iter()
                     .filter(|segment| segment.translation.is_some())
                     .count();
-                shown.lock().unwrap().push(count);
+                shown_counts.lock().unwrap().push(count);
             }
         });
 
@@ -1484,7 +1484,7 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(*shown.lock().unwrap(), vec![0, 2, 3]);
+        assert_eq!(*shown_counts.lock().unwrap(), vec![0, 2, 3]);
     }
 
     // @behavior TL-082

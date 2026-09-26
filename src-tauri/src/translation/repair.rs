@@ -47,8 +47,8 @@ pub async fn translate_batch(
             continue;
         }
         let reference = repair.surrounding_lines(&group);
-        let preceding = repair.preceding_text(&group);
-        let mut failing_reasons = repair.attempt(&group, reference, preceding).await?;
+        let preceding_text = repair.preceding_text(&group);
+        let mut failing_reasons = repair.attempt(&group, reference, preceding_text).await?;
         failing_reasons.extend(repair.review(&group).await?);
         let lines_still_failing: Vec<(usize, &str)> = group
             .into_iter()
@@ -263,9 +263,9 @@ impl BatchRepair<'_> {
             .take(window)
             .collect();
         before.reverse();
-        let needed = window - before.len();
+        let needed_pairs = window - before.len();
         let mut reference: Vec<_> =
-            self.earlier_pairs[self.earlier_pairs.len().saturating_sub(needed)..].to_vec();
+            self.earlier_pairs[self.earlier_pairs.len().saturating_sub(needed_pairs)..].to_vec();
         reference.extend(before);
         reference.extend(
             self.lines[last + 1..]
@@ -499,20 +499,20 @@ const ENGLISH_NEGATED_WORDS: [&str; 12] = [
 ];
 
 fn has_chinese_negation(text: &str) -> bool {
-    let stripped = CHINESE_NON_NEGATIONS
+    let without_non_negations = CHINESE_NON_NEGATIONS
         .iter()
         .fold(text.to_string(), |text, word| text.replace(word, ""));
     CHINESE_NEGATIONS
         .iter()
-        .any(|marker| stripped.contains(marker))
+        .any(|marker| without_non_negations.contains(marker))
 }
 
 fn has_english_negation(text: &str) -> bool {
-    let padded = format!(" {} ", text.to_lowercase());
+    let padded_text = format!(" {} ", text.to_lowercase());
     ENGLISH_NEGATIONS
         .iter()
-        .any(|marker| padded.contains(marker))
-        || padded.split_whitespace().any(|word| {
+        .any(|marker| padded_text.contains(marker))
+        || padded_text.split_whitespace().any(|word| {
             ENGLISH_NEGATED_WORDS.contains(&word.trim_matches(|ch: char| ".,!?;:\"'".contains(ch)))
         })
 }

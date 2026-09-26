@@ -149,9 +149,9 @@ pub struct Resolver {
 impl Resolver {
     /// Finds where `component` is, logging where it was found and how long finding it took.
     pub fn find(&self, component: &Component) -> ComponentStatus {
-        let started = Instant::now();
+        let start = Instant::now();
         let status = self.resolve(component);
-        let seconds = started.elapsed().as_secs_f64();
+        let seconds = start.elapsed().as_secs_f64();
         match (&status.path, status.origin) {
             (Some(path), Some(origin)) => log::info!(
                 "components: {} found ({origin:?}) at {} in {seconds:.2}s",
@@ -168,7 +168,7 @@ impl Resolver {
     }
 
     fn resolve(&self, component: &Component) -> ComponentStatus {
-        let found = |path: PathBuf, origin, variant: Option<&String>| ComponentStatus {
+        let ready_status = |path: PathBuf, origin, variant: Option<&String>| ComponentStatus {
             name: component.name.clone(),
             is_ready: true,
             path: Some(path),
@@ -177,7 +177,7 @@ impl Resolver {
             problem: None,
             install: None,
         };
-        let missing = |problem| ComponentStatus {
+        let missing_status = |problem| ComponentStatus {
             name: component.name.clone(),
             is_ready: false,
             path: None,
@@ -191,30 +191,30 @@ impl Resolver {
             .path_by_name(&component.name)
             .filter(|path| path.is_file())
         {
-            return found(chosen.to_path_buf(), Origin::Choice, None);
+            return ready_status(chosen.to_path_buf(), Origin::Choice, None);
         }
         if let Some(detected) = detection::detect(
             &component.program,
             &component.version_flag,
             &self.search_dirs,
         ) {
-            return found(detected, Origin::Detection, None);
+            return ready_status(detected, Origin::Detection, None);
         }
-        let bundled: Vec<(&String, PathBuf)> = component
+        let bundled_executables: Vec<(&String, PathBuf)> = component
             .variants
             .iter()
             .map(|variant| (variant, self.bundled_executable(component, variant)))
             .filter(|(_, path)| path.is_file())
             .collect();
-        if bundled.is_empty() {
-            return missing(Problem::NotInstalled);
+        if bundled_executables.is_empty() {
+            return missing_status(Problem::NotInstalled);
         }
-        match bundled
+        match bundled_executables
             .into_iter()
             .find(|(_, path)| detection::probe(path, &component.version_flag))
         {
-            Some((variant, path)) => found(path, Origin::BundledVariant, Some(variant)),
-            None => missing(Problem::DoesNotRun),
+            Some((variant, path)) => ready_status(path, Origin::BundledVariant, Some(variant)),
+            None => missing_status(Problem::DoesNotRun),
         }
     }
 
@@ -259,14 +259,14 @@ pub async fn find_ready_executables<const N: usize>(
     resolver: Resolver,
     names: [&'static str; N],
 ) -> Result<[PathBuf; N], Failure> {
-    let found = tokio::task::spawn_blocking(move || {
+    let paths = tokio::task::spawn_blocking(move || {
         names
             .iter()
             .map(|name| find_ready_executable(name, &resolver))
             .collect::<Result<Vec<_>, _>>()
     })
     .await??;
-    Ok(found
+    Ok(paths
         .try_into()
         .expect("one executable is found for each name"))
 }

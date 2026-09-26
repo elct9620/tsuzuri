@@ -205,7 +205,7 @@ export default class ComparisonController extends Controller {
   }: CustomEvent<{ project: ProjectView | null }>): Promise<void> {
     const project = detail.project;
     const resource = project?.current_resource ?? null;
-    const shown = project?.shown_translation ?? null;
+    const shownLanguage = project?.shown_translation ?? null;
     this.versions = await this.readVersions(project);
     const output = newestOutput(this.versions, null);
     const isNewResource = resource !== this.resource;
@@ -224,20 +224,20 @@ export default class ComparisonController extends Controller {
       this.fileBySide.original = output;
     if (
       isNewResource ||
-      shown !== this.shownTranslation ||
-      isGone(shown, this.fileBySide.translation)
+      shownLanguage !== this.shownTranslation ||
+      isGone(shownLanguage, this.fileBySide.translation)
     )
       this.fileBySide.translation = null;
     this.offeredReferences = (
       currentResource(project)?.translation_languages ?? []
-    ).filter((language) => language !== shown);
+    ).filter((language) => language !== shownLanguage);
     this.references = isNewResource
       ? []
       : this.references.filter((language) =>
           this.offeredReferences.includes(language),
         );
     this.resource = resource;
-    this.shownTranslation = shown;
+    this.shownTranslation = shownLanguage;
     this.newestOutputFile = output;
     this.offerChoices();
     await this.compare();

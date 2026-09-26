@@ -36,11 +36,11 @@ pub async fn run_step(
     mut on_stderr_line: impl FnMut(&str),
     mut on_stdout_line: impl FnMut(&str),
 ) -> Result<(), Failure> {
-    let failed = |detail: String| Failure::StepFailed {
+    let step_failure = |detail: String| Failure::StepFailed {
         step: step.to_string(),
         detail,
     };
-    let (mut events, _) = steps.start(program, args).map_err(failed)?;
+    let (mut events, _) = steps.start(program, args).map_err(step_failure)?;
     let mut stderr_tail: VecDeque<String> = VecDeque::with_capacity(STDERR_TAIL_LINES + 1);
     while let Some(event) = events.recv().await {
         match event {
@@ -52,12 +52,12 @@ pub async fn run_step(
                 }
             }
             StepEvent::Stdout(line) => on_stdout_line(&line),
-            StepEvent::Error(error) => return Err(failed(error)),
+            StepEvent::Error(error) => return Err(step_failure(error)),
             StepEvent::Exit(Some(0)) => return Ok(()),
-            StepEvent::Exit(_) => return Err(failed(Vec::from(stderr_tail).join("\n"))),
+            StepEvent::Exit(_) => return Err(step_failure(Vec::from(stderr_tail).join("\n"))),
         }
     }
-    Err(failed(
+    Err(step_failure(
         "the process ended without an exit status".to_string(),
     ))
 }

@@ -27,7 +27,7 @@ describe("ReplacementController", () => {
     await settle();
   }
 
-  const translated = projectOf({
+  const translatedProject = projectOf({
     translation_language: "en",
     shown_translation: "en",
     segments: [
@@ -115,7 +115,7 @@ describe("ReplacementController", () => {
 
   // @behavior ED-087
   it("opens by shortcut to find the text the Cursor selects", async () => {
-    await hold(translated);
+    await hold(translatedProject);
     const text = selectText(2, 3);
 
     press({ key: "h", code: "KeyH", ctrlKey: true }, text);
@@ -132,7 +132,7 @@ describe("ReplacementController", () => {
     Object.assign(window, {
       __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
     });
-    await hold(translated);
+    await hold(translatedProject);
 
     press({ key: "h", code: "KeyH", ctrlKey: true });
     await settle();
@@ -148,7 +148,7 @@ describe("ReplacementController", () => {
 
   // @behavior ED-088
   it("replaces with Enter and says how many were replaced", async () => {
-    await hold(translated);
+    await hold(translatedProject);
     count = 2;
     press({ key: "h", code: "KeyH", ctrlKey: true });
     target<HTMLInputElement>("pattern").value = "，";
@@ -178,7 +178,7 @@ describe("ReplacementController", () => {
 
   // @behavior ED-089
   it("stays open when nothing matches", async () => {
-    await hold(translated);
+    await hold(translatedProject);
     count = 0;
     press({ key: "h", code: "KeyH", ctrlKey: true });
     target<HTMLInputElement>("pattern").value = "。";
@@ -192,7 +192,7 @@ describe("ReplacementController", () => {
   });
 
   it("replaces only in the original while no translation is shown", async () => {
-    await hold(projectOf({ segments: translated.segments }));
+    await hold(projectOf({ segments: translatedProject.segments }));
     document.querySelector<HTMLInputElement>('[value="translation"]')!.checked =
       true;
 

@@ -110,15 +110,20 @@ describe("FieldController", () => {
 
   // @behavior ED-074
   it("moves to the next Segment's text with Enter", async () => {
-    const typed = vi.fn(() => true);
-    document.execCommand = typed;
+    const execCommand = vi.fn(() => true);
+    document.execCommand = execCommand;
     field().focus();
     field().textContent = "大家好啊";
 
     const taken = isEnterTaken({ code: "NumpadEnter" });
     await settle();
 
-    expect([taken, typed.mock.calls, document.activeElement, edits]).toEqual([
+    expect([
+      taken,
+      execCommand.mock.calls,
+      document.activeElement,
+      edits,
+    ]).toEqual([
       true,
       [],
       fieldAt(1),
@@ -142,13 +147,13 @@ describe("FieldController", () => {
 
   // @behavior ED-076
   it("types a line break with Shift+Enter", async () => {
-    const typed = vi.fn(() => true);
-    document.execCommand = typed;
+    const execCommand = vi.fn(() => true);
+    document.execCommand = execCommand;
     field().focus();
 
     const taken = isEnterTaken({ shiftKey: true });
 
-    expect([taken, typed.mock.calls, document.activeElement]).toEqual([
+    expect([taken, execCommand.mock.calls, document.activeElement]).toEqual([
       true,
       [["insertLineBreak"]],
       field(),

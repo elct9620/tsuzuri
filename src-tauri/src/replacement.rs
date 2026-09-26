@@ -49,12 +49,12 @@ impl<'a> Replacer<'a> {
             return None;
         }
         let substitute = self.replacement.substitute.as_str();
-        let replaced = if self.replacement.is_regex {
+        let replaced_text = if self.replacement.is_regex {
             self.matcher.replace_all(text, substitute)
         } else {
             self.matcher.replace_all(text, NoExpand(substitute))
         };
-        Some((replaced.into_owned(), count))
+        Some((replaced_text.into_owned(), count))
     }
 }
 

@@ -185,8 +185,8 @@ impl Project {
     fn reload(&mut self, resources: Vec<Resource>) -> Result<bool, Failure> {
         let (current, is_kept) = match &self.current {
             Some(current) => {
-                let shown = (current.name.clone(), current.translation);
-                (Some(shown), self.back_up_changed_elsewhere()?)
+                let shown_resource = (current.name.clone(), current.translation);
+                (Some(shown_resource), self.back_up_changed_elsewhere()?)
             }
             None => (None, false),
         };
@@ -3375,8 +3375,8 @@ mod tests {
         let (source, _hold) = current
             .hold_for_translation(Language::English, None)
             .unwrap();
-        let changed = two_cues("外面改的", "World");
-        std::fs::write(dir.path().join("ep01.en.srt"), &changed).unwrap();
+        let srt_changed_elsewhere = two_cues("外面改的", "World");
+        std::fs::write(dir.path().join("ep01.en.srt"), &srt_changed_elsewhere).unwrap();
 
         current
             .write_translations(
@@ -3390,7 +3390,7 @@ mod tests {
             (file_text(&dir, "ep01.en.srt"), kept_overwrites(&dir)),
             (
                 two_cues("Hi", "World"),
-                vec![two_cues("Hello", "World"), changed]
+                vec![two_cues("Hello", "World"), srt_changed_elsewhere]
             )
         );
     }

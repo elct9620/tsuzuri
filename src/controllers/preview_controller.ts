@@ -133,11 +133,11 @@ export default class PreviewController extends Controller {
    * the controller's element, where Stimulus no longer finds them as targets or binds their actions.
    */
   private screen!: HTMLElement;
-  /** The row the video sits in beside the card, and comes back to. */
-  private screenRow!: HTMLElement;
   private player!: HTMLVideoElement;
   private captionBox!: HTMLElement;
   private unplayableHint!: HTMLElement;
+  /** The row the video sits in beside the card, and comes back to. */
+  private screenRow!: HTMLElement;
   /** The window the video is in while it is out of the Preview. */
   private videoWindow: Window | null = null;
   private readonly playerListeners: [string, () => void][] = [
@@ -354,16 +354,16 @@ export default class PreviewController extends Controller {
   private caption({ speaker, text, translation }: Segment): string {
     const language = this.hasTranslation ? this.captionLanguage : "original";
     const name = this.isSpeakerShown ? speaker : undefined;
-    const original = withSpeakerLabel(text, name);
-    const translated = withSpeakerLabel(
+    const originalLine = withSpeakerLabel(text, name);
+    const translatedLine = withSpeakerLabel(
       translation ?? "",
       name && (this.speakerNames[name] ?? name),
     );
-    if (language === "translation") return translated;
-    if (language === "original" || !translation) return original;
+    if (language === "translation") return translatedLine;
+    if (language === "original" || !translation) return originalLine;
     return this.bilingualOrder === "translation-first"
-      ? `${translated}\n${original}`
-      : `${original}\n${translated}`;
+      ? `${translatedLine}\n${originalLine}`
+      : `${originalLine}\n${translatedLine}`;
   }
 
   /** Offers the translation only while one is shown, keeping the choice for when one is again. */

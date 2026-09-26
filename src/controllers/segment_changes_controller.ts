@@ -202,8 +202,8 @@ export default class SegmentChangesController extends Controller {
 
   /** The Checked Segments, or else the Current Segment, or none. */
   private get indexesToDelete(): number[] {
-    const checked = this.session.checkedIndexes;
-    if (checked.length > 0) return checked;
+    const checkedIndexes = this.session.checkedIndexes;
+    if (checkedIndexes.length > 0) return checkedIndexes;
     const current = this.session.cursor.index;
     return current === null ? [] : [current];
   }

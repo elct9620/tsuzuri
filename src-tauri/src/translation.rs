@@ -503,7 +503,7 @@ mod tests {
 
     use super::*;
     use crate::processes::{AppPorts, Processes};
-    use crate::project::SegmentField;
+    use crate::project::{Project, SegmentField};
     use crate::steps::ModeLock;
     use crate::test_support::Response;
     use crate::test_support::{project_of, TempDir};
@@ -1743,10 +1743,15 @@ mod tests {
     async fn translates_the_project_as_edited() {
         let llama = FakeLlama::with_echo(0);
         let dir = TempDir::new("tl-edited");
+        std::fs::write(
+            dir.path().join("lecture.srt"),
+            "1\n00:00:00,000 --> 00:00:01,000\n竹子搞\n",
+        )
+        .unwrap();
         let project = CurrentProject::default();
-        let mut edited = project_of(vec![segment(0, 1_000, "竹子搞")]);
-        edited.directory = dir.path().to_path_buf();
-        project.replace(edited);
+        project.replace(
+            Project::open(dir.path().to_path_buf(), Language::TraditionalChinese).unwrap(),
+        );
         project
             .edit(0, SegmentField::Text, "逐字稿".to_string())
             .unwrap();

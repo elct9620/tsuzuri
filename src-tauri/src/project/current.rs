@@ -193,6 +193,18 @@ impl Project {
         }
     }
 
+    /// Reads the Current Resource's Transcript from its files, with the same translation shown,
+    /// so a change starts from what they hold rather than from what was last shown.
+    fn read_current_transcript(&mut self) -> Result<(), Failure> {
+        let current = self.current()?;
+        let translation = current.translation;
+        let transcript = self
+            .resource(&current.name)?
+            .transcript(translation, &self.speaker_names(translation))?;
+        self.current_mut()?.transcript = transcript;
+        Ok(())
+    }
+
     /// Refuses a change when a subtitle of the Current Resource was changed elsewhere since
     /// Tsuzuri last read or wrote it, reading it again instead so that change is kept.
     fn refuse_changed_elsewhere(&mut self) -> Result<(), Failure> {
@@ -374,6 +386,7 @@ impl Project {
     /// Makes `change` to the Current Resource's original and to each of its translations, since a
     /// translation is matched to its original by time, and writes them all back.
     fn change_segments(&mut self, change: SegmentChange) -> Result<(), Failure> {
+        self.read_current_transcript()?;
         let current = self.current()?;
         let (name, translation) = (current.name.clone(), current.translation);
         let mut original = current.transcript.clone();
@@ -1206,6 +1219,7 @@ impl CurrentProject {
         self.change_unless_held(is_written, |project| {
             project.refuse_changed_elsewhere()?;
             project.make_undoable_change(|project| {
+                project.read_current_transcript()?;
                 let previous = project.current()?.transcript.clone();
                 let segment = project
                     .current_mut()?
@@ -1233,6 +1247,7 @@ impl CurrentProject {
             |project| {
                 project.refuse_changed_elsewhere()?;
                 project.make_undoable_change(|project| {
+                    project.read_current_transcript()?;
                     let previous = project.current()?.transcript.clone();
                     let segments = &mut project.current_mut()?.transcript.segments;
                     if let Some(index) = indexes.iter().find(|index| **index >= segments.len()) {
@@ -3701,6 +3716,32 @@ mod tests {
         {
             let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
             current.show_translations(&source, &[]);
+        }
+
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+
+        assert_eq!(file_text(&dir, "ep01.en.srt"), two_cues("Hi", "World"));
+    }
+
+    #[test]
+    fn starts_an_edit_from_what_the_files_hold_rather_than_what_was_shown() {
+        let dir = directory_of(
+            "pj-edit-from-files",
+            &[
+                ("ep01.srt", &two_cues("你好", "世界")),
+                ("ep01.en.srt", &two_cues("Hello", "World")),
+            ],
+        );
+        let current = project_in(&dir);
+        if let Some(shown) = current
+            .lock()
+            .project
+            .as_mut()
+            .and_then(|project| project.current.as_mut())
+        {
+            shown.transcript.segments[1].translation = None;
         }
 
         current

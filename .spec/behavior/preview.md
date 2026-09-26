@@ -139,6 +139,16 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | When | it plays to 1.5 s |
 | Then | nothing is shown over the video |
 
+## `PV-088` Showing the Segment over the video as soon as the media reaches it
+
+A player reports its time only a few times a second, so while the media plays what is shown over the video follows each frame drawn, and a caption comes with its words rather than up to a quarter second after.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` from 0 to 1 s and `今天` from 1 to 2 s, its media playing |
+| When | the next frame is drawn at 1.05 s, before the player reports its time |
+| Then | `今天` is shown over the video |
+
 ## `PV-017` Drawing the Waveform of the Current Resource's media
 
 | Step | Statement |

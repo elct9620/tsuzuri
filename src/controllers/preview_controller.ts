@@ -35,6 +35,11 @@ function captionBackdropOf(value: string | null): CaptionBackdrop {
   return value === "none" || value === "opaque" ? value : "translucent";
 }
 
+/** Puts `text` in `element` only when it changes, since the Preview follows the media each frame it plays. */
+function showText(element: HTMLElement, text: string): void {
+  if (element.textContent !== text) element.textContent = text;
+}
+
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
 export default class PreviewController extends Controller {
   static targets = [
@@ -92,6 +97,8 @@ export default class PreviewController extends Controller {
   private captionBackdrop = captionBackdropOf(rememberedChoice(BACKDROP_KEY));
   private isFolded = rememberedChoice(FOLDED_KEY) === "true";
   private unfollow?: () => void;
+  /** The request for the next frame the Preview follows the media on, while it plays. */
+  private frameRequest: number | null = null;
 
   connect(): void {
     this.showCaptionBackdrop();
@@ -100,6 +107,7 @@ export default class PreviewController extends Controller {
 
   disconnect(): void {
     this.unfollow?.();
+    this.stopFollowingFrames();
   }
 
   /** Shows the Current Segment in the card beside the video. */
@@ -142,7 +150,10 @@ export default class PreviewController extends Controller {
   showTime(): void {
     const { currentTime, duration } = this.mediaTarget;
     const length = Number.isFinite(duration) ? duration : 0;
-    this.timeTarget.textContent = `${formatClock(currentTime * 1000)} / ${formatClock(length * 1000)}`;
+    showText(
+      this.timeTarget,
+      `${formatClock(currentTime * 1000)} / ${formatClock(length * 1000)}`,
+    );
   }
 
   follow(): void {
@@ -155,10 +166,12 @@ export default class PreviewController extends Controller {
 
   showPlaying(): void {
     this.playbackIconTarget.classList.add("swap-active");
+    this.followFrames();
   }
 
   showPaused(): void {
     this.playbackIconTarget.classList.remove("swap-active");
+    this.stopFollowingFrames();
     this.markPlaying(null);
   }
 
@@ -167,6 +180,26 @@ export default class PreviewController extends Controller {
     this.mediaTarget.hidden = true;
     this.hintTarget.hidden = false;
     this.captionChoiceTarget.hidden = true;
+  }
+
+  /**
+   * A player reports its time only a few times a second, so while it plays the Preview follows
+   * each frame drawn, and a caption comes with its words.
+   */
+  private followFrames(): void {
+    if (this.frameRequest !== null) return;
+    const onFrame = () => {
+      this.follow();
+      this.frameRequest = this.mediaTarget.paused
+        ? null
+        : requestAnimationFrame(onFrame);
+    };
+    this.frameRequest = requestAnimationFrame(onFrame);
+  }
+
+  private stopFollowingFrames(): void {
+    if (this.frameRequest !== null) cancelAnimationFrame(this.frameRequest);
+    this.frameRequest = null;
   }
 
   /** The index of the Segment at the media's time, or -1 between Segments. */
@@ -179,7 +212,7 @@ export default class PreviewController extends Controller {
 
   private showCaption(index: number): void {
     const segment = this.segments[index];
-    this.captionTarget.textContent = segment ? this.caption(segment) : "";
+    showText(this.captionTarget, segment ? this.caption(segment) : "");
   }
 
   /** The text over the video, laid out as a Bilingual SRT cue lays out both languages. */

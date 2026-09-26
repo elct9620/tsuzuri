@@ -1416,6 +1416,7 @@ impl CurrentProject {
         self.change_unless_held(
             |_, written, _| Some(written) == language,
             |project| {
+                project.refuse_changed_elsewhere()?;
                 project.make_undoable_change(|project| project.restore_version(language, backup))
             },
         )
@@ -1443,6 +1444,7 @@ impl CurrentProject {
         self.change_unless_held(
             |_, written, _| Some(written) == language,
             |project| {
+                project.refuse_changed_elsewhere()?;
                 project
                     .make_undoable_change(|project| project.revert_row(language, backup, row, part))
             },
@@ -1450,11 +1452,23 @@ impl CurrentProject {
     }
 
     pub fn undo(&self) -> Result<(), Failure> {
-        self.change_unless_held(|_, _, _| true, Project::undo)
+        self.change_unless_held(
+            |_, _, _| true,
+            |project| {
+                project.refuse_changed_elsewhere()?;
+                project.undo()
+            },
+        )
     }
 
     pub fn redo(&self) -> Result<(), Failure> {
-        self.change_unless_held(|_, _, _| true, Project::redo)
+        self.change_unless_held(
+            |_, _, _| true,
+            |project| {
+                project.refuse_changed_elsewhere()?;
+                project.redo()
+            },
+        )
     }
 
     pub fn change_segments(&self, change: SegmentChange) -> Result<(), Failure> {
@@ -2760,6 +2774,26 @@ mod tests {
         );
     }
 
+    // @behavior VR-050
+    #[test]
+    fn refuses_a_restore_over_a_subtitle_changed_elsewhere() {
+        let dir = directory_of("vr-restore-elsewhere", &[("ep01.srt", &cue("新的"))]);
+        write_backup(&dir, "ep01.20260925T023000Z.srt", &cue("舊的"));
+        let current = project_in(&dir);
+        std::fs::write(dir.path().join("ep01.srt"), cue("外面改的")).unwrap();
+
+        let result = current.restore_version(None, "ep01.20260925T023000Z.srt");
+
+        assert_eq!(
+            (result, read(&dir, "ep01.srt"), texts(&current)),
+            (
+                Err(Failure::ChangedElsewhere),
+                cue("外面改的"),
+                vec!["外面改的".to_string()]
+            )
+        );
+    }
+
     // @behavior VR-005
     #[test]
     fn keeps_the_subtitle_a_restore_replaces() {
@@ -3794,6 +3828,26 @@ mod tests {
         current.reload_if_changed().unwrap();
 
         assert!(!current.view().unwrap().has_undo());
+    }
+
+    // @behavior UD-018
+    #[test]
+    fn refuses_an_undo_over_a_subtitle_changed_elsewhere() {
+        let dir = directory_of("ud-elsewhere", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        edit_text(&current, "您好");
+        std::fs::write(dir.path().join("ep01.srt"), cue("外面改的")).unwrap();
+
+        let result = current.undo();
+
+        assert_eq!(
+            (
+                result,
+                file_text(&dir, "ep01.srt"),
+                current.view().unwrap().has_undo()
+            ),
+            (Err(Failure::ChangedElsewhere), cue("外面改的"), false)
+        );
     }
 
     // @behavior UD-011

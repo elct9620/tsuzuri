@@ -89,6 +89,14 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 | When | the Backup is restored |
 | Then | `ep01.srt` and the editor read `舊的` |
 
+## `VR-050` Refusing a restore over a subtitle changed elsewhere
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose `ep01.srt` read `新的` and was changed elsewhere to `外面改的`, and a Backup of it reading `舊的` |
+| When | the Backup is restored |
+| Then | it is refused as `changed-elsewhere`, and `ep01.srt` and the editor read `外面改的` |
+
 ## `VR-005` Keeping the subtitle a restore replaces
 
 | Step | Statement |

@@ -88,6 +88,16 @@ Taking back the changes Tsuzuri made to the Current Resource's subtitles, and ma
 | When | the Current Resource is asked what it can undo |
 | Then | it has nothing to undo |
 
+## `UD-018` Refusing an undo over a subtitle changed elsewhere
+
+An undo puts back what Tsuzuri kept, so over a change made elsewhere it would drop that change unkept; it reads the subtitle again instead, as an edit does.
+
+| Step | Statement |
+| --- | --- |
+| Given | an edit of `ep01.srt` from `你好` to `您好`, then `ep01.srt` changed elsewhere to `外面改的` |
+| When | the change is undone |
+| Then | it is refused as `changed-elsewhere`, `ep01.srt` reads `外面改的`, and nothing is left to undo |
+
 ## `UD-011` Undoing without a Backup
 
 | Step | Statement |

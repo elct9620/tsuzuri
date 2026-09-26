@@ -76,7 +76,7 @@ describe("PreviewController", () => {
           <p data-preview-target="caption"></p>
           <div data-preview-target="hint" hidden></div>
         </div>
-        <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playback"></span></button>
+        <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playbackIcon"></span></button>
         <span data-preview-target="time"></span>
         <div data-preview-target="captionChoice">
           <input type="radio" name="caption" value="original" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">

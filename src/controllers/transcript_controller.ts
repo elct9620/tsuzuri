@@ -26,7 +26,7 @@ import {
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
-import { preference, savePreference } from "../ui/preferences";
+import { rememberChoice, rememberedChoice } from "../ui/choices";
 import type { TaskKind } from "../ui/progress";
 import { formatTime } from "../ui/time";
 
@@ -222,7 +222,7 @@ export default class TranscriptController extends Controller {
     "exportButton",
     "heading",
     "translationLanguage",
-    "followingButton",
+    "followButton",
   ];
 
   declare readonly listTarget: HTMLOListElement;
@@ -234,8 +234,8 @@ export default class TranscriptController extends Controller {
   /** Each export, enabled once the Project has the text it writes. */
   declare readonly exportButtonTargets: HTMLButtonElement[];
   /** Whether the editor scrolls to the row being played, pressed to turn it on or off. */
-  declare readonly followingButtonTarget: HTMLButtonElement;
-  declare readonly hasFollowingButtonTarget: boolean;
+  declare readonly followButtonTarget: HTMLButtonElement;
+  declare readonly hasFollowButtonTarget: boolean;
 
   declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
@@ -247,8 +247,8 @@ export default class TranscriptController extends Controller {
   private project: ProjectView | null = null;
   /** The position of the Segment the Preview is playing. */
   private playingIndex: number | null = null;
-  /** Whether the row being played is scrolled into view; the user turns it off to work elsewhere while it plays. */
-  private isFollowing = preference(FOLLOWING_KEY) !== "false";
+  /** Whether the row being played is scrolled into view; turned off, the list stays where the user left it. */
+  private isFollowing = rememberedChoice(FOLLOWING_KEY) !== "false";
 
   connect(): void {
     this.showFollowing();
@@ -311,7 +311,7 @@ export default class TranscriptController extends Controller {
   /** Turns following playback on or off, catching up with the row being played as it comes on. */
   toggleFollowing(): void {
     this.isFollowing = !this.isFollowing;
-    savePreference(FOLLOWING_KEY, String(this.isFollowing));
+    rememberChoice(FOLLOWING_KEY, String(this.isFollowing));
     this.showFollowing();
     this.scrollToPlaying();
   }
@@ -322,12 +322,9 @@ export default class TranscriptController extends Controller {
   }
 
   private showFollowing(): void {
-    if (!this.hasFollowingButtonTarget) return;
-    this.followingButtonTarget.setAttribute(
-      "aria-pressed",
-      `${this.isFollowing}`,
-    );
-    this.followingButtonTarget.classList.toggle("btn-active", this.isFollowing);
+    if (!this.hasFollowButtonTarget) return;
+    this.followButtonTarget.setAttribute("aria-pressed", `${this.isFollowing}`);
+    this.followButtonTarget.classList.toggle("btn-active", this.isFollowing);
   }
 
   private drawCursor(): void {

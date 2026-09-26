@@ -69,9 +69,9 @@ describe("Current Segment", () => {
     media().dispatchEvent(new Event("timeupdate"));
   }
 
-  const following = () =>
+  const followButton = () =>
     document.querySelector<HTMLButtonElement>(
-      '[data-transcript-target="followingButton"]',
+      '[data-transcript-target="followButton"]',
     )!;
 
   /** The rows scrolled into view since `watchScrolls` began watching. */
@@ -125,8 +125,8 @@ describe("Current Segment", () => {
             <p data-preview-target="caption"></p>
             <div data-preview-target="hint" hidden></div>
           </div>
-          <span data-preview-target="playback"></span>
-          <button data-transcript-target="followingButton" data-action="transcript#toggleFollowing"></button>
+          <span data-preview-target="playbackIcon"></span>
+          <button data-transcript-target="followButton" data-action="transcript#toggleFollowing"></button>
           <span data-preview-target="time"></span>
           <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"></div>
           <p data-preview-target="currentHint"></p>
@@ -144,7 +144,6 @@ describe("Current Segment", () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
     application.stop();
     clearMocks();
     vi.restoreAllMocks();
@@ -375,7 +374,7 @@ describe("Current Segment", () => {
   // @behavior PV-081
   it("marks the row being played without scrolling to it while not following playback", async () => {
     await show(twoSegments);
-    following().click();
+    followButton().click();
     await media().play();
     watchScrolls();
 
@@ -390,16 +389,16 @@ describe("Current Segment", () => {
   // @behavior PV-082
   it("turns following playback off with Ctrl+L, leaving the focus in the field", async () => {
     await show(twoSegments);
-    await media().play();
     const field = rows()[1].querySelector<HTMLElement>(".field")!;
     field.focus();
+    await media().play();
 
     field.dispatchEvent(
       new KeyboardEvent("keydown", { key: "l", ctrlKey: true, bubbles: true }),
     );
 
     expect([
-      following().getAttribute("aria-pressed"),
+      followButton().getAttribute("aria-pressed"),
       document.activeElement,
     ]).toEqual(["false", field]);
   });
@@ -407,12 +406,12 @@ describe("Current Segment", () => {
   // @behavior PV-083
   it("scrolls to the row being played as following playback is turned on", async () => {
     await show(twoSegments);
-    following().click();
+    followButton().click();
     await media().play();
     playTo(1.5);
     watchScrolls();
 
-    following().click();
+    followButton().click();
 
     expect(scrolled()).toEqual([rows()[1]]);
   });
@@ -420,12 +419,12 @@ describe("Current Segment", () => {
   // @behavior PV-084
   it("keeps following playback off for the next Resource", async () => {
     await show(twoSegments);
-    following().click();
+    followButton().click();
     application.stop();
     await startApplication();
 
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
-    expect(following().classList.contains("btn-active")).toBe(false);
+    expect(followButton().classList.contains("btn-active")).toBe(false);
   });
 });

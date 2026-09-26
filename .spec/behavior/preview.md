@@ -662,7 +662,7 @@ A time typed into a Segment is found on the waveform first, so the timeline tell
 
 ### Following playback in the editor
 
-The editor scrolls to the row being played, unless the user turns that off to read or correct another Segment while the media plays, as Subtitle Edit's "Select current subtitle while playing" can be. Only the scrolling stops; the row is still marked.
+The editor scrolls to the row being played, unless the user turns that off to look through other Segments, or to keep correcting the Current Segment while the media plays on past it, as Subtitle Edit's "Select current subtitle while playing" can be. Only the scrolling stops; the row is still marked.
 
 ## `PV-080` Bringing the row being played into view
 
@@ -684,7 +684,7 @@ The editor scrolls to the row being played, unless the user turns that off to re
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource whose media is playing, with the Cursor in a Segment's text field |
+| Given | a Current Resource whose media is playing, with the Cursor in the Current Segment's text field |
 | When | Ctrl+L is pressed |
 | Then | following playback is turned off, and the field keeps the focus |
 

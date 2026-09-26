@@ -8,7 +8,7 @@ import type {
   Segment,
 } from "../backend/project";
 import type { EditingSession } from "../editor";
-import { preference, savePreference } from "../ui/preferences";
+import { rememberChoice, rememberedChoice } from "../ui/choices";
 import { formatClock, formatTime } from "../ui/time";
 
 /** Where the webview remembers the Preview folded away. */
@@ -48,7 +48,7 @@ export default class PreviewController extends Controller {
     "captionLanguage",
     "captionBackdrop",
     "hint",
-    "playback",
+    "playbackIcon",
     "time",
     "currentHint",
     "currentCard",
@@ -72,7 +72,7 @@ export default class PreviewController extends Controller {
   declare readonly captionLanguageTargets: HTMLInputElement[];
   declare readonly captionBackdropTargets: HTMLInputElement[];
   declare readonly hintTarget: HTMLElement;
-  declare readonly playbackTarget: HTMLElement;
+  declare readonly playbackIconTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
   /** Asks for a Segment to be clicked while none is current. */
   declare readonly currentHintTarget: HTMLElement;
@@ -88,9 +88,9 @@ export default class PreviewController extends Controller {
   private playingIndex: number | null = null;
   private hasTranslation = false;
   private bilingualOrder: ProjectOptions["bilingual_order"] = "original-first";
-  private captionLanguage = captionLanguageOf(preference(CAPTION_KEY));
-  private captionBackdrop = captionBackdropOf(preference(BACKDROP_KEY));
-  private isFolded = preference(FOLDED_KEY) === "true";
+  private captionLanguage = captionLanguageOf(rememberedChoice(CAPTION_KEY));
+  private captionBackdrop = captionBackdropOf(rememberedChoice(BACKDROP_KEY));
+  private isFolded = rememberedChoice(FOLDED_KEY) === "true";
   private unfollow?: () => void;
 
   connect(): void {
@@ -109,21 +109,21 @@ export default class PreviewController extends Controller {
 
   toggleFold(): void {
     this.isFolded = !this.isFolded;
-    savePreference(FOLDED_KEY, String(this.isFolded));
+    rememberChoice(FOLDED_KEY, String(this.isFolded));
     this.showPanel();
   }
 
   chooseCaptionLanguage({ target }: Event): void {
     this.captionLanguage = (target as HTMLInputElement)
       .value as CaptionLanguage;
-    savePreference(CAPTION_KEY, this.captionLanguage);
+    rememberChoice(CAPTION_KEY, this.captionLanguage);
     this.showCaption(this.segmentIndexAtTime());
   }
 
   chooseCaptionBackdrop({ target }: Event): void {
     this.captionBackdrop = (target as HTMLInputElement)
       .value as CaptionBackdrop;
-    savePreference(BACKDROP_KEY, this.captionBackdrop);
+    rememberChoice(BACKDROP_KEY, this.captionBackdrop);
     this.showCaptionBackdrop();
   }
 
@@ -154,11 +154,11 @@ export default class PreviewController extends Controller {
   }
 
   showPlaying(): void {
-    this.playbackTarget.classList.add("swap-active");
+    this.playbackIconTarget.classList.add("swap-active");
   }
 
   showPaused(): void {
-    this.playbackTarget.classList.remove("swap-active");
+    this.playbackIconTarget.classList.remove("swap-active");
     this.markPlaying(null);
   }
 

@@ -4,7 +4,7 @@
  */
 
 /** The choice kept under `key`, or null when none was ever made here. */
-export function preference(key: string): string | null {
+export function rememberedChoice(key: string): string | null {
   try {
     return localStorage.getItem(key);
   } catch {
@@ -12,7 +12,7 @@ export function preference(key: string): string | null {
   }
 }
 
-export function savePreference(key: string, value: string): void {
+export function rememberChoice(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
   } catch {

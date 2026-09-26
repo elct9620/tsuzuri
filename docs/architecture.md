@@ -486,7 +486,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
 | `ui/models.ts` | 各 Model Slot 的副檔名 |
-| `ui/preferences.ts` | 記在這台電腦的畫面選擇 |
+| `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 

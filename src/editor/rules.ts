@@ -1,6 +1,6 @@
 /** The rules an edit follows, apart from any screen. */
 
-import type { TranscriptView } from "./segment";
+import type { SegmentChange, TranscriptView } from "./segment";
 
 /** Whether `indexes`, in order, stand next to each other, as a merge needs. */
 export function isRun(indexes: number[]): boolean {
@@ -33,4 +33,24 @@ export function isHeld(
 /** Where a split cuts `text` at `at` characters, or none when one side would be left empty. */
 export function splitPoint(text: string, at: number): number | null {
   return at > 0 && at < [...text].length ? at : null;
+}
+
+/** How many Segments `count` of them become once `change` is made. */
+export function segmentCountAfter(
+  change: SegmentChange,
+  count: number,
+): number {
+  switch (change.kind) {
+    case "split":
+    case "insertion":
+    case "insertion-before":
+    case "insertion-after":
+      return count + 1;
+    case "deletion":
+      return count - 1;
+    case "merge":
+      return count - (change.last - change.first);
+    default:
+      return count;
+  }
 }

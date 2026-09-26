@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { isHeld, isRun, splitPoint } from "./rules";
+import { isHeld, isRun, segmentCountAfter, splitPoint } from "./rules";
 import type { TranscriptView } from "./segment";
 
 const view = (changes: Partial<TranscriptView>): TranscriptView => ({
@@ -43,5 +43,14 @@ describe("rules", () => {
       splitPoint("你好世界", 2),
       splitPoint("你好世界", 4),
     ]).toEqual([null, 2, null]);
+  });
+
+  it("counts the Segments a change leaves", () => {
+    expect([
+      segmentCountAfter({ kind: "split", index: 0, at: 2 }, 3),
+      segmentCountAfter({ kind: "deletion", index: 0 }, 3),
+      segmentCountAfter({ kind: "merge", first: 0, last: 2 }, 3),
+      segmentCountAfter({ kind: "times", index: 0, start_ms: 0, end_ms: 1 }, 3),
+    ]).toEqual([4, 2, 1, 3]);
   });
 });

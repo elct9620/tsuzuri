@@ -1,13 +1,13 @@
 import { Controller } from "@hotwired/stimulus";
 import { convertFileSrc } from "@tauri-apps/api/core";
 
-import {
-  followProject,
-  type ProjectOptions,
-  type ProjectView,
-  type Segment,
-  type UnlistenFn,
+import type {
+  ProjectFeed,
+  ProjectOptions,
+  ProjectView,
+  Segment,
 } from "../backend/project";
+import type { EditingSession } from "../editor";
 import { formatClock, formatTime } from "../ui/time";
 
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
@@ -76,6 +76,8 @@ export default class PreviewController extends Controller {
     "currentTranslation",
   ];
 
+  declare readonly feed: ProjectFeed;
+  declare readonly session: EditingSession;
   declare readonly panelTarget: HTMLElement;
   /** Hides or shows the panel; only a Resource with media has one to fold. */
   declare readonly foldTarget: HTMLButtonElement;
@@ -101,23 +103,22 @@ export default class PreviewController extends Controller {
   private media: string | null = null;
   private segments: Segment[] = [];
   private playingIndex: number | null = null;
-  private currentIndex: number | null = null;
   private hasTranslation = false;
   private bilingualOrder: ProjectOptions["bilingual_order"] = "original-first";
   private captionLanguage = readCaptionLanguage();
   private isFolded = readFolded();
-  private unlisten?: UnlistenFn;
+  private unfollow?: () => void;
 
-  async connect(): Promise<void> {
-    this.unlisten = await followProject((project) => this.show(project));
+  connect(): void {
+    this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
   disconnect(): void {
-    this.unlisten?.();
+    this.unfollow?.();
   }
 
-  showCurrent({ detail }: CustomEvent<{ index: number }>): void {
-    this.currentIndex = detail.index;
+  /** Shows the Current Segment in the card beside the video. */
+  showCursor(): void {
     this.showCurrentSegment();
   }
 
@@ -209,12 +210,12 @@ export default class PreviewController extends Controller {
   }
 
   private showCurrentSegment(): void {
-    const segment =
-      this.currentIndex === null ? undefined : this.segments[this.currentIndex];
+    const index = this.session.cursor.index;
+    const segment = index === null ? undefined : this.segments[index];
     this.currentEmptyTarget.hidden = segment !== undefined;
     this.currentTarget.hidden = segment === undefined;
     if (!segment) return;
-    this.currentNumberTarget.textContent = `#${this.currentIndex! + 1}`;
+    this.currentNumberTarget.textContent = `#${index! + 1}`;
     this.currentTimesTarget.textContent = `${formatTime(segment.start_ms)} → ${formatTime(segment.end_ms)}`;
     this.currentTextTarget.textContent = segment.text;
     this.currentTranslationTarget.textContent = segment.translation ?? "";
@@ -241,7 +242,6 @@ export default class PreviewController extends Controller {
     this.bilingualOrder = project?.options.bilingual_order ?? "original-first";
     this.showCaptionChoice();
     const media = project?.media ?? null;
-    if (media !== this.media) this.currentIndex = null;
     this.showCurrentSegment();
     if (media === this.media) {
       this.showCaption(this.segmentIndexAtTime());

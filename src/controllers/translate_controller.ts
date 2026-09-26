@@ -2,9 +2,8 @@ import { Controller } from "@hotwired/stimulus";
 
 import {
   currentResource,
-  followProject,
   type ProjectView,
-  type UnlistenFn,
+  type ProjectFeed,
 } from "../backend/project";
 import { translate } from "../backend/translation";
 import { t } from "../i18n";
@@ -28,15 +27,17 @@ export default class TranslateController extends Controller {
   declare readonly progressOutlet: ProgressController;
   declare readonly translationOptionsOutlet: TranslationOptionsController;
 
-  private unlisten?: UnlistenFn;
+  declare readonly feed: ProjectFeed;
+
+  private unfollow?: () => void;
   private project: ProjectView | null = null;
 
-  async connect(): Promise<void> {
-    this.unlisten = await followProject((project) => this.show(project));
+  connect(): void {
+    this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
   disconnect(): void {
-    this.unlisten?.();
+    this.unfollow?.();
   }
 
   open(): void {

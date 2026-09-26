@@ -3,6 +3,8 @@
  * text, line breaks included. It knows nothing of Stimulus or Tauri, so any controller can use it.
  */
 
+import type { TextRange } from "./cursor";
+
 const EDITABLE = "plaintext-only";
 
 /** A new field holding `value`, showing `placeholder` while it is empty. */
@@ -30,18 +32,8 @@ export function fieldValue(field: HTMLElement): string {
   return field.textContent ?? "";
 }
 
-/** Where a selection in a field starts and ends, counted in characters; a caret starts where it ends. */
-export interface FieldSelection {
-  start: number;
-  end: number;
-}
-
-/** The selection each field held when it was last left, as a textarea keeps its own. */
-const keptSelections = new WeakMap<HTMLElement, FieldSelection>();
-
-/** Replaces the field's text; a different text drops the selection it kept, as a textarea's value does. */
+/** Replaces the field's text. */
 export function setFieldValue(field: HTMLElement, value: string): void {
-  if (value !== fieldValue(field)) keptSelections.delete(field);
   field.textContent = value;
 }
 
@@ -64,40 +56,48 @@ function offsetOf(field: HTMLElement, node: Node, offset: number): number {
   return [...before.toString()].length;
 }
 
-/** The part of the document's selection within the field, or nothing when the selection is elsewhere. */
-function liveSelection(field: HTMLElement): FieldSelection | undefined {
+/** The part of the document's selection within the field, or none when the selection is elsewhere. */
+export function fieldSelection(field: HTMLElement): TextRange | null {
   const selection = document.getSelection();
-  if (!selection || selection.rangeCount === 0) return undefined;
+  if (!selection || selection.rangeCount === 0) return null;
   const range = selection.getRangeAt(0);
   if (
     !field.contains(range.startContainer) ||
     !field.contains(range.endContainer)
   )
-    return undefined;
+    return null;
   return {
     start: offsetOf(field, range.startContainer, range.startOffset),
     end: offsetOf(field, range.endContainer, range.endOffset),
   };
 }
 
-/**
- * The field's selection: the one it holds now, or else the one it held when last left, or else a
- * caret after its text. The document has one selection, which a click elsewhere moves away, so a
- * menu chosen after leaving the field still finds where the user was.
- */
-export function fieldSelection(field: HTMLElement): FieldSelection {
-  const length = [...fieldValue(field)].length;
-  return (
-    liveSelection(field) ??
-    keptSelections.get(field) ?? { start: length, end: length }
-  );
+/** Where `at` characters into the field fall in its DOM, past its end when the text is shorter. */
+function boundaryAt(field: HTMLElement, at: number): [Node, number] {
+  const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT);
+  let left = at;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const characters = [...(node.textContent ?? "")];
+    if (left <= characters.length)
+      return [node, characters.slice(0, left).join("").length];
+    left -= characters.length;
+  }
+  return [field, field.childNodes.length];
 }
 
-/** Keeps the field's selection for `fieldSelection` once the document's moves elsewhere; called as the field is left. */
-export function keepSelection(field: HTMLElement): void {
-  const selection = liveSelection(field);
-  if (selection) keptSelections.set(field, selection);
-  else keptSelections.delete(field);
+/** The DOM Range covering characters `start` to `end` of the field. */
+export function rangeOf(field: HTMLElement, { start, end }: TextRange): Range {
+  const range = document.createRange();
+  range.setStart(...boundaryAt(field, start));
+  range.setEnd(...boundaryAt(field, end));
+  return range;
+}
+
+/** Selects characters `start` to `end` of the field, as the caret or range the user would see. */
+export function placeSelection(field: HTMLElement, textRange: TextRange): void {
+  const selection = document.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(rangeOf(field, textRange));
 }
 
 /**

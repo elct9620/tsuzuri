@@ -2,9 +2,8 @@ import { Controller } from "@hotwired/stimulus";
 
 import {
   currentResource,
-  followProject,
   type ProjectView,
-  type UnlistenFn,
+  type ProjectFeed,
 } from "../backend/project";
 import { modelSettings } from "../backend/toolchain";
 import { transcribe } from "../backend/transcription";
@@ -46,17 +45,19 @@ export default class TranscribeController extends Controller {
   declare readonly translationOptionsOutlet: TranslationOptionsController;
   declare readonly translationOptionsOutletElement: HTMLElement;
 
-  private unlisten?: UnlistenFn;
+  declare readonly feed: ProjectFeed;
+
+  private unfollow?: () => void;
   private project: ProjectView | null = null;
   /** Whether the Language the translation options have chosen is already translated. */
   private isTranslationOverwriting = false;
 
-  async connect(): Promise<void> {
-    this.unlisten = await followProject((project) => this.show(project));
+  connect(): void {
+    this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
   disconnect(): void {
-    this.unlisten?.();
+    this.unfollow?.();
   }
 
   async open(): Promise<void> {

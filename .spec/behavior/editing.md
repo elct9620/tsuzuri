@@ -10,6 +10,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/speakers_controller.test.ts`
 - `src/controllers/retranslation_controller.test.ts`
 - `src/controllers/field_controller.test.ts`
+- `src/controllers/timeline_controller.test.ts`
 - `src/editor/*.test.ts`
 
 ## `ED-001` Writing an edited text to the Project

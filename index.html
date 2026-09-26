@@ -18,7 +18,7 @@
       data-controller="project transcript segment-changes dialog comparison speakers retranslation"
       data-retranslation-progress-outlet="#progress"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask timeline:current->transcript#showCurrent preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForSelection transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateSelection versions:compare-with->comparison#compareWith"
+      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith"
     >
       <section class="hero flex-1" data-project-target="start">
         <div class="hero-content flex-col text-center">
@@ -279,7 +279,7 @@
           <div
             class="contents"
             data-controller="preview timeline"
-            data-action="transcript:current@window->timeline#showCurrent transcript:current@window->preview#showCurrent timeline:current->preview#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange:!control"
+            data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor keydown.space@window->timeline#playCurrent:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange:!control"
           >
             <div
               class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
@@ -414,16 +414,16 @@
                     ></legend>
                     <label
                       class="flex items-center gap-2"
-                      data-speakers-target="selection"
+                      data-speakers-target="checked"
                     >
                       <input
                         type="radio"
                         name="speaker-scope"
-                        value="selection"
+                        value="checked"
                         class="radio radio-sm"
                         data-speakers-target="scope"
                       />
-                      <span data-speakers-target="selectionCount"></span>
+                      <span data-speakers-target="checkedCount"></span>
                     </label>
                     <label class="flex items-center gap-2">
                       <input
@@ -737,10 +737,10 @@
             ></p>
             <div
               class="mb-2 flex items-center gap-2 rounded-box bg-base-200 px-3 py-1.5 text-sm"
-              data-segment-changes-target="selection"
+              data-segment-changes-target="checked"
               hidden
             >
-              <span data-segment-changes-target="selectionCount"></span>
+              <span data-segment-changes-target="checkedCount"></span>
               <button
                 type="button"
                 class="btn btn-xs"
@@ -763,14 +763,14 @@
               <button
                 type="button"
                 class="btn btn-xs"
-                data-retranslation-target="selection"
+                data-retranslation-target="checked"
                 data-action="segment-changes#retranslate"
                 data-i18n="edit.retranslate"
               ></button>
               <button
                 type="button"
                 class="btn btn-ghost btn-xs"
-                data-action="segment-changes#clearSelection"
+                data-action="segment-changes#clearChecks"
                 data-i18n="edit.cancelSelection"
               ></button>
             </div>
@@ -809,7 +809,7 @@
               </form>
             </dialog>
             <ol
-              class="list text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
+              class="list text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
               data-transcript-target="list"
               data-comparison-target="list"
             ></ol>

@@ -73,16 +73,21 @@ describe("EditingSession", () => {
   it("writes nothing when a text is left as it was entered", async () => {
     enterFirst();
 
-    expect([await session.leave(null, "你好世界"), port.sent]).toEqual([
-      { kind: "unchanged" },
-      [],
-    ]);
+    expect([
+      await session.leave(0, "text", null, "你好世界"),
+      port.sent,
+    ]).toEqual([{ kind: "unchanged" }, []]);
   });
 
   it("writes a text left changed, and keeps the caret where it was", async () => {
     enterFirst();
 
-    const outcome = await session.leave({ start: 3, end: 3 }, "你好啊世界");
+    const outcome = await session.leave(
+      0,
+      "text",
+      { start: 3, end: 3 },
+      "你好啊世界",
+    );
 
     expect([outcome, port.sent, session.cursor.caret]).toEqual([
       { kind: "written" },
@@ -108,7 +113,7 @@ describe("EditingSession", () => {
 
   it("writes a text still being typed before splitting it", async () => {
     enterFirst();
-    session.select({ start: 3, end: 3 }, "你好啊世界");
+    session.select(0, "text", { start: 3, end: 3 }, "你好啊世界");
 
     await session.split();
 
@@ -120,7 +125,7 @@ describe("EditingSession", () => {
 
   it("moves the Cursor only once a Transcript shows the split, whichever comes first", async () => {
     enterFirst();
-    await session.leave(null, "你好世界");
+    await session.leave(0, "text", null, "你好世界");
     const split = session.split();
     session.follow(view("你好世界", "今天", "天氣"));
     const beforeShown = session.cursor.index;
@@ -137,9 +142,25 @@ describe("EditingSession", () => {
     ]);
   });
 
+  it("waits past the Transcript of a text written before a split for the one that shows the split", async () => {
+    enterFirst();
+    session.select(0, "text", { start: 3, end: 3 }, "你好啊世界");
+
+    await session.split();
+    session.follow(view("你好啊世界", "今天", "天氣"));
+    const afterEdit = session.cursor.index;
+    session.follow(view("你好啊", "世界", "今天", "天氣"));
+
+    expect([
+      afterEdit,
+      session.cursor.index,
+      session.cursor.caret?.text,
+    ]).toEqual([0, 1, "世界"]);
+  });
+
   it("keeps the Cursor where it was when a split is refused", async () => {
     enterFirst();
-    await session.leave(null, "你好世界");
+    await session.leave(0, "text", null, "你好世界");
     port.isRefusing = true;
 
     const outcome = await session.split();
@@ -180,5 +201,17 @@ describe("EditingSession", () => {
     session.follow(view("你好", "今天", "天氣"));
 
     expect(session.checkedIndexes).toEqual([0, 2]);
+  });
+
+  it("changes nothing as a field without the Cursor is left", async () => {
+    enterFirst();
+
+    const outcome = await session.leave(1, "text", null, "今天啊");
+
+    expect([outcome, session.cursor.caret?.kind, port.sent]).toEqual([
+      { kind: "unchanged" },
+      "live",
+      [],
+    ]);
   });
 });

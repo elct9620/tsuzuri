@@ -3,9 +3,10 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { assemble } from "../assembly";
 import type { GlossaryTable, ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
-import { fieldValue, isFieldHeld } from "../editor/field";
+import { fieldValue, isFieldHeld } from "../editor";
 import FieldController from "./field_controller";
 import NotificationController from "./notification_controller";
 import ProgressController from "./progress_controller";
@@ -123,11 +124,13 @@ describe("TranscriptController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.register("field", FieldController);
-    application.register("notification", NotificationController);
-    application.register("progress", ProgressController);
-    application.register("speakers", SpeakersController);
-    application.register("transcript", TranscriptController);
+    await assemble(application, {
+      field: FieldController,
+      notification: NotificationController,
+      progress: ProgressController,
+      speakers: SpeakersController,
+      transcript: TranscriptController,
+    }).start();
     await settle();
   });
 

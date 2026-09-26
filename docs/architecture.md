@@ -49,7 +49,7 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 ```
 .
 ├─ src/                   Webview（第 4 章）
-│  ├─ main.ts             組裝點（4.3）
+│  ├─ main.ts             啟動，呼叫 assembly.ts 組裝（4.3）
 │  ├─ backend/            Rust 的唯一入口
 │  ├─ controllers/        Stimulus controller 與它們的測試
 │  ├─ editor/             編輯核心，不依賴 editor/ 以外（4.5）
@@ -359,6 +359,7 @@ backend/editing.ts            閘道：唯一呼叫編輯指令的地方
 | `editor/` | DOM | `editor/` 以外的模組 |
 | `backend/` | Tauri、`editor/` 的 port | controller |
 | controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
+| `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
 | `main.ts` | 全部 | — |
 
 Controller 之間只 import outlet 的型別，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
@@ -366,21 +367,21 @@ Controller 之間只 import outlet 的型別，編輯一律經過 session。對�
 ### 4.3 組裝
 
 ```
-main.ts
-  |-- feed = followProject()          每次變更讀一次 current_project
+main.ts -> assemble(application, controllers)      assembly.ts
+  |-- feed = new ProjectFeed()        每次變更讀一次 current_project
   |-- session = new EditingSession(editingPort)
-  |-- feed -> session.follow -> 各 controller
+  |-- feed -> session.follow -> 各 controller -> session.announce
   |-- session.onChange -> window 的 editor:cursor、editor:checked
   +-- application.register(名稱, class extends X { session, feed })
 ```
 
 | 模式 | 何時用 | 範例 |
 |---|---|---|
-| Composition Root | 組裝 app 範圍物件 | `main.ts` |
+| Composition Root | 組裝 app 範圍物件 | `assembly.ts` |
 | 註冊時注入 | controller 取得依賴 | `class extends` |
-| 專案訂閱 | 分送同一份專案 | `followProject` |
+| 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
-Stimulus 自己建立 controller，所以依賴放在註冊的子類別上，測試以同樣方式換成替身。沒有 controller 自己向 Rust 讀專案。
+Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。沒有 controller 自己向 Rust 讀專案。
 
 ### 4.4 先後順序
 
@@ -404,7 +405,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上，測
 | `rules.ts` | 領域 | 合併、鎖定、分割的規則 |
 | `session.ts` | 應用 | `EditingSession` 與 port |
 | `field.ts` | DOM | 欄位內容與選取換算 |
-| `marks.ts` | DOM | 畫出 Cursor 與選單定位 |
+| `marks.ts` | DOM | 畫出 Cursor |
 | `highlight.ts` | DOM | CSS Custom Highlight |
 
 `editor/` 是能抽成獨立套件的編輯核心：Current Segment、Cursor、Checked Segments 與改動段落的用例都在這裡。用例回傳結果而不發通知，controller 再轉成介面文字。

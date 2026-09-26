@@ -12,7 +12,7 @@ import {
   type CursorField,
   type TextRange,
 } from "./cursor";
-import { splitPoint } from "./rules";
+import { segmentCountAfter, splitPoint } from "./rules";
 import type {
   Segment,
   SegmentChange,
@@ -93,14 +93,15 @@ export class EditingSession {
 
   /**
    * Takes the Transcript as the Project holds it now. A Segment Change sent is applied on the first
-   * Transcript that differs from the one it was made to; any other difference was made elsewhere.
-   * Nothing is announced, so the screen can draw the Transcript before it hears of the Cursor.
+   * Transcript that shows it: one with as many Segments as it leaves, differing from those it was
+   * made to, so a text written just before it is not taken for it. Any other difference was made
+   * elsewhere. Nothing is announced, so the screen can draw the Transcript before it hears of the Cursor.
    */
   follow(view: TranscriptView): void {
     const before = this.view;
     this.view = view;
     const pending = this.pending;
-    if (pending && !isSameSegments(pending.before, view.segments)) {
+    if (pending && this.isShown(pending, view.segments)) {
       this.pending = null;
       this.move({
         kind: "change",
@@ -130,16 +131,39 @@ export class EditingSession {
   }
 
   /** Follows the live caret as the selection in its field moves or its text is typed. */
-  select(range: TextRange, text: string): void {
-    this.act({ kind: "select", range, text });
+  select(
+    index: number,
+    field: CursorField,
+    range: TextRange,
+    text: string,
+  ): void {
+    if (this.holdsCaret(index, field))
+      this.act({ kind: "select", range, text });
   }
 
-  /** Keeps the caret as focus leaves its field, and writes the field's text if it changed. */
-  async leave(range: TextRange | null, text: string): Promise<Outcome> {
-    const { index, caret } = this.state;
-    if (index === null || caret?.kind !== "live") return { kind: "unchanged" };
+  /**
+   * Keeps the caret as focus leaves its field, and writes the field's text if it changed. A field
+   * that does not hold the Cursor, such as one drawn away after a split, changes nothing.
+   */
+  async leave(
+    index: number,
+    field: CursorField,
+    range: TextRange | null,
+    text: string,
+  ): Promise<Outcome> {
+    if (!this.holdsCaret(index, field)) return { kind: "unchanged" };
     this.act({ kind: "leave", range, text });
-    return this.writeText(index, caret.field, text);
+    return this.writeText(index, field, text);
+  }
+
+  /** Whether the live caret stands in `field` of the Segment at `index`. */
+  private holdsCaret(index: number, field: CursorField): boolean {
+    const { caret } = this.state;
+    return (
+      this.state.index === index &&
+      caret?.kind === "live" &&
+      caret.field === field
+    );
   }
 
   makeCurrent(index: number): void {
@@ -159,9 +183,15 @@ export class EditingSession {
     return this.write(() => this.port.setSpeakers(indexes, speaker));
   }
 
-  /** Makes a Segment Change, noted before it is sent so the Transcript that shows it moves the Cursor. */
-  async change(change: SegmentChange): Promise<Outcome> {
-    this.pending = { change, before: this.view?.segments ?? [] };
+  /**
+   * Makes a Segment Change to `before`, the Segments as the Project holds them, noted before it is
+   * sent so the Transcript that shows it moves the Cursor.
+   */
+  async change(
+    change: SegmentChange,
+    before: Segment[] = this.view?.segments ?? [],
+  ): Promise<Outcome> {
+    this.pending = { change, before };
     try {
       await this.port.changeSegments(change);
       return { kind: "written" };
@@ -181,7 +211,10 @@ export class EditingSession {
       const written = await this.writeText(index, "text", caret.text);
       if (written.kind === "failed") return written;
     }
-    return this.change({ kind: "split", index, at });
+    const before = (this.view?.segments ?? []).map((segment, at) =>
+      at === index ? { ...segment, text: caret.text } : segment,
+    );
+    return this.change({ kind: "split", index, at }, before);
   }
 
   undo(): Promise<Outcome> {
@@ -230,6 +263,16 @@ export class EditingSession {
     } catch (error) {
       return { kind: "failed", error };
     }
+  }
+
+  private isShown(
+    { change, before }: PendingChange,
+    after: Segment[],
+  ): boolean {
+    return (
+      after.length === segmentCountAfter(change, before.length) &&
+      !isSameSegments(before, after)
+    );
   }
 
   /** Moves the Cursor as the user does, telling the listeners at once. */

@@ -1,52 +1,65 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { assemble } from "../assembly";
+import { projectOf } from "../test_project";
 import FieldController, { composingOption } from "./field_controller";
 
 describe("FieldController", () => {
   let application: Application;
-  let changes: string[];
+  let edits: unknown[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const field = () => document.querySelector<HTMLElement>("[data-controller]")!;
 
   beforeEach(async () => {
-    changes = [];
+    edits = [];
     document.body.innerHTML = `
       <div id="editor">
-        <div contenteditable="plaintext-only" data-controller="field"
-          data-action="focus->field#remember blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent">大家好</div>
+        <div contenteditable="plaintext-only" data-controller="field" data-index="0" data-field="text"
+          data-action="focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent">大家好</div>
       </div>
     `;
-    document
-      .querySelector("#editor")!
-      .addEventListener("field:change", (event) =>
-        changes.push((event as CustomEvent<{ value: string }>).detail.value),
-      );
+    mockIPC(
+      (command, args) => {
+        if (command === "current_project")
+          return projectOf({
+            segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
+          });
+        if (command === "edit_segment") edits.push(args);
+      },
+      { shouldMockEvents: true },
+    );
     application = Application.start();
     application.registerActionOption("composing", composingOption);
-    application.register("field", FieldController);
+    await assemble(application, {
+      field: FieldController,
+    }).start();
     await settle();
   });
 
   afterEach(() => {
     application.stop();
+    clearMocks();
   });
 
   // @behavior ED-029
-  it("hands over nothing when left unchanged", () => {
+  it("writes nothing when left unchanged", async () => {
     field().dispatchEvent(new FocusEvent("focus"));
     field().dispatchEvent(new FocusEvent("blur"));
+    await settle();
 
-    expect(changes).toEqual([]);
+    expect(edits).toEqual([]);
   });
 
-  it("hands over its text when left changed", () => {
+  it("writes its text when left changed", async () => {
     field().dispatchEvent(new FocusEvent("focus"));
     field().textContent = "大家好啊";
     field().dispatchEvent(new FocusEvent("blur"));
+    await settle();
 
-    expect(changes).toEqual(["大家好啊"]);
+    expect(edits).toEqual([{ index: 0, field: "text", value: "大家好啊" }]);
   });
 
   /** Whether pressing Enter lets the field take the key. */

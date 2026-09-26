@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { assemble } from "../assembly";
 import UndoController, { typingOption } from "./undo_controller";
 
 describe("UndoController", () => {
@@ -38,7 +39,9 @@ describe("UndoController", () => {
     );
     application = Application.start();
     application.registerActionOption("typing", typingOption);
-    application.register("undo", UndoController);
+    await assemble(application, {
+      undo: UndoController,
+    }).start();
     await settle();
   });
 

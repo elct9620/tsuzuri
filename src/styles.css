@@ -6,4 +6,12 @@
 
 @theme {
   --font-sans: system-ui, -apple-system, "Noto Sans TC", sans-serif;
+  /* The Cursor's own caret blinks as a platform's does, and holds still once kept */
+  --animate-blink: blink 1s step-end infinite;
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
 }

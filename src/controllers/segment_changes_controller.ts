@@ -1,14 +1,10 @@
 import { Controller } from "@hotwired/stimulus";
 
-import {
-  changeSegments,
-  refreshProject,
-  type SegmentChange,
-} from "../backend/project";
-import { fieldSelection, fieldValue } from "../editor/field";
+import { refreshProject } from "../backend/project";
+import { isRun, type EditingSession, type SegmentChange } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
-import { notify, notifyFailure } from "../ui/notification";
+import { notify, notifyEdit } from "../ui/notification";
 import { parseTime } from "../ui/time";
 
 function indexOf(element: EventTarget | null): number {
@@ -17,20 +13,21 @@ function indexOf(element: EventTarget | null): number {
 
 /**
  * Changes the Segments themselves - their times, their number, which of them are one - from the
- * rows the transcript controller draws, and the selection of rows a merge or a shift works on.
+ * rows the transcript controller draws, and checks the rows a merge or a shift works on.
  */
 export default class SegmentChangesController extends Controller {
   static targets = [
-    "selection",
-    "selectionCount",
+    "checked",
+    "checkedCount",
     "merge",
     "shiftDialog",
     "offset",
   ];
 
-  /** The bar that shows while rows are selected. */
-  declare readonly selectionTarget: HTMLElement;
-  declare readonly selectionCountTarget: HTMLElement;
+  declare readonly session: EditingSession;
+  /** The bar that shows while Segments are checked. */
+  declare readonly checkedTarget: HTMLElement;
+  declare readonly checkedCountTarget: HTMLElement;
   declare readonly mergeTarget: HTMLButtonElement;
   declare readonly shiftDialogTarget: HTMLDialogElement;
   /** Milliseconds to shift by, negative for earlier. */
@@ -74,41 +71,29 @@ export default class SegmentChangesController extends Controller {
     await this.change({ kind: "deletion", index: indexOf(currentTarget) });
   }
 
-  /**
-   * Splits where the selection in the Segment's text starts, whether it is chosen from the menu,
-   * after the text was left, or by shortcut while typing, which leaves the text so its edit is written first.
-   */
+  /** Splits the Segment whose menu was used where the Cursor in its text starts, which is kept while the menu has focus. */
   async split({ currentTarget }: Event): Promise<void> {
     closeMenu(currentTarget);
-    const index = indexOf(currentTarget);
-    const text = this.element.querySelector<HTMLElement>(
-      `.field[data-index="${index}"][data-field="text"]`,
-    );
-    const at = text ? fieldSelection(text).start : 0;
-    if (!text || at === 0 || at >= [...fieldValue(text)].length) {
-      notify({ title: t("edit.splitWhere"), kind: "warning" });
-      return;
-    }
-    text.blur();
-    await this.change({ kind: "split", index, at });
+    notifyEdit(await this.session.split(), { refusal: "edit.splitWhere" });
   }
 
-  /** Shows how many rows are selected, offering a merge only for rows next to each other. */
-  showSelection(): void {
-    const indexes = this.selectedIndexes();
-    this.selectionTarget.hidden = indexes.length === 0;
-    this.selectionCountTarget.textContent = t("edit.selected", {
+  check({ currentTarget }: Event): void {
+    const check = currentTarget as HTMLInputElement;
+    this.session.check(indexOf(check), check.checked);
+  }
+
+  /** Shows how many Segments are checked, offering a merge only for Segments next to each other. */
+  showChecked(): void {
+    const indexes = this.session.checkedIndexes;
+    this.checkedTarget.hidden = indexes.length === 0;
+    this.checkedCountTarget.textContent = t("edit.selected", {
       count: indexes.length,
     });
-    const isRun = indexes.every(
-      (index, position) =>
-        position === 0 || index === indexes[position - 1] + 1,
-    );
-    this.mergeTarget.disabled = indexes.length < 2 || !isRun;
+    this.mergeTarget.disabled = !isRun(indexes);
   }
 
   async merge(): Promise<void> {
-    const indexes = this.selectedIndexes();
+    const indexes = this.session.checkedIndexes;
     await this.change({
       kind: "merge",
       first: indexes[0],
@@ -122,7 +107,7 @@ export default class SegmentChangesController extends Controller {
   }
 
   async shift(): Promise<void> {
-    const indexes = this.selectedIndexes();
+    const indexes = this.session.checkedIndexes;
     this.shiftDialogTarget.close();
     await this.change({
       kind: "shift",
@@ -130,48 +115,23 @@ export default class SegmentChangesController extends Controller {
       last: indexes[indexes.length - 1],
       offset_ms: Math.round(Number(this.offsetTarget.value)),
     });
-    this.clearSelection();
   }
 
   /** Hands the Checked Segments to be translated again. */
   retranslate(): void {
-    this.dispatch("retranslate", {
-      detail: { indexes: this.selectedIndexes() },
-    });
+    this.dispatch("retranslate");
   }
 
   /** Hands the Checked Segments to the Speaker dialog. */
   openSpeakers(): void {
-    this.dispatch("speakers", {
-      detail: { indexes: this.selectedIndexes() },
-    });
+    this.dispatch("speakers");
   }
 
-  clearSelection(): void {
-    for (const checkbox of this.checkboxes()) checkbox.checked = false;
-    this.showSelection();
-  }
-
-  private selectedIndexes(): number[] {
-    return this.checkboxes()
-      .filter((checkbox) => checkbox.checked)
-      .map((checkbox) => indexOf(checkbox))
-      .sort((a, b) => a - b);
-  }
-
-  private checkboxes(): HTMLInputElement[] {
-    return [
-      ...this.element.querySelectorAll<HTMLInputElement>("input.selection"),
-    ];
+  clearChecks(): void {
+    this.session.uncheckAll();
   }
 
   private async change(change: SegmentChange): Promise<void> {
-    try {
-      await changeSegments(change);
-      notify({ title: t("edit.saved"), kind: "success" });
-      this.clearSelection();
-    } catch (error) {
-      notifyFailure(t("edit.notSaved"), error);
-    }
+    notifyEdit(await this.session.change(change));
   }
 }

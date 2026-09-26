@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import {
@@ -120,9 +121,11 @@ describe("TranscribeController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.register("progress", ProgressController);
-    application.register("transcribe", TranscribeController);
-    application.register("translation-options", TranslationOptionsController);
+    await assemble(application, {
+      progress: ProgressController,
+      transcribe: TranscribeController,
+      "translation-options": TranslationOptionsController,
+    }).start();
     await settle();
   });
 

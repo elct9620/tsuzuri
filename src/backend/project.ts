@@ -85,14 +85,52 @@ export function currentProject(): Promise<ProjectView | null> {
   return invoke<ProjectView | null>("current_project");
 }
 
-/** Calls `show` with the Project Rust holds now and again each time it changes. */
-export async function followProject(
-  show: (project: ProjectView | null) => void,
-): Promise<UnlistenFn> {
-  const refresh = async () => show(await currentProject());
-  const unlisten = await listen("project-changed", () => void refresh());
-  await refresh();
-  return unlisten;
+/**
+ * The Project Rust holds, read once for each change and handed to every follower in the order they
+ * began to follow, then to each `afterEach` callback. A read answered after a later one is dropped,
+ * so no follower is shown an older Project than it already has.
+ */
+export class ProjectFeed {
+  /** The Project last read, or `undefined` before the first read. */
+  private latest: ProjectView | null | undefined = undefined;
+  private readonly followers = new Set<(project: ProjectView | null) => void>();
+  private readonly settlers: (() => void)[] = [];
+  private asked = 0;
+  private shown = 0;
+
+  /** The Project last read, or none. */
+  get project(): ProjectView | null {
+    return this.latest ?? null;
+  }
+
+  /** Calls `show` with the Project read last, if any, and again with each one read after it. */
+  follow(show: (project: ProjectView | null) => void): () => void {
+    this.followers.add(show);
+    if (this.latest !== undefined) show(this.latest);
+    return () => this.followers.delete(show);
+  }
+
+  /** Calls `settle` once every follower has been shown a Project. */
+  afterEach(settle: () => void): void {
+    this.settlers.push(settle);
+  }
+
+  /** Reads the Project now and each time Rust announces a change. */
+  async start(): Promise<UnlistenFn> {
+    const unlisten = await listen("project-changed", () => void this.read());
+    await this.read();
+    return unlisten;
+  }
+
+  private async read(): Promise<void> {
+    const asked = ++this.asked;
+    const project = await currentProject();
+    if (asked < this.shown) return;
+    this.shown = asked;
+    this.latest = project;
+    for (const show of this.followers) show(project);
+    for (const settle of this.settlers) settle();
+  }
 }
 
 /** Undo or Redo chosen from the Edit menu. */
@@ -131,50 +169,8 @@ export function setProjectOptions(options: ProjectOptions): Promise<void> {
   return invoke("set_project_options", { options });
 }
 
-/** Which text of a Segment an edit replaces. */
-export type SegmentField = "text" | "translation" | "speaker";
-
-export function editSegment(
-  index: number,
-  field: SegmentField,
-  value: string,
-): Promise<void> {
-  return invoke("edit_segment", { index, field, value });
-}
-
-/** Gives each Segment at `indexes` the Speaker `speaker`, or none when it is empty, as one change. */
-export function setSpeakers(indexes: number[], speaker: string): Promise<void> {
-  return invoke("set_speakers", { indexes, speaker });
-}
-
 export function showTranslation(language: string | null): Promise<void> {
   return invoke("show_translation", { language });
-}
-
-/** A change to the Segments themselves, named as Rust names it. */
-export type SegmentChange =
-  | { kind: "times"; index: number; start_ms: number; end_ms: number }
-  | { kind: "boundary"; index: number; at_ms: number }
-  | { kind: "insertion"; start_ms: number; end_ms: number }
-  | { kind: "insertion-before"; index: number }
-  | { kind: "insertion-after"; index: number }
-  | { kind: "deletion"; index: number }
-  | { kind: "split"; index: number; at: number }
-  | { kind: "merge"; first: number; last: number }
-  | { kind: "shift"; first: number; last: number; offset_ms: number };
-
-export function changeSegments(change: SegmentChange): Promise<void> {
-  return invoke("change_segments", { change });
-}
-
-/** Takes back the Current Resource's latest change. */
-export function undo(): Promise<void> {
-  return invoke("undo");
-}
-
-/** Makes the Current Resource's latest undone change again. */
-export function redo(): Promise<void> {
-  return invoke("redo");
 }
 
 /** Which texts an SRT written from the Current Resource carries. */

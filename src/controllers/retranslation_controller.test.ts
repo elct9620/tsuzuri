@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf } from "../test_project";
 import { NOTIFICATION_STACK } from "../ui/test_notification";
@@ -44,14 +45,14 @@ describe("RetranslationController", () => {
       ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes retranslation"
         data-retranslation-progress-outlet="#progress"
-        data-action="transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateSelection">
+        data-action="transcript:shown->retranslation#follow editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked segment-changes:retranslate->retranslation#translateChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="empty"></p>
-        <div data-segment-changes-target="selection" hidden>
-          <span data-segment-changes-target="selectionCount"></span>
+        <div data-segment-changes-target="checked" hidden>
+          <span data-segment-changes-target="checkedCount"></span>
           <button data-segment-changes-target="merge"></button>
-          <button id="retranslate-selection" data-retranslation-target="selection"
+          <button id="retranslate-selection" data-retranslation-target="checked"
             data-action="segment-changes#retranslate">重新翻譯</button>
         </div>
         <ol data-transcript-target="list"></ol>
@@ -74,10 +75,12 @@ describe("RetranslationController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.register("progress", ProgressController);
-    application.register("transcript", TranscriptController);
-    application.register("segment-changes", SegmentChangesController);
-    application.register("retranslation", RetranslationController);
+    await assemble(application, {
+      progress: ProgressController,
+      transcript: TranscriptController,
+      "segment-changes": SegmentChangesController,
+      retranslation: RetranslationController,
+    }).start();
     await settle();
   });
 
@@ -101,7 +104,7 @@ describe("RetranslationController", () => {
     await hold(projectTranslatedIntoEnglish);
     for (const index of [0, 2]) {
       const checkbox =
-        rows()[index].querySelector<HTMLInputElement>("input.selection")!;
+        rows()[index].querySelector<HTMLInputElement>("input.check")!;
       checkbox.checked = true;
       checkbox.dispatchEvent(new Event("change", { bubbles: true }));
     }

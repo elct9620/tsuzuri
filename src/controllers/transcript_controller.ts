@@ -255,6 +255,8 @@ export default class TranscriptController extends Controller {
   private runningTask: TaskKind | null = null;
   /** The Project shown now. */
   private project: ProjectView | null = null;
+  /** The position of the Current Segment as its row was last brought into view. */
+  private shownCurrentIndex: number | null = null;
   /** The position of the Segment the Preview is playing. */
   private playingIndexes: number[] = [];
   /** Whether the row being played is scrolled into view; turned off, the list stays where the user left it. */
@@ -310,14 +312,17 @@ export default class TranscriptController extends Controller {
   }
 
   /**
-   * Marks the Current Segment and draws the Cursor in it, bringing its row into view; a live
+   * Marks the Current Segment and draws the Cursor in it, bringing its row into view as it becomes
+   * current, so the Cursor moving within it leaves the list where following playback put it; a live
    * Cursor in a field without focus, as after a split, takes the focus there.
    */
   showCursor(): void {
     const { index, caret } = this.session.cursor;
+    const isNewlyCurrent = index !== this.shownCurrentIndex;
+    this.shownCurrentIndex = index;
     this.markRows();
     if (index === null) return;
-    this.rowAt(index)?.scrollIntoView({ block: "nearest" });
+    if (isNewlyCurrent) this.rowAt(index)?.scrollIntoView({ block: "nearest" });
     const field = caret && this.fieldAt(index, caret.field);
     if (field && caret?.kind === "live" && document.activeElement !== field) {
       field.focus();

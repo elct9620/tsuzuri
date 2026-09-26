@@ -257,6 +257,8 @@ export default class TimelineController extends Controller {
   private surfer?: WaveSurfer;
   private regions?: ReturnType<typeof RegionsPlugin.create>;
   private unfollow?: () => void;
+  /** Where the media was as it last reported its time, to see it play across the Current Segment's end; none after a seek. */
+  private playedTo: number | null = null;
 
   connect(): void {
     const keys = timeKeys();
@@ -313,8 +315,7 @@ export default class TimelineController extends Controller {
       return;
     }
     const segment = this.currentSegment;
-    if (segment)
-      void this.surfer?.play(segment.start_ms / 1000, segment.end_ms / 1000);
+    if (segment) void this.surfer?.play(segment.start_ms / 1000);
   }
 
   togglePlayingAlone(): void {
@@ -511,6 +512,8 @@ export default class TimelineController extends Controller {
       ],
     });
     this.surfer.on("ready", () => this.markSegments());
+    this.surfer.on("timeupdate", (time) => this.stopAtCurrentEnd(time));
+    this.surfer.on("seeking", () => (this.playedTo = null));
     this.surfer.on("interaction", () => this.dropRange());
     regions.enableDragSelection({
       id: RANGE_ID,
@@ -551,6 +554,22 @@ export default class TimelineController extends Controller {
       style.top = `${((lane.count - 1 - lane.index) * 100) / lane.count}%`;
       style.zIndex = index === current ? "1" : "";
     });
+  }
+
+  /**
+   * Pauses the media as it plays across the Current Segment's end while playing alone is turned on.
+   * The end is read each time rather than fixed as the media starts, so turning playing alone on or
+   * off, or retiming the Current Segment, takes effect on the media already playing.
+   */
+  private stopAtCurrentEnd(time: number): void {
+    const from = this.playedTo;
+    this.playedTo = time;
+    const segment = this.currentSegment;
+    if (!this.isPlayingAlone || !segment || from === null) return;
+    const end = segment.end_ms / 1000;
+    if (this.mediaTarget.paused || from >= end || time < end) return;
+    this.mediaTarget.pause();
+    this.mediaTarget.currentTime = end;
   }
 
   private get currentSegment(): Segment | undefined {

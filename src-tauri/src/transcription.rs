@@ -75,7 +75,7 @@ pub async fn run_transcribe<'a>(
 
     enter(ports, &mut phases, "load");
     let started = Instant::now();
-    project.write_transcript(job.generation, Transcript::default());
+    project.show_transcript(Vec::new());
     ports.announce_project();
     run_step(
         ports,
@@ -91,7 +91,7 @@ pub async fn run_transcribe<'a>(
         },
         |line| {
             if let Some(segment) = whisper::segment(line) {
-                project.push_segment(job.generation, segment);
+                project.push_segment(segment);
                 ports.announce_project();
             }
         },
@@ -100,9 +100,9 @@ pub async fn run_transcribe<'a>(
     let transcribe_seconds = started.elapsed().as_secs_f64();
 
     let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
-    let transcript = Transcript::from_srt(&srt)?;
+    // What whisper-cli wrote must read as a Transcript before it replaces the subtitle.
+    Transcript::from_srt(&srt)?;
     project.write_transcription(job, srt)?;
-    project.write_transcript(job.generation, transcript);
     ports.announce_project();
     Ok(Transcription {
         audio_seconds: whisper::audio_seconds(audio_bytes),

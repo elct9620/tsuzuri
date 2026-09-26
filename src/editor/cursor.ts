@@ -185,7 +185,7 @@ function cursorAfterView(
   if (caret === null) return cursor;
   const isReplaced =
     caret.kind === "kept" && (segment[caret.field] ?? "") !== caret.text;
-  return isReplaced || isHeld(caret.field, after)
+  return isReplaced || isHeld(caret.field, after, cursor.index)
     ? { ...cursor, caret: null }
     : cursor;
 }

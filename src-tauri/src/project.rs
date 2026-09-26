@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,7 @@ pub mod glossary;
 mod history;
 pub mod versions;
 
-pub use current::{CurrentProject, ProjectView, ResourceView, RunningMode, SegmentSpan};
+pub use current::{CurrentProject, ProjectView, Reload, ResourceView, RunningMode, SegmentSpan};
 #[cfg(test)]
 pub(crate) use files::HISTORY_DIR;
 use glossary::TranslationGlossary;
@@ -32,21 +32,24 @@ pub struct Project {
     pub current: Option<CurrentResource>,
     /// The Undo History of each Resource changed since the Project was opened, by its name.
     pub undo_histories: HashMap<String, UndoHistory>,
+    /// The subtitles a Backup was kept of since the Project was opened.
+    pub backed_up_subtitles: HashSet<PathBuf>,
 }
 
-/// The Resource the editor shows, with its Segments as read from the directory and edited since.
+/// The Resource the editor shows, with its Segments as its files hold them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CurrentResource {
     pub name: String,
     pub transcript: Transcript,
     /// The Language of the translations its Segments carry.
     pub translation: Option<Language>,
-    /// What its subtitle files held when Tsuzuri last read or wrote them, to tell a change made elsewhere.
-    pub subtitle_digests: Vec<SubtitleDigest>,
+    /// What its subtitle files held when Tsuzuri last read or wrote them, to tell a change made
+    /// elsewhere and keep what that change replaced.
+    pub known_subtitles: Vec<KnownSubtitle>,
 }
 
-/// A subtitle file and a digest of what it held, or `None` while it did not exist.
-pub type SubtitleDigest = (PathBuf, Option<u64>);
+/// A subtitle file and what it held, or `None` while it did not exist.
+pub type KnownSubtitle = (PathBuf, Option<Vec<u8>>);
 
 /// Why the Project could not answer: it has no Resource by the name asked for, or none is current.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -184,7 +187,8 @@ fn segment_at_times<'a>(segments: &'a [Segment], cue: &Segment) -> Option<&'a Se
         .find(|segment| (segment.start_ms, segment.end_ms) == (cue.start_ms, cue.end_ms))
 }
 
-/// What a restore left behind: how many Segments it gave times that no translation lines up with.
+/// What a restore or a translation left behind: how many Segments of the original have times
+/// that no translation lines up with.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
 pub struct Restoration {
     pub unmatched_count: usize,
@@ -292,7 +296,6 @@ pub enum SegmentField {
 /// What a translation needs from the Project when it starts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TranslationSource {
-    pub generation: u64,
     pub directory: PathBuf,
     /// The Resource being translated.
     pub name: String,
@@ -306,7 +309,6 @@ pub struct TranslationSource {
 /// What a transcription needs from the Project when it starts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TranscriptionTarget {
-    pub generation: u64,
     pub directory: PathBuf,
     /// The Resource being transcribed.
     pub name: String,

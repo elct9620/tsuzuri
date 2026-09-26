@@ -104,7 +104,7 @@ pub fn select_resource(app: AppHandle, current: State<'_, CurrentProject>, name:
 
 ## `show_translation`
 
-Show the Current Resource's translation in this Language, or none.
+Show the Current Resource's translation in this Language, or none. While a Mode runs on the Current Resource it is refused as `mode-running`, since what is shown is then the Mode's.
 
 ```rust
 pub fn show_translation(app: AppHandle, current: State<'_, CurrentProject>, language: Option<Language>) -> Result<(), Failure> {}
@@ -144,7 +144,7 @@ pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView
 
 ## `edit_segment`
 
-Replace the `text`, the `translation` or the `speaker` of one Segment of the Current Resource, by its position, where an empty `speaker` leaves it with none, and write the subtitle it belongs to back to the directory; a Speaker is written to the original and to each cue of every translation that has the Segment's times. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure. An edit of a subtitle a running Mode writes is refused as `mode-running`.
+Replace the `text`, the `translation` or the `speaker` of one Segment of the Current Resource, by its position, where an empty `speaker` leaves it with none, and write the subtitle it belongs to back to the directory; a Speaker is written to the original and to each cue of every translation that has the Segment's times. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure. An edit of a subtitle a running Mode writes is refused as `mode-running`. The first change Tsuzuri makes to a subtitle since the Project was opened keeps it as an Overwrite Backup first, unless a Backup of it was kept since; `set_speakers`, `change_segments`, `revert_row` and `retranslate` keep one the same way.
 
 ```rust
 pub fn edit_segment(app: AppHandle, current: State<'_, CurrentProject>, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}
@@ -168,7 +168,7 @@ pub fn replace_text(app: AppHandle, current: State<'_, CurrentProject>, field: S
 
 ## `cancel_task`
 
-Ask the running transcription or translation to stop. It stops at once, ending the Components it started, and answers the `mode-cancelled` Failure; what it has shown so far stays shown and nothing more is written. With no task running it changes nothing.
+Ask the running transcription or translation to stop. It stops at once, ending the Components it started, and answers the `mode-cancelled` Failure; nothing more is written, and what it showed gives way to what the files hold, emitting `project-changed`. With no task running it changes nothing.
 
 ```rust
 pub fn cancel_task(mode_lock: State<'_, ModeLock>) {}
@@ -176,7 +176,7 @@ pub fn cancel_task(mode_lock: State<'_, ModeLock>) {}
 
 ## `retranslate`
 
-Translate the Current Resource's Segments at `indexes` again, into the translation shown, as one Batch carrying the translated lines before them and the source lines after them; no Split Sentences are searched for and no Rolling Summary is kept. The translations are written as one change in the Undo History, with no Backup, and the answer is how long each Phase took. With no translation shown it is refused as `no-translation-shown`; it runs, waits and can be cancelled as `translate` does.
+Translate the Current Resource's Segments at `indexes` again, into the translation shown, as one Batch carrying the translated lines before them and the source lines after them; no Split Sentences are searched for and no Rolling Summary is kept. It holds only those Segments of that translation, and their translations are written into its file as it then is, so an edit of another Segment made meanwhile is kept, as one change in the Undo History, kept as a Backup first as `edit_segment` keeps one; the answer is how long each Phase took. A position the Segments do not have is refused before any Model is loaded. With no translation shown it is refused as `no-translation-shown`; it runs, waits and can be cancelled as `translate` does.
 
 ```rust
 pub async fn retranslate(app: AppHandle, current: State<'_, CurrentProject>, indexes: Vec<usize>) -> Result<Translation, Failure> {}
@@ -184,7 +184,7 @@ pub async fn retranslate(app: AppHandle, current: State<'_, CurrentProject>, ind
 
 ## `translate`
 
-Run the Translate Mode on the Current Resource from the Primary Language into the target Language, given by its code, with the options the Translate panel offers, the saved translation settings and the Project Model where the Project has one, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. Each Batch's translations are shown as it finishes, emitting `project-changed`; once all are done they are written to the Resource's translation file and the target is recorded as the Project's translation Language; the answer is the seconds each Phase took.
+Run the Translate Mode on the Current Resource from the Primary Language into the target Language, given by its code, with the options the Translate panel offers, the saved translation settings and the Project Model where the Project has one, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. Each Batch's translations are shown as it finishes, emitting `project-changed`; once all are done they are written to the Resource's translation file and the target is recorded as the Project's translation Language; the answer is the seconds each Phase took, and how many Segments of the original, retimed while it was translated, find no cue at their times in what was written.
 
 ```rust
 pub async fn translate(app: AppHandle, target: Language, options: TranslationOptions) -> Result<Translation, Failure> {}
@@ -232,7 +232,7 @@ pub fn translation_cues(current: State<'_, CurrentProject>, language: Language) 
 
 ## `restore_version`
 
-Keep the subtitle as an Overwrite Backup, then put the named Backup in its place and read the Current Resource again, emitting `project-changed`. A name the subtitle's Backups do not hold is refused as `no-backup`. A subtitle a running Mode writes is refused as `mode-running`. It answers how many Segments of the original, restored with times they did not have, find no cue at those times in one of the translations.
+Keep the subtitle as an Overwrite Backup, then put the named Backup in its place and read the Current Resource again, emitting `project-changed`. A name the subtitle's Backups do not hold is refused as `no-backup`. A subtitle a running Mode writes is refused as `mode-running`, and one changed elsewhere as `edit_segment` refuses it. It answers how many Segments of the original, restored with times they did not have, find no cue at those times in one of the translations.
 
 ```rust
 pub fn restore_version(app: AppHandle, language: Option<Language>, backup: String) -> Result<Restoration, Failure> {}
@@ -240,7 +240,7 @@ pub fn restore_version(app: AppHandle, language: Option<Language>, backup: Strin
 
 ## `undo`
 
-Put the Current Resource's subtitles back as they were before its latest change in the Undo History, write them to the directory with the Bilingual SRTs they feed, and read the Current Resource again, emitting `project-changed`. With nothing to undo it changes nothing; while a Mode runs on the Current Resource it is refused as `mode-running`.
+Put the Current Resource's subtitles back as they were before its latest change in the Undo History, write them to the directory with the Bilingual SRTs they feed, and read the Current Resource again, emitting `project-changed`. With nothing to undo it changes nothing; while a Mode runs on the Current Resource it is refused as `mode-running`, and a subtitle changed elsewhere is refused as `edit_segment` refuses it, since putting back what Tsuzuri kept would drop that change.
 
 ```rust
 pub fn undo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {}
@@ -256,7 +256,7 @@ pub fn redo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Fa
 
 ## `revert_row`
 
-Take back one Comparison Row of the named Backup against the Current Resource's original, or its translation into `language`, as they compare now: for a Pair its `text`, its `times`, or the `whole` cue; for any other row the whole of it, putting back the Backup's cues in place of the subtitle's. Only that subtitle is written, with the Bilingual SRTs it feeds, as one change in the Undo History, emitting `project-changed`. A row the comparison does not have is refused as `no-row`, a Backup the subtitle does not have as `no-backup`, and a subtitle a running Mode writes as `mode-running`. It answers as `restore_version` does.
+Take back one Comparison Row of the named Backup against the Current Resource's original, or its translation into `language`, as they compare now: for a Pair its `text`, its `times`, or the `whole` cue; for any other row the whole of it, putting back the Backup's cues in place of the subtitle's. Only that subtitle is written, with the Bilingual SRTs it feeds, as one change in the Undo History, emitting `project-changed`. A row the comparison does not have is refused as `no-row`, a Backup the subtitle does not have as `no-backup`, a subtitle a running Mode writes as `mode-running`, and one changed elsewhere as `edit_segment` refuses it. It answers as `restore_version` does.
 
 ```rust
 pub fn revert_row(app: AppHandle, language: Option<Language>, backup: String, row: usize, part: RevertPart) -> Result<Restoration, Failure> {}

@@ -18,6 +18,7 @@ import {
 import { interfaceLanguageCode, t } from "../i18n";
 import { failureMessage } from "../ui/failure";
 import { closeMenu } from "../ui/menu";
+import { notify } from "../ui/notification";
 import { MODEL_EXTENSIONS } from "../ui/models";
 
 function resourceItem(
@@ -120,6 +121,18 @@ export default class ProjectController extends Controller {
 
   disconnect(): void {
     this.unfollow?.();
+  }
+
+  /**
+   * Says a subtitle changed elsewhere was read in and where what Tsuzuri held of it was kept;
+   * bound to `rust:changed-elsewhere-kept`.
+   */
+  notifyChangedElsewhereKept(): void {
+    notify({
+      title: t("versions.changedElsewhereKept"),
+      detail: t("versions.changedElsewhereKeptDetail"),
+      kind: "warning",
+    });
   }
 
   async openDirectory({ currentTarget }: Event): Promise<void> {

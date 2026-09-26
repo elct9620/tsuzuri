@@ -82,6 +82,9 @@ async fn run_translation(
     {
         resident.release_after(*keep).await;
     }
+    // The Mode's hold and what it showed end with its run, however it ended.
+    drop(run);
+    app.announce_project();
     result
 }
 
@@ -115,7 +118,7 @@ pub async fn save_translation_settings(
 pub fn start_resident_llama(app: &AppHandle) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
-        let started = async {
+        let start = async {
             let [llama] =
                 toolchain::find_ready_executables(settings::resolver(&app)?, ["llama"]).await?;
             let model_settings = settings::load_settings(&app)?;
@@ -131,7 +134,7 @@ pub fn start_resident_llama(app: &AppHandle) {
                 )
                 .await
         };
-        if let Err(failure) = started.await {
+        if let Err(failure) = start.await {
             log::info!("the Resident llama-server waits for the first translation: {failure:?}");
         }
     });

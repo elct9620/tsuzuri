@@ -1,11 +1,13 @@
 use std::path::PathBuf;
 
-use tauri::{AppHandle, Manager, Runtime, State};
+use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
-use super::{CurrentProject, Project, ProjectOptions, ProjectView, Restoration, SegmentField};
+use super::{
+    CurrentProject, Project, ProjectOptions, ProjectView, Reload, Restoration, SegmentField,
+};
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::progress::Progress;
@@ -36,12 +38,24 @@ fn replace_project<R: Runtime>(app: &AppHandle<R>, project: Project) -> Result<(
     Ok(())
 }
 
+/// Tells the webview what a reload did: that the Project changed, and that a version of a
+/// subtitle changed elsewhere was kept, so the user knows where to find it.
+fn announce_reload<R: Runtime>(app: &AppHandle<R>, reload: Reload) {
+    if reload == Reload::Unchanged {
+        return;
+    }
+    app.announce_project();
+    if reload == Reload::ChangedWithBackup {
+        // @event changed-elsewhere-kept
+        let _ = app.emit("changed-elsewhere-kept", ());
+    }
+}
+
 /// Reloads the Project when its files were changed elsewhere, and tells the webview; a failure
 /// is logged, since nobody asked for this read.
 pub fn reload_if_changed<R: Runtime>(app: &AppHandle<R>) {
     match app.state::<CurrentProject>().reload_if_changed() {
-        Ok(true) => app.announce_project(),
-        Ok(false) => {}
+        Ok(reload) => announce_reload(app, reload),
         Err(Failure::NoProject) => {}
         Err(failure) => log::warn!("could not reload the Project: {failure:?}"),
     }
@@ -71,8 +85,8 @@ pub fn show_translation(
 
 #[tauri::command]
 pub fn reload_project(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
-    current.reload()?;
-    app.announce_project();
+    let reload = current.reload()?;
+    announce_reload(&app, reload);
     Ok(())
 }
 

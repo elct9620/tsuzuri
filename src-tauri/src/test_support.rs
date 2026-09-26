@@ -14,6 +14,7 @@ pub fn project_of(segments: Vec<Segment>) -> Project {
         translation_glossary: None,
         options: ProjectOptions::default(),
         undo_histories: Default::default(),
+        backed_up_subtitles: Default::default(),
         resources: vec![Resource {
             name: "lecture".to_string(),
             media: None,
@@ -24,7 +25,7 @@ pub fn project_of(segments: Vec<Segment>) -> Project {
             name: "lecture".to_string(),
             transcript: Transcript { segments },
             translation: None,
-            subtitle_digests: Vec::new(),
+            known_subtitles: Vec::new(),
         }),
     }
 }

@@ -446,6 +446,22 @@ Registering a Speaker gives it a name in every Language and lets the editor offe
 | When | the panel shows its Segments |
 | Then | each translation field is disabled and each text field is not |
 
+## `ED-092` Holding only the translations of the Segments translated again
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose second Segment is being translated again into the Language it shows |
+| When | the panel shows its Segments |
+| Then | the second translation field is disabled and the first is not |
+
+## `ED-093` Holding the choice of translation while a Mode runs
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Current Resource is being translated |
+| When | the panel shows its Segments |
+| Then | the choice of translation to show is disabled |
+
 ## `ED-028` Keeping a cue's text plain
 
 A subtitle has no formatting, so what is pasted or typed into a text field stays plain text.

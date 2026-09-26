@@ -1,9 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
-import {
-  followEditCommands,
-  type EditCommand,
-  type UnlistenFn,
-} from "../backend/project";
+import type { EditCommand } from "../backend/project";
 import { isTextField, type EditingSession } from "../editor";
 import { notifyEdit } from "../ui/notification";
 
@@ -25,21 +21,14 @@ export function typingOption({
 export default class UndoController extends Controller {
   declare readonly session: EditingSession;
 
-  private unlisten?: UnlistenFn;
-
-  async connect(): Promise<void> {
-    this.unlisten = await followEditCommands((command) => {
-      if (command === "select-all") return;
-      if (isTextField(document.activeElement)) {
-        document.execCommand(command);
-      } else {
-        void this.applyToProject(command);
-      }
-    });
-  }
-
-  disconnect(): void {
-    this.unlisten?.();
+  /** Undo or Redo chosen from the Edit menu; bound to `rust:edit-command`. */
+  applyEditCommand({ detail: command }: CustomEvent<EditCommand>): void {
+    if (command === "select-all") return;
+    if (isTextField(document.activeElement)) {
+      document.execCommand(command);
+    } else {
+      void this.applyToProject(command);
+    }
   }
 
   /** Ctrl/⌘+Z where no menu takes it first; bound with `:!typing:prevent`. */

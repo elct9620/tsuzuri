@@ -442,6 +442,9 @@ export default class TranscriptController extends Controller {
       ...codes.map((code) => option(code, t(`languages.${code}`))),
     );
     this.translationLanguageTarget.value = shown ?? "";
+    // What a running Mode shows is its own until it ends.
+    this.translationLanguageTarget.disabled =
+      (project?.running_mode ?? null) !== null;
   }
 
   /** Refreshes the editors in place when the Project keeps its shape, so the one being typed in keeps its focus. */
@@ -494,7 +497,8 @@ export default class TranscriptController extends Controller {
         : field.classList.contains("translation")
           ? "translation"
           : "other";
-      const isFree = view === null || !isHeld(kind, view);
+      const isFree =
+        view === null || !isHeld(kind, view, Number(field.dataset.index));
       if (
         field instanceof HTMLInputElement ||
         field instanceof HTMLButtonElement

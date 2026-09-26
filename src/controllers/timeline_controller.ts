@@ -203,9 +203,6 @@ export default class TimelineController extends Controller {
   private surfer?: WaveSurfer;
   private regions?: ReturnType<typeof RegionsPlugin.create>;
   private unfollow?: () => void;
-  private readonly followModifiers = (event: PointerEvent) => {
-    this.modifiers = { shiftKey: event.shiftKey, altKey: event.altKey };
-  };
 
   connect(): void {
     const keys = timeKeys();
@@ -214,17 +211,20 @@ export default class TimelineController extends Controller {
     this.showZoomLevel();
     this.showSnapping();
     this.showPlayingAlone();
-    // Capturing, so the modifiers are known before a region hears the same move
-    window.addEventListener("pointerdown", this.followModifiers, true);
-    window.addEventListener("pointermove", this.followModifiers, true);
     this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
   disconnect(): void {
-    window.removeEventListener("pointerdown", this.followModifiers, true);
-    window.removeEventListener("pointermove", this.followModifiers, true);
     this.unfollow?.();
     this.surfer?.destroy();
+  }
+
+  /**
+   * Notes the modifiers held as the pointer goes down or moves anywhere; bound on the window while
+   * capturing, so they are known before a region hears the same move.
+   */
+  followModifiers({ shiftKey, altKey }: PointerEvent): void {
+    this.modifiers = { shiftKey, altKey };
   }
 
   zoomIn(): void {

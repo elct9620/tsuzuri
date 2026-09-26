@@ -1,11 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-import {
-  cancelTask,
-  listenProgress,
-  type PipelineProgress,
-  type UnlistenFn,
-} from "../backend/progress";
+import { cancelTask, type PipelineProgress } from "../backend/progress";
 import { t } from "../i18n";
 import { iconElement } from "../ui/icons";
 import { failureCode } from "../ui/failure";
@@ -61,18 +56,9 @@ export default class ProgressController extends Controller {
   declare readonly statusTarget: HTMLElement;
   declare readonly barTarget: HTMLProgressElement;
 
-  private unlisten?: UnlistenFn;
   private isRunning = false;
   /** The task running now, which a failure is said to belong to. */
   private task: TaskKind = "transcription";
-
-  async connect(): Promise<void> {
-    this.unlisten = await listenProgress((progress) => this.show(progress));
-  }
-
-  disconnect(): void {
-    this.unlisten?.();
-  }
 
   /** Whether a task is running, so no second one starts. */
   get isBusy(): boolean {
@@ -118,8 +104,11 @@ export default class ProgressController extends Controller {
     await cancelTask();
   }
 
-  /** Shows the Phase just reported as the one running, every Phase before it as done. */
-  private show(progress: PipelineProgress): void {
+  /**
+   * Shows the Phase just reported as the one running, every Phase before it as done; bound to
+   * `rust:pipeline-progress`.
+   */
+  show({ detail: progress }: CustomEvent<PipelineProgress>): void {
     if (!this.isRunning) return;
     this.statusTarget.textContent = progressLine(progress);
     this.summaryTarget.textContent = progressSummary(progress);

@@ -64,13 +64,15 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | When | a Segment is edited |
 | Then | a Notification says the edit was not written and the subtitle was read again |
 
-## `ED-007` Saying an edit was saved
+## `ED-007` Marking an edit as saved
+
+Every field left writes an edit, so a Notification for each would pile up over the Segments being edited.
 
 | Step | Statement |
 | --- | --- |
 | Given | a Project in the panel |
 | When | a Segment's text is edited |
-| Then | a Notification says the edit was saved |
+| Then | the Save Mark shows and no Notification says the edit was saved |
 
 ## `ED-008` Showing Placeholders until a transcription writes a Segment
 
@@ -412,7 +414,7 @@ Registering a Speaker gives it a name in every Language and lets the editor offe
 | --- | --- |
 | Given | a Project whose Translation Glossary names no Speaker `co` |
 | When | the first Segment's Speaker is set to `co` |
-| Then | the notice that the edit was saved offers to add `co` to the Translation Glossary |
+| Then | a Notification says the edit was saved and offers to add `co` to the Translation Glossary |
 
 ## `ED-023` Not offering a Speaker the Translation Glossary names
 
@@ -420,7 +422,7 @@ Registering a Speaker gives it a name in every Language and lets the editor offe
 | --- | --- |
 | Given | a Project whose Translation Glossary names the Speaker `小明` |
 | When | the first Segment's Speaker is set to `小明` |
-| Then | the notice that the edit was saved offers nothing |
+| Then | the Save Mark shows and no Notification says the edit was saved |
 
 ## `ED-024` Adding a new Speaker to the Translation Glossary
 

@@ -5,6 +5,7 @@ import { iconElement, type IconName } from "./icons";
 import { t } from "../i18n";
 import { failureCode, failureMessage } from "./failure";
 import { phaseItems } from "./progress";
+import { showSaveMark } from "./save_mark";
 
 /** How long a Notification that goes on its own stays, paused while the pointer or focus rests on it. */
 export const NOTIFICATION_MS = 6000;
@@ -191,15 +192,15 @@ export function notifyFailure(title: string, error: unknown): void {
 }
 
 /**
- * Says how an edit ended: saved, refused before it was sent with `refusal`, or not done as `failure`
- * says and why. An edit that changed nothing says nothing.
+ * Says how an edit ended: saved, by the Save Mark rather than a Notification since every field left
+ * writes one; refused before it was sent with `refusal`; or not done as `failure` says and why. An
+ * edit that changed nothing says nothing.
  */
 export function notifyEdit(
   outcome: Outcome,
   { refusal = "edit.notSaved", failure = "edit.notSaved" } = {},
 ): void {
-  if (outcome.kind === "written")
-    notify({ title: t("edit.saved"), kind: "success" });
+  if (outcome.kind === "written") showSaveMark();
   else if (outcome.kind === "refused")
     notify({ title: t(refusal), kind: "warning" });
   else if (outcome.kind === "failed") notifyFailure(t(failure), outcome.error);

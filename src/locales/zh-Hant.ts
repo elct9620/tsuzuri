@@ -44,6 +44,7 @@ const zhHant: typeof en = {
     language: "語言",
     model: "模型",
     overwrite: "字幕已存在，開始後會覆蓋",
+    overwriteBoth: "字幕與這個語言的譯文都已存在，開始後會覆蓋",
     start: "開始轉錄",
     overwriteAndStart: "覆蓋並開始",
     translateAfter: "完成後翻譯",

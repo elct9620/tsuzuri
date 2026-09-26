@@ -26,7 +26,6 @@ export default class TranslationOptionsController extends Controller {
     "selfReview",
     "summary",
     "summaryWords",
-    "overwrite",
   ];
 
   declare readonly languageTarget: HTMLSelectElement;
@@ -36,8 +35,6 @@ export default class TranslationOptionsController extends Controller {
   declare readonly selfReviewTarget: HTMLInputElement;
   declare readonly summaryTarget: HTMLInputElement;
   declare readonly summaryWordsTarget: HTMLInputElement;
-  /** Warns that the translation into the Language chosen will be overwritten. */
-  declare readonly overwriteTarget: HTMLElement;
 
   /** The Languages the Current Resource is already translated into. */
   private translatedLanguages: string[] = [];
@@ -63,10 +60,12 @@ export default class TranslationOptionsController extends Controller {
     this.showOverwrite();
   }
 
-  /** Warns when the Language chosen is already translated, telling the dialog around it too. */
+  /**
+   * Tells the dialog around it whether the Language chosen is already translated; the dialog
+   * warns of it, since only the dialog knows what else starting overwrites.
+   */
   showOverwrite(): void {
     const isOverwriting = this.translatedLanguages.includes(this.language);
-    this.overwriteTarget.hidden = !isOverwriting;
     this.dispatch("overwrite", { detail: { isOverwriting } });
   }
 

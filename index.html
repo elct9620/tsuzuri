@@ -89,6 +89,7 @@
               <div
                 class="contents"
                 data-controller="transcribe"
+                data-action="translation-options:overwrite->transcribe#followTranslation"
                 data-transcribe-progress-outlet="#progress"
                 data-transcribe-translation-options-outlet="#transcribe-options"
               >
@@ -145,7 +146,7 @@
                       data-transcribe-target="overwrite"
                       hidden
                     >
-                      <span data-i18n="transcribe.overwrite"></span>
+                      <span data-transcribe-target="overwriteMessage"></span>
                     </div>
                     <div class="modal-action">
                       <form method="dialog">
@@ -169,7 +170,7 @@
               <div
                 class="contents"
                 data-controller="translate"
-                data-action="translation-options:overwrite->translate#labelStart"
+                data-action="translation-options:overwrite->translate#showOverwrite"
                 data-translate-progress-outlet="#progress"
                 data-translate-translation-options-outlet="#translate-options"
               >
@@ -198,6 +199,14 @@
                         data-controller="translation-options"
                       ></div>
                     </fieldset>
+                    <div
+                      role="alert"
+                      class="alert alert-warning alert-soft mt-2"
+                      data-translate-target="overwrite"
+                      hidden
+                    >
+                      <span data-i18n="translate.overwrite"></span>
+                    </div>
                     <div class="modal-action">
                       <form method="dialog">
                         <button class="btn" data-i18n="work.cancel"></button>
@@ -1342,14 +1351,6 @@
         />
         <span data-i18n="translate.words"></span>
       </label>
-      <div
-        role="alert"
-        class="alert alert-warning alert-soft"
-        data-translation-options-target="overwrite"
-        hidden
-      >
-        <span data-i18n="translate.overwrite"></span>
-      </div>
     </template>
     <div class="toast toast-end toast-bottom z-40" data-notifications></div>
     <div

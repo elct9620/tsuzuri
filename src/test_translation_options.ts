@@ -10,7 +10,6 @@ export const translationOptionsTemplate = `
     <input type="checkbox" data-translation-options-target="selfReview">
     <input type="checkbox" data-translation-options-target="summary">
     <input type="number" value="100" data-translation-options-target="summaryWords">
-    <div data-translation-options-target="overwrite" hidden></div>
   </template>
 `;
 

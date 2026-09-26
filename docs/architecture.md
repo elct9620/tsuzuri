@@ -116,11 +116,11 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | 事件 | 送出者 | 接收者 |
 |---|---|---|
 | `project-changed` | 改變專案的指令 | `ProjectFeed` |
-| 進度 | 用例經 `Progress` | `listenProgress` |
-| 復原、重做、全選 | macOS 編輯選單 | 復原與勾選的處理 |
-| 外部修改已留存 | 重新載入 | 專案的通知 |
+| 進度 | 用例經 `Progress` | `progress` |
+| 復原、重做、全選 | macOS 編輯選單 | `undo`、`segment-changes` |
+| 外部修改已留存 | 重新載入 | `project` |
 
-事件只說有變化或到哪一步，不帶資料，內容再用指令取得。進度事件是 `pipeline-progress`；復原、重做與全選是 `menu.rs` 送出的 `edit-command`，給 `followEditCommands`；外部修改已留存是 `changed-elsewhere-kept`。
+事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`；三者由 `relayEvents` 轉成 window 的 `rust:` 事件。
 
 ### 2.4 錯誤與通知
 
@@ -464,7 +464,7 @@ backend/editing.ts            閘道：唯一呼叫編輯指令的地方
 | `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
 | `main.ts` | 全部 | — |
 
-Controller 之間只 import outlet 的型別，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
+Controller 之間只 import outlet 的型別，編輯一律經過 session。Controller 不自己訂閱 Rust 或 window 的事件，一律寫成 `data-action`，由 Stimulus 隨元素綁定與解除。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
 
 ### 4.3 組裝
 
@@ -474,6 +474,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
   |-- session = new EditingSession(editingPort)
   |-- feed -> session.follow -> 各 controller -> session.announce
   |-- session.onChange -> window 的 editor:cursor、editor:choice、editor:checks
+  |-- start() -> relayEvents：Rust 事件 -> window 的 rust:<事件名稱>
   +-- application.register(名稱, class extends X { session, feed })
 ```
 
@@ -544,6 +545,9 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
 | `editor:choice` | session，經 `assembly.ts` | `timeline` 暫停在選的段落 |
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
+| `rust:pipeline-progress` | Rust，經 `relayEvents` | `progress` 顯示 Phase |
+| `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
+| `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，跟隨時捲動 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
@@ -558,7 +562,8 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `transcription.ts`、`translation.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄的指令與型別 |
-| `progress.ts` | `pipeline-progress` 與 Phase 耗時的型別 |
+| `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |
+| `events.ts` | 把 Rust 事件轉到 window |
 | `failure.ts` | `Failure` 型別 |
 | `dialog.ts`、`system.ts` | 系統對話方塊、語系與平台 |
 

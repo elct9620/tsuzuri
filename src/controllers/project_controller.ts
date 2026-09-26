@@ -2,7 +2,6 @@ import { Controller } from "@hotwired/stimulus";
 
 import { message, open } from "../backend/dialog";
 import {
-  followChangesElsewhereKept,
   openProject,
   refreshProject,
   reloadProject,
@@ -15,7 +14,6 @@ import {
   type ResourceView,
   type ProjectFeed,
   type TranscriptionOverrides,
-  type UnlistenFn,
 } from "../backend/project";
 import { interfaceLanguageCode, t } from "../i18n";
 import { failureMessage } from "../ui/failure";
@@ -115,23 +113,26 @@ export default class ProjectController extends Controller {
   declare readonly feed: ProjectFeed;
 
   private unfollow?: () => void;
-  private unlisten?: UnlistenFn;
   private options: ProjectOptions | null = null;
 
-  async connect(): Promise<void> {
+  connect(): void {
     this.unfollow = this.feed.follow((project) => this.show(project));
-    this.unlisten = await followChangesElsewhereKept(() =>
-      notify({
-        title: t("versions.changedElsewhereKept"),
-        detail: t("versions.changedElsewhereKeptDetail"),
-        kind: "warning",
-      }),
-    );
   }
 
   disconnect(): void {
     this.unfollow?.();
-    this.unlisten?.();
+  }
+
+  /**
+   * Says a subtitle changed elsewhere was read in and where what Tsuzuri held of it was kept;
+   * bound to `rust:changed-elsewhere-kept`.
+   */
+  notifyChangedElsewhereKept(): void {
+    notify({
+      title: t("versions.changedElsewhereKept"),
+      detail: t("versions.changedElsewhereKeptDetail"),
+      kind: "warning",
+    });
   }
 
   async openDirectory({ currentTarget }: Event): Promise<void> {

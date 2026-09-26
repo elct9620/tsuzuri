@@ -77,7 +77,7 @@ describe("TranslateController", () => {
           <button id="start" data-translate-target="startButton" data-action="translate#start">開始翻譯</button>
         </dialog>
       </div>
-      <div id="progress" data-controller="progress" hidden>
+      <div id="progress" data-controller="progress" data-action="rust:pipeline-progress@window->progress#show" hidden>
         <span data-progress-target="summary"></span>
         <ul data-progress-target="steps"></ul>
         <p data-progress-target="status"></p>

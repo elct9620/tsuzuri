@@ -51,7 +51,7 @@ describe("ProjectController", () => {
     document.body.innerHTML = `
       <main
         data-controller="project"
-        data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent"
+        data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
       >
         <section data-project-target="startScreen"></section>
         <div data-project-target="workspace" hidden>

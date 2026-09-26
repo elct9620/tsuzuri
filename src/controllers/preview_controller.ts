@@ -68,6 +68,7 @@ export default class PreviewController extends Controller {
     "currentCard",
     "currentNumber",
     "currentTimes",
+    "currentSpeaker",
     "currentText",
     "currentTranslation",
   ];
@@ -95,6 +96,8 @@ export default class PreviewController extends Controller {
   declare readonly currentCardTarget: HTMLElement;
   declare readonly currentNumberTarget: HTMLElement;
   declare readonly currentTimesTarget: HTMLElement;
+  /** Who says the Current Segment, left out while no one is named. */
+  declare readonly currentSpeakerTarget: HTMLElement;
   declare readonly currentTextTarget: HTMLElement;
   declare readonly currentTranslationTarget: HTMLElement;
 
@@ -278,6 +281,8 @@ export default class PreviewController extends Controller {
     if (!segment) return;
     this.currentNumberTarget.textContent = `#${index! + 1}`;
     this.currentTimesTarget.textContent = `${formatTime(segment.start_ms)} → ${formatTime(segment.end_ms)}`;
+    this.currentSpeakerTarget.textContent = segment.speaker ?? "";
+    this.currentSpeakerTarget.hidden = !segment.speaker;
     this.currentTextTarget.textContent = segment.text;
     this.currentTranslationTarget.textContent = segment.translation ?? "";
   }

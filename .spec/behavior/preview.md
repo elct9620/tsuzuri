@@ -309,6 +309,22 @@ A player reports its time only a few times a second, so while the media plays wh
 | When | the second Segment's row is clicked |
 | Then | the card beside the video shows #2 with its times, text and translation |
 
+## `PV-097` Naming the Current Segment's Speaker beside the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments, the second said by `小明` |
+| When | the second Segment's row is clicked |
+| Then | the card beside the video names `小明` |
+
+## `PV-098` Naming no one beside the video for a Segment without a Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment current, said by `小明` |
+| When | the first Segment's row, said by no one, is clicked |
+| Then | the card beside the video names no Speaker |
+
 ## `PV-037` Following an edit of the Current Segment beside the video
 
 | Step | Statement |

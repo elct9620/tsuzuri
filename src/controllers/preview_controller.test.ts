@@ -106,7 +106,7 @@ describe("PreviewController", () => {
           <input type="checkbox" data-preview-target="captionSpeaker" data-action="preview#toggleCaptionSpeaker">
         </div>
           <p data-preview-target="currentHint"></p>
-          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
+          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
         </div>
       </div>
     `;

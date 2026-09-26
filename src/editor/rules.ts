@@ -47,7 +47,7 @@ export function segmentCountAfter(
     case "insertion-after":
       return count + 1;
     case "deletion":
-      return count - 1;
+      return count - change.indexes.length;
     case "merge":
       return count - (change.last - change.first);
     default:

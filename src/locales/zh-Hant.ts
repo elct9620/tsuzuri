@@ -89,7 +89,7 @@ const zhHant: typeof en = {
     newSpeakerName: "新名稱，按 Enter",
     clearSpeaker: "清除說話者",
     speakers: "說話者",
-    speakersOfSelection: "說話者……",
+    speakersOfChecked: "說話者……",
     speakersTitle: "設定說話者",
     speakersScope: "範圍",
     speakersEvery: "全部段落",

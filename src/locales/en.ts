@@ -92,7 +92,7 @@ const en = {
     newSpeakerName: "New name, then Enter",
     clearSpeaker: "Clear speaker",
     speakers: "Speakers",
-    speakersOfSelection: "Speaker…",
+    speakersOfChecked: "Speaker…",
     speakersTitle: "Set speakers",
     speakersScope: "Segments",
     speakersEvery: "Every segment",

@@ -20,4 +20,4 @@ The Project changed; the webview asks `current_project` for what it now holds.
 
 ## `edit-command`
 
-Undo or Redo chosen from the Edit menu, as `"undo"` or `"redo"`: the menu takes their shortcuts before the webview sees them, so the webview applies the command to the text field holding focus, or else to the Project.
+Undo, Redo or Select All chosen from the Edit menu, as `"undo"`, `"redo"` or `"select-all"`: the menu takes their shortcuts before the webview sees them, so the webview applies the command to the text field holding focus, or else to the Project, where Select All checks every Segment.

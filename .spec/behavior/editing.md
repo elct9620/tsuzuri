@@ -231,6 +231,52 @@ Editing goes on from where the text was cut, which is the start of the second ha
 | When | the bar for Checked Segments shows |
 | Then | merging is not offered |
 
+## `ED-065` Deleting the Checked Segments
+
+Deleting the Checked Segments at once is one change, so a single undo brings them all back.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the first and third checked |
+| When | deleting is chosen from the bar for Checked Segments |
+| Then | the Project is asked to delete Segments 0 and 2 as one change |
+
+## `ED-066` Checking every Segment by shortcut
+
+Checking rows one by one is slow across a long transcript, so Ctrl+A, or ⌘+A on macOS, checks them all where no text is being typed.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, with focus outside any text field |
+| When | Ctrl+A is pressed |
+| Then | the three Segments are checked and the bar for Checked Segments shows them |
+
+## `ED-067` Leaving Ctrl+A to a text field
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, with focus in the first Segment's text |
+| When | Ctrl+A is pressed |
+| Then | no Segment is checked and the key is left to the field |
+
+## `ED-068` Checking every Segment from the Edit menu
+
+The macOS Edit menu takes ⌘+A before the webview sees it, so Select All chosen there does what the shortcut does.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, with focus outside any text field |
+| When | Select All is chosen from the Edit menu |
+| Then | the three Segments are checked |
+
+## `ED-069` Selecting a text field's text from the Edit menu
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, with focus in the first Segment's text |
+| When | Select All is chosen from the Edit menu |
+| Then | the field's text is selected and no Segment is checked |
+
 ## `ED-021` Clearing the checks once the Segments change
 
 A change redraws the rows, so a check kept across it would name rows that moved.
@@ -241,7 +287,7 @@ A change redraws the rows, so a check kept across it would name rows that moved.
 | When | the third Segment is deleted from its menu |
 | Then | no Segment is checked and the bar for Checked Segments is hidden |
 
-## `ED-065` Checking the Segments through a row clicked with Shift
+## `ED-071` Checking the Segments through a row clicked with Shift
 
 Subtitle editors check a run of lines by Shift-clicking its other end, as a list does. The Current Segment is that run's fixed end, so it stays current and another Shift-click resizes the run up or down.
 
@@ -251,7 +297,7 @@ Subtitle editors check a run of lines by Shift-clicking its other end, as a list
 | When | the third row is clicked with Shift held |
 | Then | the second and third Segments are checked and no others, and the second stays current |
 
-## `ED-066` Checking upward from the Current Segment
+## `ED-072` Checking upward from the Current Segment
 
 | Step | Statement |
 | --- | --- |
@@ -259,7 +305,7 @@ Subtitle editors check a run of lines by Shift-clicking its other end, as a list
 | When | the first row is clicked with Shift held |
 | Then | the first through the third Segments are checked |
 
-## `ED-067` Making a row current with Shift when no Segment is
+## `ED-073` Making a row current with Shift when no Segment is
 
 | Step | Statement |
 | --- | --- |
@@ -302,6 +348,14 @@ A Segment drawn on the timeline is inserted to be written, as one inserted from 
 | Given | three Segments, the third current |
 | When | the third is deleted from its menu |
 | Then | the second Segment is current |
+
+## `ED-070` Moving past every Segment deleted
+
+| Step | Statement |
+| --- | --- |
+| Given | four Segments, the second and third checked and the second current |
+| When | they are deleted |
+| Then | the Segment that was fourth, now second, is current |
 
 ## `ED-059` Keeping the merged Segment current
 

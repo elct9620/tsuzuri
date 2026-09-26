@@ -18,7 +18,7 @@
       data-controller="project transcript segment-changes dialog comparison speakers retranslation"
       data-retranslation-progress-outlet="#progress"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent"
+      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent"
     >
       <section class="hero flex-1" data-project-target="startScreen">
         <div class="hero-content flex-col text-center">
@@ -809,7 +809,7 @@
               data-i18n="edit.empty"
             ></p>
             <div
-              class="mb-2 flex items-center gap-2 rounded-box bg-base-200 px-3 py-1.5 text-sm"
+              class="sticky -top-4 z-10 mb-2 flex items-center gap-2 rounded-box bg-base-200 px-3 py-1.5 text-sm"
               data-segment-changes-target="checkedBar"
               hidden
             >
@@ -831,7 +831,7 @@
                 type="button"
                 class="btn btn-xs"
                 data-action="segment-changes#openSpeakers"
-                data-i18n="edit.speakersOfSelection"
+                data-i18n="edit.speakersOfChecked"
               ></button>
               <button
                 type="button"
@@ -839,6 +839,12 @@
                 data-retranslation-target="checkedButton"
                 data-action="segment-changes#retranslate"
                 data-i18n="edit.retranslate"
+              ></button>
+              <button
+                type="button"
+                class="btn btn-xs"
+                data-action="segment-changes#deleteChecked"
+                data-i18n="edit.delete"
               ></button>
               <button
                 type="button"

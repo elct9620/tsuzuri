@@ -6,7 +6,7 @@ use crate::transcript::Segment;
 const INSERTED_MS: u64 = 2_000;
 
 /// A change to the Segments themselves, by position, made alike to the original and each translation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum SegmentChange {
     Times {
@@ -15,36 +15,19 @@ pub enum SegmentChange {
         end_ms: u64,
     },
     /// The end of the Segment at `index` and the start of the next, moved together to `at_ms`.
-    Boundary {
-        index: usize,
-        at_ms: u64,
-    },
+    Boundary { index: usize, at_ms: u64 },
     /// An empty Segment from `start_ms` to `end_ms`, placed among the others by its start.
-    Insertion {
-        start_ms: u64,
-        end_ms: u64,
-    },
+    Insertion { start_ms: u64, end_ms: u64 },
     /// An empty Segment filling the gap before the one at `index`.
-    InsertionBefore {
-        index: usize,
-    },
+    InsertionBefore { index: usize },
     /// An empty Segment filling the gap after the one at `index`.
-    InsertionAfter {
-        index: usize,
-    },
-    Deletion {
-        index: usize,
-    },
+    InsertionAfter { index: usize },
+    /// The Segments at `indexes`, in any order.
+    Deletion { indexes: Vec<usize> },
     /// Two Segments, split after the `at`th character of the text; the translation stays with the first.
-    Split {
-        index: usize,
-        at: usize,
-    },
+    Split { index: usize, at: usize },
     /// One Segment from `first` through `last`, their texts and translations each a line.
-    Merge {
-        first: usize,
-        last: usize,
-    },
+    Merge { first: usize, last: usize },
     /// `first` through `last` moved by `offset_ms`, stopping at the start of the media.
     Shift {
         first: usize,
@@ -108,9 +91,16 @@ impl SegmentChange {
                 };
                 segments.insert(index + 1, empty_segment(start_ms, end_ms));
             }
-            SegmentChange::Deletion { index } => {
-                segment_at(segments, index)?;
-                segments.remove(index);
+            SegmentChange::Deletion { mut indexes } => {
+                indexes.sort_unstable();
+                indexes.dedup();
+                let Some(&last) = indexes.last() else {
+                    return Err(invalid_position("no Segment to delete".to_string()));
+                };
+                segment_at(segments, last)?;
+                for index in indexes.into_iter().rev() {
+                    segments.remove(index);
+                }
             }
             SegmentChange::Split { index, at } => {
                 let segment = segment_at(segments, index)?;
@@ -201,7 +191,7 @@ mod tests {
                 {"kind":"insertion","start_ms":1500,"end_ms":2500},
                 {"kind":"insertion-before","index":1},
                 {"kind":"insertion-after","index":1},
-                {"kind":"deletion","index":2},
+                {"kind":"deletion","indexes":[0,2]},
                 {"kind":"split","index":0,"at":2},
                 {"kind":"merge","first":0,"last":1},
                 {"kind":"shift","first":1,"last":2,"offset_ms":-500}
@@ -227,7 +217,9 @@ mod tests {
                 },
                 SegmentChange::InsertionBefore { index: 1 },
                 SegmentChange::InsertionAfter { index: 1 },
-                SegmentChange::Deletion { index: 2 },
+                SegmentChange::Deletion {
+                    indexes: vec![0, 2]
+                },
                 SegmentChange::Split { index: 0, at: 2 },
                 SegmentChange::Merge { first: 0, last: 1 },
                 SegmentChange::Shift {

@@ -370,13 +370,13 @@ impl Project {
         let current = self.current()?;
         let (name, translation) = (current.name.clone(), current.translation);
         let mut original = current.transcript.clone();
-        change.apply(&mut original.segments)?;
+        change.clone().apply(&mut original.segments)?;
         let resource = self.resource(&name)?;
         let mut translations = Vec::new();
         for (language, path) in &resource.translations {
             let mut translation =
                 resource.transcript(Some(*language), &self.speaker_names(Some(*language)))?;
-            change.apply(&mut translation.segments)?;
+            change.clone().apply(&mut translation.segments)?;
             translations.push((
                 path.clone(),
                 translation_srt(&translation, self.speaker_names(Some(*language))),
@@ -2147,7 +2147,7 @@ mod tests {
         );
 
         current
-            .change_segments(SegmentChange::Deletion { index: 0 })
+            .change_segments(SegmentChange::Deletion { indexes: vec![0] })
             .unwrap();
 
         assert_eq!(
@@ -2156,6 +2156,58 @@ mod tests {
                 srt_of(&[(1_000, 2_000, "世界")]),
                 srt_of(&[(1_000, 2_000, "world")])
             ]
+        );
+    }
+
+    // @behavior PJ-121
+    #[test]
+    fn deletes_segments_apart_from_each_other_as_one_change() {
+        let dir = TempDir::new("pj-delete-apart");
+        let current = changing_project_in(
+            &dir,
+            &[
+                (0, 1_000, "你好"),
+                (1_000, 2_000, "今天"),
+                (2_000, 3_000, "世界"),
+            ],
+            &[
+                (0, 1_000, "Hello"),
+                (1_000, 2_000, "today"),
+                (2_000, 3_000, "world"),
+            ],
+        );
+
+        current
+            .change_segments(SegmentChange::Deletion {
+                indexes: vec![2, 0],
+            })
+            .unwrap();
+        let after_deletion = [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")];
+        current.undo().unwrap();
+
+        assert_eq!(
+            (
+                after_deletion,
+                [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")]
+            ),
+            (
+                [
+                    srt_of(&[(1_000, 2_000, "今天")]),
+                    srt_of(&[(1_000, 2_000, "today")])
+                ],
+                [
+                    srt_of(&[
+                        (0, 1_000, "你好"),
+                        (1_000, 2_000, "今天"),
+                        (2_000, 3_000, "世界")
+                    ]),
+                    srt_of(&[
+                        (0, 1_000, "Hello"),
+                        (1_000, 2_000, "today"),
+                        (2_000, 3_000, "world")
+                    ])
+                ]
+            )
         );
     }
 
@@ -3723,7 +3775,7 @@ mod tests {
         let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
 
         let results = (
-            current.change_segments(SegmentChange::Deletion { index: 0 }),
+            current.change_segments(SegmentChange::Deletion { indexes: vec![0] }),
             current.undo(),
         );
 

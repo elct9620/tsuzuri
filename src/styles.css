@@ -5,7 +5,7 @@
 @plugin "daisyui";
 
 /* While the timeline is dragged, the time under the pointer gives way to the times it lands on */
-[data-dragging] ::part(hover) {
+[data-is-dragging] ::part(hover) {
   visibility: hidden;
 }
 

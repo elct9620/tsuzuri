@@ -600,7 +600,7 @@ export default class TimelineController extends Controller {
     this.timesTarget.textContent = span
       ? `${formatSeconds(span.start)} → ${formatSeconds(span.end)} (${formatLength(span)})`
       : "";
-    this.waveformTarget.toggleAttribute("data-dragging", isDragging);
+    this.waveformTarget.toggleAttribute("data-is-dragging", isDragging);
   }
 
   /** Asks the Project for new times for the Segment at `index`, unless they are the ones it has. */

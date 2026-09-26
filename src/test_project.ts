@@ -23,6 +23,7 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
     media: null,
     segments: [],
     shown_translation: null,
+    shown_speaker_names: {},
     has_undo: false,
     has_redo: false,
     running_mode: null,

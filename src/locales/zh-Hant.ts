@@ -155,7 +155,7 @@ const zhHant: typeof en = {
     playCurrent: "播放這段",
     playOn: "從這裡播放",
     fold: "顯示或收起預覽",
-    following: "段落清單跟隨播放",
+    following: "段落清單追蹤播放",
     followingHint: "清單會捲到正在播放的段落，關掉後播放時清單停在原處。",
     playingAlone: "只播目前段落",
     playingAloneHint:
@@ -383,7 +383,7 @@ const zhHant: typeof en = {
       delete: "刪除段落",
       replace: "取代",
       reload: "重新載入",
-      following: "跟隨播放",
+      following: "追蹤播放",
       play: "播放或停止",
       setStart: "設開始",
       setEnd: "設結束",

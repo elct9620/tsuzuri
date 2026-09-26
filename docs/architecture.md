@@ -537,7 +537,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `field` | 每個編輯欄位接上 session |
 | `time-field` | 時間欄分段輸入 |
 
-畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`；跟隨播放鈕在預覽卡片，屬於捲動清單的 `transcript`。
+畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`；追蹤播放鈕在預覽卡片，屬於捲動清單的 `transcript`。
 
 | 事件或 outlet | 送出者 | 接收者與用途 |
 |---|---|---|
@@ -552,7 +552,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `progress` 顯示 Phase |
 | `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
-| `preview:playing` | `preview` | 字幕編輯標出播放中，跟隨時捲動 |
+| `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
 | `segment-changes:retranslate` | `segment-changes` | `retranslation` 重新翻譯 Checked Segments |

@@ -20,6 +20,8 @@ describe("TooltipController", () => {
     document.body.innerHTML = `
       <div data-controller="tooltip" data-action="pointerover->tooltip#show focusin->tooltip#show pointerout->tooltip#hide focusout->tooltip#hide scroll->tooltip#hide:capture">
         <ul><li><button id="resource" data-tooltip="ep03-a-very-long-name">ep03…</button></li></ul>
+        <button id="following" data-tooltip="清單會捲到正在播放的段落" data-shortcut="following"></button>
+        <button id="replace" data-shortcut="replace">取代</button>
         <dialog open>
           <span id="setting" data-tooltip="每批送給模型的句數">每批</span>
         </dialog>
@@ -59,6 +61,19 @@ describe("TooltipController", () => {
     point("pointerover", "#setting");
 
     expect(bubble().parentElement).toBe(document.querySelector("dialog"));
+  });
+
+  // @behavior IF-035
+  it("ends the tooltip of a button with its shortcut", () => {
+    point("pointerover", "#following");
+
+    expect(bubble().dataset.tip).toBe("清單會捲到正在播放的段落（Ctrl+L）");
+  });
+
+  it("shows the shortcut alone for a button that explains nothing more", () => {
+    point("pointerover", "#replace");
+
+    expect(bubble().dataset.tip).toBe("Ctrl+H");
   });
 
   // @behavior IF-027

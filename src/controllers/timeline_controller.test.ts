@@ -10,7 +10,10 @@ import type { ProjectView, Segment } from "../backend/project";
 import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test_layout";
 import { projectOf } from "../test_project";
-import TimelineController, { regionColor } from "./timeline_controller";
+import TimelineController, {
+  controlOption,
+  regionColor,
+} from "./timeline_controller";
 
 describe("TimelineController", () => {
   let application: Application;
@@ -76,8 +79,9 @@ describe("TimelineController", () => {
       { shouldMockEvents: true },
     );
     document.body.innerHTML = `
-      <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture">
+      <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture">
         <video data-timeline-target="media"></video>
+        <input id="typing" />
         <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button>
         <span data-timeline-target="times" hidden></span>
         <button data-timeline-target="aloneButton"></button><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd>
@@ -87,6 +91,7 @@ describe("TimelineController", () => {
       </div>
     `;
     application = Application.start();
+    application.registerActionOption("control", controlOption);
     const assembly = assemble(application, {
       timeline: TimelineController,
     });
@@ -618,6 +623,20 @@ describe("TimelineController", () => {
       pressKey("Escape");
 
       expect(regions().length).toBe(1);
+    });
+
+    // @behavior PV-102
+    it("keeps the drawn range when Esc is pressed in a text field", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5)]));
+      await draw(100, 45);
+
+      document
+        .querySelector("#typing")!
+        .dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+        );
+
+      expect(regions().length).toBe(2);
     });
 
     // @behavior PV-064

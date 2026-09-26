@@ -787,6 +787,16 @@ Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as S
 | When | Esc is pressed |
 | Then | the timeline marks only the Segment |
 
+## `PV-102` Keeping a drawn range when Esc is pressed in a text field
+
+Esc in a text field gives up what was typed there, which asks nothing of the timeline.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline with one Segment, a range drawn where no Segment is, and focus in a text field |
+| When | Esc is pressed |
+| Then | the timeline marks the Segment and the range |
+
 ## `PV-064` Drawing a range over the next Segment
 
 | Step | Statement |

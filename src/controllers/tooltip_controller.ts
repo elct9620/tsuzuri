@@ -1,19 +1,34 @@
 import { Controller } from "@hotwired/stimulus";
 
+import { isMacOS } from "../backend/system";
+import { t } from "../i18n";
+import { shortcutById, shortcutText } from "../ui/shortcuts";
+
+/** The text of `trigger`'s tooltip, followed by the keys of the shortcut it names. */
+function tip({ dataset }: HTMLElement): string | undefined {
+  const shortcut = shortcutById(dataset.shortcut ?? "");
+  if (!shortcut) return dataset.tooltip;
+  const keys = shortcutText(shortcut, isMacOS());
+  return dataset.tooltip
+    ? t("shortcuts.withKeys", { tip: dataset.tooltip, keys })
+    : keys;
+}
+
 /**
  * One daisyUI tooltip for the whole page, moved beside whichever element with `data-tooltip` the
  * pointer or focus is on. daisyUI draws a tooltip inside its element, where a scrolling list or a
  * dialog cuts it off; this one sits outside them and is placed by the element's position on screen.
+ * An element naming a shortcut with `data-shortcut` has its keys added to the text.
  */
 export default class TooltipController extends Controller<HTMLElement> {
   static targets = ["bubble"];
 
   declare readonly bubbleTarget: HTMLElement;
 
-  /** Shows the tip of the element with `data-tooltip` the pointer or focus has come to. */
+  /** Shows the tip of the element with `data-tooltip` or `data-shortcut` the pointer or focus has come to. */
   show(event: Event): void {
     const trigger = (event.target as Element).closest<HTMLElement>(
-      "[data-tooltip]",
+      "[data-tooltip], [data-shortcut]",
     );
     if (trigger) this.place(trigger);
   }
@@ -39,7 +54,7 @@ export default class TooltipController extends Controller<HTMLElement> {
     const isInRightHalf = left + width / 2 > window.innerWidth / 2;
     bubble.classList.toggle("tooltip-left", isInRightHalf);
     bubble.classList.toggle("tooltip-right", !isInRightHalf);
-    bubble.dataset.tip = trigger.dataset.tooltip;
+    bubble.dataset.tip = tip(trigger);
     bubble.hidden = false;
   }
 }

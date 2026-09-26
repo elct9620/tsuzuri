@@ -14,6 +14,7 @@ import type { EditingSession, SegmentChange } from "../editor";
 import { t } from "../i18n";
 import { rememberChoice, rememberedChoice } from "../ui/choices";
 import { notifyEdit, notifyFailure } from "../ui/notification";
+import { chords, shortcutById } from "../ui/shortcuts";
 import { formatTime } from "../ui/time";
 
 const INITIAL_PX_PER_SEC = 100;
@@ -35,12 +36,11 @@ const ALONE_KEY = "tsuzuri.timeline-playing-alone";
 /** Where the webview remembers whether a dragged edge Snaps without Shift. */
 const SNAPPING_KEY = "tsuzuri.timeline-snapping";
 
-/**
- * The key that sets the Current Segment's start or end where the media is: F11 and F12, as
- * Subtitle Edit binds them, but F9 for the start on macOS, which takes F11 to show the desktop.
- */
+/** The key that sets the Current Segment's start or end where the media is, as `KeyboardEvent.key` names it. */
 function timeKeys(): Record<UpdateSide, string> {
-  return { start: isMacOS() ? "F9" : "F11", end: "F12" };
+  const isMac = isMacOS();
+  const key = (id: string) => chords(shortcutById(id)!, isMac)[0].toUpperCase();
+  return { start: key("setStart"), end: key("setEnd") };
 }
 
 /** Where a Segment runs on the timeline, in seconds. */
@@ -370,9 +370,8 @@ export default class TimelineController extends Controller {
   }
 
   /**
-   * Begins drawing a range with Ctrl held, or ⌘ on macOS, where Ctrl and a click open the context
-   * menu: a press on a region otherwise chooses or drags its Segment, so this goes before the
-   * regions hear it and draws over them.
+   * Begins drawing a range with the drawing key held: a press on a region otherwise chooses or
+   * drags its Segment, so this goes before the regions hear it and draws over them.
    */
   drawOver(event: PointerEvent): void {
     if (event.button !== 0 || !isDrawingKey(event) || !this.surfer) return;
@@ -867,9 +866,10 @@ export default class TimelineController extends Controller {
   }
 }
 
-/** Whether the key that draws a range over the Segments is held: ⌘ on macOS, else Ctrl. */
+/** Whether the key the shortcut list names for drawing a range over the Segments is held. */
 function isDrawingKey(event: MouseEvent): boolean {
-  return isMacOS() ? event.metaKey : event.ctrlKey;
+  const [modifier] = chords(shortcutById("drawOver")!, isMacOS())[0].split("+");
+  return modifier === "meta" ? event.metaKey : event.ctrlKey;
 }
 
 function spanOf(segment: Segment): Span {

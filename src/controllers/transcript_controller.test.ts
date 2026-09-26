@@ -608,7 +608,7 @@ describe("TranscriptController", () => {
     ]).toEqual(["段落操作", true]);
   });
 
-  // @behavior ED-094
+  // @behavior ED-096
   it("shows the split shortcut beside splitting in a Segment's menu", async () => {
     await hold(translated);
 

@@ -244,7 +244,7 @@ Deleting the Checked Segments at once is one change, so a single undo brings the
 | When | deleting is chosen from the bar for Checked Segments |
 | Then | the Project is asked to delete Segments 0 and 2 as one change |
 
-## `ED-094` Showing the split shortcut in a Segment's menu
+## `ED-096` Showing the split shortcut in a Segment's menu
 
 | Step | Statement |
 | --- | --- |

@@ -41,6 +41,13 @@ export const SHORTCUTS: Shortcut[] = [
     other: ["ctrl+shift+z", "ctrl+y"],
   },
   { id: "checkAll", group: "anywhere", mac: ["meta+a"], other: ["ctrl+a"] },
+  // Backspace on macOS too, where the key labelled delete types it and a forward Delete takes Fn
+  {
+    id: "delete",
+    group: "anywhere",
+    mac: ["backspace", "delete"],
+    other: ["delete"],
+  },
   { id: "replace", group: "anywhere", mac: ["meta+alt+f"], other: ["ctrl+h"] },
   { id: "reload", group: "anywhere", mac: ["meta+r"], other: ["ctrl+r"] },
   { id: "following", group: "anywhere", mac: ["meta+l"], other: ["ctrl+l"] },
@@ -97,6 +104,8 @@ const MAC_LABELS: Record<string, string> = {
   alt: "⌥",
   shift: "⇧",
   enter: "↩",
+  backspace: "⌫",
+  delete: "⌦",
 };
 
 const OTHER_LABELS: Record<string, string> = {
@@ -104,6 +113,7 @@ const OTHER_LABELS: Record<string, string> = {
   alt: "Alt",
   shift: "Shift",
   enter: "Enter",
+  delete: "Delete",
 };
 
 /** The keys and mouse actions written as words of the Interface Language. */

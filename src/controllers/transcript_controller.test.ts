@@ -620,4 +620,13 @@ describe("TranscriptController", () => {
       "Ctrl+Alt+Enter",
     );
   });
+
+  // @behavior ED-106
+  it("shows the delete shortcut beside deleting in a Segment's menu", async () => {
+    await hold(translated);
+
+    expect(document.querySelector("li button.delete kbd")?.textContent).toBe(
+      "Delete",
+    );
+  });
 });

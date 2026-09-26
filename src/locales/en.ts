@@ -385,6 +385,7 @@ const en = {
       undo: "Undo",
       redo: "Redo",
       checkAll: "Check every Segment",
+      delete: "Delete Segments",
       replace: "Replace",
       reload: "Reload",
       following: "Follow playback",
@@ -407,6 +408,8 @@ const en = {
       undo: "Undoes the typing in a text field, else the last change to the subtitles",
       redo: "Redoes the typing in a text field, else the last change undone",
       checkAll: "Selects the text in a text field, else checks every Segment",
+      delete:
+        "Deletes the Checked Segments, else the Current Segment; not in a text field, a menu, a list or a dialog",
       replace: "Text selected in a field is what is looked for",
       reload: "Reads the folder again for files changed elsewhere",
       following:

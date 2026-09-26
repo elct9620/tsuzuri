@@ -372,6 +372,7 @@ const zhHant: typeof en = {
       undo: "復原",
       redo: "重做",
       checkAll: "全部勾選",
+      delete: "刪除段落",
       replace: "取代",
       reload: "重新載入",
       following: "跟隨播放",
@@ -394,6 +395,8 @@ const zhHant: typeof en = {
       undo: "在欄位中復原打的字，其他時候復原上一次對字幕的改動",
       redo: "在欄位中重做打的字，其他時候重做上一次復原的改動",
       checkAll: "在欄位中全選文字，其他時候勾選全部段落",
+      delete:
+        "有勾選刪除勾選的段落，否則刪除目前段落；在欄位、選單、清單或對話框中不作用",
       replace: "欄位中選取的文字會帶入「尋找」",
       reload: "重新讀取目錄，帶入別處改動的檔案",
       following: "清單捲到正在播放的段落；在欄位中也可以切換",

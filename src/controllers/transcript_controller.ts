@@ -159,7 +159,7 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
     ["insertBefore", "edit.insertAbove"],
     ["insertAfter", "edit.insertBelow"],
     ["split", "edit.split", "split"],
-    ["delete", "edit.delete"],
+    ["delete", "edit.delete", "delete"],
   ]) {
     const button = document.createElement("button");
     button.type = "button";

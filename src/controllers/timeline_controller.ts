@@ -32,6 +32,8 @@ const SNAP_PX = 8;
 const RANGE_ID = "range";
 /** Where the webview remembers whether Space plays the Current Segment alone. */
 const ALONE_KEY = "tsuzuri.timeline-playing-alone";
+/** Where the webview remembers whether a dragged edge Snaps without Shift. */
+const SNAPPING_KEY = "tsuzuri.timeline-snapping";
 
 /**
  * The key that sets the Current Segment's start or end where the media is: F11 and F12, as
@@ -192,7 +194,8 @@ export default class TimelineController extends Controller {
   /** Whether a running Mode holds the Current Resource, which refuses every Segment Change. */
   private isHeld = false;
   private pxPerSec = INITIAL_PX_PER_SEC;
-  private isSnapping = true;
+  /** Whether a dragged edge Snaps, which Shift reverses for one drag; off unless chosen, as in Aegisub. */
+  private isSnapping = rememberedChoice(SNAPPING_KEY) === "true";
   /** Whether Space plays the Current Segment alone and stops at its end, rather than on from where the media is. */
   private isPlayingAlone = rememberedChoice(ALONE_KEY) === "true";
   /** The modifier keys held as the pointer last moved, which a region's own events do not carry. */
@@ -241,6 +244,7 @@ export default class TimelineController extends Controller {
 
   toggleSnapping(): void {
     this.isSnapping = !this.isSnapping;
+    rememberChoice(SNAPPING_KEY, String(this.isSnapping));
     this.showSnapping();
   }
 

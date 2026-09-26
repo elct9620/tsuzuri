@@ -696,6 +696,12 @@ fn is_written_by_edit(
     }
 }
 
+/// The text `value` holds, without the line breaks and spaces after its last character: a field
+/// keeps a line break typed at the end that it no longer shows, and SRT writes none of them.
+fn text_from(value: &str) -> String {
+    value.trim_end().to_string()
+}
+
 /// The Speaker `value` names, trimmed; an empty one names none.
 fn speaker_from(value: &str) -> Option<String> {
     let speaker = value.trim();
@@ -740,6 +746,9 @@ pub struct ProjectView {
     media: Option<PathBuf>,
     segments: Vec<Segment>,
     shown_translation: Option<Language>,
+    /// What the Translation Glossary calls each Speaker in the translation shown, by its name in
+    /// the Primary Language, so the webview names a Speaker as the saved subtitle does.
+    shown_speaker_names: HashMap<String, String>,
     has_undo: bool,
     has_redo: bool,
     running_mode: Option<RunningMode>,
@@ -773,6 +782,10 @@ impl ProjectView {
 
     pub fn segments(&self) -> &[Segment] {
         &self.segments
+    }
+
+    pub fn shown_speaker_names(&self) -> &HashMap<String, String> {
+        &self.shown_speaker_names
     }
 
     pub fn directory(&self) -> &Path {
@@ -1118,6 +1131,7 @@ impl CurrentProject {
                     .and_then(|resource| resource.media.clone()),
                 segments,
                 shown_translation,
+                shown_speaker_names: project.speaker_names(shown_translation),
                 has_undo: history.is_some_and(UndoHistory::has_undo),
                 has_redo: history.is_some_and(UndoHistory::has_redo),
                 running_mode: mode_hold.map(|hold| hold.mode.clone()),
@@ -1475,8 +1489,8 @@ impl CurrentProject {
                         detail: format!("no Segment at {index}"),
                     })?;
                 match field {
-                    SegmentField::Text => segment.text = value,
-                    SegmentField::Translation => segment.translation = Some(value),
+                    SegmentField::Text => segment.text = text_from(&value),
+                    SegmentField::Translation => segment.translation = Some(text_from(&value)),
                     SegmentField::Speaker => segment.speaker = speaker_from(&value),
                 }
                 project.write_back(field, &previous)
@@ -3819,6 +3833,33 @@ mod tests {
         assert_eq!(segments(&current)[0].text, "你好");
     }
 
+    // @behavior ED-094
+    #[test]
+    fn leaves_out_what_follows_the_last_character_of_an_edited_text() {
+        let dir = directory_of("ed-edit-trailing", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+
+        edit_text(&current, "您好\n ");
+
+        assert_eq!(segments(&current)[0].text, "您好");
+    }
+
+    // @behavior ED-095
+    #[test]
+    fn leaves_out_what_follows_the_last_character_of_an_edited_translation() {
+        let dir = directory_of(
+            "ed-edit-trailing-translation",
+            &[("ep01.srt", &cue("你好")), ("ep01.en.srt", &cue("Hi"))],
+        );
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Translation, "Hello\n".to_string())
+            .unwrap();
+
+        assert_eq!(segments(&current), vec![segment("你好", Some("Hello"))]);
+    }
+
     #[test]
     fn refuses_a_translation_with_none_shown() {
         let dir = directory_of("ed-replace-no-translation", &[("ep01.srt", &cue("你好"))]);
@@ -3875,6 +3916,20 @@ mod tests {
             .unwrap();
 
         assert_eq!(read(&dir, "ep01.en.srt"), cue("Xiao Ming: Hello"));
+    }
+
+    // @behavior PJ-137
+    #[test]
+    fn tells_the_webview_what_the_translation_glossary_calls_each_speaker_in_the_translation_shown()
+    {
+        let dir = TempDir::new("pj-speaker-shown-names");
+        let current = xiao_ming_project_in(&dir, &[("ep01.en.srt", &cue("Xiao Ming: Hello"))]);
+        current.show_translation(Some(Language::English)).unwrap();
+
+        assert_eq!(
+            current.view().unwrap().shown_speaker_names(),
+            &HashMap::from([("小明".to_string(), "Xiao Ming".to_string())])
+        );
     }
 
     /// A Project whose `ep01` has a media file, `ep01.srt` reading `co: 你好` and `ep01.en.srt`

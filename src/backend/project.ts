@@ -59,6 +59,8 @@ export interface ProjectView {
   segments: Segment[];
   /** The Language code of the translations the Segments carry. */
   shown_translation: string | null;
+  /** What the Translation Glossary calls each Speaker in the translation shown, by its name in the Primary Language. */
+  shown_speaker_names: Record<string, string>;
   /** Whether the Current Resource has a change to undo. */
   has_undo: boolean;
   /** Whether the Current Resource has an undone change to redo. */

@@ -35,6 +35,14 @@ function captionBackdropOf(value: string | null): CaptionBackdrop {
   return value === "none" || value === "opaque" ? value : "translucent";
 }
 
+/** Where the webview remembers the Speaker over the video turned off. */
+const SPEAKER_KEY = "tsuzuri.preview-speaker";
+
+/** `text` after a Speaker Label naming `name`, as a cue names its Speaker; with nothing to say, no one is named. */
+function withSpeakerLabel(text: string, name: string | undefined): string {
+  return name && text ? `${name}: ${text}` : text;
+}
+
 /** Puts `text` in `element` only when it changes, since the Preview follows the media each frame it plays. */
 function showText(element: HTMLElement, text: string): void {
   if (element.textContent !== text) element.textContent = text;
@@ -52,6 +60,7 @@ export default class PreviewController extends Controller {
     "captionChoice",
     "captionLanguage",
     "captionBackdrop",
+    "captionSpeaker",
     "hint",
     "playbackIcon",
     "time",
@@ -59,6 +68,7 @@ export default class PreviewController extends Controller {
     "currentCard",
     "currentNumber",
     "currentTimes",
+    "currentSpeaker",
     "currentText",
     "currentTranslation",
   ];
@@ -76,6 +86,7 @@ export default class PreviewController extends Controller {
   declare readonly captionChoiceTarget: HTMLElement;
   declare readonly captionLanguageTargets: HTMLInputElement[];
   declare readonly captionBackdropTargets: HTMLInputElement[];
+  declare readonly captionSpeakerTarget: HTMLInputElement;
   declare readonly hintTarget: HTMLElement;
   declare readonly playbackIconTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
@@ -85,6 +96,8 @@ export default class PreviewController extends Controller {
   declare readonly currentCardTarget: HTMLElement;
   declare readonly currentNumberTarget: HTMLElement;
   declare readonly currentTimesTarget: HTMLElement;
+  /** Who says the Current Segment, left out while no one is named. */
+  declare readonly currentSpeakerTarget: HTMLElement;
   declare readonly currentTextTarget: HTMLElement;
   declare readonly currentTranslationTarget: HTMLElement;
 
@@ -92,9 +105,12 @@ export default class PreviewController extends Controller {
   private segments: Segment[] = [];
   private playingIndex: number | null = null;
   private hasTranslation = false;
+  private speakerNames: ProjectView["shown_speaker_names"] = {};
   private bilingualOrder: ProjectOptions["bilingual_order"] = "original-first";
   private captionLanguage = captionLanguageOf(rememberedChoice(CAPTION_KEY));
   private captionBackdrop = captionBackdropOf(rememberedChoice(BACKDROP_KEY));
+  /** A saved cue names its Speaker, so the caption does too until turned off. */
+  private isSpeakerShown = rememberedChoice(SPEAKER_KEY) !== "false";
   private isFolded = rememberedChoice(FOLDED_KEY) === "true";
   private unfollow?: () => void;
   /** The request for the next frame the Preview follows the media on, while it plays. */
@@ -102,6 +118,7 @@ export default class PreviewController extends Controller {
 
   connect(): void {
     this.showCaptionBackdrop();
+    this.captionSpeakerTarget.checked = this.isSpeakerShown;
     this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
@@ -133,6 +150,12 @@ export default class PreviewController extends Controller {
       .value as CaptionBackdrop;
     rememberChoice(BACKDROP_KEY, this.captionBackdrop);
     this.showCaptionBackdrop();
+  }
+
+  toggleCaptionSpeaker(): void {
+    this.isSpeakerShown = this.captionSpeakerTarget.checked;
+    rememberChoice(SPEAKER_KEY, String(this.isSpeakerShown));
+    this.showCaption(this.segmentIndexAtTime());
   }
 
   togglePlayback(): void {
@@ -215,14 +238,23 @@ export default class PreviewController extends Controller {
     showText(this.captionTarget, segment ? this.caption(segment) : "");
   }
 
-  /** The text over the video, laid out as a Bilingual SRT cue lays out both languages. */
-  private caption({ text, translation }: Segment): string {
+  /**
+   * The text over the video, laid out as a Bilingual SRT cue lays out both languages, each
+   * naming the Speaker as that language's subtitle does.
+   */
+  private caption({ speaker, text, translation }: Segment): string {
     const language = this.hasTranslation ? this.captionLanguage : "original";
-    if (language === "translation") return translation ?? "";
-    if (language === "original" || !translation) return text;
+    const name = this.isSpeakerShown ? speaker : undefined;
+    const original = withSpeakerLabel(text, name);
+    const translated = withSpeakerLabel(
+      translation ?? "",
+      name && (this.speakerNames[name] ?? name),
+    );
+    if (language === "translation") return translated;
+    if (language === "original" || !translation) return original;
     return this.bilingualOrder === "translation-first"
-      ? `${translation}\n${text}`
-      : `${text}\n${translation}`;
+      ? `${translated}\n${original}`
+      : `${original}\n${translated}`;
   }
 
   /** Offers the translation only while one is shown, keeping the choice for when one is again. */
@@ -249,6 +281,8 @@ export default class PreviewController extends Controller {
     if (!segment) return;
     this.currentNumberTarget.textContent = `#${index! + 1}`;
     this.currentTimesTarget.textContent = `${formatTime(segment.start_ms)} → ${formatTime(segment.end_ms)}`;
+    this.currentSpeakerTarget.textContent = segment.speaker ?? "";
+    this.currentSpeakerTarget.hidden = !segment.speaker;
     this.currentTextTarget.textContent = segment.text;
     this.currentTranslationTarget.textContent = segment.translation ?? "";
   }
@@ -271,6 +305,7 @@ export default class PreviewController extends Controller {
   private show(project: ProjectView | null): void {
     this.segments = project?.segments ?? [];
     this.hasTranslation = (project?.shown_translation ?? null) !== null;
+    this.speakerNames = project?.shown_speaker_names ?? {};
     this.bilingualOrder = project?.options.bilingual_order ?? "original-first";
     this.showCaptionChoice();
     const media = project?.media ?? null;

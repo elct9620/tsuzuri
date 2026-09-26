@@ -53,6 +53,7 @@ describe("TimelineController", () => {
 
   beforeEach(async () => {
     takeLayoutBack = layOutTimeline();
+    localStorage.clear();
     // The regions measure a drag against their own width: 200 pixels over two seconds of Peaks
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
       DOMRect.fromRect({ x: 0, y: 0, width: 200, height: 100 }),
@@ -388,6 +389,7 @@ describe("TimelineController", () => {
     // @behavior PV-054
     it("snaps a dragged edge to the next Segment", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
+      press("timeline#toggleSnapping");
 
       await drag(endOf(0)!, 5);
 
@@ -398,6 +400,7 @@ describe("TimelineController", () => {
     it("snaps a dragged edge to where the media is", async () => {
       await showCurrent([segmentAt(0, 0.5)]);
       media().currentTime = 0.8;
+      press("timeline#toggleSnapping");
 
       await drag(endOf(0)!, 25);
 
@@ -405,8 +408,9 @@ describe("TimelineController", () => {
     });
 
     // @behavior PV-056
-    it("does not snap while Shift is held", async () => {
+    it("does not snap while Shift is held once snapping is turned on", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
+      press("timeline#toggleSnapping");
 
       await drag(endOf(0)!, 5, { shiftKey: true });
 
@@ -417,10 +421,29 @@ describe("TimelineController", () => {
     it("does not snap once snapping is turned off", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
       press("timeline#toggleSnapping");
+      press("timeline#toggleSnapping");
 
       await drag(endOf(0)!, 5);
 
       expect(changes).toEqual([times(0, 0, 550)]);
+    });
+
+    // @behavior PV-099
+    it("does not snap unless snapping is chosen", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
+
+      await drag(endOf(0)!, 5);
+
+      expect(changes).toEqual([times(0, 0, 550)]);
+    });
+
+    // @behavior PV-100
+    it("snaps while Shift is held", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
+
+      await drag(endOf(0)!, 5, { shiftKey: true });
+
+      expect(changes).toEqual([times(0, 0, 600)]);
     });
 
     // @behavior PV-058
@@ -545,6 +568,7 @@ describe("TimelineController", () => {
     // @behavior PV-072
     it("reads where a dragged Segment lands before it is let go", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
+      press("timeline#toggleSnapping");
 
       pressAndMove(endOf(0)!, 5);
 

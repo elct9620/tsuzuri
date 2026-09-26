@@ -56,6 +56,24 @@ describe("PreviewController", () => {
       ...changes,
     });
 
+  const captionSpeaker = () => target("captionSpeaker") as HTMLInputElement;
+
+  /** `ep01` with media and `今天` from 0 to 1 s said by `小明`, translated `Today` in `en` shown, where the Translation Glossary names `小明` as `Xiao Ming`. */
+  const projectSpoken = (changes: Partial<ProjectView> = {}) =>
+    projectTranslated({
+      segments: [
+        {
+          start_ms: 0,
+          end_ms: 1000,
+          speaker: "小明",
+          text: "今天",
+          translation: "Today",
+        },
+      ],
+      shown_speaker_names: { 小明: "Xiao Ming" },
+      ...changes,
+    });
+
   function pressPlay(): void {
     document.querySelector<HTMLElement>("#play")!.click();
   }
@@ -85,9 +103,10 @@ describe("PreviewController", () => {
           <input type="radio" name="backdrop" value="none" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
           <input type="radio" name="backdrop" value="translucent" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
           <input type="radio" name="backdrop" value="opaque" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
+          <input type="checkbox" data-preview-target="captionSpeaker" data-action="preview#toggleCaptionSpeaker">
         </div>
           <p data-preview-target="currentHint"></p>
-          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
+          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
         </div>
       </div>
     `;
@@ -335,6 +354,91 @@ describe("PreviewController", () => {
       target("caption").dataset.backdrop,
       captionBackdrop("none").checked,
     ]).toEqual(["none", true]);
+  });
+
+  // @behavior PV-092
+  it("names the Speaker over the video by default", async () => {
+    await show(projectSpoken());
+
+    playTo(0.5);
+
+    expect([target("caption").textContent, captionSpeaker().checked]).toEqual([
+      "小明: 今天",
+      true,
+    ]);
+  });
+
+  // @behavior PV-093
+  it("names the Speaker in the translation over the video as the Translation Glossary does", async () => {
+    await show(projectSpoken());
+
+    captionLanguage("translation").click();
+    playTo(0.5);
+
+    expect(target("caption").textContent).toBe("Xiao Ming: Today");
+  });
+
+  it("keeps a Speaker's name the Translation Glossary does not give over the translation", async () => {
+    await show(projectSpoken({ shown_speaker_names: {} }));
+
+    captionLanguage("translation").click();
+    playTo(0.5);
+
+    expect(target("caption").textContent).toBe("小明: Today");
+  });
+
+  // @behavior PV-094
+  it("names the Speaker in both languages over the video", async () => {
+    await show(projectSpoken());
+
+    captionLanguage("bilingual").click();
+    playTo(0.5);
+
+    expect(target("caption").textContent).toBe("小明: 今天\nXiao Ming: Today");
+  });
+
+  it("names the Speaker once before a caption of several lines", async () => {
+    await show(
+      projectSpoken({
+        segments: [
+          { start_ms: 0, end_ms: 1000, speaker: "小明", text: "今天\n天氣好" },
+        ],
+      }),
+    );
+
+    playTo(0.5);
+
+    expect(target("caption").textContent).toBe("小明: 今天\n天氣好");
+  });
+
+  // @behavior PV-095
+  it("shows the text alone over the video once the Speaker is turned off", async () => {
+    await show(projectSpoken());
+
+    captionSpeaker().click();
+    playTo(0.5);
+
+    expect(target("caption").textContent).toBe("今天");
+  });
+
+  // @behavior PV-096
+  it("keeps the Speaker over the video off for the next Resource", async () => {
+    await show(projectSpoken());
+    captionSpeaker().click();
+    application.stop();
+    application = Application.start();
+    await assemble(application, {
+      preview: PreviewController,
+    }).start();
+    await settle();
+
+    await show(projectSpoken({ media: "/talks/ep02.mp4" }));
+    playTo(0.5);
+
+    expect([target("caption").textContent, captionSpeaker().checked]).toEqual([
+      "今天",
+      false,
+    ]);
   });
 
   // @behavior PV-034

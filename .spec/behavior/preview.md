@@ -963,6 +963,14 @@ Esc in a text field gives up what was typed there, which asks nothing of the tim
 | When | the pointer is dragged from 0.5 to 1 s on its region |
 | Then | no range is drawn |
 
+## `PV-140` Inserting a Segment drawn over another with Enter
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s and a range drawn from 0.5 to 1 s on its region with Ctrl held |
+| When | Enter is pressed |
+| Then | the Project is asked to insert a Segment from 0.5 to 1 s |
+
 ## `PV-065` Setting the Current Segment's start where the media is with F11
 
 | Step | Statement |

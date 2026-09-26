@@ -84,7 +84,7 @@ describe("TimelineController", () => {
       { shouldMockEvents: true },
     );
     document.body.innerHTML = `
-      <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture">
+      <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture pointermove@window->timeline#extendDrawing pointerup@window->timeline#finishDrawing">
         <video data-timeline-target="media"></video>
         <input id="typing" />
         <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button>
@@ -689,6 +689,19 @@ describe("TimelineController", () => {
       await drawOver(regions()[0], 50, 50);
 
       expect([spanTimes().hidden, regions().length]).toEqual([true, 1]);
+    });
+
+    // @behavior PV-140
+    it("inserts a Segment drawn over another with Enter", async () => {
+      await show(projectWithMedia([segmentAt(0, 2)]));
+      await drawOver(regions()[0], 50, 50, { ctrlKey: true });
+
+      pressKey("Enter");
+      await settle();
+
+      expect(changes).toEqual([
+        { kind: "insertion", start_ms: 500, end_ms: 1000 },
+      ]);
     });
 
     // @behavior PV-072

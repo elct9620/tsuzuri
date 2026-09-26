@@ -399,16 +399,6 @@ export default class TimelineController extends Controller {
       clientX: event.clientX,
       range: null,
     };
-    const extend = (move: PointerEvent) => this.extendDrawing(move);
-    window.addEventListener("pointermove", extend);
-    window.addEventListener(
-      "pointerup",
-      () => {
-        window.removeEventListener("pointermove", extend);
-        this.finishDrawing();
-      },
-      { once: true },
-    );
   }
 
   /** Keeps a click with the drawing key held from choosing a Segment or moving the media. */
@@ -790,8 +780,11 @@ export default class TimelineController extends Controller {
     this.showTimes(range);
   }
 
-  /** Stretches the range being drawn to the pointer, once it has moved far enough to be a drag. */
-  private extendDrawing(event: PointerEvent): void {
+  /**
+   * Stretches the range being drawn to the pointer, once it has moved far enough to be a drag;
+   * bound to `pointermove@window`, as the stroke may leave the waveform.
+   */
+  extendDrawing(event: PointerEvent): void {
     const stroke = this.stroke;
     if (!stroke || !this.regions) return;
     if (!stroke.range && Math.abs(event.clientX - stroke.clientX) < 3) return;
@@ -814,7 +807,8 @@ export default class TimelineController extends Controller {
     this.showTimes(span, true);
   }
 
-  private finishDrawing(): void {
+  /** Keeps the range a stroke drew once the pointer is let go anywhere; bound to `pointerup@window`. */
+  finishDrawing(): void {
     const range = this.stroke?.range;
     this.stroke = null;
     if (range) this.keepRange(range);

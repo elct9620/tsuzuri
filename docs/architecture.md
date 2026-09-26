@@ -466,7 +466,7 @@ backend/editing.ts            閘道：唯一呼叫編輯指令的地方
 | `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
 | `main.ts` | 全部 | — |
 
-Controller 之間只 import outlet 的型別，編輯一律經過 session。Controller 不自己訂閱 Rust 或 window 的事件，一律寫成 `data-action`，由 Stimulus 隨元素綁定與解除。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
+Controller 之間只 import outlet 的型別，編輯一律經過 session。Controller 不自己訂閱 Rust 或 window 的事件，一律寫成 `data-action`，由 Stimulus 隨元素綁定與解除，影片視窗除外（4.9）。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
 
 ### 4.3 組裝
 
@@ -606,6 +606,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | 播放器 | 只有一個，移動不複製 |
 | 移出去的元素 | connect 時留下參照 |
 | 播放器的事件 | `preview` 自己綁在元素上 |
+| 影片視窗的事件 | `preview` 開窗時綁定 |
 | 每格畫面 | 用影片所在視窗的 rAF |
 | WebKit 移動時暫停 | 移完接著播 |
 | 呼叫 Rust | 只從主視窗 |

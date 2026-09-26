@@ -8,74 +8,31 @@ import type {
   Segment,
 } from "../backend/project";
 import type { EditingSession } from "../editor";
+import { rememberChoice, rememberedChoice } from "../ui/choices";
 import { formatClock, formatTime } from "../ui/time";
 
-/** Where the webview remembers the Preview folded away, a choice of this machine's alone. */
+/** Where the webview remembers the Preview folded away. */
 const FOLDED_KEY = "tsuzuri.preview-folded";
-
-function isRememberedAsFolded(): boolean {
-  try {
-    return localStorage.getItem(FOLDED_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function writeFolded(isFolded: boolean): void {
-  try {
-    localStorage.setItem(FOLDED_KEY, String(isFolded));
-  } catch {
-    // A webview without storage forgets the choice when it closes.
-  }
-}
 
 /** Which text of the Segment being played is shown over the video. */
 type CaptionLanguage = "original" | "translation" | "bilingual";
 
-/** Where the webview remembers what is shown over the video, a choice of this machine's alone. */
+/** Where the webview remembers what is shown over the video. */
 const CAPTION_KEY = "tsuzuri.preview-caption";
 
-function rememberedCaptionLanguage(): CaptionLanguage {
-  try {
-    const value = localStorage.getItem(CAPTION_KEY);
-    return value === "translation" || value === "bilingual"
-      ? value
-      : "original";
-  } catch {
-    return "original";
-  }
-}
-
-function writeCaptionLanguage(language: CaptionLanguage): void {
-  try {
-    localStorage.setItem(CAPTION_KEY, language);
-  } catch {
-    // A webview without storage forgets the choice when it closes.
-  }
+function captionLanguageOf(value: string | null): CaptionLanguage {
+  return value === "translation" || value === "bilingual" ? value : "original";
 }
 
 /** What the text over the video sits on: a shadow alone, a translucent black or an opaque one. */
 type CaptionBackdrop = "none" | "translucent" | "opaque";
 
-/** Where the webview remembers the backdrop over the video, a choice of this machine's alone. */
+/** Where the webview remembers the backdrop over the video. */
 const BACKDROP_KEY = "tsuzuri.preview-backdrop";
 
 /** A shadow alone is lost on a bright picture, so a caption sits on a backdrop until taken away. */
-function rememberedCaptionBackdrop(): CaptionBackdrop {
-  try {
-    const value = localStorage.getItem(BACKDROP_KEY);
-    return value === "none" || value === "opaque" ? value : "translucent";
-  } catch {
-    return "translucent";
-  }
-}
-
-function writeCaptionBackdrop(backdrop: CaptionBackdrop): void {
-  try {
-    localStorage.setItem(BACKDROP_KEY, backdrop);
-  } catch {
-    // A webview without storage forgets the choice when it closes.
-  }
+function captionBackdropOf(value: string | null): CaptionBackdrop {
+  return value === "none" || value === "opaque" ? value : "translucent";
 }
 
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
@@ -91,7 +48,7 @@ export default class PreviewController extends Controller {
     "captionLanguage",
     "captionBackdrop",
     "hint",
-    "playback",
+    "playbackIcon",
     "time",
     "currentHint",
     "currentCard",
@@ -115,7 +72,7 @@ export default class PreviewController extends Controller {
   declare readonly captionLanguageTargets: HTMLInputElement[];
   declare readonly captionBackdropTargets: HTMLInputElement[];
   declare readonly hintTarget: HTMLElement;
-  declare readonly playbackTarget: HTMLElement;
+  declare readonly playbackIconTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
   /** Asks for a Segment to be clicked while none is current. */
   declare readonly currentHintTarget: HTMLElement;
@@ -131,9 +88,9 @@ export default class PreviewController extends Controller {
   private playingIndex: number | null = null;
   private hasTranslation = false;
   private bilingualOrder: ProjectOptions["bilingual_order"] = "original-first";
-  private captionLanguage = rememberedCaptionLanguage();
-  private captionBackdrop = rememberedCaptionBackdrop();
-  private isFolded = isRememberedAsFolded();
+  private captionLanguage = captionLanguageOf(rememberedChoice(CAPTION_KEY));
+  private captionBackdrop = captionBackdropOf(rememberedChoice(BACKDROP_KEY));
+  private isFolded = rememberedChoice(FOLDED_KEY) === "true";
   private unfollow?: () => void;
 
   connect(): void {
@@ -152,21 +109,21 @@ export default class PreviewController extends Controller {
 
   toggleFold(): void {
     this.isFolded = !this.isFolded;
-    writeFolded(this.isFolded);
+    rememberChoice(FOLDED_KEY, String(this.isFolded));
     this.showPanel();
   }
 
   chooseCaptionLanguage({ target }: Event): void {
     this.captionLanguage = (target as HTMLInputElement)
       .value as CaptionLanguage;
-    writeCaptionLanguage(this.captionLanguage);
+    rememberChoice(CAPTION_KEY, this.captionLanguage);
     this.showCaption(this.segmentIndexAtTime());
   }
 
   chooseCaptionBackdrop({ target }: Event): void {
     this.captionBackdrop = (target as HTMLInputElement)
       .value as CaptionBackdrop;
-    writeCaptionBackdrop(this.captionBackdrop);
+    rememberChoice(BACKDROP_KEY, this.captionBackdrop);
     this.showCaptionBackdrop();
   }
 
@@ -197,11 +154,11 @@ export default class PreviewController extends Controller {
   }
 
   showPlaying(): void {
-    this.playbackTarget.classList.add("swap-active");
+    this.playbackIconTarget.classList.add("swap-active");
   }
 
   showPaused(): void {
-    this.playbackTarget.classList.remove("swap-active");
+    this.playbackIconTarget.classList.remove("swap-active");
     this.markPlaying(null);
   }
 

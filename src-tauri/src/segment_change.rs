@@ -14,6 +14,16 @@ pub enum SegmentChange {
         start_ms: u64,
         end_ms: u64,
     },
+    /// The end of the Segment at `index` and the start of the next, moved together to `at_ms`.
+    Boundary {
+        index: usize,
+        at_ms: u64,
+    },
+    /// An empty Segment from `start_ms` to `end_ms`, placed among the others by its start.
+    Insertion {
+        start_ms: u64,
+        end_ms: u64,
+    },
     /// An empty Segment filling the gap before the one at `index`.
     InsertionBefore {
         index: usize,
@@ -65,6 +75,22 @@ impl SegmentChange {
                 let segment = segment_at(segments, index)?;
                 segment.start_ms = start_ms;
                 segment.end_ms = end_ms;
+            }
+            SegmentChange::Boundary { index, at_ms } => {
+                let start_ms = segment_at(segments, index)?.start_ms;
+                let end_ms = segment_at(segments, index + 1)?.end_ms;
+                if !(start_ms..=end_ms).contains(&at_ms) {
+                    return Err(SegmentChangeError::InvalidTimes);
+                }
+                segments[index].end_ms = at_ms;
+                segments[index + 1].start_ms = at_ms;
+            }
+            SegmentChange::Insertion { start_ms, end_ms } => {
+                if end_ms < start_ms {
+                    return Err(SegmentChangeError::InvalidTimes);
+                }
+                let index = segments.partition_point(|segment| segment.start_ms <= start_ms);
+                segments.insert(index, empty_segment(start_ms, end_ms));
             }
             SegmentChange::InsertionBefore { index } => {
                 let end_ms = segment_at(segments, index)?.start_ms;
@@ -171,6 +197,8 @@ mod tests {
         let changes: Vec<SegmentChange> = serde_json::from_str(
             r#"[
                 {"kind":"times","index":0,"start_ms":500,"end_ms":1000},
+                {"kind":"boundary","index":0,"at_ms":700},
+                {"kind":"insertion","start_ms":1500,"end_ms":2500},
                 {"kind":"insertion-before","index":1},
                 {"kind":"insertion-after","index":1},
                 {"kind":"deletion","index":2},
@@ -188,6 +216,14 @@ mod tests {
                     index: 0,
                     start_ms: 500,
                     end_ms: 1_000
+                },
+                SegmentChange::Boundary {
+                    index: 0,
+                    at_ms: 700
+                },
+                SegmentChange::Insertion {
+                    start_ms: 1_500,
+                    end_ms: 2_500
                 },
                 SegmentChange::InsertionBefore { index: 1 },
                 SegmentChange::InsertionAfter { index: 1 },

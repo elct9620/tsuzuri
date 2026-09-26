@@ -2108,6 +2108,78 @@ mod tests {
         );
     }
 
+    // @behavior PJ-101
+    #[test]
+    fn moves_the_edge_two_segments_share_in_every_subtitle() {
+        let dir = TempDir::new("pj-boundary");
+        let current = changing_project_in(
+            &dir,
+            &[(0, 1_000, "你好"), (1_000, 2_000, "世界")],
+            &[(0, 1_000, "Hello"), (1_000, 2_000, "world")],
+        );
+
+        current
+            .change_segments(SegmentChange::Boundary {
+                index: 0,
+                at_ms: 1_500,
+            })
+            .unwrap();
+
+        assert_eq!(
+            [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
+            [
+                srt_of(&[(0, 1_500, "你好"), (1_500, 2_000, "世界")]),
+                srt_of(&[(0, 1_500, "Hello"), (1_500, 2_000, "world")])
+            ]
+        );
+    }
+
+    // @behavior PJ-102
+    #[test]
+    fn refuses_to_move_a_shared_edge_past_either_segment() {
+        let dir = TempDir::new("pj-boundary-past");
+        let current = changing_project_in(&dir, &[(0, 1_000, "你好"), (1_000, 2_000, "世界")], &[]);
+
+        let result = current.change_segments(SegmentChange::Boundary {
+            index: 0,
+            at_ms: 2_500,
+        });
+
+        assert_eq!(
+            (result, read(&dir, "ep01.srt")),
+            (
+                Err(Failure::InvalidTimes),
+                srt_of(&[(0, 1_000, "你好"), (1_000, 2_000, "世界")])
+            )
+        );
+    }
+
+    // @behavior PJ-103
+    #[test]
+    fn inserts_a_segment_at_times_of_its_own() {
+        let dir = TempDir::new("pj-insert-at");
+        let current = changing_project_in(&dir, &[(0, 1_000, "你好"), (3_000, 4_000, "再見")], &[]);
+
+        current
+            .change_segments(SegmentChange::Insertion {
+                start_ms: 1_500,
+                end_ms: 2_500,
+            })
+            .unwrap();
+
+        assert_eq!(
+            segments(&current)
+                .iter()
+                .map(|segment| (segment.start_ms, segment.end_ms, segment.text.as_str()))
+                .collect::<Vec<_>>(),
+            [
+                (0, 1_000, "你好"),
+                (1_500, 2_500, ""),
+                (3_000, 4_000, "再見")
+            ]
+        );
+    }
+
     /// Whether `backups` is one Backup of `stem`, stamped with a UTC time, holding `content`.
     fn is_one_backup_of(backups: &[(String, String)], stem: &str, content: &str) -> bool {
         match backups {

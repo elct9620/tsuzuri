@@ -3374,7 +3374,7 @@ mod tests {
         }
     }
 
-    // @behavior ED-076
+    // @behavior ED-079
     #[test]
     fn replaces_a_text_across_the_current_resource() {
         let dir = directory_of(
@@ -3394,7 +3394,7 @@ mod tests {
         );
     }
 
-    // @behavior ED-080
+    // @behavior ED-083
     #[test]
     fn refuses_a_regular_expression_that_cannot_be_read() {
         let dir = directory_of("ed-replace-invalid", &[("ep01.srt", &cue("你好"))]);
@@ -3406,7 +3406,7 @@ mod tests {
         assert_eq!(read(&dir, "ep01.srt"), cue("你好"));
     }
 
-    // @behavior ED-081
+    // @behavior ED-084
     #[test]
     fn replaces_in_the_translation_shown() {
         let dir = directory_of(
@@ -3427,7 +3427,7 @@ mod tests {
         assert_eq!(segments(&current)[1].translation, None);
     }
 
-    // @behavior ED-082
+    // @behavior ED-085
     #[test]
     fn undoes_a_replacement_at_once() {
         let original = two_cues("你好，世界", "再見，朋友");
@@ -3442,7 +3442,7 @@ mod tests {
         assert_eq!(read(&dir, "ep01.srt"), original);
     }
 
-    // @behavior ED-083
+    // @behavior ED-086
     #[test]
     fn writes_nothing_when_nothing_matches() {
         let as_written = "1\r\n00:00:00,000 --> 00:00:01,000\r\n你好\r\n";

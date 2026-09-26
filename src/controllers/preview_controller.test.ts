@@ -182,6 +182,24 @@ describe("PreviewController", () => {
     expect(target("caption").textContent).toBe("今天");
   });
 
+  // @behavior PV-088
+  it("shows the Segment over the video on the frame the media reaches it", async () => {
+    await show(
+      projectWithMedia({
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "大家好" },
+          { start_ms: 1000, end_ms: 2000, text: "今天" },
+        ],
+      }),
+    );
+    pressPlay();
+
+    media().currentTime = 1.05;
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    expect(target("caption").textContent).toBe("今天");
+  });
+
   // @behavior PV-016
   it("shows nothing over the video between Segments", async () => {
     await show(

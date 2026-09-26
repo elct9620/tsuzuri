@@ -34,8 +34,8 @@ export function composingOption({
 
 /**
  * One text or translation field of the editor, handing the session what the user does in it:
- * entering it, moving the selection, leaving it or giving up its typing, and splitting its Segment
- * by shortcut.
+ * entering it, moving the selection, leaving it or giving up its typing, and splitting its
+ * Segment by shortcut; its keys also break a line and move on to the next Segment.
  */
 export default class FieldController extends Controller<HTMLElement> {
   declare readonly session: EditingSession;
@@ -89,6 +89,18 @@ export default class FieldController extends Controller<HTMLElement> {
     if (text === null) return;
     setFieldValue(this.element, text);
     this.element.blur();
+  }
+
+  /**
+   * Enters the same field of the next Segment, or leaves the field after the last; leaving writes
+   * the text as a click elsewhere does. Bound with `:!composing:prevent`.
+   */
+  enterNext(): void {
+    const next = document.querySelector<HTMLElement>(
+      `.field[data-index="${this.index + 1}"][data-field="${this.field}"]`,
+    );
+    if (next) next.focus();
+    else this.element.blur();
   }
 
   /** Hands over where the Cursor was left and the text. */

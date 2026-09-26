@@ -113,7 +113,7 @@ describe("ReplacementController", () => {
     );
   }
 
-  // @behavior ED-084
+  // @behavior ED-087
   it("opens by shortcut to find the text the Cursor selects", async () => {
     await hold(translated);
     const text = selectText(2, 3);
@@ -146,7 +146,7 @@ describe("ReplacementController", () => {
     ]);
   });
 
-  // @behavior ED-085
+  // @behavior ED-088
   it("replaces with Enter and says how many were replaced", async () => {
     await hold(translated);
     count = 2;
@@ -176,7 +176,7 @@ describe("ReplacementController", () => {
     ]);
   });
 
-  // @behavior ED-086
+  // @behavior ED-089
   it("stays open when nothing matches", async () => {
     await hold(translated);
     count = 0;

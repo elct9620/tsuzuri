@@ -76,7 +76,7 @@ mod tests {
             .replace_matches(text)
     }
 
-    // @behavior ED-077
+    // @behavior ED-080
     #[test]
     fn removes_a_text_replaced_with_nothing() {
         let removal = replacement("。", "", false);
@@ -91,7 +91,7 @@ mod tests {
         );
     }
 
-    // @behavior ED-078
+    // @behavior ED-081
     #[test]
     fn takes_a_pattern_as_written_unless_it_is_a_regular_expression() {
         let as_written = replacement(".", "。", false);
@@ -112,7 +112,7 @@ mod tests {
         );
     }
 
-    // @behavior ED-079
+    // @behavior ED-082
     #[test]
     fn replaces_by_a_regular_expression_with_its_groups() {
         let episodes = replacement(r"第(\d+)集", "EP${1}", true);

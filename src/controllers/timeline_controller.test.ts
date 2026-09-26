@@ -616,7 +616,7 @@ describe("TimelineController", () => {
         });
       });
 
-      // @behavior PV-088
+      // @behavior PV-089
       it("sets the Current Segment's start with F9", async () => {
         await showCurrent([segmentAt(0, 0.5)]);
         media().currentTime = 0.2;
@@ -627,7 +627,7 @@ describe("TimelineController", () => {
         expect(changes).toEqual([times(0, 200, 500)]);
       });
 
-      // @behavior PV-089
+      // @behavior PV-090
       it("leaves F11 to the system", async () => {
         await showCurrent([segmentAt(0, 0.5)]);
         media().currentTime = 0.2;
@@ -638,7 +638,7 @@ describe("TimelineController", () => {
         expect(changes).toEqual([]);
       });
 
-      // @behavior PV-090
+      // @behavior PV-091
       it("names F9 and F12 as the keys that set times", () => {
         const keys = [
           ...document.querySelectorAll('[data-timeline-target$="Key"]'),

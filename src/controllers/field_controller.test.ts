@@ -11,21 +11,30 @@ describe("FieldController", () => {
   let edits: unknown[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const field = () => document.querySelector<HTMLElement>("[data-controller]")!;
+  const fieldAt = (index: number) =>
+    document.querySelectorAll<HTMLElement>("[data-controller]")[index];
+  const field = () => fieldAt(0);
 
   beforeEach(async () => {
     edits = [];
+    const actions =
+      "focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#enterNext:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent keydown.esc->field#revert:!composing:prevent";
     document.body.innerHTML = `
       <div id="editor">
-        <div contenteditable="plaintext-only" data-controller="field" data-index="0" data-field="text"
-          data-action="focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent keydown.esc->field#revert:!composing:prevent">大家好</div>
+        <div class="field text" contenteditable="plaintext-only" data-controller="field" data-index="0" data-field="text"
+          data-action="${actions}">大家好</div>
+        <div class="field text" contenteditable="plaintext-only" data-controller="field" data-index="1" data-field="text"
+          data-action="${actions}">今天天氣</div>
       </div>
     `;
     mockIPC(
       (command, args) => {
         if (command === "current_project")
           return projectOf({
-            segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
+            segments: [
+              { start_ms: 0, end_ms: 1000, text: "大家好" },
+              { start_ms: 1000, end_ms: 2000, text: "今天天氣" },
+            ],
           });
         if (command === "edit_segment") edits.push(args);
       },
@@ -63,21 +72,21 @@ describe("FieldController", () => {
   });
 
   /** Whether pressing Enter lets the field take the key. */
-  function isEnterTaken(init: KeyboardEventInit = {}): boolean {
+  function isEnterTaken(
+    init: KeyboardEventInit = {},
+    target = field(),
+  ): boolean {
     const enter = new KeyboardEvent("keydown", {
       key: "Enter",
       cancelable: true,
       ...init,
     });
-    field().dispatchEvent(enter);
+    target.dispatchEvent(enter);
     return enter.defaultPrevented;
   }
 
   // @behavior ED-031
   it("leaves Enter to an input method while it composes", async () => {
-    const typed = vi.fn(() => true);
-    document.execCommand = typed;
-
     const whileComposing = isEnterTaken({ isComposing: true });
     const keyInProcess = isEnterTaken({ keyCode: 229 });
     field().dispatchEvent(new CompositionEvent("compositionstart"));
@@ -92,8 +101,54 @@ describe("FieldController", () => {
       keyInProcess,
       rightAfterComposing,
       typedAfterward,
-      typed.mock.calls,
-    ]).toEqual([false, false, false, true, [["insertLineBreak"]]]);
+    ]).toEqual([false, false, false, true]);
+  });
+
+  // @behavior ED-074
+  it("moves to the next Segment's text with Enter", async () => {
+    const typed = vi.fn(() => true);
+    document.execCommand = typed;
+    field().focus();
+    field().textContent = "大家好啊";
+
+    const taken = isEnterTaken({ code: "NumpadEnter" });
+    await settle();
+
+    expect([taken, typed.mock.calls, document.activeElement, edits]).toEqual([
+      true,
+      [],
+      fieldAt(1),
+      [{ index: 0, field: "text", value: "大家好啊" }],
+    ]);
+  });
+
+  // @behavior ED-075
+  it("is left after the last Segment with Enter", async () => {
+    fieldAt(1).focus();
+    fieldAt(1).textContent = "今天天氣很好";
+
+    isEnterTaken({}, fieldAt(1));
+    await settle();
+
+    expect([document.activeElement, edits]).toEqual([
+      document.body,
+      [{ index: 1, field: "text", value: "今天天氣很好" }],
+    ]);
+  });
+
+  // @behavior ED-076
+  it("types a line break with Shift+Enter", async () => {
+    const typed = vi.fn(() => true);
+    document.execCommand = typed;
+    field().focus();
+
+    const taken = isEnterTaken({ shiftKey: true });
+
+    expect([taken, typed.mock.calls, document.activeElement]).toEqual([
+      true,
+      [["insertLineBreak"]],
+      field(),
+    ]);
   });
 
   /** Presses Esc in the field, answering whether the field took the key. */
@@ -107,7 +162,7 @@ describe("FieldController", () => {
     return esc.defaultPrevented;
   }
 
-  // @behavior ED-074
+  // @behavior ED-077
   it("puts back the text it was entered with on Esc", async () => {
     field().focus();
     field().dispatchEvent(new FocusEvent("focus"));
@@ -123,7 +178,7 @@ describe("FieldController", () => {
     ]).toEqual(["大家好", false, []]);
   });
 
-  // @behavior ED-075
+  // @behavior ED-078
   it("leaves Esc to an input method while it composes", async () => {
     field().focus();
     field().dispatchEvent(new FocusEvent("focus"));

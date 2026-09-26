@@ -574,7 +574,7 @@ Any focus within a row makes its Segment current; only a text or a translation h
 | When | a transcription of the Current Resource starts |
 | Then | the first Segment stays current and no Cursor is kept |
 
-## `ED-074` Putting back a text's entry with Esc
+## `ED-077` Putting back a text's entry with Esc
 
 Esc gives up what was typed since the field was entered, as an inline edit in a list does, so a correction gone wrong costs no undo.
 
@@ -584,7 +584,7 @@ Esc gives up what was typed since the field was entered, as an inline edit in a 
 | When | Esc is pressed |
 | Then | the field reads `你好` again, focus leaves it, and no edit is written |
 
-## `ED-075` Leaving Esc to an input method while it composes
+## `ED-078` Leaving Esc to an input method while it composes
 
 | Step | Statement |
 | --- | --- |
@@ -599,6 +599,32 @@ Esc gives up what was typed since the field was entered, as an inline edit in a 
 | Given | a text field where an input method is composing text |
 | When | Enter is pressed to pick a candidate, even where the platform ends the composition before the key arrives |
 | Then | no line break is typed and the input method keeps the key |
+
+## `ED-074` Moving to the next Segment with Enter
+
+Subtitle editors confirm a line with Enter and go on to the next, and break a line with Shift+Enter, so a transcript is corrected line by line without reaching for the mouse; Enter on the numeric keypad is the same key.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first of two Segments, its text entered and changed |
+| When | Enter is pressed |
+| Then | no line break is typed, the first text is written, and the second Segment's text is entered |
+
+## `ED-075` Leaving the last Segment's text with Enter
+
+| Step | Statement |
+| --- | --- |
+| Given | the last Segment's text entered and changed |
+| When | Enter is pressed |
+| Then | the field is left and its text is written |
+
+## `ED-076` Breaking a line with Shift+Enter
+
+| Step | Statement |
+| --- | --- |
+| Given | a text field the user entered |
+| When | Shift+Enter is pressed |
+| Then | a line break is typed at the Cursor and the field keeps focus |
 
 ## `ED-034` Setting the Speaker of the Checked Segments
 
@@ -658,7 +684,7 @@ Setting Speakers one Segment at a time is slow across a long transcript, so the 
 | When | translating them again is chosen |
 | Then | the Project is asked to translate Segments 0 and 2 again |
 
-## `ED-076` Replacing a text across the Current Resource
+## `ED-079` Replacing a text across the Current Resource
 
 Punctuation a transcription put in is corrected across a whole subtitle at once, rather than a Segment at a time.
 
@@ -668,7 +694,7 @@ Punctuation a transcription put in is corrected across a whole subtitle at once,
 | When | `，` is replaced with a space in the original |
 | Then | `ep01.srt` reads `你好 世界。` and `再見 朋友。`, and the answer is 2 |
 
-## `ED-077` Removing a text by replacing it with nothing
+## `ED-080` Removing a text by replacing it with nothing
 
 | Step | Statement |
 | --- | --- |
@@ -676,7 +702,7 @@ Punctuation a transcription put in is corrected across a whole subtitle at once,
 | When | `。` is replaced with nothing |
 | Then | they read `你好` and `再見` |
 
-## `ED-078` Taking the text to find as written
+## `ED-081` Taking the text to find as written
 
 What is typed to find is looked for character by character unless it is marked a regular expression, so a `.` or a `?` in a subtitle is found as itself.
 
@@ -686,7 +712,7 @@ What is typed to find is looked for character by character unless it is marked a
 | When | `.` is replaced with `。` without marking it a regular expression |
 | Then | it reads `真的?好。` |
 
-## `ED-079` Replacing by a regular expression with its groups
+## `ED-082` Replacing by a regular expression with its groups
 
 Rust reads the regular expression, so the syntax is the `regex` crate's alone, with no lookaround or backreference, and a group in the replacement is `$1` or `${1}`, braced where a letter or digit follows.
 
@@ -696,7 +722,7 @@ Rust reads the regular expression, so the syntax is the `regex` crate's alone, w
 | When | `第(\d+)集` is replaced as a regular expression with `EP${1}` |
 | Then | it reads `EP1 EP12` |
 
-## `ED-080` Refusing a regular expression that cannot be read
+## `ED-083` Refusing a regular expression that cannot be read
 
 | Step | Statement |
 | --- | --- |
@@ -704,7 +730,7 @@ Rust reads the regular expression, so the syntax is the `regex` crate's alone, w
 | When | `(` is replaced as a regular expression |
 | Then | it is refused as `invalid-pattern` and `ep01.srt` is left as it was |
 
-## `ED-081` Replacing in the translation shown
+## `ED-084` Replacing in the translation shown
 
 | Step | Statement |
 | --- | --- |
@@ -712,7 +738,7 @@ Rust reads the regular expression, so the syntax is the `regex` crate's alone, w
 | When | `,` is replaced with nothing in the translation |
 | Then | `ep01.en.srt` reads `Hello world`, the original is left as it was, and the second Segment still has no translation |
 
-## `ED-082` Undoing a replacement at once
+## `ED-085` Undoing a replacement at once
 
 | Step | Statement |
 | --- | --- |
@@ -720,7 +746,7 @@ Rust reads the regular expression, so the syntax is the `regex` crate's alone, w
 | When | the change is undone |
 | Then | they read `你好，世界` and `再見，朋友` again |
 
-## `ED-083` Writing nothing when nothing matches
+## `ED-086` Writing nothing when nothing matches
 
 | Step | Statement |
 | --- | --- |
@@ -728,7 +754,7 @@ Rust reads the regular expression, so the syntax is the `regex` crate's alone, w
 | When | `。` is replaced with nothing |
 | Then | the answer is 0, `ep01.srt` is not written and nothing is added to the Undo History |
 
-## `ED-084` Opening the replace dialog by shortcut
+## `ED-087` Opening the replace dialog by shortcut
 
 Subtitle editors open replacing with Ctrl+H; macOS keeps ⌘+H to hide the app, so there it is ⌘+Option+F, as its editors bind it. A range selected in a text is what is looked for.
 
@@ -738,7 +764,7 @@ Subtitle editors open replacing with Ctrl+H; macOS keeps ⌘+H to hide the app, 
 | When | Ctrl+H is pressed |
 | Then | the replace dialog opens with `，` as the text to find, and the text to find has focus |
 
-## `ED-085` Replacing from the dialog with Enter
+## `ED-088` Replacing from the dialog with Enter
 
 The dialog is kept to the keyboard: Enter in either box replaces, as Esc closes it.
 
@@ -748,7 +774,7 @@ The dialog is kept to the keyboard: Enter in either box replaces, as Esc closes 
 | When | Enter is pressed in the text to replace with |
 | Then | the Project is asked to replace `，` with a space in the translation as a regular expression, the dialog closes, and a Notification says how many were replaced |
 
-## `ED-086` Keeping the dialog open when nothing matches
+## `ED-089` Keeping the dialog open when nothing matches
 
 | Step | Statement |
 | --- | --- |

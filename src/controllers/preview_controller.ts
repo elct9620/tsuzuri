@@ -92,6 +92,8 @@ export default class PreviewController extends Controller {
   private captionBackdrop = captionBackdropOf(rememberedChoice(BACKDROP_KEY));
   private isFolded = rememberedChoice(FOLDED_KEY) === "true";
   private unfollow?: () => void;
+  /** The frame the Preview follows the media on next, while it plays. */
+  private frame: number | null = null;
 
   connect(): void {
     this.showCaptionBackdrop();
@@ -100,6 +102,7 @@ export default class PreviewController extends Controller {
 
   disconnect(): void {
     this.unfollow?.();
+    this.stopFollowingFrames();
   }
 
   /** Shows the Current Segment in the card beside the video. */
@@ -155,10 +158,12 @@ export default class PreviewController extends Controller {
 
   showPlaying(): void {
     this.playbackIconTarget.classList.add("swap-active");
+    this.followFrames();
   }
 
   showPaused(): void {
     this.playbackIconTarget.classList.remove("swap-active");
+    this.stopFollowingFrames();
     this.markPlaying(null);
   }
 
@@ -167,6 +172,26 @@ export default class PreviewController extends Controller {
     this.mediaTarget.hidden = true;
     this.hintTarget.hidden = false;
     this.captionChoiceTarget.hidden = true;
+  }
+
+  /**
+   * A player reports its time only a few times a second, so while it plays the Preview follows
+   * each frame drawn, and a caption comes with its words.
+   */
+  private followFrames(): void {
+    if (this.frame !== null) return;
+    const onFrame = () => {
+      this.follow();
+      this.frame = this.mediaTarget.paused
+        ? null
+        : requestAnimationFrame(onFrame);
+    };
+    this.frame = requestAnimationFrame(onFrame);
+  }
+
+  private stopFollowingFrames(): void {
+    if (this.frame !== null) cancelAnimationFrame(this.frame);
+    this.frame = null;
   }
 
   /** The index of the Segment at the media's time, or -1 between Segments. */

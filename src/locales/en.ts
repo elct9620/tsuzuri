@@ -139,13 +139,17 @@ const en = {
     setTimes: "set start and end at the playhead",
     resetZoom: "Back to 100%",
     current: "Current Segment",
-    pickSegment: "Click a Segment to play it on its own.",
+    pickSegment: "Click a Segment to play from it.",
     space: "Space",
     playCurrent: "plays this Segment",
+    playOn: "plays on from here",
     fold: "Show or fold the preview",
     following: "Follow playback in the Segment list",
     followingHint:
       "Scrolls the list to the Segment being played. Turn it off to keep the list where it is while the media plays on; ⌘L or Ctrl+L also switches it.",
+    playingAlone: "Play only the Current Segment",
+    playingAloneHint:
+      "Space plays the Current Segment from its start and stops at its end, to hear one line again. Turned off, Space plays on from where the media is.",
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",
     noWaveform: "Could not draw the waveform",

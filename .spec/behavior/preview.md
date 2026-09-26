@@ -227,11 +227,11 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | When | the second Segment's row is clicked |
 | Then | its region is coloured more strongly than the other |
 
-## `PV-028` Playing the Current Segment with Space
+## `PV-028` Playing the Current Segment alone with Space
 
 | Step | Statement |
 | --- | --- |
-| Given | a paused Current Resource whose Current Segment runs from 1 to 2 s |
+| Given | a paused Current Resource whose Current Segment runs from 1 to 2 s, the media at 1.5 s, with playing alone turned on |
 | When | Space is pressed outside a field or button |
 | Then | the media plays from 1 s |
 
@@ -239,7 +239,7 @@ Hearing and watching the Current Resource's media above the editor while its sub
 
 | Step | Statement |
 | --- | --- |
-| Given | the Current Segment from 1 to 2 s playing after Space |
+| Given | the Current Segment from 1 to 2 s playing after Space, with playing alone turned on |
 | When | the media reaches 2 s |
 | Then | the media pauses |
 
@@ -703,3 +703,31 @@ The editor scrolls to the row being played, unless the user turns that off to lo
 | Given | following playback turned off |
 | When | another Resource with a media file becomes current |
 | Then | following playback stays off |
+
+### Playing the Current Segment alone
+
+Space plays on from where the media is, so a Segment chosen is heard with the ones after it, and Space pauses it again when a line needs correcting. Playing only the Current Segment from its start, stopping at its end, is turned on when one line is heard over and over.
+
+## `PV-085` Playing on from the Current Segment with Space
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, and no choice about playing alone ever made on this machine |
+| When | the second Segment's row is clicked and Space is pressed outside a field or button |
+| Then | the media plays from 1 s, and plays on at 2 s |
+
+## `PV-086` Playing on from where the media paused
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Current Segment runs from 1 to 2 s, the media paused at 1.5 s, with playing alone turned off |
+| When | Space is pressed outside a field or button |
+| Then | the media plays from 1.5 s |
+
+## `PV-087` Keeping playing alone on for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | playing alone turned on |
+| When | another Resource with a media file becomes current |
+| Then | playing alone stays on |

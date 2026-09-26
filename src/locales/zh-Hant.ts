@@ -136,13 +136,17 @@ const zhHant: typeof en = {
     setTimes: "以播放位置設定開始與結束",
     resetZoom: "回到 100%",
     current: "目前段落",
-    pickSegment: "點一段字幕，就能單獨播放。",
+    pickSegment: "點一段字幕，就從那裡播放。",
     space: "空白鍵",
     playCurrent: "播放這段",
+    playOn: "從這裡播放",
     fold: "顯示或收起預覽",
     following: "段落清單跟隨播放",
     followingHint:
       "清單會捲到正在播放的段落，關掉後播放時清單停在原處；也可以按 ⌘L 或 Ctrl+L 切換。",
+    playingAlone: "只播目前段落",
+    playingAloneHint:
+      "空白鍵從目前段落的開頭播放，播完就停，方便重聽一句。關掉後空白鍵從目前位置繼續播放。",
     zoomIn: "放大",
     zoomOut: "縮小",
     noWaveform: "無法畫出波形",

@@ -76,6 +76,7 @@ describe("TimelineController", () => {
         <video data-timeline-target="media"></video>
         <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button>
         <span data-timeline-target="times" hidden></span>
+        <button data-timeline-target="aloneButton"></button><span data-timeline-target="spaceHint"></span>
         <button data-action="timeline#zoomOut"></button>
         <button data-action="timeline#zoomIn"></button>
         <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent" hidden></div>

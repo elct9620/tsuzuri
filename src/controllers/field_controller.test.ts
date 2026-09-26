@@ -11,14 +11,14 @@ describe("FieldController", () => {
   let edits: unknown[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const fields = (index: number) =>
+  const fieldAt = (index: number) =>
     document.querySelectorAll<HTMLElement>("[data-controller]")[index];
-  const field = () => fields(0);
+  const field = () => fieldAt(0);
 
   beforeEach(async () => {
     edits = [];
     const actions =
-      "focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#commit:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent";
+      "focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#enterNext:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent";
     document.body.innerHTML = `
       <div id="editor">
         <div class="field text" contenteditable="plaintext-only" data-controller="field" data-index="0" data-field="text"
@@ -117,17 +117,17 @@ describe("FieldController", () => {
     expect([taken, typed.mock.calls, document.activeElement, edits]).toEqual([
       true,
       [],
-      fields(1),
+      fieldAt(1),
       [{ index: 0, field: "text", value: "大家好啊" }],
     ]);
   });
 
-  // @behavior ED-076
+  // @behavior ED-075
   it("is left after the last Segment with Enter", async () => {
-    fields(1).focus();
-    fields(1).textContent = "今天天氣很好";
+    fieldAt(1).focus();
+    fieldAt(1).textContent = "今天天氣很好";
 
-    isEnterTaken({}, fields(1));
+    isEnterTaken({}, fieldAt(1));
     await settle();
 
     expect([document.activeElement, edits]).toEqual([
@@ -136,7 +136,7 @@ describe("FieldController", () => {
     ]);
   });
 
-  // @behavior ED-075
+  // @behavior ED-076
   it("types a line break with Shift+Enter", async () => {
     const typed = vi.fn(() => true);
     document.execCommand = typed;

@@ -589,7 +589,7 @@ Subtitle editors confirm a line with Enter and go on to the next, and break a li
 | When | Enter is pressed |
 | Then | no line break is typed, the first text is written, and the second Segment's text is entered |
 
-## `ED-076` Leaving the last Segment's text with Enter
+## `ED-075` Leaving the last Segment's text with Enter
 
 | Step | Statement |
 | --- | --- |
@@ -597,7 +597,7 @@ Subtitle editors confirm a line with Enter and go on to the next, and break a li
 | When | Enter is pressed |
 | Then | the field is left and its text is written |
 
-## `ED-075` Breaking a line with Shift+Enter
+## `ED-076` Breaking a line with Shift+Enter
 
 | Step | Statement |
 | --- | --- |

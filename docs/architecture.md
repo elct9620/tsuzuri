@@ -535,6 +535,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `notification` | 每則通知的倒數、暫停與按鈕 |
 | `undo` | 全頁的復原與重做 |
 | `field` | 每個編輯欄位接上 session |
+| `time-field` | 時間欄分段輸入 |
 
 畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`；跟隨播放鈕在預覽卡片，屬於捲動清單的 `transcript`。
 

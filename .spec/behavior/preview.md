@@ -400,7 +400,7 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | Step | Statement |
 | --- | --- |
 | Given | a paused Current Resource whose Current Segment runs from 1 to 2 s, the media at 1.5 s, with playing alone turned on |
-| When | Space is pressed outside a field or button |
+| When | Space is pressed outside a field or a control reached by keyboard |
 | Then | the media plays from 1 s |
 
 ## `PV-029` Stopping at the end of the Current Segment
@@ -416,7 +416,7 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource whose media is playing |
-| When | Space is pressed outside a field or button |
+| When | Space is pressed outside a field or a control reached by keyboard |
 | Then | the media pauses |
 
 ## `PV-031` Leaving Space to the field being typed in
@@ -425,6 +425,24 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | --- | --- |
 | Given | a paused Current Resource with a Current Segment |
 | When | Space is pressed in a Segment's text field |
+| Then | the media stays paused |
+
+## `PV-125` Playing with Space after a button is clicked
+
+A button clicked keeps the focus, yet Space pressed afterward is meant for the media, not to press the button again.
+
+| Step | Statement |
+| --- | --- |
+| Given | a paused Current Resource with a Current Segment, with playing alone turned off |
+| When | the playing alone button is clicked and Space is pressed |
+| Then | the media plays and playing alone stays on |
+
+## `PV-126` Leaving Space to a button reached by keyboard
+
+| Step | Statement |
+| --- | --- |
+| Given | a paused Current Resource with a Current Segment |
+| When | the playing alone button is reached by keyboard and Space is pressed |
 | Then | the media stays paused |
 
 ## `PV-032` Marking the Segment being played in the editor
@@ -1099,7 +1117,7 @@ Space plays on from where the media is, so a Segment chosen is heard with the on
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, and no choice about playing alone ever made on this machine |
-| When | the second Segment's row is clicked and Space is pressed outside a field or button |
+| When | the second Segment's row is clicked and Space is pressed outside a field or a control reached by keyboard |
 | Then | the media plays from 1 s, and plays on at 2 s |
 
 ## `PV-086` Playing on from where the media paused
@@ -1107,7 +1125,7 @@ Space plays on from where the media is, so a Segment chosen is heard with the on
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource whose Current Segment runs from 1 to 2 s, the media paused at 1.5 s, with playing alone turned off |
-| When | Space is pressed outside a field or button |
+| When | Space is pressed outside a field or a control reached by keyboard |
 | Then | the media plays from 1.5 s |
 
 ## `PV-087` Keeping playing alone on for the next Resource

@@ -213,7 +213,7 @@
 | 縮放手勢 | Ctrl、Alt 或 ⌘＋滾輪，捏合 | — |
 | 刻度 | 依縮放調整間距 | Timeline |
 
-滾輪捲動、Ctrl＋滾輪縮放是 Windows 的慣例，Alt＋滾輪則是 Subtitle Edit 的縮放方式，兩者都支援；按鈕的 tooltip 寫出這些組合鍵。只有目前段落可拖，操作見 `docs/design.md` 10.2，吸附按鈕的 tooltip 寫出 Shift 與 Alt。
+滾輪捲動、Ctrl＋滾輪縮放是 Windows 的慣例，Alt＋滾輪則是 Subtitle Edit 的縮放方式，兩者都支援；按鈕的 tooltip 寫出這些組合鍵。拖動操作見 `docs/design.md` 10.2。
 
 ### 4.3 進度
 

@@ -156,10 +156,10 @@ function countDown(alert: HTMLElement, content: HTMLElement): void {
 
 /** Takes away the oldest Notification while more than `MOST_SHOWN` are shown. */
 function keepMostShown(stack: HTMLElement): void {
-  const shown = stack.querySelectorAll<HTMLElement>(
+  const shownAlerts = stack.querySelectorAll<HTMLElement>(
     '[role="alert"]:not([data-is-leaving])',
   );
-  if (shown.length > MOST_SHOWN) leave(shown[0]);
+  if (shownAlerts.length > MOST_SHOWN) leave(shownAlerts[0]);
 }
 
 /** Shows `notification` in the corner of the window, stacked under the ones already shown. A failure stays until closed; anything else counts down `NOTIFICATION_MS`, its action within reach while the pointer or focus rests on it. */

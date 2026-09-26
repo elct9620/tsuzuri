@@ -187,7 +187,8 @@ fn segment_at_times<'a>(segments: &'a [Segment], cue: &Segment) -> Option<&'a Se
         .find(|segment| (segment.start_ms, segment.end_ms) == (cue.start_ms, cue.end_ms))
 }
 
-/// What a restore left behind: how many Segments it gave times that no translation lines up with.
+/// What a restore or a translation left behind: how many Segments of the original have times
+/// that no translation lines up with.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
 pub struct Restoration {
     pub unmatched_count: usize,

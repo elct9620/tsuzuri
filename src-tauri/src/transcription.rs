@@ -75,7 +75,7 @@ pub async fn run_transcribe<'a>(
 
     enter(ports, &mut phases, "load");
     let started = Instant::now();
-    project.show_transcribed(Vec::new());
+    project.show_transcript(Vec::new());
     ports.announce_project();
     run_step(
         ports,

@@ -45,7 +45,7 @@ fn announce_reload<R: Runtime>(app: &AppHandle<R>, reload: Reload) {
         return;
     }
     app.announce_project();
-    if reload == Reload::ReloadedKeeping {
+    if reload == Reload::ChangedWithBackup {
         // @event changed-elsewhere-kept
         let _ = app.emit("changed-elsewhere-kept", ());
     }

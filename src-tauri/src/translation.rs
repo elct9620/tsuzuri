@@ -206,16 +206,17 @@ pub async fn run_translate<'a>(
             result
         }
     };
-    let restoration = match &plan.scope {
+    let unmatched_count = match &plan.scope {
         TranslationScope::Whole => project.write_translations(&source, plan.target, result?)?,
         TranslationScope::Segments(indexes) => {
             project.write_retranslations(&source, plan.target, indexes, result?)?
         }
-    };
+    }
+    .unmatched_count;
     ports.announce_project();
     Ok(Translation {
         phases: phases.finish(),
-        unmatched_count: restoration.unmatched_count,
+        unmatched_count,
     })
 }
 
@@ -236,13 +237,13 @@ async fn translate_on_job_server(
             step: "translate".to_string(),
             detail,
         })?;
-    let exited = Arc::new(AtomicBool::new(false));
+    let has_exited = Arc::new(AtomicBool::new(false));
     tokio::spawn({
-        let exited = Arc::clone(&exited);
+        let has_exited = Arc::clone(&has_exited);
         async move {
             while let Some(event) = events.recv().await {
                 if matches!(event, StepEvent::Exit(_)) {
-                    exited.store(true, Ordering::SeqCst);
+                    has_exited.store(true, Ordering::SeqCst);
                 }
             }
         }
@@ -251,7 +252,7 @@ async fn translate_on_job_server(
         ports,
         &format!("http://127.0.0.1:{port}"),
         ready_timeout,
-        || exited.load(Ordering::SeqCst),
+        || has_exited.load(Ordering::SeqCst),
         job,
         phases,
         on_batch,

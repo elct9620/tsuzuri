@@ -50,12 +50,13 @@ interface Span {
 }
 
 /**
- * What a dragged Span may reach and land on: the times it stays within, and the times it Snaps to
- * within `snapDistance`.
+ * What a dragged Span may reach and land on: where its start stays between, how late its end may
+ * go, and the times it Snaps to within `snapDistance`.
  */
 interface DragReach {
-  lowest: number;
-  highest: number;
+  lowestStart: number;
+  highestStart: number;
+  highestEnd: number;
   snapTimes: number[];
   snapDistance: number;
 }
@@ -73,6 +74,38 @@ function snapTime(time: number, times: number[], distance: number): number {
 
 const toMilliseconds = (seconds: number) => Math.round(seconds * 1000);
 
+/** The band of the timeline a region lies in: `lane` of `count`, counted from the bottom. */
+interface Lane {
+  lane: number;
+  count: number;
+}
+
+/**
+ * The Lane of each of `spans`, in the order they start: each lies in the lowest lane free at its
+ * start, and the spans overlapping one another share the lanes they need; one overlapping none
+ * has a lane to itself.
+ */
+function lanesOf(spans: Span[]): Lane[] {
+  const lanes: Lane[] = [];
+  let group: Lane[] = [];
+  let laneEnds: number[] = [];
+  let groupEnd = -Infinity;
+  for (const { start, end } of spans) {
+    if (start >= groupEnd) {
+      for (const lane of group) lane.count = laneEnds.length;
+      [group, laneEnds] = [[], []];
+    }
+    const free = laneEnds.findIndex((laneEnd) => laneEnd <= start);
+    const lane = { lane: free === -1 ? laneEnds.length : free, count: 1 };
+    laneEnds[lane.lane] = end;
+    groupEnd = group.length === 0 ? end : Math.max(groupEnd, end);
+    group.push(lane);
+    lanes.push(lane);
+  }
+  for (const lane of group) lane.count = laneEnds.length;
+  return lanes;
+}
+
 /** `seconds` as the editor writes a time, so what the timeline reads can be typed into a Segment. */
 const formatSeconds = (seconds: number) => formatTime(toMilliseconds(seconds));
 
@@ -82,22 +115,30 @@ const formatLength = ({ start, end }: Span) =>
 
 /**
  * Where `span`, dragged by its `side` or, without one, as a whole, lands: Snapped to the nearest of
- * the reach's times, then kept within its lowest and highest, so it is never dragged over another.
+ * the reach's times, then kept within the reach, so it may overlap its neighbours but never starts
+ * out of their order.
  */
 function landingSpan(
   span: Span,
   side: UpdateSide | undefined,
-  { lowest, highest, snapTimes, snapDistance }: DragReach,
+  { lowestStart, highestStart, highestEnd, snapTimes, snapDistance }: DragReach,
 ): Span {
   const snap = (time: number) => snapTime(time, snapTimes, snapDistance);
   const clamp = (time: number, low: number, high: number) =>
     Math.min(high, Math.max(low, time));
   if (side === "start")
-    return { start: clamp(snap(span.start), lowest, span.end), end: span.end };
+    return {
+      start: clamp(
+        snap(span.start),
+        lowestStart,
+        Math.min(highestStart, span.end),
+      ),
+      end: span.end,
+    };
   if (side === "end")
     return {
       start: span.start,
-      end: clamp(snap(span.end), span.start, highest),
+      end: clamp(snap(span.end), span.start, highestEnd),
     };
   const length = span.end - span.start;
   const [offset = 0] = [
@@ -106,7 +147,11 @@ function landingSpan(
   ]
     .filter((offset) => offset !== 0)
     .sort((one, other) => Math.abs(one) - Math.abs(other));
-  const start = clamp(span.start + offset, lowest, highest - length);
+  const start = clamp(
+    span.start + offset,
+    lowestStart,
+    Math.min(highestStart, highestEnd - length),
+  );
   return { start, end: start + length };
 }
 
@@ -203,6 +248,12 @@ export default class TimelineController extends Controller {
   private drag: Drag | null = null;
   /** The range drawn on the empty waveform, waiting for Enter to become a Segment or Esc to go. */
   private range: Region | null = null;
+  /** A range being drawn over the Segments with the drawing key held, from the time it began at. */
+  private drawing: {
+    from: number;
+    clientX: number;
+    range: Region | null;
+  } | null = null;
   private surfer?: WaveSurfer;
   private regions?: ReturnType<typeof RegionsPlugin.create>;
   private unfollow?: () => void;
@@ -290,7 +341,7 @@ export default class TimelineController extends Controller {
 
   /**
    * Sets the Current Segment's start or end where the media is with the key `timeKeys` names for
-   * it; the time stays clear of its neighbours as a dragged edge does.
+   * it; the time stays within reach as a dragged edge does.
    */
   setTimeAtMedia(event: KeyboardEvent): void {
     const keys = timeKeys();
@@ -302,14 +353,52 @@ export default class TimelineController extends Controller {
     if (!side || index === null || !segment || this.isHeld) return;
     event.preventDefault();
     const time = this.mediaTarget.currentTime;
-    const { lowest, highest } = this.dragReach(index, false);
+    const { lowestStart, highestStart, highestEnd } = this.dragReach(
+      index,
+      false,
+    );
     const span = spanOf(segment);
     void this.retime(
       index,
       side === "start"
-        ? { start: Math.max(lowest, time), end: span.end }
-        : { start: span.start, end: Math.min(highest, time) },
+        ? {
+            start: Math.min(highestStart, Math.max(lowestStart, time)),
+            end: span.end,
+          }
+        : { start: span.start, end: Math.min(highestEnd, time) },
     );
+  }
+
+  /**
+   * Begins drawing a range with Ctrl held, or ⌘ on macOS, where Ctrl and a click open the context
+   * menu: a press on a region otherwise chooses or drags its Segment, so this goes before the
+   * regions hear it and draws over them.
+   */
+  drawOver(event: PointerEvent): void {
+    if (event.button !== 0 || !isDrawingKey(event) || !this.surfer) return;
+    event.stopPropagation();
+    event.preventDefault();
+    if (this.isHeld) return;
+    this.drawing = {
+      from: this.timeAt(event.clientX),
+      clientX: event.clientX,
+      range: null,
+    };
+    const extend = (move: PointerEvent) => this.extendDrawing(move);
+    window.addEventListener("pointermove", extend);
+    window.addEventListener(
+      "pointerup",
+      () => {
+        window.removeEventListener("pointermove", extend);
+        this.finishDrawing();
+      },
+      { once: true },
+    );
+  }
+
+  /** Keeps a click with the drawing key held from choosing a Segment or moving the media. */
+  ignoreClickOver(event: MouseEvent): void {
+    if (isDrawingKey(event)) event.stopPropagation();
   }
 
   /** Takes a drag back to where it began, or drops the drawn range. */
@@ -441,6 +530,26 @@ export default class TimelineController extends Controller {
         ...this.regionLook(index),
       }),
     );
+    this.placeRegions();
+  }
+
+  /**
+   * Lays each region in its Lane, so overlapping Segments can each be seen, clicked and dragged,
+   * with the Current Segment's above the rest; read from where the regions are, so a drag lays
+   * them again as it goes.
+   */
+  private placeRegions(): void {
+    const regions = this.segmentRegions();
+    const lanes = lanesOf(regions.map(({ start, end }) => ({ start, end })));
+    const current = this.session.cursor.index;
+    regions.forEach((region, index) => {
+      const style = region.element?.style;
+      if (!style) return;
+      const { lane, count } = lanes[index];
+      style.height = `${100 / count}%`;
+      style.top = `${((count - 1 - lane) * 100) / count}%`;
+      style.zIndex = index === current ? "1" : "";
+    });
   }
 
   private get currentSegment(): Segment | undefined {
@@ -456,6 +565,7 @@ export default class TimelineController extends Controller {
     this.segmentRegions().forEach((region, index) =>
       region.setOptions(this.regionLook(index)),
     );
+    this.placeRegions();
   }
 
   /**
@@ -556,6 +666,7 @@ export default class TimelineController extends Controller {
             : { start: segment.start, end: span.start },
       );
     }
+    this.placeRegions();
   }
 
   /** The neighbour on `side` of the Segment at `index` whose edge touches it, or none. */
@@ -572,8 +683,9 @@ export default class TimelineController extends Controller {
   }
 
   /**
-   * What the Segment at `index` may reach: from its previous neighbour's end to its next's start,
-   * or across the neighbour whose shared edge moves with it; and what it Snaps to.
+   * What the Segment at `index` may reach: its start between its neighbours' starts and its end as
+   * late as the media, over its neighbours; or, where the edge it shares with the next moves with
+   * it, no later than that neighbour's end and the start after it. And what it Snaps to.
    */
   private dragReach(
     index: number,
@@ -581,22 +693,20 @@ export default class TimelineController extends Controller {
     side?: UpdateSide,
   ): DragReach {
     const segment = spanOf(this.segments[index]);
-    const previous = this.segments[index - 1];
+    const startOf = (at: number) => {
+      const other = this.segments[at];
+      return other ? other.start_ms / 1000 : undefined;
+    };
     const next = this.segments[index + 1];
     const duration = this.surfer?.getDuration() ?? Infinity;
-    const lowest = !previous
-      ? 0
-      : isShared && side === "start"
-        ? previous.start_ms / 1000
-        : Math.min(previous.end_ms / 1000, segment.start);
-    const highest = !next
-      ? duration
-      : isShared && side === "end"
-        ? next.end_ms / 1000
-        : Math.max(next.start_ms / 1000, segment.end);
+    const highestEnd =
+      next && isShared && side === "end"
+        ? Math.min(next.end_ms / 1000, startOf(index + 2) ?? Infinity)
+        : duration;
     return {
-      lowest,
-      highest,
+      lowestStart: Math.min(startOf(index - 1) ?? 0, segment.start),
+      highestStart: Math.max(startOf(index + 1) ?? duration, segment.start),
+      highestEnd: Math.max(highestEnd, segment.end),
       snapTimes: this.snapTargets(index),
       snapDistance: SNAP_PX / this.wrapperPxPerSec(),
     };
@@ -619,19 +729,15 @@ export default class TimelineController extends Controller {
     return width > 0 && duration > 0 ? width / duration : this.pxPerSec;
   }
 
-  /** Keeps a range just drawn to the gap it began in, Snapped at both ends, or drops it where no gap is. */
+  /**
+   * Keeps a range just drawn, Snapped at both ends, over any Segments it covers, since someone may
+   * cut in there; one left with no length is dropped.
+   */
   private keepRange(range: Region): void {
+    if (this.drawing) return;
     this.dropRange();
-    const next = this.segments.findIndex(
-      (segment) => segment.start_ms / 1000 > range.start,
-    );
-    const nextIndex = next === -1 ? this.segments.length : next;
-    const previous = this.segments[nextIndex - 1];
-    const lowest = previous ? previous.end_ms / 1000 : 0;
-    const highest =
-      nextIndex < this.segments.length
-        ? this.segments[nextIndex].start_ms / 1000
-        : (this.surfer?.getDuration() ?? range.end);
+    const lowest = 0;
+    const highest = this.surfer?.getDuration() ?? range.end;
     const snapTimes = this.snapTargets(-1);
     const snapDistance = SNAP_PX / this.wrapperPxPerSec();
     const snap = (time: number) =>
@@ -647,6 +753,45 @@ export default class TimelineController extends Controller {
     range.setOptions({ start, end });
     this.range = range;
     this.showTimes(range);
+  }
+
+  /** Stretches the range being drawn to the pointer, once it has moved far enough to be a drag. */
+  private extendDrawing(event: PointerEvent): void {
+    const drawing = this.drawing;
+    if (!drawing || !this.regions) return;
+    if (!drawing.range && Math.abs(event.clientX - drawing.clientX) < 3) return;
+    const to = this.timeAt(event.clientX);
+    const span = {
+      start: Math.min(drawing.from, to),
+      end: Math.max(drawing.from, to),
+    };
+    if (drawing.range) drawing.range.setOptions(span);
+    else {
+      this.dropRange();
+      drawing.range = this.regions.addRegion({
+        id: RANGE_ID,
+        ...span,
+        color: "var(--segment-range)",
+        drag: false,
+        resize: false,
+      });
+    }
+    this.showTimes(span, true);
+  }
+
+  private finishDrawing(): void {
+    const range = this.drawing?.range;
+    this.drawing = null;
+    if (range) this.keepRange(range);
+  }
+
+  /** The time on the waveform under `clientX`. */
+  private timeAt(clientX: number): number {
+    const duration = this.surfer?.getDuration() ?? 0;
+    const box = this.surfer?.getWrapper().getBoundingClientRect();
+    if (!box || box.width === 0) return 0;
+    const at = ((clientX - box.left) / box.width) * duration;
+    return Math.min(duration, Math.max(0, at));
   }
 
   private dropRange(): void {
@@ -720,6 +865,11 @@ export default class TimelineController extends Controller {
     const value = getComputedStyle(this.element).getPropertyValue(variable);
     return value.trim() || fallback;
   }
+}
+
+/** Whether the key that draws a range over the Segments is held: ⌘ on macOS, else Ctrl. */
+function isDrawingKey(event: MouseEvent): boolean {
+  return isMacOS() ? event.metaKey : event.ctrlKey;
 }
 
 function spanOf(segment: Segment): Span {

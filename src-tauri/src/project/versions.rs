@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
 use serde::{Deserialize, Serialize};
 
@@ -132,12 +132,36 @@ struct RowPositions {
 
 /// The cues of `left` and `right` grouped into Comparison Rows by position, in time order.
 fn row_positions(left: &[ComparedCue], right: &[ComparedCue]) -> Vec<RowPositions> {
-    // Each cue is a node, the left ones first; a pair of overlapping cues joins their groups.
+    // Each cue is a node, the left ones first. Cues at the same times pair first, in order, so a
+    // cue someone cuts in keeps its own row; of the rest, a pair of overlapping cues joins their groups.
     let mut groups = Groups::new(left.len() + right.len());
+    let mut right_by_times: HashMap<(u64, u64), VecDeque<usize>> = HashMap::new();
+    for (right_index, right_cue) in right.iter().enumerate() {
+        right_by_times
+            .entry((right_cue.start_ms, right_cue.end_ms))
+            .or_default()
+            .push_back(right_index);
+    }
+    let mut timed_alike = vec![false; left.len() + right.len()];
+    for (left_index, left_cue) in left.iter().enumerate() {
+        if let Some(right_index) = right_by_times
+            .get_mut(&(left_cue.start_ms, left_cue.end_ms))
+            .and_then(VecDeque::pop_front)
+        {
+            let right_node = left.len() + right_index;
+            groups.join(left_index, right_node);
+            timed_alike[left_index] = true;
+            timed_alike[right_node] = true;
+        }
+    }
     for (left_index, left_cue) in left.iter().enumerate() {
         for (right_index, right_cue) in right.iter().enumerate() {
-            if is_overlapping(left_cue, right_cue) {
-                groups.join(left_index, left.len() + right_index);
+            let right_node = left.len() + right_index;
+            if !timed_alike[left_index]
+                && !timed_alike[right_node]
+                && is_overlapping(left_cue, right_cue)
+            {
+                groups.join(left_index, right_node);
             }
         }
     }
@@ -434,6 +458,34 @@ mod tests {
         );
 
         assert_eq!(kinds_and_changes(&rows), [(RowKind::Pair, false, true)]);
+    }
+
+    // @behavior VR-051
+    #[test]
+    fn pairs_a_cue_someone_cuts_in_with_its_own_cue() {
+        let rows = compare(
+            &transcript(&[(0, 5_000, "大家好"), (2_000, 3_000, "對啊")]),
+            &transcript(&[(0, 5_000, "大家好"), (2_000, 3_000, "對呀")]),
+        );
+
+        assert_eq!(
+            kinds_and_changes(&rows),
+            [(RowKind::Pair, false, false), (RowKind::Pair, true, false)]
+        );
+    }
+
+    // @behavior VR-052
+    #[test]
+    fn pairs_cues_with_the_same_times_in_their_order() {
+        let rows = compare(
+            &transcript(&[(0, 1_000, "大家好"), (0, 1_000, "對啊")]),
+            &transcript(&[(0, 1_000, "大家好"), (0, 1_000, "對呀")]),
+        );
+
+        assert_eq!(
+            kinds_and_changes(&rows),
+            [(RowKind::Pair, false, false), (RowKind::Pair, true, false)]
+        );
     }
 
     // @behavior VR-012

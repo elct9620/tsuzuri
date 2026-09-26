@@ -350,6 +350,8 @@ const en = {
     noBackup: "No such backup: {{backup}}",
     noRow: "The comparison has changed; compare again before taking a cue back",
     invalidTimes: "A segment cannot end before it starts",
+    unorderedTimes:
+      "A segment cannot start before the one before it or after the one after it",
     invalidPattern: "Nothing to find, or not a regular expression: {{detail}}",
     modeRunning:
       "A task running on this Resource is writing this subtitle; try again once it ends",

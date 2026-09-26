@@ -14,6 +14,7 @@ export type Failure =
   | { code: "mode-cancelled" }
   | { code: "no-translation-shown" }
   | { code: "invalid-times" }
+  | { code: "unordered-times" }
   | { code: "invalid-pattern"; detail: string }
   | { code: "no-backup"; backup: string }
   | { code: "no-row"; row: number }

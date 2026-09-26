@@ -341,6 +341,7 @@ const zhHant: typeof en = {
     noBackup: "找不到這份備份：{{backup}}",
     noRow: "比較的內容已經變了，請重新比較後再還原",
     invalidTimes: "結束時間不能早於開始時間",
+    unorderedTimes: "開始時間不能早於前一段的開始，也不能晚於後一段的開始",
     invalidPattern: "沒有要找的文字，或不是正規表示式：{{detail}}",
     modeRunning: "這個資源的任務正在寫入這份字幕，請等任務結束再改",
     cancelled: "任務已取消",

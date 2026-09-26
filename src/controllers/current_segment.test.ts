@@ -47,6 +47,12 @@ describe("Current Segment", () => {
     segments: [segmentAt(0, 1), { ...segmentAt(1, 2), translation: "Today" }],
   });
 
+  /** Two Segments, the second said while the first is. */
+  const overlappingSegments = projectOf({
+    media: "/talks/ep01.mp4",
+    segments: [segmentAt(0, 2), segmentAt(1, 1.5)],
+  });
+
   /** `twoSegments` with the second said by `小明`. */
   const spokenSegments = projectOf({
     ...twoSegments,
@@ -192,6 +198,25 @@ describe("Current Segment", () => {
     expect(isMarked("aria-current")).toEqual([false, true]);
   });
 
+  // @behavior PV-108
+  it("marks the row of a region clicked in an upper lane as the Current Segment", async () => {
+    await show(overlappingSegments);
+    rows()[0].click();
+
+    regions()[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    expect(isMarked("aria-current")).toEqual([false, true]);
+  });
+
+  // @behavior PV-109
+  it("draws the Current Segment's region above the others", async () => {
+    await show(twoSegments);
+
+    rows()[0].click();
+
+    expect(regions().map((region) => region.style.zIndex)).toEqual(["1", ""]);
+  });
+
   // @behavior PV-027
   it("colours the Current Segment's region more strongly", async () => {
     await show(twoSegments);
@@ -259,6 +284,16 @@ describe("Current Segment", () => {
     playTo(1.5);
 
     expect(isMarked("data-is-playing")).toEqual([false, true]);
+  });
+
+  // @behavior PV-110
+  it("marks the row of every Segment being played", async () => {
+    await show(overlappingSegments);
+    await media().play();
+
+    playTo(1.2);
+
+    expect(isMarked("data-is-playing")).toEqual([true, true]);
   });
 
   // @behavior PV-075
@@ -416,6 +451,17 @@ describe("Current Segment", () => {
     watchScrolls();
 
     playTo(1.5);
+
+    expect(scrolled()).toEqual([rows()[1]]);
+  });
+
+  // @behavior PV-119
+  it("scrolls the row of the Segment started last into view", async () => {
+    await show(overlappingSegments);
+    await media().play();
+    watchScrolls();
+
+    playTo(1.2);
 
     expect(scrolled()).toEqual([rows()[1]]);
   });

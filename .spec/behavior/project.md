@@ -552,6 +552,14 @@ With no gap to fill, the new Segment runs two seconds from the edge it is insert
 | When | it is split after `你好` |
 | Then | `你好` runs from 0 to 1 second with the translation and `世界` from 1 to 2 seconds without one |
 
+## `PJ-148` Splitting a Segment another is said over
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `大家好嗎` from 0 to 4 and `對啊` from 1 to 1.5 seconds |
+| When | the first is split after `大家` |
+| Then | `大家` runs from 0 to 2, `對啊` from 1 to 1.5 and `好嗎` from 2 to 4 seconds, in that order |
+
 ## `PJ-062` Merging a run of Segments
 
 | Step | Statement |

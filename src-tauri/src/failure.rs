@@ -51,6 +51,9 @@ pub enum Failure {
     NoTranslationShown,
     /// A Segment Change that would leave a Segment ending before it starts.
     InvalidTimes,
+    /// A Segment Change that would start a Segment before the Segment before it or after the one
+    /// after it.
+    UnorderedTimes,
     /// A Replacement with nothing to find, or a regular expression the `regex` crate cannot read.
     InvalidPattern {
         detail: String,
@@ -123,6 +126,7 @@ impl From<SegmentChangeError> for Failure {
     fn from(error: SegmentChangeError) -> Self {
         match error {
             SegmentChangeError::InvalidTimes => Failure::InvalidTimes,
+            SegmentChangeError::UnorderedTimes => Failure::UnorderedTimes,
             SegmentChangeError::InvalidPosition { detail } => Failure::Internal { detail },
         }
     }

@@ -82,11 +82,27 @@ function timeOf(item: HTMLLIElement, edge: "start" | "end"): number | null {
   return field ? parseTime(field.value) : null;
 }
 
-function isSameCue(cue: ComparedCue, item: HTMLLIElement): boolean {
-  return (
-    cue.start_ms === timeOf(item, "start") && cue.end_ms === timeOf(item, "end")
-  );
+/**
+ * Takes out the things at the times given, one at a time in the order `things` holds them, so
+ * Segments said at once, which share their times, each pair with their own cue.
+ */
+function takerAtTimes<T>(
+  things: T[],
+  timesOf: (thing: T) => [number | null, number | null],
+): (start_ms: number | null, end_ms: number | null) => T | undefined {
+  const thingsByTimes = new Map<string, T[]>();
+  for (const thing of things) {
+    const key = timesOf(thing).join();
+    thingsByTimes.set(key, [...(thingsByTimes.get(key) ?? []), thing]);
+  }
+  return (start_ms, end_ms) =>
+    thingsByTimes.get([start_ms, end_ms].join())?.shift();
 }
+
+const itemTimes = (item: HTMLLIElement): [number | null, number | null] => [
+  timeOf(item, "start"),
+  timeOf(item, "end"),
+];
 
 /** What a changed text read in the Backup, with the characters since removed struck out. */
 function earlierText(row: ComparedRow): HTMLParagraphElement {
@@ -424,13 +440,14 @@ export default class ComparisonController extends Controller {
     ];
     const additionRanges: Range[] = [];
     for (const side of ["original", "translation"] as Side[]) {
+      const itemAt = takerAtTimes(items, itemTimes);
       rowsBySide[side].forEach((row, index) => {
         if (row.kind === "removal") {
           this.showRemoval(row, index, items, side);
           return;
         }
         for (const cue of row.right) {
-          const item = items.find((each) => isSameCue(cue, each));
+          const item = itemAt(cue.start_ms, cue.end_ms);
           if (item)
             additionRanges.push(...this.markItem(item, row, index, side));
         }
@@ -497,12 +514,19 @@ export default class ComparisonController extends Controller {
 
   /** Shows beneath each Segment's texts the cue of each translation read, named by its Language. */
   private showReferences(cuesByLanguage: [string, ComparedCue[]][]): void {
+    const cueTakers = cuesByLanguage.map(
+      ([language, cues]) =>
+        [
+          language,
+          takerAtTimes(cues, (cue) => [cue.start_ms, cue.end_ms]),
+        ] as const,
+    );
     for (const item of this.listTarget.querySelectorAll<HTMLLIElement>(
       ":scope > li:not([data-ghost])",
     )) {
       const texts = item.querySelector(".field.text")?.parentElement;
-      for (const [language, cues] of cuesByLanguage) {
-        const cue = cues.find((each) => isSameCue(each, item));
+      for (const [language, cueAt] of cueTakers) {
+        const cue = cueAt(...itemTimes(item));
         if (!cue || !texts) continue;
         const code = document.createElement("span");
         code.className = "badge badge-ghost badge-xs";

@@ -118,6 +118,7 @@ export default class TranscribeController extends Controller {
     this.showOverwrite();
   }
 
+  /** Follows whether the Language the translation options have chosen is already translated. */
   followTranslation({ detail }: CustomEvent<{ isOverwriting: boolean }>): void {
     this.isTranslationOverwriting = detail.isOverwriting;
     this.showOverwrite();

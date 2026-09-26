@@ -57,14 +57,14 @@ export default class TranslationOptionsController extends Controller {
       this.languageTarget.value = project.translation_language;
     this.translatedLanguages =
       currentResource(project)?.translation_languages ?? [];
-    this.showOverwrite();
+    this.reportOverwrite();
   }
 
   /**
    * Tells the dialog around it whether the Language chosen is already translated; the dialog
    * warns of it, since only the dialog knows what else starting overwrites.
    */
-  showOverwrite(): void {
+  reportOverwrite(): void {
     const isOverwriting = this.translatedLanguages.includes(this.language);
     this.dispatch("overwrite", { detail: { isOverwriting } });
   }

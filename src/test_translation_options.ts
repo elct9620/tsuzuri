@@ -1,7 +1,7 @@
 /** The page's `#translation-options` template, reduced to the fields a test reads and sets. */
 export const translationOptionsTemplate = `
   <template id="translation-options">
-    <select data-translation-options-target="language" data-action="translation-options#showOverwrite">
+    <select data-translation-options-target="language" data-action="translation-options#reportOverwrite">
       <option value="en">English</option>
       <option value="ja" selected>日本語</option>
     </select>

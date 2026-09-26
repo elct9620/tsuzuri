@@ -144,7 +144,7 @@ pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView
 
 ## `edit_segment`
 
-Replace the `text`, the `translation` or the `speaker` of one Segment of the Current Resource, by its position, where an empty `speaker` leaves it with none, and write the subtitle it belongs to back to the directory; a Speaker is written to the original and to each cue of every translation that has the Segment's times. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure. An edit of a subtitle a running Mode writes is refused as `mode-running`.
+Replace the `text`, the `translation` or the `speaker` of one Segment of the Current Resource, by its position, where an empty `speaker` leaves it with none, and write the subtitle it belongs to back to the directory; a Speaker is written to the original and to each cue of every translation that has the Segment's times. When a subtitle of the Current Resource was changed elsewhere since Tsuzuri last read or wrote it, the edit is not made: the Current Resource is read again, `project-changed` is emitted, and the answer is the `changed-elsewhere` Failure. An edit of a subtitle a running Mode writes is refused as `mode-running`. The first change Tsuzuri makes to a subtitle since the Project was opened keeps it as an Overwrite Backup first, unless a Backup of it was kept since; `set_speakers`, `change_segments`, `revert_row` and `retranslate` keep one the same way.
 
 ```rust
 pub fn edit_segment(app: AppHandle, current: State<'_, CurrentProject>, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {}
@@ -168,7 +168,7 @@ pub fn cancel_task(mode_lock: State<'_, ModeLock>) {}
 
 ## `retranslate`
 
-Translate the Current Resource's Segments at `indexes` again, into the translation shown, as one Batch carrying the translated lines before them and the source lines after them; no Split Sentences are searched for and no Rolling Summary is kept. It holds only those Segments of that translation, and their translations are written into its file as it then is, so an edit of another Segment made meanwhile is kept, as one change in the Undo History, with no Backup; the answer is how long each Phase took. A position the Segments do not have is refused before any Model is loaded. With no translation shown it is refused as `no-translation-shown`; it runs, waits and can be cancelled as `translate` does.
+Translate the Current Resource's Segments at `indexes` again, into the translation shown, as one Batch carrying the translated lines before them and the source lines after them; no Split Sentences are searched for and no Rolling Summary is kept. It holds only those Segments of that translation, and their translations are written into its file as it then is, so an edit of another Segment made meanwhile is kept, as one change in the Undo History, kept as a Backup first as `edit_segment` keeps one; the answer is how long each Phase took. A position the Segments do not have is refused before any Model is loaded. With no translation shown it is refused as `no-translation-shown`; it runs, waits and can be cancelled as `translate` does.
 
 ```rust
 pub async fn retranslate(app: AppHandle, current: State<'_, CurrentProject>, indexes: Vec<usize>) -> Result<Translation, Failure> {}

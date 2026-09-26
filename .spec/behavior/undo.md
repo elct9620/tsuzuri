@@ -92,9 +92,9 @@ Taking back the changes Tsuzuri made to the Current Resource's subtitles, and ma
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project keeping Backups, with an edit of `ep01.srt` |
+| Given | a Project keeping Backups, with an edit of `ep01.srt` from `你好` |
 | When | the change is undone |
-| Then | `.tsuzuri/history/` holds no Overwrite |
+| Then | `.tsuzuri/history/` holds only the Overwrite the edit kept, reading `你好` |
 
 ## `UD-012` Leaving out an edit that changes nothing
 

@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::SystemTime;
@@ -35,6 +35,7 @@ impl Project {
             options: config.options,
             current: None,
             undo_histories: HashMap::new(),
+            backed_up_subtitles: HashSet::new(),
         };
         project.translation_glossary =
             TranslationGlossary::from_directory(&project.directory, project.source_target())
@@ -332,7 +333,7 @@ impl Project {
 
     /// Writes the Current Resource's original, or the translation shown, which holds only the
     /// Segments translated; with no translation shown there is none to write.
-    fn write_subtitle(&self, content: SrtContent) -> Result<(), Failure> {
+    fn write_subtitle(&mut self, content: SrtContent) -> Result<(), Failure> {
         let current = self.current()?;
         let srt = match (content, current.translation) {
             (SrtContent::Translation, None) => return Ok(()),
@@ -352,15 +353,31 @@ impl Project {
             Some(path) => path,
             None => self.export_path(content)?,
         };
+        self.back_up_first_change(&path)?;
         files::write_srt(&path, srt)
+    }
+
+    /// Keeps `subtitle` as an Overwrite Backup before Tsuzuri first changes it since the Project
+    /// was opened, unless a Backup of it was kept since, so what the Undo History held can still
+    /// be taken back once the Project is closed.
+    fn back_up_first_change(&mut self, subtitle: &Path) -> Result<(), Failure> {
+        if self.backed_up_subtitles.insert(subtitle.to_path_buf()) {
+            files::back_up(
+                &self.directory,
+                subtitle,
+                SystemTime::now(),
+                BackupKind::Overwrite,
+            )?;
+        }
+        Ok(())
     }
 
     /// Gives each cue of the named Resource's translations the Speaker of its original's Segment with
     /// the same times, named as the Translation Glossary names it in that Language, in place of the
     /// label it carried for that Segment in `previous`; first keeps each translation it changes as a
-    /// Backup when `is_backed_up`.
+    /// Backup when `is_backed_up`, else as its first change does.
     fn write_speakers_to_translations(
-        &self,
+        &mut self,
         name: &str,
         previous: &Transcript,
         is_backed_up: bool,
@@ -370,6 +387,7 @@ impl Project {
             return Ok(());
         };
         let original = files::transcript_at(subtitle)?;
+        let mut writes = Vec::new();
         for (language, path) in &resource.translations {
             let translation = files::translation_at(path)?;
             let as_read = translation.to_srt(SrtContent::Original);
@@ -382,18 +400,23 @@ impl Project {
                         ..SpeakerNames::default()
                     },
                 );
-            if srt == as_read {
-                continue;
+            if srt != as_read {
+                writes.push((path.clone(), srt));
             }
+        }
+        for (path, srt) in writes {
             if is_backed_up {
                 files::back_up(
                     &self.directory,
-                    path,
+                    &path,
                     SystemTime::now(),
                     BackupKind::Overwrite,
                 )?;
+                self.backed_up_subtitles.insert(path.clone());
+            } else {
+                self.back_up_first_change(&path)?;
             }
-            files::write_srt(path, srt)?;
+            files::write_srt(&path, srt)?;
         }
         Ok(())
     }
@@ -420,6 +443,7 @@ impl Project {
         self.current_mut()?.transcript = original;
         self.write_subtitle(SrtContent::Original)?;
         for (path, srt) in translations {
+            self.back_up_first_change(&path)?;
             files::write_srt(&path, srt)?;
         }
         self.pair_again(Some(&name))?;
@@ -489,6 +513,7 @@ impl Project {
             part,
         )
         .ok_or(Failure::NoRow { row })?;
+        self.back_up_first_change(&subtitle)?;
         files::write_srt(&subtitle, transcript.to_srt(SrtContent::Original))?;
         let name = self.current()?.name.clone();
         self.read_current_again()?;
@@ -513,6 +538,7 @@ impl Project {
             SystemTime::now(),
             BackupKind::Overwrite,
         )?;
+        self.backed_up_subtitles.insert(subtitle.clone());
         files::copy(&backup_path, &subtitle)?;
         self.read_current_again()?;
         self.write_bilingual_subtitles(&name, language)?;
@@ -1119,6 +1145,7 @@ impl CurrentProject {
             BackupKind::Output,
         )?;
         if let Some(project) = project.as_mut() {
+            project.backed_up_subtitles.insert(job.subtitle.clone());
             project.write_speakers_to_translations(
                 &job.name,
                 &previous,
@@ -1151,8 +1178,8 @@ impl CurrentProject {
     }
 
     /// Writes the translations into `target` of the Segments at `indexes`, translated again, into
-    /// the translation file as it is now, so each other cue keeps what it holds, as one change with
-    /// no Backup, since it only corrects lines of a translation already kept.
+    /// the translation file as it is now, so each other cue keeps what it holds, as one change kept
+    /// as a Backup first only as an edit is.
     pub fn write_retranslations(
         &self,
         source: &TranslationSource,
@@ -1179,8 +1206,9 @@ impl CurrentProject {
 
     /// Writes the translation into `target` that `translation` makes, given the Project while
     /// `source` is still from it, to the Resource `source` was taken from, with the Bilingual SRTs
-    /// it feeds, as one change; first keeps the file it replaces and afterwards the new one as
-    /// Backups when `is_backed_up`. The Current Resource, while it is that Resource, is then read
+    /// it feeds, as one change; with `is_backed_up` it first keeps the file it replaces when the
+    /// Project Options ask, and afterwards the new one, as Backups, and else keeps the file as its
+    /// first change since the Project was opened does. The Current Resource, while it is that Resource, is then read
     /// from the files in place of what the Mode showed.
     fn write_translation_file(
         &self,
@@ -1218,6 +1246,9 @@ impl CurrentProject {
                 BackupKind::Overwrite,
             )?;
         }
+        if let Some(project) = project.as_mut().filter(|_| !is_backed_up) {
+            project.back_up_first_change(&path)?;
+        }
         files::write_srt(&path, translation_srt(&translation, speaker_names))?;
         if let Some(project) = project.as_mut() {
             project.pair_again(Some(&source.name))?;
@@ -1229,6 +1260,9 @@ impl CurrentProject {
                 SystemTime::now(),
                 BackupKind::Output,
             )?;
+            if let Some(project) = project.as_mut() {
+                project.backed_up_subtitles.insert(path.clone());
+            }
         }
         if let Some(project) = project.as_mut() {
             project.write_bilingual_subtitles(&source.name, Some(target))?;
@@ -3300,12 +3334,15 @@ mod tests {
             .write_retranslations(&source, Language::English, &[1], segments)
             .unwrap();
         let translation = read(&dir, "ep01.en.srt");
-        let has_backups = dir.path().join(files::HISTORY_DIR).exists();
         current.undo().unwrap();
 
         assert_eq!(
-            (translation, has_backups, read(&dir, "ep01.en.srt")),
-            (three("B2"), false, three("B"))
+            (
+                translation,
+                kept_overwrites(&dir),
+                read(&dir, "ep01.en.srt")
+            ),
+            (three("B2"), vec![three("B")], three("B"))
         );
     }
 
@@ -3774,7 +3811,7 @@ mod tests {
 
         current.undo().unwrap();
 
-        assert!(overwrite_backups(dir.path()).is_empty());
+        assert_eq!(kept_overwrites(&dir), vec![cue("你好")]);
     }
 
     // @behavior UD-012
@@ -3939,6 +3976,71 @@ mod tests {
         assert_eq!(
             (result, current.view().unwrap().shown_translation),
             (Err(Failure::ModeRunning), Some(Language::English))
+        );
+    }
+
+    /// What each Overwrite in the history of `dir` reads, oldest first.
+    fn kept_overwrites(dir: &TempDir) -> Vec<String> {
+        overwrite_backups(dir.path())
+            .into_iter()
+            .map(|(_, content)| content)
+            .collect()
+    }
+
+    // @behavior PJ-129
+    #[test]
+    fn keeps_a_subtitle_once_before_its_first_change_since_opening() {
+        let (dir, current) = translated_in_english("pj-first-change");
+
+        for translation in ["Hi", "Hey"] {
+            current
+                .edit(0, SegmentField::Translation, translation.to_string())
+                .unwrap();
+        }
+
+        assert_eq!(kept_overwrites(&dir), vec![two_cues("Hello", "World")]);
+    }
+
+    // @behavior PJ-130
+    #[test]
+    fn keeps_no_overwrite_of_what_a_mode_kept_as_an_output_since_opening() {
+        let dir = directory_of("pj-first-change-output", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("你好", Some("Hello"))],
+            )
+            .unwrap();
+
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+
+        assert_eq!(
+            (kept_overwrites(&dir), output_backups(dir.path()).len()),
+            (Vec::<String>::new(), 1)
+        );
+    }
+
+    // @behavior PJ-131
+    #[test]
+    fn keeps_a_subtitle_again_before_its_first_change_once_opened_again() {
+        let (dir, current) = translated_in_english("pj-first-change-again");
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+        let reopened = project_in(&dir);
+
+        reopened
+            .edit(0, SegmentField::Translation, "Hey".to_string())
+            .unwrap();
+
+        assert_eq!(
+            kept_overwrites(&dir),
+            vec![two_cues("Hello", "World"), two_cues("Hi", "World")]
         );
     }
 

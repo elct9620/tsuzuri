@@ -748,6 +748,32 @@ What a Mode shows is its own, so the translation shown stays until it ends.
 | When | no translation is asked to be shown |
 | Then | it is refused as `mode-running` and `en` is still shown |
 
+## `PJ-129` Keeping a subtitle once before its first change since opening
+
+The Undo History ends with the Project, so each subtitle is kept once before Tsuzuri first changes it, whatever the Project Options say, and no more often however many changes follow.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project not asking for Backups, whose `ep01.en.srt` reads `Hello` and `World` |
+| When | the first translation is edited to `Hi`, then to `Hey` |
+| Then | `.tsuzuri/history/` holds one Overwrite, reading `Hello` and `World` |
+
+## `PJ-130` Keeping no Overwrite of what a Mode kept as an Output since opening
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` translated into `en` since the Project was opened |
+| When | its translation is edited |
+| Then | `.tsuzuri/history/` holds the Output of `ep01.en.srt` and no Overwrite |
+
+## `PJ-131` Keeping a subtitle again once the Project is opened again
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello`, edited to `Hi`, and the Project opened again |
+| When | its translation is edited to `Hey` |
+| Then | `.tsuzuri/history/` holds an Overwrite reading `Hello` and one reading `Hi` |
+
 ## `PJ-123` Keeping an original whole when edited after a transcription ended early
 
 | Step | Statement |
@@ -1020,7 +1046,7 @@ A name changed in the Translation Glossary since a translation was written leave
 | --- | --- |
 | Given | three Segments translated into `en` as `A`, `B` and `C`, shown in the editor |
 | When | the second is translated again as `B2` |
-| Then | `ep01.en.srt` reads `A`, `B2` and `C`, no Backup is kept, and one undo puts `B` back |
+| Then | `ep01.en.srt` reads `A`, `B2` and `C`, an Overwrite of it reads `A`, `B` and `C`, and one undo puts `B` back |
 
 ## `PJ-100` Refusing to translate again with no translation shown
 

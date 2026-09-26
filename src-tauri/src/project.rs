@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -32,9 +32,11 @@ pub struct Project {
     pub current: Option<CurrentResource>,
     /// The Undo History of each Resource changed since the Project was opened, by its name.
     pub undo_histories: HashMap<String, UndoHistory>,
+    /// The subtitles a Backup was kept of since the Project was opened.
+    pub backed_up_subtitles: HashSet<PathBuf>,
 }
 
-/// The Resource the editor shows, with its Segments as read from the directory and edited since.
+/// The Resource the editor shows, with its Segments as its files hold them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CurrentResource {
     pub name: String,

@@ -194,7 +194,7 @@ export default class TimelineController extends Controller {
   /** Whether a running Mode holds the Current Resource, which refuses every Segment Change. */
   private isHeld = false;
   private pxPerSec = INITIAL_PX_PER_SEC;
-  /** Whether a dragged edge Snaps without Shift; off unless chosen, as in Aegisub, since Shift turns it on. */
+  /** Whether a dragged edge Snaps, which Shift reverses for one drag; off unless chosen, as in Aegisub. */
   private isSnapping = rememberedChoice(SNAPPING_KEY) === "true";
   /** Whether Space plays the Current Segment alone and stops at its end, rather than on from where the media is. */
   private isPlayingAlone = rememberedChoice(ALONE_KEY) === "true";

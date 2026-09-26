@@ -20,6 +20,7 @@ import RetranslationController from "./controllers/retranslation_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
 import ShortcutsController from "./controllers/shortcuts_controller";
 import SpeakersController from "./controllers/speakers_controller";
+import TimeFieldController from "./controllers/time_field_controller";
 import TimelineController, {
   controlOption,
 } from "./controllers/timeline_controller";
@@ -64,6 +65,7 @@ async function start(): Promise<void> {
     "segment-changes": SegmentChangesController,
     shortcuts: ShortcutsController,
     speakers: SpeakersController,
+    "time-field": TimeFieldController,
     timeline: TimelineController,
     tooltip: TooltipController,
     transcribe: TranscribeController,

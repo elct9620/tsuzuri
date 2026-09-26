@@ -10,7 +10,11 @@ import TimelinePlugin from "wavesurfer.js/plugins/timeline";
 import type { ProjectFeed, ProjectView, Segment } from "../backend/project";
 import { isMacOS } from "../backend/system";
 import { extractWaveform, type Waveform } from "../backend/waveform";
-import type { EditingSession, SegmentChange } from "../editor";
+import {
+  isTextField,
+  type EditingSession,
+  type SegmentChange,
+} from "../editor";
 import { t } from "../i18n";
 import { rememberChoice, rememberedChoice } from "../ui/choices";
 import { notifyEdit, notifyFailure } from "../ui/notification";
@@ -183,8 +187,9 @@ const CONTROL_SELECTOR =
   "input, select, textarea, button, summary, [contenteditable], [role=button]";
 
 /**
- * Routes a key event by whether a control has the focus: `:!control` leaves a key to the field,
- * input or button it was pressed in, which Space types into or presses.
+ * Routes a key event by whether a control has the focus: `:!control` leaves a key to the field
+ * typed in, or to the control reached by keyboard, which Space presses. A control clicked keeps
+ * the focus without being meant for the keys that follow, as `:focus-visible` tells.
  */
 export function controlOption({
   event,
@@ -193,9 +198,13 @@ export function controlOption({
   event: Event;
   value: boolean;
 }): boolean {
+  const control =
+    event.target instanceof Element
+      ? event.target.closest(CONTROL_SELECTOR)
+      : null;
   const isControl =
-    event.target instanceof Element &&
-    event.target.closest(CONTROL_SELECTOR) !== null;
+    control !== null &&
+    (isTextField(control) || control.matches(":focus-visible"));
   return isControl === value;
 }
 

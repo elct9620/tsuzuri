@@ -139,6 +139,38 @@ describe("SegmentChangesController", () => {
     ]);
   });
 
+  // @behavior ED-098
+  it("reads a time typed as digits alone from its milliseconds up", async () => {
+    await hold(threeSegments);
+    const start = row(0).querySelector<HTMLInputElement>("input.start")!;
+
+    for (const typed of ["500", "000000500"]) {
+      start.value = typed;
+      start.dispatchEvent(new Event("change"));
+      await settle();
+    }
+
+    expect(changes).toEqual([
+      { kind: "times", index: 0, start_ms: 500, end_ms: 1000 },
+      { kind: "times", index: 0, start_ms: 500, end_ms: 1000 },
+    ]);
+  });
+
+  // @behavior ED-099
+  it("refuses a time past its part's range", async () => {
+    await hold(threeSegments);
+    const start = row(0).querySelector<HTMLInputElement>("input.start")!;
+
+    start.value = "00:75:00.000";
+    start.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect([changes, notifications()]).toEqual([
+      [],
+      ["時間要寫成 00:00:01.000 的格式"],
+    ]);
+  });
+
   // @behavior ED-097
   it("says why a typed start before the previous Segment's start is refused", async () => {
     await hold(

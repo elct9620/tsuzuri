@@ -10,6 +10,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/speakers_controller.test.ts`
 - `src/controllers/retranslation_controller.test.ts`
 - `src/controllers/field_controller.test.ts`
+- `src/controllers/time_field_controller.test.ts`
 - `src/controllers/timeline_controller.test.ts`
 - `src/controllers/replacement_controller.test.ts`
 - `src/editor/*.test.ts`
@@ -168,6 +169,42 @@ A choice limited to names like the one already set would hide the others, the ve
 | When | a Segment's start is changed to `abc` |
 | Then | a Notification says the time cannot be read and nothing is changed |
 
+
+## `ED-098` Reading a time typed as digits alone
+
+Digits fill a time from its milliseconds up, as editing software takes a timecode, so the separators need not be typed.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment runs from 0 to 1 second |
+| When | its start is changed to `500` |
+| Then | the Project is asked to change its times to 0.5 to 1 second |
+
+## `ED-099` Refusing a time past its part's range
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel |
+| When | a Segment's start is changed to `00:75:00.000` |
+| Then | a Notification says the time cannot be read and nothing is changed |
+
+## `ED-100` Choosing a part of a time by clicking it
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's start reading `00:00:32.360` |
+| When | its minutes are clicked |
+| Then | the minutes are selected |
+
+## `ED-101` Typing over the chosen part of a time
+
+Digits shift into the chosen part from the right, as they do into a whole time, and the next part is chosen once it is full.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's start reading `00:00:32.360` with its minutes chosen |
+| When | `1` and `0` are typed |
+| Then | it reads `00:10:32.360` with the seconds selected |
 
 ## `ED-097` Refusing a typed start before the previous Segment's start
 

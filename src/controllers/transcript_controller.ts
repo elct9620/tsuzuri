@@ -136,7 +136,9 @@ function timeEditor(
   input.className = `${edge} input input-xs w-28 font-mono`;
   input.dataset.index = String(index);
   input.dataset.edge = edge;
-  input.dataset.action = "change->segment-changes#changeTimes";
+  input.dataset.controller = "time-field";
+  input.dataset.action =
+    "change->segment-changes#changeTimes click->time-field#choosePart keydown->time-field#typeDigit:!composing";
   input.value = formatTime(ms);
   return input;
 }

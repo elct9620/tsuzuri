@@ -77,9 +77,31 @@ describe("Current Segment", () => {
     rows().map((row) => row.hasAttribute(attribute));
 
   function pressSpace(target: EventTarget = document.body): void {
-    target.dispatchEvent(
-      new KeyboardEvent("keydown", { key: " ", bubbles: true }),
+    isSpaceTaken(target);
+  }
+
+  /** Presses Space on `target`, answering whether the page took it from the browser. */
+  function isSpaceTaken(target: EventTarget): boolean {
+    const space = new KeyboardEvent("keydown", {
+      key: " ",
+      bubbles: true,
+      cancelable: true,
+    });
+    target.dispatchEvent(space);
+    return space.defaultPrevented;
+  }
+
+  /**
+   * Clicks `button` as a pointer does: it takes the focus without showing it, which happy-dom
+   * cannot tell from focus reached by keyboard.
+   */
+  function clickWithPointer(button: HTMLElement): void {
+    const matches = button.matches.bind(button);
+    vi.spyOn(button, "matches").mockImplementation(
+      (selector) => selector !== ":focus-visible" && matches(selector),
     );
+    button.focus();
+    button.click();
   }
 
   /** Makes the media report being at `at` seconds, as a playing player does. */
@@ -274,6 +296,34 @@ describe("Current Segment", () => {
     await settle();
 
     expect(media().paused).toBe(true);
+  });
+
+  // @behavior PV-121
+  it("plays with Space after a button is clicked", async () => {
+    await show(twoSegments);
+    rows()[1].click();
+
+    clickWithPointer(aloneButton());
+    const taken = isSpaceTaken(aloneButton());
+    await settle();
+
+    expect([
+      media().paused,
+      taken,
+      aloneButton().getAttribute("aria-pressed"),
+    ]).toEqual([false, true, "true"]);
+  });
+
+  // @behavior PV-122
+  it("leaves Space to a button reached by keyboard", async () => {
+    await show(twoSegments);
+    rows()[1].click();
+
+    aloneButton().focus();
+    const taken = isSpaceTaken(aloneButton());
+    await settle();
+
+    expect([media().paused, taken]).toEqual([true, false]);
   });
 
   // @behavior PV-032

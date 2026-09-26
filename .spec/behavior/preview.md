@@ -934,7 +934,7 @@ A time typed into a Segment is found on the waveform first, so the timeline tell
 
 ### Following playback in the editor
 
-The editor scrolls to the row being played, the one started last while Segments overlap, unless the user turns that off to look through other Segments, or to keep correcting the Current Segment while the media plays on past it, as Subtitle Edit's "Select current subtitle while playing" can be. Only the scrolling stops; the row is still marked.
+The editor scrolls to the row being played, the one started last while Segments overlap, unless the user turns that off to look through other Segments, or to keep correcting the Current Segment while the media plays on past it, as Subtitle Edit's "Select current subtitle while playing" can be. Only the scrolling stops; the row is still marked. While it follows, the list goes where the media is: only another Segment becoming current brings its row back, not the Cursor moving or typing within it.
 
 ## `PV-080` Bringing the row being played into view
 
@@ -984,9 +984,17 @@ The editor scrolls to the row being played, the one started last while Segments 
 | When | another Resource with a media file becomes current |
 | Then | following playback stays off |
 
+## `PV-121` Following playback while typing in the Current Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing, following playback turned on, and the Cursor in the first Segment's text field |
+| When | the media plays to 1.5 s and a character is typed in the field |
+| Then | the second Segment's row is scrolled into view, and the first Segment's row is not scrolled back into view |
+
 ### Playing the Current Segment alone
 
-Space plays on from where the media is, so a Segment chosen is heard with the ones after it, and Space pauses it again when a line needs correcting. Playing only the Current Segment from its start, stopping at its end, is turned on when one line is heard over and over.
+Space plays on from where the media is, so a Segment chosen is heard with the ones after it, and Space pauses it again when a line needs correcting. Playing only the Current Segment from its start, stopping at its end, is turned on when one line is heard over and over. Where it stops is read from the choice and the Current Segment as the media plays, not fixed as it starts, so turning playing alone on or off, or retiming the Current Segment, takes effect on the media already playing.
 
 ## `PV-085` Playing on from the Current Segment with Space
 
@@ -1011,3 +1019,27 @@ Space plays on from where the media is, so a Segment chosen is heard with the on
 | Given | playing alone turned on |
 | When | another Resource with a media file becomes current |
 | Then | playing alone stays on |
+
+## `PV-122` Stopping at the Current Segment's end once playing alone is turned on while playing
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Current Segment runs from 1 to 2 s, its media playing at 1.5 s, with playing alone turned off |
+| When | playing alone is turned on and the media reaches 2 s |
+| Then | the media pauses |
+
+## `PV-123` Playing on once playing alone is turned off while playing
+
+| Step | Statement |
+| --- | --- |
+| Given | the Current Segment from 1 to 2 s playing after Space, with playing alone turned on |
+| When | playing alone is turned off and the media reaches 2 s |
+| Then | the media plays on |
+
+## `PV-124` Stopping at the Current Segment's new end while playing alone
+
+| Step | Statement |
+| --- | --- |
+| Given | the Current Segment from 1 to 2 s playing after Space, with playing alone turned on |
+| When | its end is changed to 3 s and the media reaches 2 s |
+| Then | the media plays on, and pauses as it reaches 3 s |

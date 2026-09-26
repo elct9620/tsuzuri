@@ -523,6 +523,19 @@ describe("Current Segment", () => {
     expect(followButton().getAttribute("aria-pressed")).toBe("false");
   });
 
+  // @behavior PV-121
+  it("keeps following playback as the Cursor moves in the Current Segment's field", async () => {
+    await show(twoSegments);
+    session.enter(0, "text", { start: 0, end: 0 }, "0");
+    await media().play();
+    watchScrolls();
+
+    playTo(1.5);
+    session.select(0, "text", { start: 2, end: 2 }, "0a");
+
+    expect(scrolled()).toEqual([rows()[1]]);
+  });
+
   // @behavior PV-085
   it("plays on from the Current Segment past its end with Space by default", async () => {
     await show(twoSegments);
@@ -534,6 +547,57 @@ describe("Current Segment", () => {
     playTo(2);
 
     expect([startedAt, media().paused]).toEqual([1, false]);
+  });
+
+  // @behavior PV-122
+  it("pauses at the end of the Current Segment once playing alone is turned on while playing", async () => {
+    await show(twoSegments);
+    rows()[1].click();
+    await media().play();
+    playTo(1.5);
+
+    aloneButton().click();
+    playTo(2);
+
+    expect(media().paused).toBe(true);
+  });
+
+  // @behavior PV-123
+  it("plays on past the Current Segment once playing alone is turned off while playing it", async () => {
+    await show(twoSegments);
+    aloneButton().click();
+    rows()[1].click();
+    pressSpace();
+    await settle();
+
+    aloneButton().click();
+    playTo(2);
+
+    expect(media().paused).toBe(false);
+  });
+
+  // @behavior PV-124
+  it("pauses at the Current Segment's new end while playing it alone", async () => {
+    await show(twoSegments);
+    aloneButton().click();
+    rows()[1].click();
+    pressSpace();
+    await settle();
+
+    await show(
+      projectOf({
+        ...twoSegments,
+        segments: [
+          segmentAt(0, 1),
+          { ...segmentAt(1, 3), translation: "Today" },
+        ],
+      }),
+    );
+    playTo(2);
+    const isPausedAtOldEnd = media().paused;
+    playTo(3);
+
+    expect([isPausedAtOldEnd, media().paused]).toEqual([false, true]);
   });
 
   // @behavior PV-086

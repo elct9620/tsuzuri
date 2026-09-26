@@ -233,7 +233,7 @@
                 </div>
                 <ul
                   tabindex="-1"
-                  class="menu dropdown-content z-10 w-44 rounded-box bg-base-100 shadow-md [&_button:disabled]:pointer-events-none [&_button:disabled]:text-base-content/40"
+                  class="menu dropdown-content z-10 w-44 rounded-box bg-base-100 shadow-md"
                 >
                   <li>
                     <button
@@ -753,37 +753,42 @@
                           </div>
                           <div
                             tabindex="-1"
-                            role="radiogroup"
-                            class="dropdown-content join join-vertical z-20 mt-1 w-28 bg-base-100 shadow-md"
-                            data-i18n-label="preview.captionBackdrop"
+                            class="dropdown-content z-20 mt-1 w-28 bg-base-100 shadow-md"
                           >
-                            <input
-                              type="radio"
-                              name="preview-backdrop"
-                              value="none"
-                              class="join-item btn btn-sm"
-                              data-preview-target="captionBackdrop"
-                              data-action="preview#chooseCaptionBackdrop"
-                              data-i18n-label="preview.captionBackdropNone"
-                            />
-                            <input
-                              type="radio"
-                              name="preview-backdrop"
-                              value="translucent"
-                              class="join-item btn btn-sm"
-                              data-preview-target="captionBackdrop"
-                              data-action="preview#chooseCaptionBackdrop"
-                              data-i18n-label="preview.captionBackdropTranslucent"
-                            />
-                            <input
-                              type="radio"
-                              name="preview-backdrop"
-                              value="opaque"
-                              class="join-item btn btn-sm"
-                              data-preview-target="captionBackdrop"
-                              data-action="preview#chooseCaptionBackdrop"
-                              data-i18n-label="preview.captionBackdropOpaque"
-                            />
+                            <!-- The join sits inside, as its display would keep a closed menu over the buttons beside it -->
+                            <div
+                              role="radiogroup"
+                              class="join join-vertical w-full"
+                              data-i18n-label="preview.captionBackdrop"
+                            >
+                              <input
+                                type="radio"
+                                name="preview-backdrop"
+                                value="none"
+                                class="join-item btn btn-sm"
+                                data-preview-target="captionBackdrop"
+                                data-action="preview#chooseCaptionBackdrop"
+                                data-i18n-label="preview.captionBackdropNone"
+                              />
+                              <input
+                                type="radio"
+                                name="preview-backdrop"
+                                value="translucent"
+                                class="join-item btn btn-sm"
+                                data-preview-target="captionBackdrop"
+                                data-action="preview#chooseCaptionBackdrop"
+                                data-i18n-label="preview.captionBackdropTranslucent"
+                              />
+                              <input
+                                type="radio"
+                                name="preview-backdrop"
+                                value="opaque"
+                                class="join-item btn btn-sm"
+                                data-preview-target="captionBackdrop"
+                                data-action="preview#chooseCaptionBackdrop"
+                                data-i18n-label="preview.captionBackdropOpaque"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>

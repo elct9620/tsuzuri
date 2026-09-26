@@ -781,3 +781,13 @@ The dialog is kept to the keyboard: Enter in either box replaces, as Esc closes 
 | Given | the replace dialog with `。` to find |
 | When | it is applied and the Project answers that nothing was replaced |
 | Then | the dialog stays open and a Notification says nothing matched |
+
+## `ED-090` Not offering to translate again without a translation shown
+
+Translating again writes into the translation shown, so without one it is not offered at all.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing no translation, its first Segment checked |
+| When | the editor shows it |
+| Then | neither the Segment menu nor the bar for Checked Segments offers translating again |

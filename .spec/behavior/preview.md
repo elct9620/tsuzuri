@@ -408,7 +408,7 @@ A caption drawn with a shadow alone is lost on a bright picture, so it sits on a
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource with a media file, no backdrop chosen on this machine |
+| Given | a Current Resource with a media file, and no backdrop ever chosen on this machine |
 | When | the Project is shown |
 | Then | what is shown over the video sits on a translucent black |
 
@@ -424,9 +424,9 @@ A caption drawn with a shadow alone is lost on a bright picture, so it sits on a
 
 | Step | Statement |
 | --- | --- |
-| Given | no backdrop chosen over the video |
+| Given | the backdrop over the video taken away |
 | When | another Resource with a media file becomes current |
-| Then | what is shown over the video still sits on no backdrop |
+| Then | what is shown over the video still has no backdrop |
 
 ### Retiming on the timeline
 

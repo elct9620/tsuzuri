@@ -18,7 +18,7 @@
       data-controller="project transcript segment-changes dialog comparison speakers replacement retranslation"
       data-retranslation-progress-outlet="#progress"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
+      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
     >
       <section class="hero flex-1" data-project-target="startScreen">
         <div class="hero-content flex-col text-center">
@@ -988,6 +988,7 @@
                 class="btn btn-xs"
                 data-action="segment-changes#deleteChecked"
                 data-i18n="edit.delete"
+                data-shortcut="delete"
               ></button>
               <button
                 type="button"

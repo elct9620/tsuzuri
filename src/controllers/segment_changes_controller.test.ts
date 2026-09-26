@@ -66,7 +66,7 @@ describe("SegmentChangesController", () => {
     refusal = null;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent rust:edit-command@window->segment-changes#applyEditCommand">
+      <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing rust:edit-command@window->segment-changes#applyEditCommand">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="emptyHint"></p>
@@ -729,6 +729,207 @@ describe("SegmentChangesController", () => {
       await hold({ ...threeSegments, running_mode: { mode: "transcription" } });
 
       expect([current(), field(0).dataset.cursor]).toEqual([0, undefined]);
+    });
+  });
+
+  describe("deleting by key", () => {
+    function press(
+      target: EventTarget,
+      key = "Delete",
+      options: KeyboardEventInit = {},
+    ): KeyboardEvent {
+      const event = new KeyboardEvent("keydown", {
+        key,
+        bubbles: true,
+        cancelable: true,
+        ...options,
+      });
+      target.dispatchEvent(event);
+      return event;
+    }
+
+    const textOf = (index: number) =>
+      row(index).querySelector<HTMLElement>(".field.text")!;
+
+    afterEach(() => {
+      Object.assign(window, {
+        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
+      });
+    });
+
+    // @behavior ED-098
+    it("deletes the Current Segment with Delete outside a text field", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      const event = press(document.body);
+      await settle();
+
+      expect([changes, event.defaultPrevented]).toEqual([
+        [{ kind: "deletion", indexes: [1] }],
+        true,
+      ]);
+    });
+
+    // @behavior ED-098
+    it("deletes the Current Segment with focus on its check", async () => {
+      await hold(threeSegments);
+      const checkbox = row(1).querySelector<HTMLInputElement>("input.check")!;
+      checkbox.focus();
+      row(1).click();
+
+      press(checkbox);
+      await settle();
+
+      expect(changes).toEqual([{ kind: "deletion", indexes: [1] }]);
+    });
+
+    // @behavior ED-099
+    it("deletes the Checked Segments with Delete over the Current Segment", async () => {
+      await hold(threeSegments);
+      row(1).click();
+      await check(0, 2);
+
+      press(document.body);
+      await settle();
+
+      expect(changes).toEqual([{ kind: "deletion", indexes: [0, 2] }]);
+    });
+
+    // @behavior ED-100
+    it("deletes with Backspace on macOS", async () => {
+      Object.assign(window, {
+        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
+      });
+      await hold(threeSegments);
+      row(1).click();
+
+      press(document.body, "Backspace");
+      await settle();
+
+      expect(changes).toEqual([{ kind: "deletion", indexes: [1] }]);
+    });
+
+    // @behavior ED-100
+    it("leaves Backspace alone outside macOS", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      const event = press(document.body, "Backspace");
+      await settle();
+
+      expect([changes, event.defaultPrevented]).toEqual([[], false]);
+    });
+
+    // @behavior ED-098
+    it("leaves Delete with a modifier alone", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      press(document.body, "Delete", { ctrlKey: true });
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior ED-101
+    it("leaves Delete in a text field to the field", async () => {
+      await hold(threeSegments);
+      textOf(1).focus();
+      await settle();
+
+      const event = press(textOf(1));
+      await settle();
+
+      expect([changes, event.defaultPrevented]).toEqual([[], false]);
+    });
+
+    // @behavior ED-101
+    it("leaves Delete in a time field to the field", async () => {
+      await hold(threeSegments);
+      row(1).click();
+      const start = row(1).querySelector<HTMLInputElement>("input.start")!;
+
+      press(start);
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior ED-102
+    it("deletes nothing while a dialog is open", async () => {
+      await hold(threeSegments);
+      row(1).click();
+      const dialog = document.querySelector<HTMLDialogElement>(
+        '[data-segment-changes-target="shiftDialog"]',
+      )!;
+      dialog.setAttribute("open", "");
+
+      press(dialog.querySelector("button")!);
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior ED-103
+    it("deletes nothing with focus on a Segment's menu", async () => {
+      await hold(threeSegments);
+      const opener = row(1).querySelector<HTMLElement>(
+        ".dropdown [role=button]",
+      )!;
+      opener.focus();
+      row(1).click();
+
+      press(opener);
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior ED-103
+    it("deletes nothing with focus on a drop-down list", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      press(document.querySelector("select")!);
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior ED-104
+    it("deletes nothing while a Mode holds the Segments", async () => {
+      await hold(threeSegments);
+      row(1).click();
+      await hold({ ...threeSegments, running_mode: { mode: "transcription" } });
+
+      press(document.body);
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior ED-105
+    it("deletes once for a held key", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      press(document.body);
+      press(document.body, "Delete", { repeat: true });
+      press(document.body);
+      await settle();
+
+      expect(changes).toEqual([{ kind: "deletion", indexes: [1] }]);
+    });
+
+    // @behavior ED-106
+    it("leaves Delete alone with nothing to delete", async () => {
+      await hold(threeSegments);
+
+      const event = press(document.body);
+      await settle();
+
+      expect([changes, event.defaultPrevented]).toEqual([[], false]);
     });
   });
 });

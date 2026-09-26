@@ -1,14 +1,11 @@
 import { Controller } from "@hotwired/stimulus";
 import {
   followEditCommands,
-  redo,
-  undo,
   type EditCommand,
   type UnlistenFn,
 } from "../backend/project";
-import { isField } from "../editor/field";
-import { t } from "../i18n";
-import { notifyFailure } from "../ui/notification";
+import { isField, type EditingSession } from "../editor";
+import { notifyEdit } from "../ui/notification";
 
 /** The input types holding typed text, whose own history an undo in them belongs to. */
 const TEXT_INPUT_TYPES = new Set(["text", "search", "url", "email", "tel"]);
@@ -36,6 +33,8 @@ export function typingOption({
 
 /** Sends Undo and Redo to the text field in focus, which keeps its own typing, or else to the Project. */
 export default class UndoController extends Controller {
+  declare readonly session: EditingSession;
+
   private unlisten?: UnlistenFn;
 
   async connect(): Promise<void> {
@@ -63,13 +62,12 @@ export default class UndoController extends Controller {
   }
 
   private async applyToProject(command: EditCommand): Promise<void> {
-    try {
-      await (command === "undo" ? undo() : redo());
-    } catch (error) {
-      notifyFailure(
-        t(command === "undo" ? "edit.notUndone" : "edit.notRedone"),
-        error,
-      );
-    }
+    const outcome = await (command === "undo"
+      ? this.session.undo()
+      : this.session.redo());
+    if (outcome.kind === "failed")
+      notifyEdit(outcome, {
+        failure: command === "undo" ? "edit.notUndone" : "edit.notRedone",
+      });
   }
 }

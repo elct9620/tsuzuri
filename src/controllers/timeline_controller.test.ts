@@ -3,7 +3,10 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProjectView, Segment, SegmentChange } from "../backend/project";
+import { assemble } from "../assembly";
+import type { EditingSession } from "../editor";
+import type { SegmentChange } from "../backend/editing";
+import type { ProjectView, Segment } from "../backend/project";
 import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test_layout";
 import { projectOf } from "../test_project";
@@ -11,6 +14,7 @@ import TimelineController, { regionColor } from "./timeline_controller";
 
 describe("TimelineController", () => {
   let application: Application;
+  let session: EditingSession;
   let project: ProjectView | null;
   let waveform: Waveform;
   let changes: SegmentChange[];
@@ -68,7 +72,7 @@ describe("TimelineController", () => {
       { shouldMockEvents: true },
     );
     document.body.innerHTML = `
-      <div data-controller="timeline" data-action="transcript:current@window->timeline#showCurrent keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange">
+      <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange">
         <video data-timeline-target="media"></video>
         <button data-timeline-target="snapping" data-action="timeline#toggleSnapping"></button>
         <button data-action="timeline#zoomOut"></button>
@@ -77,7 +81,11 @@ describe("TimelineController", () => {
       </div>
     `;
     application = Application.start();
-    application.register("timeline", TimelineController);
+    const assembly = assemble(application, {
+      timeline: TimelineController,
+    });
+    session = assembly.session;
+    await assembly.start();
     await settle();
   });
 
@@ -237,9 +245,7 @@ describe("TimelineController", () => {
       changes: Partial<ProjectView> = {},
     ): Promise<void> {
       await show({ ...projectWithMedia(segments), ...changes });
-      window.dispatchEvent(
-        new CustomEvent("transcript:current", { detail: { index: current } }),
-      );
+      session.makeCurrent(current);
     }
 
     const endOf = (index: number) =>
@@ -445,6 +451,33 @@ describe("TimelineController", () => {
       expect(changes).toEqual([
         { kind: "insertion", start_ms: 1000, end_ms: 1500 },
       ]);
+    });
+
+    // @behavior ED-056
+    it("moves into a Segment drawn on the timeline", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5)]));
+      session.makeCurrent(0);
+      await draw(100, 45);
+
+      pressKey("Enter");
+      await settle();
+      await show(projectWithMedia([segmentAt(0, 0.5), segmentAt(1, 1.5)]));
+
+      expect(session.cursor).toEqual({
+        index: 1,
+        caret: { kind: "live", field: "text", start: 0, end: 0, text: "" },
+      });
+    });
+
+    // @behavior ED-047
+    it("drops the Cursor when another Segment's region is clicked", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5), segmentAt(1, 1.5)]));
+      session.enter(0, "text", { start: 2, end: 2 }, "你好世界");
+      void session.leave(0, "text", null, "你好世界");
+
+      regions()[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+      expect(session.cursor).toEqual({ index: 1, caret: null });
     });
 
     // @behavior PV-063

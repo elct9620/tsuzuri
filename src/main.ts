@@ -1,5 +1,6 @@
 import { Application } from "@hotwired/stimulus";
 
+import { assemble } from "./assembly";
 import { locale } from "./backend/system";
 import ComparisonController from "./controllers/comparison_controller";
 import ComponentsController from "./controllers/components_controller";
@@ -31,7 +32,10 @@ import VersionsController from "./controllers/versions_controller";
 import { setInterfaceLanguage, translatePage } from "./i18n";
 import { showIcons } from "./ui/icons";
 
-/** Controllers write text as they connect, so the language is settled before any of them starts. */
+/**
+ * Controllers write text as they connect, so the language is settled before any of them starts;
+ * `assemble` then hands each of them the Project feed and the editing session.
+ */
 async function start(): Promise<void> {
   await setInterfaceLanguage(await locale());
   translatePage();
@@ -40,29 +44,31 @@ async function start(): Promise<void> {
   application.registerActionOption("composing", composingOption);
   application.registerActionOption("control", controlOption);
   application.registerActionOption("typing", typingOption);
-  application.register("comparison", ComparisonController);
-  application.register("components", ComponentsController);
-  application.register("dialog", DialogController);
-  application.register("field", FieldController);
-  application.register("glossary", GlossaryController);
-  application.register("logs", LogsController);
-  application.register("models", ModelsController);
-  application.register("notification", NotificationController);
-  application.register("preview", PreviewController);
-  application.register("progress", ProgressController);
-  application.register("project", ProjectController);
-  application.register("retranslation", RetranslationController);
-  application.register("segment-changes", SegmentChangesController);
-  application.register("speakers", SpeakersController);
-  application.register("timeline", TimelineController);
-  application.register("tooltip", TooltipController);
-  application.register("transcribe", TranscribeController);
-  application.register("transcript", TranscriptController);
-  application.register("translate", TranslateController);
-  application.register("translation-options", TranslationOptionsController);
-  application.register("translation-settings", TranslationSettingsController);
-  application.register("undo", UndoController);
-  application.register("versions", VersionsController);
+  await assemble(application, {
+    comparison: ComparisonController,
+    components: ComponentsController,
+    dialog: DialogController,
+    field: FieldController,
+    glossary: GlossaryController,
+    logs: LogsController,
+    models: ModelsController,
+    notification: NotificationController,
+    preview: PreviewController,
+    progress: ProgressController,
+    project: ProjectController,
+    retranslation: RetranslationController,
+    "segment-changes": SegmentChangesController,
+    speakers: SpeakersController,
+    timeline: TimelineController,
+    tooltip: TooltipController,
+    transcribe: TranscribeController,
+    transcript: TranscriptController,
+    translate: TranslateController,
+    "translation-options": TranslationOptionsController,
+    "translation-settings": TranslationSettingsController,
+    undo: UndoController,
+    versions: VersionsController,
+  }).start();
 }
 
 void start();

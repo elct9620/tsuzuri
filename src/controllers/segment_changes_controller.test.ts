@@ -3,9 +3,12 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
+import page from "../../index.html?raw";
 import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 import { projectOf } from "../test_project";
+import { fieldValue } from "../editor";
 import FieldController, { composingOption } from "./field_controller";
 import SegmentChangesController from "./segment_changes_controller";
 import TranscriptController from "./transcript_controller";
@@ -14,6 +17,7 @@ describe("SegmentChangesController", () => {
   let application: Application;
   let project: ProjectView | null;
   let changes: unknown[];
+  let isRefusing: boolean;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -35,7 +39,7 @@ describe("SegmentChangesController", () => {
   async function select(...indexes: number[]): Promise<void> {
     for (const index of indexes) {
       const checkbox =
-        row(index).querySelector<HTMLInputElement>("input.selection")!;
+        row(index).querySelector<HTMLInputElement>("input.check")!;
       checkbox.checked = true;
       checkbox.dispatchEvent(new Event("change", { bubbles: true }));
     }
@@ -53,14 +57,15 @@ describe("SegmentChangesController", () => {
   beforeEach(async () => {
     project = null;
     changes = [];
+    isRefusing = false;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <section data-controller="transcript segment-changes">
+      <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="empty"></p>
-        <div data-segment-changes-target="selection" hidden>
-          <span data-segment-changes-target="selectionCount"></span>
+        <div data-segment-changes-target="checked" hidden>
+          <span data-segment-changes-target="checkedCount"></span>
           <button id="merge" data-segment-changes-target="merge" data-action="segment-changes#merge">合併</button>
           <button id="open-shift" data-action="segment-changes#openShift">平移</button>
         </div>
@@ -74,16 +79,20 @@ describe("SegmentChangesController", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
-        if (command === "change_segments")
+        if (command === "change_segments") {
           changes.push((args as { change: unknown }).change);
+          if (isRefusing) throw { code: "segment", detail: "refused" };
+        }
       },
       { shouldMockEvents: true },
     );
     application = Application.start();
     application.registerActionOption("composing", composingOption);
-    application.register("field", FieldController);
-    application.register("transcript", TranscriptController);
-    application.register("segment-changes", SegmentChangesController);
+    await assemble(application, {
+      field: FieldController,
+      transcript: TranscriptController,
+      "segment-changes": SegmentChangesController,
+    }).start();
     await settle();
   });
 
@@ -212,17 +221,294 @@ describe("SegmentChangesController", () => {
   });
 
   // @behavior ED-021
-  it("clears the selection once the Segments change", async () => {
+  it("clears the checks once the Segments change", async () => {
     await hold(threeSegments);
     await select(0, 1);
 
     await choose(2, "delete");
+    await hold(projectOf({ segments: threeSegments.segments.slice(0, 2) }));
 
     expect([
-      document.querySelectorAll("input.selection:checked").length,
+      document.querySelectorAll("input.check:checked").length,
       document.querySelector<HTMLElement>(
-        '[data-segment-changes-target="selection"]',
+        '[data-segment-changes-target="checked"]',
       )!.hidden,
     ]).toEqual([0, true]);
+  });
+
+  describe("the Cursor", () => {
+    const texts = (...values: string[]) =>
+      projectOf({
+        segments: values.map((text, index) => ({
+          start_ms: index * 1000,
+          end_ms: (index + 1) * 1000,
+          text,
+        })),
+      });
+    const field = (index: number, kind = "text") =>
+      row(index).querySelector<HTMLElement>(`.field.${kind}`)!;
+    const current = () =>
+      [...document.querySelectorAll("ol > li")].findIndex((li) =>
+        li.hasAttribute("aria-current"),
+      );
+    const caretMark = (index: number) =>
+      row(index).querySelector<HTMLElement>(".cursor-caret");
+
+    /** Places the caret `at` characters into the text of Segment `index`, then gives the text focus, as a click there does. */
+    async function enter(index: number, at: number, end = at): Promise<void> {
+      const text = field(index);
+      const range = document.createRange();
+      range.setStart(text.firstChild!, at);
+      range.setEnd(text.firstChild!, end);
+      document.getSelection()!.removeAllRanges();
+      document.getSelection()!.addRange(range);
+      text.focus();
+      await settle();
+    }
+
+    /** Moves focus from the text of Segment `index` to the menu of Segment `menu`, as opening that menu does. */
+    async function openMenu(index: number, menu = index): Promise<void> {
+      field(index).blur();
+      const opener = row(menu).querySelector<HTMLElement>(
+        '[role="button"][aria-label]',
+      )!;
+      opener.focus();
+      document.getSelection()!.removeAllRanges();
+      await settle();
+    }
+
+    // @behavior ED-042
+    it("keeps the Cursor where it was left once focus moves to the menu", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+
+      await openMenu(0);
+
+      expect([
+        field(0).dataset.cursor,
+        field(0).hasAttribute("data-cursor-kept"),
+      ]).toEqual(["2", true]);
+    });
+
+    // @behavior ED-044
+    it("drops a kept Cursor once the Project replaces its text", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+      await openMenu(0);
+
+      await hold(texts("今天天氣很好", "今天", "天氣很好"));
+
+      expect([current(), field(0).dataset.cursor]).toEqual([0, undefined]);
+    });
+
+    // @behavior ED-045
+    it("makes a Segment current as its text gets focus", async () => {
+      await hold(threeSegments);
+      row(0).click();
+
+      await enter(1, 1);
+
+      expect([current(), field(1).dataset.cursor]).toEqual([1, "1"]);
+    });
+
+    // @behavior ED-061
+    it("makes a Segment current without a Cursor as its time gets focus", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+
+      row(1).querySelector<HTMLInputElement>("input.start")!.focus();
+      await settle();
+
+      expect([
+        current(),
+        field(0).dataset.cursor,
+        field(1).dataset.cursor,
+      ]).toEqual([1, undefined, undefined]);
+    });
+
+    // @behavior ED-048
+    it("asks for a Cursor when another Segment's menu splits", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+      await openMenu(0, 1);
+
+      await choose(1, "split");
+
+      expect([changes, notifications(), current()]).toEqual([
+        [],
+        ["先把游標放在文字中要切割的位置"],
+        1,
+      ]);
+    });
+
+    // @behavior ED-049
+    it("draws its own caret, which the page leaves the platform's to hide", async () => {
+      await hold(threeSegments);
+
+      await enter(0, 2);
+
+      const list = new DOMParser()
+        .parseFromString(page, "text/html")
+        .querySelector('[data-transcript-target="list"]')!.className;
+      expect([
+        field(0).dataset.cursor,
+        caretMark(0)?.classList.contains("animate-blink"),
+        list.includes("[&_.field]:caret-transparent"),
+        list.includes("[&_.field]:selection:bg-transparent"),
+      ]).toEqual(["2", true, true, true]);
+    });
+
+    // @behavior ED-050
+    it("holds a kept caret still", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+
+      await openMenu(0);
+
+      expect([
+        field(0).dataset.cursor,
+        caretMark(0)?.classList.contains("animate-blink"),
+      ]).toEqual(["2", false]);
+    });
+
+    // @behavior ED-051
+    it("marks a range of text without a caret", async () => {
+      await hold(threeSegments);
+
+      await enter(0, 1, 3);
+
+      expect([field(0).dataset.cursor, caretMark(0)]).toEqual(["1-3", null]);
+    });
+
+    // @behavior ED-052
+    it("leaves no Current Segment once another Resource is shown", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+
+      await hold({ ...threeSegments, current_resource: "ep02" });
+
+      expect([current(), field(0).dataset.cursor]).toEqual([-1, undefined]);
+    });
+
+    // @behavior ED-053
+    it("moves to the start of the second half after a split", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+      await openMenu(0);
+
+      await choose(0, "split");
+      await hold(texts("你好", "世界", "今天", "天氣很好"));
+
+      expect([
+        current(),
+        document.activeElement === field(1),
+        field(1).dataset.cursor,
+      ]).toEqual([1, true, "0"]);
+    });
+
+    // @behavior ED-054
+    it("keeps the Cursor when a split is refused", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+      await openMenu(0);
+      isRefusing = true;
+
+      await choose(0, "split");
+      await hold(threeSegments);
+
+      expect([current(), field(0).dataset.cursor]).toEqual([0, "2"]);
+    });
+
+    // @behavior ED-055
+    it("moves into a Segment inserted from a menu", async () => {
+      await hold(threeSegments);
+      row(0).click();
+
+      await choose(0, "insertAfter");
+      await hold(texts("你好世界", "", "今天", "天氣很好"));
+
+      expect([
+        current(),
+        document.activeElement === field(1),
+        field(1).dataset.cursor,
+      ]).toEqual([1, true, "0"]);
+    });
+
+    // @behavior ED-057
+    it("moves to the next Segment when the current one is deleted", async () => {
+      await hold(threeSegments);
+
+      await choose(1, "delete");
+      await hold(texts("你好世界", "天氣很好"));
+
+      expect(current()).toBe(1);
+    });
+
+    // @behavior ED-058
+    it("moves to the previous Segment when the last one is deleted", async () => {
+      await hold(threeSegments);
+
+      await choose(2, "delete");
+      await hold(texts("你好世界", "今天"));
+
+      expect(current()).toBe(1);
+    });
+
+    // @behavior ED-059
+    it("keeps the merged Segment current", async () => {
+      await hold(threeSegments);
+      await select(1, 2);
+      row(2).click();
+
+      document.querySelector<HTMLButtonElement>("#merge")!.click();
+      await settle();
+      await hold(texts("你好世界", "今天天氣很好"));
+
+      expect(current()).toBe(1);
+    });
+
+    // @behavior ED-063
+    it("keeps the Current Segment on its Segment when others before it are merged", async () => {
+      await hold(texts("一", "二", "三", "四"));
+      await select(0, 1);
+      row(3).click();
+
+      document.querySelector<HTMLButtonElement>("#merge")!.click();
+      await settle();
+      await hold(texts("一二", "三", "四"));
+
+      expect([current(), fieldValue(field(2))]).toEqual([2, "四"]);
+    });
+
+    // @behavior ED-060
+    it("leaves no Current Segment when the Segments change in number elsewhere", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      await hold(texts("你好世界", "今天", "天氣很好", "明天"));
+
+      expect(current()).toBe(-1);
+    });
+
+    // @behavior ED-064
+    it("keeps the Current Segment when the Segments change elsewhere but not in number", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      await hold(texts("你好", "今天", "天氣很好"));
+
+      expect(current()).toBe(1);
+    });
+
+    // @behavior ED-062
+    it("drops the Cursor when a Mode holds its text", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+      await openMenu(0);
+
+      await hold({ ...threeSegments, running_mode: { mode: "transcription" } });
+
+      expect([current(), field(0).dataset.cursor]).toEqual([0, undefined]);
+    });
   });
 });

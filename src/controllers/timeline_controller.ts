@@ -6,17 +6,11 @@ import RegionsPlugin, {
 } from "wavesurfer.js/plugins/regions";
 import TimelinePlugin from "wavesurfer.js/plugins/timeline";
 
-import {
-  changeSegments,
-  followProject,
-  type ProjectView,
-  type Segment,
-  type SegmentChange,
-  type UnlistenFn,
-} from "../backend/project";
+import type { ProjectFeed, ProjectView, Segment } from "../backend/project";
 import { extractWaveform, type Waveform } from "../backend/waveform";
+import type { EditingSession, SegmentChange } from "../editor";
 import { t } from "../i18n";
-import { notify, notifyFailure } from "../ui/notification";
+import { notifyEdit, notifyFailure } from "../ui/notification";
 
 const INITIAL_PX_PER_SEC = 100;
 /** The time scale's height, which the page leaves free beneath the waveform. */
@@ -144,6 +138,8 @@ export function controlOption({
 export default class TimelineController extends Controller {
   static targets = ["media", "waveform", "zoomLevel", "snapping"];
 
+  declare readonly feed: ProjectFeed;
+  declare readonly session: EditingSession;
   declare readonly mediaTarget: HTMLMediaElement;
   declare readonly waveformTarget: HTMLElement;
   /** How far the timeline is zoomed, as a percentage of where it starts; pressing it goes back there. */
@@ -156,7 +152,6 @@ export default class TimelineController extends Controller {
   /** Whether a running Mode holds the Current Resource, which refuses every Segment Change. */
   private isHeld = false;
   private pxPerSec = INITIAL_PX_PER_SEC;
-  private currentIndex: number | null = null;
   private isSnapping = true;
   /** The modifier keys held as the pointer last moved, which a region's own events do not carry. */
   private modifiers = { shiftKey: false, altKey: false };
@@ -165,24 +160,24 @@ export default class TimelineController extends Controller {
   private range: Region | null = null;
   private surfer?: WaveSurfer;
   private regions?: ReturnType<typeof RegionsPlugin.create>;
-  private unlisten?: UnlistenFn;
+  private unfollow?: () => void;
   private readonly followModifiers = (event: PointerEvent) => {
     this.modifiers = { shiftKey: event.shiftKey, altKey: event.altKey };
   };
 
-  async connect(): Promise<void> {
+  connect(): void {
     this.showZoomLevel();
     this.showSnapping();
     // Capturing, so the modifiers are known before a region hears the same move
     window.addEventListener("pointerdown", this.followModifiers, true);
     window.addEventListener("pointermove", this.followModifiers, true);
-    this.unlisten = await followProject((project) => this.show(project));
+    this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
   disconnect(): void {
     window.removeEventListener("pointerdown", this.followModifiers, true);
     window.removeEventListener("pointermove", this.followModifiers, true);
-    this.unlisten?.();
+    this.unfollow?.();
     this.surfer?.destroy();
   }
 
@@ -209,14 +204,13 @@ export default class TimelineController extends Controller {
       this.mediaTarget.pause();
       return;
     }
-    const segment =
-      this.currentIndex === null ? undefined : this.segments[this.currentIndex];
+    const segment = this.currentSegment;
     if (segment)
       void this.surfer?.play(segment.start_ms / 1000, segment.end_ms / 1000);
   }
 
-  showCurrent({ detail }: CustomEvent<{ index: number }>): void {
-    this.currentIndex = detail.index;
+  /** Colours the Current Segment's region, the only one that can be dragged. */
+  showCursor(): void {
     this.colorRegions();
   }
 
@@ -227,15 +221,15 @@ export default class TimelineController extends Controller {
   setTimeAtMedia(event: KeyboardEvent): void {
     const side = { F11: "start", F12: "end" }[event.key] as
       UpdateSide | undefined;
-    if (!side || this.currentIndex === null || this.isHeld) return;
-    const segment = this.segments[this.currentIndex];
-    if (!segment) return;
+    const index = this.session.cursor.index;
+    const segment = this.currentSegment;
+    if (!side || index === null || !segment || this.isHeld) return;
     event.preventDefault();
     const time = this.mediaTarget.currentTime;
-    const { lowest, highest } = this.dragReach(this.currentIndex, false);
+    const { lowest, highest } = this.dragReach(index, false);
     const span = spanOf(segment);
     void this.retime(
-      this.currentIndex,
+      index,
       side === "start"
         ? { start: Math.max(lowest, time), end: span.end }
         : { start: span.start, end: Math.min(highest, time) },
@@ -291,7 +285,6 @@ export default class TimelineController extends Controller {
       return;
     }
     this.media = media;
-    this.currentIndex = null;
     void this.loadWaveform(media);
   }
 
@@ -360,10 +353,13 @@ export default class TimelineController extends Controller {
     );
   }
 
+  private get currentSegment(): Segment | undefined {
+    const index = this.session.cursor.index;
+    return index === null ? undefined : this.segments[index];
+  }
+
   private makeCurrent(index: number): void {
-    this.currentIndex = index;
-    this.colorRegions();
-    this.dispatch("current", { detail: { index } });
+    this.session.makeCurrent(index);
   }
 
   private colorRegions(): void {
@@ -377,7 +373,7 @@ export default class TimelineController extends Controller {
    * Current Segment can.
    */
   private regionLook(index: number) {
-    const isCurrent = index === this.currentIndex;
+    const isCurrent = index === this.session.cursor.index;
     const isMovable = isCurrent && !this.isHeld;
     return {
       color: regionColor(index, isCurrent),
@@ -576,13 +572,9 @@ export default class TimelineController extends Controller {
 
   /** Makes `change`, putting the regions back where the Segments are when it is refused. */
   private async change(change: SegmentChange): Promise<void> {
-    try {
-      await changeSegments(change);
-      notify({ title: t("edit.saved"), kind: "success" });
-    } catch (error) {
-      this.markSegments();
-      notifyFailure(t("edit.notSaved"), error);
-    }
+    const outcome = await this.session.change(change);
+    if (outcome.kind === "failed") this.markSegments();
+    notifyEdit(outcome);
   }
 
   private showSnapping(): void {

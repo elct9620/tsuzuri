@@ -12,8 +12,7 @@ import {
   type RevertPart,
   type SubtitleVersions,
 } from "../backend/project";
-import { fieldValue } from "../editor/field";
-import { markRanges, textRange } from "../editor/highlight";
+import { fieldValue, markRanges, textRange } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";

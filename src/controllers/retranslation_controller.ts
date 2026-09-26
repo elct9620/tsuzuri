@@ -2,20 +2,22 @@ import { Controller } from "@hotwired/stimulus";
 
 import type { ProjectView } from "../backend/project";
 import { retranslate } from "../backend/translation";
+import type { EditingSession } from "../editor";
 import { notifyTranslation } from "../ui/notification";
 import type ProgressController from "./progress_controller";
 
-/** Translates chosen Segments again into the translation shown, one row's or the selection's. */
+/** Translates chosen Segments again into the translation shown, one row's or the Checked Segments. */
 export default class RetranslationController extends Controller {
-  static targets = ["selection"];
+  static targets = ["checked"];
   static outlets = ["progress"];
 
-  /** The selection bar's button, usable only while a translation is shown. */
-  declare readonly selectionTarget: HTMLButtonElement;
+  declare readonly session: EditingSession;
+  /** The button on the bar for Checked Segments, usable only while a translation is shown. */
+  declare readonly checkedTarget: HTMLButtonElement;
   declare readonly progressOutlet: ProgressController;
 
   follow({ detail }: CustomEvent<{ project: ProjectView | null }>): void {
-    this.selectionTarget.disabled =
+    this.checkedTarget.disabled =
       (detail.project?.shown_translation ?? null) === null;
   }
 
@@ -27,10 +29,8 @@ export default class RetranslationController extends Controller {
     await this.translate([params.index]);
   }
 
-  async translateSelection({
-    detail,
-  }: CustomEvent<{ indexes: number[] }>): Promise<void> {
-    await this.translate(detail.indexes);
+  async translateChecked(): Promise<void> {
+    await this.translate(this.session.checkedIndexes);
   }
 
   private async translate(indexes: number[]): Promise<void> {

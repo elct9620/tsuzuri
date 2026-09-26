@@ -2,45 +2,41 @@ import { Controller } from "@hotwired/stimulus";
 
 import { save } from "../backend/dialog";
 import {
-  currentProject,
   currentResource,
-  editSegment,
   exportPath,
-  followProject,
   saveSrt,
   showTranslation,
+  type ProjectFeed,
   type ProjectView,
   type Segment,
-  type SegmentField,
   type SrtContent,
-  type UnlistenFn,
 } from "../backend/project";
 import {
   createField,
-  fieldValue,
+  drawCursor,
   isField,
+  isHeld,
+  placeSelection,
   setFieldHeld,
   setFieldValue,
-} from "../editor/field";
+  type CursorField,
+  type EditingSession,
+  type FieldKind,
+} from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
-import { notify, notifyFailure } from "../ui/notification";
 import { formatTime } from "../ui/time";
 import type { TaskKind } from "./progress_controller";
 
-/** Ctrl+Alt+Enter, or ⌘+Option+Enter, splits a Segment at the caret in its text, as subtitle editors bind splitting to a modified line break. */
+/** Ctrl+Alt+Enter, or ⌘+Option+Enter, splits a Segment at the Cursor in its text, as subtitle editors bind splitting to a modified line break. */
 const SPLIT_SHORTCUTS = [
-  "keydown.ctrl+alt+enter->segment-changes#split:!composing:prevent",
-  "keydown.meta+alt+enter->segment-changes#split:!composing:prevent",
+  "keydown.ctrl+alt+enter->field#split:!composing:prevent",
+  "keydown.meta+alt+enter->field#split:!composing:prevent",
 ].join(" ");
 
-/** The text field of one text of a Segment, which hands its text to `transcript#edit` when left changed. */
-function editor(
-  index: number,
-  field: SegmentField,
-  value: string,
-): HTMLElement {
+/** The field of the text or the translation of a Segment, which hands the session what the user does in it. */
+function editor(index: number, field: CursorField, value: string): HTMLElement {
   const editor = createField(
     value,
     field === "translation" ? t("edit.untranslated") : "",
@@ -50,7 +46,7 @@ function editor(
   editor.dataset.field = field;
   editor.dataset.controller = "field";
   editor.dataset.action =
-    "focus->field#remember compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent blur->field#leave field:change->transcript#edit";
+    "focus->field#enter selectionchange@document->field#select compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent blur->field#leave";
   if (field === "text") editor.dataset.action += ` ${SPLIT_SHORTCUTS}`;
   return editor;
 }
@@ -183,20 +179,21 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
   return dropdown;
 }
 
-/** One row: the choice to select it, its times and Speaker, the text, and the translation when one is shown, even before it is made. */
+/** One row: its check, its times and Speaker, the text, and the translation when one is shown, even before it is made. */
 function item(
   segment: Segment,
   index: number,
   isTranslationShown: boolean,
 ): HTMLLIElement {
   const li = document.createElement("li");
-  li.dataset.action = "click->transcript#makeCurrent";
+  li.dataset.action =
+    "click->transcript#makeCurrent focusin->transcript#makeCurrent";
   li.dataset.transcriptIndexParam = String(index);
-  const selection = document.createElement("input");
-  selection.type = "checkbox";
-  selection.className = "selection checkbox checkbox-xs mt-1.5";
-  selection.dataset.index = String(index);
-  selection.dataset.action = "change->segment-changes#showSelection";
+  const check = document.createElement("input");
+  check.type = "checkbox";
+  check.className = "check checkbox checkbox-xs mt-1.5";
+  check.dataset.index = String(index);
+  check.dataset.action = "change->segment-changes#check";
   const heading = document.createElement("div");
   heading.className = "flex flex-col gap-1";
   heading.append(
@@ -205,11 +202,12 @@ function item(
     speakerMenu(index, segment.speaker ?? ""),
   );
   const editors = document.createElement("div");
-  editors.className = "list-col-grow";
+  // The Cursor's caret is drawn within, beside the character it stands after
+  editors.className = "list-col-grow relative";
   editors.append(editor(index, "text", segment.text));
   if (isTranslationShown)
     editors.append(editor(index, "translation", segment.translation ?? ""));
-  li.append(selection, heading, editors, changeMenu(index, isTranslationShown));
+  li.append(check, heading, editors, changeMenu(index, isTranslationShown));
   return li;
 }
 
@@ -231,29 +229,28 @@ export default class TranscriptController extends Controller {
   /** Each export, enabled once the Project has the text it writes. */
   declare readonly exportTargets: HTMLButtonElement[];
 
-  private unlisten?: UnlistenFn;
+  declare readonly feed: ProjectFeed;
+  declare readonly session: EditingSession;
+
+  private unfollow?: () => void;
   /** The task running now, whose results the editor holds Placeholders for. */
   private runningTask: TaskKind | null = null;
-  /** The Project shown now, whose Primary Language and glossary Speakers a new Speaker is checked against. */
+  /** The Project shown now. */
   private project: ProjectView | null = null;
-  /** The Current Segment's position, held by the webview alone. */
-  private currentIndex: number | null = null;
   /** The position of the Segment the Preview is playing. */
   private playingIndex: number | null = null;
 
-  async connect(): Promise<void> {
-    this.unlisten = await followProject((project) => this.show(project));
+  connect(): void {
+    this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
   disconnect(): void {
-    this.unlisten?.();
+    this.unfollow?.();
   }
 
-  async followTask({
-    detail,
-  }: CustomEvent<{ task: TaskKind | null }>): Promise<void> {
+  followTask({ detail }: CustomEvent<{ task: TaskKind | null }>): void {
     this.runningTask = detail.task;
-    this.show(await currentProject());
+    this.show(this.feed.project);
   }
 
   /** Stands Placeholders in for the Segments of a Resource being read. */
@@ -262,30 +259,35 @@ export default class TranscriptController extends Controller {
     this.emptyTarget.hidden = true;
   }
 
-  async edit(event: Event): Promise<void> {
-    const field = event.currentTarget as HTMLElement;
-    try {
-      await editSegment(
-        Number(field.dataset.index),
-        field.dataset.field as SegmentField,
-        fieldValue(field),
-      );
-      notify({ title: t("edit.saved"), kind: "success" });
-    } catch (error) {
-      notifyFailure(t("edit.notSaved"), error);
-    }
-  }
-
+  /** Makes the Segment of a row current as the row is clicked or anything in it gets focus. */
   makeCurrent({ params }: { params: { index: number } }): void {
-    if (params.index === this.currentIndex) return;
-    this.markCurrent(params.index);
-    this.dispatch("current", { detail: { index: params.index } });
+    this.session.makeCurrent(params.index);
   }
 
-  /** Marks the Segment made current elsewhere, bringing its row into view. */
-  showCurrent({ detail }: CustomEvent<{ index: number }>): void {
-    this.markCurrent(detail.index);
-    this.rowAt(detail.index)?.scrollIntoView({ block: "nearest" });
+  /**
+   * Marks the Current Segment and draws the Cursor in it, bringing its row into view; a live
+   * Cursor in a field without focus, as after a split, takes the focus there.
+   */
+  showCursor(): void {
+    const { index, caret } = this.session.cursor;
+    this.markRows();
+    if (index === null) return;
+    this.rowAt(index)?.scrollIntoView({ block: "nearest" });
+    const field = caret && this.fieldAt(index, caret.field);
+    if (field && caret?.kind === "live" && document.activeElement !== field) {
+      field.focus();
+      placeSelection(field, caret);
+    }
+    this.drawCursor();
+  }
+
+  /** Checks the rows of the Checked Segments and no others. */
+  showChecked(): void {
+    const checked = new Set(this.session.checkedIndexes);
+    for (const check of this.listTarget.querySelectorAll<HTMLInputElement>(
+      "input.check",
+    ))
+      check.checked = checked.has(Number(check.dataset.index));
   }
 
   /** Marks the Segment the Preview is playing, keeping its row in view. */
@@ -296,14 +298,18 @@ export default class TranscriptController extends Controller {
       this.rowAt(detail.index)?.scrollIntoView({ block: "nearest" });
   }
 
-  private markCurrent(index: number | null): void {
-    this.currentIndex = index;
-    this.markRows();
+  private drawCursor(): void {
+    const { index, caret } = this.session.cursor;
+    drawCursor(
+      index === null || !caret ? null : this.fieldAt(index, caret.field),
+      caret,
+    );
   }
 
   private markRows(): void {
+    const current = this.session.cursor.index;
     this.segmentRows().forEach((row, index) => {
-      row.toggleAttribute("aria-current", index === this.currentIndex);
+      row.toggleAttribute("aria-current", index === current);
       row.toggleAttribute("data-playing", index === this.playingIndex);
     });
   }
@@ -318,6 +324,12 @@ export default class TranscriptController extends Controller {
 
   private rowAt(index: number): HTMLLIElement | undefined {
     return this.segmentRows()[index];
+  }
+
+  private fieldAt(index: number, field: CursorField): HTMLElement | null {
+    return this.listTarget.querySelector<HTMLElement>(
+      `.field[data-index="${index}"][data-field="${field}"]`,
+    );
   }
 
   async showTranslation(): Promise<void> {
@@ -341,15 +353,15 @@ export default class TranscriptController extends Controller {
   }
 
   private show(project: ProjectView | null): void {
-    if (project?.current_resource !== this.project?.current_resource)
-      this.markCurrent(null);
     this.project = project;
     const segments = project?.segments ?? [];
     const isTranslationShown = (project?.shown_translation ?? null) !== null;
     this.headingTarget.textContent = project?.current_resource ?? "";
     this.showLanguages(project);
     this.showSegments(segments, isTranslationShown);
-    this.holdFields(project);
+    this.holdFields();
+    this.showChecked();
+    this.drawCursor();
     const isAwaitingSegments =
       segments.length === 0 && this.runningTask === "transcribe";
     if (isAwaitingSegments) this.showLoading();
@@ -418,18 +430,17 @@ export default class TranscriptController extends Controller {
   }
 
   /** Disables each field whose subtitle the Mode running on the Current Resource writes. */
-  private holdFields(project: ProjectView | null): void {
-    const mode = project?.running_mode ?? null;
-    const isTranslationFree =
-      mode?.mode === "translation" &&
-      mode.language !== project?.shown_translation;
+  private holdFields(): void {
+    const view = this.session.transcript;
     for (const field of this.listTarget.querySelectorAll<
       HTMLInputElement | HTMLButtonElement | HTMLElement
     >('input, button, [role="button"], [contenteditable]')) {
-      const isFree =
-        mode === null ||
-        (mode.mode === "translation" && field.classList.contains("text")) ||
-        (isTranslationFree && field.classList.contains("translation"));
+      const kind: FieldKind = field.classList.contains("text")
+        ? "text"
+        : field.classList.contains("translation")
+          ? "translation"
+          : "other";
+      const isFree = view === null || !isHeld(kind, view);
       if (
         field instanceof HTMLInputElement ||
         field instanceof HTMLButtonElement

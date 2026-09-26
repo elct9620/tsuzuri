@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { assemble } from "../assembly";
 import type { ProjectView, Segment } from "../backend/project";
 import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test_layout";
@@ -85,9 +86,9 @@ describe("Current Segment", () => {
     );
     document.body.innerHTML = `
       <main data-controller="transcript"
-        data-action="timeline:current->transcript#showCurrent preview:playing->transcript#markPlaying">
+        data-action="editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying">
         <div data-controller="preview timeline"
-          data-action="transcript:current@window->timeline#showCurrent transcript:current@window->preview#showCurrent timeline:current->preview#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent">
+          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor keydown.space@window->timeline#playCurrent:!control:prevent">
           <button data-preview-target="fold" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">
@@ -111,9 +112,11 @@ describe("Current Segment", () => {
     `;
     application = Application.start();
     application.registerActionOption("control", controlOption);
-    application.register("transcript", TranscriptController);
-    application.register("preview", PreviewController);
-    application.register("timeline", TimelineController);
+    await assemble(application, {
+      transcript: TranscriptController,
+      preview: PreviewController,
+      timeline: TimelineController,
+    }).start();
     await settle();
   });
 

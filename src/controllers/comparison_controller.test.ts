@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { assemble } from "../assembly";
 import type {
   ComparedRow,
   ProjectView,
@@ -170,8 +171,10 @@ describe("ComparisonController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.register("transcript", TranscriptController);
-    application.register("comparison", ComparisonController);
+    await assemble(application, {
+      transcript: TranscriptController,
+      comparison: ComparisonController,
+    }).start();
     await settle();
   });
 

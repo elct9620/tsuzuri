@@ -1,16 +1,20 @@
 import { Controller } from "@hotwired/stimulus";
 
 import {
-  editSegment,
   saveTranslationGlossary,
-  setSpeakers,
   translationGlossaryTable,
   type ProjectView,
   type Segment,
 } from "../backend/project";
+import type { EditingSession, Outcome } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
-import { notify, notifyFailure, type Notification } from "../ui/notification";
+import {
+  notify,
+  notifyEdit,
+  notifyFailure,
+  type Notification,
+} from "../ui/notification";
 
 /** One choice of a Speaker menu, `speaker` for Segment `index`; an empty one clears it. */
 function speakerChoice(
@@ -55,24 +59,25 @@ function nameButton(speaker: string): HTMLButtonElement {
  * to the Translation Glossary.
  */
 /** Which Segments the Speaker dialog names. */
-type SpeakerScope = "selection" | "every" | "unnamed" | "named";
+type SpeakerScope = "checked" | "every" | "unnamed" | "named";
 
 export default class SpeakersController extends Controller {
   static targets = [
     "dialog",
     "scope",
-    "selection",
-    "selectionCount",
+    "checked",
+    "checkedCount",
     "from",
     "to",
     "names",
   ];
 
+  declare readonly session: EditingSession;
   declare readonly dialogTarget: HTMLDialogElement;
   declare readonly scopeTargets: HTMLInputElement[];
-  /** The choice of the rows selected, offered only when the dialog is opened from them. */
-  declare readonly selectionTarget: HTMLElement;
-  declare readonly selectionCountTarget: HTMLElement;
+  /** The choice of the Checked Segments, offered only when the dialog is opened for them. */
+  declare readonly checkedTarget: HTMLElement;
+  declare readonly checkedCountTarget: HTMLElement;
   /** The Speaker whose Segments are renamed. */
   declare readonly fromTarget: HTMLSelectElement;
   /** The Speaker to set, none when left empty. */
@@ -80,8 +85,8 @@ export default class SpeakersController extends Controller {
   /** Each Speaker named, to fill in the Speaker to set. */
   declare readonly namesTarget: HTMLElement;
 
-  /** The rows selected when the dialog was opened from them. */
-  private selectedIndexes: number[] = [];
+  /** The Checked Segments when the dialog was opened for them. */
+  private checkedIndexes: number[] = [];
   /** The Project the editor shows, whose Segments and Translation Glossary name the Speakers. */
   private project: ProjectView | null = null;
 
@@ -142,9 +147,9 @@ export default class SpeakersController extends Controller {
     this.showDialog([]);
   }
 
-  /** Opens the Speaker dialog for the rows selected. */
-  openForSelection({ detail }: CustomEvent<{ indexes: number[] }>): void {
-    this.showDialog(detail.indexes);
+  /** Opens the Speaker dialog for the Checked Segments. */
+  openForChecked(): void {
+    this.showDialog(this.session.checkedIndexes);
   }
 
   /** Fills in the Speaker a name button names. */
@@ -159,27 +164,18 @@ export default class SpeakersController extends Controller {
     const indexes = this.scopeIndexes(scope);
     const name = this.toTarget.value.trim();
     this.dialogTarget.close();
-    try {
-      await setSpeakers(indexes, name);
-      notify({
-        title: t("edit.saved"),
-        kind: "success",
-        ...this.speakerOffer(name),
-      });
-    } catch (error) {
-      notifyFailure(t("edit.notSaved"), error);
-    }
+    this.notifyNamed(await this.session.setSpeakers(indexes, name), name);
   }
 
-  private showDialog(selectedIndexes: number[]): void {
-    this.selectedIndexes = selectedIndexes;
-    const isSelected = selectedIndexes.length > 0;
-    this.selectionTarget.hidden = !isSelected;
-    this.selectionCountTarget.textContent = t("edit.selected", {
-      count: selectedIndexes.length,
+  private showDialog(checkedIndexes: number[]): void {
+    this.checkedIndexes = checkedIndexes;
+    const isChecked = checkedIndexes.length > 0;
+    this.checkedTarget.hidden = !isChecked;
+    this.checkedCountTarget.textContent = t("edit.selected", {
+      count: checkedIndexes.length,
     });
     for (const choice of this.scopeTargets)
-      choice.checked = choice.value === (isSelected ? "selection" : "every");
+      choice.checked = choice.value === (isChecked ? "checked" : "every");
     const speakers = this.speakers;
     this.fromTarget.replaceChildren(...speakers.map(speakerOption));
     this.toTarget.value = "";
@@ -190,9 +186,9 @@ export default class SpeakersController extends Controller {
 
   /** The positions of the Segments `scope` takes in. */
   private scopeIndexes(scope: SpeakerScope): number[] {
-    if (scope === "selection") return this.selectedIndexes;
+    if (scope === "checked") return this.checkedIndexes;
     const isTaken: Record<
-      Exclude<SpeakerScope, "selection">,
+      Exclude<SpeakerScope, "checked">,
       (segment: Segment) => boolean
     > = {
       every: () => true,
@@ -219,16 +215,20 @@ export default class SpeakersController extends Controller {
   }
 
   private async writeSpeaker(index: number, name: string): Promise<void> {
-    try {
-      await editSegment(index, "speaker", name);
-      notify({
-        title: t("edit.saved"),
-        kind: "success",
-        ...this.speakerOffer(name),
-      });
-    } catch (error) {
-      notifyFailure(t("edit.notSaved"), error);
+    this.notifyNamed(await this.session.editText(index, "speaker", name), name);
+  }
+
+  /** Says a Speaker was named, offering the name to the Translation Glossary, or why it was not. */
+  private notifyNamed(outcome: Outcome, name: string): void {
+    if (outcome.kind !== "written") {
+      notifyEdit(outcome);
+      return;
     }
+    notify({
+      title: t("edit.saved"),
+      kind: "success",
+      ...this.speakerOffer(name),
+    });
   }
 
   /** An offer to add the Speaker just named to the Translation Glossary, when it names none such. */

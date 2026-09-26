@@ -2,7 +2,6 @@ import { Controller } from "@hotwired/stimulus";
 
 import { message, open } from "../backend/dialog";
 import {
-  followProject,
   openProject,
   refreshProject,
   selectResource,
@@ -11,7 +10,7 @@ import {
   type ProjectOptions,
   type ProjectView,
   type ResourceView,
-  type UnlistenFn,
+  type ProjectFeed,
 } from "../backend/project";
 import { interfaceLanguageCode, t } from "../i18n";
 import { failureMessage } from "../ui/failure";
@@ -89,14 +88,16 @@ export default class ProjectController extends Controller {
   declare readonly bilingualAutosaveTarget: HTMLInputElement;
   declare readonly overwriteBackupTarget: HTMLInputElement;
 
-  private unlisten?: UnlistenFn;
+  declare readonly feed: ProjectFeed;
 
-  async connect(): Promise<void> {
-    this.unlisten = await followProject((project) => this.show(project));
+  private unfollow?: () => void;
+
+  connect(): void {
+    this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
   disconnect(): void {
-    this.unlisten?.();
+    this.unfollow?.();
   }
 
   async openDirectory({ currentTarget }: Event): Promise<void> {

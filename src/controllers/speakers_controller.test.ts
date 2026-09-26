@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf } from "../test_project";
 import { NOTIFICATION_STACK } from "../ui/test_notification";
@@ -40,7 +41,7 @@ describe("SpeakersController", () => {
     const rows = document.querySelectorAll<HTMLLIElement>("ol > li");
     for (const index of indexes) {
       const checkbox =
-        rows[index].querySelector<HTMLInputElement>("input.selection")!;
+        rows[index].querySelector<HTMLInputElement>("input.check")!;
       checkbox.checked = true;
       checkbox.dispatchEvent(new Event("change", { bubbles: true }));
     }
@@ -73,15 +74,15 @@ describe("SpeakersController", () => {
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes speakers"
-        data-action="transcript:shown->speakers#follow segment-changes:speakers->speakers#openForSelection">
+        data-action="transcript:shown->speakers#follow editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked segment-changes:speakers->speakers#openForChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="empty"></p>
         <button id="open-speakers" data-action="speakers#open">說話者</button>
         <dialog data-speakers-target="dialog">
-          <label data-speakers-target="selection">
-            <input type="radio" name="speaker-scope" value="selection" data-speakers-target="scope">
-            <span data-speakers-target="selectionCount"></span>
+          <label data-speakers-target="checked">
+            <input type="radio" name="speaker-scope" value="checked" data-speakers-target="scope">
+            <span data-speakers-target="checkedCount"></span>
           </label>
           <input type="radio" name="speaker-scope" value="every" data-speakers-target="scope">
           <input type="radio" name="speaker-scope" value="unnamed" data-speakers-target="scope">
@@ -91,8 +92,8 @@ describe("SpeakersController", () => {
           <div data-speakers-target="names"></div>
           <button id="apply" data-action="speakers#apply">套用</button>
         </dialog>
-        <div data-segment-changes-target="selection" hidden>
-          <span data-segment-changes-target="selectionCount"></span>
+        <div data-segment-changes-target="checked" hidden>
+          <span data-segment-changes-target="checkedCount"></span>
           <button data-segment-changes-target="merge"></button>
           <button id="speakers-of-selection" data-action="segment-changes#openSpeakers">說話者</button>
         </div>
@@ -107,9 +108,11 @@ describe("SpeakersController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.register("transcript", TranscriptController);
-    application.register("segment-changes", SegmentChangesController);
-    application.register("speakers", SpeakersController);
+    await assemble(application, {
+      transcript: TranscriptController,
+      "segment-changes": SegmentChangesController,
+      speakers: SpeakersController,
+    }).start();
     await settle();
   });
 
@@ -127,7 +130,7 @@ describe("SpeakersController", () => {
       .click();
     await settle();
 
-    await apply("selection", "co");
+    await apply("checked", "co");
 
     expect(named).toEqual({ indexes: [0, 2], speaker: "co" });
   });

@@ -49,8 +49,10 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 ```
 .
 ├─ src/                   Webview（第 4 章）
+│  ├─ main.ts             啟動，呼叫 assembly.ts 組裝（4.3）
 │  ├─ backend/            Rust 的唯一入口
 │  ├─ controllers/        Stimulus controller 與它們的測試
+│  ├─ editor/             編輯核心，不依賴 editor/ 以外（4.5）
 │  ├─ ui/                 共用的畫面模組
 │  └─ locales/            en、zh-Hant
 ├─ src-tauri/src/         Rust（第 3 章）
@@ -72,7 +74,7 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 |---|---|---|
 | Rust 用例與規則 | `cargo test`，測試寫在程式旁的 `mod tests` | mock app 建出 `AppPorts`；shell 腳本假裝元件；`fake_llama` 假裝 llama-server |
 | 真的元件 | `cargo test -- --ignored`，需要模型與媒體檔 | 無 |
-| Webview | `pnpm test`（Vitest、happy-dom），測試放在 controller 旁 | `mockIPC` 代替 Rust |
+| Webview | `pnpm test`（Vitest、happy-dom），測試放在 controller 與 `editor/` 的程式旁 | `mockIPC` 代替 Rust；`editor/` 以假的 port 測試 |
 | 規格 | `sumi verify` | 測試以 `@behavior` 宣告實作的情境 |
 
 用例測試使用真的 `Processes` 與 Tauri 的 mock runtime，元件行程與事件依實際的先後發生。
@@ -84,7 +86,7 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 | Rust 擁有 | Webview 擁有 |
 |---|---|
 | 專案、目前資源、段落、譯文 | 畫面上顯示的內容，每次都向 Rust 取得 |
-| 設定檔、備份、翻譯詞彙表 | modal、勾選、目前段落等 |
+| 設定檔、備份、翻譯詞彙表 | modal、勾選、目前段落、Cursor |
 | 元件行程、進度、失敗原因 | 介面語言、通知、tooltip |
 
 Rust 是唯一的事實來源。Webview 不另外儲存工作資料的副本，所有變更都寫進 Rust，再依事件重讀。
@@ -93,13 +95,15 @@ Rust 是唯一的事實來源。Webview 不另外儲存工作資料的副本，�
 
 ```
 controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs ─▶ 用例／CurrentProject
-    ▲                                                                  │
-    └──────────────────── 回答，或 Failure ◀──────────────────────────┘
+    │    ▲                                                             │
+    │    └─────────────── 回答，或 Failure ◀──────────────────────────┘
+    └─▶ editor/ session ─▶ backend/editing.ts ─▶ invoke             編輯只走這條
 ```
 
 | backend 模組 | Rust 模組 | 指令 |
 |---|---|---|
-| `project.ts` | `project/commands.rs` | 專案、編輯、版本、詞彙表 |
+| `project.ts` | `project/commands.rs` | 專案、版本、詞彙表 |
+| `editing.ts` | `project/commands.rs` | 編輯、段落改動、復原 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
@@ -111,7 +115,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 | 事件 | 送出者 | 接收者 |
 |---|---|---|
-| `project-changed` | 改變專案的指令、用例；`refreshProject` | `backend/project.ts` 的 `followProject`，再呼叫 `current_project` |
+| `project-changed` | 改變專案的指令、用例；`refreshProject` | `main.ts` 以 `followProject` 讀一次 `current_project` 再分送 |
 | `pipeline-progress` | 用例經由 `Progress` 回報 Phase 與百分比 | `backend/progress.ts` 的 `listenProgress` |
 | `edit-command` | macOS 編輯選單的復原與重做（`menu.rs`） | `backend/project.ts` 的 `followEditCommands` |
 
@@ -326,16 +330,20 @@ command ── ModeLock::begin(AppPorts::new(..)) ──▶ ModeRun：執行權�
 ### 4.1 分層
 
 ```
-index.html（data-controller、data-action）
-   │
-controllers/  讀寫 DOM；彼此只經 outlet 與 Stimulus 事件協作
-   │     ├──────────▶ ui/     通知、錯誤訊息、進度文字、時間、選單
-   │     └──────────▶ editor/ 編輯欄位：值、選取範圍、Highlight；不依賴框架
-   ▼
-backend/      唯一碰 Tauri API 的地方：指令、事件、系統對話方塊、系統語系
+index.html                    data-controller、data-action
+    |
+controllers/ ---------------> ui/、backend/（編輯以外）
+    |                         介面：DOM 事件轉成用例，變化轉成畫面
+    v
+editor/  session.ts           應用：Cursor、Checked Segments、用例、port
+         cursor.ts, rules.ts   領域：狀態機與規則
+         field.ts, marks.ts    DOM：欄位換算、畫出 Cursor
+    ^
+    | 實作 EditingPort
+backend/editing.ts            閘道：唯一呼叫編輯指令的地方
 ```
 
-Controller 之間不 import 彼此的函式，只 import outlet 的型別。對應 Rust 的型別只定義在 `backend/`。
+依賴一律往內，和 Rust 端（3.1）同一套規則：介面呼叫應用，應用使用領域，閘道實作應用宣告的 port。`main.ts` 是組裝點（4.3）。
 
 | 選擇 | 原因 |
 |---|---|
@@ -344,13 +352,71 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 
 頁面 markup 都在 `index.html`，i18n 與 Lucide 圖示在啟動時掃描整頁。拆成片段或 custom element 會讓掃描改在執行期進行，目前的規模還不值得。
 
-### 4.2 Controller
+### 4.2 相依規則
+
+| 層 | 可以依賴 | 不可以依賴 |
+|---|---|---|
+| `editor/` | DOM | `editor/` 以外的模組 |
+| `backend/` | Tauri、`editor/` 的 port | controller |
+| controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
+| `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
+| `main.ts` | 全部 | — |
+
+Controller 之間只 import outlet 的型別，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
+
+### 4.3 組裝
+
+```
+main.ts -> assemble(application, controllers)      assembly.ts
+  |-- feed = new ProjectFeed()        每次變更讀一次 current_project
+  |-- session = new EditingSession(editingPort)
+  |-- feed -> session.follow -> 各 controller -> session.announce
+  |-- session.onChange -> window 的 editor:cursor、editor:checked
+  +-- application.register(名稱, class extends X { session, feed })
+```
+
+| 模式 | 何時用 | 範例 |
+|---|---|---|
+| Composition Root | 組裝 app 範圍物件 | `assembly.ts` |
+| 註冊時注入 | controller 取得依賴 | `class extends` |
+| 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
+
+Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。沒有 controller 自己向 Rust 讀專案。
+
+### 4.4 先後順序
+
+| 步驟 | 內容 |
+|---|---|
+| 1 | 送出改動前先記下待套用 |
+| 2 | 讀到的專案比上一份舊就丟掉 |
+| 3 | session 換算並套用待套用 |
+| 4 | 各 controller 依專案重畫 |
+| 5 | 送出 `editor:cursor`，移動焦點 |
+
+`project-changed` 可能比指令的回答先到，所以待套用在送出前就記下，被拒絕時清掉。焦點與 Cursor 等列畫完才動，才不會落在即將被取代的舊列上。
+
+### 4.5 editor
+
+| 檔案 | 層 | 內容 |
+|---|---|---|
+| `index.ts` | 對外 | 唯一可 import 的入口 |
+| `segment.ts` | 領域 | 自己的段落與專案視圖型別 |
+| `cursor.ts` | 領域 | Cursor 的狀態機 |
+| `rules.ts` | 領域 | 合併、鎖定、分割的規則 |
+| `session.ts` | 應用 | `EditingSession` 與 port |
+| `field.ts` | DOM | 欄位內容與選取換算 |
+| `marks.ts` | DOM | 畫出 Cursor |
+| `highlight.ts` | DOM | CSS Custom Highlight |
+
+`editor/` 是能抽成獨立套件的編輯核心：Current Segment、Cursor、Checked Segments 與改動段落的用例都在這裡。用例回傳結果而不發通知，controller 再轉成介面文字。
+
+### 4.6 Controller
 
 | Controller | 畫面區域 |
 |---|---|
 | `project`、`transcript`、`segment-changes`、`dialog` | 資源清單、字幕編輯、設定 |
 | `speakers` | 說話者選單與設定 modal |
-| `retranslation` | 重新翻譯一段或選取的段落 |
+| `retranslation` | 重新翻譯一段或 Checked Segments |
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
 | `preview` | 播放器、疊字、收起 |
@@ -361,9 +427,9 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `tooltip` | 全頁共用的 tooltip |
 | `notification` | 每則通知的倒數、暫停與按鈕 |
 | `undo` | 全頁的復原與重做 |
-| `field` | 每個編輯欄位接上 `editor/` |
+| `field` | 每個編輯欄位接上 session |
 
-畫面配置見 `docs/ui.md`。controller 之間以事件或 outlet 往來，目前段落只由 webview 持有。`preview` 與 `timeline` 掛在同一個元素，各以自己的 target 共用同一個 `<video>`。
+畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，只把互動交給 session；Checked Segments 也向 session 讀取。`preview` 與 `timeline` 掛在同一個元素，各以自己的 target 共用同一個 `<video>`。
 
 | 事件或 outlet | 送出者 | 接收者與用途 |
 |---|---|---|
@@ -372,18 +438,19 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
 | `versions` outlet | `comparison` | 開啟版本 dialog |
 | `versions:compare-with` | `versions` | `comparison` 換對照 |
-| `transcript:current` | 字幕編輯 | 時間軸標出目前段落 |
-| `timeline:current` | 時間軸 | 字幕編輯標出目前段落 |
+| `editor:cursor` | session，經 `main.ts` | 標出 Current Segment 與 Cursor |
+| `editor:checked` | session，經 `main.ts` | 顯示勾選工具列 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
-| `segment-changes:speakers` | `segment-changes` | `speakers` 為選取的段落開設定說話者 |
-| `segment-changes:retranslate` | `segment-changes` | `retranslation` 重新翻譯選取的段落 |
+| `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
+| `segment-changes:retranslate` | `segment-changes` | `retranslation` 重新翻譯 Checked Segments |
 
-### 4.3 backend
+### 4.7 backend
 
 | 模組 | 內容 |
 |---|---|
-| `project.ts` | 專案、版本、詞彙表的指令 |
+| `project.ts` | 專案、版本、詞彙表的指令與訂閱 |
+| `editing.ts` | 實作 `editor/` 的 port |
 | `transcription.ts`、`translation.ts` | 任務指令、翻譯選項與設定的型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄的指令與型別 |
@@ -391,7 +458,7 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `failure.ts` | `Failure` 型別 |
 | `dialog.ts`、`system.ts` | 系統對話方塊與語系 |
 
-### 4.4 共用模組
+### 4.8 共用模組
 
 | 模組 | 內容 |
 |---|---|
@@ -401,6 +468,5 @@ Controller 之間不 import 彼此的函式，只 import outlet 的型別。對�
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
-| `editor/` | 欄位的值、選取範圍與標記 |
 
-圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。`editor/` 以 CSS Custom Highlight 標記範圍，不 import Stimulus 與 Tauri。
+圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。

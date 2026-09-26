@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf } from "../test_project";
 import PreviewController from "./preview_controller";
@@ -83,7 +84,9 @@ describe("PreviewController", () => {
       </div>
     `;
     application = Application.start();
-    application.register("preview", PreviewController);
+    await assemble(application, {
+      preview: PreviewController,
+    }).start();
     await settle();
   });
 
@@ -254,7 +257,9 @@ describe("PreviewController", () => {
     captionLanguage("bilingual").click();
     application.stop();
     application = Application.start();
-    application.register("preview", PreviewController);
+    await assemble(application, {
+      preview: PreviewController,
+    }).start();
     await settle();
 
     await show(projectTranslated({ media: "/talks/ep02.mp4" }));
@@ -287,7 +292,9 @@ describe("PreviewController", () => {
     document.querySelector<HTMLElement>("#fold")!.click();
     application.stop();
     application = Application.start();
-    application.register("preview", PreviewController);
+    await assemble(application, {
+      preview: PreviewController,
+    }).start();
     await settle();
 
     await show(projectOf({ media: "/talks/ep02.mp4" }));

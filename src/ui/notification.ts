@@ -1,5 +1,6 @@
 import type { Restoration } from "../backend/project";
 import type { Translation } from "../backend/translation";
+import type { Outcome } from "../editor";
 import { iconElement, type IconName } from "./icons";
 import { t } from "../i18n";
 import { failureCode, failureMessage } from "./failure";
@@ -187,6 +188,21 @@ export function notifyFailure(title: string, error: unknown): void {
     detail: failureMessage(error),
     kind: failureCode(error) === "changed-elsewhere" ? "warning" : "error",
   });
+}
+
+/**
+ * Says how an edit ended: saved, refused before it was sent with `refusal`, or not done as `failure`
+ * says and why. An edit that changed nothing says nothing.
+ */
+export function notifyEdit(
+  outcome: Outcome,
+  { refusal = "edit.notSaved", failure = "edit.notSaved" } = {},
+): void {
+  if (outcome.kind === "written")
+    notify({ title: t("edit.saved"), kind: "success" });
+  else if (outcome.kind === "refused")
+    notify({ title: t(refusal), kind: "warning" });
+  else if (outcome.kind === "failed") notifyFailure(t(failure), outcome.error);
 }
 
 /** Says a translation finished, with how long each of its Phases took. */

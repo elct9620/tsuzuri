@@ -1,6 +1,13 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { fieldValue, insertLineBreak, keepSelection } from "../editor/field";
+import {
+  fieldSelection,
+  fieldValue,
+  insertLineBreak,
+  type CursorField,
+  type EditingSession,
+} from "../editor";
+import { notifyEdit } from "../ui/notification";
 
 /**
  * Routes a key event by whether an input method is still composing text: `:composing` routes only
@@ -24,9 +31,13 @@ export function composingOption({
   return isComposing === value;
 }
 
-/** One text field of the editor: hands over its text as `field:change` when it is left changed, and keeps its selection. */
+/**
+ * One text or translation field of the editor, handing the session what the user does in it:
+ * entering it, moving the selection, leaving it, and splitting its Segment by shortcut.
+ */
 export default class FieldController extends Controller<HTMLElement> {
-  private valueOnEntry = "";
+  declare readonly session: EditingSession;
+
   private hasComposition = false;
 
   /** Whether an input method is composing, or has only just ended composing, in the field. */
@@ -43,8 +54,26 @@ export default class FieldController extends Controller<HTMLElement> {
     setTimeout(() => (this.hasComposition = false), 0);
   }
 
-  remember(): void {
-    this.valueOnEntry = fieldValue(this.element);
+  enter(): void {
+    this.session.enter(
+      this.index,
+      this.field,
+      fieldSelection(this.element),
+      fieldValue(this.element),
+    );
+  }
+
+  /** Follows the selection while the field has focus, as it moves or text is typed. */
+  select(): void {
+    if (document.activeElement !== this.element) return;
+    const range = fieldSelection(this.element);
+    if (range)
+      this.session.select(
+        this.index,
+        this.field,
+        range,
+        fieldValue(this.element),
+      );
   }
 
   /** Keeps a line break as a character of the text rather than as markup; bound with `:!composing:prevent`. */
@@ -52,12 +81,29 @@ export default class FieldController extends Controller<HTMLElement> {
     insertLineBreak();
   }
 
-  /** Keeps where the selection was, which a click elsewhere moves away, and hands over the text if it changed. */
-  leave(): void {
-    keepSelection(this.element);
-    const value = fieldValue(this.element);
-    if (value === this.valueOnEntry) return;
-    this.valueOnEntry = value;
-    this.dispatch("change", { detail: { value } });
+  /** Hands over where the Cursor was left and the text. */
+  async leave(): Promise<void> {
+    notifyEdit(
+      await this.session.leave(
+        this.index,
+        this.field,
+        fieldSelection(this.element),
+        fieldValue(this.element),
+      ),
+    );
+  }
+
+  /** Splits the Segment where the Cursor in its text starts; bound to the split shortcuts with `:!composing:prevent`. */
+  async split(): Promise<void> {
+    this.select();
+    notifyEdit(await this.session.split(), { refusal: "edit.splitWhere" });
+  }
+
+  private get index(): number {
+    return Number(this.element.dataset.index);
+  }
+
+  private get field(): CursorField {
+    return this.element.dataset.field as CursorField;
   }
 }

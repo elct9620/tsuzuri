@@ -60,7 +60,22 @@ The Current Resource's media above the editor: a player, its Waveform with a reg
 
 ### Current Segment
 
-The one Segment the user last clicked in the editor or on the timeline, shown with its own background; Space plays it alone. It is the webview's to hold and changes nothing in the Project, unlike the Segments checked to merge or shift.
+The one Segment whose row last took a click or focus in the editor, or whose region was last clicked on the timeline, shown with its own background; Space plays it alone. It stays on its Segment through the Segment Changes around it, moves to the second half of a split and into a Segment just inserted, and is let go only when the Segments change in number by other means. It is the webview's to hold and changes nothing in the Project, unlike the Checked Segments.
+
+### Cursor
+
+Where editing stands in the Current Segment: a caret, or a range of text, in one of its fields. It is live while that field has focus and kept once focus leaves, so a menu chosen afterwards still acts where the user was; Tsuzuri draws it itself in both cases, so it looks the same. It belongs to the Current Segment alone, is the webview's to hold, and changes nothing in the Project.
+
+### Checked Segment
+
+A Segment whose box is checked in the editor, so one change reaches many at once: merging neighbours, shifting, naming a Speaker, or translating again. Checking changes nothing in the Project, and the checks are cleared once the Segments change.
+
+#### Rejected
+
+- `Selected Segment` - selecting is what a Cursor does to text; a Segment is checked.
+- `selected rows` - a row stands for a Segment on screen, and it is checked, not selected.
+- `selected Segments` - Segments are checked; selecting is what a Cursor does to text.
+- `rows selected` - a row stands for a Segment on screen, and it is checked, not selected.
 
 ### Waveform
 

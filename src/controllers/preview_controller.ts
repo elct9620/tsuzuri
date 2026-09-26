@@ -10,7 +10,6 @@ import type {
 import type { EditingSession } from "../editor";
 import { formatClock, formatTime } from "../ui/time";
 
-/** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
 /** Where the webview remembers the Preview folded away, a choice of this machine's alone. */
 const FOLDED_KEY = "tsuzuri.preview-folded";
 
@@ -79,6 +78,7 @@ function writeCaptionBackdrop(backdrop: CaptionBackdrop): void {
   }
 }
 
+/** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
 export default class PreviewController extends Controller {
   static targets = [
     "panel",

@@ -222,23 +222,25 @@ export default class SpeakersController extends Controller {
     this.notifyNamed(await this.session.editText(index, "speaker", name), name);
   }
 
-  /** Says a Speaker was named, offering the name to the Translation Glossary, or why it was not. */
+  /**
+   * Says a Speaker was named, offering the name to the Translation Glossary in a Notification when
+   * it names none such, or why it was not.
+   */
   private notifyNamed(outcome: Outcome, name: string): void {
-    if (outcome.kind !== "written") {
+    const offer = this.speakerOffer(name);
+    if (outcome.kind !== "written" || !offer) {
       notifyEdit(outcome);
       return;
     }
-    notify({
-      title: t("edit.saved"),
-      kind: "success",
-      ...this.speakerOffer(name),
-    });
+    notify({ title: t("edit.saved"), kind: "success", ...offer });
   }
 
   /** An offer to add the Speaker just named to the Translation Glossary, when it names none such. */
-  private speakerOffer(name: string): Pick<Notification, "detail" | "action"> {
+  private speakerOffer(
+    name: string,
+  ): Pick<Notification, "detail" | "action"> | undefined {
     const glossarySpeakers = this.project?.translation_glossary?.speakers ?? [];
-    if (name === "" || glossarySpeakers.includes(name)) return {};
+    if (name === "" || glossarySpeakers.includes(name)) return undefined;
     return {
       detail: t("edit.newSpeaker", { name }),
       action: {

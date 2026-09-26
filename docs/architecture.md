@@ -572,6 +572,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | 模組 | 內容 |
 |---|---|
 | `ui/notification.ts` | 產生 toast 通知，互動交給 `notification` |
+| `ui/save_mark.ts` | 標題列的存檔提示與計時 |
 | `ui/failure.ts` | 依錯誤碼產生介面語言的訊息 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |

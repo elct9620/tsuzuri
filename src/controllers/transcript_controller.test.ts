@@ -16,6 +16,7 @@ import {
   notificationDetail,
   notifications,
 } from "../ui/test_notification";
+import { SAVE_MARK, saveMark } from "../ui/test_save_mark";
 import SpeakersController from "./speakers_controller";
 import TranscriptController from "./transcript_controller";
 
@@ -91,6 +92,7 @@ describe("TranscriptController", () => {
     };
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
+      ${SAVE_MARK}
       <section data-controller="transcript speakers"
         data-action="progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->speakers#follow">
         <div id="progress" data-controller="progress" hidden>
@@ -186,7 +188,7 @@ describe("TranscriptController", () => {
   });
 
   // @behavior ED-007
-  it("says an edit was saved", async () => {
+  it("marks an edit as saved rather than notifying it", async () => {
     await hold(
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "竹子搞" }] }),
     );
@@ -194,7 +196,8 @@ describe("TranscriptController", () => {
     edit(".field.text", "逐字稿");
     await settle();
 
-    expect(notifications()).toEqual(["已存檔"]);
+    expect(saveMark()).toBe("已存檔");
+    expect(notifications()).toEqual([]);
   });
 
   // @behavior ED-001
@@ -498,12 +501,13 @@ describe("TranscriptController", () => {
   });
 
   // @behavior ED-023
-  it("offers nothing for a Speaker the Translation Glossary names", async () => {
+  it("marks naming a Speaker the Translation Glossary names as saved", async () => {
     await hold(projectNaming(["小明"]));
 
     await nameSpeaker("小明");
 
-    expect(notificationAction(0)).toBeNull();
+    expect(saveMark()).toBe("已存檔");
+    expect(notifications()).toEqual([]);
   });
 
   // @behavior ED-024

@@ -184,6 +184,32 @@ describe("EditingSession", () => {
     expect([beforeAnnounced, heard]).toEqual([[], ["cursor"]]);
   });
 
+  it("tells of a choice after the Cursor as the user makes another Segment current", () => {
+    session.makeCurrent(1);
+
+    expect(heard).toEqual(["cursor", "choice"]);
+  });
+
+  it("tells of no choice as the user enters a field of the Current Segment", () => {
+    session.makeCurrent(1);
+    heard = [];
+
+    session.enter(1, "text", { start: 0, end: 0 }, "今天");
+
+    expect(heard).toEqual(["cursor"]);
+  });
+
+  it("tells of no choice as a Segment Change moves the Current Segment", async () => {
+    session.makeCurrent(0);
+    heard = [];
+
+    await session.change({ kind: "insertion-after", index: 0 });
+    session.follow(view("你好世界", "", "今天", "天氣"));
+    session.announce();
+
+    expect(heard).toEqual(["cursor"]);
+  });
+
   it("clears the checks once a Segment Change is shown", async () => {
     session.check(0, true);
     session.check(1, true);

@@ -1,7 +1,8 @@
 /**
  * The webview's Composition Root: one Project feed and one editing session, handed to each controller
  * as it is registered. The session reads each Project before any controller does and tells of the
- * Cursor only after all of them have drawn it, as the page's `editor:cursor` and `editor:checked`.
+ * Cursor only after all of them have drawn it, as the page's `editor:cursor`, `editor:choice` and
+ * `editor:checks`.
  */
 
 import type { Application, ControllerConstructor } from "@hotwired/stimulus";

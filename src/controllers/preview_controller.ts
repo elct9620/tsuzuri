@@ -39,7 +39,7 @@ function captionBackdropOf(value: string | null): CaptionBackdrop {
 export default class PreviewController extends Controller {
   static targets = [
     "panel",
-    "fold",
+    "foldButton",
     "foldIcon",
     "screen",
     "media",
@@ -50,8 +50,8 @@ export default class PreviewController extends Controller {
     "hint",
     "playback",
     "time",
-    "currentEmpty",
-    "current",
+    "currentHint",
+    "currentCard",
     "currentNumber",
     "currentTimes",
     "currentText",
@@ -62,7 +62,7 @@ export default class PreviewController extends Controller {
   declare readonly session: EditingSession;
   declare readonly panelTarget: HTMLElement;
   /** Hides or shows the panel; only a Resource with media has one to fold. */
-  declare readonly foldTarget: HTMLButtonElement;
+  declare readonly foldButtonTarget: HTMLButtonElement;
   declare readonly foldIconTarget: HTMLElement;
   declare readonly screenTarget: HTMLElement;
   declare readonly mediaTarget: HTMLVideoElement;
@@ -75,9 +75,9 @@ export default class PreviewController extends Controller {
   declare readonly playbackTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
   /** Asks for a Segment to be clicked while none is current. */
-  declare readonly currentEmptyTarget: HTMLElement;
+  declare readonly currentHintTarget: HTMLElement;
   /** The Current Segment beside the video: its number, times and text. */
-  declare readonly currentTarget: HTMLElement;
+  declare readonly currentCardTarget: HTMLElement;
   declare readonly currentNumberTarget: HTMLElement;
   declare readonly currentTimesTarget: HTMLElement;
   declare readonly currentTextTarget: HTMLElement;
@@ -211,8 +211,8 @@ export default class PreviewController extends Controller {
   private showCurrentSegment(): void {
     const index = this.session.cursor.index;
     const segment = index === null ? undefined : this.segments[index];
-    this.currentEmptyTarget.hidden = segment !== undefined;
-    this.currentTarget.hidden = segment === undefined;
+    this.currentHintTarget.hidden = segment !== undefined;
+    this.currentCardTarget.hidden = segment === undefined;
     if (!segment) return;
     this.currentNumberTarget.textContent = `#${index! + 1}`;
     this.currentTimesTarget.textContent = `${formatTime(segment.start_ms)} → ${formatTime(segment.end_ms)}`;
@@ -222,10 +222,10 @@ export default class PreviewController extends Controller {
 
   private showPanel(): void {
     const hasMedia = this.media !== null;
-    this.foldTarget.hidden = !hasMedia;
+    this.foldButtonTarget.hidden = !hasMedia;
     this.panelTarget.hidden = !hasMedia || this.isFolded;
     this.foldIconTarget.classList.toggle("swap-active", this.isFolded);
-    this.foldTarget.setAttribute("aria-pressed", String(this.isFolded));
+    this.foldButtonTarget.setAttribute("aria-pressed", String(this.isFolded));
   }
 
   /** Tells the editor which Segment is being played, each time that changes. */

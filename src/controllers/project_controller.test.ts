@@ -48,7 +48,7 @@ describe("ProjectController", () => {
         data-controller="project"
         data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent"
       >
-        <section data-project-target="start"></section>
+        <section data-project-target="startScreen"></section>
         <div data-project-target="workspace" hidden>
           <h1 data-project-target="name"></h1>
           <div class="dropdown">
@@ -80,7 +80,7 @@ describe("ProjectController", () => {
             <option value="off">關閉</option>
           </select>
           <span data-project-target="projectModel" data-slot="transcription"></span>
-          <button id="follow-transcription-model" data-project-target="followModel" data-slot="transcription" data-action="project#followModel">改用整體設定</button>
+          <button id="follow-transcription-model" data-project-target="generalModelButton" data-slot="transcription" data-action="project#followModel">改用整體設定</button>
           <span data-project-target="projectModel" data-slot="translation"></span>
           <button id="choose-translation-model" data-slot="translation" data-action="project#chooseModel">指定檔案</button>
         </fieldset>
@@ -302,7 +302,7 @@ describe("ProjectController", () => {
     await hold(null);
 
     expect([
-      target("start").hidden,
+      target("startScreen").hidden,
       target("workspace").hidden,
       target("workspace").hidden,
     ]).toEqual([false, true, true]);

@@ -12,7 +12,7 @@ export default class NotificationController extends Controller<HTMLElement> {
 
   private timer?: ReturnType<typeof setInterval>;
   /** What rests on the Notification now: the pointer, focus, or both. */
-  private readonly resting = new Set<"pointer" | "focus">();
+  private readonly restingInputs = new Set<"pointer" | "focus">();
 
   connect(): void {
     if (this.hasBarTarget) this.timer = setInterval(() => this.tick(), TICK_MS);
@@ -23,11 +23,13 @@ export default class NotificationController extends Controller<HTMLElement> {
   }
 
   rest(event: Event): void {
-    this.resting.add(event.type === "mouseenter" ? "pointer" : "focus");
+    this.restingInputs.add(event.type === "mouseenter" ? "pointer" : "focus");
   }
 
   resume(event: Event): void {
-    this.resting.delete(event.type === "mouseleave" ? "pointer" : "focus");
+    this.restingInputs.delete(
+      event.type === "mouseleave" ? "pointer" : "focus",
+    );
   }
 
   act(): void {
@@ -41,7 +43,7 @@ export default class NotificationController extends Controller<HTMLElement> {
 
   private tick(): void {
     if ("leaving" in this.element.dataset) return clearInterval(this.timer);
-    if (this.resting.size > 0) return;
+    if (this.restingInputs.size > 0) return;
     this.barTarget.value -= TICK_MS;
     if (this.barTarget.value > 0) return;
     clearInterval(this.timer);

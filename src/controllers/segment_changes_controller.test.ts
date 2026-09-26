@@ -60,13 +60,13 @@ describe("SegmentChangesController", () => {
     isRefusing = false;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked">
+      <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
-        <p data-transcript-target="empty"></p>
-        <div data-segment-changes-target="checked" hidden>
+        <p data-transcript-target="emptyHint"></p>
+        <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
-          <button id="merge" data-segment-changes-target="merge" data-action="segment-changes#merge">合併</button>
+          <button id="merge" data-segment-changes-target="mergeButton" data-action="segment-changes#merge">合併</button>
           <button id="open-shift" data-action="segment-changes#openShift">平移</button>
         </div>
         <dialog data-segment-changes-target="shiftDialog">
@@ -231,7 +231,7 @@ describe("SegmentChangesController", () => {
     expect([
       document.querySelectorAll("input.check:checked").length,
       document.querySelector<HTMLElement>(
-        '[data-segment-changes-target="checked"]',
+        '[data-segment-changes-target="checkedBar"]',
       )!.hidden,
     ]).toEqual([0, true]);
   });
@@ -286,7 +286,7 @@ describe("SegmentChangesController", () => {
 
       expect([
         field(0).dataset.cursor,
-        field(0).hasAttribute("data-cursor-kept"),
+        field(0).hasAttribute("data-has-kept-cursor"),
       ]).toEqual(["2", true]);
     });
 

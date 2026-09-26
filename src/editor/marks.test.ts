@@ -50,7 +50,7 @@ describe("drawCursor", () => {
     drawCursor(field, caret("kept", 2));
 
     expect([
-      field.hasAttribute("data-cursor-kept"),
+      field.hasAttribute("data-has-kept-cursor"),
       caretMarks()[0].classList.contains("animate-blink"),
     ]).toEqual([true, false]);
   });

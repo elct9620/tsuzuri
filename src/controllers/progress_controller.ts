@@ -19,8 +19,14 @@ import {
 
 /** The Phases each task goes through, in the order Rust enters them. */
 const PHASES_BY_TASK: Record<TaskKind, string[]> = {
-  transcribe: ["prepare", "convert", "load", "transcribe"],
-  translate: ["prepare", "load", "detect", "translate"],
+  transcription: ["prepare", "convert", "load", "transcribe"],
+  translation: ["prepare", "load", "detect", "translate"],
+};
+
+/** Where each task's messages are kept: under the dialog that starts it. */
+const MESSAGES_BY_TASK: Record<TaskKind, string> = {
+  transcription: "transcribe",
+  translation: "translate",
 };
 
 /**
@@ -58,7 +64,7 @@ export default class ProgressController extends Controller {
   private unlisten?: UnlistenFn;
   private isRunning = false;
   /** The task running now, which a failure is said to belong to. */
-  private task: TaskKind = "transcribe";
+  private task: TaskKind = "transcription";
 
   async connect(): Promise<void> {
     this.unlisten = await listenProgress((progress) => this.show(progress));
@@ -100,8 +106,11 @@ export default class ProgressController extends Controller {
   fail(error: unknown): void {
     this.end();
     if (failureCode(error) === "mode-cancelled")
-      notify({ title: t(`${this.task}.cancelled`), kind: "warning" });
-    else notifyFailure(t(`${this.task}.failed`), error);
+      notify({
+        title: t(`${MESSAGES_BY_TASK[this.task]}.cancelled`),
+        kind: "warning",
+      });
+    else notifyFailure(t(`${MESSAGES_BY_TASK[this.task]}.failed`), error);
   }
 
   /** Asks the running task to stop; it ends through `fail` once it has. */
@@ -118,10 +127,10 @@ export default class ProgressController extends Controller {
     if (progress.percent === null) this.barTarget.removeAttribute("value");
     else this.barTarget.value = progress.percent;
     const steps = [...this.stepsTarget.children] as HTMLElement[];
-    const reached = steps.findIndex(
+    const reachedIndex = steps.findIndex(
       (step) => step.dataset.phase === progress.phase,
     );
-    steps.forEach((step, index) => markStep(step, index - reached));
+    steps.forEach((step, index) => markStep(step, index - reachedIndex));
   }
 
   private end(): void {

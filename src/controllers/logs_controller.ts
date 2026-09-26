@@ -12,11 +12,11 @@ import { notifyFailure } from "../ui/notification";
 
 /** Where the log is written: shown, chosen anew for the next launch, and opened. */
 export default class LogsController extends Controller {
-  static targets = ["path", "pending"];
+  static targets = ["path", "pendingHint"];
 
   declare readonly pathTarget: HTMLElement;
   /** Says a directory chosen takes effect after a restart, while it differs from the one in use. */
-  declare readonly pendingTarget: HTMLElement;
+  declare readonly pendingHintTarget: HTMLElement;
 
   async connect(): Promise<void> {
     try {
@@ -47,8 +47,8 @@ export default class LogsController extends Controller {
   private show(directory: LogDirectory): void {
     this.pathTarget.textContent = directory.in_use;
     this.pathTarget.title = directory.in_use;
-    this.pendingTarget.hidden = directory.chosen === directory.in_use;
-    this.pendingTarget.textContent = t("settings.logsAfterRestart", {
+    this.pendingHintTarget.hidden = directory.chosen === directory.in_use;
+    this.pendingHintTarget.textContent = t("settings.logsAfterRestart", {
       path: directory.chosen,
     });
   }

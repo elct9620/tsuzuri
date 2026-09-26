@@ -38,8 +38,11 @@ export type Outcome =
   | { kind: "refused" }
   | { kind: "failed"; error: unknown };
 
-/** What a listener is told has changed. */
-export type SessionChange = "cursor" | "checked";
+/**
+ * What a listener is told has changed; a `choice` is the user making another Segment current, as a
+ * Segment Change moving the Current Segment is not.
+ */
+export type SessionChange = "cursor" | "choice" | "checks";
 
 /** A Segment Change sent and not yet seen in a Transcript, with the Segments it was made to. */
 interface PendingChange {
@@ -54,12 +57,12 @@ function isSameSegments(one: Segment[], other: Segment[]): boolean {
 export class EditingSession {
   private view: TranscriptView | null = null;
   private state: Cursor = NO_CURSOR;
-  private checked = new Set<number>();
-  private pending: PendingChange | null = null;
+  private checks = new Set<number>();
+  private pendingChange: PendingChange | null = null;
   /** The text the live caret's field held when entered, so leaving it unchanged writes nothing. */
   private entryText = "";
   private readonly listeners = new Set<(change: SessionChange) => void>();
-  private readonly unannounced = new Set<SessionChange>();
+  private readonly unannouncedChanges = new Set<SessionChange>();
 
   constructor(private readonly port: EditingPort) {}
 
@@ -69,7 +72,7 @@ export class EditingSession {
 
   /** The Checked Segments' positions, in order. */
   get checkedIndexes(): number[] {
-    return [...this.checked].sort((one, other) => one - other);
+    return [...this.checks].sort((one, other) => one - other);
   }
 
   /** The Transcript last followed, or none before the first. */
@@ -85,8 +88,8 @@ export class EditingSession {
 
   /** Tells the listeners what has changed since they were last told. */
   announce(): void {
-    const changes = [...this.unannounced];
-    this.unannounced.clear();
+    const changes = [...this.unannouncedChanges];
+    this.unannouncedChanges.clear();
     for (const change of changes)
       for (const listener of this.listeners) listener(change);
   }
@@ -100,13 +103,13 @@ export class EditingSession {
   follow(view: TranscriptView): void {
     const before = this.view;
     this.view = view;
-    const pending = this.pending;
-    if (pending && this.isShown(pending, view.segments)) {
-      this.pending = null;
+    const pendingChange = this.pendingChange;
+    if (pendingChange && this.isShown(pendingChange, view.segments)) {
+      this.pendingChange = null;
       this.move({
         kind: "change",
-        change: pending.change,
-        before: pending.before,
+        change: pendingChange.change,
+        before: pendingChange.before,
       });
       this.clearChecks();
       return;
@@ -127,7 +130,7 @@ export class EditingSession {
     text: string,
   ): void {
     if (field !== null) this.entryText = text;
-    this.act({ kind: "enter", index, field, range, text });
+    this.act({ kind: "entry", index, field, range, text });
   }
 
   /** Follows the live caret as the selection in its field moves or its text is typed. */
@@ -138,7 +141,7 @@ export class EditingSession {
     text: string,
   ): void {
     if (this.holdsCaret(index, field))
-      this.act({ kind: "select", range, text });
+      this.act({ kind: "selection", range, text });
   }
 
   /**
@@ -152,7 +155,7 @@ export class EditingSession {
     text: string,
   ): Promise<Outcome> {
     if (!this.holdsCaret(index, field)) return { kind: "unchanged" };
-    this.act({ kind: "leave", range, text });
+    this.act({ kind: "exit", range, text });
     return this.writeText(index, field, text);
   }
 
@@ -167,7 +170,7 @@ export class EditingSession {
   }
 
   makeCurrent(index: number): void {
-    this.act({ kind: "make-current", index });
+    this.act({ kind: "current-segment", index });
   }
 
   /** Writes a text, a translation or a Speaker of the Segment at `index`. */
@@ -191,12 +194,12 @@ export class EditingSession {
     change: SegmentChange,
     before: Segment[] = this.view?.segments ?? [],
   ): Promise<Outcome> {
-    this.pending = { change, before };
+    this.pendingChange = { change, before };
     try {
       await this.port.changeSegments(change);
       return { kind: "written" };
     } catch (error) {
-      this.pending = null;
+      this.pendingChange = null;
       return { kind: "failed", error };
     }
   }
@@ -227,16 +230,16 @@ export class EditingSession {
 
   /** Checks or unchecks the Segment at `index`. */
   check(index: number, isChecked: boolean): void {
-    if (isChecked) this.checked.add(index);
-    else this.checked.delete(index);
-    this.unannounced.add("checked");
+    if (isChecked) this.checks.add(index);
+    else this.checks.delete(index);
+    this.unannouncedChanges.add("checks");
     this.announce();
   }
 
   clearChecks(): void {
-    if (this.checked.size === 0) return;
-    this.checked.clear();
-    this.unannounced.add("checked");
+    if (this.checks.size === 0) return;
+    this.checks.clear();
+    this.unannouncedChanges.add("checks");
   }
 
   /** Clears the checks and tells the listeners at once, as the user does. */
@@ -277,7 +280,9 @@ export class EditingSession {
 
   /** Moves the Cursor as the user does, telling the listeners at once. */
   private act(event: CursorEvent): void {
+    const index = this.state.index;
     this.move(event);
+    if (this.state.index !== index) this.unannouncedChanges.add("choice");
     this.announce();
   }
 
@@ -285,6 +290,6 @@ export class EditingSession {
     const next = nextCursor(this.state, event);
     if (next === this.state) return;
     this.state = next;
-    this.unannounced.add("cursor");
+    this.unannouncedChanges.add("cursor");
   }
 }

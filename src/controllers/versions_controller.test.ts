@@ -62,9 +62,9 @@ describe("VersionsController", () => {
           <select data-versions-target="subtitle" data-action="change->versions#showBackups"></select>
           <ul data-versions-target="backups"></ul>
           <section data-versions-target="comparison" hidden>
-            <select data-versions-target="left"></select>
-            <select data-versions-target="right"></select>
-            <input type="checkbox" data-versions-target="onlyDifferences"
+            <select data-versions-target="leftVersion"></select>
+            <select data-versions-target="rightVersion"></select>
+            <input type="checkbox" data-versions-target="differenceFilter"
               data-action="change->versions#showOnlyDifferences">
             <button id="next" data-action="versions#moveToNextDifference">↓</button>
             <table><tbody data-versions-target="rows"></tbody></table>
@@ -193,10 +193,10 @@ describe("VersionsController", () => {
   it("shows only the rows that differ", async () => {
     await openVersions();
     await click("button.compare");
-    const onlyDifferences = target<HTMLInputElement>("onlyDifferences");
+    const differenceFilter = target<HTMLInputElement>("differenceFilter");
 
-    onlyDifferences.checked = true;
-    onlyDifferences.dispatchEvent(new Event("change"));
+    differenceFilter.checked = true;
+    differenceFilter.dispatchEvent(new Event("change"));
 
     expect(shownRows().map((tr) => tr.textContent)).toEqual([
       expect.stringContaining("您好"),
@@ -212,7 +212,7 @@ describe("VersionsController", () => {
     document.querySelector<HTMLButtonElement>("#next")!.click();
 
     const current = [...target("rows").querySelectorAll("tr")].findIndex((tr) =>
-      tr.hasAttribute("data-current"),
+      tr.hasAttribute("data-is-current"),
     );
     expect(current).toBe(1);
   });

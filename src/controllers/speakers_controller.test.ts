@@ -57,8 +57,9 @@ describe("SpeakersController", () => {
     document
       .querySelector<HTMLInputElement>(`input[value="${scope}"]`)!
       .click();
-    if (from !== undefined) target<HTMLSelectElement>("from").value = from;
-    target<HTMLInputElement>("to").value = name;
+    if (from !== undefined)
+      target<HTMLSelectElement>("renamedSpeaker").value = from;
+    target<HTMLInputElement>("newSpeaker").value = name;
     document.querySelector<HTMLButtonElement>("#apply")!.click();
     await settle();
   }
@@ -74,27 +75,27 @@ describe("SpeakersController", () => {
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes speakers"
-        data-action="transcript:shown->speakers#follow editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked segment-changes:speakers->speakers#openForChecked">
+        data-action="transcript:shown->speakers#follow editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked segment-changes:speakers->speakers#openForChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
-        <p data-transcript-target="empty"></p>
+        <p data-transcript-target="emptyHint"></p>
         <button id="open-speakers" data-action="speakers#open">說話者</button>
         <dialog data-speakers-target="dialog">
-          <label data-speakers-target="checked">
-            <input type="radio" name="speaker-scope" value="checked" data-speakers-target="scope">
+          <label data-speakers-target="checkedChoice">
+            <input type="radio" name="speaker-scope" value="checked-segments" data-speakers-target="scope">
             <span data-speakers-target="checkedCount"></span>
           </label>
-          <input type="radio" name="speaker-scope" value="every" data-speakers-target="scope">
-          <input type="radio" name="speaker-scope" value="unnamed" data-speakers-target="scope">
-          <input type="radio" name="speaker-scope" value="named" data-speakers-target="scope">
-          <select data-speakers-target="from"></select>
-          <input data-speakers-target="to">
+          <input type="radio" name="speaker-scope" value="all-segments" data-speakers-target="scope">
+          <input type="radio" name="speaker-scope" value="unnamed-segments" data-speakers-target="scope">
+          <input type="radio" name="speaker-scope" value="named-segments" data-speakers-target="scope">
+          <select data-speakers-target="renamedSpeaker"></select>
+          <input data-speakers-target="newSpeaker">
           <div data-speakers-target="names"></div>
           <button id="apply" data-action="speakers#apply">套用</button>
         </dialog>
-        <div data-segment-changes-target="checked" hidden>
+        <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
-          <button data-segment-changes-target="merge"></button>
+          <button data-segment-changes-target="mergeButton"></button>
           <button id="speakers-of-selection" data-action="segment-changes#openSpeakers">說話者</button>
         </div>
         <ol data-transcript-target="list"></ol>
@@ -130,7 +131,7 @@ describe("SpeakersController", () => {
       .click();
     await settle();
 
-    await apply("checked", "co");
+    await apply("checked-segments", "co");
 
     expect(named).toEqual({ indexes: [0, 2], speaker: "co" });
   });
@@ -140,7 +141,7 @@ describe("SpeakersController", () => {
     await hold(saidBy("", "cl", ""));
     await openDialog();
 
-    await apply("every", "co");
+    await apply("all-segments", "co");
 
     expect(named).toEqual({ indexes: [0, 1, 2], speaker: "co" });
   });
@@ -150,7 +151,7 @@ describe("SpeakersController", () => {
     await hold(saidBy("", "cl", ""));
     await openDialog();
 
-    await apply("unnamed", "co");
+    await apply("unnamed-segments", "co");
 
     expect(named).toEqual({ indexes: [0, 2], speaker: "co" });
   });
@@ -160,7 +161,7 @@ describe("SpeakersController", () => {
     await hold(saidBy("co", "cl", "co"));
     await openDialog();
 
-    await apply("named", "小明", "co");
+    await apply("named-segments", "小明", "co");
 
     expect(named).toEqual({ indexes: [0, 2], speaker: "小明" });
   });

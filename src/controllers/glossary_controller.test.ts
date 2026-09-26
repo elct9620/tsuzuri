@@ -40,7 +40,9 @@ describe("GlossaryController", () => {
   }
 
   async function openDialog(): Promise<void> {
-    target("open").click();
+    document
+      .querySelector<HTMLElement>('[data-action="glossary#open"]')!
+      .click();
     await settle();
   }
 
@@ -49,7 +51,7 @@ describe("GlossaryController", () => {
     savedArgs = undefined;
     document.body.innerHTML = `
       <div data-controller="glossary">
-        <button data-glossary-target="open" data-action="glossary#open">詞彙表</button>
+        <button data-action="glossary#open">詞彙表</button>
         <dialog data-glossary-target="dialog">
           <div data-glossary-target="warning" hidden>儲存後改用語言代碼標頭</div>
           <p data-glossary-target="failure" hidden></p>
@@ -58,7 +60,7 @@ describe("GlossaryController", () => {
             <tbody data-glossary-target="rows"></tbody>
           </table>
           <button id="add" data-action="glossary#addRow">新增一列</button>
-          <button id="save" data-glossary-target="save" data-action="glossary#save">儲存</button>
+          <button id="save" data-glossary-target="saveButton" data-action="glossary#save">儲存</button>
         </dialog>
       </div>
     `;
@@ -128,7 +130,7 @@ describe("GlossaryController", () => {
 
     expect([
       target("failure").hidden,
-      target<HTMLButtonElement>("save").disabled,
+      target<HTMLButtonElement>("saveButton").disabled,
     ]).toEqual([false, true]);
   });
 

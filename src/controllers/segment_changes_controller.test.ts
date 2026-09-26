@@ -757,7 +757,7 @@ describe("SegmentChangesController", () => {
       });
     });
 
-    // @behavior ED-097
+    // @behavior ED-098
     it("deletes the Current Segment with Delete outside a text field", async () => {
       await hold(threeSegments);
       row(1).click();
@@ -771,7 +771,7 @@ describe("SegmentChangesController", () => {
       ]);
     });
 
-    // @behavior ED-097
+    // @behavior ED-098
     it("deletes the Current Segment with focus on its check", async () => {
       await hold(threeSegments);
       const checkbox = row(1).querySelector<HTMLInputElement>("input.check")!;
@@ -784,7 +784,7 @@ describe("SegmentChangesController", () => {
       expect(changes).toEqual([{ kind: "deletion", indexes: [1] }]);
     });
 
-    // @behavior ED-098
+    // @behavior ED-099
     it("deletes the Checked Segments with Delete over the Current Segment", async () => {
       await hold(threeSegments);
       row(1).click();
@@ -796,7 +796,7 @@ describe("SegmentChangesController", () => {
       expect(changes).toEqual([{ kind: "deletion", indexes: [0, 2] }]);
     });
 
-    // @behavior ED-099
+    // @behavior ED-100
     it("deletes with Backspace on macOS", async () => {
       Object.assign(window, {
         __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
@@ -810,7 +810,7 @@ describe("SegmentChangesController", () => {
       expect(changes).toEqual([{ kind: "deletion", indexes: [1] }]);
     });
 
-    // @behavior ED-099
+    // @behavior ED-100
     it("leaves Backspace alone outside macOS", async () => {
       await hold(threeSegments);
       row(1).click();
@@ -821,7 +821,7 @@ describe("SegmentChangesController", () => {
       expect([changes, event.defaultPrevented]).toEqual([[], false]);
     });
 
-    // @behavior ED-097
+    // @behavior ED-098
     it("leaves Delete with a modifier alone", async () => {
       await hold(threeSegments);
       row(1).click();
@@ -832,7 +832,7 @@ describe("SegmentChangesController", () => {
       expect(changes).toEqual([]);
     });
 
-    // @behavior ED-100
+    // @behavior ED-101
     it("leaves Delete in a text field to the field", async () => {
       await hold(threeSegments);
       textOf(1).focus();
@@ -844,7 +844,7 @@ describe("SegmentChangesController", () => {
       expect([changes, event.defaultPrevented]).toEqual([[], false]);
     });
 
-    // @behavior ED-100
+    // @behavior ED-101
     it("leaves Delete in a time field to the field", async () => {
       await hold(threeSegments);
       row(1).click();
@@ -856,7 +856,7 @@ describe("SegmentChangesController", () => {
       expect(changes).toEqual([]);
     });
 
-    // @behavior ED-101
+    // @behavior ED-102
     it("deletes nothing while a dialog is open", async () => {
       await hold(threeSegments);
       row(1).click();
@@ -871,7 +871,7 @@ describe("SegmentChangesController", () => {
       expect(changes).toEqual([]);
     });
 
-    // @behavior ED-102
+    // @behavior ED-103
     it("deletes nothing with focus on a Segment's menu", async () => {
       await hold(threeSegments);
       const opener = row(1).querySelector<HTMLElement>(
@@ -886,7 +886,7 @@ describe("SegmentChangesController", () => {
       expect(changes).toEqual([]);
     });
 
-    // @behavior ED-102
+    // @behavior ED-103
     it("deletes nothing with focus on a drop-down list", async () => {
       await hold(threeSegments);
       row(1).click();
@@ -897,7 +897,7 @@ describe("SegmentChangesController", () => {
       expect(changes).toEqual([]);
     });
 
-    // @behavior ED-103
+    // @behavior ED-104
     it("deletes nothing while a Mode holds the Segments", async () => {
       await hold(threeSegments);
       row(1).click();
@@ -909,7 +909,7 @@ describe("SegmentChangesController", () => {
       expect(changes).toEqual([]);
     });
 
-    // @behavior ED-104
+    // @behavior ED-105
     it("deletes once for a held key", async () => {
       await hold(threeSegments);
       row(1).click();
@@ -922,7 +922,7 @@ describe("SegmentChangesController", () => {
       expect(changes).toEqual([{ kind: "deletion", indexes: [1] }]);
     });
 
-    // @behavior ED-105
+    // @behavior ED-106
     it("leaves Delete alone with nothing to delete", async () => {
       await hold(threeSegments);
 

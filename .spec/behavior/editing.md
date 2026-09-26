@@ -254,7 +254,7 @@ Deleting the Checked Segments at once is one change, so a single undo brings the
 | When | deleting is chosen from the bar for Checked Segments |
 | Then | the Project is asked to delete Segments 0 and 2 as one change |
 
-## `ED-097` Deleting the Current Segment with Delete
+## `ED-098` Deleting the Current Segment with Delete
 
 Proofreading line by line, reaching for a menu to drop a stray line is slow, so Delete deletes the Current Segment where no text is typed, as subtitle editors do. A single undo brings it back, so nothing asks first.
 
@@ -264,7 +264,7 @@ Proofreading line by line, reaching for a menu to drop a stray line is slow, so 
 | When | Delete is pressed |
 | Then | the Project is asked to delete Segment 1 |
 
-## `ED-098` Deleting the Checked Segments with Delete
+## `ED-099` Deleting the Checked Segments with Delete
 
 Checked Segments are the ones chosen to act on, so Delete takes them over the Current Segment.
 
@@ -274,7 +274,7 @@ Checked Segments are the ones chosen to act on, so Delete takes them over the Cu
 | When | Delete is pressed |
 | Then | the Project is asked to delete Segments 0 and 2 as one change |
 
-## `ED-099` Deleting with Backspace on macOS
+## `ED-100` Deleting with Backspace on macOS
 
 The key a Mac keyboard labels delete types Backspace, and a forward Delete takes Fn with it, so both delete there.
 
@@ -284,7 +284,7 @@ The key a Mac keyboard labels delete types Backspace, and a forward Delete takes
 | When | Backspace is pressed |
 | Then | the Project is asked to delete Segment 1 |
 
-## `ED-100` Leaving Delete to a text field
+## `ED-101` Leaving Delete to a text field
 
 | Step | Statement |
 | --- | --- |
@@ -292,7 +292,7 @@ The key a Mac keyboard labels delete types Backspace, and a forward Delete takes
 | When | Delete is pressed |
 | Then | no Segment is deleted and the key is left to the field |
 
-## `ED-101` Leaving Delete to an open dialog
+## `ED-102` Leaving Delete to an open dialog
 
 Focus in a dialog, a menu or a drop-down list means the user is working there, so Delete does not reach past it to the Segments.
 
@@ -302,7 +302,7 @@ Focus in a dialog, a menu or a drop-down list means the user is working there, s
 | When | Delete is pressed |
 | Then | no Segment is deleted |
 
-## `ED-102` Leaving Delete to a menu or a list with focus
+## `ED-103` Leaving Delete to a menu or a list with focus
 
 | Step | Statement |
 | --- | --- |
@@ -310,7 +310,7 @@ Focus in a dialog, a menu or a drop-down list means the user is working there, s
 | When | Delete is pressed |
 | Then | no Segment is deleted |
 
-## `ED-103` Deleting nothing while a Mode holds the Segments
+## `ED-104` Deleting nothing while a Mode holds the Segments
 
 A running Mode holds the Segments from being deleted from a menu, and Delete follows the same hold.
 
@@ -320,7 +320,7 @@ A running Mode holds the Segments from being deleted from a menu, and Delete fol
 | When | Delete is pressed |
 | Then | no Segment is deleted |
 
-## `ED-104` Deleting one Segment for a held key
+## `ED-105` Deleting one Segment for a held key
 
 The Current Segment moves only once the deletion shows, so a key repeating before then would delete by a place already gone.
 
@@ -330,7 +330,7 @@ The Current Segment moves only once the deletion shows, so a key repeating befor
 | When | Delete is held down until it repeats |
 | Then | the Project is asked to delete Segment 1 once |
 
-## `ED-105` Leaving Delete alone with nothing to delete
+## `ED-106` Leaving Delete alone with nothing to delete
 
 | Step | Statement |
 | --- | --- |
@@ -346,7 +346,7 @@ The Current Segment moves only once the deletion shows, so a key repeating befor
 | When | a Segment's menu is read |
 | Then | splitting at the Cursor reads `Ctrl+Alt+Enter` beside it |
 
-## `ED-106` Showing the delete shortcut in a Segment's menu
+## `ED-107` Showing the delete shortcut in a Segment's menu
 
 | Step | Statement |
 | --- | --- |

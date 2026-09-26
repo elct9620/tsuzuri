@@ -621,7 +621,7 @@ describe("TranscriptController", () => {
     );
   });
 
-  // @behavior ED-106
+  // @behavior ED-107
   it("shows the delete shortcut beside deleting in a Segment's menu", async () => {
     await hold(translated);
 

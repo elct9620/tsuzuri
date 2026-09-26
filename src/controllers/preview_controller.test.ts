@@ -41,6 +41,11 @@ describe("PreviewController", () => {
       `[data-preview-target="captionLanguage"][value="${value}"]`,
     )!;
 
+  const captionBackdrop = (value: string) =>
+    document.querySelector<HTMLInputElement>(
+      `[data-preview-target="captionBackdrop"][value="${value}"]`,
+    )!;
+
   /** `ep01` with media and `今天` from 0 to 1 s, translated `Today` in `en` shown. */
   const projectTranslated = (changes: Partial<ProjectView> = {}) =>
     projectWithMedia({
@@ -77,6 +82,9 @@ describe("PreviewController", () => {
           <input type="radio" name="caption" value="original" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
           <input type="radio" name="caption" value="translation" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
           <input type="radio" name="caption" value="bilingual" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
+          <input type="radio" name="backdrop" value="none" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
+          <input type="radio" name="backdrop" value="translucent" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
+          <input type="radio" name="backdrop" value="opaque" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
         </div>
           <p data-preview-target="currentEmpty"></p>
           <div data-preview-target="current" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
@@ -275,6 +283,41 @@ describe("PreviewController", () => {
     media().dispatchEvent(new Event("loadedmetadata"));
 
     expect(target("captionChoice").hidden).toBe(true);
+  });
+
+  // @behavior PV-068
+  it("shows what is over the video on a translucent black by default", async () => {
+    await show(projectWithMedia());
+
+    expect(target("caption").dataset.backdrop).toBe("translucent");
+  });
+
+  // @behavior PV-069
+  it("shows what is over the video on the backdrop chosen", async () => {
+    await show(projectWithMedia());
+
+    captionBackdrop("opaque").click();
+
+    expect(target("caption").dataset.backdrop).toBe("opaque");
+  });
+
+  // @behavior PV-070
+  it("keeps the backdrop over the video for the next Resource", async () => {
+    await show(projectWithMedia());
+    captionBackdrop("none").click();
+    application.stop();
+    application = Application.start();
+    await assemble(application, {
+      preview: PreviewController,
+    }).start();
+    await settle();
+
+    await show(projectOf({ media: "/talks/ep02.mp4" }));
+
+    expect([
+      target("caption").dataset.backdrop,
+      captionBackdrop("none").checked,
+    ]).toEqual(["none", true]);
   });
 
   // @behavior PV-034

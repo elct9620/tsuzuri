@@ -118,6 +118,10 @@ const zhHant: typeof en = {
     captionOriginal: "原文",
     captionTranslation: "譯文",
     captionBilingual: "雙語",
+    captionBackdrop: "疊字底色",
+    backdropNone: "無",
+    backdropTranslucent: "半透明",
+    backdropOpaque: "黑底",
     zoomHint: "Ctrl 或 Alt 加滾輪也能縮放",
     snapping: "對齊其他段落與播放位置",
     snappingHint:

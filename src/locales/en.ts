@@ -120,6 +120,10 @@ const en = {
     captionOriginal: "Original",
     captionTranslation: "Translation",
     captionBilingual: "Both",
+    captionBackdrop: "Behind the text over the video",
+    backdropNone: "None",
+    backdropTranslucent: "Translucent",
+    backdropOpaque: "Black",
     zoomHint: "Ctrl or Alt with the wheel also zooms",
     snapping: "Snap to other Segments and the playhead",
     snappingHint:

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -180,11 +180,24 @@ fn translation_srt(transcript: &Transcript, speaker_names: HashMap<String, Strin
     )
 }
 
-/// The Segment of `segments` with the times of `cue`, the one a translation's cue belongs to.
-fn segment_at_times<'a>(segments: &'a [Segment], cue: &Segment) -> Option<&'a Segment> {
-    segments
-        .iter()
-        .find(|segment| (segment.start_ms, segment.end_ms) == (cue.start_ms, cue.end_ms))
+/// For each of `cues`, the Segment of `segments` with its times, the one a translation's cue
+/// belongs to. Segments said at once share their times, so the cues at the same times pair with
+/// those Segments in the order each list holds them.
+fn segments_at_times<'a>(segments: &'a [Segment], cues: &[Segment]) -> Vec<Option<&'a Segment>> {
+    let mut segments_by_times: HashMap<(u64, u64), VecDeque<&Segment>> = HashMap::new();
+    for segment in segments {
+        segments_by_times
+            .entry((segment.start_ms, segment.end_ms))
+            .or_default()
+            .push_back(segment);
+    }
+    cues.iter()
+        .map(|cue| {
+            segments_by_times
+                .get_mut(&(cue.start_ms, cue.end_ms))
+                .and_then(VecDeque::pop_front)
+        })
+        .collect()
 }
 
 /// What a restore or a translation left behind: how many Segments of the original have times
@@ -198,15 +211,14 @@ impl Restoration {
     /// The Segments of `now` with times `previous` did not have, and no cue at them in one of
     /// `translations`; a translation lines up with its original by time alone.
     fn new(previous: &Transcript, now: &Transcript, translations: &[Transcript]) -> Restoration {
-        let unmatched_count = now
-            .segments
+        let previous_segments = segments_at_times(&previous.segments, &now.segments);
+        let cues_by_translation: Vec<Vec<Option<&Segment>>> = translations
             .iter()
-            .filter(|segment| segment_at_times(&previous.segments, segment).is_none())
-            .filter(|segment| {
-                translations
-                    .iter()
-                    .any(|translation| segment_at_times(&translation.segments, segment).is_none())
-            })
+            .map(|translation| segments_at_times(&translation.segments, &now.segments))
+            .collect();
+        let unmatched_count = (0..now.segments.len())
+            .filter(|&at| previous_segments[at].is_none())
+            .filter(|&at| cues_by_translation.iter().any(|cues| cues[at].is_none()))
             .count();
         Restoration { unmatched_count }
     }
@@ -245,16 +257,18 @@ fn translation_with_speakers(
     previous: &Transcript,
     speaker_names: &HashMap<String, String>,
 ) -> Transcript {
+    let segments = segments_at_times(&original.segments, &translation.segments);
+    let previous_segments = segments_at_times(&previous.segments, &translation.segments);
     Transcript {
         segments: translation
             .segments
             .iter()
-            .map(|cue| {
-                let Some(segment) = segment_at_times(&original.segments, cue) else {
+            .zip(segments.into_iter().zip(previous_segments))
+            .map(|(cue, (segment, previous_segment))| {
+                let Some(segment) = segment else {
                     return cue.clone();
                 };
-                let before = segment_at_times(&previous.segments, cue)
-                    .and_then(|segment| segment.speaker.as_deref());
+                let before = previous_segment.and_then(|segment| segment.speaker.as_deref());
                 Segment {
                     speaker: segment.speaker.clone(),
                     text: translated_dialogue(&cue.text, before, speaker_names),

@@ -149,6 +149,32 @@ A player reports its time only a few times a second, so while the media plays wh
 | When | the next frame is drawn at 1.05 s, before the player reports its time |
 | Then | `今天` is shown over the video |
 
+
+## `PV-103` Showing a Segment that overlaps another above it
+
+Someone cutting in speaks over the Segment already shown, so every Segment being played is shown, each one above the Segments that started before it, as players stack overlapping cues.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` from 0 to 2 s and `對啊` from 1 to 1.5 s |
+| When | it plays to 1.2 s |
+| Then | `對啊` is shown over the video above `大家好` |
+
+## `PV-104` Keeping a Segment over the video once the one over it ends
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` from 0 to 2 s and `對啊` from 1 to 1.5 s |
+| When | it plays to 1.8 s |
+| Then | `大家好` alone is shown over the video |
+
+## `PV-105` Stacking Segments that start together in their order
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` and `對啊`, both from 0 to 1 s |
+| When | it plays to 0.5 s |
+| Then | `對啊` is shown over the video above `大家好` |
 ## `PV-017` Drawing the Waveform of the Current Resource's media
 
 | Step | Statement |
@@ -237,6 +263,40 @@ A player reports its time only a few times a second, so while the media plays wh
 | When | the second Segment's row is clicked |
 | Then | its region is coloured more strongly than the other |
 
+
+## `PV-107` Laying overlapping Segments in Lanes on the timeline
+
+Regions that overlap would hide one another, so each Segment lies in the lowest Lane free at its start, the Lanes sharing the waveform's height, and each region can be clicked and dragged on its own. The Lanes stack upward as the Segments over the video do.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and Segments from 0 to 2 s and from 1 to 1.5 s |
+| When | the Project is shown |
+| Then | the first region fills the lower half of the waveform and the second the upper half |
+
+## `PV-108` Keeping a Segment that overlaps none at full height
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and Segments from 0 to 2 s, from 1 to 1.5 s and from 3 to 4 s |
+| When | the Project is shown |
+| Then | the third region fills the waveform's full height |
+
+## `PV-109` Making a Segment in an upper Lane current from the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and Segments from 0 to 2 s and from 1 to 1.5 s, the first current |
+| When | the second Segment's region is clicked |
+| Then | that Segment's row alone is marked as the Current Segment |
+
+## `PV-110` Drawing the Current Segment's region above the others
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments |
+| When | the first Segment's row is clicked |
+| Then | its region is drawn above the second's |
 ## `PV-028` Playing the Current Segment alone with Space
 
 | Step | Statement |
@@ -276,6 +336,14 @@ A player reports its time only a few times a second, so while the media plays wh
 | Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing |
 | When | the media plays to 1.5 s |
 | Then | the second Segment's row alone is marked as playing |
+
+## `PV-111` Marking every Segment being played in the editor
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 2 s and from 1 to 1.5 s, its media playing |
+| When | the media plays to 1.2 s |
+| Then | both rows are marked as playing |
 
 ## `PV-033` Zooming the timeline with Ctrl and the wheel
 
@@ -524,6 +592,14 @@ A cue is saved with its Speaker's name before the dialogue, so what is over the 
 | When | both languages are chosen over the video and the media plays to 0.5 s |
 | Then | `小明: 今天` is shown over the video above `Xiao Ming: Today` |
 
+
+## `PV-106` Naming the Speaker of each overlapping Segment over the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` from 0 to 2 s said by `小明` and `對啊` from 1 to 1.5 s said by `小華` |
+| When | the media plays to 1.2 s |
+| Then | `小華: 對啊` is shown over the video above `小明: 大家好` |
 ## `PV-095` Turning the Speaker over the video off
 
 | Step | Statement |
@@ -542,7 +618,7 @@ A cue is saved with its Speaker's name before the dialogue, so what is over the 
 
 ### Retiming on the timeline
 
-Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragged and written once let go, snapping to what is near only while Shift is held, unless snapping is turned on, as in Aegisub. Only the Current Segment moves, so a click on a narrow region still selects it, and no Segment is dragged over another, since a translation is matched to its original by time.
+Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragged and written once let go, snapping to what is near only while Shift is held, unless snapping is turned on, as in Aegisub. Only the Current Segment moves, so a click on a narrow region still selects it. A Segment may be dragged over its neighbours, as someone cutting in speaks over them, but its start stays between their starts, so the Segments keep the order they start in.
 
 ## `PV-050` Dragging the Current Segment's end on the timeline
 
@@ -568,13 +644,37 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | When | the second's end is dragged 20 pixels later |
 | Then | nothing is asked of the Project |
 
-## `PV-053` Stopping a dragged edge at the next Segment
+## `PV-053` Overlapping the next Segment with a dragged end
 
 | Step | Statement |
 | --- | --- |
 | Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
 | When | its end is dragged 50 pixels later |
-| Then | the Project is asked to change its times to 0 to 0.6 s |
+| Then | the Project is asked to change its times to 0 to 1 s |
+
+## `PV-112` Stopping a dragged start at the previous Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 1 to 1.5 s, the previous from 0.5 to 1 s |
+| When | its start is dragged 80 pixels earlier |
+| Then | the Project is asked to change its times to 0.5 to 1.5 s |
+
+## `PV-113` Stopping a moved Segment at the next Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 to 1.2 s |
+| When | it is dragged 100 pixels later |
+| Then | the Project is asked to change its times to 0.6 to 1.1 s |
+
+## `PV-114` Laying a dragged Segment in a Lane as it overlaps the next
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 to 1.2 s |
+| When | its end is dragged 50 pixels later and not yet let go |
+| Then | the two regions lie in two Lanes |
 
 ## `PV-054` Snapping a dragged edge to the next Segment
 
@@ -671,7 +771,7 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 
 ## `PV-062` Inserting a Segment drawn on the timeline
 
-Drawing on the empty waveform leaves a range to keep with Enter or drop with Esc, as Subtitle Edit does.
+Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as Subtitle Edit does. A press on a region chooses or drags its Segment, so a range over Segments is drawn with Ctrl held, or ⌘ on macOS, where Ctrl and a click open the context menu.
 
 | Step | Statement |
 | --- | --- |
@@ -697,13 +797,45 @@ Esc in a text field gives up what was typed there, which asks nothing of the tim
 | When | Esc is pressed |
 | Then | the timeline marks the Segment and the range |
 
-## `PV-064` Keeping a drawn range out of the next Segment
+## `PV-064` Drawing a range over the next Segment
 
 | Step | Statement |
 | --- | --- |
 | Given | a timeline at 100 pixels a second with Segments from 0 to 0.5 s and from 1 to 1.5 s |
 | When | a range is drawn from 0.7 to 1.2 s |
-| Then | the range runs from 0.7 to 1 s |
+| Then | the range runs from 0.7 to 1.2 s |
+
+## `PV-115` Drawing a range over a Segment with Ctrl held
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s, not current, on Windows or Linux |
+| When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
+| Then | the range runs from 0.5 to 1 s and no Segment is made current |
+
+## `PV-116` Drawing a range over a Segment with ⌘ held on macOS
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s, not current, on macOS |
+| When | a range is drawn from 0.5 to 1 s on its region with ⌘ held |
+| Then | the range runs from 0.5 to 1 s and no Segment is made current |
+
+## `PV-117` Drawing a range over the Current Segment without moving it
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 2 s, on Windows or Linux |
+| When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
+| Then | the range runs from 0.5 to 1 s and nothing is asked of the Project |
+
+## `PV-118` Drawing no range over a Segment without the key
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s, not current |
+| When | the pointer is dragged from 0.5 to 1 s on its region |
+| Then | no range is drawn |
 
 ## `PV-065` Setting the Current Segment's start where the media is with F11
 
@@ -721,13 +853,21 @@ Esc in a text field gives up what was typed there, which asks nothing of the tim
 | When | F12 is pressed outside a field |
 | Then | the Project is asked to change its times to 0 to 0.8 s |
 
-## `PV-067` Keeping a time set with a key out of the next Segment
+## `PV-067` Overlapping the next Segment with a time set with a key
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Segment from 0 to 0.5 s, the next from 0.6 s, the media at 0.8 s |
 | When | F12 is pressed outside a field |
-| Then | the Project is asked to change its times to 0 to 0.6 s |
+| Then | the Project is asked to change its times to 0 to 0.8 s |
+
+## `PV-119` Keeping a start set with a key from before the previous Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0.6 to 1 s, the previous from 0.3 to 0.5 s, the media at 0.2 s, on Windows or Linux |
+| When | F11 is pressed outside a field |
+| Then | the Project is asked to change its times to 0.3 to 1 s |
 
 ## `PV-089` Setting the Current Segment's start with F9 on macOS
 
@@ -794,7 +934,7 @@ A time typed into a Segment is found on the waveform first, so the timeline tell
 
 ### Following playback in the editor
 
-The editor scrolls to the row being played, unless the user turns that off to look through other Segments, or to keep correcting the Current Segment while the media plays on past it, as Subtitle Edit's "Select current subtitle while playing" can be. Only the scrolling stops; the row is still marked.
+The editor scrolls to the row being played, the one started last while Segments overlap, unless the user turns that off to look through other Segments, or to keep correcting the Current Segment while the media plays on past it, as Subtitle Edit's "Select current subtitle while playing" can be. Only the scrolling stops; the row is still marked.
 
 ## `PV-080` Bringing the row being played into view
 
@@ -804,6 +944,14 @@ The editor scrolls to the row being played, unless the user turns that off to lo
 | When | the media plays to 1.5 s |
 | Then | the second Segment's row is scrolled into view |
 
+
+## `PV-120` Bringing the row of the Segment started last into view
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 2 s and from 1 to 1.5 s, its media playing, and following playback on |
+| When | the media plays to 1.2 s |
+| Then | the second Segment's row is scrolled into view |
 ## `PV-081` Leaving the editor where it is while not following playback
 
 | Step | Statement |

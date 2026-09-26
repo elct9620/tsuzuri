@@ -102,6 +102,16 @@ A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri 
 | When | it is opened in `zh-TW` |
 | Then | the first Segment is translated from `ep01.en.srt` and the second is not |
 
+
+## `PJ-138` Loading a translation for Segments with the same times in their order
+
+Two people may speak at once, so Segments may share their times; their cues are matched in the order each file holds them.
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `ep01.srt` of `大家好` and `對啊`, both from 0 to 1 second, and `ep01.en.srt` of `Hello` and `Yeah` at the same times |
+| When | it is opened in `zh-TW` |
+| Then | `大家好` is translated as `Hello` and `對啊` as `Yeah` |
 ## `PJ-020` Showing another translation of the Current Resource
 
 | Step | Statement |
@@ -450,6 +460,32 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | its times are changed to 0.5 to 1.5 seconds |
 | Then | the Segment runs from 0.5 to 1.5 seconds in both files |
 
+
+## `PJ-139` Changing a Segment's times to overlap the next
+
+Segments may overlap, as when someone cuts in, but they keep the order they start in, so a change that would start a Segment before the one before it is refused.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1 and from 1 to 2 seconds |
+| When | the first's times are changed to 0 to 1.5 seconds |
+| Then | the Segments run from 0 to 1.5 and from 1 to 2 seconds |
+
+## `PJ-140` Refusing a start before the previous Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 1 to 2 and from 3 to 4 seconds |
+| When | the second's times are changed to 0.5 to 4 seconds |
+| Then | the change is refused as `unordered-times` and the subtitle is left as it was |
+
+## `PJ-141` Refusing a start after the next Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 1 to 2 and from 3 to 4 seconds |
+| When | the first's times are changed to 3.5 to 5 seconds |
+| Then | the change is refused as `unordered-times` and the subtitle is left as it was |
 ## `PJ-058` Inserting a Segment into the gap after another
 
 | Step | Statement |
@@ -458,6 +494,32 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | a Segment is inserted after the first |
 | Then | an empty Segment from 1 to 3 seconds stands between them |
 
+
+## `PJ-142` Inserting a Segment after one the next touches
+
+With no gap to fill, the new Segment runs two seconds from the edge it is inserted at, over its neighbour, and takes its place among the Segments by its start.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1 and from 1 to 2 seconds |
+| When | a Segment is inserted after the first |
+| Then | an empty Segment from 1 to 3 seconds stands between them |
+
+## `PJ-143` Inserting a Segment after one the next overlaps
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 2 and from 1 to 3 seconds |
+| When | a Segment is inserted after the first |
+| Then | an empty Segment from 2 to 4 seconds comes after the second |
+
+## `PJ-144` Inserting a Segment before one the previous overlaps
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 3.5 and from 3 to 5 seconds |
+| When | a Segment is inserted before the second |
+| Then | an empty Segment from 1 to 3 seconds stands between them |
 ## `PJ-059` Inserting a Segment before the first
 
 | Step | Statement |
@@ -490,6 +552,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | it is split after `你好` |
 | Then | `你好` runs from 0 to 1 second with the translation and `世界` from 1 to 2 seconds without one |
 
+## `PJ-148` Splitting a Segment another is said over
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `大家好嗎` from 0 to 4 and `對啊` from 1 to 1.5 seconds |
+| When | the first is split after `大家` |
+| Then | `大家` runs from 0 to 2, `對啊` from 1 to 1.5 and `好嗎` from 2 to 4 seconds, in that order |
+
 ## `PJ-062` Merging a run of Segments
 
 | Step | Statement |
@@ -498,6 +568,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | the two are merged |
 | Then | one Segment from 0 to 2 seconds reads `你好` above `世界`, translated as `Hello` above `world` |
 
+
+## `PJ-145` Merging a Segment with one it overlaps
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `大家好` from 0 to 5 and `對啊` from 2 to 3 seconds |
+| When | the two are merged |
+| Then | one Segment from 0 to 5 seconds reads `大家好` above `對啊` |
 ## `PJ-063` Shifting a run of Segments
 
 | Step | Statement |
@@ -514,6 +592,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | it is shifted back by two seconds |
 | Then | it runs from 0 to 1 second |
 
+
+## `PJ-146` Refusing a shift past the next Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1 and from 2 to 3 seconds |
+| When | the first is shifted by three seconds |
+| Then | the change is refused as `unordered-times` and the subtitle is left as it was |
 ## `PJ-065` Refusing a Segment that ends before it starts
 
 | Step | Statement |
@@ -918,6 +1004,14 @@ What Tsuzuri wrote itself is never taken for a change made elsewhere.
 | When | its times are changed to 0.5 to 1.5 seconds |
 | Then | `ep01.en.srt` reads `Xiao Ming: Hello` from 0.5 to 1.5 seconds |
 
+
+## `PJ-147` Naming a Speaker in a translation for Segments with the same times in their order
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` reads `大家好` and `對啊`, both from 0 to 1 second, translated in `ep01.en.srt` as `Hello` and `Yeah` |
+| When | the Speaker of `對啊` is set to `co` |
+| Then | `ep01.en.srt` reads `Hello` and `co: Yeah` |
 ## `PJ-077` Writing an edited Speaker to every translation
 
 | Step | Statement |

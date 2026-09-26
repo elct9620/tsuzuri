@@ -6,7 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import page from "../../index.html?raw";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import {
+  NOTIFICATION_STACK,
+  notificationDetail,
+  notifications,
+} from "../ui/test_notification";
 import { projectOf } from "../test_project";
 import { fieldValue } from "../editor";
 import FieldController, { composingOption } from "./field_controller";
@@ -18,7 +22,8 @@ describe("SegmentChangesController", () => {
   let application: Application;
   let project: ProjectView | null;
   let changes: unknown[];
-  let isRefusing: boolean;
+  /** What the Project answers each Segment Change with, or none to make it. */
+  let refusal: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -58,7 +63,7 @@ describe("SegmentChangesController", () => {
   beforeEach(async () => {
     project = null;
     changes = [];
-    isRefusing = false;
+    refusal = null;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent rust:edit-command@window->segment-changes#applyEditCommand">
@@ -83,7 +88,7 @@ describe("SegmentChangesController", () => {
         if (command === "current_project") return project;
         if (command === "change_segments") {
           changes.push((args as { change: unknown }).change);
-          if (isRefusing) throw { code: "segment", detail: "refused" };
+          if (refusal) throw refusal;
         }
       },
       { shouldMockEvents: true },
@@ -132,6 +137,28 @@ describe("SegmentChangesController", () => {
       [],
       ["時間要寫成 00:00:01.000 的格式"],
     ]);
+  });
+
+  // @behavior ED-097
+  it("says why a typed start before the previous Segment's start is refused", async () => {
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 1000, end_ms: 2000, text: "一" },
+          { start_ms: 3000, end_ms: 4000, text: "二" },
+        ],
+      }),
+    );
+    refusal = { code: "unordered-times" };
+    const start = row(1).querySelector<HTMLInputElement>("input.start")!;
+
+    start.value = "00:00:00.500";
+    start.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(notificationDetail(0)).toBe(
+      "開始時間不能早於前一段的開始，也不能晚於後一段的開始",
+    );
   });
 
   // @behavior ED-016
@@ -591,7 +618,7 @@ describe("SegmentChangesController", () => {
       await hold(threeSegments);
       await enter(0, 2);
       await openMenu(0);
-      isRefusing = true;
+      refusal = { code: "segment", detail: "refused" };
 
       await choose(0, "split");
       await hold(threeSegments);

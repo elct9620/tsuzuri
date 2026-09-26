@@ -6,6 +6,10 @@ use crate::transcript::Segment;
 const INSERTED_MS: u64 = 2_000;
 
 /// A change to the Segments themselves, by position, made alike to the original and each translation.
+///
+/// Segments may overlap, as when someone cuts in, but keep the order they start in: a Segment a
+/// change makes takes its place by its start, and a change that would start one before the
+/// Segment before it or after the one after it is refused.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum SegmentChange {
@@ -18,15 +22,19 @@ pub enum SegmentChange {
     Boundary { index: usize, at_ms: u64 },
     /// An empty Segment from `start_ms` to `end_ms`, placed among the others by its start.
     Insertion { start_ms: u64, end_ms: u64 },
-    /// An empty Segment filling the gap before the one at `index`.
+    /// An empty Segment filling the gap before the one at `index`, or running `INSERTED_MS` up to
+    /// its start where there is none.
     InsertionBefore { index: usize },
-    /// An empty Segment filling the gap after the one at `index`.
+    /// An empty Segment filling the gap after the one at `index`, or running `INSERTED_MS` from its
+    /// end where there is none.
     InsertionAfter { index: usize },
     /// The Segments at `indexes`, in any order.
     Deletion { indexes: Vec<usize> },
-    /// Two Segments, split after the `at`th character of the text; the translation stays with the first.
+    /// Two Segments, split after the `at`th character of the text; the translation stays with the
+    /// first, and the second takes its place by its start.
     Split { index: usize, at: usize },
-    /// One Segment from `first` through `last`, their texts and translations each a line.
+    /// One Segment from `first` through the latest end of `first` through `last`, their texts and
+    /// translations each a line.
     Merge { first: usize, last: usize },
     /// `first` through `last` moved by `offset_ms`, stopping at the start of the media.
     Shift {
@@ -36,11 +44,12 @@ pub enum SegmentChange {
     },
 }
 
-/// Why a Segment Change was not made: it would end a Segment before it starts, or it names a
-/// position the Segments do not have.
+/// Why a Segment Change was not made: it would end a Segment before it starts, start one out of
+/// the order the Segments start in, or it names a position the Segments do not have.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SegmentChangeError {
     InvalidTimes,
+    UnorderedTimes,
     InvalidPosition { detail: String },
 }
 
@@ -58,6 +67,7 @@ impl SegmentChange {
                 let segment = segment_at(segments, index)?;
                 segment.start_ms = start_ms;
                 segment.end_ms = end_ms;
+                refuse_unordered_start(segments, index)?;
             }
             SegmentChange::Boundary { index, at_ms } => {
                 let start_ms = segment_at(segments, index)?.start_ms;
@@ -67,6 +77,7 @@ impl SegmentChange {
                 }
                 segments[index].end_ms = at_ms;
                 segments[index + 1].start_ms = at_ms;
+                refuse_unordered_start(segments, index + 1)?;
             }
             SegmentChange::Insertion { start_ms, end_ms } => {
                 if end_ms < start_ms {
@@ -77,19 +88,29 @@ impl SegmentChange {
             }
             SegmentChange::InsertionBefore { index } => {
                 let end_ms = segment_at(segments, index)?.start_ms;
-                let start_ms = match index.checked_sub(1) {
-                    Some(previous) => segments[previous].end_ms.min(end_ms),
-                    None => end_ms.saturating_sub(INSERTED_MS),
+                let start_ms = match index.checked_sub(1).map(|previous| &segments[previous]) {
+                    Some(previous) if previous.end_ms < end_ms => previous.end_ms,
+                    _ => end_ms.saturating_sub(INSERTED_MS),
                 };
-                segments.insert(index, empty_segment(start_ms, end_ms));
+                // Before a Segment starting at the start of the media there is no room, so it runs after
+                let end_ms = if end_ms == start_ms {
+                    start_ms + INSERTED_MS
+                } else {
+                    end_ms
+                };
+                let at = segments[..index].partition_point(|segment| segment.start_ms <= start_ms);
+                segments.insert(at, empty_segment(start_ms, end_ms));
             }
             SegmentChange::InsertionAfter { index } => {
                 let start_ms = segment_at(segments, index)?.end_ms;
                 let end_ms = match segments.get(index + 1) {
-                    Some(next) => next.start_ms.max(start_ms),
-                    None => start_ms + INSERTED_MS,
+                    Some(next) if next.start_ms > start_ms => next.start_ms,
+                    _ => start_ms + INSERTED_MS,
                 };
-                segments.insert(index + 1, empty_segment(start_ms, end_ms));
+                let at = index
+                    + 1
+                    + segments[index + 1..].partition_point(|segment| segment.start_ms < start_ms);
+                segments.insert(at, empty_segment(start_ms, end_ms));
             }
             SegmentChange::Deletion { mut indexes } => {
                 indexes.sort_unstable();
@@ -119,7 +140,10 @@ impl SegmentChange {
                 };
                 segment.end_ms = middle_ms;
                 segment.text = segment.text[..byte_at].trim_end().to_string();
-                segments.insert(index + 1, second);
+                let at = index
+                    + 1
+                    + segments[index + 1..].partition_point(|segment| segment.start_ms < middle_ms);
+                segments.insert(at, second);
             }
             SegmentChange::Merge { first, last } => {
                 if first >= last {
@@ -130,7 +154,10 @@ impl SegmentChange {
                 segment_at(segments, last)?;
                 let run: Vec<Segment> = segments.drain(first + 1..=last).collect();
                 let merged = &mut segments[first];
-                merged.end_ms = run.last().map_or(merged.end_ms, |segment| segment.end_ms);
+                merged.end_ms = run
+                    .iter()
+                    .map(|segment| segment.end_ms)
+                    .fold(merged.end_ms, u64::max);
                 for segment in &run {
                     merged.text = format!("{}\n{}", merged.text, segment.text);
                 }
@@ -152,6 +179,8 @@ impl SegmentChange {
                     segment.start_ms = shift(segment.start_ms);
                     segment.end_ms = shift(segment.end_ms);
                 }
+                refuse_unordered_start(segments, first)?;
+                refuse_unordered_start(segments, last)?;
             }
         }
         Ok(())
@@ -162,6 +191,21 @@ fn segment_at(segments: &mut [Segment], index: usize) -> Result<&mut Segment, Se
     segments
         .get_mut(index)
         .ok_or_else(|| invalid_position(format!("no Segment at {index}")))
+}
+
+/// Refuses the Segment at `index` starting before the Segment before it or after the one after it.
+fn refuse_unordered_start(segments: &[Segment], index: usize) -> Result<(), SegmentChangeError> {
+    let start_ms = segments[index].start_ms;
+    let previous = index.checked_sub(1).map(|previous| &segments[previous]);
+    let is_after_previous = previous.is_none_or(|previous| previous.start_ms <= start_ms);
+    let is_before_next = segments
+        .get(index + 1)
+        .is_none_or(|next| start_ms <= next.start_ms);
+    if is_after_previous && is_before_next {
+        Ok(())
+    } else {
+        Err(SegmentChangeError::UnorderedTimes)
+    }
 }
 
 fn empty_segment(start_ms: u64, end_ms: u64) -> Segment {

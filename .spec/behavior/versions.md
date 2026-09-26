@@ -41,6 +41,24 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 | When | the two are compared |
 | Then | the one row is a Pair with its times changed and its text not |
 
+
+## `VR-051` Pairing a cue someone cuts in with its own cue
+
+A cue that cuts in overlaps the cue it cuts into, so cues with the same times are paired first, and only the cues left are paired by overlap.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `大家好` from 0 to 5 and `對啊` from 2 to 3 seconds, and the subtitle now the same but with `對呀` in place of `對啊` |
+| When | the two are compared |
+| Then | there are two rows, each a Pair, and only the second has its text changed |
+
+## `VR-052` Pairing cues with the same times in their order
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `大家好` and `對啊`, both from 0 to 1 second, and the subtitle now reading `大家好` and `對呀` at the same times |
+| When | the two are compared |
+| Then | there are two rows, each a Pair, and only the second has its text changed |
 ## `VR-012` Keeping apart cues that only touch
 
 | Step | Statement |
@@ -341,6 +359,14 @@ Nothing chosen to compare is the user's choice, so writing the subtitle keeps it
 | When | the Segments are shown |
 | Then | the Segment from 0 to 1 second shows `こんにちは` beneath its texts, named `ja` |
 
+
+## `VR-053` Showing a translation beside cues with the same times in their order
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor reading `en` beside the cues, whose cues from 0 to 1 second read `Hello` and `Yeah` |
+| When | two Segments from 0 to 1 second are shown |
+| Then | the first shows `Hello` beneath its texts and the second `Yeah` |
 ## `VR-040` Comparing the original and the translation at once
 
 | Step | Statement |

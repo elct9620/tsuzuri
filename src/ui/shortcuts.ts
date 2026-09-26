@@ -82,6 +82,13 @@ export const SHORTCUTS: Shortcut[] = [
     mac: ["alt+drag"],
     other: ["alt+drag"],
   },
+  // ⌘ on macOS, where Ctrl and a click open the context menu
+  {
+    id: "drawOver",
+    group: "mouse",
+    mac: ["meta+drag"],
+    other: ["ctrl+drag"],
+  },
   {
     id: "zoom",
     group: "mouse",

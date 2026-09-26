@@ -12,7 +12,7 @@ The words this project keeps, and the ones it turns down in their place.
 
 ### Segment
 
-One piece of speech with a start time, an end time, its text and, when known, its Speaker, and its translation once translated. The unit every mode reads and writes.
+One piece of speech with a start time, an end time, its text and, when known, its Speaker, and its translation once translated. The unit every mode reads and writes. Segments keep the order they start in and may overlap, as when someone cuts in.
 
 ### Speaker
 
@@ -88,6 +88,10 @@ How loud the Current Resource's media is over time, as one Peak for every 10 ms.
 ### Snap
 
 Where an edge dragged on the timeline lands when it comes within 8 pixels of another Segment's edge or of where the media is: on that time instead. Shift held while dragging does the opposite of what the timeline is set to.
+
+### Lane
+
+One band of the timeline's height where regions lie. Segments that overlap lie in Lanes stacked upward in the order they start, sharing the height; a Segment that overlaps none fills it whole.
 
 ### Peak
 

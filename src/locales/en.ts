@@ -348,6 +348,8 @@ const en = {
     noBackup: "No such backup: {{backup}}",
     noRow: "The comparison has changed; compare again before taking a cue back",
     invalidTimes: "A segment cannot end before it starts",
+    unorderedTimes:
+      "A segment cannot start before the one before it or after the one after it",
     invalidPattern: "Nothing to find, or not a regular expression: {{detail}}",
     modeRunning:
       "A task running on this Resource is writing this subtitle; try again once it ends",
@@ -400,6 +402,7 @@ const en = {
       checkRange: "Check a range",
       snapping: "Switch snapping",
       shareBoundary: "Move a shared boundary",
+      drawOver: "Draw a range over Segments",
       zoom: "Zoom the timeline",
     },
     hints: {
@@ -414,7 +417,7 @@ const en = {
       play: "Plays on from where the media is, or only the Current Segment when playing alone",
       setStart: "Moves the Current Segment's start to where the media is",
       setEnd: "Moves the Current Segment's end to where the media is",
-      insertRange: "Adds a Segment over the range drawn on the empty waveform",
+      insertRange: "Adds a Segment over the range drawn on the waveform",
       cancel: "Takes a drag back before it is let go, or drops the drawn range",
       next: "Writes the text and goes to the same field of the next Segment",
       lineBreak: "Starts a new line within the Segment",
@@ -425,6 +428,8 @@ const en = {
         "Checks every Segment from the Current Segment to the one clicked",
       snapping: "Switches snapping for this drag only",
       shareBoundary: "Moves the edge shared with the neighbouring Segment too",
+      drawOver:
+        "Draws a range for a Segment said over others, as when someone cuts in",
       zoom: "Pinching on a trackpad zooms too",
     },
   },

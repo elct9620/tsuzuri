@@ -30,6 +30,9 @@ describe("TimelineController", () => {
   const regions = () => [
     ...host().querySelectorAll<HTMLElement>('[part~="region"]'),
   ];
+  /** Where each region lies and how tall it is, as the share of the waveform's height. */
+  const lanes = () =>
+    regions().map((region) => [region.style.top, region.style.height]);
   const segmentAt = (start: number, end: number): Segment => ({
     start_ms: start * 1000,
     end_ms: end * 1000,
@@ -84,7 +87,7 @@ describe("TimelineController", () => {
         <button data-timeline-target="aloneButton"></button><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd>
         <button data-action="timeline#zoomOut"></button>
         <button data-action="timeline#zoomIn"></button>
-        <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent" hidden></div>
+        <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent pointerdown->timeline#drawOver:capture click->timeline#ignoreClickOver:capture" hidden></div>
       </div>
     `;
     application = Application.start();
@@ -146,6 +149,25 @@ describe("TimelineController", () => {
       true,
       false,
     ]);
+  });
+
+  // @behavior PV-107
+  it("lays overlapping Segments in Lanes, the first in the lower one", async () => {
+    await show(projectWithMedia([segmentAt(0, 2), segmentAt(1, 1.5)]));
+
+    expect(lanes()).toEqual([
+      ["50%", "50%"],
+      ["0%", "50%"],
+    ]);
+  });
+
+  // @behavior PV-108
+  it("keeps a Segment that overlaps none at full height", async () => {
+    await show(
+      projectWithMedia([segmentAt(0, 1), segmentAt(0.5, 0.8), segmentAt(1, 2)]),
+    );
+
+    expect(lanes()[2]).toEqual(["0%", "100%"]);
   });
 
   // @behavior PV-020
@@ -276,6 +298,10 @@ describe("TimelineController", () => {
       regions()[index].querySelector<HTMLElement>(
         '[part~="region-handle-right"]',
       );
+    const startOf = (index: number) =>
+      regions()[index].querySelector<HTMLElement>(
+        '[part~="region-handle-left"]',
+      );
 
     /** Presses the pointer on `element`, then moves it `by` pixels and back `back` more, with `keys` held. */
     function pressAndMove(
@@ -319,6 +345,36 @@ describe("TimelineController", () => {
     ): Promise<void> {
       pressAndMove(element, by, keys);
       letGo();
+      await settle();
+    }
+
+    /** Draws from `from` pixels across `by` more, pressing on `element` with `keys` held. */
+    async function drawOver(
+      element: Element,
+      from: number,
+      by: number,
+      keys: PointerEventInit = {},
+    ): Promise<void> {
+      const at = {
+        pointerId: 1,
+        button: 0,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        ...keys,
+      };
+      element.dispatchEvent(
+        new PointerEvent("pointerdown", { ...at, clientX: from }),
+      );
+      window.dispatchEvent(
+        new PointerEvent("pointermove", { ...at, clientX: from + by }),
+      );
+      window.dispatchEvent(
+        new PointerEvent("pointerup", { ...at, clientX: from + by }),
+      );
+      element.dispatchEvent(
+        new MouseEvent("click", { ...at, clientX: from + by }),
+      );
       await settle();
     }
 
@@ -378,12 +434,42 @@ describe("TimelineController", () => {
     });
 
     // @behavior PV-053
-    it("stops a dragged edge at the next Segment", async () => {
+    it("overlaps the next Segment with a dragged end", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1.5)]);
 
       await drag(endOf(0)!, 50);
 
-      expect(changes).toEqual([times(0, 0, 600)]);
+      expect(changes).toEqual([times(0, 0, 1000)]);
+    });
+
+    // @behavior PV-112
+    it("stops a dragged start at the previous Segment's start", async () => {
+      await showCurrent([segmentAt(0.5, 1), segmentAt(1, 1.5)], 1);
+
+      await drag(startOf(1)!, -80);
+
+      expect(changes).toEqual([times(1, 500, 1500)]);
+    });
+
+    // @behavior PV-113
+    it("stops a moved Segment at the next Segment's start", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1.2)]);
+
+      await drag(regions()[0], 100);
+
+      expect(changes).toEqual([times(0, 600, 1100)]);
+    });
+
+    // @behavior PV-114
+    it("lays a dragged Segment in a Lane as it overlaps the next", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1.2)]);
+
+      pressAndMove(endOf(0)!, 50);
+
+      expect(lanes()).toEqual([
+        ["50%", "50%"],
+        ["0%", "50%"],
+      ]);
     });
 
     // @behavior PV-054
@@ -554,15 +640,48 @@ describe("TimelineController", () => {
     });
 
     // @behavior PV-064
-    it("keeps a drawn range out of the next Segment", async () => {
+    it("draws a range over the next Segment", async () => {
       await show(projectWithMedia([segmentAt(0, 0.5), segmentAt(1, 1.5)]));
 
       await draw(70, 45);
 
       expect([regions()[2].style.left, regions()[2].style.right]).toEqual([
         "35%",
-        "50%",
+        "40%",
       ]);
+    });
+
+    // @behavior PV-115
+    it("draws a range over a Segment with Ctrl held", async () => {
+      await show(projectWithMedia([segmentAt(0, 2)]));
+
+      await drawOver(regions()[0], 50, 50, { ctrlKey: true });
+
+      expect([spanTimes().textContent, session.cursor.index]).toEqual([
+        "00:00:00.500 → 00:00:01.000 (0.500s)",
+        null,
+      ]);
+    });
+
+    // @behavior PV-117
+    it("draws a range over the Current Segment without moving it", async () => {
+      await showCurrent([segmentAt(0, 2)]);
+
+      await drawOver(regions()[0], 50, 50, { ctrlKey: true });
+
+      expect([spanTimes().textContent, changes]).toEqual([
+        "00:00:00.500 → 00:00:01.000 (0.500s)",
+        [],
+      ]);
+    });
+
+    // @behavior PV-118
+    it("draws no range over a Segment without the key", async () => {
+      await show(projectWithMedia([segmentAt(0, 2)]));
+
+      await drawOver(regions()[0], 50, 50);
+
+      expect([spanTimes().hidden, regions().length]).toEqual([true, 1]);
     });
 
     // @behavior PV-072
@@ -629,14 +748,25 @@ describe("TimelineController", () => {
     });
 
     // @behavior PV-067
-    it("keeps a time set with a key out of the next Segment", async () => {
+    it("overlaps the next Segment with a time set with a key", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
       media().currentTime = 0.8;
 
       pressKey("F12");
       await settle();
 
-      expect(changes).toEqual([times(0, 0, 600)]);
+      expect(changes).toEqual([times(0, 0, 800)]);
+    });
+
+    // @behavior PV-119
+    it("keeps a start set with a key from before the previous Segment's start", async () => {
+      await showCurrent([segmentAt(0.3, 0.5), segmentAt(0.6, 1)], 1);
+      media().currentTime = 0.2;
+
+      pressKey("F11");
+      await settle();
+
+      expect(changes).toEqual([times(1, 300, 1000)]);
     });
 
     describe("on macOS", () => {
@@ -679,6 +809,18 @@ describe("TimelineController", () => {
         await settle();
 
         expect(changes).toEqual([]);
+      });
+
+      // @behavior PV-116
+      it("draws a range over a Segment with ⌘ held", async () => {
+        await show(projectWithMedia([segmentAt(0, 2)]));
+
+        await drawOver(regions()[0], 50, 50, { metaKey: true });
+
+        expect([spanTimes().textContent, session.cursor.index]).toEqual([
+          "00:00:00.500 → 00:00:01.000 (0.500s)",
+          null,
+        ]);
       });
 
       // @behavior PV-091

@@ -11,8 +11,8 @@ use super::history::{SubtitleSnapshot, UndoHistory};
 use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
     translation_srt, translation_with_speakers, BackupKind, CurrentResource, Project,
-    ProjectConfig, ProjectOptions, Restoration, SegmentField, SubtitleDigest, TranscriptionTarget,
-    TranslationSource,
+    ProjectConfig, ProjectOptions, Resource, Restoration, SegmentField, SubtitleDigest,
+    TranscriptionTarget, TranslationSource,
 };
 use crate::failure::Failure;
 use crate::language::Language;
@@ -106,13 +106,13 @@ impl Project {
         Ok(self.subtitle_digests()? != self.current()?.subtitle_digests)
     }
 
-    /// Reads the Current Resource again from the directory, showing the same translation.
+    /// Pairs the directory's files again and reads the Current Resource again from them, showing
+    /// the same translation while its file is there.
     fn read_current_again(&mut self) -> Result<(), Failure> {
         let current = self.current()?;
         let (name, translation) = (current.name.clone(), current.translation);
-        self.resources = files::resources_in(&self.directory, self.language)?;
-        self.select(&name)?;
-        self.show_translation(translation)
+        self.pair_again(Some(&name))?;
+        self.read_again_showing(&name, translation)
     }
 
     /// Reads the Current Resource again after a subtitle of it was changed elsewhere, forgetting
@@ -123,11 +123,29 @@ impl Project {
         self.read_current_again()
     }
 
-    /// Pairs the directory's files again and reads the Current Resource again from them, showing
-    /// the same translation while its file is there, or the first Resource once it is gone;
-    /// forgets the Undo History of a Current Resource changed elsewhere.
-    fn reload(&mut self) -> Result<(), Failure> {
-        let kept = match &self.current {
+    /// Pairs the directory's files again after `writer`, the Resource whose files Tsuzuri just
+    /// wrote, if any, changed them.
+    fn pair_again(&mut self, writer: Option<&str>) -> Result<(), Failure> {
+        let resources = files::resources_in(&self.directory, self.language)?;
+        self.replace_resources(resources, writer);
+        Ok(())
+    }
+
+    /// Takes `resources` as the directory's pairing, forgetting the Undo History of each Resource
+    /// but `writer` whose files it changes: undoing would remove a file it did not know of.
+    fn replace_resources(&mut self, resources: Vec<Resource>, writer: Option<&str>) {
+        self.undo_histories.retain(|name, _| {
+            Some(name.as_str()) == writer
+                || resource_by_name(&self.resources, name) == resource_by_name(&resources, name)
+        });
+        self.resources = resources;
+    }
+
+    /// Takes `resources` as the directory's pairing and reads the Current Resource again from
+    /// them, showing the same translation while its file is there, or the first Resource once it
+    /// is gone; forgets the Undo History of a Current Resource changed elsewhere.
+    fn reload(&mut self, resources: Vec<Resource>) -> Result<(), Failure> {
+        let current = match &self.current {
             Some(current) => {
                 if self.is_changed_elsewhere()? {
                     self.undo_histories.remove(&current.name);
@@ -136,25 +154,30 @@ impl Project {
             }
             None => None,
         };
-        self.resources = files::resources_in(&self.directory, self.language)?;
-        self.select_kept_or_first(kept.as_ref().map(|(name, _)| name.clone()))?;
-        let Some((name, translation)) = kept else {
-            return Ok(());
-        };
-        if self.current.as_ref().map(|current| &current.name) != Some(&name) {
-            return Ok(());
+        self.replace_resources(resources, None);
+        match current.filter(|(name, _)| self.resource(name).is_ok()) {
+            Some((name, translation)) => self.read_again_showing(&name, translation),
+            None => self.select_first(),
         }
-        let resource = self.resource(&name)?;
-        let shown = translation.filter(|language| resource.translation_path(*language).is_some());
-        self.show_translation(shown)
     }
 
-    /// Selects the Resource named `kept` while there is one, else the first, else none.
-    fn select_kept_or_first(&mut self, kept: Option<String>) -> Result<(), Failure> {
-        let name = kept
-            .filter(|name| self.resource(name).is_ok())
-            .or(self.resources.first().map(|first| first.name.clone()));
-        match name {
+    /// Reads the named Resource again from the directory, showing its translation into
+    /// `translation` while that file is there.
+    fn read_again_showing(
+        &mut self,
+        name: &str,
+        translation: Option<Language>,
+    ) -> Result<(), Failure> {
+        self.select(name)?;
+        let resource = self.resource(name)?;
+        let translation =
+            translation.filter(|language| resource.translation_path(*language).is_some());
+        self.show_translation(translation)
+    }
+
+    /// Selects the first Resource, or none when there is none.
+    fn select_first(&mut self) -> Result<(), Failure> {
+        match self.resources.first().map(|first| first.name.clone()) {
             Some(name) => self.select(&name),
             None => {
                 self.current = None;
@@ -216,7 +239,7 @@ impl Project {
         take: impl FnOnce(&mut UndoHistory, SubtitleSnapshot) -> Option<SubtitleSnapshot>,
     ) -> Result<(), Failure> {
         let current = self.current()?;
-        let (name, shown) = (current.name.clone(), current.translation);
+        let (name, translation) = (current.name.clone(), current.translation);
         let now = self.subtitle_snapshot(&name)?;
         let Some(history) = self.undo_histories.get_mut(&name) else {
             return Ok(());
@@ -225,11 +248,8 @@ impl Project {
             return Ok(());
         };
         files::put_back(&now, &snapshot)?;
-        self.resources = files::resources_in(&self.directory, self.language)?;
-        self.select(&name)?;
-        let resource = self.resource(&name)?;
-        let shown = shown.filter(|language| resource.translation_path(*language).is_some());
-        self.show_translation(shown)?;
+        self.pair_again(Some(&name))?;
+        self.read_again_showing(&name, translation)?;
         self.write_bilingual_subtitles(&name, None)
     }
 
@@ -242,8 +262,16 @@ impl Project {
         }
         .save(&self.directory)?;
         self.language = language;
-        self.resources = files::resources_in(&self.directory, language)?;
-        self.select_kept_or_first(self.current.as_ref().map(|current| current.name.clone()))
+        self.pair_again(None)?;
+        match self
+            .current
+            .as_ref()
+            .map(|current| current.name.clone())
+            .filter(|name| self.resource(name).is_ok())
+        {
+            Some(name) => self.select(&name),
+            None => self.select_first(),
+        }
     }
 
     /// Writes the Current Resource's subtitles that `field` belongs to back to the directory, and
@@ -260,7 +288,7 @@ impl Project {
             SegmentField::Text | SegmentField::Speaker => None,
         };
         self.write_subtitle(content)?;
-        self.resources = files::resources_in(&self.directory, self.language)?;
+        self.pair_again(Some(&name))?;
         if field == SegmentField::Speaker {
             self.write_speakers_to_translations(&name, previous, false)?;
         }
@@ -340,7 +368,7 @@ impl Project {
     /// translation is matched to its original by time, and writes them all back.
     fn change_segments(&mut self, change: SegmentChange) -> Result<(), Failure> {
         let current = self.current()?;
-        let (name, shown) = (current.name.clone(), current.translation);
+        let (name, translation) = (current.name.clone(), current.translation);
         let mut original = current.transcript.clone();
         change.apply(&mut original.segments)?;
         let resource = self.resource(&name)?;
@@ -359,9 +387,8 @@ impl Project {
         for (path, srt) in translations {
             files::write_srt(&path, srt)?;
         }
-        self.resources = files::resources_in(&self.directory, self.language)?;
-        self.select(&name)?;
-        self.show_translation(shown)?;
+        self.pair_again(Some(&name))?;
+        self.read_again_showing(&name, translation)?;
         self.write_bilingual_subtitles(&name, None)
     }
 
@@ -542,6 +569,11 @@ fn remember_written_subtitles(project: &mut Project) {
     }
 }
 
+/// The Resource of `resources` named `name`, if any.
+fn resource_by_name<'a>(resources: &'a [Resource], name: &str) -> Option<&'a Resource> {
+    resources.iter().find(|resource| resource.name == name)
+}
+
 /// A Resource as the Resource list shows it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ResourceView {
@@ -632,6 +664,40 @@ struct HeldProject {
     generation: u64,
     project: Option<Project>,
     mode_hold: Option<ModeHold>,
+}
+
+impl HeldProject {
+    /// The Resources the Project's directory pairs into now.
+    fn resources_in_directory(&self) -> Result<Vec<Resource>, Failure> {
+        let project = self.project.as_ref().ok_or(Failure::NoProject)?;
+        files::resources_in(&project.directory, project.language)
+    }
+
+    /// Whether a Mode runs on the Current Resource.
+    fn is_current_held(&self) -> bool {
+        match (&self.project, &self.mode_hold) {
+            (Some(project), Some(hold)) => hold.is_on_current(project),
+            _ => false,
+        }
+    }
+
+    /// Takes `resources` as the directory's pairing and reads the Current Resource again, or only
+    /// takes them while a Mode runs on the Current Resource, so what the Mode shows stays.
+    fn reload(&mut self, resources: Vec<Resource>) -> Result<(), Failure> {
+        let is_held = self.is_current_held();
+        let project = self.project.as_mut().ok_or(Failure::NoProject)?;
+        if is_held {
+            project.replace_resources(resources, None);
+            return Ok(());
+        }
+        let name = |project: &Project| project.current.as_ref().map(|current| current.name.clone());
+        let previous_name = name(project);
+        project.reload(resources)?;
+        if name(project) != previous_name {
+            self.generation += 1;
+        }
+        Ok(())
+    }
 }
 
 /// A Mode running on one Resource, and so which of its subtitles nothing else may change.
@@ -927,14 +993,11 @@ impl CurrentProject {
         }
     }
 
-    /// Pairs the directory's files again after one was written, if it is still the Project's.
-    fn refresh_resources(&self, directory: &Path) -> Result<(), Failure> {
-        let mut held = self.lock();
-        match held.project.as_mut() {
-            Some(project) if project.directory == directory => {
-                project.resources = files::resources_in(directory, project.language)?;
-                Ok(())
-            }
+    /// Pairs the directory's files again after a job wrote those of the named Resource, if the
+    /// directory is still the Project's.
+    fn pair_again_after_job(&self, directory: &Path, name: &str) -> Result<(), Failure> {
+        match self.lock().project.as_mut() {
+            Some(project) if project.directory == directory => project.pair_again(Some(name)),
             _ => Ok(()),
         }
     }
@@ -993,7 +1056,7 @@ impl CurrentProject {
         let before = self.job_snapshot(&job.directory, &job.name)?;
         self.back_up_before_overwrite(&job.directory, &job.subtitle)?;
         files::write_srt(&job.subtitle, srt)?;
-        self.refresh_resources(&job.directory)?;
+        self.pair_again_after_job(&job.directory, &job.name)?;
         files::back_up(
             &job.directory,
             &job.subtitle,
@@ -1061,7 +1124,7 @@ impl CurrentProject {
             self.back_up_before_overwrite(&source.directory, &path)?;
         }
         files::write_srt(&path, translation_srt(&translation, speaker_names))?;
-        self.refresh_resources(&source.directory)?;
+        self.pair_again_after_job(&source.directory, &source.name)?;
         if is_backed_up {
             files::back_up(
                 &source.directory,
@@ -1121,42 +1184,24 @@ impl CurrentProject {
         Ok(())
     }
 
-    /// Pairs the directory's files again and reads the Current Resource again from them, or only
-    /// pairs them while a Mode runs on it, so what the Mode shows stays.
+    /// Pairs the directory's files again and reads the Current Resource again from them.
     pub fn reload(&self) -> Result<(), Failure> {
         let mut held = self.lock();
-        let HeldProject {
-            generation,
-            project,
-            mode_hold,
-        } = &mut *held;
-        let project = project.as_mut().ok_or(Failure::NoProject)?;
-        if mode_hold
-            .as_ref()
-            .is_some_and(|hold| hold.is_on_current(project))
-        {
-            project.resources = files::resources_in(&project.directory, project.language)?;
-            return Ok(());
-        }
-        let name = |project: &Project| project.current.as_ref().map(|current| current.name.clone());
-        let before = name(project);
-        project.reload()?;
-        if name(project) != before {
-            *generation += 1;
-        }
-        Ok(())
+        let resources = held.resources_in_directory()?;
+        held.reload(resources)
     }
 
-    /// Reloads the Project when its directory pairs into other Resources or a subtitle of the
-    /// Current Resource was changed elsewhere, answering whether it did.
+    /// Reloads the Project when its directory pairs into other Resources, or a subtitle of the
+    /// Current Resource no Mode holds was changed elsewhere, answering whether it did.
     pub fn reload_if_changed(&self) -> Result<bool, Failure> {
-        let is_changed = self.update_project(|project| {
-            let is_listed_anew =
-                files::resources_in(&project.directory, project.language)? != project.resources;
-            Ok(is_listed_anew || (project.current.is_some() && project.is_changed_elsewhere()?))
-        })?;
+        let mut held = self.lock();
+        let resources = held.resources_in_directory()?;
+        let is_held = held.is_current_held();
+        let project = held.project.as_ref().ok_or(Failure::NoProject)?;
+        let is_changed = resources != project.resources
+            || (!is_held && project.current.is_some() && project.is_changed_elsewhere()?);
         if is_changed {
-            self.reload()?;
+            held.reload(resources)?;
         }
         Ok(is_changed)
     }
@@ -2779,6 +2824,43 @@ mod tests {
         current.reload().unwrap();
 
         assert_eq!(current.view().unwrap().shown_translation, None);
+    }
+
+    // @behavior PJ-119
+    #[test]
+    fn forgets_the_undo_history_of_a_resource_that_gained_a_subtitle_elsewhere() {
+        let dir = directory_of("pj-reload-undo-added", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        current
+            .edit(0, SegmentField::Text, "您好".to_string())
+            .unwrap();
+        std::fs::write(dir.path().join("ep01.en.srt"), cue("Hello")).unwrap();
+
+        current.reload().unwrap();
+
+        current.undo().unwrap();
+        assert_eq!(
+            (
+                current.view().unwrap().has_undo(),
+                dir.path().join("ep01.en.srt").exists()
+            ),
+            (false, true)
+        );
+    }
+
+    #[test]
+    fn leaves_a_subtitle_changed_elsewhere_to_the_mode_holding_it_on_focus() {
+        let dir = directory_of("pj-focus-held", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
+        std::fs::write(dir.path().join("ep01.srt"), cue("您好")).unwrap();
+
+        let is_reloaded = current.reload_if_changed().unwrap();
+
+        assert_eq!(
+            (is_reloaded, texts(&current)),
+            (false, vec!["你好".to_string()])
+        );
     }
 
     // @behavior PJ-113

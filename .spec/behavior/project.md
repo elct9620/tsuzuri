@@ -70,6 +70,14 @@ A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri 
 | When | it is opened in `zh-TW` |
 | Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
 
+## `PJ-118` Leaving out an unknown Language code after a Resource of subtitles alone
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `talk.hd.srt` and `talk.hd.ko.srt`, or `talk.hd.srt` and `talk.hd.vi.srt` |
+| When | it is opened in `zh-TW` |
+| Then | the Project lists only `talk.hd` |
+
 ## `PJ-107` Pairing a subtitle with the Resource its whole name before the code names
 
 | Step | Statement |
@@ -325,6 +333,14 @@ A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri 
 | Given | a Project of `ep01` translated into `en` and `ep02` of a media file alone |
 | When | the Resource list shows it |
 | Then | it lists `ep01` with `en` and `ep02` marked as having no subtitle |
+
+## `PJ-120` Writing the text being typed before a reload
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's text being typed in and not yet written |
+| When | ⌘R or Ctrl+R is pressed |
+| Then | the text is written before the Project is reloaded |
 
 ## `PJ-117` Marking a Resource of subtitles alone
 
@@ -643,6 +659,16 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | Given | a Current Resource `ep01` whose first Segment's text was just edited |
 | When | the Project is reloaded |
 | Then | the edit can still be undone |
+
+## `PJ-119` Forgetting the Undo History of a Resource that gained a subtitle elsewhere
+
+Undoing puts back the subtitles a change knew of and removes the rest, so a file added since would be removed.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose first Segment's text was just edited, and whose `ep01.en.srt` another program then wrote |
+| When | the Project is reloaded |
+| Then | there is nothing to undo, and `ep01.en.srt` stays |
 
 ## `PJ-112` Showing the same translation after a reload
 

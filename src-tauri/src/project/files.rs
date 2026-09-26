@@ -198,30 +198,33 @@ pub fn resources_in(directory: &Path, language: Language) -> Result<Vec<Resource
             _ => files_by_name.entry(stem.to_string()).or_default().subtitle = Some(path),
         }
     }
-    // Each kind of code may name a Resource the next kind belongs to, so they are paired in turn.
-    for (_, name, _, path) in coded_subtitles
-        .iter()
-        .filter(|(_, _, coded, _)| *coded == Some(language))
-    {
-        if files_by_name.contains_key(*name) || !is_bilingual(name, &files_by_name) {
-            files_by_name
-                .entry(name.to_string())
-                .or_default()
-                .coded_subtitle = Some(path.clone());
+    // A subtitle coded in the Primary Language, or in a code Tsuzuri does not know, may name the
+    // Resource a longer name belongs to, so the shorter names are paired first.
+    coded_subtitles.sort_by_key(|(stem, _, code_language, _)| {
+        (stem.matches('.').count(), *code_language != Some(language))
+    });
+    for (stem, name, code_language, path) in &coded_subtitles {
+        let is_named = files_by_name.contains_key(*name);
+        if !is_named && is_bilingual(name, &files_by_name) {
+            continue;
+        }
+        match code_language {
+            Some(code_language) if *code_language == language => {
+                files_by_name
+                    .entry(name.to_string())
+                    .or_default()
+                    .coded_subtitle = Some(path.clone())
+            }
+            None if !is_named => {
+                files_by_name.entry(stem.to_string()).or_default().subtitle = Some(path.clone())
+            }
+            _ => {}
         }
     }
-    for (stem, name, _, path) in coded_subtitles
-        .iter()
-        .filter(|(_, _, coded, _)| coded.is_none())
-    {
-        if !files_by_name.contains_key(*name) && !is_bilingual(name, &files_by_name) {
-            files_by_name.entry(stem.to_string()).or_default().subtitle = Some(path.clone());
-        }
-    }
-    for (_, name, coded, path) in coded_subtitles {
-        match (coded, files_by_name.get_mut(name)) {
-            (Some(coded), Some(files)) if coded != language => {
-                files.translations.push((coded, path))
+    for (_, name, code_language, path) in coded_subtitles {
+        match (code_language, files_by_name.get_mut(name)) {
+            (Some(code_language), Some(files)) if code_language != language => {
+                files.translations.push((code_language, path))
             }
             _ => {}
         }
@@ -617,6 +620,21 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![("lecture", 0), ("lecture.ja", 1)]
         );
+    }
+
+    // @behavior PJ-118
+    #[test]
+    fn leaves_out_an_unknown_language_code_after_a_resource_of_subtitles_alone() {
+        for code in ["ko", "vi"] {
+            let dir = directory_of(
+                "resource-unknown-after-coded-name",
+                &[("talk.hd.srt", ""), (&format!("talk.hd.{code}.srt"), "")],
+            );
+
+            let resources = resources_in(dir.path(), Language::TraditionalChinese).unwrap();
+
+            assert_eq!(names(&resources), vec!["talk.hd"], "with {code}");
+        }
     }
 
     #[test]

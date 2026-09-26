@@ -146,9 +146,14 @@ export default class ProjectController extends Controller {
     if (!isSelected) await refreshProject();
   }
 
-  /** Reads the Project's directory again, for files added or changed elsewhere. */
+  /**
+   * Reads the Project's directory again, for files added or changed elsewhere. The field being
+   * typed in is left first, so its text is sent to be written before the directory is read.
+   */
   async reload(): Promise<void> {
     if (this.feed.project === null) return;
+    if (document.activeElement instanceof HTMLElement)
+      document.activeElement.blur();
     await this.report(() => reloadProject());
   }
 

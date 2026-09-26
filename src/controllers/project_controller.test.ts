@@ -14,6 +14,7 @@ describe("ProjectController", () => {
   let calls: { command: string; args: unknown }[];
   let openSrt: () => unknown;
   let selectFailure: unknown;
+  let reloaded: () => unknown;
   let chosenFile: string;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -40,6 +41,7 @@ describe("ProjectController", () => {
     calls = [];
     openSrt = () => null;
     selectFailure = undefined;
+    reloaded = () => null;
     chosenFile = "/subtitles/lecture.srt";
     document.body.innerHTML = `
       <main
@@ -93,6 +95,7 @@ describe("ProjectController", () => {
             ? "/talks"
             : chosenFile;
         if (command === "open_srt") return openSrt();
+        if (command === "reload_project") return reloaded();
         if (command === "select_resource" && selectFailure !== undefined)
           return Promise.reject(selectFailure);
       },
@@ -262,6 +265,25 @@ describe("ProjectController", () => {
     expect(
       calls.filter((call) => call.command === "reload_project").length,
     ).toBe(3);
+  });
+
+  // @behavior PJ-120
+  it("leaves the field being typed in before reloading", async () => {
+    await hold(projectOf());
+    const field = document.createElement("div");
+    field.tabIndex = 0;
+    const order: string[] = [];
+    field.addEventListener("blur", () => order.push("leave"));
+    target("resources").append(field);
+    field.focus();
+    reloaded = () => order.push("reload");
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "r", ctrlKey: true }),
+    );
+    await settle();
+
+    expect(order).toEqual(["leave", "reload"]);
   });
 
   it("reloads nothing without a Project", async () => {

@@ -209,7 +209,7 @@ describe("PreviewController", () => {
       ],
     ) => projectWithMedia({ segments });
 
-    // @behavior PV-102
+    // @behavior PV-103
     it("shows it over the video above the one it overlaps", async () => {
       await show(overlapping());
 
@@ -218,7 +218,7 @@ describe("PreviewController", () => {
       expect(target("caption").textContent).toBe("對啊\n大家好");
     });
 
-    // @behavior PV-103
+    // @behavior PV-104
     it("keeps the Segment it overlapped over the video once it ends", async () => {
       await show(overlapping());
 
@@ -227,7 +227,7 @@ describe("PreviewController", () => {
       expect(target("caption").textContent).toBe("大家好");
     });
 
-    // @behavior PV-104
+    // @behavior PV-105
     it("stacks Segments that start together in their order", async () => {
       await show(
         overlapping([
@@ -438,7 +438,7 @@ describe("PreviewController", () => {
     expect(target("caption").textContent).toBe("小明: 今天\nXiao Ming: Today");
   });
 
-  // @behavior PV-105
+  // @behavior PV-106
   it("names the Speaker of each overlapping Segment over the video", async () => {
     await show(
       projectSpoken({

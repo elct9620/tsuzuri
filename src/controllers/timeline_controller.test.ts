@@ -146,7 +146,7 @@ describe("TimelineController", () => {
     ]);
   });
 
-  // @behavior PV-106
+  // @behavior PV-107
   it("lays overlapping Segments in lanes, the first in the lower one", async () => {
     await show(projectWithMedia([segmentAt(0, 2), segmentAt(1, 1.5)]));
 
@@ -156,7 +156,7 @@ describe("TimelineController", () => {
     ]);
   });
 
-  // @behavior PV-107
+  // @behavior PV-108
   it("keeps a Segment that overlaps none at full height", async () => {
     await show(
       projectWithMedia([segmentAt(0, 1), segmentAt(0.5, 0.8), segmentAt(1, 2)]),
@@ -437,7 +437,7 @@ describe("TimelineController", () => {
       expect(changes).toEqual([times(0, 0, 1000)]);
     });
 
-    // @behavior PV-111
+    // @behavior PV-112
     it("stops a dragged start at the previous Segment's start", async () => {
       await showCurrent([segmentAt(0.5, 1), segmentAt(1, 1.5)], 1);
 
@@ -446,7 +446,7 @@ describe("TimelineController", () => {
       expect(changes).toEqual([times(1, 500, 1500)]);
     });
 
-    // @behavior PV-112
+    // @behavior PV-113
     it("stops a moved Segment at the next Segment's start", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1.2)]);
 
@@ -455,7 +455,7 @@ describe("TimelineController", () => {
       expect(changes).toEqual([times(0, 600, 1100)]);
     });
 
-    // @behavior PV-113
+    // @behavior PV-114
     it("lays a dragged Segment in a lane as it overlaps the next", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1.2)]);
 
@@ -632,7 +632,7 @@ describe("TimelineController", () => {
       ]);
     });
 
-    // @behavior PV-114
+    // @behavior PV-115
     it("draws a range over a Segment with Ctrl held", async () => {
       await show(projectWithMedia([segmentAt(0, 2)]));
 
@@ -644,7 +644,7 @@ describe("TimelineController", () => {
       ]);
     });
 
-    // @behavior PV-116
+    // @behavior PV-117
     it("draws a range over the Current Segment without moving it", async () => {
       await showCurrent([segmentAt(0, 2)]);
 
@@ -656,7 +656,7 @@ describe("TimelineController", () => {
       ]);
     });
 
-    // @behavior PV-117
+    // @behavior PV-118
     it("draws no range over a Segment without the key", async () => {
       await show(projectWithMedia([segmentAt(0, 2)]));
 
@@ -739,7 +739,7 @@ describe("TimelineController", () => {
       expect(changes).toEqual([times(0, 0, 800)]);
     });
 
-    // @behavior PV-118
+    // @behavior PV-119
     it("keeps a start set with a key from before the previous Segment's start", async () => {
       await showCurrent([segmentAt(0.3, 0.5), segmentAt(0.6, 1)], 1);
       media().currentTime = 0.2;
@@ -792,7 +792,7 @@ describe("TimelineController", () => {
         expect(changes).toEqual([]);
       });
 
-      // @behavior PV-115
+      // @behavior PV-116
       it("draws a range over a Segment with ⌘ held", async () => {
         await show(projectWithMedia([segmentAt(0, 2)]));
 

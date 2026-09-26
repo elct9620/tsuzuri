@@ -139,7 +139,7 @@ describe("SegmentChangesController", () => {
     ]);
   });
 
-  // @behavior ED-096
+  // @behavior ED-097
   it("says why a typed start before the previous Segment's start is refused", async () => {
     await hold(
       projectOf({

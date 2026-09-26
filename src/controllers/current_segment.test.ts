@@ -198,7 +198,7 @@ describe("Current Segment", () => {
     expect(isMarked("aria-current")).toEqual([false, true]);
   });
 
-  // @behavior PV-108
+  // @behavior PV-109
   it("marks the row of a region clicked in an upper lane as the Current Segment", async () => {
     await show(overlappingSegments);
     rows()[0].click();
@@ -208,7 +208,7 @@ describe("Current Segment", () => {
     expect(isMarked("aria-current")).toEqual([false, true]);
   });
 
-  // @behavior PV-109
+  // @behavior PV-110
   it("draws the Current Segment's region above the others", async () => {
     await show(twoSegments);
 
@@ -286,7 +286,7 @@ describe("Current Segment", () => {
     expect(isMarked("data-is-playing")).toEqual([false, true]);
   });
 
-  // @behavior PV-110
+  // @behavior PV-111
   it("marks the row of every Segment being played", async () => {
     await show(overlappingSegments);
     await media().play();
@@ -455,7 +455,7 @@ describe("Current Segment", () => {
     expect(scrolled()).toEqual([rows()[1]]);
   });
 
-  // @behavior PV-119
+  // @behavior PV-120
   it("scrolls the row of the Segment started last into view", async () => {
     await show(overlappingSegments);
     await media().play();

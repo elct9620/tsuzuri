@@ -150,7 +150,7 @@ A player reports its time only a few times a second, so while the media plays wh
 | Then | `今天` is shown over the video |
 
 
-## `PV-102` Showing a Segment that overlaps another above it
+## `PV-103` Showing a Segment that overlaps another above it
 
 Someone cutting in speaks over the Segment already shown, so every Segment being played is shown, each one above the Segments that started before it, as players stack overlapping cues.
 
@@ -160,7 +160,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | it plays to 1.2 s |
 | Then | `對啊` is shown over the video above `大家好` |
 
-## `PV-103` Keeping a Segment over the video once the one over it ends
+## `PV-104` Keeping a Segment over the video once the one over it ends
 
 | Step | Statement |
 | --- | --- |
@@ -168,7 +168,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | it plays to 1.8 s |
 | Then | `大家好` alone is shown over the video |
 
-## `PV-104` Stacking Segments that start together in their order
+## `PV-105` Stacking Segments that start together in their order
 
 | Step | Statement |
 | --- | --- |
@@ -264,7 +264,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | Then | its region is coloured more strongly than the other |
 
 
-## `PV-106` Laying overlapping Segments in lanes on the timeline
+## `PV-107` Laying overlapping Segments in lanes on the timeline
 
 Regions that overlap would hide one another, so each Segment lies in the lowest lane free at its start, the lanes sharing the waveform's height, and each region can be clicked and dragged on its own. The lanes stack upward as the Segments over the video do.
 
@@ -274,7 +274,7 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | When | the Project is shown |
 | Then | the first region fills the lower half of the waveform and the second the upper half |
 
-## `PV-107` Keeping a Segment that overlaps none at full height
+## `PV-108` Keeping a Segment that overlaps none at full height
 
 | Step | Statement |
 | --- | --- |
@@ -282,7 +282,7 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | When | the Project is shown |
 | Then | the third region fills the waveform's full height |
 
-## `PV-108` Making a Segment in an upper lane current from the timeline
+## `PV-109` Making a Segment in an upper lane current from the timeline
 
 | Step | Statement |
 | --- | --- |
@@ -290,7 +290,7 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | When | the second Segment's region is clicked |
 | Then | that Segment's row alone is marked as the Current Segment |
 
-## `PV-109` Drawing the Current Segment's region above the others
+## `PV-110` Drawing the Current Segment's region above the others
 
 | Step | Statement |
 | --- | --- |
@@ -337,7 +337,7 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | When | the media plays to 1.5 s |
 | Then | the second Segment's row alone is marked as playing |
 
-## `PV-110` Marking every Segment being played in the editor
+## `PV-111` Marking every Segment being played in the editor
 
 | Step | Statement |
 | --- | --- |
@@ -593,7 +593,7 @@ A cue is saved with its Speaker's name before the dialogue, so what is over the 
 | Then | `小明: 今天` is shown over the video above `Xiao Ming: Today` |
 
 
-## `PV-105` Naming the Speaker of each overlapping Segment over the video
+## `PV-106` Naming the Speaker of each overlapping Segment over the video
 
 | Step | Statement |
 | --- | --- |
@@ -652,7 +652,7 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | When | its end is dragged 50 pixels later |
 | Then | the Project is asked to change its times to 0 to 1 s |
 
-## `PV-111` Stopping a dragged start at the previous Segment's start
+## `PV-112` Stopping a dragged start at the previous Segment's start
 
 | Step | Statement |
 | --- | --- |
@@ -660,7 +660,7 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | When | its start is dragged 80 pixels earlier |
 | Then | the Project is asked to change its times to 0.5 to 1.5 s |
 
-## `PV-112` Stopping a moved Segment at the next Segment's start
+## `PV-113` Stopping a moved Segment at the next Segment's start
 
 | Step | Statement |
 | --- | --- |
@@ -668,7 +668,7 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | When | it is dragged 100 pixels later |
 | Then | the Project is asked to change its times to 0.6 to 1.1 s |
 
-## `PV-113` Laying a dragged Segment in a lane as it overlaps the next
+## `PV-114` Laying a dragged Segment in a lane as it overlaps the next
 
 | Step | Statement |
 | --- | --- |
@@ -795,7 +795,7 @@ Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as S
 | When | a range is drawn from 0.7 to 1.2 s |
 | Then | the range runs from 0.7 to 1.2 s |
 
-## `PV-114` Drawing a range over a Segment with Ctrl held
+## `PV-115` Drawing a range over a Segment with Ctrl held
 
 | Step | Statement |
 | --- | --- |
@@ -803,7 +803,7 @@ Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as S
 | When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
 | Then | the range runs from 0.5 to 1 s and no Segment is made current |
 
-## `PV-115` Drawing a range over a Segment with ⌘ held on macOS
+## `PV-116` Drawing a range over a Segment with ⌘ held on macOS
 
 | Step | Statement |
 | --- | --- |
@@ -811,7 +811,7 @@ Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as S
 | When | a range is drawn from 0.5 to 1 s on its region with ⌘ held |
 | Then | the range runs from 0.5 to 1 s and no Segment is made current |
 
-## `PV-116` Drawing a range over the Current Segment without moving it
+## `PV-117` Drawing a range over the Current Segment without moving it
 
 | Step | Statement |
 | --- | --- |
@@ -819,7 +819,7 @@ Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as S
 | When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
 | Then | the range runs from 0.5 to 1 s and nothing is asked of the Project |
 
-## `PV-117` Drawing no range over a Segment without the key
+## `PV-118` Drawing no range over a Segment without the key
 
 | Step | Statement |
 | --- | --- |
@@ -851,7 +851,7 @@ Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as S
 | When | F12 is pressed outside a field |
 | Then | the Project is asked to change its times to 0 to 0.8 s |
 
-## `PV-118` Keeping a start set with a key from before the previous Segment's start
+## `PV-119` Keeping a start set with a key from before the previous Segment's start
 
 | Step | Statement |
 | --- | --- |
@@ -935,7 +935,7 @@ The editor scrolls to the row being played, the one started last while Segments 
 | Then | the second Segment's row is scrolled into view |
 
 
-## `PV-119` Bringing the row of the Segment started last into view
+## `PV-120` Bringing the row of the Segment started last into view
 
 | Step | Statement |
 | --- | --- |

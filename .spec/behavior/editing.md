@@ -167,7 +167,7 @@ A choice limited to names like the one already set would hide the others, the ve
 | Then | a Notification says the time cannot be read and nothing is changed |
 
 
-## `ED-096` Refusing a typed start before the previous Segment's start
+## `ED-097` Refusing a typed start before the previous Segment's start
 
 | Step | Statement |
 | --- | --- |

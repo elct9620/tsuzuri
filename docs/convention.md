@@ -25,7 +25,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 
 ### 1.2 依角色選詞性
 
-執行外部程式算動作，即使只是讀取結果；僅讀取檔案或記憶體的算查詢。產生給人看的文字是訊息，改變同一個值的表示法是轉換。
+執行外部程式算動作，即使只是讀取結果；僅讀取檔案或記憶體的算查詢。產生給人看的文字是訊息，改變同一個值的表示法是轉換，以 `new`、`try_new`、`with_*`、`from_*`、`into_*`、`to_*`、`as_*` 開頭。
 
 | 角色 | 名稱形式 | Rust 例 | TypeScript 例 |
 |---|---|---|---|
@@ -34,7 +34,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | 回答一件事、不改變任何東西 | 該事物的名詞，不加 `get` | `view()`、`ready_path(slot)`、`conversion_args(...)` | `bar()`、`label(phase)` |
 | 依鍵尋找 | 名詞＋`by`＋鍵 | `path_by_name` | `statusByName` |
 | 問句 | `is`／`has`＋形容詞或名詞 | `is_file` | `isHidden`、`isFailure` |
-| 新值或轉換 | `new`、`try_new`、`with_*`、`from_*`、`into_*`／`to_*`／`as_*`，或動詞＋名詞 | `from_srt`、`to_srt`、`parse_timestamp` | `formatTime` |
+| 新值或轉換 | 建構或轉換的前綴，或動詞＋名詞 | `from_srt`、`to_srt`、`parse_timestamp` | `formatTime` |
 | 動作（有副作用） | 動詞開頭，後面可接狀態 | `write_translations`、`probe`、`kill_all` | `notifyFailure`、`translatePage` |
 | 建構錯誤或訊息 | 所建構之物的名詞 | — | `failureMessage`、`phasesSummary` |
 | 畫面元素（target） | 元素的名詞，不用動作 | — | `startButton`、`emptyHint` |
@@ -59,13 +59,14 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 
 | 來源 | 名稱 |
 |---|---|
-| Stimulus | `connect`、`disconnect`、`static targets`、`*Target`、`*Targets` |
+| Stimulus | `connect`、`disconnect`、`static targets`、`*Target`、`*Targets`、action option 的 `value` |
 | Rust trait | `fmt`、`from`、`drop`、`enabled`、`log`、`flush` |
 | i18next、Vitest | `t`、`describe`、`it` |
 | `.spec/contract/commands.md` | Tauri 指令名稱，例如 `component_statuses` |
 | serde 序列化的欄位 | TypeScript 介面照 Rust 欄位名，例如 `start_ms` |
+| 外部程式的 JSON | 照原樣，例如 llama-server 的 `failed` |
 | 對應的 Rust 型別 | `ComponentStatus`、`ProjectView`、`SegmentField` |
-| 測試 | Rust 測試與 `it()` 標題是描述行為的句子 |
+| 測試 | 描述行為的句子，Rust 與 `it()` 皆同 |
 
 ### 1.5 加入名稱之前
 
@@ -86,7 +87,9 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 |---|---|
 | Rust API Guidelines C-GETTER | 查詢是名詞，不加 `get_` |
 | Rust API Guidelines C-CONV、C-CTOR | `as_`／`to_`／`into_`；建構用 `new`／`with_`／`from_` |
-| JavaScript 標準函式庫 | 查詢用名詞 `Map.prototype.size`；問句用 `Array.isArray`、`Number.isNaN`；轉換用 `Array.from`、`toISOString` |
+| JavaScript 標準函式庫 | 查詢用名詞 `Map.prototype.size` |
+| JavaScript 標準函式庫 | 問句用 `Array.isArray`、`Number.isNaN` |
+| JavaScript 標準函式庫 | 轉換用 `Array.from`、`toISOString` |
 | Godot API | 依鍵尋找用 `_by_`，不用 `_named` |
 
 ## 2 文件

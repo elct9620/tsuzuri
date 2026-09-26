@@ -287,6 +287,32 @@ A change redraws the rows, so a check kept across it would name rows that moved.
 | When | the third Segment is deleted from its menu |
 | Then | no Segment is checked and the bar for Checked Segments is hidden |
 
+## `ED-071` Checking the Segments through a row clicked with Shift
+
+Subtitle editors check a run of lines by Shift-clicking its other end, as a list does. The Current Segment is that run's fixed end, so it stays current and another Shift-click resizes the run up or down.
+
+| Step | Statement |
+| --- | --- |
+| Given | four Segments, the second current and the fourth checked |
+| When | the third row is clicked with Shift held |
+| Then | the second and third Segments are checked and no others, and the second stays current |
+
+## `ED-072` Checking upward from the Current Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the third current |
+| When | the first row is clicked with Shift held |
+| Then | the first through the third Segments are checked |
+
+## `ED-073` Making a row current with Shift when no Segment is
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, none current |
+| When | the second row is clicked with Shift held |
+| Then | the second Segment is current and none is checked |
+
 ## `ED-055` Moving into a Segment inserted from a menu
 
 A Segment is inserted to be written, so its text is entered at once.

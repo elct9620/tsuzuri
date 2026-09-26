@@ -302,6 +302,39 @@ describe("ComparisonController", () => {
     });
   });
 
+  // @behavior VR-049
+  it("keeps comparing with nothing once an edit is written", async () => {
+    await show();
+    await check('input[name="compare-original"][value=""]');
+    const comparedCount = sent("compare_versions").length;
+
+    await show();
+
+    expect([
+      sent("compare_versions").length,
+      marks(),
+      document.querySelector<HTMLInputElement>(
+        'input[name="compare-original"]:checked',
+      )!.value,
+    ]).toEqual([comparedCount, [[], []], ""]);
+  });
+
+  // @behavior VR-049
+  it("keeps comparing with nothing once a newer Output is kept", async () => {
+    await show();
+    await check('input[name="compare-original"][value=""]');
+    const comparedCount = sent("compare_versions").length;
+    versions[0].backups.unshift({
+      file: "ep01.20260925T040000Z.output.srt",
+      taken_at: "20260925T040000Z",
+      kind: "output",
+    });
+
+    await show();
+
+    expect(sent("compare_versions").length).toBe(comparedCount);
+  });
+
   // @behavior VR-030
   it("offers the Backups of the translation shown", async () => {
     versions.push({

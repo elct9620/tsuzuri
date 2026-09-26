@@ -21,6 +21,10 @@ const en = {
     ja: "Japanese",
   },
   resources: {
+    title: "Resources",
+    reload: "Reload",
+    reloadHint:
+      "Read the folder again for files changed elsewhere (⌘R or Ctrl+R)",
     noSubtitle: "No subtitle yet; transcribe it to make one",
     glossary: "Glossary: {{count}} terms",
     createGlossary: "Create a glossary",

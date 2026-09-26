@@ -123,6 +123,46 @@ impl Project {
         self.read_current_again()
     }
 
+    /// Pairs the directory's files again and reads the Current Resource again from them, showing
+    /// the same translation while its file is there, or the first Resource once it is gone;
+    /// forgets the Undo History of a Current Resource changed elsewhere.
+    fn reload(&mut self) -> Result<(), Failure> {
+        let kept = match &self.current {
+            Some(current) => {
+                if self.is_changed_elsewhere()? {
+                    self.undo_histories.remove(&current.name);
+                }
+                Some((current.name.clone(), current.translation))
+            }
+            None => None,
+        };
+        self.resources = files::resources_in(&self.directory, self.language)?;
+        self.select_kept_or_first(kept.as_ref().map(|(name, _)| name.clone()))?;
+        let Some((name, translation)) = kept else {
+            return Ok(());
+        };
+        if self.current()?.name != name {
+            return Ok(());
+        }
+        let resource = self.resource(&name)?;
+        let shown = translation.filter(|language| resource.translation_path(*language).is_some());
+        self.show_translation(shown)
+    }
+
+    /// Selects the Resource named `kept` while there is one, else the first, else none.
+    fn select_kept_or_first(&mut self, kept: Option<String>) -> Result<(), Failure> {
+        let name = kept
+            .filter(|name| self.resource(name).is_ok())
+            .or(self.resources.first().map(|first| first.name.clone()));
+        match name {
+            Some(name) => self.select(&name),
+            None => {
+                self.current = None;
+                Ok(())
+            }
+        }
+    }
+
     /// Refuses a change when a subtitle of the Current Resource was changed elsewhere since
     /// Tsuzuri last read or wrote it, reading it again instead so that change is kept.
     fn refuse_changed_elsewhere(&mut self) -> Result<(), Failure> {
@@ -203,19 +243,7 @@ impl Project {
         .save(&self.directory)?;
         self.language = language;
         self.resources = files::resources_in(&self.directory, language)?;
-        let name = self
-            .current
-            .as_ref()
-            .map(|current| current.name.clone())
-            .filter(|name| self.resource(name).is_ok())
-            .or(self.resources.first().map(|first| first.name.clone()));
-        match name {
-            Some(name) => self.select(&name),
-            None => {
-                self.current = None;
-                Ok(())
-            }
-        }
+        self.select_kept_or_first(self.current.as_ref().map(|current| current.name.clone()))
     }
 
     /// Writes the Current Resource's subtitles that `field` belongs to back to the directory, and
@@ -1093,16 +1121,44 @@ impl CurrentProject {
         Ok(())
     }
 
-    /// Reads the Current Resource again when one of its subtitles was changed elsewhere, answering
-    /// whether it did.
-    pub fn read_again_if_changed(&self) -> Result<bool, Failure> {
-        self.update_project(|project| {
-            if project.current.is_none() || !project.is_changed_elsewhere()? {
-                return Ok(false);
-            }
-            project.read_changed_elsewhere()?;
-            Ok(true)
-        })
+    /// Pairs the directory's files again and reads the Current Resource again from them, or only
+    /// pairs them while a Mode runs on it, so what the Mode shows stays.
+    pub fn reload(&self) -> Result<(), Failure> {
+        let mut held = self.lock();
+        let HeldProject {
+            generation,
+            project,
+            mode_hold,
+        } = &mut *held;
+        let project = project.as_mut().ok_or(Failure::NoProject)?;
+        if mode_hold
+            .as_ref()
+            .is_some_and(|hold| hold.is_on_current(project))
+        {
+            project.resources = files::resources_in(&project.directory, project.language)?;
+            return Ok(());
+        }
+        let name = |project: &Project| project.current.as_ref().map(|current| current.name.clone());
+        let before = name(project);
+        project.reload()?;
+        if name(project) != before {
+            *generation += 1;
+        }
+        Ok(())
+    }
+
+    /// Reloads the Project when its directory pairs into other Resources or a subtitle of the
+    /// Current Resource was changed elsewhere, answering whether it did.
+    pub fn reload_if_changed(&self) -> Result<bool, Failure> {
+        let is_changed = self.update_project(|project| {
+            let is_listed_anew =
+                files::resources_in(&project.directory, project.language)? != project.resources;
+            Ok(is_listed_anew || (project.current.is_some() && project.is_changed_elsewhere()?))
+        })?;
+        if is_changed {
+            self.reload()?;
+        }
+        Ok(is_changed)
     }
 
     /// Makes an edit and writes it back, unless a subtitle was changed elsewhere since Tsuzuri last
@@ -2657,9 +2713,131 @@ mod tests {
         let current = project_in(&dir);
         std::fs::write(dir.path().join("ep01.srt"), cue("您好")).unwrap();
 
-        current.read_again_if_changed().unwrap();
+        current.reload_if_changed().unwrap();
 
         assert_eq!(texts(&current), vec!["您好".to_string()]);
+    }
+
+    fn resource_names(current: &CurrentProject) -> Vec<String> {
+        current
+            .view()
+            .unwrap()
+            .resources
+            .into_iter()
+            .map(|resource| resource.name)
+            .collect()
+    }
+
+    // @behavior PJ-109
+    #[test]
+    fn lists_files_added_elsewhere_when_the_project_is_reloaded() {
+        let dir = directory_of("pj-reload-added", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        std::fs::write(dir.path().join("ep01.en.srt"), cue("Hello")).unwrap();
+        std::fs::write(dir.path().join("ep02.srt"), cue("再見")).unwrap();
+
+        current.reload().unwrap();
+
+        assert_eq!(
+            (
+                resource_names(&current),
+                current.view().unwrap().resources[0]
+                    .translation_languages
+                    .clone()
+            ),
+            (
+                vec!["ep01".to_string(), "ep02".to_string()],
+                vec![Language::English]
+            )
+        );
+    }
+
+    // @behavior PJ-110
+    #[test]
+    fn keeps_the_undo_history_of_a_current_resource_no_one_else_changed() {
+        let dir = directory_of("pj-reload-undo", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        current
+            .edit(0, SegmentField::Text, "您好".to_string())
+            .unwrap();
+
+        current.reload().unwrap();
+
+        assert!(current.view().unwrap().has_undo());
+    }
+
+    // @behavior PJ-111
+    #[test]
+    fn shows_the_same_translation_after_a_reload() {
+        let dir = directory_of(
+            "pj-reload-shown",
+            &[("ep01.srt", &cue("你好")), ("ep01.en.srt", &cue("Hello"))],
+        );
+        let current = project_in(&dir);
+        current.show_translation(None).unwrap();
+
+        current.reload().unwrap();
+
+        assert_eq!(current.view().unwrap().shown_translation, None);
+    }
+
+    // @behavior PJ-112
+    #[test]
+    fn selects_the_first_resource_once_the_current_resource_is_gone() {
+        let dir = directory_of(
+            "pj-reload-gone",
+            &[("ep01.srt", &cue("你好")), ("ep02.srt", &cue("再見"))],
+        );
+        let current = project_in(&dir);
+        current.select("ep02").unwrap();
+        std::fs::remove_file(dir.path().join("ep02.srt")).unwrap();
+
+        current.reload().unwrap();
+
+        assert_eq!(
+            current.view().unwrap().current_resource,
+            Some("ep01".to_string())
+        );
+    }
+
+    // @behavior PJ-113
+    #[test]
+    fn reloads_only_the_resource_list_while_a_mode_runs_on_the_current_resource() {
+        let dir = directory_of("pj-reload-held", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+        let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
+        current.show_translations(
+            &source,
+            Language::English,
+            &[segment("你好", Some("Hello"))],
+        );
+        std::fs::write(dir.path().join("ep02.srt"), cue("再見")).unwrap();
+
+        current.reload().unwrap();
+
+        assert_eq!(
+            (resource_names(&current), texts(&current)),
+            (
+                vec!["ep01".to_string(), "ep02".to_string()],
+                vec!["Hello".to_string()]
+            )
+        );
+    }
+
+    // @behavior PJ-114
+    #[test]
+    fn lists_files_added_elsewhere_when_the_window_regains_focus() {
+        let dir = directory_of("pj-focus-added", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        std::fs::write(dir.path().join("ep02.srt"), cue("再見")).unwrap();
+
+        let is_reloaded = current.reload_if_changed().unwrap();
+
+        assert_eq!(
+            (is_reloaded, resource_names(&current)),
+            (true, vec!["ep01".to_string(), "ep02".to_string()])
+        );
     }
 
     // @behavior PJ-042
@@ -3344,7 +3522,7 @@ mod tests {
         let current = project_in(&dir);
         edit_text(&current, "您好");
         std::fs::write(dir.path().join("ep01.srt"), cue("外面改的")).unwrap();
-        current.read_again_if_changed().unwrap();
+        current.reload_if_changed().unwrap();
 
         assert!(!current.view().unwrap().has_undo());
     }

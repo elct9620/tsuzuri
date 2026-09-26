@@ -72,10 +72,10 @@ pub fn run() {
             window::size_first_window(app)?;
             Ok(())
         })
-        // A subtitle may have been corrected in another program while the window was away
+        // A file may have been added or corrected in another program while the window was away
         .on_window_event(|window, event| {
             if let WindowEvent::Focused(true) = event {
-                project::commands::read_again_if_changed(window.app_handle());
+                project::commands::reload_if_changed(window.app_handle());
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -112,6 +112,7 @@ pub fn run() {
             project::commands::set_primary_language,
             project::commands::set_project_options,
             project::commands::show_translation,
+            project::commands::reload_project,
             translation::commands::save_translation_settings,
             translation::commands::translate,
             translation::commands::translation_settings,

@@ -232,7 +232,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
   │ manage             Processes、CurrentProject
   │ size_first_window  第一次開啟佔螢幕 80%，之後由 window-state 還原
   ▼
-視窗取得焦點 ─▶ read_again_if_changed ─▶ 字幕被外部修改就重讀並送出 project-changed
+視窗取得焦點 ─▶ reload_if_changed ─▶ 清單或字幕被外部修改就重新載入並送出 project-changed
   ▼
 結束 ─▶ kill_all       結束仍在執行的元件行程
 ```
@@ -244,7 +244,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 ```
 CurrentProject(Mutex<HeldProject>)
   └─ HeldProject { generation, project: Option<Project>, mode_hold }
-       replace／select 時 generation + 1
+       replace／select，或重新載入換了目前資源時 generation + 1
        用例結束時 write_if_current(generation)：資源已換就不寫入畫面
        Project.undo_histories：每個資源一份復原紀錄（project/history.rs）
 ```
@@ -255,6 +255,7 @@ CurrentProject(Mutex<HeldProject>)
 | 任務跨越切換資源 | 寫回畫面前比對 generation |
 | 外部修改 | 比對摘要，不同就拒絕並重讀 |
 | 任務寫入中 | `mode_hold` 由 `ModeRun` 保管 |
+| 任務中重新載入 | 只重新配對清單 |
 | 復原 | 改動前記下所有字幕的內容 |
 
 字幕被外部改過時，重讀並清掉該資源的復原紀錄。任務寫入中的字幕，改動會被拒絕為 `mode-running`。改動後內容有差才留下一步復原，復原與重做換回那份內容並重讀。

@@ -4,6 +4,7 @@ import { message, open } from "../backend/dialog";
 import {
   openProject,
   refreshProject,
+  reloadProject,
   selectResource,
   setPrimaryLanguage,
   setProjectOptions,
@@ -135,6 +136,12 @@ export default class ProjectController extends Controller {
     const isSelected = await this.report(() => selectResource(name));
     // Rust announces nothing when it could not select, so the editor is told to read what it holds.
     if (!isSelected) await refreshProject();
+  }
+
+  /** Reads the Project's directory again, for files added or changed elsewhere. */
+  async reload(): Promise<void> {
+    if (this.feed.project === null) return;
+    await this.report(() => reloadProject());
   }
 
   async setLanguage(): Promise<void> {

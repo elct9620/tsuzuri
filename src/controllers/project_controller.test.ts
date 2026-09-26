@@ -42,7 +42,10 @@ describe("ProjectController", () => {
     selectFailure = undefined;
     chosenFile = "/subtitles/lecture.srt";
     document.body.innerHTML = `
-      <main data-controller="project">
+      <main
+        data-controller="project"
+        data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent"
+      >
         <section data-project-target="start"></section>
         <div data-project-target="workspace" hidden>
           <h1 data-project-target="name"></h1>
@@ -51,6 +54,7 @@ describe("ProjectController", () => {
             <button id="open-directory" data-action="project#openDirectory">開啟目錄</button>
             <button id="open-srt" data-action="project#openSrt">開啟 SRT</button>
           </div>
+          <button id="reload" data-action="project#reload">重新載入</button>
           <ul data-project-target="resources"></ul>
           <p data-project-target="glossary"></p>
         </div>
@@ -227,6 +231,31 @@ describe("ProjectController", () => {
     await click('[data-name="ep02"]');
 
     expect(isAnnounced).toBe(true);
+  });
+
+  // @behavior PJ-115
+  it("reloads the Project from the button above the Resource list or its shortcut", async () => {
+    await hold(projectOf());
+
+    await click("#reload");
+    for (const key of [{ ctrlKey: true }, { metaKey: true }])
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "r", ...key }));
+    await settle();
+
+    expect(
+      calls.filter((call) => call.command === "reload_project").length,
+    ).toBe(3);
+  });
+
+  it("reloads nothing without a Project", async () => {
+    await hold(null);
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "r", ctrlKey: true }),
+    );
+    await settle();
+
+    expect(sent("reload_project")).toBeUndefined();
   });
 
   // @behavior PJ-036

@@ -184,6 +184,11 @@ export function setProjectOptions(options: ProjectOptions): Promise<void> {
   return invoke("set_project_options", { options });
 }
 
+/** Pairs the Project's files again and reads the Current Resource again from them. */
+export function reloadProject(): Promise<void> {
+  return invoke("reload_project");
+}
+
 export function showTranslation(language: string | null): Promise<void> {
   return invoke("show_translation", { language });
 }

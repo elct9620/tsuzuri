@@ -22,6 +22,9 @@ const zhHant: typeof en = {
     ja: "日本語",
   },
   resources: {
+    title: "資源",
+    reload: "重新載入",
+    reloadHint: "重新讀取目錄，帶入別處改動的檔案（⌘R 或 Ctrl+R）",
     noSubtitle: "還沒有字幕，可以轉錄產生",
     glossary: "詞彙表 {{count}} 筆",
     createGlossary: "建立詞彙表",

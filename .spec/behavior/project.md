@@ -618,6 +618,62 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | When | the window regains focus |
 | Then | the Current Resource holds what the other program wrote |
 
+## `PJ-109` Listing files added elsewhere when the Project is reloaded
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project of `ep01.srt` whose directory gained `ep01.en.srt` and `ep02.srt` after it was opened |
+| When | the Project is reloaded |
+| Then | the Project lists `ep01` with the `en` translation, and `ep02` |
+
+## `PJ-110` Keeping the Undo History of a Current Resource no one else changed
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose first Segment's text was just edited |
+| When | the Project is reloaded |
+| Then | the edit can still be undone |
+
+## `PJ-111` Showing the same translation after a reload
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` showing no translation, though `ep01.en.srt` is there |
+| When | the Project is reloaded |
+| Then | the Current Resource shows no translation |
+
+## `PJ-112` Selecting the first Resource once the Current Resource is gone
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep02` whose `ep02.srt` was removed elsewhere, beside `ep01.srt` |
+| When | the Project is reloaded |
+| Then | the Current Resource is `ep01` |
+
+## `PJ-113` Reloading only the Resource list while a Mode runs on the Current Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated, whose directory gained `ep02.srt` |
+| When | the Project is reloaded |
+| Then | the Project lists `ep02`, and `ep01` keeps the Segments the translation shows |
+
+## `PJ-114` Listing files added elsewhere when the window regains focus
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project of `ep01.srt` whose directory gained `ep02.srt` after it was opened |
+| When | the window regains focus |
+| Then | the Project lists `ep01` and `ep02` |
+
+## `PJ-115` Reloading the Project from the Resource list
+
+| Step | Statement |
+| --- | --- |
+| Given | an open Project |
+| When | the reload button above the Resource list is clicked, or ⌘R or Ctrl+R is pressed |
+| Then | the Project is reloaded |
+
 ## `PJ-042` Writing edit after edit
 
 What Tsuzuri wrote itself is never taken for a change made elsewhere.

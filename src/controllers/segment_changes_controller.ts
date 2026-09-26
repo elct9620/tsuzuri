@@ -86,7 +86,7 @@ export default class SegmentChangesController extends Controller {
   showChecked(): void {
     const indexes = this.session.checkedIndexes;
     this.checkedBarTarget.hidden = indexes.length === 0;
-    this.checkedCountTarget.textContent = t("edit.selected", {
+    this.checkedCountTarget.textContent = t("edit.checkedCount", {
       count: indexes.length,
     });
     this.mergeButtonTarget.disabled = !isRun(indexes);

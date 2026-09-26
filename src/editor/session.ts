@@ -236,6 +236,15 @@ export class EditingSession {
     this.announce();
   }
 
+  /** Checks the Segments from `from` through `to`, either way round, and no others. */
+  checkRange(from: number, to: number): void {
+    this.checks.clear();
+    for (let index = Math.min(from, to); index <= Math.max(from, to); index++)
+      this.checks.add(index);
+    this.unannouncedChanges.add("checks");
+    this.announce();
+  }
+
   clearChecks(): void {
     if (this.checks.size === 0) return;
     this.checks.clear();

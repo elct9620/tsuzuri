@@ -173,7 +173,7 @@ export default class SpeakersController extends Controller {
     this.checkedIndexes = checkedIndexes;
     const isChecked = checkedIndexes.length > 0;
     this.checkedChoiceTarget.hidden = !isChecked;
-    this.checkedCountTarget.textContent = t("edit.selected", {
+    this.checkedCountTarget.textContent = t("edit.checkedCount", {
       count: checkedIndexes.length,
     });
     for (const choice of this.scopeTargets)

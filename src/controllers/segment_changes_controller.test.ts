@@ -36,7 +36,7 @@ describe("SegmentChangesController", () => {
     await settle();
   }
 
-  async function select(...indexes: number[]): Promise<void> {
+  async function checkRows(...indexes: number[]): Promise<void> {
     for (const index of indexes) {
       const checkbox =
         row(index).querySelector<HTMLInputElement>("input.check")!;
@@ -182,9 +182,9 @@ describe("SegmentChangesController", () => {
   });
 
   // @behavior ED-018
-  it("asks to merge the Segments selected", async () => {
+  it("asks to merge the Checked Segments", async () => {
     await hold(threeSegments);
-    await select(0, 1);
+    await checkRows(0, 1);
 
     document.querySelector<HTMLButtonElement>("#merge")!.click();
     await settle();
@@ -193,9 +193,9 @@ describe("SegmentChangesController", () => {
   });
 
   // @behavior ED-019
-  it("asks to shift the Segments selected", async () => {
+  it("asks to shift the Checked Segments", async () => {
     await hold(threeSegments);
-    await select(1, 2);
+    await checkRows(1, 2);
     document.querySelector<HTMLButtonElement>("#open-shift")!.click();
     document.querySelector<HTMLInputElement>(
       '[data-segment-changes-target="offset"]',
@@ -213,7 +213,7 @@ describe("SegmentChangesController", () => {
   it("offers no merge for Segments apart from each other", async () => {
     await hold(threeSegments);
 
-    await select(0, 2);
+    await checkRows(0, 2);
 
     expect(document.querySelector<HTMLButtonElement>("#merge")!.disabled).toBe(
       true,
@@ -223,7 +223,7 @@ describe("SegmentChangesController", () => {
   // @behavior ED-021
   it("clears the checks once the Segments change", async () => {
     await hold(threeSegments);
-    await select(0, 1);
+    await checkRows(0, 1);
 
     await choose(2, "delete");
     await hold(projectOf({ segments: threeSegments.segments.slice(0, 2) }));
@@ -234,6 +234,103 @@ describe("SegmentChangesController", () => {
         '[data-segment-changes-target="checkedBar"]',
       )!.hidden,
     ]).toEqual([0, true]);
+  });
+
+  describe("checking with Shift", () => {
+    const fourSegments = projectOf({
+      segments: [
+        ...threeSegments.segments,
+        { start_ms: 3000, end_ms: 4000, text: "出門" },
+      ],
+    });
+    const checked = () =>
+      [...document.querySelectorAll<HTMLInputElement>("input.check")].map(
+        (check) => check.checked,
+      );
+    const current = () =>
+      [...document.querySelectorAll("ol > li")].findIndex((li) =>
+        li.hasAttribute("aria-current"),
+      );
+
+    /** Clicks the text of row `index` with Shift held; the text takes focus unless the press is prevented, as in a browser. */
+    async function shiftClick(index: number): Promise<void> {
+      const text = row(index).querySelector<HTMLElement>(".field.text")!;
+      const options = { bubbles: true, cancelable: true, shiftKey: true };
+      if (text.dispatchEvent(new MouseEvent("mousedown", options)))
+        text.focus();
+      text.dispatchEvent(new MouseEvent("click", options));
+      await settle();
+    }
+
+    // @behavior ED-065
+    it("checks the Segments from the Current Segment through a row clicked with Shift", async () => {
+      await hold(fourSegments);
+      row(1).click();
+      await checkRows(3);
+
+      await shiftClick(2);
+
+      expect([checked(), current()]).toEqual([[false, true, true, false], 1]);
+    });
+
+    // @behavior ED-065
+    it("resizes the run as another row is clicked with Shift", async () => {
+      await hold(fourSegments);
+      row(1).click();
+      await shiftClick(3);
+
+      await shiftClick(2);
+
+      expect(checked()).toEqual([false, true, true, false]);
+    });
+
+    // @behavior ED-066
+    it("checks upward from the Current Segment", async () => {
+      await hold(threeSegments);
+      row(2).click();
+
+      await shiftClick(0);
+
+      expect(checked()).toEqual([true, true, true]);
+    });
+
+    // @behavior ED-065
+    it("leaves the check of a row clicked with Shift as the run makes it", async () => {
+      await hold(threeSegments);
+      row(0).click();
+      const check = row(1).querySelector<HTMLInputElement>("input.check")!;
+
+      const isToggled = check.dispatchEvent(
+        new MouseEvent("mousedown", {
+          bubbles: true,
+          cancelable: true,
+          shiftKey: true,
+        }),
+      );
+      const isClicked = check.dispatchEvent(
+        new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          shiftKey: true,
+        }),
+      );
+      await settle();
+
+      expect([isToggled, isClicked, checked()]).toEqual([
+        false,
+        false,
+        [true, true, false],
+      ]);
+    });
+
+    // @behavior ED-067
+    it("makes a row clicked with Shift current when no Segment is", async () => {
+      await hold(threeSegments);
+
+      await shiftClick(1);
+
+      expect([checked(), current()]).toEqual([[false, false, false], 1]);
+    });
   });
 
   describe("the Cursor", () => {
@@ -457,7 +554,7 @@ describe("SegmentChangesController", () => {
     // @behavior ED-059
     it("keeps the merged Segment current", async () => {
       await hold(threeSegments);
-      await select(1, 2);
+      await checkRows(1, 2);
       row(2).click();
 
       document.querySelector<HTMLButtonElement>("#merge")!.click();
@@ -470,7 +567,7 @@ describe("SegmentChangesController", () => {
     // @behavior ED-063
     it("keeps the Current Segment on its Segment when others before it are merged", async () => {
       await hold(texts("一", "二", "三", "四"));
-      await select(0, 1);
+      await checkRows(0, 1);
       row(3).click();
 
       document.querySelector<HTMLButtonElement>("#merge")!.click();

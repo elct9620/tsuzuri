@@ -168,8 +168,6 @@ const zhHant: typeof en = {
     videoWindow: "在影片視窗播放",
     videoWindowHint:
       "把影片移到獨立視窗，可拖到另一個螢幕放大；雙擊影片切換全螢幕。再按一次或關閉視窗就回到這裡。",
-    videoWindowAway:
-      "影片在影片視窗播放。再按一次影片視窗按鈕或關閉那個視窗，就回到這裡。",
     videoWindowTitle: "Tsuzuri 影片",
   },
   compare: {

@@ -123,7 +123,6 @@ describe("PreviewController", () => {
           <p data-preview-target="caption"></p>
           <div data-preview-target="hint" hidden></div>
         </div>
-        <div data-preview-target="videoWindowHint" hidden></div>
         <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playbackIcon"></span></button>
         <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
         <span data-preview-target="time"></span>
@@ -136,8 +135,9 @@ describe("PreviewController", () => {
           <input type="radio" name="backdrop" value="opaque" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
           <input type="checkbox" data-preview-target="captionSpeaker" data-action="preview#toggleCaptionSpeaker">
         </div>
+          <div data-preview-target="currentSection">
           <p data-preview-target="currentHint"></p>
-          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
+          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div></div>
         </div>
       </div>
     `;
@@ -573,12 +573,22 @@ describe("PreviewController", () => {
     });
 
     // @behavior PV-128
-    it("says where the video went in its place", async () => {
+    it("shows only the controls, without the Current Segment's card, while the video is away", async () => {
       await show(projectWithMedia());
 
       pressVideoWindowButton();
 
-      expect(target("videoWindowHint").hidden).toBe(false);
+      expect(target("currentSection").hidden).toBe(true);
+    });
+
+    // @behavior PV-139
+    it("shows the Current Segment's card again as the video comes back", async () => {
+      await show(projectWithMedia());
+      pressVideoWindowButton();
+
+      pressVideoWindowButton();
+
+      expect(target("currentSection").hidden).toBe(false);
     });
 
     // @behavior PV-129

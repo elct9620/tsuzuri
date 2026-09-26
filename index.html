@@ -657,7 +657,9 @@
               data-preview-target="panel"
               hidden
             >
-              <div class="flex h-[30vh] min-h-40 gap-3">
+              <div
+                class="flex h-[30vh] min-h-40 gap-3 data-is-video-away:h-auto data-is-video-away:min-h-0"
+              >
                 <div
                   class="group relative min-w-0 flex-2 overflow-hidden rounded-box bg-black data-is-away:rounded-none"
                   data-preview-target="screen"
@@ -685,14 +687,6 @@
                     <i data-lucide="triangle-alert" class="size-4"></i>
                     <span data-i18n="preview.unplayable"></span>
                   </div>
-                </div>
-                <div
-                  class="flex min-w-0 flex-2 flex-col items-center justify-center gap-2 rounded-box border border-base-300 p-3 text-center text-sm text-base-content/60"
-                  data-preview-target="videoWindowHint"
-                  hidden
-                >
-                  <i data-lucide="monitor-play" class="size-6"></i>
-                  <span data-i18n="preview.videoWindowAway"></span>
                 </div>
                 <div class="card card-sm card-border min-w-0 flex-3">
                   <div class="card-body">
@@ -847,62 +841,64 @@
                         </div>
                       </div>
                     </div>
-                    <div class="divider my-0"></div>
-                    <p
-                      class="text-sm text-base-content/60"
-                      data-preview-target="currentHint"
-                      data-i18n="preview.pickSegment"
-                    ></p>
-                    <div
-                      class="flex min-h-0 flex-col gap-1"
-                      data-preview-target="currentCard"
-                      hidden
-                    >
-                      <h3 class="card-title text-sm">
-                        <span data-i18n="preview.current"></span>
-                        <span
-                          class="badge badge-sm"
-                          data-preview-target="currentNumber"
-                        ></span>
-                        <span
-                          class="text-xs font-normal tabular-nums text-base-content/60"
-                          data-preview-target="currentTimes"
-                        ></span>
-                        <span
-                          class="badge badge-sm badge-neutral max-w-32 truncate"
-                          data-preview-target="currentSpeaker"
-                          hidden
-                        ></span>
-                      </h3>
+                    <div class="contents" data-preview-target="currentSection">
+                      <div class="divider my-0"></div>
                       <p
-                        class="line-clamp-3 text-lg whitespace-pre-line"
-                        data-preview-target="currentText"
+                        class="text-sm text-base-content/60"
+                        data-preview-target="currentHint"
+                        data-i18n="preview.pickSegment"
                       ></p>
-                      <p
-                        class="line-clamp-2 whitespace-pre-line text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))]"
-                        data-preview-target="currentTranslation"
-                      ></p>
-                      <p class="text-xs text-base-content/60">
-                        <kbd
-                          class="kbd kbd-xs"
-                          data-i18n="shortcuts.keys.space"
-                        ></kbd>
-                        <span
-                          data-i18n="preview.playOn"
-                          data-timeline-target="spaceHint"
-                        ></span>
-                      </p>
-                      <p class="text-xs text-base-content/60">
-                        <kbd
-                          class="kbd kbd-xs"
-                          data-timeline-target="startKey"
-                        ></kbd>
-                        <kbd
-                          class="kbd kbd-xs"
-                          data-timeline-target="endKey"
-                        ></kbd>
-                        <span data-i18n="preview.setTimes"></span>
-                      </p>
+                      <div
+                        class="flex min-h-0 flex-col gap-1"
+                        data-preview-target="currentCard"
+                        hidden
+                      >
+                        <h3 class="card-title text-sm">
+                          <span data-i18n="preview.current"></span>
+                          <span
+                            class="badge badge-sm"
+                            data-preview-target="currentNumber"
+                          ></span>
+                          <span
+                            class="text-xs font-normal tabular-nums text-base-content/60"
+                            data-preview-target="currentTimes"
+                          ></span>
+                          <span
+                            class="badge badge-sm badge-neutral max-w-32 truncate"
+                            data-preview-target="currentSpeaker"
+                            hidden
+                          ></span>
+                        </h3>
+                        <p
+                          class="line-clamp-3 text-lg whitespace-pre-line"
+                          data-preview-target="currentText"
+                        ></p>
+                        <p
+                          class="line-clamp-2 whitespace-pre-line text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))]"
+                          data-preview-target="currentTranslation"
+                        ></p>
+                        <p class="text-xs text-base-content/60">
+                          <kbd
+                            class="kbd kbd-xs"
+                            data-i18n="shortcuts.keys.space"
+                          ></kbd>
+                          <span
+                            data-i18n="preview.playOn"
+                            data-timeline-target="spaceHint"
+                          ></span>
+                        </p>
+                        <p class="text-xs text-base-content/60">
+                          <kbd
+                            class="kbd kbd-xs"
+                            data-timeline-target="startKey"
+                          ></kbd>
+                          <kbd
+                            class="kbd kbd-xs"
+                            data-timeline-target="endKey"
+                          ></kbd>
+                          <span data-i18n="preview.setTimes"></span>
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -176,15 +176,15 @@ describe("Current Segment", () => {
             <p data-preview-target="caption"></p>
             <div data-preview-target="hint" hidden></div>
           </div>
-          <div data-preview-target="videoWindowHint" hidden></div>
           <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
           <span data-preview-target="playbackIcon"></span>
           <button data-transcript-target="followButton" data-action="transcript#toggleFollowing"></button>
           <button data-timeline-target="aloneButton" data-action="timeline#togglePlayingAlone"></button>
           <span data-preview-target="time"></span>
           <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"><input type="checkbox" data-preview-target="captionSpeaker"></div>
+          <div data-preview-target="currentSection">
           <p data-preview-target="currentHint"></p>
-          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd></div>
+          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd></div></div>
           <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
           </div>
         </div>

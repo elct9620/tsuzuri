@@ -11,21 +11,30 @@ describe("FieldController", () => {
   let edits: unknown[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const field = () => document.querySelector<HTMLElement>("[data-controller]")!;
+  const fields = (index: number) =>
+    document.querySelectorAll<HTMLElement>("[data-controller]")[index];
+  const field = () => fields(0);
 
   beforeEach(async () => {
     edits = [];
+    const actions =
+      "focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#commit:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent";
     document.body.innerHTML = `
       <div id="editor">
-        <div contenteditable="plaintext-only" data-controller="field" data-index="0" data-field="text"
-          data-action="focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#commit:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent">大家好</div>
+        <div class="field text" contenteditable="plaintext-only" data-controller="field" data-index="0" data-field="text"
+          data-action="${actions}">大家好</div>
+        <div class="field text" contenteditable="plaintext-only" data-controller="field" data-index="1" data-field="text"
+          data-action="${actions}">今天天氣</div>
       </div>
     `;
     mockIPC(
       (command, args) => {
         if (command === "current_project")
           return projectOf({
-            segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
+            segments: [
+              { start_ms: 0, end_ms: 1000, text: "大家好" },
+              { start_ms: 1000, end_ms: 2000, text: "今天天氣" },
+            ],
           });
         if (command === "edit_segment") edits.push(args);
       },
@@ -63,13 +72,16 @@ describe("FieldController", () => {
   });
 
   /** Whether pressing Enter lets the field take the key. */
-  function isEnterTaken(init: KeyboardEventInit = {}): boolean {
+  function isEnterTaken(
+    init: KeyboardEventInit = {},
+    target = field(),
+  ): boolean {
     const enter = new KeyboardEvent("keydown", {
       key: "Enter",
       cancelable: true,
       ...init,
     });
-    field().dispatchEvent(enter);
+    target.dispatchEvent(enter);
     return enter.defaultPrevented;
   }
 
@@ -93,7 +105,7 @@ describe("FieldController", () => {
   });
 
   // @behavior ED-074
-  it("is left and written with Enter", async () => {
+  it("moves to the next Segment's text with Enter", async () => {
     const typed = vi.fn(() => true);
     document.execCommand = typed;
     field().focus();
@@ -105,8 +117,22 @@ describe("FieldController", () => {
     expect([taken, typed.mock.calls, document.activeElement, edits]).toEqual([
       true,
       [],
-      document.body,
+      fields(1),
       [{ index: 0, field: "text", value: "大家好啊" }],
+    ]);
+  });
+
+  // @behavior ED-076
+  it("is left after the last Segment with Enter", async () => {
+    fields(1).focus();
+    fields(1).textContent = "今天天氣很好";
+
+    isEnterTaken({}, fields(1));
+    await settle();
+
+    expect([document.activeElement, edits]).toEqual([
+      document.body,
+      [{ index: 1, field: "text", value: "今天天氣很好" }],
     ]);
   });
 

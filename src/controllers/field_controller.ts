@@ -81,9 +81,16 @@ export default class FieldController extends Controller<HTMLElement> {
     insertLineBreak();
   }
 
-  /** Leaves the field, which writes its text as a click elsewhere does; bound with `:!composing:prevent`. */
+  /**
+   * Leaves the field, which writes its text as a click elsewhere does, for the same field of the
+   * next Segment, or for none after the last; bound with `:!composing:prevent`.
+   */
   commit(): void {
-    this.element.blur();
+    const next = document.querySelector<HTMLElement>(
+      `.field[data-index="${this.index + 1}"][data-field="${this.field}"]`,
+    );
+    if (next) next.focus();
+    else this.element.blur();
   }
 
   /** Hands over where the Cursor was left and the text. */

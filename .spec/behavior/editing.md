@@ -579,15 +579,23 @@ Any focus within a row makes its Segment current; only a text or a translation h
 | When | Enter is pressed to pick a candidate, even where the platform ends the composition before the key arrives |
 | Then | no line break is typed and the input method keeps the key |
 
-## `ED-074` Leaving a text field with Enter
+## `ED-074` Moving to the next Segment with Enter
 
-Subtitle editors confirm a line with Enter and break it with Shift+Enter, so a correction is written without reaching for the mouse; Enter on the numeric keypad is the same key.
+Subtitle editors confirm a line with Enter and go on to the next, and break a line with Shift+Enter, so a transcript is corrected line by line without reaching for the mouse; Enter on the numeric keypad is the same key.
 
 | Step | Statement |
 | --- | --- |
-| Given | a text field the user entered and changed |
+| Given | the first of two Segments, its text entered and changed |
 | When | Enter is pressed |
-| Then | no line break is typed, the field is left, and its text is written |
+| Then | no line break is typed, the first text is written, and the second Segment's text is entered |
+
+## `ED-076` Leaving the last Segment's text with Enter
+
+| Step | Statement |
+| --- | --- |
+| Given | the last Segment's text entered and changed |
+| When | Enter is pressed |
+| Then | the field is left and its text is written |
 
 ## `ED-075` Breaking a line with Shift+Enter
 

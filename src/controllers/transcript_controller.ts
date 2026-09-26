@@ -349,7 +349,7 @@ export default class TranscriptController extends Controller {
   private showFollowing(): void {
     if (!this.hasFollowButtonTarget) return;
     this.followButtonTarget.setAttribute("aria-pressed", `${this.isFollowing}`);
-    this.followButtonTarget.classList.toggle("btn-active", this.isFollowing);
+    this.followButtonTarget.classList.toggle("btn-primary", this.isFollowing);
   }
 
   private drawCursor(): void {

@@ -434,7 +434,7 @@ describe("Current Segment", () => {
 
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
-    expect(followButton().classList.contains("btn-active")).toBe(false);
+    expect(followButton().getAttribute("aria-pressed")).toBe("false");
   });
 
   // @behavior PV-085
@@ -471,6 +471,6 @@ describe("Current Segment", () => {
 
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
-    expect(aloneButton().classList.contains("btn-active")).toBe(true);
+    expect(aloneButton().getAttribute("aria-pressed")).toBe("true");
   });
 });

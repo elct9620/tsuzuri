@@ -133,14 +133,14 @@ export default class SegmentChangesController extends Controller {
     this.clearSelection();
   }
 
-  /** Hands the selected rows to be translated again. */
+  /** Hands the Checked Segments to be translated again. */
   retranslate(): void {
     this.dispatch("retranslate", {
       detail: { indexes: this.selectedIndexes() },
     });
   }
 
-  /** Hands the selected rows to the Speaker dialog. */
+  /** Hands the Checked Segments to the Speaker dialog. */
   openSpeakers(): void {
     this.dispatch("speakers", {
       detail: { indexes: this.selectedIndexes() },

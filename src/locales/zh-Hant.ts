@@ -401,7 +401,7 @@ const zhHant: typeof en = {
       videoWindowFullscreen: "影片視窗全螢幕",
     },
     hints: {
-      list: "不在文字欄位時，也可以按 ? 開啟",
+      list: "不在文字欄位時，也可以按問號鍵開啟",
       undo: "在欄位中復原打的字，其他時候復原上一次對字幕的改動",
       redo: "在欄位中重做打的字，其他時候重做上一次復原的改動",
       checkAll: "在欄位中全選文字，其他時候勾選全部段落",

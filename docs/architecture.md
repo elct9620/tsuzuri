@@ -74,7 +74,7 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 |---|---|---|
 | Rust 用例與規則 | `cargo test`，測試寫在程式旁的 `mod tests` | mock app、假元件、`fake_llama` |
 | 真的元件 | `cargo test -- --ignored`，需要模型與媒體檔 | 無 |
-| Webview | `pnpm test`（Vitest、happy-dom），測試放在 controller 與 `editor/` 的程式旁 | `mockIPC` 代替 Rust；`editor/` 以假的 port 測試 |
+| Webview | `pnpm test`（Vitest、happy-dom），測試在程式旁 | `mockIPC` 代替 Rust；`editor/` 以假的 port 測試 |
 | 規格 | `sumi verify` | 測試以 `@behavior` 宣告實作的情境 |
 
 用例測試使用真的 `Processes` 與 Tauri 的 mock runtime，元件行程與事件依實際的先後發生。mock app 建出 `AppPorts`，shell 腳本假裝元件，`fake_llama` 假裝 llama-server。
@@ -85,7 +85,7 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 
 | Rust 擁有 | Webview 擁有 |
 |---|---|
-| 專案、目前資源、段落、譯文 | 畫面上顯示的內容，每次都向 Rust 取得 |
+| 專案、目前資源、段落、譯文 | 畫面顯示的內容，每次向 Rust 取得 |
 | 設定檔、備份、翻譯詞彙表 | modal、勾選、目前段落、Cursor |
 | 元件行程、進度、失敗原因 | 介面語言、通知、tooltip |
 
@@ -150,7 +150,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | 子目錄 | 不含 |
 | 路徑來源 | `ProjectView.media` |
 
-影片要能拖動與串流，透過指令傳送整個檔案不可行，所以媒體檔是 webview 唯一直接讀取的資料。路徑仍由 Rust 給出，範圍只含開啟過的專案目錄。
+影片要能拖動與串流，經由指令傳送整個檔案不可行，所以媒體檔是 webview 唯一直接讀取的資料。路徑仍由 Rust 給出，範圍只含開啟過的專案目錄。
 
 ## 3 Rust 端
 
@@ -172,7 +172,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | `project/glossary.rs` 同時是規則與 csv 讀寫 | 詞彙表的格式就是它的規則 |
 | `progress.rs` 與 `Progress` 放在同一檔的 `AppHandle` 實作 | 只發兩個事件，放一起最清楚 |
 | `failure.rs` 把 `tauri::Error` 轉成 `Failure` | 統一轉換指令的錯誤 |
-| 轉錄指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（design 6.4） |
+| 轉錄指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（`docs/design.md` 6.4） |
 
 ### 3.2 情境
 
@@ -231,7 +231,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | — | `failure` | 應用 | 錯誤碼 |
 | — | `processes` | 轉接 | 子行程與 `AppPorts` |
 
-目錄以 `src-tauri/src/` 為根，— 是根目錄，模組省略 `.rs`。各目錄的 `commands` 是介面層的指令，不另列。波形以 ffmpeg 轉成 PCM，每 10 ms 取一個峰值。
+目錄以 `src-tauri/src/` 為根，表中的「—」是根目錄，模組省略 `.rs`。各目錄的 `commands` 是介面層的指令，不另列。波形以 ffmpeg 轉成 PCM，每 10 ms 取一個峰值。
 
 ### 3.4 Port 與轉接
 
@@ -281,7 +281,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | 任務中重新載入 | 照常重讀，進度照疊 |
 | 重新配對 | 檔案變了就清復原 |
 
-記憶體裡的目前資源只是檔案讀出的樣子，只在讀檔與寫檔後更新，所以記下的內容相同就代表兩者一致。任務進度疊在 `view()` 上，任務結束就丟掉，不會被當成字幕寫回。
+記憶體裡的目前資源就是讀檔的結果，只在讀檔與寫檔後更新，所以記下的內容相同就代表兩者一致。任務進度疊在 `view()` 上，任務結束就丟掉，不會被當成字幕寫回。
 
 ### 3.7 寫入者
 
@@ -427,7 +427,7 @@ command ── ModeLock::begin(AppPorts::new(..)) ──▶ ModeRun：執行權�
 | 注入 State | 指令取得依賴 | `project/commands.rs` |
 | Mode Run | 任務範圍的狀態 | `transcription/commands.rs` |
 
-任務範圍的東西（取消、它啟動的行程、資源的 hold）由 `ModeRun` 擁有，不寄放在 app 範圍的物件上。design 6.4 的狀態機動工時重新檢討：Phases 與狀態應一起收進 `ModeRun`。
+任務範圍的東西（取消、它啟動的行程、資源的 hold）由 `ModeRun` 擁有，不寄放在 app 範圍的物件上。`docs/design.md` 6.4 的狀態機動工時重新檢討：Phases 與狀態應一起收進 `ModeRun`。
 
 ## 4 Webview
 
@@ -454,7 +454,7 @@ backend/editing.ts            閘道：唯一呼叫編輯指令的地方
 | 畫面維持單一 `index.html` | 拆檔要加 plugin |
 | 不改成 custom element | 翻譯與圖示靠靜態掃描 |
 
-頁面 markup 都在 `index.html`，i18n 與 Lucide 圖示在啟動時掃描整頁。拆成片段或 custom element 會讓掃描改在執行期進行，目前的規模還不值得。
+頁面 markup 都在 `index.html`，i18n 與 Lucide 圖示在啟動時掃描整頁；拆成片段或 custom element 就得在執行期掃描，目前的規模還不值得。
 
 ### 4.2 相依規則
 

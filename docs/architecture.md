@@ -37,7 +37,7 @@
 
 | 來源 | 決定什麼 |
 |---|---|
-| `components.json` | 原始碼釘版、變體順序 |
+| `components.json` | 原始程式碼釘版、變體順序 |
 | `src-tauri/tauri.bundle.conf.json` | 打包時把 `vendor/` 放進資源的 `components/` |
 | CI 的 cargo-about | 產生 `THIRD-PARTY-LICENSES.html`，隨建置提供 |
 | CI 的 `scripts/webview-licenses.ts` | 檢查 webview 套件授權並產生 `THIRD-PARTY-LICENSES-WEBVIEW.html` |
@@ -156,7 +156,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 
 | 層 | 可以依賴 | 不可以依賴 |
 |---|---|---|
-| 領域 | 標準庫、serde、字幕核心 | `Failure`、Tauri、檔案系統、行程、HTTP |
+| 領域 | 標準函式庫、serde、字幕核心 | `Failure`、Tauri、檔案系統、行程、HTTP |
 | 應用 | 領域、Port | Tauri、`AppHandle` |
 | 轉接 | 應用的 Port、領域 | 其他情境的轉接 |
 | 介面 | 應用、轉接的設定讀取 | 直接操作專案目錄或行程 |
@@ -208,9 +208,9 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | `translation/resident.rs` | 轉接 | 常駐的 llama-server |
 | `transcription.rs`、`transcription/whisper.rs` | 應用、轉接 | 轉錄用例；ffmpeg 與 whisper-cli 的參數與輸出 |
 | `transcription/settings.rs` | 轉接 | 轉錄設定檔 |
-| `waveform.rs` | 應用、領域 | 波形用例：ffmpeg 轉成 PCM，每 10 ms 取一個峰值 |
+| `waveform.rs` | 應用、領域 | 波形用例：ffmpeg 轉 PCM，每 10 ms 取峰值 |
 | `toolchain.rs`、`toolchain/{detection,settings}.rs` | 應用、轉接 | 尋找元件、偵測、設定檔 |
-| `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、執行一個 Step、`ModeLock` 與 `ModeRun`、Phase 計時、錯誤碼 |
+| `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、執行 Step、`ModeLock`、`ModeRun`、Phase 計時、錯誤碼 |
 | `steps/commands.rs` | 介面 | `cancel_task` |
 | `processes.rs` | 轉接 | 子行程的啟動、紀錄與清理，以及 `AppPorts` |
 | `*/commands.rs`、`window.rs`、`lib.rs` | 介面 | 指令、視窗大小、組裝 |
@@ -286,14 +286,14 @@ transcribe 指令                       translate 指令
 
 | 時機 | `Processes` 做什麼 |
 |---|---|
-| 啟動元件 | 以絕對路徑經 shell plugin 啟動，把 PID 與名稱寫進 `processes.json` |
+| 啟動元件 | 以絕對路徑啟動，PID 與名稱寫進 `processes.json` |
 | 元件輸出 | 每行寫進 log，最後才送出結束 |
 | 元件結束 | 從紀錄移除 |
 | 常駐 router | 背景啟動，關掉常駐時停止 |
 | App 結束 | `kill_all`，連同 router 開的模型行程 |
 | 下次啟動 | `reap_strays` 只結束 PID 與名稱都相符的行程 |
 
-介面以 `.spec/contract/processes.md` 為準。
+元件一律經 shell plugin 啟動。介面以 `.spec/contract/processes.md` 為準。
 
 ### 3.9 元件解析
 
@@ -401,7 +401,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | 檔案 | 層 | 內容 |
 |---|---|---|
 | `index.ts` | 對外 | 唯一可 import 的入口 |
-| `segment.ts` | 領域 | 自己的段落與專案視圖型別 |
+| `segment.ts` | 領域 | 自己的段落與專案檢視型別 |
 | `cursor.ts` | 領域 | Cursor 的狀態機 |
 | `rules.ts` | 領域 | 合併、鎖定、分割的規則 |
 | `session.ts` | 應用 | `EditingSession` 與 port |

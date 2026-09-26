@@ -279,7 +279,7 @@
           <div
             class="contents"
             data-controller="preview timeline"
-            data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playCurrent:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange:!control"
+            data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playOrStop:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange:!control"
           >
             <div
               class="flex items-center gap-2 border-b border-base-300 px-4 py-2"

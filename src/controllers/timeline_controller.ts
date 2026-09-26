@@ -170,10 +170,8 @@ export default class TimelineController extends Controller {
   declare readonly timesTarget: HTMLElement;
   /** Whether Space plays the Current Segment alone, pressed to turn it on or off. */
   declare readonly aloneButtonTarget: HTMLButtonElement;
-  declare readonly hasAloneButtonTarget: boolean;
   /** What Space does, beside its key in the Current Segment's card. */
   declare readonly spaceHintTarget: HTMLElement;
-  declare readonly hasSpaceHintTarget: boolean;
 
   private media: string | null = null;
   private segments: Segment[] = [];
@@ -233,7 +231,7 @@ export default class TimelineController extends Controller {
    * Stops the media when it plays, or else plays on from where it is, or the Current Segment alone
    * while playing alone is turned on.
    */
-  playCurrent(): void {
+  playOrStop(): void {
     if (!this.mediaTarget.paused) {
       this.mediaTarget.pause();
       return;
@@ -254,8 +252,8 @@ export default class TimelineController extends Controller {
   }
 
   /**
-   * Pauses the media at the start of the Segment the user chose, for Space to play it. A region's
-   * click reaches the waveform afterwards, which moves the media on to where it was clicked.
+   * Pauses the media at the start of the Segment the user chose, for Space to play from it. A
+   * region's click reaches the waveform afterwards, which moves the media on to where it was clicked.
    */
   pauseAtCurrent(): void {
     const segment = this.currentSegment;
@@ -669,24 +667,15 @@ export default class TimelineController extends Controller {
   }
 
   private showPlayingAlone(): void {
-    if (this.hasAloneButtonTarget) {
-      this.aloneButtonTarget.setAttribute(
-        "aria-pressed",
-        `${this.isPlayingAlone}`,
-      );
-      this.aloneButtonTarget.classList.toggle(
-        "btn-active",
-        this.isPlayingAlone,
-      );
-    }
-    if (this.hasSpaceHintTarget) {
-      // Kept as the key, so translating the page again says the same
-      const hint = this.isPlayingAlone
-        ? "preview.playCurrent"
-        : "preview.playOn";
-      this.spaceHintTarget.dataset.i18n = hint;
-      this.spaceHintTarget.textContent = t(hint);
-    }
+    this.aloneButtonTarget.setAttribute(
+      "aria-pressed",
+      `${this.isPlayingAlone}`,
+    );
+    this.aloneButtonTarget.classList.toggle("btn-active", this.isPlayingAlone);
+    // Kept as the key, so translating the page again says the same
+    const hint = this.isPlayingAlone ? "preview.playCurrent" : "preview.playOn";
+    this.spaceHintTarget.dataset.i18n = hint;
+    this.spaceHintTarget.textContent = t(hint);
   }
 
   private showZoomLevel(): void {

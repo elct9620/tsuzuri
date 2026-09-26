@@ -122,7 +122,7 @@ describe("Current Segment", () => {
       <main data-controller="transcript"
         data-action="editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
         <div data-controller="preview timeline"
-          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playCurrent:!control:prevent">
+          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playOrStop:!control:prevent">
           <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">
@@ -438,18 +438,16 @@ describe("Current Segment", () => {
   });
 
   // @behavior PV-085
-  it("plays on past the Current Segment with Space by default", async () => {
+  it("plays on from the Current Segment past its end with Space by default", async () => {
     await show(twoSegments);
     rows()[1].click();
     pressSpace();
     await settle();
+    const startedAt = media().currentTime;
 
     playTo(2);
 
-    expect([
-      aloneButton().getAttribute("aria-pressed"),
-      media().paused,
-    ]).toEqual(["false", false]);
+    expect([startedAt, media().paused]).toEqual([1, false]);
   });
 
   // @behavior PV-086

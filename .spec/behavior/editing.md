@@ -579,6 +579,24 @@ Any focus within a row makes its Segment current; only a text or a translation h
 | When | Enter is pressed to pick a candidate, even where the platform ends the composition before the key arrives |
 | Then | no line break is typed and the input method keeps the key |
 
+## `ED-074` Leaving a text field with Enter
+
+Subtitle editors confirm a line with Enter and break it with Shift+Enter, so a correction is written without reaching for the mouse; Enter on the numeric keypad is the same key.
+
+| Step | Statement |
+| --- | --- |
+| Given | a text field the user entered and changed |
+| When | Enter is pressed |
+| Then | no line break is typed, the field is left, and its text is written |
+
+## `ED-075` Breaking a line with Shift+Enter
+
+| Step | Statement |
+| --- | --- |
+| Given | a text field the user entered |
+| When | Shift+Enter is pressed |
+| Then | a line break is typed at the Cursor and the field keeps focus |
+
 ## `ED-034` Setting the Speaker of the Checked Segments
 
 Setting Speakers one Segment at a time is slow across a long transcript, so the Checked Segments and the whole transcript can be named at once.

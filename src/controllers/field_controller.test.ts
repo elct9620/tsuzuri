@@ -18,7 +18,7 @@ describe("FieldController", () => {
     document.body.innerHTML = `
       <div id="editor">
         <div contenteditable="plaintext-only" data-controller="field" data-index="0" data-field="text"
-          data-action="focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent">大家好</div>
+          data-action="focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#commit:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent">大家好</div>
       </div>
     `;
     mockIPC(
@@ -75,9 +75,6 @@ describe("FieldController", () => {
 
   // @behavior ED-031
   it("leaves Enter to an input method while it composes", async () => {
-    const typed = vi.fn(() => true);
-    document.execCommand = typed;
-
     const whileComposing = isEnterTaken({ isComposing: true });
     const keyInProcess = isEnterTaken({ keyCode: 229 });
     field().dispatchEvent(new CompositionEvent("compositionstart"));
@@ -92,7 +89,39 @@ describe("FieldController", () => {
       keyInProcess,
       rightAfterComposing,
       typedAfterward,
-      typed.mock.calls,
-    ]).toEqual([false, false, false, true, [["insertLineBreak"]]]);
+    ]).toEqual([false, false, false, true]);
+  });
+
+  // @behavior ED-074
+  it("is left and written with Enter", async () => {
+    const typed = vi.fn(() => true);
+    document.execCommand = typed;
+    field().focus();
+    field().textContent = "大家好啊";
+
+    const taken = isEnterTaken({ code: "NumpadEnter" });
+    await settle();
+
+    expect([taken, typed.mock.calls, document.activeElement, edits]).toEqual([
+      true,
+      [],
+      document.body,
+      [{ index: 0, field: "text", value: "大家好啊" }],
+    ]);
+  });
+
+  // @behavior ED-075
+  it("types a line break with Shift+Enter", async () => {
+    const typed = vi.fn(() => true);
+    document.execCommand = typed;
+    field().focus();
+
+    const taken = isEnterTaken({ shiftKey: true });
+
+    expect([taken, typed.mock.calls, document.activeElement]).toEqual([
+      true,
+      [["insertLineBreak"]],
+      field(),
+    ]);
   });
 });

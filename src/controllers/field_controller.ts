@@ -81,6 +81,11 @@ export default class FieldController extends Controller<HTMLElement> {
     insertLineBreak();
   }
 
+  /** Leaves the field, which writes its text as a click elsewhere does; bound with `:!composing:prevent`. */
+  commit(): void {
+    this.element.blur();
+  }
+
   /** Hands over where the Cursor was left and the text. */
   async leave(): Promise<void> {
     notifyEdit(

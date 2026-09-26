@@ -550,7 +550,7 @@ mod tests {
         );
     }
 
-    // @behavior PJ-104
+    // @behavior PJ-105
     #[test]
     fn pairs_subtitles_with_a_media_file_whose_name_ends_like_a_language_code() {
         let dir = directory_of(
@@ -575,7 +575,7 @@ mod tests {
         );
     }
 
-    // @behavior PJ-105
+    // @behavior PJ-106
     #[test]
     fn names_a_resource_by_a_subtitle_whose_name_ends_like_an_unknown_language_code() {
         let dir = directory_of(
@@ -596,7 +596,7 @@ mod tests {
         );
     }
 
-    // @behavior PJ-106
+    // @behavior PJ-107
     #[test]
     fn pairs_a_subtitle_with_the_resource_its_whole_name_before_the_code_names() {
         let dir = directory_of(

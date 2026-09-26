@@ -52,7 +52,7 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | it is opened in `zh-TW` |
 | Then | the Project lists only `ep01`, with no translation |
 
-## `PJ-104` Pairing subtitles with a media file whose name ends like a Language code
+## `PJ-105` Pairing subtitles with a media file whose name ends like a Language code
 
 A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri writes for it are found again.
 
@@ -62,7 +62,7 @@ A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri 
 | When | it is opened in `zh-TW` |
 | Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
 
-## `PJ-105` Naming a Resource by a subtitle whose name ends like an unknown Language code
+## `PJ-106` Naming a Resource by a subtitle whose name ends like an unknown Language code
 
 | Step | Statement |
 | --- | --- |
@@ -70,7 +70,7 @@ A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri 
 | When | it is opened in `zh-TW` |
 | Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
 
-## `PJ-106` Pairing a subtitle with the Resource its whole name before the code names
+## `PJ-107` Pairing a subtitle with the Resource its whole name before the code names
 
 | Step | Statement |
 | --- | --- |
@@ -78,7 +78,7 @@ A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri 
 | When | it is opened in `zh-TW` |
 | Then | `lecture.ja` has the `en` translation and `lecture` has none |
 
-## `PJ-107` Showing a translation again after showing none
+## `PJ-108` Showing a translation again after showing none
 
 | Step | Statement |
 | --- | --- |
@@ -326,7 +326,7 @@ A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri 
 | When | the Resource list shows it |
 | Then | it lists `ep01` with `en` and `ep02` marked as having no subtitle |
 
-## `PJ-116` Marking a Resource of subtitles alone
+## `PJ-117` Marking a Resource of subtitles alone
 
 A Resource without a media file only edits its subtitles, so the list says so before it is selected.
 
@@ -562,7 +562,7 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | its translation into `en` is written as `Hello` |
 | Then | `.tsuzuri/history/` holds an Output of `ep01.en.srt` reading `Hello` |
 
-## `PJ-108` Listing a translation whose Output could not be kept
+## `PJ-109` Listing a translation whose Output could not be kept
 
 | Step | Statement |
 | --- | --- |
@@ -628,7 +628,7 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | When | the window regains focus |
 | Then | the Current Resource holds what the other program wrote |
 
-## `PJ-109` Listing files added elsewhere when the Project is reloaded
+## `PJ-110` Listing files added elsewhere when the Project is reloaded
 
 | Step | Statement |
 | --- | --- |
@@ -636,7 +636,7 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | When | the Project is reloaded |
 | Then | the Project lists `ep01` with the `en` translation, and `ep02` |
 
-## `PJ-110` Keeping the Undo History of a Current Resource no one else changed
+## `PJ-111` Keeping the Undo History of a Current Resource no one else changed
 
 | Step | Statement |
 | --- | --- |
@@ -644,7 +644,7 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | When | the Project is reloaded |
 | Then | the edit can still be undone |
 
-## `PJ-111` Showing the same translation after a reload
+## `PJ-112` Showing the same translation after a reload
 
 | Step | Statement |
 | --- | --- |
@@ -652,7 +652,7 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | When | the Project is reloaded |
 | Then | the Current Resource shows no translation |
 
-## `PJ-112` Selecting the first Resource once the Current Resource is gone
+## `PJ-113` Selecting the first Resource once the Current Resource is gone
 
 | Step | Statement |
 | --- | --- |
@@ -660,7 +660,7 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | When | the Project is reloaded |
 | Then | the Current Resource is `ep01` |
 
-## `PJ-113` Reloading only the Resource list while a Mode runs on the Current Resource
+## `PJ-114` Reloading only the Resource list while a Mode runs on the Current Resource
 
 | Step | Statement |
 | --- | --- |
@@ -668,7 +668,7 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | When | the Project is reloaded |
 | Then | the Project lists `ep02`, and `ep01` keeps the Segments the translation shows |
 
-## `PJ-114` Listing files added elsewhere when the window regains focus
+## `PJ-115` Listing files added elsewhere when the window regains focus
 
 | Step | Statement |
 | --- | --- |
@@ -676,7 +676,7 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | When | the window regains focus |
 | Then | the Project lists `ep01` and `ep02` |
 
-## `PJ-115` Reloading the Project from the Resource list
+## `PJ-116` Reloading the Project from the Resource list
 
 | Step | Statement |
 | --- | --- |

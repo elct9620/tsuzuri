@@ -141,7 +141,7 @@ impl Project {
         let Some((name, translation)) = kept else {
             return Ok(());
         };
-        if self.current()?.name != name {
+        if self.current.as_ref().map(|current| &current.name) != Some(&name) {
             return Ok(());
         }
         let resource = self.resource(&name)?;
@@ -1487,7 +1487,7 @@ mod tests {
         assert_eq!(texts(&current), vec!["こんにちは".to_string()]);
     }
 
-    // @behavior PJ-107
+    // @behavior PJ-108
     #[test]
     fn shows_a_translation_again_after_showing_none() {
         let dir = directory_of(
@@ -2393,7 +2393,7 @@ mod tests {
             .any(|(file, content)| file.starts_with("ep01.en.") && *content == cue("Hello")));
     }
 
-    // @behavior PJ-108
+    // @behavior PJ-109
     #[test]
     fn lists_a_translation_whose_output_could_not_be_kept() {
         let dir = directory_of(
@@ -2728,7 +2728,7 @@ mod tests {
             .collect()
     }
 
-    // @behavior PJ-109
+    // @behavior PJ-110
     #[test]
     fn lists_files_added_elsewhere_when_the_project_is_reloaded() {
         let dir = directory_of("pj-reload-added", &[("ep01.srt", &cue("你好"))]);
@@ -2752,7 +2752,7 @@ mod tests {
         );
     }
 
-    // @behavior PJ-110
+    // @behavior PJ-111
     #[test]
     fn keeps_the_undo_history_of_a_current_resource_no_one_else_changed() {
         let dir = directory_of("pj-reload-undo", &[("ep01.srt", &cue("你好"))]);
@@ -2766,7 +2766,7 @@ mod tests {
         assert!(current.view().unwrap().has_undo());
     }
 
-    // @behavior PJ-111
+    // @behavior PJ-112
     #[test]
     fn shows_the_same_translation_after_a_reload() {
         let dir = directory_of(
@@ -2781,7 +2781,7 @@ mod tests {
         assert_eq!(current.view().unwrap().shown_translation, None);
     }
 
-    // @behavior PJ-112
+    // @behavior PJ-113
     #[test]
     fn selects_the_first_resource_once_the_current_resource_is_gone() {
         let dir = directory_of(
@@ -2800,7 +2800,18 @@ mod tests {
         );
     }
 
-    // @behavior PJ-113
+    #[test]
+    fn selects_no_resource_once_none_is_left() {
+        let dir = directory_of("pj-reload-empty", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        std::fs::remove_file(dir.path().join("ep01.srt")).unwrap();
+
+        current.reload().unwrap();
+
+        assert_eq!(current.view().unwrap().current_resource, None);
+    }
+
+    // @behavior PJ-114
     #[test]
     fn reloads_only_the_resource_list_while_a_mode_runs_on_the_current_resource() {
         let dir = directory_of("pj-reload-held", &[("ep01.srt", &cue("你好"))]);
@@ -2825,7 +2836,7 @@ mod tests {
         );
     }
 
-    // @behavior PJ-114
+    // @behavior PJ-115
     #[test]
     fn lists_files_added_elsewhere_when_the_window_regains_focus() {
         let dir = directory_of("pj-focus-added", &[("ep01.srt", &cue("你好"))]);

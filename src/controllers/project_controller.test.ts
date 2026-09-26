@@ -167,7 +167,7 @@ describe("ProjectController", () => {
     ]);
   });
 
-  // @behavior PJ-116
+  // @behavior PJ-117
   it("marks a Resource of subtitles alone", async () => {
     await hold(
       projectOf({
@@ -250,7 +250,7 @@ describe("ProjectController", () => {
     expect(isAnnounced).toBe(true);
   });
 
-  // @behavior PJ-115
+  // @behavior PJ-116
   it("reloads the Project from the button above the Resource list or its shortcut", async () => {
     await hold(projectOf());
 

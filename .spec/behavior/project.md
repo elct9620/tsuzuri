@@ -52,6 +52,40 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | it is opened in `zh-TW` |
 | Then | the Project lists only `ep01`, with no translation |
 
+## `PJ-104` Pairing subtitles with a media file whose name ends like a Language code
+
+A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri writes for it are found again.
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `talk.hd.mp4`, `talk.hd.srt` and `talk.hd.en.srt` |
+| When | it is opened in `zh-TW` |
+| Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
+
+## `PJ-105` Naming a Resource by a subtitle whose name ends like an unknown Language code
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `talk.hd.srt` and `talk.hd.en.srt` |
+| When | it is opened in `zh-TW` |
+| Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
+
+## `PJ-106` Pairing a subtitle with the Resource its whole name before the code names
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `lecture.mp4`, `lecture.ja.mp4` and `lecture.ja.en.srt` |
+| When | it is opened in `zh-TW` |
+| Then | `lecture.ja` has the `en` translation and `lecture` has none |
+
+## `PJ-107` Showing a translation again after showing none
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `talk.hd` of `talk.hd.mp4` and `talk.hd.srt` just translated into `en`, with no translation shown since |
+| When | `en` is shown |
+| Then | the Segments carry the `en` translation |
+
 ## `PJ-019` Loading a translation by the times of its cues
 
 | Step | Statement |

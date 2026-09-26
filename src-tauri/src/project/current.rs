@@ -1431,6 +1431,29 @@ mod tests {
         assert_eq!(texts(&current), vec!["こんにちは".to_string()]);
     }
 
+    // @behavior PJ-107
+    #[test]
+    fn shows_a_translation_again_after_showing_none() {
+        let dir = directory_of(
+            "pj-show-again",
+            &[("talk.hd.mp4", ""), ("talk.hd.srt", &cue("你好"))],
+        );
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                vec![segment("你好", Some("Hello"))],
+            )
+            .unwrap();
+        current.show_translation(None).unwrap();
+
+        current.show_translation(Some(Language::English)).unwrap();
+
+        assert_eq!(texts(&current), vec!["Hello".to_string()]);
+    }
+
     #[test]
     fn keeps_edited_text_when_showing_another_translation() {
         let dir = directory_of(

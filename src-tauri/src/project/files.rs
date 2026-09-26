@@ -169,28 +169,86 @@ fn srt_transcript(path: &Path) -> Result<Transcript, Failure> {
 }
 
 /// The Resources of `directory` in the order of their names, taking subtitles as in `language`.
+///
+/// A media file, or a subtitle whose name ends in no code, names a Resource as it stands, so a
+/// name may end like a code, as `talk.hd` does; every other subtitle belongs to the Resource its
+/// name before the last code names.
 pub fn resources_in(directory: &Path, language: Language) -> Result<Vec<Resource>, Failure> {
     let mut file_names: Vec<String> = std::fs::read_dir(directory)?
         .filter_map(|entry| entry.ok()?.file_name().into_string().ok())
+        .filter(|file_name| !file_name.starts_with('.'))
         .collect();
     file_names.sort();
     let mut files_by_name: BTreeMap<String, FoundFiles> = BTreeMap::new();
-    for file_name in file_names {
-        if let Some((name, role)) = role_of(&file_name, language) {
-            let files = files_by_name.entry(name).or_default();
-            let path = directory.join(&file_name);
-            match role {
-                FileRole::Media => files.media = Some(path),
-                FileRole::Subtitle => files.subtitle = Some(path),
-                FileRole::CodedSubtitle => files.coded_subtitle = Some(path),
-                FileRole::Translation(language) => files.translations.push((language, path)),
+    let mut subtitles = Vec::new();
+    for file_name in &file_names {
+        let Some((stem, extension)) = file_name.rsplit_once('.') else {
+            continue;
+        };
+        let path = directory.join(file_name);
+        let extension = extension.to_ascii_lowercase();
+        if MEDIA_EXTENSIONS.contains(&extension.as_str()) {
+            files_by_name.entry(stem.to_string()).or_default().media = Some(path);
+        } else if extension == "srt" {
+            subtitles.push((stem, path));
+        }
+    }
+    let mut coded_subtitles = Vec::new();
+    for (stem, path) in subtitles {
+        match name_and_code(stem) {
+            Some((name, code)) if !files_by_name.contains_key(stem) => {
+                coded_subtitles.push((stem, name, Language::from_code(code), path))
             }
+            _ => files_by_name.entry(stem.to_string()).or_default().subtitle = Some(path),
+        }
+    }
+    // Each kind of code may name a Resource the next kind belongs to, so they are paired in turn.
+    for (_, name, _, path) in coded_subtitles
+        .iter()
+        .filter(|(_, _, coded, _)| *coded == Some(language))
+    {
+        if files_by_name.contains_key(*name) || !is_bilingual(name, &files_by_name) {
+            files_by_name
+                .entry(name.to_string())
+                .or_default()
+                .coded_subtitle = Some(path.clone());
+        }
+    }
+    for (stem, name, _, path) in coded_subtitles
+        .iter()
+        .filter(|(_, _, coded, _)| coded.is_none())
+    {
+        if !files_by_name.contains_key(*name) && !is_bilingual(name, &files_by_name) {
+            files_by_name.entry(stem.to_string()).or_default().subtitle = Some(path.clone());
+        }
+    }
+    for (_, name, coded, path) in coded_subtitles {
+        match (coded, files_by_name.get_mut(name)) {
+            (Some(coded), Some(files)) if coded != language => {
+                files.translations.push((coded, path))
+            }
+            _ => {}
         }
     }
     Ok(files_by_name
         .into_iter()
         .filter_map(|(name, files)| files.into_resource(name))
         .collect())
+}
+
+/// Whether a subtitle whose name before its code is `name` is a Bilingual SRT: `name` itself
+/// ends in a code, of a Language Tsuzuri knows or after the name of a Resource.
+fn is_bilingual(name: &str, files_by_name: &BTreeMap<String, FoundFiles>) -> bool {
+    name_and_code(name).is_some_and(|(resource_name, code)| {
+        Language::from_code(code).is_some() || files_by_name.contains_key(resource_name)
+    })
+}
+
+/// The part of `stem` before its last part, and that last part, when it is shaped like a
+/// Language code.
+fn name_and_code(stem: &str) -> Option<(&str, &str)> {
+    stem.rsplit_once('.')
+        .filter(|(_, code)| is_code_shaped(code))
 }
 
 #[derive(Default)]
@@ -219,51 +277,9 @@ impl FoundFiles {
     }
 }
 
-enum FileRole {
-    Media,
-    /// `[name].srt`
-    Subtitle,
-    /// `[name].[Primary Language].srt`
-    CodedSubtitle,
-    Translation(Language),
-}
-
-/// The Resource name a file belongs to and what it is there, or none for a file no Resource takes.
-fn role_of(file_name: &str, language: Language) -> Option<(String, FileRole)> {
-    if file_name.starts_with('.') {
-        return None;
-    }
-    let (stem, extension) = file_name.rsplit_once('.')?;
-    let extension = extension.to_ascii_lowercase();
-    if MEDIA_EXTENSIONS.contains(&extension.as_str()) {
-        return Some((stem.to_string(), FileRole::Media));
-    }
-    if extension != "srt" {
-        return None;
-    }
-    let Some((name, code)) = stem
-        .rsplit_once('.')
-        .filter(|(_, code)| is_language_code(code))
-    else {
-        return Some((stem.to_string(), FileRole::Subtitle));
-    };
-    let is_bilingual = name
-        .rsplit_once('.')
-        .is_some_and(|(_, code)| is_language_code(code));
-    if is_bilingual {
-        return None;
-    }
-    let coded_language = Language::from_code(code)?;
-    let role = match coded_language == language {
-        true => FileRole::CodedSubtitle,
-        false => FileRole::Translation(coded_language),
-    };
-    Some((name.to_string(), role))
-}
-
 /// Shaped like a BCP 47 tag of a two-letter language and an optional region or script,
 /// such as `ko` or `zh-TW`, whether Tsuzuri knows the Language or not.
-fn is_language_code(text: &str) -> bool {
+fn is_code_shaped(text: &str) -> bool {
     let (primary, subtag) = match text.split_once('-') {
         Some((primary, subtag)) => (primary, Some(subtag)),
         None => (text, None),
@@ -528,6 +544,90 @@ mod tests {
                 ("ep01.zh-TW.en.srt", ""),
                 ("ep01.ko.srt", ""),
             ],
+        );
+
+        let resources = resources_in(dir.path(), Language::TraditionalChinese).unwrap();
+
+        assert_eq!(
+            (names(&resources), resources[0].translations.len()),
+            (vec!["ep01"], 0)
+        );
+    }
+
+    // @behavior PJ-104
+    #[test]
+    fn pairs_subtitles_with_a_media_file_whose_name_ends_like_a_language_code() {
+        let dir = directory_of(
+            "resource-media-coded-name",
+            &[
+                ("talk.hd.mp4", ""),
+                ("talk.hd.srt", ""),
+                ("talk.hd.en.srt", ""),
+            ],
+        );
+
+        let resources = resources_in(dir.path(), Language::TraditionalChinese).unwrap();
+
+        assert_eq!(
+            resources,
+            vec![Resource {
+                name: "talk.hd".to_string(),
+                media: Some(dir.path().join("talk.hd.mp4")),
+                subtitle: Some(dir.path().join("talk.hd.srt")),
+                translations: vec![(Language::English, dir.path().join("talk.hd.en.srt"))],
+            }]
+        );
+    }
+
+    // @behavior PJ-105
+    #[test]
+    fn names_a_resource_by_a_subtitle_whose_name_ends_like_an_unknown_language_code() {
+        let dir = directory_of(
+            "resource-subtitle-coded-name",
+            &[("talk.hd.srt", ""), ("talk.hd.en.srt", "")],
+        );
+
+        let resources = resources_in(dir.path(), Language::TraditionalChinese).unwrap();
+
+        assert_eq!(
+            resources,
+            vec![Resource {
+                name: "talk.hd".to_string(),
+                media: None,
+                subtitle: Some(dir.path().join("talk.hd.srt")),
+                translations: vec![(Language::English, dir.path().join("talk.hd.en.srt"))],
+            }]
+        );
+    }
+
+    // @behavior PJ-106
+    #[test]
+    fn pairs_a_subtitle_with_the_resource_its_whole_name_before_the_code_names() {
+        let dir = directory_of(
+            "resource-longest-name",
+            &[
+                ("lecture.mp4", ""),
+                ("lecture.ja.mp4", ""),
+                ("lecture.ja.en.srt", ""),
+            ],
+        );
+
+        let resources = resources_in(dir.path(), Language::TraditionalChinese).unwrap();
+
+        assert_eq!(
+            resources
+                .iter()
+                .map(|resource| (resource.name.as_str(), resource.translations.len()))
+                .collect::<Vec<_>>(),
+            vec![("lecture", 0), ("lecture.ja", 1)]
+        );
+    }
+
+    #[test]
+    fn leaves_out_a_bilingual_export_in_translation_first_order() {
+        let dir = directory_of(
+            "resource-skip-reversed",
+            &[("ep01.srt", ""), ("ep01.en.zh-TW.srt", "")],
         );
 
         let resources = resources_in(dir.path(), Language::TraditionalChinese).unwrap();

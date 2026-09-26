@@ -309,6 +309,22 @@ A player reports its time only a few times a second, so while the media plays wh
 | When | the second Segment's row is clicked |
 | Then | the card beside the video shows #2 with its times, text and translation |
 
+## `PV-097` Naming the Current Segment's Speaker beside the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments, the second said by `小明` |
+| When | the second Segment's row is clicked |
+| Then | the card beside the video names `小明` |
+
+## `PV-098` Naming no one beside the video for a Segment without a Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment current, said by `小明` |
+| When | the first Segment's row, said by no one, is clicked |
+| Then | the card beside the video names no Speaker |
+
 ## `PV-037` Following an edit of the Current Segment beside the video
 
 | Step | Statement |
@@ -481,6 +497,48 @@ A caption drawn with a shadow alone is lost on a bright picture, so it sits on a
 | Given | the backdrop over the video taken away |
 | When | another Resource with a media file becomes current |
 | Then | what is shown over the video still has no backdrop |
+
+## `PV-092` Showing the Speaker over the video by default
+
+A cue is saved with its Speaker's name before the dialogue, so what is over the video names who says it too.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明`, and the Speaker over the video never turned off on this machine |
+| When | the media plays to 0.5 s |
+| Then | `小明: 今天` is shown over the video |
+
+## `PV-093` Naming the Speaker in the translation over the video as the Translation Glossary does
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明`, translated `Today` in the translation shown, where the Translation Glossary names `小明` as `Xiao Ming` |
+| When | the translation is chosen over the video and the media plays to 0.5 s |
+| Then | `Xiao Ming: Today` is shown over the video |
+
+## `PV-094` Naming the Speaker in both languages over the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明`, translated `Today` in the translation shown, where the Translation Glossary names `小明` as `Xiao Ming` |
+| When | both languages are chosen over the video and the media plays to 0.5 s |
+| Then | `小明: 今天` is shown over the video above `Xiao Ming: Today` |
+
+## `PV-095` Turning the Speaker over the video off
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明` |
+| When | the Speaker over the video is turned off and the media plays to 0.5 s |
+| Then | `今天` alone is shown over the video |
+
+## `PV-096` Keeping the Speaker over the video off for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | the Speaker over the video turned off |
+| When | another Resource with a media file becomes current |
+| Then | the Speaker over the video stays off |
 
 ### Retiming on the timeline
 

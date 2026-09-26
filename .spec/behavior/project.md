@@ -977,6 +977,14 @@ A cue with other times belongs to no Segment, so a Speaker has nowhere to come f
 | When | its times are changed to 0.5 to 1.5 seconds |
 | Then | `ep01.en.srt` reads `Christopher Nolan Jr.: Hello` from 0.5 to 1.5 seconds |
 
+## `PJ-137` Telling the webview what the Translation Glossary calls each Speaker in the translation shown
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` with `ep01.en.srt` shown |
+| When | the Project is shown |
+| Then | it names `小明` as `Xiao Ming` in the translation shown |
+
 ## `PJ-084` Reading a translation's dialogue that opens like a label
 
 A translation's labels come from its original, so a line that only looks like one is dialogue.

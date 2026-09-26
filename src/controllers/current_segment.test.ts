@@ -47,6 +47,19 @@ describe("Current Segment", () => {
     segments: [segmentAt(0, 1), { ...segmentAt(1, 2), translation: "Today" }],
   });
 
+  /** `twoSegments` with the second said by `小明`. */
+  const spokenSegments = projectOf({
+    ...twoSegments,
+    segments: [
+      segmentAt(0, 1),
+      { ...segmentAt(1, 2), speaker: "小明", translation: "Today" },
+    ],
+  });
+  const currentSpeaker = () =>
+    document.querySelector<HTMLElement>(
+      '[data-preview-target="currentSpeaker"]',
+    )!;
+
   /** Shows `next` and waits for the timeline to draw it: the Waveform loads, then regions are placed a turn later. */
   async function show(next: ProjectView): Promise<void> {
     project = next;
@@ -134,9 +147,9 @@ describe("Current Segment", () => {
           <button data-transcript-target="followButton" data-action="transcript#toggleFollowing"></button>
           <button data-timeline-target="aloneButton" data-action="timeline#togglePlayingAlone"></button>
           <span data-preview-target="time"></span>
-          <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"></div>
+          <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"><input type="checkbox" data-preview-target="captionSpeaker"></div>
           <p data-preview-target="currentHint"></p>
-          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd></div>
+          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd></div>
           <button data-timeline-target="snapButton"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
           </div>
         </div>
@@ -331,6 +344,28 @@ describe("Current Segment", () => {
             .textContent,
       ),
     ).toEqual(["#2", "00:00:01.000 → 00:00:02.000", "1", "Today"]);
+  });
+
+  // @behavior PV-097
+  it("names the Current Segment's Speaker beside the video", async () => {
+    await show(spokenSegments);
+
+    rows()[1].click();
+
+    expect([currentSpeaker().hidden, currentSpeaker().textContent]).toEqual([
+      false,
+      "小明",
+    ]);
+  });
+
+  // @behavior PV-098
+  it("names no one beside the video for a Segment without a Speaker", async () => {
+    await show(spokenSegments);
+    rows()[1].click();
+
+    rows()[0].click();
+
+    expect(currentSpeaker().hidden).toBe(true);
   });
 
   // @behavior PV-037

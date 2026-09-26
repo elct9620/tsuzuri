@@ -740,6 +740,9 @@ pub struct ProjectView {
     media: Option<PathBuf>,
     segments: Vec<Segment>,
     shown_translation: Option<Language>,
+    /// What the Translation Glossary calls each Speaker in the translation shown, by its name in
+    /// the Primary Language, so the webview names a Speaker as the saved subtitle does.
+    shown_speaker_names: HashMap<String, String>,
     has_undo: bool,
     has_redo: bool,
     running_mode: Option<RunningMode>,
@@ -773,6 +776,10 @@ impl ProjectView {
 
     pub fn segments(&self) -> &[Segment] {
         &self.segments
+    }
+
+    pub fn shown_speaker_names(&self) -> &HashMap<String, String> {
+        &self.shown_speaker_names
     }
 
     pub fn directory(&self) -> &Path {
@@ -1118,6 +1125,7 @@ impl CurrentProject {
                     .and_then(|resource| resource.media.clone()),
                 segments,
                 shown_translation,
+                shown_speaker_names: project.speaker_names(shown_translation),
                 has_undo: history.is_some_and(UndoHistory::has_undo),
                 has_redo: history.is_some_and(UndoHistory::has_redo),
                 running_mode: mode_hold.map(|hold| hold.mode.clone()),
@@ -3875,6 +3883,20 @@ mod tests {
             .unwrap();
 
         assert_eq!(read(&dir, "ep01.en.srt"), cue("Xiao Ming: Hello"));
+    }
+
+    // @behavior PJ-137
+    #[test]
+    fn tells_the_webview_what_the_translation_glossary_calls_each_speaker_in_the_translation_shown()
+    {
+        let dir = TempDir::new("pj-speaker-shown-names");
+        let current = xiao_ming_project_in(&dir, &[("ep01.en.srt", &cue("Xiao Ming: Hello"))]);
+        current.show_translation(Some(Language::English)).unwrap();
+
+        assert_eq!(
+            current.view().unwrap().shown_speaker_names(),
+            &HashMap::from([("小明".to_string(), "Xiao Ming".to_string())])
+        );
     }
 
     /// A Project whose `ep01` has a media file, `ep01.srt` reading `co: 你好` and `ep01.en.srt`

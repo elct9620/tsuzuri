@@ -10,8 +10,8 @@ use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, Translati
 use super::history::{SubtitleSnapshot, UndoHistory};
 use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
-    translation_srt, translation_with_speakers, BackupKind, CurrentResource, Project,
-    ProjectConfig, ProjectOptions, Resource, Restoration, SegmentField, SubtitleDigest,
+    translation_srt, translation_with_speakers, BackupKind, CurrentResource, KnownSubtitle,
+    Project, ProjectConfig, ProjectOptions, Resource, Restoration, SegmentField,
     TranscriptionTarget, TranslationSource,
 };
 use crate::failure::Failure;
@@ -60,7 +60,7 @@ impl Project {
             name: name.to_string(),
             transcript,
             translation,
-            subtitle_digests: Vec::new(),
+            known_subtitles: Vec::new(),
         });
         self.remember_subtitles()
     }
@@ -87,7 +87,7 @@ impl Project {
     }
 
     /// Digests of the Current Resource's original subtitle and the translation file it shows.
-    fn subtitle_digests(&self) -> Result<Vec<SubtitleDigest>, Failure> {
+    fn subtitle_contents(&self) -> Result<Vec<KnownSubtitle>, Failure> {
         let current = self.current()?;
         let resource = self.resource(&current.name)?;
         let translation_path = current
@@ -98,20 +98,20 @@ impl Project {
             .as_deref()
             .into_iter()
             .chain(translation_path)
-            .map(files::digest_of)
+            .map(files::content_of)
             .collect()
     }
 
     /// Records what the Current Resource's subtitle files hold now, as read or written by Tsuzuri.
     fn remember_subtitles(&mut self) -> Result<(), Failure> {
-        let digests = self.subtitle_digests()?;
-        self.current_mut()?.subtitle_digests = digests;
+        let contents = self.subtitle_contents()?;
+        self.current_mut()?.known_subtitles = contents;
         Ok(())
     }
 
     /// Whether a subtitle file of the Current Resource no longer holds what Tsuzuri last read or wrote.
     fn is_changed_elsewhere(&self) -> Result<bool, Failure> {
-        Ok(self.subtitle_digests()? != self.current()?.subtitle_digests)
+        Ok(self.subtitle_contents()? != self.current()?.known_subtitles)
     }
 
     /// Pairs the directory's files again and reads the Current Resource again from them, showing
@@ -126,9 +126,37 @@ impl Project {
     /// Reads the Current Resource again after a subtitle of it was changed elsewhere, forgetting
     /// its Undo History, since what it would put back no longer follows from what is there.
     fn read_changed_elsewhere(&mut self) -> Result<(), Failure> {
-        let name = self.current()?.name.clone();
-        self.undo_histories.remove(&name);
+        self.forget_changed_elsewhere()?;
         self.read_current_again()
+    }
+
+    /// Keeps what Tsuzuri last read or wrote of each subtitle of the Current Resource changed
+    /// elsewhere as an Overwrite Backup, since nothing else holds it once the file is read again,
+    /// and forgets its Undo History; answers whether it kept one. The version read in is then no
+    /// longer kept this opening, so the next change keeps it first.
+    fn forget_changed_elsewhere(&mut self) -> Result<bool, Failure> {
+        let current = self.current()?;
+        let name = current.name.clone();
+        let mut is_kept = false;
+        for (path, known) in current.known_subtitles.clone() {
+            let (_, now) = files::content_of(&path)?;
+            if now == known {
+                continue;
+            }
+            self.undo_histories.remove(&name);
+            self.backed_up_subtitles.remove(&path);
+            if let Some(known) = known {
+                files::keep_as_backup(
+                    &self.directory,
+                    &path,
+                    &known,
+                    SystemTime::now(),
+                    BackupKind::Overwrite,
+                )?;
+                is_kept = true;
+            }
+        }
+        Ok(is_kept)
     }
 
     /// Pairs the directory's files again after `writer`, the Resource whose files Tsuzuri just
@@ -151,22 +179,22 @@ impl Project {
 
     /// Takes `resources` as the directory's pairing and reads the Current Resource again from
     /// them, showing the same translation while its file is there, or the first Resource once it
-    /// is gone; forgets the Undo History of a Current Resource changed elsewhere.
-    fn reload(&mut self, resources: Vec<Resource>) -> Result<(), Failure> {
-        let current = match &self.current {
+    /// is gone; a Current Resource changed elsewhere is handled as `forget_changed_elsewhere`
+    /// does, answering whether a Backup was kept.
+    fn reload(&mut self, resources: Vec<Resource>) -> Result<bool, Failure> {
+        let (current, is_kept) = match &self.current {
             Some(current) => {
-                if self.is_changed_elsewhere()? {
-                    self.undo_histories.remove(&current.name);
-                }
-                Some((current.name.clone(), current.translation))
+                let shown = (current.name.clone(), current.translation);
+                (Some(shown), self.forget_changed_elsewhere()?)
             }
-            None => None,
+            None => (None, false),
         };
         self.replace_resources(resources, None);
         match current.filter(|(name, _)| self.resource(name).is_ok()) {
-            Some((name, translation)) => self.read_again_showing(&name, translation),
-            None => self.select_first(),
+            Some((name, translation)) => self.read_again_showing(&name, translation)?,
+            None => self.select_first()?,
         }
+        Ok(is_kept)
     }
 
     /// Reads the named Resource again from the directory, showing its translation into
@@ -737,12 +765,34 @@ impl HeldProject {
         files::resources_in(&project.directory, project.language)
     }
 
-    /// Takes `resources` as the directory's pairing and reads the Current Resource again.
-    fn reload(&mut self, resources: Vec<Resource>) -> Result<(), Failure> {
+    /// Takes `resources` as the directory's pairing and reads the Current Resource again,
+    /// answering whether it kept what a change made elsewhere replaced.
+    fn reload(&mut self, resources: Vec<Resource>) -> Result<bool, Failure> {
         self.project
             .as_mut()
             .ok_or(Failure::NoProject)?
             .reload(resources)
+    }
+}
+
+/// What reloading the Project did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Reload {
+    /// Nothing had changed, so nothing was read again.
+    Unchanged,
+    /// The Project was read again.
+    Reloaded,
+    /// The Project was read again over a subtitle changed elsewhere, keeping what Tsuzuri last
+    /// held of it as an Overwrite Backup.
+    ReloadedKeeping,
+}
+
+impl Reload {
+    fn from_kept(is_kept: bool) -> Reload {
+        match is_kept {
+            true => Reload::ReloadedKeeping,
+            false => Reload::Reloaded,
+        }
     }
 }
 
@@ -1317,24 +1367,24 @@ impl CurrentProject {
     }
 
     /// Pairs the directory's files again and reads the Current Resource again from them.
-    pub fn reload(&self) -> Result<(), Failure> {
+    pub fn reload(&self) -> Result<Reload, Failure> {
         let mut held = self.lock();
         let resources = held.resources_in_directory()?;
-        held.reload(resources)
+        Ok(Reload::from_kept(held.reload(resources)?))
     }
 
     /// Reloads the Project when its directory pairs into other Resources, or a subtitle of the
-    /// Current Resource was changed elsewhere, answering whether it did.
-    pub fn reload_if_changed(&self) -> Result<bool, Failure> {
+    /// Current Resource was changed elsewhere, answering what it did.
+    pub fn reload_if_changed(&self) -> Result<Reload, Failure> {
         let mut held = self.lock();
         let resources = held.resources_in_directory()?;
         let project = held.project.as_ref().ok_or(Failure::NoProject)?;
         let is_changed = resources != project.resources
             || (project.current.is_some() && project.is_changed_elsewhere()?);
-        if is_changed {
-            held.reload(resources)?;
+        if !is_changed {
+            return Ok(Reload::Unchanged);
         }
-        Ok(is_changed)
+        Ok(Reload::from_kept(held.reload(resources)?))
     }
 
     /// Makes an edit and writes it back, unless a subtitle was changed elsewhere since Tsuzuri last
@@ -2962,6 +3012,49 @@ mod tests {
         );
     }
 
+    // @behavior PJ-132
+    #[test]
+    fn keeps_what_tsuzuri_wrote_of_a_subtitle_changed_elsewhere() {
+        let dir = directory_of("pj-kept-elsewhere", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        current
+            .edit(0, SegmentField::Text, "您好".to_string())
+            .unwrap();
+        std::fs::write(dir.path().join("ep01.srt"), cue("外面改的")).unwrap();
+
+        let reload = current.reload_if_changed().unwrap();
+
+        assert_eq!(
+            (reload, texts(&current), kept_overwrites(&dir)),
+            (
+                Reload::ReloadedKeeping,
+                vec!["外面改的".to_string()],
+                vec![cue("你好"), cue("您好")]
+            )
+        );
+    }
+
+    // @behavior PJ-133
+    #[test]
+    fn keeps_a_version_read_in_from_elsewhere_before_changing_it() {
+        let dir = directory_of("pj-kept-read-in", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+        current
+            .edit(0, SegmentField::Text, "您好".to_string())
+            .unwrap();
+        std::fs::write(dir.path().join("ep01.srt"), cue("外面改的")).unwrap();
+        current.reload_if_changed().unwrap();
+
+        current
+            .edit(0, SegmentField::Text, "大家好".to_string())
+            .unwrap();
+
+        assert_eq!(
+            kept_overwrites(&dir),
+            vec![cue("你好"), cue("您好"), cue("外面改的")]
+        );
+    }
+
     // @behavior PJ-041
     #[test]
     fn reads_again_a_subtitle_changed_elsewhere_on_focus() {
@@ -3070,7 +3163,7 @@ mod tests {
 
         assert_eq!(
             (is_reloaded, texts(&current)),
-            (true, vec!["您好".to_string()])
+            (Reload::ReloadedKeeping, vec!["您好".to_string()])
         );
     }
 
@@ -3136,7 +3229,10 @@ mod tests {
 
         assert_eq!(
             (is_reloaded, resource_names(&current)),
-            (true, vec!["ep01".to_string(), "ep02".to_string()])
+            (
+                Reload::Reloaded,
+                vec!["ep01".to_string(), "ep02".to_string()]
+            )
         );
     }
 

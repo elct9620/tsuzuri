@@ -1,14 +1,13 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
-use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use super::history::SubtitleSnapshot;
 use super::{
-    segment_at_times, translated_dialogue, Backup, BackupKind, Project, ProjectConfig, Resource,
-    SubtitleDigest,
+    segment_at_times, translated_dialogue, Backup, BackupKind, KnownSubtitle, Project,
+    ProjectConfig, Resource,
 };
 use crate::failure::Failure;
 use crate::language::Language;
@@ -25,17 +24,14 @@ pub fn file_name(name: &str, languages: impl IntoIterator<Item = Option<Language
     file_name
 }
 
-pub fn digest_of(path: &Path) -> Result<SubtitleDigest, Failure> {
-    let digest = match std::fs::read(path) {
-        Ok(bytes) => {
-            let mut hasher = DefaultHasher::new();
-            bytes.hash(&mut hasher);
-            Some(hasher.finish())
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+/// What the subtitle at `path` holds, or `None` when there is no such file.
+pub fn content_of(path: &Path) -> Result<KnownSubtitle, Failure> {
+    let content = match fs::read(path) {
+        Ok(bytes) => Some(bytes),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => None,
         Err(error) => return Err(error.into()),
     };
-    Ok((path.to_path_buf(), digest))
+    Ok((path.to_path_buf(), content))
 }
 
 /// Writes `srt` to the subtitle at `path`.
@@ -322,12 +318,24 @@ pub fn back_up(
     at: SystemTime,
     kind: BackupKind,
 ) -> io::Result<()> {
-    let Some(stem) = subtitle_stem(subtitle) else {
-        return Ok(());
-    };
     if !subtitle.is_file() {
         return Ok(());
     }
+    keep_as_backup(directory, subtitle, &fs::read(subtitle)?, at, kind)
+}
+
+/// Keeps `content` as a Backup of `subtitle` taken at `at`, as [`back_up`] keeps the file itself,
+/// for a version the file no longer holds.
+pub fn keep_as_backup(
+    directory: &Path,
+    subtitle: &Path,
+    content: &[u8],
+    at: SystemTime,
+    kind: BackupKind,
+) -> io::Result<()> {
+    let Some(stem) = subtitle_stem(subtitle) else {
+        return Ok(());
+    };
     let history = directory.join(HISTORY_DIR);
     fs::create_dir_all(&history)?;
     let mut at = at;
@@ -342,8 +350,7 @@ pub fn back_up(
         }
         at += Duration::from_secs(1);
     };
-    fs::copy(subtitle, backup)?;
-    Ok(())
+    fs::write(backup, content)
 }
 
 /// The Backups of `subtitle` in the history of `directory`, newest first.

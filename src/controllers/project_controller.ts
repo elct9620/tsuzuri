@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 
 import { message, open } from "../backend/dialog";
 import {
+  followChangesElsewhereKept,
   openProject,
   refreshProject,
   reloadProject,
@@ -14,10 +15,12 @@ import {
   type ResourceView,
   type ProjectFeed,
   type TranscriptionOverrides,
+  type UnlistenFn,
 } from "../backend/project";
 import { interfaceLanguageCode, t } from "../i18n";
 import { failureMessage } from "../ui/failure";
 import { closeMenu } from "../ui/menu";
+import { notify } from "../ui/notification";
 import { MODEL_EXTENSIONS } from "../ui/models";
 
 function resourceItem(
@@ -112,14 +115,23 @@ export default class ProjectController extends Controller {
   declare readonly feed: ProjectFeed;
 
   private unfollow?: () => void;
+  private unlisten?: UnlistenFn;
   private options: ProjectOptions | null = null;
 
-  connect(): void {
+  async connect(): Promise<void> {
     this.unfollow = this.feed.follow((project) => this.show(project));
+    this.unlisten = await followChangesElsewhereKept(() =>
+      notify({
+        title: t("versions.changedElsewhereKept"),
+        detail: t("versions.changedElsewhereKeptDetail"),
+        kind: "warning",
+      }),
+    );
   }
 
   disconnect(): void {
     this.unfollow?.();
+    this.unlisten?.();
   }
 
   async openDirectory({ currentTarget }: Event): Promise<void> {

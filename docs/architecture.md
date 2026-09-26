@@ -118,8 +118,9 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `project-changed` | 改變專案的指令 | `ProjectFeed` |
 | 進度 | 用例經 `Progress` | `listenProgress` |
 | 復原、重做、全選 | macOS 編輯選單 | 復原與勾選的處理 |
+| 外部修改已留存 | 重新載入 | 專案的通知 |
 
-事件只說有變化或到哪一步，不帶資料，內容再用指令取得。進度事件是 `pipeline-progress`；復原、重做與全選是 `menu.rs` 送出的 `edit-command`，給 `followEditCommands`。
+事件只說有變化或到哪一步，不帶資料，內容再用指令取得。進度事件是 `pipeline-progress`；復原、重做與全選是 `menu.rs` 送出的 `edit-command`，給 `followEditCommands`；外部修改已留存是 `changed-elsewhere-kept`。
 
 ### 2.4 錯誤與通知
 
@@ -273,7 +274,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | 每次寫入 | 鎖內讀檔、改、寫、重讀 |
 | 任務進度 | 放在 `mode_hold` |
 | 任務收尾 | 一次取鎖寫完 |
-| 外部修改 | 比對摘要，不同就拒絕並重讀 |
+| 外部修改 | 先留舊版，再拒絕並重讀 |
 | 任務中重新載入 | 照常重讀，進度照疊 |
 | 重新配對 | 檔案變了就清復原 |
 

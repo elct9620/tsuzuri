@@ -163,6 +163,13 @@ export function followEditCommands(
   return listen<EditCommand>("edit-command", (event) => apply(event.payload));
 }
 
+/** Calls `tell` each time Rust reads in a subtitle changed elsewhere and keeps what Tsuzuri held of it. */
+export function followChangesElsewhereKept(
+  tell: () => void,
+): Promise<UnlistenFn> {
+  return listen("changed-elsewhere-kept", () => tell());
+}
+
 /** Asks every view to read the Project again, as when Rust announces nothing after a refusal. */
 export function refreshProject(): Promise<void> {
   return emit("project-changed");

@@ -13,7 +13,7 @@ pub mod glossary;
 mod history;
 pub mod versions;
 
-pub use current::{CurrentProject, ProjectView, ResourceView, RunningMode, SegmentSpan};
+pub use current::{CurrentProject, ProjectView, Reload, ResourceView, RunningMode, SegmentSpan};
 #[cfg(test)]
 pub(crate) use files::HISTORY_DIR;
 use glossary::TranslationGlossary;
@@ -43,12 +43,13 @@ pub struct CurrentResource {
     pub transcript: Transcript,
     /// The Language of the translations its Segments carry.
     pub translation: Option<Language>,
-    /// What its subtitle files held when Tsuzuri last read or wrote them, to tell a change made elsewhere.
-    pub subtitle_digests: Vec<SubtitleDigest>,
+    /// What its subtitle files held when Tsuzuri last read or wrote them, to tell a change made
+    /// elsewhere and keep what that change replaced.
+    pub known_subtitles: Vec<KnownSubtitle>,
 }
 
-/// A subtitle file and a digest of what it held, or `None` while it did not exist.
-pub type SubtitleDigest = (PathBuf, Option<u64>);
+/// A subtitle file and what it held, or `None` while it did not exist.
+pub type KnownSubtitle = (PathBuf, Option<Vec<u8>>);
 
 /// Why the Project could not answer: it has no Resource by the name asked for, or none is current.
 #[derive(Debug, Clone, PartialEq, Eq)]

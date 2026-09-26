@@ -774,6 +774,32 @@ The Undo History ends with the Project, so each subtitle is kept once before Tsu
 | When | its translation is edited to `Hey` |
 | Then | `.tsuzuri/history/` holds an Overwrite reading `Hello` and one reading `Hi` |
 
+## `PJ-132` Keeping what Tsuzuri wrote of a subtitle changed elsewhere
+
+The files decide what is shown, so a change made elsewhere is read in; what Tsuzuri held of the subtitle is kept first, since nothing else holds it once the file is read again.
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` reading `你好`, edited in Tsuzuri to `您好`, then changed elsewhere to `外面改的` |
+| When | the window regains focus |
+| Then | the editor reads `外面改的`, and `.tsuzuri/history/` holds an Overwrite reading `你好` and one reading `您好` |
+
+## `PJ-133` Keeping a version read in from elsewhere before changing it
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` edited in Tsuzuri, then changed elsewhere to `外面改的` and read in |
+| When | its text is edited to `大家好` |
+| Then | `.tsuzuri/history/` also holds an Overwrite reading `外面改的` |
+
+## `PJ-134` Telling the user a version changed elsewhere was kept
+
+| Step | Statement |
+| --- | --- |
+| Given | an opened Project |
+| When | Rust says it read in a subtitle changed elsewhere and kept what Tsuzuri held of it |
+| Then | a warning Notification says so and points at the Versions |
+
 ## `PJ-123` Keeping an original whole when edited after a transcription ended early
 
 | Step | Statement |

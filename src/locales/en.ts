@@ -197,6 +197,10 @@ const en = {
     restore: "Restore",
     restored: "Restored",
     replacedKept: "The subtitle it replaced was kept as a backup",
+    changedElsewhereKept:
+      "The subtitle was changed in another program and read again",
+    changedElsewhereKeptDetail:
+      "What Tsuzuri held before was kept as a backup to compare or restore in Versions",
     unreadable: "Could not read the versions",
     notRestored: "Not restored",
   },

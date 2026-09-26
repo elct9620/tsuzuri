@@ -192,6 +192,9 @@ const zhHant: typeof en = {
     restore: "還原",
     restored: "已還原",
     replacedKept: "被取代的字幕已留作備份",
+    changedElsewhereKept: "字幕已在其他程式修改過並重新讀取",
+    changedElsewhereKeptDetail:
+      "Tsuzuri 原本的內容已留作備份，可在「版本」比較或還原",
     unreadable: "無法讀取版本",
     notRestored: "沒有還原",
   },

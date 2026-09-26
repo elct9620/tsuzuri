@@ -106,7 +106,8 @@ export function nextCursor(cursor: Cursor, event: CursorEvent): Cursor {
 
 /**
  * Where the Cursor stands once the editor's own `change` is made to `before`: it stays on its
- * Segment, moves to the second half of a split and into a Segment just inserted.
+ * Segment, moves to the second half of a split and into a Segment just inserted, both placed as
+ * the Project places them.
  */
 function cursorAfterChange(
   cursor: Cursor,
@@ -119,7 +120,10 @@ function cursorAfterChange(
       if (index === change.index)
         return {
           index: index + 1,
-          caret: caretAt(0, [...before[index].text].slice(change.at).join("")),
+          caret: caretAt(
+            0,
+            [...before[index].text].slice(change.at).join("").trimStart(),
+          ),
         };
       return index !== null && index > change.index
         ? { ...cursor, index: index + 1 }
@@ -130,7 +134,7 @@ function cursorAfterChange(
       return { index: change.index + 1, caret: caretAt(0, "") };
     case "insertion":
       return {
-        index: before.filter((segment) => segment.start_ms < change.start_ms)
+        index: before.filter((segment) => segment.start_ms <= change.start_ms)
           .length,
         caret: caretAt(0, ""),
       };

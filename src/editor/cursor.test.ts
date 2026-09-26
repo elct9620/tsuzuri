@@ -152,6 +152,29 @@ describe("nextCursor after a Segment Change", () => {
     });
   });
 
+  it("moves into a Segment drawn after one starting at the same time, as the Project places it", () => {
+    expect(
+      after(NO_CURSOR, {
+        kind: "change",
+        change: { kind: "insertion", start_ms: 1000, end_ms: 1500 },
+        before,
+      }).index,
+    ).toBe(2);
+  });
+
+  it("starts the second half of a split at its first character past the spaces", () => {
+    expect(
+      after(
+        { index: 0, caret: null },
+        {
+          kind: "change",
+          change: { kind: "split", index: 0, at: 2 },
+          before: segments("你好 世界"),
+        },
+      ).caret?.text,
+    ).toBe("世界");
+  });
+
   it("stays on its Segment when one before it is deleted", () => {
     expect(
       after(
@@ -244,6 +267,16 @@ describe("nextCursor after a Transcript changed elsewhere", () => {
         after: view({ segments: segments("今天天氣很好", "今天", "天氣") }),
       }),
     ]).toEqual([kept, { index: 0, caret: null }]);
+  });
+
+  it("keeps a kept caret when the same text is written again", () => {
+    expect(
+      nextCursor(kept, {
+        kind: "view",
+        before: view(),
+        after: view({ segments: segments("你好世界", "今天", "天氣") }),
+      }),
+    ).toBe(kept);
   });
 
   it("drops the caret once a Mode holds its field", () => {

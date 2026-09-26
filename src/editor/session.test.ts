@@ -181,7 +181,7 @@ describe("EditingSession", () => {
     const beforeAnnounced = [...heard];
     session.announce();
 
-    expect([beforeAnnounced, heard]).toEqual([[], ["cursor"]]);
+    expect([beforeAnnounced, heard]).toEqual([[], ["current", "cursor"]]);
   });
 
   it("clears the checks once a Segment Change is shown", async () => {
@@ -212,6 +212,50 @@ describe("EditingSession", () => {
       { kind: "unchanged" },
       "live",
       [],
+    ]);
+  });
+
+  it("clears the checks once a change keeping the Segments' number is written, even one changing nothing", async () => {
+    session.check(0, true);
+    session.check(1, true);
+
+    await session.change({ kind: "shift", first: 0, last: 1, offset_ms: 0 });
+    const afterShift = session.checkedIndexes;
+    session.check(2, true);
+    session.follow(view("你好世界", "今天啊", "天氣"));
+
+    expect([afterShift, session.checkedIndexes]).toEqual([[], [2]]);
+  });
+
+  it("still writes a text typed while a Mode took the Cursor away, so the Project can say why not", async () => {
+    enterFirst();
+    session.follow({
+      ...view("你好世界", "今天", "天氣"),
+      runningMode: { mode: "transcription" },
+    });
+
+    const outcome = await session.leave(0, "text", null, "你好世界啊");
+
+    expect([session.cursor.caret, outcome, port.sent]).toEqual([
+      null,
+      { kind: "written" },
+      [{ edit: [0, "text", "你好世界啊"] }],
+    ]);
+  });
+
+  it("writes a text typed into the second half of a split before splitting it again", async () => {
+    enterFirst();
+    await session.leave(0, "text", null, "你好世界");
+    await session.split();
+    session.follow(view("你好", "世界", "今天", "天氣"));
+    port.sent = [];
+
+    session.select(1, "text", { start: 2, end: 2 }, "世X界");
+    await session.split();
+
+    expect(port.sent).toEqual([
+      { edit: [1, "text", "世X界"] },
+      { kind: "split", index: 1, at: 2 },
     ]);
   });
 });

@@ -115,7 +115,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 | 事件 | 送出者 | 接收者 |
 |---|---|---|
-| `project-changed` | 改變專案的指令、用例；`refreshProject` | `main.ts` 以 `followProject` 讀一次 `current_project` 再分送 |
+| `project-changed` | 改變專案的指令、用例；`refreshProject` | `ProjectFeed` 讀一次 `current_project` 再分送 |
 | `pipeline-progress` | 用例經由 `Progress` 回報 Phase 與百分比 | `backend/progress.ts` 的 `listenProgress` |
 | `edit-command` | macOS 編輯選單的復原與重做（`menu.rs`） | `backend/project.ts` 的 `followEditCommands` |
 
@@ -371,7 +371,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
   |-- feed = new ProjectFeed()        每次變更讀一次 current_project
   |-- session = new EditingSession(editingPort)
   |-- feed -> session.follow -> 各 controller -> session.announce
-  |-- session.onChange -> window 的 editor:cursor、editor:checked
+  |-- session.onChange -> window 的 editor:current、cursor、checked
   +-- application.register(名稱, class extends X { session, feed })
 ```
 
@@ -391,7 +391,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | 2 | 讀到的專案比上一份舊就丟掉 |
 | 3 | session 換算並套用待套用 |
 | 4 | 各 controller 依專案重畫 |
-| 5 | 送出 `editor:cursor`，移動焦點 |
+| 5 | 送出 session 事件，移動焦點 |
 
 `project-changed` 可能比指令的回答先到，所以待套用在送出前就記下，被拒絕時清掉。焦點與 Cursor 等列畫完才動，才不會落在即將被取代的舊列上。
 
@@ -438,8 +438,9 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
 | `versions` outlet | `comparison` | 開啟版本 dialog |
 | `versions:compare-with` | `versions` | `comparison` 換對照 |
-| `editor:cursor` | session，經 `main.ts` | 標出 Current Segment 與 Cursor |
-| `editor:checked` | session，經 `main.ts` | 顯示勾選工具列 |
+| `editor:current` | session，經 `assembly.ts` | 各處標出 Current Segment |
+| `editor:cursor` | session，經 `assembly.ts` | 字幕編輯畫出 Cursor |
+| `editor:checked` | session，經 `assembly.ts` | 顯示勾選工具列 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |

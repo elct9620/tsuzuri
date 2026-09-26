@@ -72,7 +72,7 @@ describe("TimelineController", () => {
       { shouldMockEvents: true },
     );
     document.body.innerHTML = `
-      <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange">
+      <div data-controller="timeline" data-action="editor:current@window->timeline#showCurrent keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange">
         <video data-timeline-target="media"></video>
         <button data-timeline-target="snapping" data-action="timeline#toggleSnapping"></button>
         <button data-action="timeline#zoomOut"></button>

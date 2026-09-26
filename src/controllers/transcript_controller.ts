@@ -264,16 +264,18 @@ export default class TranscriptController extends Controller {
     this.session.makeCurrent(params.index);
   }
 
-  /**
-   * Marks the Current Segment and draws the Cursor in it, bringing its row into view; a live
-   * Cursor in a field without focus, as after a split, takes the focus there.
-   */
+  /** Marks the Current Segment, bringing its row into view. */
+  showCurrent(): void {
+    const { index } = this.session.cursor;
+    this.markRows();
+    if (index !== null) this.rowAt(index)?.scrollIntoView({ block: "nearest" });
+  }
+
+  /** Draws the Cursor; a live one in a field without focus, as after a split, takes the focus there. */
   showCursor(): void {
     const { index, caret } = this.session.cursor;
-    this.markRows();
-    if (index === null) return;
-    this.rowAt(index)?.scrollIntoView({ block: "nearest" });
-    const field = caret && this.fieldAt(index, caret.field);
+    const field =
+      index === null || !caret ? null : this.fieldAt(index, caret.field);
     if (field && caret?.kind === "live" && document.activeElement !== field) {
       field.focus();
       placeSelection(field, caret);

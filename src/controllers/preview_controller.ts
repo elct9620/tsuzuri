@@ -118,7 +118,7 @@ export default class PreviewController extends Controller {
   }
 
   /** Shows the Current Segment in the card beside the video. */
-  showCursor(): void {
+  showCurrent(): void {
     this.showCurrentSegment();
   }
 

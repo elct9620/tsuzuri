@@ -210,7 +210,7 @@ export default class TimelineController extends Controller {
   }
 
   /** Colours the Current Segment's region, the only one that can be dragged. */
-  showCursor(): void {
+  showCurrent(): void {
     this.colorRegions();
   }
 

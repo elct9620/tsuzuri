@@ -86,9 +86,9 @@ describe("Current Segment", () => {
     );
     document.body.innerHTML = `
       <main data-controller="transcript"
-        data-action="editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying">
+        data-action="editor:current@window->transcript#showCurrent editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying">
         <div data-controller="preview timeline"
-          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor keydown.space@window->timeline#playCurrent:!control:prevent">
+          data-action="editor:current@window->timeline#showCurrent editor:current@window->preview#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent">
           <button data-preview-target="fold" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">

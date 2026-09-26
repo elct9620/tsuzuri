@@ -38,8 +38,8 @@ export type Outcome =
   | { kind: "refused" }
   | { kind: "failed"; error: unknown };
 
-/** What a listener is told has changed. */
-export type SessionChange = "cursor" | "checked";
+/** What a listener is told has changed: the Current Segment, the Cursor within it, or the checks. */
+export type SessionChange = "current" | "cursor" | "checked";
 
 /** A Segment Change sent and not yet seen in a Transcript, with the Segments it was made to. */
 interface PendingChange {
@@ -47,8 +47,11 @@ interface PendingChange {
   before: Segment[];
 }
 
-function isSameSegments(one: Segment[], other: Segment[]): boolean {
-  return JSON.stringify(one) === JSON.stringify(other);
+/** The text or translation last entered, with the text it held, so leaving it unchanged writes nothing. */
+interface EnteredField {
+  index: number;
+  field: CursorField;
+  text: string;
 }
 
 export class EditingSession {
@@ -56,8 +59,7 @@ export class EditingSession {
   private state: Cursor = NO_CURSOR;
   private checked = new Set<number>();
   private pending: PendingChange | null = null;
-  /** The text the live caret's field held when entered, so leaving it unchanged writes nothing. */
-  private entryText = "";
+  private entered: EnteredField | null = null;
   private readonly listeners = new Set<(change: SessionChange) => void>();
   private readonly unannounced = new Set<SessionChange>();
 
@@ -92,22 +94,30 @@ export class EditingSession {
   }
 
   /**
-   * Takes the Transcript as the Project holds it now. A Segment Change sent is applied on the first
-   * Transcript that shows it: one with as many Segments as it leaves, differing from those it was
-   * made to, so a text written just before it is not taken for it. Any other difference was made
-   * elsewhere. Nothing is announced, so the screen can draw the Transcript before it hears of the Cursor.
+   * Takes the Transcript as the Project holds it now. A Segment Change that changes how many
+   * Segments there are is applied on the first Transcript with as many as it leaves, so a text
+   * written just before it is not taken for it; any other difference was made elsewhere. Nothing is
+   * announced, so the screen can draw the Transcript before it hears of the Cursor.
    */
   follow(view: TranscriptView): void {
     const before = this.view;
     this.view = view;
     const pending = this.pending;
-    if (pending && this.isShown(pending, view.segments)) {
+    if (
+      pending &&
+      view.segments.length ===
+        segmentCountAfter(pending.change, pending.before.length)
+    ) {
       this.pending = null;
       this.move({
         kind: "change",
         change: pending.change,
         before: pending.before,
       });
+      // The screen gives this field focus before its controller hears of it, so it counts as entered now
+      const { index, caret } = this.state;
+      if (index !== null && caret?.kind === "live")
+        this.entered = { index, field: caret.field, text: caret.text };
       this.clearChecks();
       return;
     }
@@ -126,7 +136,7 @@ export class EditingSession {
     range: TextRange | null,
     text: string,
   ): void {
-    if (field !== null) this.entryText = text;
+    if (field !== null) this.entered = { index, field, text };
     this.act({ kind: "enter", index, field, range, text });
   }
 
@@ -142,8 +152,9 @@ export class EditingSession {
   }
 
   /**
-   * Keeps the caret as focus leaves its field, and writes the field's text if it changed. A field
-   * that does not hold the Cursor, such as one drawn away after a split, changes nothing.
+   * Keeps the caret as focus leaves its field, and writes the field's text if it changed since it
+   * was entered, even once the Cursor has moved on, so nothing typed is lost unsaid; a field left
+   * after another was entered, such as one drawn away after a split, changes nothing.
    */
   async leave(
     index: number,
@@ -151,8 +162,7 @@ export class EditingSession {
     range: TextRange | null,
     text: string,
   ): Promise<Outcome> {
-    if (!this.holdsCaret(index, field)) return { kind: "unchanged" };
-    this.act({ kind: "leave", range, text });
+    if (this.holdsCaret(index, field)) this.act({ kind: "leave", range, text });
     return this.writeText(index, field, text);
   }
 
@@ -184,21 +194,25 @@ export class EditingSession {
   }
 
   /**
-   * Makes a Segment Change to `before`, the Segments as the Project holds them, noted before it is
-   * sent so the Transcript that shows it moves the Cursor.
+   * Makes a Segment Change to `before`, the Segments as the Project holds them. One that changes
+   * how many Segments there are is noted before it is sent, so the Transcript that shows it moves
+   * the Cursor; one that keeps their number never moves it, and clears the checks once written.
    */
   async change(
     change: SegmentChange,
     before: Segment[] = this.view?.segments ?? [],
   ): Promise<Outcome> {
-    this.pending = { change, before };
+    const isReshaping =
+      segmentCountAfter(change, before.length) !== before.length;
+    if (isReshaping) this.pending = { change, before };
     try {
       await this.port.changeSegments(change);
-      return { kind: "written" };
     } catch (error) {
-      this.pending = null;
+      if (isReshaping) this.pending = null;
       return { kind: "failed", error };
     }
+    if (!isReshaping) this.uncheckAll();
+    return { kind: "written" };
   }
 
   /** Splits the Current Segment where the Cursor in its text starts, writing a text still being typed first. */
@@ -245,14 +259,20 @@ export class EditingSession {
     this.announce();
   }
 
-  /** Writes `text` into `field` of the Segment at `index` unless it is the text the field was entered with. */
+  /** Writes `text` into the field last entered, if it is `field` of the Segment at `index` and its text changed. */
   private async writeText(
     index: number,
     field: CursorField,
     text: string,
   ): Promise<Outcome> {
-    if (text === this.entryText) return { kind: "unchanged" };
-    this.entryText = text;
+    const entered = this.entered;
+    if (
+      entered?.index !== index ||
+      entered.field !== field ||
+      entered.text === text
+    )
+      return { kind: "unchanged" };
+    entered.text = text;
     return this.editText(index, field, text);
   }
 
@@ -265,16 +285,6 @@ export class EditingSession {
     }
   }
 
-  private isShown(
-    { change, before }: PendingChange,
-    after: Segment[],
-  ): boolean {
-    return (
-      after.length === segmentCountAfter(change, before.length) &&
-      !isSameSegments(before, after)
-    );
-  }
-
   /** Moves the Cursor as the user does, telling the listeners at once. */
   private act(event: CursorEvent): void {
     this.move(event);
@@ -284,6 +294,7 @@ export class EditingSession {
   private move(event: CursorEvent): void {
     const next = nextCursor(this.state, event);
     if (next === this.state) return;
+    if (next.index !== this.state.index) this.unannounced.add("current");
     this.state = next;
     this.unannounced.add("cursor");
   }

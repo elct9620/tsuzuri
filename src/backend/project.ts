@@ -128,8 +128,12 @@ export class ProjectFeed {
     if (asked < this.shown) return;
     this.shown = asked;
     this.latest = project;
-    for (const show of this.followers) show(project);
-    for (const settle of this.settlers) settle();
+    // One follower failing to draw still lets the rest settle, so the Cursor is still told of
+    try {
+      for (const show of this.followers) show(project);
+    } finally {
+      for (const settle of this.settlers) settle();
+    }
   }
 }
 

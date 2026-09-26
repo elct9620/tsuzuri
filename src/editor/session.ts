@@ -166,9 +166,15 @@ export class EditingSession {
     return this.writeText(index, field, text);
   }
 
-  /** The text `field` of the Segment at `index` was entered with, or none unless the live caret stands there. */
-  textAtEntry(index: number, field: CursorField): string | null {
-    return this.holdsCaret(index, field) ? this.entryText : null;
+  /**
+   * Gives up the typing in `field` of the Segment at `index`, dropping the live caret there so
+   * leaving the field keeps no Cursor and writes nothing; answers the text the field was entered
+   * with, to put back, or none unless the live caret stands there.
+   */
+  revert(index: number, field: CursorField): string | null {
+    if (!this.holdsCaret(index, field)) return null;
+    this.act({ kind: "revert" });
+    return this.entryText;
   }
 
   /** Whether the live caret stands in `field` of the Segment at `index`. */

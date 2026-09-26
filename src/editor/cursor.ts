@@ -50,6 +50,8 @@ export type CursorEvent =
     }
   | { kind: "selection"; range: TextRange; text: string }
   | { kind: "exit"; range: TextRange | null; text: string }
+  /** The typing in the live caret's field given up, which leaves no place in the text to keep. */
+  | { kind: "revert" }
   | { kind: "current-segment"; index: number }
   | { kind: "change"; change: SegmentChange; before: Segment[] }
   | { kind: "view"; before: TranscriptView | null; after: TranscriptView };
@@ -93,6 +95,10 @@ export function nextCursor(cursor: Cursor, event: CursorEvent): Cursor {
           text: event.text,
         },
       };
+    case "revert":
+      return cursor.caret?.kind === "live"
+        ? { ...cursor, caret: null }
+        : cursor;
     case "current-segment":
       return event.index === cursor.index
         ? cursor

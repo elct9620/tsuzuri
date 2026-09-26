@@ -37,7 +37,7 @@
 
 | 來源 | 決定什麼 |
 |---|---|
-| `components.json` | 原始碼釘版、變體順序 |
+| `components.json` | 原始程式碼釘版、變體順序 |
 | `src-tauri/tauri.bundle.conf.json` | 打包時把 `vendor/` 放進資源的 `components/` |
 | CI 的 cargo-about | 產生 `THIRD-PARTY-LICENSES.html`，隨建置提供 |
 | CI 的 `scripts/webview-licenses.ts` | 檢查 webview 套件授權並產生 `THIRD-PARTY-LICENSES-WEBVIEW.html` |
@@ -156,7 +156,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 
 | 層 | 可以依賴 | 不可以依賴 |
 |---|---|---|
-| 領域 | 標準庫、serde、字幕核心 | `Failure`、Tauri、檔案系統、行程、HTTP |
+| 領域 | 標準函式庫、serde、字幕核心 | `Failure`、Tauri、檔案系統、行程、HTTP |
 | 應用 | 領域、Port | Tauri、`AppHandle` |
 | 轉接 | 應用的 Port、領域 | 其他情境的轉接 |
 | 介面 | 應用、轉接的設定讀取 | 直接操作專案目錄或行程 |
@@ -401,7 +401,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | 檔案 | 層 | 內容 |
 |---|---|---|
 | `index.ts` | 對外 | 唯一可 import 的入口 |
-| `segment.ts` | 領域 | 自己的段落與專案視圖型別 |
+| `segment.ts` | 領域 | 自己的段落與專案檢視型別 |
 | `cursor.ts` | 領域 | Cursor 的狀態機 |
 | `rules.ts` | 領域 | 合併、鎖定、分割的規則 |
 | `session.ts` | 應用 | `EditingSession` 與 port |

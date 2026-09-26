@@ -33,7 +33,7 @@ Webview 顯示的資料都向 Rust 查詢，變更也都寫進 Rust，自己只�
 | 1 字幕資料 | 🚧 | 讀入雙語 SRT |
 | 2 專案 | 🚧 | 最近的專案 |
 | 3 行程 | ✅ | — |
-| 4 元件 | 🚧 | 內建全部變體、ffmpeg 原始碼 |
+| 4 元件 | 🚧 | 內建全部變體、ffmpeg 原始程式碼 |
 | 5 模型 | ✅ | — |
 | 6 工作流程 | 🚧 | 可組合流程、狀態機 |
 | 7 轉錄模組 | 🚧 | 轉檔百分比 |
@@ -71,7 +71,7 @@ Webview 顯示的資料都向 Rust 查詢，變更也都寫進 Rust，自己只�
 | 譯文 | 一次一種語言 |
 | 多語言對照 | 尚不需要 |
 
-Segment 有開始、結束時間、可省略的說話者與文字，翻譯後另有譯文；譯文靠時間對上原文。Transcript 是一個媒體檔的全部 Segment。模組之間只交換 Transcript，不交換各元件自己的輸出格式。這讓轉錄可以換引擎、翻譯可以接既有字幕，而不影響其他模組。
+Segment 有開始、結束時間、可省略的說話者與文字，翻譯後另有譯文；譯文靠時間對上原文。Transcript 是單一媒體檔的全部 Segment。模組之間只交換 Transcript，不交換各元件自己的輸出格式。這讓轉錄可以換引擎、翻譯可以接既有字幕，而不影響其他模組。
 
 ### 1.2 SRT 讀寫
 
@@ -283,11 +283,11 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 | 元件 | 授權 | 我們的義務 |
 |---|---|---|
 | whisper.cpp、llama.cpp | MIT | 附上授權聲明 |
-| ffmpeg | LGPL 2.1+ | 附原始碼、標示授權 |
+| ffmpeg | LGPL 2.1+ | 附原始程式碼、標示授權 |
 | Rust 相依套件 | 見 `deny.toml` | cargo-deny 檢查、cargo-about 產生授權聲明 |
 | Webview 打包套件 | 同 `about.toml` | 腳本檢查並產生聲明 |
 
-ffmpeg 不開 GPL、nonfree，是獨立執行檔，Tsuzuri 不連結它的函式庫，使用者也能改用自己的。Webview 的聲明由 `scripts/webview-licenses.ts` 產生，含只在建置時用到、CSS 卻打包進去的 daisyUI 與 Tailwind。
+ffmpeg 不開 GPL、nonfree，是獨立執行檔，Tsuzuri 不連結它的函式庫，使用者也能改用自己的。Webview 打包套件的授權由 `scripts/webview-licenses.ts` 檢查並列出，含只在建置時用到、CSS 卻打包進去的 daisyUI 與 Tailwind。
 
 ## 5 模型
 
@@ -706,7 +706,7 @@ textarea 不能在文字裡標記，後續的詞彙標記與選取都需要。Pr
 
 原生游標只在欄位有焦點時出現，選單與之後的浮動選單卻在焦點移走後才作用在 Cursor 上。所以一律自己畫，有沒有焦點看起來都一樣，不會兩套並存。
 
-### 10.8 目前段落跟隨改動
+### 10.8 目前段落隨改動移動
 
 | 情況 | 目前段落 | Cursor |
 |---|---|---|

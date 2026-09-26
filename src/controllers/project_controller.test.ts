@@ -6,6 +6,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
+import {
+  NOTIFICATION_STACK,
+  notificationDetail,
+  notifications,
+} from "../ui/test_notification";
 import ProjectController from "./project_controller";
 
 describe("ProjectController", () => {
@@ -46,7 +51,7 @@ describe("ProjectController", () => {
     document.body.innerHTML = `
       <main
         data-controller="project"
-        data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent"
+        data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
       >
         <section data-project-target="startScreen"></section>
         <div data-project-target="workspace" hidden>
@@ -446,5 +451,19 @@ describe("ProjectController", () => {
     expect(sent("set_project_options")).toEqual({
       options: { ...projectOf().options, is_overwrite_backed_up: true },
     });
+  });
+
+  // @behavior PJ-134
+  it("tells the user a version changed elsewhere was kept", async () => {
+    document.body.insertAdjacentHTML("beforeend", NOTIFICATION_STACK);
+    await hold(projectOf());
+
+    await emit("changed-elsewhere-kept");
+    await settle();
+
+    expect([notifications(), notificationDetail(0)]).toEqual([
+      ["字幕已在其他程式修改過並重新讀取"],
+      "Tsuzuri 原本的內容已留作備份，可在「版本」比較或還原",
+    ]);
   });
 });

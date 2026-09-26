@@ -562,13 +562,15 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | its translation into `en` is written again |
 | Then | `.tsuzuri/history/` holds an Overwrite of `ep01.en.srt` reading `Hello` |
 
-## `PJ-068` Keeping no Overwrite unless asked
+## `PJ-068` Keeping one Overwrite each opening unless asked for more
+
+Without the Project Option a Mode keeps what it writes over as any first change does, once each time the Project is opened.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project not keeping Backups, whose `ep01.en.srt` exists |
-| When | its translation into `en` is written again |
-| Then | `.tsuzuri/history/` holds only the Output of `ep01.en.srt` |
+| Given | a Project not keeping Backups, whose `ep01.en.srt` reads `Hello` |
+| When | its translation into `en` is written twice |
+| Then | `.tsuzuri/history/` holds one Overwrite of `ep01.en.srt`, reading `Hello`, and an Output of each translation |
 
 ## `PJ-088` Keeping what a transcription wrote as an Output
 
@@ -694,13 +696,145 @@ Undoing puts back the subtitles a change knew of and removes the rest, so a file
 | When | the Project is reloaded |
 | Then | the Current Resource is `ep01` |
 
-## `PJ-114` Reloading only the Resource list while a Mode runs on the Current Resource
+## `PJ-114` Keeping what a Mode shows when the Project is reloaded
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource `ep01` being translated, whose directory gained `ep02.srt` |
 | When | the Project is reloaded |
-| Then | the Project lists `ep02`, and `ep01` keeps the Segments the translation shows |
+| Then | the Project lists `ep02`, and `ep01` still shows the translations made so far |
+
+## `PJ-122` Keeping a translation whole when edited after a translation ended early
+
+What a Mode shows is never written as a subtitle, so an edit after it starts from the file.
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello` and `World`, and a translation into `en` that showed its first empty Batch and was cancelled |
+| When | the translation of the first Segment is edited to `Hi` |
+| Then | `ep01.en.srt` reads `Hi` and `World` |
+
+## `PJ-125` Translating again the translation chosen, whichever is shown when it starts
+
+The translation a Segment is translated again into is read from its file when the Mode takes it, so switching the translation shown while it waits changes nothing it writes.
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello` and `World`, and the first Segment asked to be translated again into `en` while no translation is shown |
+| When | it is translated again as `Hi` |
+| Then | `ep01.en.srt` reads `Hi` and `World` |
+
+## `PJ-126` Keeping an edit made while other Segments are translated again
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello` and `World`, and the first Segment being translated again into `en` |
+| When | the second Segment's translation is edited to `Earth`, then the first is translated again as `Hi` |
+| Then | `ep01.en.srt` reads `Hi` and `Earth` |
+
+## `PJ-127` Refusing an edit of a Segment being translated again
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello` and `World`, and the first Segment being translated again into `en` |
+| When | its translation is edited to `Hi` |
+| Then | the edit is refused as `mode-running` and `ep01.en.srt` is left as it was |
+
+## `PJ-128` Refusing to show another translation while a Mode runs
+
+What a Mode shows is its own, so the translation shown stays until it ends.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en`, showing its `en` translation |
+| When | no translation is asked to be shown |
+| Then | it is refused as `mode-running` and `en` is still shown |
+
+## `PJ-129` Keeping a subtitle once before its first change since opening
+
+The Undo History ends with the Project, so each subtitle is kept once before Tsuzuri first changes it, whatever the Project Options say, and no more often however many changes follow.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project not asking for Backups, whose `ep01.en.srt` reads `Hello` and `World` |
+| When | the first translation is edited to `Hi`, then to `Hey` |
+| Then | `.tsuzuri/history/` holds one Overwrite, reading `Hello` and `World` |
+
+## `PJ-130` Keeping no Overwrite of what a Mode kept as an Output since opening
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` translated into `en` since the Project was opened |
+| When | its translation is edited |
+| Then | `.tsuzuri/history/` holds the Output of `ep01.en.srt` and no Overwrite |
+
+## `PJ-131` Keeping a subtitle again once the Project is opened again
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello`, edited to `Hi`, and the Project opened again |
+| When | its translation is edited to `Hey` |
+| Then | `.tsuzuri/history/` holds an Overwrite reading `Hello` and one reading `Hi` |
+
+## `PJ-132` Keeping what Tsuzuri wrote of a subtitle changed elsewhere
+
+The files decide what is shown, so a change made elsewhere is read in; what Tsuzuri held of the subtitle is kept first, since nothing else holds it once the file is read again.
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` reading `你好`, edited in Tsuzuri to `您好`, then changed elsewhere to `外面改的` |
+| When | the window regains focus |
+| Then | the editor reads `外面改的`, and `.tsuzuri/history/` holds an Overwrite reading `你好` and one reading `您好` |
+
+## `PJ-133` Keeping a version read in from elsewhere before changing it
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` edited in Tsuzuri, then changed elsewhere to `外面改的` and read in |
+| When | its text is edited to `大家好` |
+| Then | `.tsuzuri/history/` also holds an Overwrite reading `外面改的` |
+
+## `PJ-134` Telling the user a version changed elsewhere was kept
+
+| Step | Statement |
+| --- | --- |
+| Given | an opened Project |
+| When | Rust says it read in a subtitle changed elsewhere and kept what Tsuzuri held of it |
+| Then | a warning Notification says so and points at the Versions |
+
+## `PJ-135` Keeping a change made elsewhere during a Mode before writing over it
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello` and `World`, being translated into `en`, and changed elsewhere meanwhile to `外面改的` and `World` |
+| When | the translation writes `Hi` and `World` |
+| Then | `ep01.en.srt` reads `Hi` and `World`, and `.tsuzuri/history/` holds an Overwrite of what Tsuzuri held and one of the change made elsewhere |
+
+## `PJ-136` Counting the Segments a translation leaves unmatched once retimed elsewhere
+
+A translation lines up with its original by time alone, so one written after the original was retimed elsewhere is still written, and says how many Segments to translate again.
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` with `你好` from 0 to 1 and `世界` from 1 to 2 seconds, being translated into `en`, and retimed elsewhere meanwhile to 0 to 1.5 and 1.5 to 2 seconds |
+| When | the translation is written |
+| Then | the answer counts 2 Segments without a translation |
+
+## `PJ-123` Keeping an original whole when edited after a transcription ended early
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` reading `你好` and `世界`, and a transcription that showed only `你好` and was cancelled |
+| When | the text of the first Segment is edited to `您好` |
+| Then | `ep01.srt` reads `您好` and `世界` |
+
+## `PJ-124` Showing what the files hold once a Mode ends without writing
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` reading `你好` and `世界`, being transcribed with `大家好` shown so far |
+| When | the transcription ends without writing |
+| Then | the editor shows `你好` and `世界` |
 
 ## `PJ-115` Listing files added elsewhere when the window regains focus
 
@@ -843,7 +977,7 @@ A cue with other times belongs to no Segment, so a Speaker has nowhere to come f
 | When | its times are changed to 0.5 to 1.5 seconds |
 | Then | `ep01.en.srt` reads `Christopher Nolan Jr.: Hello` from 0.5 to 1.5 seconds |
 
-## `PJ-122` Telling the webview what the Translation Glossary calls each Speaker in the translation shown
+## `PJ-137` Telling the webview what the Translation Glossary calls each Speaker in the translation shown
 
 | Step | Statement |
 | --- | --- |
@@ -966,7 +1100,7 @@ A name changed in the Translation Glossary since a translation was written leave
 | --- | --- |
 | Given | three Segments translated into `en` as `A`, `B` and `C`, shown in the editor |
 | When | the second is translated again as `B2` |
-| Then | `ep01.en.srt` reads `A`, `B2` and `C`, no Backup is kept, and one undo puts `B` back |
+| Then | `ep01.en.srt` reads `A`, `B2` and `C`, an Overwrite of it reads `A`, `B` and `C`, and one undo puts `B` back |
 
 ## `PJ-100` Refusing to translate again with no translation shown
 

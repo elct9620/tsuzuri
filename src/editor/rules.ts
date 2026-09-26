@@ -17,17 +17,24 @@ export function isRun(indexes: number[]): boolean {
 export type FieldKind = "text" | "translation" | "other";
 
 /**
- * Whether the Mode running on the Current Resource holds a field of `kind`: a transcription holds
- * every field, a translation every one but the texts and a translation it does not write.
+ * Whether the Mode running on the Current Resource holds a field of `kind` of the Segment at
+ * `index`: a transcription holds every field, a translation every one but the texts and a
+ * translation it does not write, which translating chosen Segments again narrows to theirs.
  */
 export function isHeld(
   kind: FieldKind,
   { runningMode, shownTranslation }: TranscriptView,
+  index: number,
 ): boolean {
   if (runningMode === null) return false;
   if (runningMode.mode === "transcription") return true;
   if (kind === "text") return false;
-  return kind !== "translation" || runningMode.language === shownTranslation;
+  if (kind !== "translation") return true;
+  const { language, indexes } = runningMode;
+  return (
+    language === shownTranslation &&
+    (indexes === null || indexes.includes(index))
+  );
 }
 
 /** Where a split cuts `text` at `at` characters, or none when one side would be left empty. */

@@ -126,7 +126,7 @@ impl<'a, P: Steps> ModeRun<'a, P> {
     }
 
     /// Runs `task` until it ends or the Mode Run is asked to stop; then the Components it
-    /// started are stopped and it fails as `mode-cancelled`, what it showed so far kept.
+    /// started are stopped and it fails as `mode-cancelled`; what it showed ends with its hold.
     pub async fn run_until_cancelled<T>(
         &self,
         task: impl Future<Output = Result<T, Failure>>,

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::progress::{enter, Progress};
-use crate::project::{CurrentProject, RunningMode, SegmentSpan, TranslationSource};
+use crate::project::{CurrentProject, SegmentSpan, TranslationSource};
 use crate::steps::{ModeRun, StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -85,6 +85,9 @@ struct TranslationJob<'a> {
 #[derive(Debug, Clone, Serialize)]
 pub struct Translation {
     phases: Vec<PhaseTiming>,
+    /// How many Segments of the original, retimed while it was translated, find no cue at their
+    /// times in what was written.
+    unmatched_count: usize,
 }
 
 /// Which llama-server a translation runs on.
@@ -128,18 +131,18 @@ pub async fn run_translate<'a>(
     ready_timeout: Duration,
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
-    let source = project.snapshot()?;
+    let (source, hold) = project.hold_for_translation(
+        plan.target,
+        match &plan.scope {
+            TranslationScope::Whole => None,
+            TranslationScope::Segments(indexes) => Some(indexes.clone()),
+        },
+    )?;
+    run.keep(hold);
     let model_settings = model_settings
         .clone()
         .with_project_model(ModelSlot::Translation, source.model.clone());
     let model = model_settings.ready_path(ModelSlot::Translation)?;
-    run.keep(project.hold_resource(
-        &source.directory,
-        &source.name,
-        RunningMode::Translation {
-            language: plan.target,
-        },
-    ));
     let ports = run.ports();
     let languages = LanguagePair {
         source: source.language,
@@ -162,7 +165,7 @@ pub async fn run_translate<'a>(
         },
     };
     enter(ports, &mut phases, "load");
-    let on_batch = batch_display(ports, project, &source, plan.target);
+    let on_batch = batch_display(ports, project, &source);
     let result = match server {
         LlamaServer::Job => {
             translate_on_job_server(
@@ -203,15 +206,17 @@ pub async fn run_translate<'a>(
             result
         }
     };
-    match plan.scope {
+    let unmatched_count = match &plan.scope {
         TranslationScope::Whole => project.write_translations(&source, plan.target, result?)?,
-        TranslationScope::Segments(_) => {
-            project.write_retranslations(&source, plan.target, result?)?
+        TranslationScope::Segments(indexes) => {
+            project.write_retranslations(&source, plan.target, indexes, result?)?
         }
     }
+    .unmatched_count;
     ports.announce_project();
     Ok(Translation {
         phases: phases.finish(),
+        unmatched_count,
     })
 }
 
@@ -232,13 +237,13 @@ async fn translate_on_job_server(
             step: "translate".to_string(),
             detail,
         })?;
-    let exited = Arc::new(AtomicBool::new(false));
+    let has_exited = Arc::new(AtomicBool::new(false));
     tokio::spawn({
-        let exited = Arc::clone(&exited);
+        let has_exited = Arc::clone(&has_exited);
         async move {
             while let Some(event) = events.recv().await {
                 if matches!(event, StepEvent::Exit(_)) {
-                    exited.store(true, Ordering::SeqCst);
+                    has_exited.store(true, Ordering::SeqCst);
                 }
             }
         }
@@ -247,7 +252,7 @@ async fn translate_on_job_server(
         ports,
         &format!("http://127.0.0.1:{port}"),
         ready_timeout,
-        || exited.load(Ordering::SeqCst),
+        || has_exited.load(Ordering::SeqCst),
         job,
         phases,
         on_batch,
@@ -257,16 +262,15 @@ async fn translate_on_job_server(
     result
 }
 
-/// Shows the Segments translated into `target` so far on the Resource `source` was taken from,
-/// and tells the webview, so each Batch appears as it finishes.
+/// Shows the Segments translated so far on the Resource `source` was taken from, and tells the
+/// webview, so each Batch appears as it finishes.
 fn batch_display<'a>(
     progress: &'a impl Progress,
     project: &'a CurrentProject,
     source: &'a TranslationSource,
-    target: Language,
 ) -> impl Fn(&[Segment], Option<SegmentSpan>) + 'a {
     move |translated_segments, pending_batch| {
-        project.show_translations(source, target, translated_segments);
+        project.show_translations(source, translated_segments);
         project.mark_pending_batch(pending_batch);
         progress.announce_project();
     }
@@ -504,7 +508,7 @@ mod tests {
 
     use super::*;
     use crate::processes::{AppPorts, Processes};
-    use crate::project::SegmentField;
+    use crate::project::{Project, RunningMode, SegmentField};
     use crate::steps::ModeLock;
     use crate::test_support::Response;
     use crate::test_support::{project_of, TempDir};
@@ -1442,8 +1446,17 @@ mod tests {
         let app = mock_app();
         let mut project = project_of(three_segments());
         project.directory = dir.path().to_path_buf();
-        app.state::<CurrentProject>().replace(project);
-        let source = app.state::<CurrentProject>().snapshot().unwrap();
+        let current = app.state::<CurrentProject>();
+        current.replace(project);
+        let source = current.snapshot().unwrap();
+        let _hold = current.hold_resource(
+            &source.directory,
+            &source.name,
+            RunningMode::Translation {
+                language: Language::Japanese,
+                indexes: None,
+            },
+        );
         let shown = Arc::new(Mutex::new(Vec::new()));
         app.listen_any("project-changed", {
             let shown = Arc::clone(&shown);
@@ -1466,12 +1479,7 @@ mod tests {
             || false,
             &job_in_batches_of_two(&source.transcript.segments),
             &mut Phases::start("translate", "load"),
-            batch_display(
-                app.handle(),
-                &app.state::<CurrentProject>(),
-                &source,
-                Language::Japanese,
-            ),
+            batch_display(app.handle(), &current, &source),
         )
         .await
         .unwrap();
@@ -1495,6 +1503,7 @@ mod tests {
             &source.name,
             RunningMode::Translation {
                 language: Language::Japanese,
+                indexes: None,
             },
         );
         let named = Arc::new(Mutex::new(Vec::new()));
@@ -1514,7 +1523,7 @@ mod tests {
             || false,
             &job_in_batches_of_two(&source.transcript.segments),
             &mut Phases::start("translate", "load"),
-            batch_display(app.handle(), &current, &source, Language::Japanese),
+            batch_display(app.handle(), &current, &source),
         )
         .await
         .unwrap();
@@ -1571,7 +1580,7 @@ mod tests {
 
     // @behavior TL-083
     #[tokio::test]
-    async fn keeps_the_translations_shown_when_cancelled() {
+    async fn drops_the_translations_shown_when_cancelled() {
         let llama = FakeLlama::with_answer_per_request(|asked, lines| {
             if asked > 0 {
                 std::thread::sleep(Duration::from_secs(2));
@@ -1588,6 +1597,14 @@ mod tests {
         let processes = Processes::new(dir.path().join("processes.json"));
         let lock = ModeLock::default();
         let run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
+        run.keep(current.hold_resource(
+            &source.directory,
+            &source.name,
+            RunningMode::Translation {
+                language: Language::Japanese,
+                indexes: None,
+            },
+        ));
         let translated_count = || {
             current
                 .view()
@@ -1614,10 +1631,11 @@ mod tests {
                 || false,
                 &job,
                 &mut phases,
-                batch_display(app.handle(), &current, &source, Language::Japanese),
+                batch_display(app.handle(), &current, &source),
             )),
             cancel_once_shown
         );
+        drop(run);
 
         let written_srts = std::fs::read_dir(dir.path())
             .unwrap()
@@ -1629,7 +1647,7 @@ mod tests {
             .count();
         assert_eq!(
             (result.map(|_| ()), translated_count(), written_srts),
-            (Err(Failure::ModeCancelled), 2, 0)
+            (Err(Failure::ModeCancelled), 0, 0)
         );
     }
 
@@ -1733,10 +1751,15 @@ mod tests {
     async fn translates_the_project_as_edited() {
         let llama = FakeLlama::with_echo(0);
         let dir = TempDir::new("tl-edited");
+        std::fs::write(
+            dir.path().join("lecture.srt"),
+            "1\n00:00:00,000 --> 00:00:01,000\n竹子搞\n",
+        )
+        .unwrap();
         let project = CurrentProject::default();
-        let mut edited = project_of(vec![segment(0, 1_000, "竹子搞")]);
-        edited.directory = dir.path().to_path_buf();
-        project.replace(edited);
+        project.replace(
+            Project::open(dir.path().to_path_buf(), Language::TraditionalChinese).unwrap(),
+        );
         project
             .edit(0, SegmentField::Text, "逐字稿".to_string())
             .unwrap();
@@ -1998,7 +2021,8 @@ mod tests {
             (seen, running_mode()),
             (
                 Some(RunningMode::Translation {
-                    language: Language::Japanese
+                    language: Language::Japanese,
+                    indexes: None
                 }),
                 None
             )

@@ -11,14 +11,14 @@
   <body
     class="text-[15px]"
     data-controller="tooltip undo"
-    data-action="pointerover->tooltip#show focusin->tooltip#show pointerout->tooltip#hide focusout->tooltip#hide scroll->tooltip#hide:capture keydown.ctrl+z@window->undo#undoInProject:!typing:prevent keydown.meta+z@window->undo#undoInProject:!typing:prevent keydown.ctrl+shift+z@window->undo#redoInProject:!typing:prevent keydown.meta+shift+z@window->undo#redoInProject:!typing:prevent keydown.ctrl+y@window->undo#redoInProject:!typing:prevent keydown.meta+y@window->undo#redoInProject:!typing:prevent"
+    data-action="pointerover->tooltip#show focusin->tooltip#show pointerout->tooltip#hide focusout->tooltip#hide scroll->tooltip#hide:capture keydown.ctrl+z@window->undo#undoInProject:!typing:prevent keydown.meta+z@window->undo#undoInProject:!typing:prevent keydown.ctrl+shift+z@window->undo#redoInProject:!typing:prevent keydown.meta+shift+z@window->undo#redoInProject:!typing:prevent keydown.ctrl+y@window->undo#redoInProject:!typing:prevent keydown.meta+y@window->undo#redoInProject:!typing:prevent rust:edit-command@window->undo#applyEditCommand"
   >
     <main
       class="flex h-dvh flex-col"
       data-controller="project transcript segment-changes dialog comparison speakers replacement retranslation"
       data-retranslation-progress-outlet="#progress"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut"
+      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
     >
       <section class="hero flex-1" data-project-target="startScreen">
         <div class="hero-content flex-col text-center">
@@ -279,7 +279,7 @@
           <div
             class="contents"
             data-controller="preview timeline"
-            data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playOrStop:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange:!control"
+            data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playOrStop:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange:!control pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture"
           >
             <div
               class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
@@ -577,6 +577,7 @@
                 id="progress"
                 class="dropdown dropdown-end"
                 data-controller="progress"
+                data-action="rust:pipeline-progress@window->progress#show"
                 hidden
               >
                 <div tabindex="0" role="button" class="btn btn-sm">

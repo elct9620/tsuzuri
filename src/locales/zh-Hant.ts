@@ -208,6 +208,9 @@ const zhHant: typeof en = {
     restore: "還原",
     restored: "已還原",
     replacedKept: "被取代的字幕已留作備份",
+    changedElsewhereKept: "字幕已在其他程式修改過並重新讀取",
+    changedElsewhereKeptDetail:
+      "Tsuzuri 原本的內容已留作備份，可在「版本」比較或還原",
     unreadable: "無法讀取版本",
     notRestored: "沒有還原",
   },
@@ -233,7 +236,7 @@ const zhHant: typeof en = {
       "開啟後，每次寫出原文或譯文，都會在旁邊更新雙語 SRT（例如 ep01.zh-TW.en.srt），不必每次手動匯出。只影響這個專案。",
     overwriteBackup: "覆蓋前備份",
     overwriteBackupHelp:
-      "開啟後，轉錄或翻譯要覆蓋已有的字幕前，會先把舊檔複製到專案的 .tsuzuri/history 資料夾，檔名加上時間；可在編輯區的「版本」比較或還原。只影響這個專案。",
+      "開啟後，轉錄或翻譯每次覆蓋已有的字幕前，都會先把舊檔複製到專案的 .tsuzuri/history 資料夾，檔名加上時間；關閉時，每次開啟專案只在第一次改動前留一份。可在編輯區的「版本」比較或還原。只影響這個專案。",
     ffmpegHelp:
       "把影片或音訊轉成轉錄用的音檔。按「指定」選擇自己安裝的執行檔；沒有指定時，依序使用偵測到的和內建的版本。",
     whisperHelp:

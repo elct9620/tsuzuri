@@ -1,10 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-import {
-  followEditCommands,
-  refreshProject,
-  type UnlistenFn,
-} from "../backend/project";
+import { refreshProject, type EditCommand } from "../backend/project";
 import {
   isRun,
   isTextField,
@@ -42,20 +38,14 @@ export default class SegmentChangesController extends Controller {
   /** Milliseconds to shift by, negative for earlier. */
   declare readonly offsetTarget: HTMLInputElement;
 
-  private unlisten?: UnlistenFn;
-
-  /** Select All chosen from the Edit menu selects the text in focus, or else checks every Segment. */
-  async connect(): Promise<void> {
-    this.unlisten = await followEditCommands((command) => {
-      if (command !== "select-all") return;
-      if (isTextField(document.activeElement))
-        document.execCommand("selectAll");
-      else this.checkAll();
-    });
-  }
-
-  disconnect(): void {
-    this.unlisten?.();
+  /**
+   * Select All chosen from the Edit menu selects the text in focus, or else checks every Segment;
+   * bound to `rust:edit-command`.
+   */
+  applyEditCommand({ detail: command }: CustomEvent<EditCommand>): void {
+    if (command !== "select-all") return;
+    if (isTextField(document.activeElement)) document.execCommand("selectAll");
+    else this.checkAll();
   }
 
   async changeTimes({ currentTarget }: Event): Promise<void> {

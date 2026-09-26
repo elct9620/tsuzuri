@@ -71,15 +71,19 @@ export interface ProjectView {
   pending_batch: SegmentSpan | null;
 }
 
-/** A transcription holds every subtitle of its Resource; a translation, the one it writes. */
 /** The Segments from `first` through `last`, by position. */
 export interface SegmentSpan {
   first: number;
   last: number;
 }
 
+/**
+ * A transcription holds every subtitle of its Resource; a translation, the one it writes, or only
+ * its Segments at `indexes` while they are translated again.
+ */
 export type RunningMode =
-  { mode: "transcription" } | { mode: "translation"; language: string };
+  | { mode: "transcription" }
+  | { mode: "translation"; language: string; indexes: number[] | null };
 
 /** The Current Resource as the Resource list shows it, or none. */
 export function currentResource(
@@ -153,13 +157,6 @@ export class ProjectFeed {
 
 /** Undo, Redo or Select All chosen from the Edit menu. */
 export type EditCommand = "undo" | "redo" | "select-all";
-
-/** Calls `apply` with each Undo, Redo or Select All chosen from the Edit menu, which takes their shortcuts first. */
-export function followEditCommands(
-  apply: (command: EditCommand) => void,
-): Promise<UnlistenFn> {
-  return listen<EditCommand>("edit-command", (event) => apply(event.payload));
-}
 
 /** Asks every view to read the Project again, as when Rust announces nothing after a refusal. */
 export function refreshProject(): Promise<void> {

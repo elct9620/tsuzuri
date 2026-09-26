@@ -127,8 +127,8 @@ fn parse_srt(
     input: &str,
     read_lines: fn(Vec<&str>) -> (Option<String>, String),
 ) -> Result<Transcript, SrtError> {
-    let normalized = input.replace("\r\n", "\n");
-    let segments = normalized
+    let normalized_input = input.replace("\r\n", "\n");
+    let segments = normalized_input
         .split("\n\n")
         .map(str::trim)
         .filter(|block| !block.is_empty())

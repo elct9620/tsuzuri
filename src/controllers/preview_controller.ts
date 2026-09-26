@@ -70,9 +70,9 @@ export default class PreviewController extends Controller {
     "captionSpeaker",
     "hint",
     "videoWindowButton",
-    "videoWindowHint",
     "playbackIcon",
     "time",
+    "currentSection",
     "currentHint",
     "currentCard",
     "currentNumber",
@@ -99,10 +99,10 @@ export default class PreviewController extends Controller {
   declare readonly hintTarget: HTMLElement;
   /** Moves the video into the Video Window and back; only a picture has one to move. */
   declare readonly videoWindowButtonTarget: HTMLButtonElement;
-  /** Says, in the video's place, that it is in the Video Window. */
-  declare readonly videoWindowHintTarget: HTMLElement;
   declare readonly playbackIconTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
+  /** What the card shows of the Current Segment, put away while the video is out of the Preview. */
+  declare readonly currentSectionTarget: HTMLElement;
   /** Asks for a Segment to be clicked while none is current. */
   declare readonly currentHintTarget: HTMLElement;
   /** The Current Segment beside the video: its number, times and text. */
@@ -136,6 +136,8 @@ export default class PreviewController extends Controller {
   private player!: HTMLVideoElement;
   private captionBox!: HTMLElement;
   private unplayableHint!: HTMLElement;
+  /** The row the video sits in beside the card, and comes back to. */
+  private screenRow!: HTMLElement;
   /** The window the video is in while it is out of the Preview. */
   private videoWindow: Window | null = null;
   private readonly playerListeners: [string, () => void][] = [
@@ -149,6 +151,7 @@ export default class PreviewController extends Controller {
 
   connect(): void {
     this.screen = this.screenTarget;
+    this.screenRow = this.screen.parentElement!;
     this.player = this.mediaTarget;
     this.captionBox = this.captionTarget;
     this.unplayableHint = this.hintTarget;
@@ -300,7 +303,7 @@ export default class PreviewController extends Controller {
   private bringVideoBack(): void {
     if (!this.videoWindow) return;
     this.videoWindow = null;
-    this.moveScreen(() => this.videoWindowHintTarget.before(this.screen));
+    this.moveScreen(() => this.screenRow.prepend(this.screen));
   }
 
   /**
@@ -318,9 +321,14 @@ export default class PreviewController extends Controller {
     this.showVideoWindow();
   }
 
+  /**
+   * Once the video is out, the card's Current Segment repeats the row being edited, so only the
+   * controls stay above the timeline and the editor takes the height.
+   */
   private showVideoWindow(): void {
     const isAway = this.videoWindow !== null;
-    this.videoWindowHintTarget.hidden = !isAway;
+    this.screenRow.toggleAttribute("data-is-video-away", isAway);
+    this.currentSectionTarget.hidden = isAway;
     this.videoWindowButtonTarget.setAttribute("aria-pressed", `${isAway}`);
     this.videoWindowButtonTarget.classList.toggle("btn-primary", isAway);
   }
@@ -346,16 +354,16 @@ export default class PreviewController extends Controller {
   private caption({ speaker, text, translation }: Segment): string {
     const language = this.hasTranslation ? this.captionLanguage : "original";
     const name = this.isSpeakerShown ? speaker : undefined;
-    const original = withSpeakerLabel(text, name);
-    const translated = withSpeakerLabel(
+    const originalLine = withSpeakerLabel(text, name);
+    const translatedLine = withSpeakerLabel(
       translation ?? "",
       name && (this.speakerNames[name] ?? name),
     );
-    if (language === "translation") return translated;
-    if (language === "original" || !translation) return original;
+    if (language === "translation") return translatedLine;
+    if (language === "original" || !translation) return originalLine;
     return this.bilingualOrder === "translation-first"
-      ? `${translated}\n${original}`
-      : `${original}\n${translated}`;
+      ? `${translatedLine}\n${originalLine}`
+      : `${originalLine}\n${translatedLine}`;
   }
 
   /** Offers the translation only while one is shown, keeping the choice for when one is again. */

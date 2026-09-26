@@ -457,14 +457,15 @@ export default class TranscriptController extends Controller {
 
   /** Offers no translation and each Language the Current Resource has, or is being translated into. */
   private showLanguages(project: ProjectView | null): void {
-    const shown = project?.shown_translation ?? null;
+    const shownLanguage = project?.shown_translation ?? null;
     const codes = [...(currentResource(project)?.translation_languages ?? [])];
-    if (shown !== null && !codes.includes(shown)) codes.push(shown);
+    if (shownLanguage !== null && !codes.includes(shownLanguage))
+      codes.push(shownLanguage);
     this.translationLanguageTarget.replaceChildren(
       option("", t("edit.noTranslation")),
       ...codes.map((code) => option(code, t(`languages.${code}`))),
     );
-    this.translationLanguageTarget.value = shown ?? "";
+    this.translationLanguageTarget.value = shownLanguage ?? "";
     // What a running Mode shows is its own until it ends.
     this.translationLanguageTarget.disabled =
       (project?.running_mode ?? null) !== null;

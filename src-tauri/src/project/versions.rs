@@ -215,7 +215,7 @@ fn pair_moved_cues(left: &[ComparedCue], right: &[ComparedCue], groups: &mut Gro
         if !groups.is_alone(left_index) {
             continue;
         }
-        let moved = right
+        let moved_index = right
             .iter()
             .enumerate()
             .position(|(right_index, right_cue)| {
@@ -223,7 +223,7 @@ fn pair_moved_cues(left: &[ComparedCue], right: &[ComparedCue], groups: &mut Gro
                     && groups.is_alone(left.len() + right_index)
                     && right_cue.text == left_cue.text
             });
-        if let Some(right_index) = moved {
+        if let Some(right_index) = moved_index {
             taken[right_index] = true;
             groups.join(left_index, left.len() + right_index);
         }

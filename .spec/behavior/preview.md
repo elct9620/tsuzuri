@@ -184,13 +184,23 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | the Video Window button is pressed |
 | Then | the video plays on from 3 s in a window of its own |
 
-## `PV-128` Telling where the video went
+## `PV-128` Leaving only the controls above the timeline while the video is away
+
+Once the video has left, the Current Segment's card repeats the row being edited in the list, so the Preview keeps only its controls and gives the height to the editor.
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a video |
 | When | the Video Window button is pressed |
-| Then | the Preview says the video is in the Video Window, where the video was |
+| Then | the Preview shows its controls without the Current Segment's card |
+
+## `PV-139` Showing the Current Segment's card again as the video comes back
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window |
+| When | the Video Window button is pressed again |
+| Then | the Preview shows the Current Segment's card beside the video |
 
 ## `PV-129` Showing the Segment being played over the video in the Video Window
 

@@ -84,9 +84,14 @@ impl ResidentLlama {
         let mut router = self.router.lock().await;
         self.ensure_router(&mut router, steps, llama, model, preset_dir, timeout)
             .await?;
-        let running = router.as_ref().expect("the router was just started");
-        request_load(&running.base_url, timeout, &running.has_exited).await?;
-        Ok(running.base_url.clone())
+        let running_router = router.as_ref().expect("the router was just started");
+        request_load(
+            &running_router.base_url,
+            timeout,
+            &running_router.has_exited,
+        )
+        .await?;
+        Ok(running_router.base_url.clone())
     }
 
     /// Unloads the Model once `keep` passes, unless another translation asks for it first.
@@ -349,12 +354,12 @@ mod tests {
     struct RecordedSteps {
         started_args: StdMutex<Vec<Vec<String>>>,
         stopped_pids: StdMutex<Vec<u32>>,
-        running: StdMutex<Vec<Sender<StepEvent>>>,
+        running_senders: StdMutex<Vec<Sender<StepEvent>>>,
     }
 
     impl RecordedSteps {
         fn exit(&self) {
-            self.running.lock().unwrap().clear();
+            self.running_senders.lock().unwrap().clear();
         }
 
         fn start_count(&self) -> usize {
@@ -369,10 +374,10 @@ mod tests {
             args: &[String],
         ) -> Result<(tokio::sync::mpsc::Receiver<StepEvent>, u32), String> {
             let (sender, events) = channel(8);
-            self.running.lock().unwrap().push(sender);
-            let mut started = self.started_args.lock().unwrap();
-            started.push(args.to_vec());
-            Ok((events, started.len() as u32))
+            self.running_senders.lock().unwrap().push(sender);
+            let mut started_args = self.started_args.lock().unwrap();
+            started_args.push(args.to_vec());
+            Ok((events, started_args.len() as u32))
         }
 
         fn stop(&self, pid: u32) {

@@ -68,7 +68,7 @@ describe("TranscriptController", () => {
     return calls.find((call) => call.command === command)?.args;
   }
 
-  const translated: ProjectView = projectOf({
+  const translatedProject: ProjectView = projectOf({
     resources: [resourceOf({ translation_languages: ["en", "ja"] })],
     shown_translation: "en",
     segments: [
@@ -166,7 +166,7 @@ describe("TranscriptController", () => {
 
   // @behavior TL-006
   it("shows each translation under its segment", async () => {
-    await hold(translated);
+    await hold(translatedProject);
 
     expect(fields()).toEqual(["大家好", "Hello everyone"]);
   });
@@ -218,7 +218,7 @@ describe("TranscriptController", () => {
 
   // @behavior ED-002
   it("writes an edited translation to the Project", async () => {
-    await hold(translated);
+    await hold(translatedProject);
 
     edit(".field.translation", "Hi all");
     await settle();
@@ -232,7 +232,7 @@ describe("TranscriptController", () => {
 
   // @behavior ED-003
   it("exports the Project as a bilingual SRT", async () => {
-    await hold(translated);
+    await hold(translatedProject);
 
     document.querySelector<HTMLButtonElement>("#save-bilingual")!.click();
     await settle();
@@ -245,7 +245,7 @@ describe("TranscriptController", () => {
 
   // @behavior PJ-014
   it("opens the save dialog at the default path of the export", async () => {
-    await hold(translated);
+    await hold(translatedProject);
 
     document.querySelector<HTMLButtonElement>("#save-translation")!.click();
     await settle();
@@ -258,7 +258,7 @@ describe("TranscriptController", () => {
 
   // @behavior ED-004
   it("shows the translation chosen for the Current Resource", async () => {
-    await hold(translated);
+    await hold(translatedProject);
     const choice = document.querySelector<HTMLSelectElement>(
       '[data-transcript-target="translationLanguage"]',
     )!;
@@ -542,7 +542,10 @@ describe("TranscriptController", () => {
   });
   // @behavior ED-026
   it("holds every field while the Current Resource is transcribed", async () => {
-    await hold({ ...translated, running_mode: { mode: "transcription" } });
+    await hold({
+      ...translatedProject,
+      running_mode: { mode: "transcription" },
+    });
 
     const inputs = [...document.querySelectorAll<HTMLInputElement>("li input")];
     const textFields = [...document.querySelectorAll<HTMLElement>("li .field")];
@@ -560,7 +563,7 @@ describe("TranscriptController", () => {
   // @behavior ED-027
   it("holds only the translation while it is written", async () => {
     await hold({
-      ...translated,
+      ...translatedProject,
       running_mode: { mode: "translation", language: "en", indexes: null },
     });
 
@@ -574,7 +577,7 @@ describe("TranscriptController", () => {
   // @behavior ED-092
   it("holds only the translations of the Segments translated again", async () => {
     await hold({
-      ...translated,
+      ...translatedProject,
       running_mode: { mode: "translation", language: "en", indexes: [1] },
       segments: [
         { start_ms: 0, end_ms: 1000, text: "你好", translation: "Hello" },
@@ -591,7 +594,7 @@ describe("TranscriptController", () => {
   // @behavior ED-093
   it("holds the choice of translation while a Mode runs", async () => {
     await hold({
-      ...translated,
+      ...translatedProject,
       running_mode: { mode: "translation", language: "en", indexes: null },
     });
 
@@ -603,7 +606,7 @@ describe("TranscriptController", () => {
   });
 
   it("names the icon that opens a Segment's changes", async () => {
-    await hold(translated);
+    await hold(translatedProject);
 
     const opener = document.querySelector("li .dropdown-left [role=button]");
     expect([
@@ -614,7 +617,7 @@ describe("TranscriptController", () => {
 
   // @behavior ED-096
   it("shows the split shortcut beside splitting in a Segment's menu", async () => {
-    await hold(translated);
+    await hold(translatedProject);
 
     expect(document.querySelector("li button.split kbd")?.textContent).toBe(
       "Ctrl+Alt+Enter",
@@ -623,7 +626,7 @@ describe("TranscriptController", () => {
 
   // @behavior ED-107
   it("shows the delete shortcut beside deleting in a Segment's menu", async () => {
-    await hold(translated);
+    await hold(translatedProject);
 
     expect(document.querySelector("li button.delete kbd")?.textContent).toBe(
       "Delete",

@@ -74,7 +74,7 @@ pub async fn run_transcribe<'a>(
     let audio_bytes = std::fs::metadata(&wav)?.len();
 
     enter(ports, &mut phases, "load");
-    let started = Instant::now();
+    let start = Instant::now();
     project.show_transcript(Vec::new());
     ports.announce_project();
     run_step(
@@ -97,7 +97,7 @@ pub async fn run_transcribe<'a>(
         },
     )
     .await?;
-    let transcribe_seconds = started.elapsed().as_secs_f64();
+    let transcribe_seconds = start.elapsed().as_secs_f64();
 
     let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
     // What whisper-cli wrote must read as a Transcript before it replaces the subtitle.
@@ -684,15 +684,15 @@ mod tests {
             .unwrap();
         let processes = Processes::new(dir.path().join("processes.json"));
         let project = app.state::<CurrentProject>();
-        let mut opened = Project::open(
+        let mut opened_project = Project::open(
             media.parent().unwrap().to_path_buf(),
             Language::TraditionalChinese,
         )
         .unwrap();
-        opened
+        opened_project
             .select(&media.file_stem().unwrap().to_string_lossy())
             .unwrap();
-        project.replace(opened);
+        project.replace(opened_project);
         let target = project.transcription_target(true).unwrap();
 
         let transcription = run_transcribe(

@@ -93,11 +93,12 @@ impl Project {
     pub(super) fn subtitle_path(&self, language: Option<Language>) -> Result<PathBuf, Failure> {
         let current = self.current()?;
         let resource = self.resource(&current.name)?;
-        let found = match language {
+        let existing_path = match language {
             Some(language) => resource.translation_path(language).map(Path::to_path_buf),
             None => resource.subtitle.clone(),
         };
-        Ok(found.unwrap_or_else(|| self.directory.join(file_name(&current.name, [language]))))
+        Ok(existing_path
+            .unwrap_or_else(|| self.directory.join(file_name(&current.name, [language]))))
     }
 
     pub(super) fn bilingual_file_name(&self, name: &str, translation: Language) -> String {

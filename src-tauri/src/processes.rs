@@ -25,14 +25,14 @@ struct RunningProcess {
 /// Every Component process this launch started. The record on disk mirrors it so a crash leaves the PIDs behind for [`reap_strays`].
 #[derive(Clone)]
 pub struct Processes {
-    running: Arc<Mutex<HashMap<u32, RunningProcess>>>,
+    running_processes: Arc<Mutex<HashMap<u32, RunningProcess>>>,
     record: PathBuf,
 }
 
 impl Processes {
     pub fn new(record: PathBuf) -> Processes {
         Processes {
-            running: Arc::default(),
+            running_processes: Arc::default(),
             record,
         }
     }
@@ -51,7 +51,7 @@ impl Processes {
             .map_err(|error| error.to_string())?;
         let pid = child.pid();
         let name = executable_name(&program.to_string_lossy());
-        self.running.lock().unwrap().insert(
+        self.running_processes.lock().unwrap().insert(
             pid,
             RunningProcess {
                 child,
@@ -70,47 +70,47 @@ impl Processes {
     }
 
     pub fn kill(&self, pid: u32) {
-        let running = self.running.lock().unwrap().remove(&pid);
-        if let Some(running) = running {
-            end(running);
+        let process = self.running_processes.lock().unwrap().remove(&pid);
+        if let Some(process) = process {
+            end(process);
         }
         self.write_record();
     }
 
     pub fn kill_all(&self) {
-        let running: Vec<RunningProcess> = self
-            .running
+        let processes: Vec<RunningProcess> = self
+            .running_processes
             .lock()
             .unwrap()
             .drain()
-            .map(|(_, running)| running)
+            .map(|(_, process)| process)
             .collect();
-        for running in running {
-            end(running);
+        for process in processes {
+            end(process);
         }
         self.write_record();
     }
 
     fn forget(&self, pid: u32) {
-        self.running.lock().unwrap().remove(&pid);
+        self.running_processes.lock().unwrap().remove(&pid);
         self.write_record();
     }
 
     fn write_record(&self) {
-        let recorded: Vec<RecordedProcess> = self
-            .running
+        let records: Vec<RecordedProcess> = self
+            .running_processes
             .lock()
             .unwrap()
             .iter()
-            .map(|(pid, running)| RecordedProcess {
+            .map(|(pid, process)| RecordedProcess {
                 pid: *pid,
-                name: running.name.clone(),
+                name: process.name.clone(),
             })
             .collect();
         if let Some(dir) = self.record.parent() {
             let _ = std::fs::create_dir_all(dir);
         }
-        if let Ok(json) = serde_json::to_vec(&recorded) {
+        if let Ok(json) = serde_json::to_vec(&records) {
             let _ = std::fs::write(&self.record, json);
         }
     }
@@ -203,10 +203,10 @@ impl<R: Runtime> Steps for AppPorts<'_, R> {
 
 /// Ends a running process with the processes it started: a llama-server router starts one per Model,
 /// and Windows ends only the process it is told to.
-fn end(running: RunningProcess) {
+fn end(process: RunningProcess) {
     #[cfg(windows)]
-    kill_tree(running.child.pid());
-    let _ = running.child.kill();
+    kill_tree(process.child.pid());
+    let _ = process.child.kill();
 }
 
 /// The file name of an executable without its directory, as both `ps` and `tasklist` report it.
@@ -218,8 +218,8 @@ pub fn reap_strays(record: &Path) {
     let Ok(bytes) = std::fs::read(record) else {
         return;
     };
-    let recorded: Vec<RecordedProcess> = serde_json::from_slice(&bytes).unwrap_or_default();
-    for stray in recorded {
+    let records: Vec<RecordedProcess> = serde_json::from_slice(&bytes).unwrap_or_default();
+    for stray in records {
         if find_running_name(stray.pid).is_some_and(|name| name == stray.name) {
             kill_tree(stray.pid);
         }
@@ -447,26 +447,26 @@ mod tests {
         steps.start(&sleep_path(), &["60".to_string()]).unwrap().1
     }
 
-    /// Cancels the Mode Run `run` once `started` hands over the PID it waits for, answering how the
+    /// Cancels the Mode Run `run` once `start` hands over the PID it waits for, answering how the
     /// run ended and that PID.
     async fn cancel_once_started<R: Runtime>(
         lock: &ModeLock,
         run: &ModeRun<'_, AppPorts<'_, R>>,
         start: impl FnOnce() -> u32,
     ) -> (Result<(), Failure>, u32) {
-        let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+        let (pid_tx, pid_rx) = tokio::sync::oneshot::channel();
         let task = async {
-            started_tx.send(start()).unwrap();
+            pid_tx.send(start()).unwrap();
             std::future::pending::<Result<(), Failure>>().await
         };
         let cancel = async {
-            let started = started_rx.await.unwrap();
+            let pid = pid_rx.await.unwrap();
             lock.cancel();
-            started
+            pid
         };
-        let (result, started) = tokio::join!(run.run_until_cancelled(task), cancel);
+        let (result, pid) = tokio::join!(run.run_until_cancelled(task), cancel);
         tokio::time::sleep(Duration::from_millis(200)).await;
-        (result, started)
+        (result, pid)
     }
 
     // @behavior PR-007

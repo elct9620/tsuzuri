@@ -62,14 +62,14 @@ fn whole_runs(len: usize, size: usize, split_sentences: &[Vec<usize>]) -> Vec<Ra
         })
         .collect();
     spans.sort_by_key(|span| span.start);
-    let mut merged: Vec<Range<usize>> = Vec::new();
+    let mut merged_spans: Vec<Range<usize>> = Vec::new();
     for span in spans {
-        match merged.last_mut() {
+        match merged_spans.last_mut() {
             Some(last) if span.start <= last.end => last.end = last.end.max(span.end),
-            _ => merged.push(span),
+            _ => merged_spans.push(span),
         }
     }
-    merged
+    merged_spans
         .into_iter()
         .filter(|run| run.len() <= size * SPLIT_SENTENCE_LIMIT)
         .collect()

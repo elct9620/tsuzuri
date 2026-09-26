@@ -153,20 +153,22 @@ impl SegmentChange {
                 }
                 segment_at(segments, last)?;
                 let run: Vec<Segment> = segments.drain(first + 1..=last).collect();
-                let merged = &mut segments[first];
-                merged.end_ms = run
+                let merged_segment = &mut segments[first];
+                merged_segment.end_ms = run
                     .iter()
                     .map(|segment| segment.end_ms)
-                    .fold(merged.end_ms, u64::max);
+                    .fold(merged_segment.end_ms, u64::max);
                 for segment in &run {
-                    merged.text = format!("{}\n{}", merged.text, segment.text);
+                    merged_segment.text = format!("{}\n{}", merged_segment.text, segment.text);
                 }
-                let translations: Vec<&str> = std::iter::once(merged.translation.as_deref())
-                    .chain(run.iter().map(|segment| segment.translation.as_deref()))
-                    .flatten()
-                    .filter(|translation| !translation.trim().is_empty())
-                    .collect();
-                merged.translation = (!translations.is_empty()).then(|| translations.join("\n"));
+                let translations: Vec<&str> =
+                    std::iter::once(merged_segment.translation.as_deref())
+                        .chain(run.iter().map(|segment| segment.translation.as_deref()))
+                        .flatten()
+                        .filter(|translation| !translation.trim().is_empty())
+                        .collect();
+                merged_segment.translation =
+                    (!translations.is_empty()).then(|| translations.join("\n"));
             }
             SegmentChange::Shift {
                 first,

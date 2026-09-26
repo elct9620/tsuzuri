@@ -346,3 +346,59 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | a timeline zoomed in to 200% |
 | When | the zoom level is pressed |
 | Then | the timeline shows 100 pixels a second again |
+
+## `PV-043` Showing the translation shown over the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s, translated `Today` in the translation shown |
+| When | the translation is chosen over the video and the media plays to 0.5 s |
+| Then | `Today` is shown over the video |
+
+## `PV-044` Showing both languages over the video in the Bilingual Order
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s, translated `Today` in the translation shown, its Bilingual Order putting the original first |
+| When | both languages are chosen over the video and the media plays to 0.5 s |
+| Then | `今天` is shown over the video above `Today` |
+
+## `PV-045` Putting the translation first over the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s, translated `Today` in the translation shown, its Bilingual Order putting the translation first |
+| When | both languages are chosen over the video and the media plays to 0.5 s |
+| Then | `Today` is shown over the video above `今天` |
+
+## `PV-046` Showing the original over the video with no translation shown
+
+| Step | Statement |
+| --- | --- |
+| Given | both languages chosen over the video, and a Current Resource with the Segment `今天` from 0 to 1 s and no translation shown |
+| When | the media plays to 0.5 s |
+| Then | `今天` alone is shown over the video |
+
+## `PV-047` Offering only the original over the video with no translation shown
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and no translation shown |
+| When | the Project is shown |
+| Then | only the original can be chosen over the video |
+
+## `PV-048` Keeping what is shown over the video for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | both languages chosen over the video |
+| When | another Resource with a media file and a translation shown becomes current |
+| Then | both languages stay chosen |
+
+## `PV-049` Leaving out the choice over the video for media without a picture
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file |
+| When | its media loads without a picture |
+| Then | no choice of what is shown over the video is offered |

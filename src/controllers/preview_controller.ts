@@ -3,6 +3,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 
 import {
   followProject,
+  type ProjectOptions,
   type ProjectView,
   type Segment,
   type UnlistenFn,
@@ -29,6 +30,31 @@ function writeFolded(isFolded: boolean): void {
   }
 }
 
+/** Which text of the Segment being played is shown over the video. */
+type CaptionLanguage = "original" | "translation" | "bilingual";
+
+/** Where the webview remembers what is shown over the video, a choice of this machine's alone. */
+const CAPTION_KEY = "tsuzuri.preview-caption";
+
+function readCaptionLanguage(): CaptionLanguage {
+  try {
+    const value = localStorage.getItem(CAPTION_KEY);
+    return value === "translation" || value === "bilingual"
+      ? value
+      : "original";
+  } catch {
+    return "original";
+  }
+}
+
+function writeCaptionLanguage(language: CaptionLanguage): void {
+  try {
+    localStorage.setItem(CAPTION_KEY, language);
+  } catch {
+    // A webview without storage forgets the choice when it closes.
+  }
+}
+
 export default class PreviewController extends Controller {
   static targets = [
     "panel",
@@ -37,6 +63,8 @@ export default class PreviewController extends Controller {
     "screen",
     "media",
     "caption",
+    "captionChoice",
+    "captionLanguage",
     "hint",
     "playback",
     "time",
@@ -55,6 +83,9 @@ export default class PreviewController extends Controller {
   declare readonly screenTarget: HTMLElement;
   declare readonly mediaTarget: HTMLVideoElement;
   declare readonly captionTarget: HTMLElement;
+  /** Chooses the original, the translation shown or both over the video; only a picture has one. */
+  declare readonly captionChoiceTarget: HTMLElement;
+  declare readonly captionLanguageTargets: HTMLInputElement[];
   declare readonly hintTarget: HTMLElement;
   declare readonly playbackTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
@@ -71,6 +102,9 @@ export default class PreviewController extends Controller {
   private segments: Segment[] = [];
   private playingIndex: number | null = null;
   private currentIndex: number | null = null;
+  private hasTranslation = false;
+  private bilingualOrder: ProjectOptions["bilingual_order"] = "original-first";
+  private captionLanguage = readCaptionLanguage();
   private isFolded = readFolded();
   private unlisten?: UnlistenFn;
 
@@ -93,6 +127,13 @@ export default class PreviewController extends Controller {
     this.showPanel();
   }
 
+  chooseCaptionLanguage({ target }: Event): void {
+    this.captionLanguage = (target as HTMLInputElement)
+      .value as CaptionLanguage;
+    writeCaptionLanguage(this.captionLanguage);
+    this.showCaption(this.segmentIndexAtTime());
+  }
+
   togglePlayback(): void {
     if (this.mediaTarget.paused) void this.mediaTarget.play();
     else this.mediaTarget.pause();
@@ -101,6 +142,7 @@ export default class PreviewController extends Controller {
   /** Leaves the video out for media without a picture, keeping only the controls. */
   measure(): void {
     this.screenTarget.hidden = this.mediaTarget.videoWidth === 0;
+    this.captionChoiceTarget.hidden = this.screenTarget.hidden;
     this.showTime();
   }
 
@@ -112,11 +154,8 @@ export default class PreviewController extends Controller {
 
   follow(): void {
     this.showTime();
-    const at = this.mediaTarget.currentTime * 1000;
-    const index = this.segments.findIndex(
-      (segment) => segment.start_ms <= at && at < segment.end_ms,
-    );
-    this.captionTarget.textContent = this.segments[index]?.text ?? "";
+    const index = this.segmentIndexAtTime();
+    this.showCaption(index);
     const isPlaying = !this.mediaTarget.paused && index !== -1;
     this.markPlaying(isPlaying ? index : null);
   }
@@ -134,6 +173,39 @@ export default class PreviewController extends Controller {
     this.screenTarget.hidden = false;
     this.mediaTarget.hidden = true;
     this.hintTarget.hidden = false;
+    this.captionChoiceTarget.hidden = true;
+  }
+
+  /** The index of the Segment at the media's time, or -1 between Segments. */
+  private segmentIndexAtTime(): number {
+    const at = this.mediaTarget.currentTime * 1000;
+    return this.segments.findIndex(
+      (segment) => segment.start_ms <= at && at < segment.end_ms,
+    );
+  }
+
+  private showCaption(index: number): void {
+    const segment = this.segments[index];
+    this.captionTarget.textContent = segment ? this.caption(segment) : "";
+  }
+
+  /** The text over the video, laid out as a Bilingual SRT cue lays out both languages. */
+  private caption({ text, translation }: Segment): string {
+    const language = this.hasTranslation ? this.captionLanguage : "original";
+    if (language === "translation") return translation ?? "";
+    if (language === "original" || !translation) return text;
+    return this.bilingualOrder === "translation-first"
+      ? `${translation}\n${text}`
+      : `${text}\n${translation}`;
+  }
+
+  /** Offers the translation only while one is shown, keeping the choice for when one is again. */
+  private showCaptionChoice(): void {
+    const language = this.hasTranslation ? this.captionLanguage : "original";
+    for (const input of this.captionLanguageTargets) {
+      input.disabled = !this.hasTranslation && input.value !== "original";
+      input.checked = input.value === language;
+    }
   }
 
   private showCurrentSegment(): void {
@@ -165,15 +237,22 @@ export default class PreviewController extends Controller {
 
   private show(project: ProjectView | null): void {
     this.segments = project?.segments ?? [];
+    this.hasTranslation = (project?.shown_translation ?? null) !== null;
+    this.bilingualOrder = project?.options.bilingual_order ?? "original-first";
+    this.showCaptionChoice();
     const media = project?.media ?? null;
     if (media !== this.media) this.currentIndex = null;
     this.showCurrentSegment();
-    if (media === this.media) return;
+    if (media === this.media) {
+      this.showCaption(this.segmentIndexAtTime());
+      return;
+    }
     this.media = media;
     this.showPanel();
     this.screenTarget.hidden = false;
     this.mediaTarget.hidden = false;
     this.hintTarget.hidden = true;
+    this.captionChoiceTarget.hidden = false;
     this.captionTarget.textContent = "";
     this.markPlaying(null);
     if (media === null) this.mediaTarget.removeAttribute("src");

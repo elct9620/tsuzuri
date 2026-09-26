@@ -595,6 +595,40 @@
                         class="text-lg font-medium whitespace-nowrap tabular-nums"
                         data-preview-target="time"
                       ></span>
+                      <div
+                        role="radiogroup"
+                        class="join ml-auto"
+                        data-preview-target="captionChoice"
+                        data-i18n-label="preview.captionLanguage"
+                      >
+                        <input
+                          type="radio"
+                          name="preview-caption"
+                          value="original"
+                          class="join-item btn btn-xs"
+                          data-preview-target="captionLanguage"
+                          data-action="preview#chooseCaptionLanguage"
+                          data-i18n-label="preview.captionOriginal"
+                        />
+                        <input
+                          type="radio"
+                          name="preview-caption"
+                          value="translation"
+                          class="join-item btn btn-xs"
+                          data-preview-target="captionLanguage"
+                          data-action="preview#chooseCaptionLanguage"
+                          data-i18n-label="preview.captionTranslation"
+                        />
+                        <input
+                          type="radio"
+                          name="preview-caption"
+                          value="bilingual"
+                          class="join-item btn btn-xs"
+                          data-preview-target="captionLanguage"
+                          data-action="preview#chooseCaptionLanguage"
+                          data-i18n-label="preview.captionBilingual"
+                        />
+                      </div>
                     </div>
                     <div class="divider my-0"></div>
                     <p

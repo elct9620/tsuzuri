@@ -116,6 +116,10 @@ const en = {
     notRedone: "Change not redone",
   },
   preview: {
+    captionLanguage: "Language over the video",
+    captionOriginal: "Original",
+    captionTranslation: "Translation",
+    captionBilingual: "Both",
     zoomHint: "Ctrl or Alt with the wheel also zooms",
     resetZoom: "Back to 100%",
     current: "Current Segment",

@@ -52,7 +52,7 @@ describe("RetranslationController", () => {
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
           <button data-segment-changes-target="mergeButton"></button>
-          <button id="retranslate-selection" data-retranslation-target="checkedButton"
+          <button id="retranslate-checked" data-retranslation-target="checkedButton"
             data-action="segment-changes#retranslate">重新翻譯</button>
         </div>
         <ol data-transcript-target="list"></ol>
@@ -100,7 +100,7 @@ describe("RetranslationController", () => {
   });
 
   // @behavior ED-040
-  it("translates the selected Segments again", async () => {
+  it("translates the Checked Segments again", async () => {
     await hold(projectTranslatedIntoEnglish);
     for (const index of [0, 2]) {
       const checkbox =
@@ -109,9 +109,7 @@ describe("RetranslationController", () => {
       checkbox.dispatchEvent(new Event("change", { bubbles: true }));
     }
 
-    document
-      .querySelector<HTMLButtonElement>("#retranslate-selection")!
-      .click();
+    document.querySelector<HTMLButtonElement>("#retranslate-checked")!.click();
     await settle();
 
     expect(retranslated).toEqual({ indexes: [0, 2] });

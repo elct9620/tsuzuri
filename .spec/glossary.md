@@ -72,7 +72,7 @@ Where editing stands in the Current Segment: a caret, or a range of text, in one
 
 ### Checked Segment
 
-A Segment whose box is checked in the editor, so one change reaches many at once: merging neighbours, shifting, naming a Speaker, or translating again. Checking changes nothing in the Project, and the checks are cleared once the Segments change.
+A Segment whose box is checked in the editor, so one change reaches many at once: merging neighbours, shifting, deleting, naming a Speaker, or translating again. Checking changes nothing in the Project, and the checks are cleared once the Segments change.
 
 #### Rejected
 
@@ -211,7 +211,7 @@ A grey shape standing where content is still being made or read, such as a row b
 
 ### Segment Change
 
-A change to the Segments themselves rather than to a text: new times for one, the edge two neighbours share moved for both, one inserted before or after another or at times of its own, one deleted, one split in two at a point in its text, a run of them merged, or a run of them shifted in time. It is made to the original and every translation of the Current Resource together, since a translation is matched to its original by time.
+A change to the Segments themselves rather than to a text: new times for one, the edge two neighbours share moved for both, one inserted before or after another or at times of its own, any of them deleted, one split in two at a point in its text, a run of them merged, or a run of them shifted in time. It is made to the original and every translation of the Current Resource together, since a translation is matched to its original by time.
 
 ### Backup
 

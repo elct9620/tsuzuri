@@ -4,18 +4,8 @@ import {
   type EditCommand,
   type UnlistenFn,
 } from "../backend/project";
-import { isField, type EditingSession } from "../editor";
+import { isTextField, type EditingSession } from "../editor";
 import { notifyEdit } from "../ui/notification";
-
-/** The input types holding typed text, whose own history an undo in them belongs to. */
-const TEXT_INPUT_TYPES = new Set(["text", "search", "url", "email", "tel"]);
-
-function isTextField(element: EventTarget | null): boolean {
-  return (
-    isField(element) ||
-    (element instanceof HTMLInputElement && TEXT_INPUT_TYPES.has(element.type))
-  );
-}
 
 /**
  * Routes a key event by whether it was typed in a text field: `:typing` routes only those,
@@ -39,6 +29,7 @@ export default class UndoController extends Controller {
 
   async connect(): Promise<void> {
     this.unlisten = await followEditCommands((command) => {
+      if (command === "select-all") return;
       if (isTextField(document.activeElement)) {
         document.execCommand(command);
       } else {
@@ -61,7 +52,9 @@ export default class UndoController extends Controller {
     void this.applyToProject("redo");
   }
 
-  private async applyToProject(command: EditCommand): Promise<void> {
+  private async applyToProject(
+    command: Exclude<EditCommand, "select-all">,
+  ): Promise<void> {
     const outcome = await (command === "undo"
       ? this.session.undo()
       : this.session.redo());

@@ -48,7 +48,7 @@ describe("rules", () => {
   it("counts the Segments a change leaves", () => {
     expect([
       segmentCountAfter({ kind: "split", index: 0, at: 2 }, 3),
-      segmentCountAfter({ kind: "deletion", index: 0 }, 3),
+      segmentCountAfter({ kind: "deletion", indexes: [0] }, 3),
       segmentCountAfter({ kind: "merge", first: 0, last: 2 }, 3),
       segmentCountAfter({ kind: "times", index: 0, start_ms: 0, end_ms: 1 }, 3),
     ]).toEqual([4, 2, 1, 3]);

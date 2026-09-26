@@ -474,6 +474,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | the first is deleted |
 | Then | the original and the translation each hold only the second |
 
+## `PJ-121` Deleting Segments apart from each other as one change
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of three Segments translated into `en` |
+| When | the first and third are deleted together, then undone |
+| Then | the deletion leaves only the second in each subtitle, and one undo brings all three back |
+
 ## `PJ-061` Splitting a Segment at a point in its text
 
 | Step | Statement |

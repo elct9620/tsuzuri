@@ -134,11 +134,21 @@ function cursorAfterChange(
           .length,
         caret: caretAt(0, ""),
       };
-    case "deletion":
-      if (index === null || index < change.index) return cursor;
-      if (index > change.index) return { ...cursor, index: index - 1 };
-      if (index < before.length - 1) return { index, caret: null };
-      return index > 0 ? { index: index - 1, caret: null } : NO_CURSOR;
+    case "deletion": {
+      if (index === null) return cursor;
+      const deletedIndexes = new Set(change.indexes);
+      const indexAfter = (at: number) =>
+        at - change.indexes.filter((each) => each < at).length;
+      if (!deletedIndexes.has(index))
+        return { ...cursor, index: indexAfter(index) };
+      for (let at = index + 1; at < before.length; at++)
+        if (!deletedIndexes.has(at))
+          return { index: indexAfter(at), caret: null };
+      for (let at = index - 1; at >= 0; at--)
+        if (!deletedIndexes.has(at))
+          return { index: indexAfter(at), caret: null };
+      return NO_CURSOR;
+    }
     case "merge":
       if (index === null || index < change.first) return cursor;
       if (index <= change.last) return { index: change.first, caret: null };

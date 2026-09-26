@@ -326,6 +326,16 @@ A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri 
 | When | the Resource list shows it |
 | Then | it lists `ep01` with `en` and `ep02` marked as having no subtitle |
 
+## `PJ-116` Marking a Resource of subtitles alone
+
+A Resource without a media file only edits its subtitles, so the list says so before it is selected.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project of `ep01` with a media file and `notes` of `notes.srt` alone |
+| When | the Resource list shows it |
+| Then | only `notes` is marked as subtitles alone |
+
 ## `PJ-038` Naming a Resource in full when its name is cut short
 
 | Step | Statement |

@@ -145,7 +145,7 @@ describe("ProjectController", () => {
     await hold(
       projectOf({
         resources: [
-          resourceOf({ translation_languages: ["en"] }),
+          resourceOf({ has_media: true, translation_languages: ["en"] }),
           resourceOf({ name: "ep02", has_media: true, has_subtitle: false }),
         ],
       }),
@@ -165,6 +165,23 @@ describe("ProjectController", () => {
       { name: "ep01", badges: ["en"], hasNoSubtitle: false, isCurrent: true },
       { name: "ep02", badges: [], hasNoSubtitle: true, isCurrent: false },
     ]);
+  });
+
+  // @behavior PJ-116
+  it("marks a Resource of subtitles alone", async () => {
+    await hold(
+      projectOf({
+        resources: [
+          resourceOf({ has_media: true }),
+          resourceOf({ name: "notes", has_media: false }),
+        ],
+      }),
+    );
+
+    const marked = [
+      ...target("resources").querySelectorAll('[data-kind="subtitle"]'),
+    ].map((badge) => badge.closest("button")?.dataset.name);
+    expect(marked).toEqual(["notes"]);
   });
 
   // @behavior PJ-038

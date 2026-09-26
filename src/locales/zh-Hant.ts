@@ -25,6 +25,8 @@ const zhHant: typeof en = {
     title: "資源",
     reload: "重新載入",
     reloadHint: "重新讀取目錄，帶入別處改動的檔案（⌘R 或 Ctrl+R）",
+    subtitleOnly: "字幕",
+    subtitleOnlyHint: "沒有影片或音訊檔，只編輯字幕",
     noSubtitle: "還沒有字幕，可以轉錄產生",
     glossary: "詞彙表 {{count}} 筆",
     createGlossary: "建立詞彙表",

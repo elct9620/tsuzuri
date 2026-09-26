@@ -36,6 +36,14 @@ function resourceItem(
   name.textContent = resource.name;
   button.append(name);
   const marks: HTMLElement[] = [];
+  if (!resource.has_media) {
+    const kind = document.createElement("span");
+    kind.className = "badge badge-sm badge-outline";
+    kind.dataset.kind = "subtitle";
+    kind.textContent = t("resources.subtitleOnly");
+    kind.dataset.tooltip = t("resources.subtitleOnlyHint");
+    marks.push(kind);
+  }
   if (!resource.has_subtitle) {
     const status = document.createElement("span");
     status.className = "status status-warning";

@@ -501,7 +501,7 @@ describe("TranscriptController", () => {
   });
 
   // @behavior ED-023
-  it("marks naming a Speaker the Translation Glossary names as saved", async () => {
+  it("offers nothing for a Speaker the Translation Glossary names", async () => {
     await hold(projectNaming(["小明"]));
 
     await nameSpeaker("小明");

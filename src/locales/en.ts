@@ -149,7 +149,7 @@ const en = {
       "Scrolls the list to the Segment being played. Turn it off to keep the list where it is while the media plays on; ⌘L or Ctrl+L also switches it.",
     playingAlone: "Play only the Current Segment",
     playingAloneHint:
-      "Space plays the Current Segment from its start and stops at its end, to hear one line again. Turned off, Space plays on from where the media is; ⌘J or Ctrl+J also switches it.",
+      "Space plays the Current Segment from its start and stops at its end, to hear one line again. Turned off, Space plays on from where the media is.",
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",
     noWaveform: "Could not draw the waveform",

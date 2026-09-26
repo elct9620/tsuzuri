@@ -724,15 +724,7 @@ Space plays on from where the media is, so a Segment chosen is heard with the on
 | When | Space is pressed outside a field or button |
 | Then | the media plays from 1.5 s |
 
-## `PV-087` Turning playing alone on with Ctrl+J while typing
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with the Cursor in the Current Segment's text field |
-| When | Ctrl+J is pressed |
-| Then | playing alone is turned on, and the field keeps the focus |
-
-## `PV-088` Keeping playing alone on for the next Resource
+## `PV-087` Keeping playing alone on for the next Resource
 
 | Step | Statement |
 | --- | --- |

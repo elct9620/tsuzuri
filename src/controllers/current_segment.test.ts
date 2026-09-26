@@ -122,7 +122,7 @@ describe("Current Segment", () => {
       <main data-controller="transcript"
         data-action="editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
         <div data-controller="preview timeline"
-          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playCurrent:!control:prevent keydown.ctrl+j@window->timeline#togglePlayingAlone:prevent">
+          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playCurrent:!control:prevent">
           <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">
@@ -465,22 +465,6 @@ describe("Current Segment", () => {
   });
 
   // @behavior PV-087
-  it("turns playing alone on with Ctrl+J, leaving the focus in the field", async () => {
-    await show(twoSegments);
-    const field = rows()[1].querySelector<HTMLElement>(".field")!;
-    field.focus();
-
-    field.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "j", ctrlKey: true, bubbles: true }),
-    );
-
-    expect([
-      aloneButton().getAttribute("aria-pressed"),
-      document.activeElement,
-    ]).toEqual(["true", field]);
-  });
-
-  // @behavior PV-088
   it("keeps playing alone on for the next Resource", async () => {
     await show(twoSegments);
     aloneButton().click();

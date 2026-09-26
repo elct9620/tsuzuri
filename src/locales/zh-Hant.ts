@@ -114,6 +114,10 @@ const zhHant: typeof en = {
     notRedone: "沒有重做",
   },
   preview: {
+    captionLanguage: "疊字語言",
+    captionOriginal: "原文",
+    captionTranslation: "譯文",
+    captionBilingual: "雙語",
     zoomHint: "Ctrl 或 Alt 加滾輪也能縮放",
     resetZoom: "回到 100%",
     current: "目前段落",

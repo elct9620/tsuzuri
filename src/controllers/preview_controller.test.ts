@@ -35,6 +35,21 @@ describe("PreviewController", () => {
     media().dispatchEvent(new Event("timeupdate"));
   }
 
+  const captionLanguage = (value: string) =>
+    document.querySelector<HTMLInputElement>(
+      `[data-preview-target="captionLanguage"][value="${value}"]`,
+    )!;
+
+  /** `ep01` with media and `今天` from 0 to 1 s, translated `Today` in `en` shown. */
+  const projectTranslated = (changes: Partial<ProjectView> = {}) =>
+    projectWithMedia({
+      segments: [
+        { start_ms: 0, end_ms: 1000, text: "今天", translation: "Today" },
+      ],
+      shown_translation: "en",
+      ...changes,
+    });
+
   function pressPlay(): void {
     document.querySelector<HTMLElement>("#play")!.click();
   }
@@ -57,6 +72,11 @@ describe("PreviewController", () => {
         </div>
         <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playback"></span></button>
         <span data-preview-target="time"></span>
+        <div data-preview-target="captionChoice">
+          <input type="radio" name="caption" value="original" data-preview-target="captionLanguage" data-action="preview#chooseCaption">
+          <input type="radio" name="caption" value="translation" data-preview-target="captionLanguage" data-action="preview#chooseCaption">
+          <input type="radio" name="caption" value="bilingual" data-preview-target="captionLanguage" data-action="preview#chooseCaption">
+        </div>
           <p data-preview-target="currentEmpty"></p>
           <div data-preview-target="current" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
         </div>
@@ -162,6 +182,94 @@ describe("PreviewController", () => {
     playTo(1.5);
 
     expect(target("caption").textContent).toBe("");
+  });
+
+  // @behavior PV-043
+  it("shows the translation shown over the video once it is chosen", async () => {
+    await show(projectTranslated());
+
+    captionLanguage("translation").click();
+    playTo(0.5);
+
+    expect(target("caption").textContent).toBe("Today");
+  });
+
+  // @behavior PV-044
+  it("shows both languages over the video with the original first", async () => {
+    await show(projectTranslated());
+
+    captionLanguage("bilingual").click();
+    playTo(0.5);
+
+    expect(target("caption").textContent).toBe("今天\nToday");
+  });
+
+  // @behavior PV-045
+  it("shows both languages over the video with the translation first when the Bilingual Order says so", async () => {
+    await show(
+      projectTranslated({
+        options: {
+          bilingual_order: "translation-first",
+          is_bilingual_autosaved: false,
+          is_overwrite_backed_up: false,
+        },
+      }),
+    );
+
+    captionLanguage("bilingual").click();
+    playTo(0.5);
+
+    expect(target("caption").textContent).toBe("Today\n今天");
+  });
+
+  // @behavior PV-046
+  it("shows the original alone over the video while no translation is shown", async () => {
+    await show(projectTranslated());
+    captionLanguage("bilingual").click();
+
+    await show(
+      projectWithMedia({
+        segments: [{ start_ms: 0, end_ms: 1000, text: "今天" }],
+      }),
+    );
+    playTo(0.5);
+
+    expect(target("caption").textContent).toBe("今天");
+  });
+
+  // @behavior PV-047
+  it("offers only the original over the video while no translation is shown", async () => {
+    await show(projectWithMedia());
+
+    expect(
+      ["original", "translation", "bilingual"].map(
+        (value) => captionLanguage(value).disabled,
+      ),
+    ).toEqual([false, true, true]);
+  });
+
+  // @behavior PV-048
+  it("keeps what is shown over the video for the next Resource", async () => {
+    await show(projectTranslated());
+    captionLanguage("bilingual").click();
+    application.stop();
+    application = Application.start();
+    application.register("preview", PreviewController);
+    await settle();
+
+    await show(projectTranslated({ media: "/talks/ep02.mp4" }));
+
+    expect(captionLanguage("bilingual").checked).toBe(true);
+  });
+
+  // @behavior PV-049
+  it("offers no choice over the video for media without a picture", async () => {
+    await show(projectTranslated());
+    Object.defineProperty(media(), "videoWidth", { value: 0 });
+
+    media().dispatchEvent(new Event("loadedmetadata"));
+
+    expect(target("captionChoice").hidden).toBe(true);
   });
 
   // @behavior PV-034

@@ -11,11 +11,16 @@ import PreviewController from "./preview_controller";
 describe("PreviewController", () => {
   let application: Application;
   let project: ProjectView | null;
+  /** The player, kept as the Video Window takes it out of the page. */
+  let player: HTMLVideoElement;
+  /** The commands asked of Rust's window plugin, with their arguments. */
+  let windowCalls: [string, unknown][];
+  let isFullscreen: boolean;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = (name: string) =>
     document.querySelector<HTMLElement>(`[data-preview-target="${name}"]`)!;
-  const media = () => target("media") as HTMLVideoElement;
+  const media = () => player;
   const panel = () => target("panel");
   const projectWithMedia = (changes: Partial<ProjectView> = {}) =>
     projectOf({ media: "/talks/ep01.mp4", ...changes });
@@ -74,6 +79,19 @@ describe("PreviewController", () => {
       ...changes,
     });
 
+  /** The Video Window the player is in, or none while it is in the Preview. */
+  const videoWindow = () =>
+    player.ownerDocument === document ? null : player.ownerDocument.defaultView;
+
+  const inVideoWindow = (name: string) =>
+    player.ownerDocument.querySelector<HTMLElement>(
+      `[data-preview-target="${name}"]`,
+    )!;
+
+  function pressVideoWindowButton(): void {
+    document.querySelector<HTMLElement>("#video-window")!.click();
+  }
+
   function pressPlay(): void {
     document.querySelector<HTMLElement>("#play")!.click();
   }
@@ -82,19 +100,32 @@ describe("PreviewController", () => {
     localStorage.clear();
     project = null;
     mockConvertFileSrc("macos");
-    mockIPC((command) => (command === "current_project" ? project : null), {
-      shouldMockEvents: true,
-    });
+    windowCalls = [];
+    isFullscreen = false;
+    mockIPC(
+      (command, args) => {
+        if (command === "current_project") return project;
+        if (command === "plugin:window|get_all_windows")
+          return ["main", "video"];
+        if (command === "plugin:window|is_fullscreen") return isFullscreen;
+        if (command.startsWith("plugin:window|"))
+          windowCalls.push([command, args]);
+        return null;
+      },
+      { shouldMockEvents: true },
+    );
     document.body.innerHTML = `
-      <div data-controller="preview">
+      <div data-controller="preview" data-action="rust:video-window-closing@window->preview#closeVideoWindow">
         <button id="fold" data-preview-target="foldButton" data-action="preview#toggleFold" hidden><span data-preview-target="foldIcon"></span></button>
         <div data-preview-target="panel" hidden>
         <div data-preview-target="screen">
-          <video data-preview-target="media" data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"></video>
+          <video data-preview-target="media"></video>
           <p data-preview-target="caption"></p>
           <div data-preview-target="hint" hidden></div>
         </div>
+        <div data-preview-target="videoWindowHint" hidden></div>
         <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playbackIcon"></span></button>
+        <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
         <span data-preview-target="time"></span>
         <div data-preview-target="captionChoice">
           <input type="radio" name="caption" value="original" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
@@ -110,6 +141,7 @@ describe("PreviewController", () => {
         </div>
       </div>
     `;
+    player = document.querySelector("video")!;
     application = Application.start();
     await assemble(application, {
       preview: PreviewController,
@@ -119,6 +151,7 @@ describe("PreviewController", () => {
 
   afterEach(() => {
     application.stop();
+    videoWindow()?.close();
     clearMocks();
   });
 
@@ -521,5 +554,134 @@ describe("PreviewController", () => {
     await show(projectOf({ media: "/talks/ep02.mp4" }));
 
     expect(panel().hidden).toBe(true);
+  });
+
+  describe("the Video Window", () => {
+    // @behavior PV-125
+    it("plays the video on from where it was in a window of its own", async () => {
+      await show(projectWithMedia());
+      pressPlay();
+      playTo(3);
+
+      pressVideoWindowButton();
+
+      expect([
+        videoWindow() !== null,
+        media().paused,
+        media().currentTime,
+      ]).toEqual([true, false, 3]);
+    });
+
+    // @behavior PV-126
+    it("says where the video went in its place", async () => {
+      await show(projectWithMedia());
+
+      pressVideoWindowButton();
+
+      expect(target("videoWindowHint").hidden).toBe(false);
+    });
+
+    // @behavior PV-127
+    it("shows the Segment being played over the video in the Video Window", async () => {
+      await show(
+        projectWithMedia({
+          segments: [{ start_ms: 0, end_ms: 1000, text: "今天" }],
+        }),
+      );
+      pressVideoWindowButton();
+
+      playTo(0.5);
+
+      expect(inVideoWindow("caption").textContent).toBe("今天");
+    });
+
+    // @behavior PV-128
+    it("plays the video on from where it was in the Preview as the Video Window is closed", async () => {
+      await show(projectWithMedia());
+      pressPlay();
+      playTo(3);
+      pressVideoWindowButton();
+
+      await emit("video-window-closing");
+      await settle();
+
+      expect([videoWindow(), media().paused, media().currentTime]).toEqual([
+        null,
+        false,
+        3,
+      ]);
+    });
+
+    // @behavior PV-129
+    it("closes the Video Window with the video back in the Preview when its button is pressed again", async () => {
+      await show(projectWithMedia());
+      pressVideoWindowButton();
+
+      pressVideoWindowButton();
+      await settle();
+
+      expect([videoWindow(), windowCalls]).toEqual([
+        null,
+        [["plugin:window|destroy", { label: "video" }]],
+      ]);
+    });
+
+    // @behavior PV-131
+    it("fills the screen with the Video Window when the video is double-clicked", async () => {
+      await show(projectWithMedia());
+      pressVideoWindowButton();
+
+      media().dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+      await settle();
+
+      expect(windowCalls).toEqual([
+        ["plugin:window|set_fullscreen", { label: "video", value: true }],
+      ]);
+    });
+
+    // @behavior PV-132
+    it("leaves the full screen when Esc is pressed in the Video Window", async () => {
+      await show(projectWithMedia());
+      pressVideoWindowButton();
+      isFullscreen = true;
+
+      media().dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+      await settle();
+
+      expect(windowCalls).toEqual([
+        ["plugin:window|set_fullscreen", { label: "video", value: false }],
+      ]);
+    });
+
+    // @behavior PV-133
+    it("shows the next Resource's video in the Video Window", async () => {
+      await show(projectWithMedia());
+      pressVideoWindowButton();
+
+      await show(projectWithMedia({ media: "/talks/ep02.mp4" }));
+
+      expect([videoWindow() !== null, media().getAttribute("src")]).toEqual([
+        true,
+        "asset://localhost/%2Ftalks%2Fep02.mp4",
+      ]);
+    });
+
+    // @behavior PV-134
+    it("closes the Video Window for media without a picture", async () => {
+      await show(projectWithMedia());
+      pressVideoWindowButton();
+      await show(projectWithMedia({ media: "/talks/ep02.m4a" }));
+      Object.defineProperty(media(), "videoWidth", { value: 0 });
+
+      media().dispatchEvent(new Event("loadedmetadata"));
+      await settle();
+
+      expect([videoWindow(), windowCalls]).toEqual([
+        null,
+        [["plugin:window|destroy", { label: "video" }]],
+      ]);
+    });
   });
 });

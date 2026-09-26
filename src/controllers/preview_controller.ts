@@ -7,9 +7,16 @@ import type {
   ProjectView,
   Segment,
 } from "../backend/project";
+import {
+  destroyVideoWindow,
+  leaveVideoWindowFullscreen,
+  toggleVideoWindowFullscreen,
+} from "../backend/video_window";
 import type { EditingSession } from "../editor";
+import { t } from "../i18n";
 import { rememberChoice, rememberedChoice } from "../ui/choices";
 import { formatClock, formatTime } from "../ui/time";
+import { forwardKeys, openVideoWindow } from "../ui/video_window";
 
 /** Where the webview remembers the Preview folded away. */
 const FOLDED_KEY = "tsuzuri.preview-folded";
@@ -62,6 +69,8 @@ export default class PreviewController extends Controller {
     "captionBackdrop",
     "captionSpeaker",
     "hint",
+    "videoWindowButton",
+    "videoWindowHint",
     "playbackIcon",
     "time",
     "currentHint",
@@ -88,6 +97,10 @@ export default class PreviewController extends Controller {
   declare readonly captionBackdropTargets: HTMLInputElement[];
   declare readonly captionSpeakerTarget: HTMLInputElement;
   declare readonly hintTarget: HTMLElement;
+  /** Moves the video into the Video Window and back; only a picture has one to move. */
+  declare readonly videoWindowButtonTarget: HTMLButtonElement;
+  /** Says, in the video's place, that it is in the Video Window. */
+  declare readonly videoWindowHintTarget: HTMLElement;
   declare readonly playbackIconTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
   /** Asks for a Segment to be clicked while none is current. */
@@ -113,10 +126,34 @@ export default class PreviewController extends Controller {
   private isSpeakerShown = rememberedChoice(SPEAKER_KEY) !== "false";
   private isFolded = rememberedChoice(FOLDED_KEY) === "true";
   private unfollow?: () => void;
-  /** The request for the next frame the Preview follows the media on, while it plays. */
-  private frameRequest: number | null = null;
+  /** The request for the next frame the Preview follows the media on while it plays, and the window drawing it. */
+  private frameRequest: { view: Window; id: number } | null = null;
+  /**
+   * The player and what is drawn over it, kept from `connect`: the Video Window takes them out of
+   * the controller's element, where Stimulus no longer finds them as targets or binds their actions.
+   */
+  private screen!: HTMLElement;
+  private player!: HTMLVideoElement;
+  private captionBox!: HTMLElement;
+  private unplayableHint!: HTMLElement;
+  /** The window the video is in while it is out of the Preview. */
+  private videoWindow: Window | null = null;
+  private readonly playerListeners: [string, () => void][] = [
+    ["loadedmetadata", () => this.measure()],
+    ["durationchange", () => this.showTime()],
+    ["timeupdate", () => this.follow()],
+    ["play", () => this.showPlaying()],
+    ["pause", () => this.showPaused()],
+    ["error", () => this.showUnplayable()],
+  ];
 
   connect(): void {
+    this.screen = this.screenTarget;
+    this.player = this.mediaTarget;
+    this.captionBox = this.captionTarget;
+    this.unplayableHint = this.hintTarget;
+    for (const [name, listener] of this.playerListeners)
+      this.player.addEventListener(name, listener);
     this.showCaptionBackdrop();
     this.captionSpeakerTarget.checked = this.isSpeakerShown;
     this.unfollow = this.feed.follow((project) => this.show(project));
@@ -125,6 +162,9 @@ export default class PreviewController extends Controller {
   disconnect(): void {
     this.unfollow?.();
     this.stopFollowingFrames();
+    if (this.videoWindow) this.closeVideoWindow();
+    for (const [name, listener] of this.playerListeners)
+      this.player.removeEventListener(name, listener);
   }
 
   /** Shows the Current Segment in the card beside the video. */
@@ -158,20 +198,37 @@ export default class PreviewController extends Controller {
     this.showCaption(this.segmentIndexesAtTime());
   }
 
+  toggleVideoWindow(): void {
+    if (this.videoWindow) this.closeVideoWindow();
+    else this.moveVideoOut();
+  }
+
+  /**
+   * Brings the video back as the Video Window is closed. With none of this page's open, as after the
+   * page is reloaded, the window it left behind goes all the same.
+   */
+  closeVideoWindow(): void {
+    this.bringVideoBack();
+    void destroyVideoWindow();
+  }
+
   togglePlayback(): void {
-    if (this.mediaTarget.paused) void this.mediaTarget.play();
-    else this.mediaTarget.pause();
+    if (this.player.paused) void this.player.play();
+    else this.player.pause();
   }
 
   /** Leaves the video out for media without a picture, keeping only the controls. */
   measure(): void {
-    this.screenTarget.hidden = this.mediaTarget.videoWidth === 0;
-    this.captionChoiceTarget.hidden = this.screenTarget.hidden;
+    const hasPicture = this.player.videoWidth > 0;
+    if (!hasPicture && this.videoWindow) this.closeVideoWindow();
+    this.screen.hidden = !hasPicture;
+    this.captionChoiceTarget.hidden = !hasPicture;
+    this.videoWindowButtonTarget.hidden = !hasPicture;
     this.showTime();
   }
 
   showTime(): void {
-    const { currentTime, duration } = this.mediaTarget;
+    const { currentTime, duration } = this.player;
     const length = Number.isFinite(duration) ? duration : 0;
     showText(
       this.timeTarget,
@@ -183,7 +240,7 @@ export default class PreviewController extends Controller {
     this.showTime();
     const indexes = this.segmentIndexesAtTime();
     this.showCaption(indexes);
-    this.markPlaying(this.mediaTarget.paused ? [] : indexes);
+    this.markPlaying(this.player.paused ? [] : indexes);
   }
 
   showPlaying(): void {
@@ -198,35 +255,79 @@ export default class PreviewController extends Controller {
   }
 
   showUnplayable(): void {
-    this.screenTarget.hidden = false;
-    this.mediaTarget.hidden = true;
-    this.hintTarget.hidden = false;
+    this.screen.hidden = false;
+    this.player.hidden = true;
+    this.unplayableHint.hidden = false;
     this.captionChoiceTarget.hidden = true;
   }
 
   /**
    * A player reports its time only a few times a second, so while it plays the Preview follows
-   * each frame drawn, and a caption comes with its words.
+   * each frame drawn, and a caption comes with its words. The frames are those of the window the
+   * video is in, which keeps drawing while the main window is behind another.
    */
   private followFrames(): void {
     if (this.frameRequest !== null) return;
+    const view = this.player.ownerDocument.defaultView ?? window;
     const onFrame = () => {
+      this.frameRequest = null;
       this.follow();
-      this.frameRequest = this.mediaTarget.paused
-        ? null
-        : requestAnimationFrame(onFrame);
+      if (!this.player.paused) this.followFrames();
     };
-    this.frameRequest = requestAnimationFrame(onFrame);
+    this.frameRequest = { view, id: view.requestAnimationFrame(onFrame) };
   }
 
   private stopFollowingFrames(): void {
-    if (this.frameRequest !== null) cancelAnimationFrame(this.frameRequest);
+    this.frameRequest?.view.cancelAnimationFrame(this.frameRequest.id);
     this.frameRequest = null;
+  }
+
+  private moveVideoOut(): void {
+    const videoWindow = openVideoWindow(t("preview.videoWindowTitle"));
+    if (!videoWindow) return;
+    forwardKeys(videoWindow);
+    videoWindow.addEventListener("keydown", ({ key }) => {
+      if (key === "Escape") void leaveVideoWindowFullscreen();
+    });
+    videoWindow.addEventListener(
+      "dblclick",
+      () => void toggleVideoWindowFullscreen(),
+    );
+    this.videoWindow = videoWindow;
+    this.moveScreen(() => videoWindow.document.body.append(this.screen));
+  }
+
+  private bringVideoBack(): void {
+    if (!this.videoWindow) return;
+    this.videoWindow = null;
+    this.moveScreen(() => this.videoWindowHintTarget.before(this.screen));
+  }
+
+  /**
+   * Moves the player with what is drawn over it between the Preview and the Video Window. WebKit
+   * pauses a media element moved to another page, keeping its time, so a playing one plays on, and
+   * its frames are followed in the window it is now in.
+   */
+  private moveScreen(place: () => void): void {
+    const { paused } = this.player;
+    this.stopFollowingFrames();
+    place();
+    this.screen.toggleAttribute("data-is-away", this.videoWindow !== null);
+    if (!paused && this.player.paused) void this.player.play();
+    if (!this.player.paused) this.followFrames();
+    this.showVideoWindow();
+  }
+
+  private showVideoWindow(): void {
+    const isAway = this.videoWindow !== null;
+    this.videoWindowHintTarget.hidden = !isAway;
+    this.videoWindowButtonTarget.setAttribute("aria-pressed", `${isAway}`);
+    this.videoWindowButtonTarget.classList.toggle("btn-primary", isAway);
   }
 
   /** The indexes of the Segments at the media's time, in the order they start; none between Segments. */
   private segmentIndexesAtTime(): number[] {
-    const at = this.mediaTarget.currentTime * 1000;
+    const at = this.player.currentTime * 1000;
     return this.segments.flatMap((segment, index) =>
       segment.start_ms <= at && at < segment.end_ms ? [index] : [],
     );
@@ -235,7 +336,7 @@ export default class PreviewController extends Controller {
   /** Shows the Segments at `indexes` over the video, each above those that started before it. */
   private showCaption(indexes: number[]): void {
     const captions = indexes.map((index) => this.caption(this.segments[index]));
-    showText(this.captionTarget, captions.reverse().join("\n"));
+    showText(this.captionBox, captions.reverse().join("\n"));
   }
 
   /**
@@ -267,7 +368,7 @@ export default class PreviewController extends Controller {
   }
 
   private showCaptionBackdrop(): void {
-    this.captionTarget.dataset.backdrop = this.captionBackdrop;
+    this.captionBox.dataset.backdrop = this.captionBackdrop;
     for (const input of this.captionBackdropTargets) {
       input.checked = input.value === this.captionBackdrop;
     }
@@ -315,14 +416,16 @@ export default class PreviewController extends Controller {
       return;
     }
     this.media = media;
+    if (media === null && this.videoWindow) this.closeVideoWindow();
     this.showPanel();
-    this.screenTarget.hidden = false;
-    this.mediaTarget.hidden = false;
-    this.hintTarget.hidden = true;
+    this.screen.hidden = false;
+    this.videoWindowButtonTarget.hidden = false;
+    this.player.hidden = false;
+    this.unplayableHint.hidden = true;
     this.captionChoiceTarget.hidden = false;
-    this.captionTarget.textContent = "";
+    this.captionBox.textContent = "";
     this.markPlaying([]);
-    if (media === null) this.mediaTarget.removeAttribute("src");
-    else this.mediaTarget.src = convertFileSrc(media);
+    if (media === null) this.player.removeAttribute("src");
+    else this.player.src = convertFileSrc(media);
   }
 }

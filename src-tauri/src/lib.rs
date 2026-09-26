@@ -70,6 +70,7 @@ pub fn run() {
             app.manage(ResidentLlama::default());
             app.manage(ModeLock::default());
             translation::commands::start_resident_llama(app.handle());
+            window::build_main_window(app)?;
             window::size_first_window(app)?;
             Ok(())
         })
@@ -78,6 +79,8 @@ pub fn run() {
             if let WindowEvent::Focused(true) = event {
                 project::commands::reload_if_changed(window.app_handle());
             }
+            window::hand_back_video(window, event);
+            window::close_video_with_main(window, event);
         })
         .invoke_handler(tauri::generate_handler![
             waveform::commands::extract_waveform,

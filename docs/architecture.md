@@ -119,8 +119,9 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | 進度 | 用例經 `Progress` | `progress` |
 | 復原、重做、全選 | macOS 編輯選單 | `undo`、`segment-changes` |
 | 外部修改已留存 | 重新載入 | `project` |
+| 影片視窗要關閉 | 關閉影片視窗 | `preview` |
 
-事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`；三者由 `relayEvents` 轉成 window 的 `rust:` 事件。
+事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`；四者由 `relayEvents` 轉成 window 的 `rust:` 事件。
 
 ### 2.4 錯誤與通知
 
@@ -196,7 +197,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | 目錄 | 模組 | 層 | 負責 |
 |---|---|---|---|
 | — | `lib` | 介面 | 組裝 |
-| — | `window` | 介面 | 視窗大小 |
+| — | `window` | 介面 | 視窗大小、影片視窗 |
 | — | `menu` | 轉接 | macOS 復原與重做 |
 | — | `logs` | 轉接 | 決定 log 目錄 |
 | — | `transcript` | 領域 | 段落與 SRT |
@@ -247,6 +248,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 啟動
   │ reap_strays        清掉上次留下的元件行程（processes.json）
   │ manage             Processes、CurrentProject
+  │ build_main_window  依設定建立主視窗，只准它開影片視窗
   │ size_first_window  第一次開啟佔螢幕 80%，之後由 window-state 還原
   ▼
 視窗取得焦點 ─▶ reload_if_changed ─▶ 清單或字幕被外部修改就重新載入並送出 project-changed
@@ -523,7 +525,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `retranslation` | 重新翻譯一段或 Checked Segments |
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
-| `preview` | 播放器、疊字、收起 |
+| `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
@@ -567,6 +569,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `events.ts` | 把 Rust 事件轉到 window |
 | `failure.ts` | `Failure` 型別 |
 | `dialog.ts`、`system.ts` | 系統對話方塊、語系與平台 |
+| `video_window.ts` | 影片視窗的全螢幕與關閉 |
 
 ### 4.8 共用模組
 
@@ -579,8 +582,32 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
 | `ui/models.ts` | 各 Model Slot 的副檔名 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
+| `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `ui/shortcuts.ts` | 各平台的快速鍵與寫法 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
 圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。快速鍵綁在 `data-action` 與 controller，`ui/shortcuts.ts` 只供顯示，由測試確認一致。
+
+### 4.9 影片視窗
+
+```
+ 主視窗（Stimulus、IPC）                     影片視窗（label video，沒有 capability）
+  preview ─ window.open("about:blank") ─▶ on_new_window：只准一個空白頁
+     │ 複製樣式表，把 screen（<video>、疊字）移過去 ─▶ 同一份 JS，同一個播放器
+     │ ◀─ keydown 轉給主視窗的 window；雙擊、Esc 切換全螢幕
+ 關閉 ─▶ CloseRequested 被擋下 ─▶ video-window-closing ─▶ 移回預覽 ─▶ destroy
+ 主視窗關閉 ─▶ window.rs 一併 destroy 影片視窗
+```
+
+| 規則 | 做法 |
+|---|---|
+| 播放器 | 只有一個，移動不複製 |
+| 移出去的元素 | controller 在 connect 時留下參照 |
+| 播放器的事件 | `preview` 自己綁在元素上 |
+| 每格畫面 | 用影片所在視窗的 rAF |
+| 移動時被暫停 | WebKit 會暫停，移完接著播 |
+| 呼叫 Rust | 只從主視窗 |
+| 關閉 | 先移回，再 destroy |
+
+元素離開主視窗的 document，Stimulus 就找不到 target、解除 `data-action`，所以 `preview` 與 `timeline` 在 connect 時留下參照，播放器的事件由 `preview` 以 `addEventListener` 綁定。關閉前先移回，播放器才不會隨影片視窗的 document 一起結束。

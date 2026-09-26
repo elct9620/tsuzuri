@@ -170,6 +170,12 @@ const en = {
     play: "Play or stop",
     unplayable:
       "This format cannot be previewed here; its waveform still shows.",
+    videoWindow: "Play in the Video Window",
+    videoWindowHint:
+      "Moves the video into a window of its own, to drag to another screen and enlarge; double-click the video to fill the screen. Press again or close the window to bring it back.",
+    videoWindowAway:
+      "The video is playing in the Video Window. Press the Video Window button again or close that window to bring it back here.",
+    videoWindowTitle: "Tsuzuri Video",
   },
   compare: {
     label: "Compare",

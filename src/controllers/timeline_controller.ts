@@ -262,8 +262,11 @@ export default class TimelineController extends Controller {
    * end rather than jump past it; none after a seek.
    */
   private lastTime: number | null = null;
+  /** The player, kept from `connect`, as the Video Window takes it out of the controller's element. */
+  private player!: HTMLMediaElement;
 
   connect(): void {
+    this.player = this.mediaTarget;
     const keys = timeKeys();
     this.startKeyTarget.textContent = keys.start;
     this.endKeyTarget.textContent = keys.end;
@@ -309,12 +312,12 @@ export default class TimelineController extends Controller {
    * start while playing alone is turned on, for `pauseAtCurrentEnd` to stop at its end.
    */
   playOrStop(): void {
-    if (!this.mediaTarget.paused) {
-      this.mediaTarget.pause();
+    if (!this.player.paused) {
+      this.player.pause();
       return;
     }
     if (!this.isPlayingAlone) {
-      void this.mediaTarget.play();
+      void this.player.play();
       return;
     }
     const segment = this.currentSegment;
@@ -334,8 +337,8 @@ export default class TimelineController extends Controller {
   pauseAtCurrent(): void {
     const segment = this.currentSegment;
     if (!segment) return;
-    this.mediaTarget.pause();
-    this.mediaTarget.currentTime = segment.start_ms / 1000;
+    this.player.pause();
+    this.player.currentTime = segment.start_ms / 1000;
   }
 
   /** Colours the Current Segment's region, the only one that can be dragged. */
@@ -356,7 +359,7 @@ export default class TimelineController extends Controller {
     const segment = this.currentSegment;
     if (!side || index === null || !segment || this.isHeld) return;
     event.preventDefault();
-    const time = this.mediaTarget.currentTime;
+    const time = this.player.currentTime;
     const { lowestStart, highestStart, highestEnd } = this.dragReach(
       index,
       false,
@@ -493,7 +496,7 @@ export default class TimelineController extends Controller {
     });
     this.surfer = WaveSurfer.create({
       container: this.waveformTarget,
-      media: this.mediaTarget,
+      media: this.player,
       peaks: [waveform.peaks],
       duration: waveform.peaks.length / waveform.peaks_per_second,
       height: "auto",
@@ -570,9 +573,9 @@ export default class TimelineController extends Controller {
     const segment = this.currentSegment;
     if (!this.isPlayingAlone || !segment || from === null) return;
     const end = segment.end_ms / 1000;
-    if (this.mediaTarget.paused || from >= end || time < end) return;
-    this.mediaTarget.pause();
-    this.mediaTarget.currentTime = end;
+    if (this.player.paused || from >= end || time < end) return;
+    this.player.pause();
+    this.player.currentTime = end;
   }
 
   private get currentSegment(): Segment | undefined {
@@ -738,7 +741,7 @@ export default class TimelineController extends Controller {
   /** The times an edge Snaps to: where the media is, and each edge of the Segments but the one at `index`. */
   private snapTargets(index: number): number[] {
     return [
-      this.mediaTarget.currentTime,
+      this.player.currentTime,
       ...this.segments
         .filter((_, other) => other !== index)
         .flatMap((other) => [other.start_ms / 1000, other.end_ms / 1000]),

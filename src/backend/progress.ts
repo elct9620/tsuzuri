@@ -32,7 +32,7 @@ export function listenProgress(
   );
 }
 
-/** Asks the running transcription or translation to stop; what it has shown stays shown. */
+/** Asks the running transcription or translation to stop; the editor then shows the files again. */
 export function cancelTask(): Promise<void> {
   return invoke("cancel_task");
 }

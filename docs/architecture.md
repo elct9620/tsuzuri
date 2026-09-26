@@ -529,6 +529,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `versions`、`glossary` | 版本與詞彙表 modal |
 | `components`、`models`、`translation-settings`、`logs` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |
+| `shortcuts` | 快速鍵一覽 |
 | `notification` | 每則通知的倒數、暫停與按鈕 |
 | `undo` | 全頁的復原與重做 |
 | `field` | 每個編輯欄位接上 session |
@@ -578,6 +579,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/models.ts` | 各 Model Slot 的副檔名 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
+| `ui/shortcuts.ts` | 各平台的快速鍵與寫法 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
-圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。
+圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。快速鍵綁在 `data-action` 與 controller，`ui/shortcuts.ts` 只供顯示，由測試確認一致。

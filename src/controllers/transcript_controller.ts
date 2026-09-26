@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
 import { save } from "../backend/dialog";
+import { isMacOS } from "../backend/system";
 import {
   currentResource,
   exportPath,
@@ -27,6 +28,7 @@ import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
 import { rememberChoice, rememberedChoice } from "../ui/choices";
+import { shortcutById, shortcutText } from "../ui/shortcuts";
 import type { TaskKind } from "../ui/progress";
 import { formatTime } from "../ui/time";
 
@@ -152,11 +154,11 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
   const menu = document.createElement("ul");
   menu.tabIndex = -1;
   menu.className =
-    "menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md";
-  for (const [action, label] of [
+    "menu dropdown-content z-10 w-60 rounded-box bg-base-100 shadow-md";
+  for (const [action, label, shortcutId] of [
     ["insertBefore", "edit.insertAbove"],
     ["insertAfter", "edit.insertBelow"],
-    ["split", "edit.split"],
+    ["split", "edit.split", "split"],
     ["delete", "edit.delete"],
   ]) {
     const button = document.createElement("button");
@@ -165,6 +167,13 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
     button.dataset.index = String(index);
     button.dataset.action = `segment-changes#${action}`;
     button.textContent = t(label);
+    const shortcut = shortcutById(shortcutId ?? "");
+    if (shortcut) {
+      const keys = document.createElement("kbd");
+      keys.className = "kbd kbd-xs ms-auto";
+      keys.textContent = shortcutText(shortcut, isMacOS());
+      button.append(keys);
+    }
     const choice = document.createElement("li");
     choice.append(button);
     menu.append(choice);

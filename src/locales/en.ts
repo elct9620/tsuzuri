@@ -247,10 +247,31 @@ const en = {
     choose: "Choose",
     chooseFile: "Choose a file",
     restoreDefault: "Restore default",
+    transcription: "Transcription",
+    vad: "VAD",
+    vadHelp:
+      "Finds where someone speaks before transcribing and transcribes only there, so silence or music does not lead the model to write words nobody said. Needs a VAD model chosen under Models, such as ggml-silero-v6.2.0.bin.",
+    nonSpeechSuppressed: "Suppress non-speech",
+    nonSpeechSuppressedHelp:
+      "Keeps the model from writing tokens for applause, music and other sounds that are not speech.",
+    contextCarried: "Carry context",
+    contextCarriedHelp:
+      "Transcribes each part with the text before it as context, for more consistent wording; turn it off to keep one mistake from repeating.",
+    followGeneral: "Follow general settings",
+    on: "On",
+    off: "Off",
+    useGeneral: "Use general settings",
+    projectTranscriptionHelp:
+      'This project\'s own transcription settings; "Follow general settings" uses the ones on the General tab. Affects only this project.',
+    projectModelHelp:
+      "A model this project uses instead, such as a Japanese transcription model for a Japanese project; without one, the model on the General tab is used. Affects only this project.",
+    vadModelHelp:
+      "A whisper VAD model file (.bin), such as ggml-silero-v6.2.0.bin. Used only while VAD is on.",
     license: "Tsuzuri is released under the Apache-2.0 license.",
   },
   slots: {
     transcription: "Transcription",
+    vad: "VAD",
     translation: "Translation",
   },
   components: {
@@ -267,6 +288,7 @@ const en = {
   },
   models: {
     notChosen: "Not chosen",
+    followsGeneral: "Follows general settings",
     missing: "{{path}} is missing; choose it again",
   },
   phases: {

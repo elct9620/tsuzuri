@@ -289,6 +289,22 @@ describe("TranscribeController", () => {
     });
   });
 
+  // @behavior TX-041
+  it("names the Project Model in the transcribe dialog", async () => {
+    await hold({
+      ...media,
+      options: {
+        ...media.options,
+        models: { transcription: "/models/kotoba.bin", translation: null },
+      },
+    });
+
+    target("open").click();
+    await settle();
+
+    expect(target("model").textContent).toBe("kotoba.bin");
+  });
+
   // @behavior TX-024
   it("shows the translation options once translating afterwards is chosen", async () => {
     await hold(media);

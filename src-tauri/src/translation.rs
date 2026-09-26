@@ -128,8 +128,11 @@ pub async fn run_translate<'a>(
     ready_timeout: Duration,
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
-    let model = model_settings.ready_path(ModelSlot::Translation)?;
     let source = project.snapshot()?;
+    let model_settings = model_settings
+        .clone()
+        .with_project_model(ModelSlot::Translation, source.model.clone());
+    let model = model_settings.ready_path(ModelSlot::Translation)?;
     run.keep(project.hold_resource(
         &source.directory,
         &source.name,
@@ -1897,6 +1900,50 @@ mod tests {
         assert!(
             state.trim().is_empty() || state.starts_with('Z'),
             "llama-server still running: {state}"
+        );
+    }
+
+    // @behavior TL-085
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn translates_with_the_project_model() {
+        let dir = TempDir::new("tl-project-model");
+        let llama = dir.path().join("llama-server");
+        let args_file = dir.path().join("llama.args");
+        crate::test_support::write_executable(
+            &llama,
+            &format!(
+                "#!/bin/sh\necho \"$@\" > '{}'\nexit 1\n",
+                args_file.display()
+            ),
+        );
+        let mut settings = ModelSettings::default();
+        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        let project_model = dir.file("gemma-ja.gguf");
+        let mut project = project_of(vec![segment(0, 1_000, "大家好")]);
+        project.options.models.translation = Some(project_model.clone());
+        let app = mock_app();
+        let processes = Processes::new(dir.path().join("processes.json"));
+        app.state::<CurrentProject>().replace(project);
+
+        let _ = run_translate(
+            &ModeLock::default()
+                .begin(AppPorts::new(app.handle(), &processes))
+                .await,
+            app.state::<CurrentProject>().inner(),
+            &llama,
+            &settings,
+            &plan_for(Language::Japanese),
+            &LlamaServer::Job,
+            Duration::from_secs(1),
+            Phases::start("translate", "prepare"),
+        )
+        .await;
+
+        let args = std::fs::read_to_string(args_file).unwrap();
+        assert!(
+            args.contains(&format!("-m {} ", project_model.display())),
+            "llama-server ran with {args}"
         );
     }
 

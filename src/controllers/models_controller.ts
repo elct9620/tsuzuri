@@ -7,11 +7,7 @@ import {
   type ModelSlot,
 } from "../backend/toolchain";
 import { t } from "../i18n";
-
-const MODEL_EXTENSIONS: Record<ModelSlot, string[]> = {
-  transcription: ["bin"],
-  translation: ["gguf"],
-};
+import { MODEL_EXTENSIONS } from "../ui/models";
 
 export default class ModelsController extends Controller {
   static targets = ["status"];
@@ -19,7 +15,7 @@ export default class ModelsController extends Controller {
   declare readonly statusTargets: HTMLElement[];
 
   async connect(): Promise<void> {
-    this.render(await modelSettings());
+    this.show(await modelSettings());
   }
 
   async choose(event: Event): Promise<void> {
@@ -31,10 +27,10 @@ export default class ModelsController extends Controller {
     });
     if (path === null) return;
 
-    this.render(await chooseModel(slot, path));
+    this.show(await chooseModel(slot, path));
   }
 
-  private render(settings: ModelSettingsView): void {
+  private show(settings: ModelSettingsView): void {
     for (const status of this.statusTargets) {
       const { path, has_file } = settings[status.dataset.slot as ModelSlot];
       status.textContent =

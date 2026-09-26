@@ -86,6 +86,8 @@ pub fn run() {
             toolchain::commands::model_settings,
             toolchain::commands::choose_model,
             transcription::commands::transcribe,
+            transcription::commands::transcription_settings,
+            transcription::commands::save_transcription_settings,
             project::commands::current_project,
             project::commands::edit_segment,
             project::commands::set_speakers,

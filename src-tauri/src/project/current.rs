@@ -479,7 +479,7 @@ impl Project {
     /// Replaces the Project Options and records them in the Project Config.
     pub fn set_options(&mut self, options: ProjectOptions) -> Result<(), Failure> {
         ProjectConfig {
-            options,
+            options: options.clone(),
             ..self.config()
         }
         .save(&self.directory)?;
@@ -554,8 +554,8 @@ impl ProjectView {
         self.language
     }
 
-    pub fn options(&self) -> ProjectOptions {
-        self.options
+    pub fn options(&self) -> &ProjectOptions {
+        &self.options
     }
 
     pub fn translation_language(&self) -> Option<Language> {
@@ -748,7 +748,7 @@ impl CurrentProject {
                 directory: project.directory.clone(),
                 language: project.language,
                 translation_language: project.translation_language,
-                options: project.options,
+                options: project.options.clone(),
                 translation_glossary: project
                     .translation_glossary
                     .as_ref()
@@ -798,6 +798,7 @@ impl CurrentProject {
             name: current.name.clone(),
             transcript: current.transcript.clone(),
             language: project.language,
+            model: project.options.models.translation.clone(),
         })
     }
 
@@ -828,6 +829,8 @@ impl CurrentProject {
             media,
             subtitle,
             language: project.language,
+            model: project.options.models.transcription.clone(),
+            overrides: project.options.transcription,
         })
     }
 
@@ -1314,7 +1317,7 @@ pub(super) fn open_directory_of(path: &Path, language: Language) -> Result<Proje
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::{BilingualOrder, ProjectConfig};
+    use crate::project::{BilingualOrder, ProjectConfig, ProjectModels, TranscriptionOverrides};
     use crate::test_support::{backups, output_backups, overwrite_backups, project_of, TempDir};
 
     fn segment(text: &str, translation: Option<&str>) -> Segment {
@@ -1797,6 +1800,28 @@ mod tests {
             reopened_project.view().unwrap().options().bilingual_order,
             BilingualOrder::TranslationFirst
         );
+    }
+
+    // @behavior PJ-104
+    #[test]
+    fn keeps_the_project_models_and_transcription_settings_in_the_project_config() {
+        let dir = TempDir::new("pj-models-kept");
+        let options = ProjectOptions {
+            models: ProjectModels {
+                transcription: Some(PathBuf::from("/models/kotoba.bin")),
+                ..ProjectModels::default()
+            },
+            transcription: TranscriptionOverrides {
+                has_vad: Some(true),
+                ..TranscriptionOverrides::default()
+            },
+            ..ProjectOptions::default()
+        };
+        project_in(&dir).set_options(options.clone()).unwrap();
+
+        let reopened_project = project_in(&dir);
+
+        assert_eq!(reopened_project.view().unwrap().options(), &options);
     }
 
     /// A Project in `zh-TW` of `ep01` translated into each of `translations`, saving Bilingual

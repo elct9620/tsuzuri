@@ -29,7 +29,7 @@ export function forgetComponent(name: string): Promise<ComponentStatus[]> {
   return invoke<ComponentStatus[]>("forget_component", { name });
 }
 
-export type ModelSlot = "transcription" | "translation";
+export type ModelSlot = "transcription" | "vad" | "translation";
 
 export interface SlotView {
   path: string | null;

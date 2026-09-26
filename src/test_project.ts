@@ -10,6 +10,12 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
       bilingual_order: "original-first",
       is_bilingual_autosaved: false,
       is_overwrite_backed_up: false,
+      models: { transcription: null, translation: null },
+      transcription: {
+        has_vad: null,
+        is_non_speech_suppressed: null,
+        is_context_carried: null,
+      },
     },
     translation_glossary: null,
     resources: [resourceOf()],

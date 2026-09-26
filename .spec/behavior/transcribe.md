@@ -8,6 +8,8 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 - `src-tauri/src/transcription/*.rs`
 - `src/controllers/transcribe_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
+- `src/controllers/transcription_settings_controller.test.ts`
+- `src/controllers/project_controller.test.ts`
 
 ## `TX-001` Transcribing a media file
 
@@ -248,3 +250,85 @@ The whole run is laid out ahead, so how far along it is reads at a glance.
 | Given | the progress of a transcription running |
 | When | cancelling is chosen |
 | Then | the Project is asked to cancel the running task, and once it stops a Notification says it was cancelled |
+
+## `TX-032` Leaving whisper-cli as it behaves on its own
+
+The default Transcription Settings change nothing, so a Model that transcribes well today keeps doing so.
+
+| Step | Statement |
+| --- | --- |
+| Given | the default Transcription Settings |
+| When | a media file is transcribed |
+| Then | whisper-cli is asked for neither VAD, suppressing non-speech tokens, nor a limit on its text context |
+
+## `TX-033` Transcribing with VAD
+
+| Step | Statement |
+| --- | --- |
+| Given | Transcription Settings with VAD on and a Model chosen for the VAD slot |
+| When | a media file is transcribed |
+| Then | whisper-cli is asked for VAD with that Model |
+
+## `TX-034` Refusing VAD without its Model
+
+| Step | Statement |
+| --- | --- |
+| Given | Transcription Settings with VAD on and no Model chosen for the VAD slot |
+| When | a media file is transcribed |
+| Then | it is refused as the VAD Model not chosen, before any process starts |
+
+## `TX-035` Suppressing non-speech tokens and carrying no context
+
+| Step | Statement |
+| --- | --- |
+| Given | Transcription Settings suppressing non-speech tokens and carrying no context |
+| When | a media file is transcribed |
+| Then | whisper-cli is asked to suppress non-speech tokens and to keep no text context |
+
+## `TX-036` Taking the Project's Transcription Settings over the general ones
+
+| Step | Statement |
+| --- | --- |
+| Given | general Transcription Settings with VAD off, and a Project that sets VAD on for itself |
+| When | its Current Resource is transcribed |
+| Then | whisper-cli is asked for VAD |
+
+## `TX-037` Transcribing with the Project Model
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Project Model for the transcription slot differs from the general one |
+| When | its Current Resource is transcribed |
+| Then | whisper-cli loads the Project Model |
+
+## `TX-038` Remembering the Transcription Settings
+
+| Step | Statement |
+| --- | --- |
+| Given | Transcription Settings saved with VAD on |
+| When | they are loaded again from the same app data |
+| Then | VAD is on |
+
+## `TX-039` Changing a Transcription Setting in the general settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the general settings with VAD off |
+| When | VAD is turned on |
+| Then | the Transcription Settings are saved with VAD on and the rest as they were |
+
+## `TX-040` Setting a Transcription Setting for the Project
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of a Project following the general Transcription Settings |
+| When | VAD is chosen on for the Project |
+| Then | the Project Options are set with VAD on and the rest following the general settings |
+
+## `TX-041` Naming the Project Model in the transcribe dialog
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project with a Project Model for the transcription slot |
+| When | the transcribe dialog is opened |
+| Then | it names the Project Model's file |

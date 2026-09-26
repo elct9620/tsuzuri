@@ -282,12 +282,14 @@ pub async fn find_statuses_off_the_main_thread(
 #[serde(rename_all = "lowercase")]
 pub enum ModelSlot {
     Transcription,
+    Vad,
     Translation,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModelSettings {
     transcription: Option<PathBuf>,
+    vad: Option<PathBuf>,
     translation: Option<PathBuf>,
 }
 
@@ -317,12 +319,21 @@ pub struct SlotView {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ModelSettingsView {
     transcription: SlotView,
+    vad: SlotView,
     translation: SlotView,
 }
 
 impl ModelSettings {
     pub fn choose(&mut self, slot: ModelSlot, path: PathBuf) {
         *self.slot_mut(slot) = Some(path);
+    }
+
+    /// These settings with a Project Model in `slot` in place of the general one, when there is one.
+    pub fn with_project_model(mut self, slot: ModelSlot, path: Option<PathBuf>) -> ModelSettings {
+        if let Some(path) = path {
+            self.choose(slot, path);
+        }
+        self
     }
 
     /// The Model an engine is started with; checked right before the start so a file moved since it was chosen is caught.
@@ -342,6 +353,7 @@ impl ModelSettings {
         };
         ModelSettingsView {
             transcription: slot_view(ModelSlot::Transcription),
+            vad: slot_view(ModelSlot::Vad),
             translation: slot_view(ModelSlot::Translation),
         }
     }
@@ -349,6 +361,7 @@ impl ModelSettings {
     fn slot(&self, slot: ModelSlot) -> Option<&Path> {
         match slot {
             ModelSlot::Transcription => self.transcription.as_deref(),
+            ModelSlot::Vad => self.vad.as_deref(),
             ModelSlot::Translation => self.translation.as_deref(),
         }
     }
@@ -356,6 +369,7 @@ impl ModelSettings {
     fn slot_mut(&mut self, slot: ModelSlot) -> &mut Option<PathBuf> {
         match slot {
             ModelSlot::Transcription => &mut self.transcription,
+            ModelSlot::Vad => &mut self.vad,
             ModelSlot::Translation => &mut self.translation,
         }
     }
@@ -594,5 +608,22 @@ mod tests {
         let result = settings.ready_path(ModelSlot::Transcription);
 
         assert_eq!(result, Err(ModelError::MissingFile(model)));
+    }
+
+    // @behavior MD-007
+    #[test]
+    fn takes_the_project_model_over_the_general_one() {
+        let dir = TempDir::new("project-model");
+        let general = dir.file("breeze.bin");
+        let project = dir.file("kotoba.bin");
+        let mut settings = ModelSettings::default();
+        settings.choose(ModelSlot::Transcription, general);
+
+        let settings = settings.with_project_model(ModelSlot::Transcription, Some(project.clone()));
+
+        assert_eq!(
+            settings.ready_path(ModelSlot::Transcription),
+            Ok(project.as_path())
+        );
     }
 }

@@ -207,6 +207,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | `translation/{llama,settings}.rs` | 轉接 | llama-server、翻譯設定檔 |
 | `translation/resident.rs` | 轉接 | 常駐的 llama-server |
 | `transcription.rs`、`transcription/whisper.rs` | 應用、轉接 | 轉錄用例；ffmpeg 與 whisper-cli 的參數與輸出 |
+| `transcription/settings.rs` | 轉接 | 轉錄設定檔 |
 | `waveform.rs` | 應用、領域 | 波形用例：ffmpeg 轉成 PCM，每 10 ms 取一個峰值 |
 | `toolchain.rs`、`toolchain/{detection,settings}.rs` | 應用、轉接 | 尋找元件、偵測、設定檔 |
 | `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、執行一個 Step、`ModeLock` 與 `ModeRun`、Phase 計時、錯誤碼 |
@@ -451,7 +452,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 |---|---|
 | `project.ts` | 專案、版本、詞彙表的指令與訂閱 |
 | `editing.ts` | 實作 `editor/` 的 port |
-| `transcription.ts`、`translation.ts` | 任務指令、翻譯選項與設定的型別 |
+| `transcription.ts`、`translation.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄的指令與型別 |
 | `progress.ts` | `pipeline-progress` 與 Phase 耗時的型別 |
@@ -466,6 +467,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/failure.ts` | 依錯誤碼產生介面語言的訊息 |
 | `ui/progress.ts` | 進度文字與各 Phase 耗時的列 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
+| `ui/models.ts` | 各 Model Slot 的副檔名 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 

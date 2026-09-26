@@ -24,6 +24,7 @@ import TimelineController, {
 import TooltipController from "./controllers/tooltip_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
+import TranscriptionSettingsController from "./controllers/transcription_settings_controller";
 import TranslateController from "./controllers/translate_controller";
 import TranslationOptionsController from "./controllers/translation_options_controller";
 import TranslationSettingsController from "./controllers/translation_settings_controller";
@@ -63,6 +64,7 @@ async function start(): Promise<void> {
     tooltip: TooltipController,
     transcribe: TranscribeController,
     transcript: TranscriptController,
+    "transcription-settings": TranscriptionSettingsController,
     translate: TranslateController,
     "translation-options": TranslationOptionsController,
     "translation-settings": TranslationSettingsController,

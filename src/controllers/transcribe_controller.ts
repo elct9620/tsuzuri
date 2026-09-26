@@ -39,7 +39,7 @@ export default class TranscribeController extends Controller {
   declare readonly overwriteTarget: HTMLElement;
   declare readonly overwriteMessageTarget: HTMLElement;
   declare readonly startTarget: HTMLButtonElement;
-  /** Names the transcription Model's file. */
+  /** Names the file of the transcription Model it runs with, the Project Model when there is one. */
   declare readonly modelTarget: HTMLElement;
   declare readonly progressOutlet: ProgressController;
   declare readonly translationOptionsOutlet: TranslationOptionsController;
@@ -67,8 +67,10 @@ export default class TranscribeController extends Controller {
     }
     this.showTranslationOptions();
     this.dialogTarget.showModal();
-    const models = await modelSettings();
-    const path = models?.transcription.path ?? null;
+    const path =
+      this.project?.options.models.transcription ??
+      (await modelSettings())?.transcription.path ??
+      null;
     this.modelTarget.textContent =
       path === null
         ? t("models.notChosen")

@@ -532,7 +532,7 @@ A menu, and later a floating one, acts on the Cursor after focus has moved to it
 
 ## `ED-090` Drawing the Cursor at the start of a line typed into a text
 
-A typed line break stands in the field's text apart from the text on either side, and the end of the break lies on the line it ends, so the Cursor where the two meet is taken at the start of the next line, as the platform's caret is.
+A caret between a line break and the text after it stands at the start of the next line, as in any editor, however the text was typed.
 
 | Step | Statement |
 | --- | --- |

@@ -67,7 +67,7 @@ describe("field", () => {
     ]).toEqual([true, 0, { start: 3, end: 3 }]);
   });
 
-  it("places a caret at the end of the text it ends", () => {
+  it("places a caret after the last character at the end of the text", () => {
     const field = createField("");
     const last = document.createTextNode("世界");
     field.append("你好", last);

@@ -2,9 +2,10 @@
 import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView, Segment } from "../backend/project";
+import type { EditingSession } from "../editor";
 import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test_layout";
 import { projectOf } from "../test_project";
@@ -18,6 +19,7 @@ import TranscriptController from "./transcript_controller";
 describe("Current Segment", () => {
   let application: Application;
   let project: ProjectView | null;
+  let session: EditingSession;
   let takeLayoutBack: () => void;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -88,7 +90,7 @@ describe("Current Segment", () => {
       <main data-controller="transcript"
         data-action="editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying">
         <div data-controller="preview timeline"
-          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor keydown.space@window->timeline#playCurrent:!control:prevent">
+          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playCurrent:!control:prevent">
           <button data-preview-target="fold" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">
@@ -112,17 +114,20 @@ describe("Current Segment", () => {
     `;
     application = Application.start();
     application.registerActionOption("control", controlOption);
-    await assemble(application, {
+    const assembly = assemble(application, {
       transcript: TranscriptController,
       preview: PreviewController,
       timeline: TimelineController,
-    }).start();
+    });
+    session = assembly.session;
+    await assembly.start();
     await settle();
   });
 
   afterEach(() => {
     application.stop();
     clearMocks();
+    vi.restoreAllMocks();
     takeLayoutBack();
   });
 
@@ -208,6 +213,76 @@ describe("Current Segment", () => {
     playTo(1.5);
 
     expect(isMarked("data-playing")).toEqual([false, true]);
+  });
+
+  // @behavior PV-071
+  it("pauses at the start of a Segment whose row is chosen while the media plays", async () => {
+    await show(twoSegments);
+    await media().play();
+    playTo(0.5);
+
+    rows()[1].click();
+
+    expect([media().paused, media().currentTime]).toEqual([true, 1]);
+  });
+
+  // @behavior PV-072
+  it("moves the paused media to the start of a Segment whose row is chosen", async () => {
+    await show(twoSegments);
+    playTo(0.5);
+
+    rows()[1].click();
+
+    expect([media().paused, media().currentTime]).toEqual([true, 1]);
+  });
+
+  // @behavior PV-073
+  it("pauses where a Segment's region is clicked while the media plays", async () => {
+    // The waveform takes a click's time from its width: 200 pixels over two seconds of Peaks
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 200, height: 100 }),
+    );
+    await show(twoSegments);
+    // The waveform moves only media ready to play there, which happy-dom never is
+    Object.defineProperty(media(), "readyState", {
+      value: HTMLMediaElement.HAVE_ENOUGH_DATA,
+    });
+    await media().play();
+    playTo(0.5);
+
+    regions()[1].dispatchEvent(
+      new MouseEvent("click", { bubbles: true, clientX: 150 }),
+    );
+
+    expect([media().paused, media().currentTime]).toEqual([true, 1.5]);
+  });
+
+  // @behavior PV-074
+  it("plays on when the Current Segment's row is clicked", async () => {
+    await show(twoSegments);
+    rows()[1].click();
+    await media().play();
+    playTo(1.5);
+
+    rows()[1].click();
+
+    expect([media().paused, media().currentTime]).toEqual([false, 1.5]);
+  });
+
+  // @behavior PV-075
+  it("plays on when a Segment Change moves the Current Segment", async () => {
+    await show(twoSegments);
+    rows()[0].click();
+    await media().play();
+    playTo(0.5);
+
+    await session.change({ kind: "insertion-after", index: 0 });
+    await show({
+      ...twoSegments,
+      segments: [segmentAt(0, 1), segmentAt(1, 1), segmentAt(1, 2)],
+    });
+
+    expect([session.cursor.index, media().paused]).toEqual([1, false]);
   });
 
   // @behavior PV-036

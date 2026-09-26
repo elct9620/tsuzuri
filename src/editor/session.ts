@@ -38,8 +38,11 @@ export type Outcome =
   | { kind: "refused" }
   | { kind: "failed"; error: unknown };
 
-/** What a listener is told has changed. */
-export type SessionChange = "cursor" | "checked";
+/**
+ * What a listener is told has changed; a `choice` is the user making another Segment current, as a
+ * Segment Change moving the Current Segment is not.
+ */
+export type SessionChange = "cursor" | "choice" | "checked";
 
 /** A Segment Change sent and not yet seen in a Transcript, with the Segments it was made to. */
 interface PendingChange {
@@ -277,7 +280,9 @@ export class EditingSession {
 
   /** Moves the Cursor as the user does, telling the listeners at once. */
   private act(event: CursorEvent): void {
+    const index = this.state.index;
     this.move(event);
+    if (this.state.index !== index) this.unannounced.add("choice");
     this.announce();
   }
 

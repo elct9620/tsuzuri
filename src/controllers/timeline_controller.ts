@@ -209,6 +209,17 @@ export default class TimelineController extends Controller {
       void this.surfer?.play(segment.start_ms / 1000, segment.end_ms / 1000);
   }
 
+  /**
+   * Pauses the media at the start of the Segment the user chose, for Space to play it. A region's
+   * click reaches the waveform afterwards, which moves the media on to where it was clicked.
+   */
+  pauseAtCurrent(): void {
+    const segment = this.currentSegment;
+    if (!segment) return;
+    this.mediaTarget.pause();
+    this.mediaTarget.currentTime = segment.start_ms / 1000;
+  }
+
   /** Colours the Current Segment's region, the only one that can be dragged. */
   showCursor(): void {
     this.colorRegions();

@@ -206,12 +206,16 @@ export function notifyEdit(
 }
 
 /** Says a translation finished, with how long each of its Phases took. */
-export function notifyTranslation({ phases }: Translation): void {
+export function notifyTranslation({
+  phases,
+  unmatched_count,
+}: Translation): void {
   notify({
     title: t("translate.done"),
     kind: "success",
     items: phaseItems(phases),
   });
+  notifyUnmatched(unmatched_count);
 }
 
 /** Says `title` was restored, warning of the Segments it left with no translation lined up. */
@@ -221,9 +225,14 @@ export function notifyRestoration(
   detail?: string,
 ): void {
   notify({ title, detail, kind: "success" });
-  if (unmatched_count === 0) return;
+  notifyUnmatched(unmatched_count);
+}
+
+/** Warns of `count` Segments left with no translation lined up, which can be translated again. */
+function notifyUnmatched(count: number): void {
+  if (count === 0) return;
   notify({
-    title: t("compare.unmatched", { count: unmatched_count }),
+    title: t("compare.unmatched", { count }),
     detail: t("compare.unmatchedHelp"),
     kind: "warning",
   });

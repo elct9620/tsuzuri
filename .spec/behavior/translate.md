@@ -642,6 +642,14 @@ Translating keeps the translation it replaces as a Backup, yet saying so before 
 | When | it is translated |
 | Then | the Project names Segments 0 to 1 as the Batch being translated before the first Batch, 2 to 2 after it, and none once the last is done |
 
+## `TL-086` Warning of the Segments a translation left unmatched
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation whose answer counts 2 Segments without a translation |
+| When | it finishes |
+| Then | beside the Notification that it is done, a warning says 2 Segments no longer line up with a translation |
+
 ## `TL-083` Dropping the translations shown when a translation is cancelled
 
 A cancelled translation writes nothing, so what it showed goes with it and the editor shows the files again.

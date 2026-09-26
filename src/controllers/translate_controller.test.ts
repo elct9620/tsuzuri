@@ -62,6 +62,7 @@ describe("TranslateController", () => {
         { phase: "load", seconds: 2.17 },
         { phase: "translate", seconds: 0.61 },
       ],
+      unmatched_count: 0,
     });
     document.body.innerHTML = `
       ${translationOptionsTemplate}
@@ -191,6 +192,16 @@ describe("TranslateController", () => {
         ["翻譯", "0.6 秒"],
       ],
     ]);
+  });
+
+  // @behavior TL-086
+  it("warns of the Segments a translation left unmatched", async () => {
+    translation = async () => ({ phases: [], unmatched_count: 2 });
+    await hold(projectOf());
+
+    await start();
+
+    expect(notifications()).toEqual(["翻譯完成", "2 段對不上譯文"]);
   });
 
   // @behavior TL-011

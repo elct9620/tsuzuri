@@ -72,7 +72,7 @@ describe("TranscribeController", () => {
   beforeEach(async () => {
     project = null;
     transcription = () => new Promise(() => {});
-    translation = async () => ({ phases: [] });
+    translation = async () => ({ phases: [], unmatched_count: 0 });
     translateArgs = undefined;
     transcribeArgs = undefined;
     isCancelAsked = false;

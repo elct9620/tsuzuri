@@ -85,6 +85,9 @@ struct TranslationJob<'a> {
 #[derive(Debug, Clone, Serialize)]
 pub struct Translation {
     phases: Vec<PhaseTiming>,
+    /// How many Segments of the original, retimed while it was translated, find no cue at their
+    /// times in what was written.
+    unmatched_count: usize,
 }
 
 /// Which llama-server a translation runs on.
@@ -203,15 +206,16 @@ pub async fn run_translate<'a>(
             result
         }
     };
-    match &plan.scope {
+    let restoration = match &plan.scope {
         TranslationScope::Whole => project.write_translations(&source, plan.target, result?)?,
         TranslationScope::Segments(indexes) => {
             project.write_retranslations(&source, plan.target, indexes, result?)?
         }
-    }
+    };
     ports.announce_project();
     Ok(Translation {
         phases: phases.finish(),
+        unmatched_count: restoration.unmatched_count,
     })
 }
 

@@ -10,8 +10,8 @@ use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, Translati
 use super::history::{SubtitleSnapshot, UndoHistory};
 use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
-    translation_srt, translation_with_speakers, BackupKind, CurrentResource, KnownSubtitle,
-    Project, ProjectConfig, ProjectOptions, Resource, Restoration, SegmentField,
+    translation_only, translation_srt, translation_with_speakers, BackupKind, CurrentResource,
+    KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource, Restoration, SegmentField,
     TranscriptionTarget, TranslationSource,
 };
 use crate::failure::Failure;
@@ -1242,7 +1242,7 @@ impl CurrentProject {
         source: &TranslationSource,
         target: Language,
         segments: Vec<Segment>,
-    ) -> Result<(), Failure> {
+    ) -> Result<Restoration, Failure> {
         self.write_translation_file(source, target, true, |_| Ok(Transcript { segments }))
     }
 
@@ -1255,7 +1255,7 @@ impl CurrentProject {
         target: Language,
         indexes: &[usize],
         segments: Vec<Segment>,
-    ) -> Result<(), Failure> {
+    ) -> Result<Restoration, Failure> {
         self.write_translation_file(source, target, false, |project| {
             let speaker_names = project
                 .map(|project| project.speaker_names(Some(target)))
@@ -1278,14 +1278,15 @@ impl CurrentProject {
     /// it feeds, as one change; with `is_backed_up` it keeps the file it replaces as a Mode does
     /// and afterwards the new one as an Output, and else keeps the file as its first change since
     /// the Project was opened does. The Current Resource, while it is that Resource, is then read
-    /// from the files in place of what the Mode showed.
+    /// from the files in place of what the Mode showed. It answers how many Segments of the
+    /// original, given times since `source` was taken, find no cue at them in what it wrote.
     fn write_translation_file(
         &self,
         source: &TranslationSource,
         target: Language,
         is_backed_up: bool,
         translation: impl FnOnce(Option<&Project>) -> Result<Transcript, Failure>,
-    ) -> Result<(), Failure> {
+    ) -> Result<Restoration, Failure> {
         let mut held = self.lock();
         let HeldProject { project, mode_hold } = &mut *held;
         let mut project = project
@@ -1343,7 +1344,15 @@ impl CurrentProject {
         if let Some(hold) = mode_hold.as_mut() {
             hold.progress = None;
         }
-        Ok(())
+        let original = match &resource_in(project.as_deref(), source)?.subtitle {
+            Some(subtitle) => files::transcript_at(subtitle)?,
+            None => Transcript::default(),
+        };
+        Ok(Restoration::new(
+            &source.transcript,
+            &original,
+            &[translation_only(&translation)],
+        ))
     }
 
     /// Reads the directory's `glossary.csv` again into the Project, for a translation to use.
@@ -3092,6 +3101,34 @@ mod tests {
                 vec![two_cues("Hello", "World"), changed]
             )
         );
+    }
+
+    // @behavior PJ-136
+    #[test]
+    fn counts_the_segments_a_translation_leaves_unmatched_once_retimed_elsewhere() {
+        let dir = directory_of(
+            "pj-unmatched-translation",
+            &[("ep01.srt", &two_cues("你好", "世界"))],
+        );
+        let current = project_in(&dir);
+        let (source, _hold) = current
+            .hold_for_translation(Language::English, None)
+            .unwrap();
+        std::fs::write(
+            dir.path().join("ep01.srt"),
+            srt_of(&[(0, 1_500, "你好"), (1_500, 2_000, "世界")]),
+        )
+        .unwrap();
+        let mut segments = source.transcript.segments.clone();
+        for segment in &mut segments {
+            segment.translation = Some(format!("EN:{}", segment.text));
+        }
+
+        let restoration = current
+            .write_translations(&source, Language::English, segments)
+            .unwrap();
+
+        assert_eq!(restoration.unmatched_count, 2);
     }
 
     // @behavior PJ-041

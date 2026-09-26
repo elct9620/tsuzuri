@@ -20,6 +20,8 @@ export interface TranslationSettings {
 
 export interface Translation {
   phases: PhaseTiming[];
+  /** How many Segments of the original, retimed while it was translated, find no cue at their times. */
+  unmatched_count: number;
 }
 
 /** Translates the Current Resource from the Primary Language; the translations land in the Project, not in the answer. */

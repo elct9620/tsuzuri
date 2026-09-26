@@ -810,6 +810,16 @@ The files decide what is shown, so a change made elsewhere is read in; what Tsuz
 | When | the translation writes `Hi` and `World` |
 | Then | `ep01.en.srt` reads `Hi` and `World`, and `.tsuzuri/history/` holds an Overwrite of what Tsuzuri held and one of the change made elsewhere |
 
+## `PJ-136` Counting the Segments a translation leaves unmatched once retimed elsewhere
+
+A translation lines up with its original by time alone, so one written after the original was retimed elsewhere is still written, and says how many Segments to translate again.
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` with `你好` from 0 to 1 and `世界` from 1 to 2 seconds, being translated into `en`, and retimed elsewhere meanwhile to 0 to 1.5 and 1.5 to 2 seconds |
+| When | the translation is written |
+| Then | the answer counts 2 Segments without a translation |
+
 ## `PJ-123` Keeping an original whole when edited after a transcription ended early
 
 | Step | Statement |

@@ -130,7 +130,7 @@ const en = {
     field: "In",
     original: "Original",
     translation: "Translation",
-    isRegex: "Regular expression",
+    regex: "Regular expression",
     groups: "Name a group as ${1}",
     apply: "Replace all",
     done: "{{count}} replaced",

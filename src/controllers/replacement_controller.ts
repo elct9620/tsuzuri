@@ -1,24 +1,27 @@
 import { Controller } from "@hotwired/stimulus";
 
+import { isMacOS } from "../backend/system";
 import type { CursorField, EditingSession } from "../editor";
 import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
 
 /**
- * Whether `event` asks for the replace dialog: Ctrl+H, as subtitle editors bind it, or
- * ⌘+Option+F on macOS, where ⌘+H hides the app. Option changes the key typed, so F is read by
- * its place on the keyboard.
+ * Whether `event` asks for the replace dialog: Ctrl+H, as subtitle editors bind it, or ⌘+Option+F
+ * on macOS, where ⌘+H hides the app and Ctrl+H deletes backward in a text. Option changes the key
+ * typed, so F is read by its place on the keyboard.
  */
 function isReplaceShortcut(event: KeyboardEvent): boolean {
-  const isCtrlH =
+  if (isMacOS())
+    return (
+      event.metaKey && event.altKey && !event.ctrlKey && event.code === "KeyF"
+    );
+  return (
     event.ctrlKey &&
     !event.metaKey &&
     !event.altKey &&
     !event.shiftKey &&
-    event.key.toLowerCase() === "h";
-  const isMetaOptionF =
-    event.metaKey && event.altKey && !event.ctrlKey && event.code === "KeyF";
-  return isCtrlH || isMetaOptionF;
+    event.key.toLowerCase() === "h"
+  );
 }
 
 /**
@@ -27,7 +30,7 @@ function isReplaceShortcut(event: KeyboardEvent): boolean {
  * keeps what was typed, so the same replacement is one Enter away the next time.
  */
 export default class ReplacementController extends Controller {
-  static targets = ["dialog", "pattern", "substitute", "field", "isRegex"];
+  static targets = ["dialog", "pattern", "substitute", "field", "regexToggle"];
 
   declare readonly session: EditingSession;
   declare readonly dialogTarget: HTMLDialogElement;
@@ -35,7 +38,7 @@ export default class ReplacementController extends Controller {
   declare readonly substituteTarget: HTMLInputElement;
   /** The choices of the original and the translation shown. */
   declare readonly fieldTargets: HTMLInputElement[];
-  declare readonly isRegexTarget: HTMLInputElement;
+  declare readonly regexToggleTarget: HTMLInputElement;
 
   /** Opens the dialog; bound to `keydown@window`, it acts only on the replace shortcuts. */
   openByShortcut(event: KeyboardEvent): void {
@@ -68,7 +71,7 @@ export default class ReplacementController extends Controller {
     const outcome = await this.session.replaceText(field, {
       pattern,
       substitute: this.substituteTarget.value,
-      is_regex: this.isRegexTarget.checked,
+      is_regex: this.regexToggleTarget.checked,
     });
     if (outcome.kind === "failed") {
       notifyFailure(t("replace.failed"), outcome.error);

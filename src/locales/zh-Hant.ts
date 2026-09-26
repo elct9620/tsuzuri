@@ -127,7 +127,7 @@ const zhHant: typeof en = {
     field: "對象",
     original: "原文",
     translation: "譯文",
-    isRegex: "正規表示式",
+    regex: "正規表示式",
     groups: "群組寫成 ${1}",
     apply: "全部取代",
     done: "已取代 {{count}} 處",

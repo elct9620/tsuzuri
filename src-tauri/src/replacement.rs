@@ -14,8 +14,8 @@ pub struct Replacement {
 
 /// Why a Replacement cannot be made: its pattern is empty or is not a regular expression.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct InvalidPattern {
-    pub detail: String,
+pub enum ReplacementError {
+    InvalidPattern { detail: String },
 }
 
 /// A Replacement ready to apply to one text after another.
@@ -24,31 +24,26 @@ pub struct Replacer<'a> {
     replacement: &'a Replacement,
 }
 
-impl Replacement {
-    pub fn replacer(&self) -> Result<Replacer<'_>, InvalidPattern> {
-        if self.pattern.is_empty() {
-            return Err(InvalidPattern {
-                detail: "nothing to find".to_string(),
-            });
+impl<'a> Replacer<'a> {
+    pub fn try_new(replacement: &'a Replacement) -> Result<Replacer<'a>, ReplacementError> {
+        let invalid_pattern = |detail: String| ReplacementError::InvalidPattern { detail };
+        if replacement.pattern.is_empty() {
+            return Err(invalid_pattern("nothing to find".to_string()));
         }
-        let pattern = if self.is_regex {
-            self.pattern.clone()
+        let pattern = if replacement.is_regex {
+            replacement.pattern.clone()
         } else {
-            regex::escape(&self.pattern)
+            regex::escape(&replacement.pattern)
         };
-        let matcher = Regex::new(&pattern).map_err(|error| InvalidPattern {
-            detail: error.to_string(),
-        })?;
+        let matcher = Regex::new(&pattern).map_err(|error| invalid_pattern(error.to_string()))?;
         Ok(Replacer {
             matcher,
-            replacement: self,
+            replacement,
         })
     }
-}
 
-impl Replacer<'_> {
     /// `text` with every match replaced, and how many there were; none when nothing matches.
-    pub fn replace(&self, text: &str) -> Option<(String, usize)> {
+    pub fn replace_matches(&self, text: &str) -> Option<(String, usize)> {
         let count = self.matcher.find_iter(text).count();
         if count == 0 {
             return None;
@@ -75,8 +70,10 @@ mod tests {
         }
     }
 
-    fn replace(replacement: &Replacement, text: &str) -> Option<(String, usize)> {
-        replacement.replacer().unwrap().replace(text)
+    fn replace_matches(replacement: &Replacement, text: &str) -> Option<(String, usize)> {
+        Replacer::try_new(replacement)
+            .unwrap()
+            .replace_matches(text)
     }
 
     // @behavior ED-077
@@ -84,8 +81,14 @@ mod tests {
     fn removes_a_text_replaced_with_nothing() {
         let removal = replacement("。", "", false);
 
-        assert_eq!(replace(&removal, "你好。"), Some(("你好".to_string(), 1)));
-        assert_eq!(replace(&removal, "再見。"), Some(("再見".to_string(), 1)));
+        assert_eq!(
+            replace_matches(&removal, "你好。"),
+            Some(("你好".to_string(), 1))
+        );
+        assert_eq!(
+            replace_matches(&removal, "再見。"),
+            Some(("再見".to_string(), 1))
+        );
     }
 
     // @behavior ED-078
@@ -94,7 +97,7 @@ mod tests {
         let as_written = replacement(".", "。", false);
 
         assert_eq!(
-            replace(&as_written, "真的?好."),
+            replace_matches(&as_written, "真的?好."),
             Some(("真的?好。".to_string(), 1))
         );
     }
@@ -103,7 +106,10 @@ mod tests {
     fn keeps_a_dollar_in_a_substitute_taken_as_written() {
         let as_written = replacement("元", "$1", false);
 
-        assert_eq!(replace(&as_written, "5元"), Some(("5$1".to_string(), 1)));
+        assert_eq!(
+            replace_matches(&as_written, "5元"),
+            Some(("5$1".to_string(), 1))
+        );
     }
 
     // @behavior ED-079
@@ -112,23 +118,23 @@ mod tests {
         let episodes = replacement(r"第(\d+)集", "EP${1}", true);
 
         assert_eq!(
-            replace(&episodes, "第1集 第12集"),
+            replace_matches(&episodes, "第1集 第12集"),
             Some(("EP1 EP12".to_string(), 2))
         );
     }
 
     #[test]
     fn refuses_a_regular_expression_that_cannot_be_read() {
-        assert!(replacement("(", "", true).replacer().is_err());
+        assert!(Replacer::try_new(&replacement("(", "", true)).is_err());
     }
 
     #[test]
     fn refuses_an_empty_pattern() {
-        assert!(replacement("", "x", false).replacer().is_err());
+        assert!(Replacer::try_new(&replacement("", "x", false)).is_err());
     }
 
     #[test]
     fn answers_none_when_nothing_matches() {
-        assert_eq!(replace(&replacement("。", "", false), "你好"), None);
+        assert_eq!(replace_matches(&replacement("。", "", false), "你好"), None);
     }
 }

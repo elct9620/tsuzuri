@@ -34,7 +34,8 @@ export function composingOption({
 
 /**
  * One text or translation field of the editor, handing the session what the user does in it:
- * entering it, moving the selection, leaving it or giving up its typing, and splitting its Segment by shortcut.
+ * entering it, moving the selection, leaving it or giving up its typing, and splitting its Segment
+ * by shortcut.
  */
 export default class FieldController extends Controller<HTMLElement> {
   declare readonly session: EditingSession;

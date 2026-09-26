@@ -124,7 +124,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 ### 2.4 錯誤與通知
 
 ```
-領域的錯誤 ─┐  SrtError、SegmentChangeError、ProjectError、GlossaryError、ModelError
+領域的錯誤 ─┐  SrtError、SegmentChangeError、ReplacementError、ProjectError、GlossaryError、ModelError
 函式庫的錯誤 ┼─From─▶ Failure { code, … } ──serde──▶ backend/failure.ts（型別）
              │        （failure.rs，應用層）                  │
              │                        ui/failure.ts（依 code 產生訊息）◀┘
@@ -156,7 +156,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 
 | 層 | 可以依賴 | 不可以依賴 |
 |---|---|---|
-| 領域 | 標準函式庫、serde、字幕核心 | `Failure`、Tauri、檔案系統、行程、HTTP |
+| 領域 | 標準函式庫、serde、regex、字幕核心 | `Failure`、Tauri、檔案系統、行程、HTTP |
 | 應用 | 領域、Port | Tauri、`AppHandle` |
 | 轉接 | 應用的 Port、領域 | 其他情境的轉接 |
 | 介面 | 應用、轉接的設定讀取 | 直接操作專案目錄或行程 |
@@ -477,7 +477,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `logs.ts` | log 目錄的指令與型別 |
 | `progress.ts` | `pipeline-progress` 與 Phase 耗時的型別 |
 | `failure.ts` | `Failure` 型別 |
-| `dialog.ts`、`system.ts` | 系統對話方塊與語系 |
+| `dialog.ts`、`system.ts` | 系統對話方塊、語系與平台 |
 
 ### 4.8 共用模組
 

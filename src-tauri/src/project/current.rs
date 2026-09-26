@@ -16,7 +16,7 @@ use super::{
 };
 use crate::failure::Failure;
 use crate::language::Language;
-use crate::replacement::Replacement;
+use crate::replacement::{Replacement, Replacer};
 use crate::segment_change::SegmentChange;
 use crate::transcript::{Segment, SpeakerNames, SrtContent, Transcript};
 
@@ -559,7 +559,7 @@ fn version_at(path: &Path, language: Option<Language>) -> Result<Transcript, Fai
 
 /// Whether an edit of `field` writes `subtitle`, the original as none: a text the original, a
 /// translation the one shown, and a Speaker both.
-fn is_edited(project: &Project, subtitle: Option<Language>, field: SegmentField) -> bool {
+fn is_written_by_edit(project: &Project, subtitle: Option<Language>, field: SegmentField) -> bool {
     match field {
         SegmentField::Text => subtitle.is_none(),
         SegmentField::Translation => {
@@ -1227,8 +1227,9 @@ impl CurrentProject {
     /// Makes an edit and writes it back, unless a subtitle was changed elsewhere since Tsuzuri last
     /// read or wrote it: then the Current Resource is read again instead, keeping that change.
     pub fn edit(&self, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {
-        let is_written =
-            |project: &Project, subtitle: Option<Language>| is_edited(project, subtitle, field);
+        let is_written = |project: &Project, subtitle: Option<Language>| {
+            is_written_by_edit(project, subtitle, field)
+        };
         self.change_unless_held(is_written, |project| {
             project.refuse_changed_elsewhere()?;
             project.make_undoable_change(|project| {
@@ -1288,16 +1289,17 @@ impl CurrentProject {
                 detail: "a Speaker is not searched".to_string(),
             });
         }
-        let replacer = replacement.replacer()?;
-        let is_written =
-            |project: &Project, subtitle: Option<Language>| is_edited(project, subtitle, field);
+        let replacer = Replacer::try_new(replacement)?;
+        let is_written = |project: &Project, subtitle: Option<Language>| {
+            is_written_by_edit(project, subtitle, field)
+        };
         self.change_unless_held(is_written, |project| {
             project.refuse_changed_elsewhere()?;
             let current = project.current()?;
             if field == SegmentField::Translation && current.translation.is_none() {
                 return Err(Failure::NoTranslationShown);
             }
-            let replaced: Vec<(usize, String, usize)> = current
+            let replaced_texts: Vec<(usize, String, usize)> = current
                 .transcript
                 .segments
                 .iter()
@@ -1307,17 +1309,17 @@ impl CurrentProject {
                         SegmentField::Translation => segment.translation.as_deref()?,
                         _ => &segment.text,
                     };
-                    let (text, count) = replacer.replace(text)?;
+                    let (text, count) = replacer.replace_matches(text)?;
                     Some((index, text, count))
                 })
                 .collect();
-            if replaced.is_empty() {
+            if replaced_texts.is_empty() {
                 return Ok(0);
             }
             project.make_undoable_change(|project| {
                 let previous = project.current()?.transcript.clone();
                 let segments = &mut project.current_mut()?.transcript.segments;
-                for (index, text, _) in &replaced {
+                for (index, text, _) in &replaced_texts {
                     match field {
                         SegmentField::Translation => {
                             segments[*index].translation = Some(text.clone())
@@ -1327,7 +1329,7 @@ impl CurrentProject {
                 }
                 project.write_back(field, &previous)
             })?;
-            Ok(replaced.iter().map(|(_, _, count)| count).sum())
+            Ok(replaced_texts.iter().map(|(_, _, count)| count).sum())
         })
     }
 

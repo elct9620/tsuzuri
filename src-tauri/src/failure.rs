@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::project::glossary::GlossaryError;
 use crate::project::ProjectError;
-use crate::replacement::InvalidPattern;
+use crate::replacement::ReplacementError;
 use crate::segment_change::SegmentChangeError;
 use crate::toolchain::{ModelError, ModelSlot};
 use crate::transcript::SrtError;
@@ -128,9 +128,11 @@ impl From<SegmentChangeError> for Failure {
     }
 }
 
-impl From<InvalidPattern> for Failure {
-    fn from(InvalidPattern { detail }: InvalidPattern) -> Self {
-        Failure::InvalidPattern { detail }
+impl From<ReplacementError> for Failure {
+    fn from(error: ReplacementError) -> Self {
+        match error {
+            ReplacementError::InvalidPattern { detail } => Failure::InvalidPattern { detail },
+        }
     }
 }
 

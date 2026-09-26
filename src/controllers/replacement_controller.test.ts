@@ -57,7 +57,7 @@ describe("ReplacementController", () => {
             data-action="keydown.enter->replacement#apply:!composing:prevent" />
           <input type="radio" name="replacement-field" value="text" data-replacement-target="field" checked />
           <input type="radio" name="replacement-field" value="translation" data-replacement-target="field" />
-          <input type="checkbox" data-replacement-target="isRegex" />
+          <input type="checkbox" data-replacement-target="regexToggle" />
         </dialog>
         <ol data-transcript-target="list"></ol>
       </section>
@@ -85,6 +85,9 @@ describe("ReplacementController", () => {
   afterEach(() => {
     application.stop();
     clearMocks();
+    Object.assign(window, {
+      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
+    });
   });
 
   /** Enters the first Segment's text and selects its characters `start` to `end`. */
@@ -125,13 +128,22 @@ describe("ReplacementController", () => {
     ]).toEqual([true, "，", true]);
   });
 
-  it("opens by ⌘+Option+F, whose key Option changes", async () => {
+  it("opens by ⌘+Option+F on macOS, whose key Option changes, leaving Ctrl+H to the text", async () => {
+    Object.assign(window, {
+      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
+    });
     await hold(translated);
 
+    press({ key: "h", code: "KeyH", ctrlKey: true });
+    await settle();
+    const isOpenByCtrlH = target<HTMLDialogElement>("dialog").open;
     press({ key: "ƒ", code: "KeyF", metaKey: true, altKey: true });
     await settle();
 
-    expect(target<HTMLDialogElement>("dialog").open).toBe(true);
+    expect([isOpenByCtrlH, target<HTMLDialogElement>("dialog").open]).toEqual([
+      false,
+      true,
+    ]);
   });
 
   // @behavior ED-085
@@ -143,7 +155,7 @@ describe("ReplacementController", () => {
     target<HTMLInputElement>("substitute").value = " ";
     document.querySelector<HTMLInputElement>('[value="translation"]')!.checked =
       true;
-    target<HTMLInputElement>("isRegex").checked = true;
+    target<HTMLInputElement>("regexToggle").checked = true;
 
     press({ key: "Enter" }, target("substitute"));
     await settle();

@@ -1,6 +1,6 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, telling what just happened in Notifications, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
+Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, telling what just happened in Notifications and that an edit was saved in the Save Mark, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
@@ -8,6 +8,7 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/ui/menu.test.ts`
 - `src/controllers/tooltip_controller.test.ts`
 - `src/ui/notification.test.ts`
+- `src/ui/save_mark.test.ts`
 - `src/ui/icons.test.ts`
 - `src/ui/shortcuts.test.ts`
 - `src/controllers/shortcuts_controller.test.ts`
@@ -157,9 +158,9 @@ One replacing another would take away what the earlier one said, or offered, bef
 
 | Step | Statement |
 | --- | --- |
-| Given | a Notification that an edit was saved |
-| When | another edit is saved |
-| Then | two Notifications say an edit was saved |
+| Given | a Notification that a translation finished |
+| When | another translation finishes |
+| Then | two Notifications say a translation finished |
 
 ## `IF-018` Marking the kind of a Notification
 
@@ -326,3 +327,21 @@ A key alone does not say where it works or what it leaves alone, so each shortcu
 | Given | the page as `index.html` writes it and the actions its controllers bind |
 | When | the keys they bind are read |
 | Then | the shortcut list has each of them |
+
+## `IF-037` Letting the Save Mark go on its own
+
+| Step | Statement |
+| --- | --- |
+| Given | the Save Mark shown after an edit was saved |
+| When | a moment passes |
+| Then | it is no longer shown |
+
+## `IF-038` Keeping the Save Mark while edits keep being saved
+
+Each edit saved is marked anew rather than stacked, so writing field after field shows one mark for as long as it goes on.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Save Mark shown after an edit was saved, most of its moment passed |
+| When | another edit is saved |
+| Then | one Save Mark is shown, for a whole moment from the latest edit |

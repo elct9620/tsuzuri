@@ -75,11 +75,11 @@ describe("notify", () => {
 
   // @behavior IF-017
   it("stacks every Notification", async () => {
-    await notify({ title: "已存檔", kind: "success" });
+    await notify({ title: "翻譯完成", kind: "success" });
 
-    await notify({ title: "已存檔", kind: "success" });
+    await notify({ title: "翻譯完成", kind: "success" });
 
-    expect(notifications()).toEqual(["已存檔", "已存檔"]);
+    expect(notifications()).toEqual(["翻譯完成", "翻譯完成"]);
   });
 
   // @behavior IF-018

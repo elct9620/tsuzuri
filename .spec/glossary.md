@@ -207,7 +207,15 @@ Why a command did not finish, sent to the webview as a `code` with the data it n
 
 ### Notification
 
-A short message in a corner of the window about something that has just happened: a task finished or failed, an edit was saved or was not written. Its title says what happened, marked by the icon and colour of its kind; below the title it may say why in a sentence, or list items with their values, such as how long each Phase took. Each thing that happened has a Notification of its own. It goes away on its own after a moment, except one saying something failed, which stays until it is closed.
+A short message in a corner of the window about something that has just happened: a task finished or failed, an edit was not written, or an edit was saved with something offered to do about it. Its title says what happened, marked by the icon and colour of its kind; below the title it may say why in a sentence, or list items with their values, such as how long each Phase took. Each thing that happened has a Notification of its own. It goes away on its own after a moment, except one saying something failed, which stays until it is closed.
+
+### Save Mark
+
+A small mark beside the Current Resource's name, fading in when an edit is written and away a moment later. Editing writes each time a field is left, so a saved edit is marked here rather than in a Notification; one offering something to do about the edit still comes as a Notification.
+
+#### Rejected
+
+- `saved Notification` - a Notification is for what the user should read; a routine save is only marked.
 
 ### Placeholder
 

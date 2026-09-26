@@ -74,7 +74,7 @@ describe("TimelineController", () => {
     document.body.innerHTML = `
       <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange">
         <video data-timeline-target="media"></video>
-        <button data-timeline-target="snapping" data-action="timeline#toggleSnapping"></button>
+        <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button>
         <button data-action="timeline#zoomOut"></button>
         <button data-action="timeline#zoomIn"></button>
         <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent" hidden></div>

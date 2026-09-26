@@ -81,7 +81,7 @@ export default class TranscribeController extends Controller {
     const progress = this.progressOutlet;
     if (progress.isBusy) return;
     this.dialogTarget.close();
-    progress.begin("transcribe");
+    progress.begin("transcription");
     try {
       const transcription = await transcribe(
         currentResource(this.project)?.has_subtitle ?? false,
@@ -107,7 +107,7 @@ export default class TranscribeController extends Controller {
       });
       if (this.translateTarget.checked) {
         const choices = this.translationOptionsOutlet;
-        progress.begin("translate");
+        progress.begin("translation");
         notifyTranslation(await translate(choices.language, choices.options));
       }
       progress.finish();

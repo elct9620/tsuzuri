@@ -130,7 +130,7 @@ export class EditingSession {
     text: string,
   ): void {
     if (field !== null) this.entryText = text;
-    this.act({ kind: "enter", index, field, range, text });
+    this.act({ kind: "entry", index, field, range, text });
   }
 
   /** Follows the live caret as the selection in its field moves or its text is typed. */
@@ -141,7 +141,7 @@ export class EditingSession {
     text: string,
   ): void {
     if (this.holdsCaret(index, field))
-      this.act({ kind: "select", range, text });
+      this.act({ kind: "selection", range, text });
   }
 
   /**
@@ -155,7 +155,7 @@ export class EditingSession {
     text: string,
   ): Promise<Outcome> {
     if (!this.holdsCaret(index, field)) return { kind: "unchanged" };
-    this.act({ kind: "leave", range, text });
+    this.act({ kind: "exit", range, text });
     return this.writeText(index, field, text);
   }
 
@@ -170,7 +170,7 @@ export class EditingSession {
   }
 
   makeCurrent(index: number): void {
-    this.act({ kind: "make-current", index });
+    this.act({ kind: "current-segment", index });
   }
 
   /** Writes a text, a translation or a Speaker of the Segment at `index`. */

@@ -17,7 +17,7 @@ function indexOf(element: EventTarget | null): number {
  */
 export default class SegmentChangesController extends Controller {
   static targets = [
-    "checked",
+    "checkedBar",
     "checkedCount",
     "merge",
     "shiftDialog",
@@ -26,7 +26,7 @@ export default class SegmentChangesController extends Controller {
 
   declare readonly session: EditingSession;
   /** The bar that shows while Segments are checked. */
-  declare readonly checkedTarget: HTMLElement;
+  declare readonly checkedBarTarget: HTMLElement;
   declare readonly checkedCountTarget: HTMLElement;
   declare readonly mergeTarget: HTMLButtonElement;
   declare readonly shiftDialogTarget: HTMLDialogElement;
@@ -85,7 +85,7 @@ export default class SegmentChangesController extends Controller {
   /** Shows how many Segments are checked, offering a merge only for Segments next to each other. */
   showChecked(): void {
     const indexes = this.session.checkedIndexes;
-    this.checkedTarget.hidden = indexes.length === 0;
+    this.checkedBarTarget.hidden = indexes.length === 0;
     this.checkedCountTarget.textContent = t("edit.selected", {
       count: indexes.length,
     });

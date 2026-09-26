@@ -64,7 +64,7 @@ describe("SegmentChangesController", () => {
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="empty"></p>
-        <div data-segment-changes-target="checked" hidden>
+        <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
           <button id="merge" data-segment-changes-target="merge" data-action="segment-changes#merge">合併</button>
           <button id="open-shift" data-action="segment-changes#openShift">平移</button>
@@ -231,7 +231,7 @@ describe("SegmentChangesController", () => {
     expect([
       document.querySelectorAll("input.check:checked").length,
       document.querySelector<HTMLElement>(
-        '[data-segment-changes-target="checked"]',
+        '[data-segment-changes-target="checkedBar"]',
       )!.hidden,
     ]).toEqual([0, true]);
   });

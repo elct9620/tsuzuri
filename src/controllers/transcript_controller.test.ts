@@ -286,7 +286,7 @@ describe("TranscriptController", () => {
   it("shows Placeholder rows until a transcription writes a Segment", async () => {
     await hold(projectOf({ segments: [] }));
 
-    progress().begin("transcribe");
+    progress().begin("transcription");
     await settle();
 
     expect([
@@ -324,7 +324,7 @@ describe("TranscriptController", () => {
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }] }),
     );
 
-    progress().begin("transcribe");
+    progress().begin("transcription");
     await settle();
 
     const rows = [...document.querySelectorAll("ol > li")];
@@ -348,7 +348,7 @@ describe("TranscriptController", () => {
           ...(at < done ? { translation: `line ${at}` } : {}),
         })),
       });
-    progress().begin("translate");
+    progress().begin("translation");
     await hold(translatedUpTo(0));
 
     await hold(translatedUpTo(6));

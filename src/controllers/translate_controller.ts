@@ -60,7 +60,7 @@ export default class TranslateController extends Controller {
     const progress = this.progressOutlet;
     if (progress.isBusy) return;
     this.dialogTarget.close();
-    progress.begin("translate");
+    progress.begin("translation");
     try {
       const choices = this.translationOptionsOutlet;
       const translation = await translate(choices.language, choices.options);

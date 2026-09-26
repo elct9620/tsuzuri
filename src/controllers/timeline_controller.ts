@@ -136,7 +136,7 @@ export function controlOption({
  * Segment, where the Current Segment is retimed by dragging and a new one drawn on the empty waveform.
  */
 export default class TimelineController extends Controller {
-  static targets = ["media", "waveform", "zoomLevel", "snapping"];
+  static targets = ["media", "waveform", "zoomLevel", "snapButton"];
 
   declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
@@ -145,7 +145,7 @@ export default class TimelineController extends Controller {
   /** How far the timeline is zoomed, as a percentage of where it starts; pressing it goes back there. */
   declare readonly zoomLevelTarget: HTMLElement;
   /** Whether a dragged edge Snaps, pressed to turn it on or off. */
-  declare readonly snappingTarget: HTMLButtonElement;
+  declare readonly snapButtonTarget: HTMLButtonElement;
 
   private media: string | null = null;
   private segments: Segment[] = [];
@@ -589,8 +589,8 @@ export default class TimelineController extends Controller {
   }
 
   private showSnapping(): void {
-    this.snappingTarget.setAttribute("aria-pressed", `${this.isSnapping}`);
-    this.snappingTarget.classList.toggle("btn-active", this.isSnapping);
+    this.snapButtonTarget.setAttribute("aria-pressed", `${this.isSnapping}`);
+    this.snapButtonTarget.classList.toggle("btn-active", this.isSnapping);
   }
 
   private showZoomLevel(): void {

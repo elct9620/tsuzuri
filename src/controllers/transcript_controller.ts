@@ -363,7 +363,7 @@ export default class TranscriptController extends Controller {
     this.showChecked();
     this.drawCursor();
     const isAwaitingSegments =
-      segments.length === 0 && this.runningTask === "transcribe";
+      segments.length === 0 && this.runningTask === "transcription";
     if (isAwaitingSegments) this.showLoading();
     const hasTranslation = segments.some(
       (segment) => segment.translation !== undefined,
@@ -472,7 +472,7 @@ export default class TranscriptController extends Controller {
       ":scope > li[data-placeholder]",
     ))
       row.remove();
-    if (this.runningTask === "transcribe" && count > 0)
+    if (this.runningTask === "transcription" && count > 0)
       this.listTarget.append(...placeholderRows(1));
   }
 }

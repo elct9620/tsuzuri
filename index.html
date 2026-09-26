@@ -414,12 +414,12 @@
                     ></legend>
                     <label
                       class="flex items-center gap-2"
-                      data-speakers-target="checked"
+                      data-speakers-target="checkedChoice"
                     >
                       <input
                         type="radio"
                         name="speaker-scope"
-                        value="checked"
+                        value="checked-segments"
                         class="radio radio-sm"
                         data-speakers-target="scope"
                       />
@@ -429,7 +429,7 @@
                       <input
                         type="radio"
                         name="speaker-scope"
-                        value="every"
+                        value="all-segments"
                         class="radio radio-sm"
                         data-speakers-target="scope"
                       />
@@ -439,7 +439,7 @@
                       <input
                         type="radio"
                         name="speaker-scope"
-                        value="unnamed"
+                        value="unnamed-segments"
                         class="radio radio-sm"
                         data-speakers-target="scope"
                       />
@@ -449,7 +449,7 @@
                       <input
                         type="radio"
                         name="speaker-scope"
-                        value="named"
+                        value="named-segments"
                         class="radio radio-sm"
                         data-speakers-target="scope"
                       />
@@ -739,7 +739,7 @@
                   <button
                     type="button"
                     class="btn btn-square btn-xs"
-                    data-timeline-target="snapping"
+                    data-timeline-target="snapButton"
                     data-action="timeline#toggleSnapping"
                     data-i18n-label="preview.snapping"
                     data-i18n-tooltip="preview.snappingHint"
@@ -790,7 +790,7 @@
             ></p>
             <div
               class="mb-2 flex items-center gap-2 rounded-box bg-base-200 px-3 py-1.5 text-sm"
-              data-segment-changes-target="checked"
+              data-segment-changes-target="checkedBar"
               hidden
             >
               <span data-segment-changes-target="checkedCount"></span>
@@ -816,7 +816,7 @@
               <button
                 type="button"
                 class="btn btn-xs"
-                data-retranslation-target="checked"
+                data-retranslation-target="checkedButton"
                 data-action="segment-changes#retranslate"
                 data-i18n="edit.retranslate"
               ></button>
@@ -1620,7 +1620,7 @@
                   <div
                     role="alert"
                     class="alert alert-info text-sm"
-                    data-logs-target="pending"
+                    data-logs-target="pendingHint"
                     hidden
                   ></div>
                 </fieldset>

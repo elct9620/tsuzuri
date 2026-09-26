@@ -59,13 +59,14 @@ function nameButton(speaker: string): HTMLButtonElement {
  * to the Translation Glossary.
  */
 /** Which Segments the Speaker dialog names. */
-type SpeakerScope = "checked" | "every" | "unnamed" | "named";
+type SpeakerScope =
+  "checked-segments" | "all-segments" | "unnamed-segments" | "named-segments";
 
 export default class SpeakersController extends Controller {
   static targets = [
     "dialog",
     "scope",
-    "checked",
+    "checkedChoice",
     "checkedCount",
     "from",
     "to",
@@ -76,7 +77,7 @@ export default class SpeakersController extends Controller {
   declare readonly dialogTarget: HTMLDialogElement;
   declare readonly scopeTargets: HTMLInputElement[];
   /** The choice of the Checked Segments, offered only when the dialog is opened for them. */
-  declare readonly checkedTarget: HTMLElement;
+  declare readonly checkedChoiceTarget: HTMLElement;
   declare readonly checkedCountTarget: HTMLElement;
   /** The Speaker whose Segments are renamed. */
   declare readonly fromTarget: HTMLSelectElement;
@@ -170,12 +171,13 @@ export default class SpeakersController extends Controller {
   private showDialog(checkedIndexes: number[]): void {
     this.checkedIndexes = checkedIndexes;
     const isChecked = checkedIndexes.length > 0;
-    this.checkedTarget.hidden = !isChecked;
+    this.checkedChoiceTarget.hidden = !isChecked;
     this.checkedCountTarget.textContent = t("edit.selected", {
       count: checkedIndexes.length,
     });
     for (const choice of this.scopeTargets)
-      choice.checked = choice.value === (isChecked ? "checked" : "every");
+      choice.checked =
+        choice.value === (isChecked ? "checked-segments" : "all-segments");
     const speakers = this.speakers;
     this.fromTarget.replaceChildren(...speakers.map(speakerOption));
     this.toTarget.value = "";
@@ -186,14 +188,14 @@ export default class SpeakersController extends Controller {
 
   /** The positions of the Segments `scope` takes in. */
   private scopeIndexes(scope: SpeakerScope): number[] {
-    if (scope === "checked") return this.checkedIndexes;
+    if (scope === "checked-segments") return this.checkedIndexes;
     const isTaken: Record<
-      Exclude<SpeakerScope, "checked">,
+      Exclude<SpeakerScope, "checked-segments">,
       (segment: Segment) => boolean
     > = {
-      every: () => true,
-      unnamed: (segment) => !segment.speaker,
-      named: (segment) => segment.speaker === this.fromTarget.value,
+      "all-segments": () => true,
+      "unnamed-segments": (segment) => !segment.speaker,
+      "named-segments": (segment) => segment.speaker === this.fromTarget.value,
     };
     return (this.project?.segments ?? []).flatMap((segment, index) =>
       isTaken[scope](segment) ? [index] : [],

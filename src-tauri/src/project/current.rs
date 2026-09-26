@@ -965,13 +965,13 @@ impl CurrentProject {
         let before = self.job_snapshot(&job.directory, &job.name)?;
         self.back_up_before_overwrite(&job.directory, &job.subtitle)?;
         files::write_srt(&job.subtitle, srt)?;
+        self.refresh_resources(&job.directory)?;
         files::back_up(
             &job.directory,
             &job.subtitle,
             SystemTime::now(),
             BackupKind::Output,
         )?;
-        self.refresh_resources(&job.directory)?;
         match self.lock().project.as_ref() {
             Some(project) if project.directory == job.directory => project
                 .write_speakers_to_translations(
@@ -1033,6 +1033,7 @@ impl CurrentProject {
             self.back_up_before_overwrite(&source.directory, &path)?;
         }
         files::write_srt(&path, translation_srt(&translation, speaker_names))?;
+        self.refresh_resources(&source.directory)?;
         if is_backed_up {
             files::back_up(
                 &source.directory,
@@ -1041,7 +1042,6 @@ impl CurrentProject {
                 BackupKind::Output,
             )?;
         }
-        self.refresh_resources(&source.directory)?;
         self.write_bilingual_subtitles(&source.directory, &source.name, Some(target))?;
         self.record_job_change(&source.directory, &source.name, before)?;
         self.show_translations(source, target, &translation.segments);
@@ -2335,6 +2335,33 @@ mod tests {
         assert!(output_backups(dir.path())
             .iter()
             .any(|(file, content)| file.starts_with("ep01.en.") && *content == cue("Hello")));
+    }
+
+    // @behavior PJ-108
+    #[test]
+    fn lists_a_translation_whose_output_could_not_be_kept() {
+        let dir = directory_of(
+            "pj-output-failed",
+            &[("ep01.srt", &cue("大家好")), (".tsuzuri", "")],
+        );
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+
+        let written = current.write_translations(
+            &source,
+            Language::English,
+            vec![segment("大家好", Some("Hello"))],
+        );
+
+        assert_eq!(
+            (
+                written.is_err(),
+                current.view().unwrap().resources[0]
+                    .translation_languages
+                    .clone()
+            ),
+            (true, vec![Language::English])
+        );
     }
 
     // @behavior PJ-069

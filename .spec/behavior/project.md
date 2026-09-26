@@ -552,6 +552,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | its translation into `en` is written as `Hello` |
 | Then | `.tsuzuri/history/` holds an Output of `ep01.en.srt` reading `Hello` |
 
+## `PJ-108` Listing a translation whose Output could not be kept
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose `ep01.srt` has no translation, and where `.tsuzuri` is a file, so no Backup can be kept |
+| When | its translation into `en` is written |
+| Then | the writing fails, and `ep01` lists the `en` translation it wrote |
+
 ## `PJ-069` Leaving Backups out of the Resources
 
 | Step | Statement |

@@ -136,7 +136,7 @@ impl Resource {
         speaker_names: &HashMap<String, String>,
     ) -> Result<Transcript, Failure> {
         let mut transcript = match &self.subtitle {
-            Some(path) => srt_transcript(path)?,
+            Some(path) => transcript_at(path)?,
             None => Transcript::default(),
         };
         self.carry_translations(&mut transcript.segments, translation, speaker_names)?;
@@ -162,10 +162,6 @@ impl Resource {
         }
         Ok(())
     }
-}
-
-fn srt_transcript(path: &Path) -> Result<Transcript, Failure> {
-    Ok(Transcript::from_srt(&std::fs::read_to_string(path)?)?)
 }
 
 /// The Resources of `directory` in the order of their names, taking subtitles as in `language`.

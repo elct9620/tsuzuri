@@ -5,6 +5,7 @@ import {
   fieldSelection,
   fieldValue,
   keepSelection,
+  setFieldValue,
 } from "./field";
 
 describe("field", () => {
@@ -52,6 +53,24 @@ describe("field", () => {
     document.getSelection()!.selectAllChildren(menu);
 
     expect(fieldSelection(field)).toEqual({ start: 2, end: 2 });
+  });
+
+  // @behavior ED-044
+  it("drops its kept selection once another text is written into it", () => {
+    const field = createField("你好世界");
+    document.body.append(field);
+    select(field, 2);
+    keepSelection(field);
+    document.getSelection()!.removeAllRanges();
+
+    setFieldValue(field, "你好世界");
+    const unchanged = fieldSelection(field);
+    setFieldValue(field, "今天天氣很好");
+
+    expect([unchanged, fieldSelection(field)]).toEqual([
+      { start: 2, end: 2 },
+      { start: 6, end: 6 },
+    ]);
   });
 
   it("puts the caret after its text when it never held the selection", () => {

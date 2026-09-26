@@ -30,7 +30,18 @@ export function fieldValue(field: HTMLElement): string {
   return field.textContent ?? "";
 }
 
+/** Where a selection in a field starts and ends, counted in characters; a caret starts where it ends. */
+export interface FieldSelection {
+  start: number;
+  end: number;
+}
+
+/** The selection each field held when it was last left, as a textarea keeps its own. */
+const keptSelections = new WeakMap<HTMLElement, FieldSelection>();
+
+/** Replaces the field's text; a different text drops the selection it kept, as a textarea's value does. */
 export function setFieldValue(field: HTMLElement, value: string): void {
+  if (value !== fieldValue(field)) keptSelections.delete(field);
   field.textContent = value;
 }
 
@@ -44,15 +55,6 @@ export function setFieldHeld(field: HTMLElement, isHeld: boolean): void {
 export function isFieldHeld(field: HTMLElement): boolean {
   return field.getAttribute("contenteditable") === "false";
 }
-
-/** Where a selection in a field starts and ends, counted in characters; a caret starts where it ends. */
-export interface FieldSelection {
-  start: number;
-  end: number;
-}
-
-/** The selection each field held when it was last left, as a textarea keeps its own. */
-const keptSelections = new WeakMap<HTMLElement, FieldSelection>();
 
 /** How many characters of the field come before `node` at `offset`. */
 function offsetOf(field: HTMLElement, node: Node, offset: number): number {
@@ -85,12 +87,10 @@ function liveSelection(field: HTMLElement): FieldSelection | undefined {
  */
 export function fieldSelection(field: HTMLElement): FieldSelection {
   const length = [...fieldValue(field)].length;
-  const selection = liveSelection(field) ??
-    keptSelections.get(field) ?? { start: length, end: length };
-  return {
-    start: Math.min(selection.start, length),
-    end: Math.min(selection.end, length),
-  };
+  return (
+    liveSelection(field) ??
+    keptSelections.get(field) ?? { start: length, end: length }
+  );
 }
 
 /** Keeps the field's selection for `fieldSelection` once the document's moves elsewhere; called as the field is left. */

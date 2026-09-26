@@ -308,6 +308,16 @@ The document holds one selection, which a click elsewhere moves away, so a field
 | When | the document's selection moves elsewhere and the field's is asked |
 | Then | it is still after the second character |
 
+## `ED-044` Dropping a kept selection once the field's text is replaced
+
+A selection kept for one text means nothing in another, so a field whose text is written anew keeps none, as a textarea's value does; the same text written again, as the editor does on every refresh, keeps it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a text field reading `你好世界`, left with the cursor after `你好` |
+| When | `今天天氣很好` is written into it |
+| Then | its selection is a caret after its last character |
+
 ## `ED-031` Leaving Enter to an input method while it composes
 
 | Step | Statement |

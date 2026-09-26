@@ -329,7 +329,7 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | When | Space is pressed in a Segment's text field |
 | Then | the media stays paused |
 
-## `PV-121` Playing with Space after a button is clicked
+## `PV-125` Playing with Space after a button is clicked
 
 A button clicked keeps the focus, yet Space pressed afterward is meant for the media, not to press the button again.
 
@@ -339,7 +339,7 @@ A button clicked keeps the focus, yet Space pressed afterward is meant for the m
 | When | the playing alone button is clicked and Space is pressed |
 | Then | the media plays and playing alone stays on |
 
-## `PV-122` Leaving Space to a button reached by keyboard
+## `PV-126` Leaving Space to a button reached by keyboard
 
 | Step | Statement |
 | --- | --- |

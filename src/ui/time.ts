@@ -16,7 +16,7 @@ export function formatTime(ms: number): string {
  */
 export function parseTime(text: string): number | null {
   const match = /^(?:(?:(\d+):)?(\d{1,2}):)?(\d{1,2})(?:[.,](\d{1,3}))?$/.exec(
-    separatedTime(text.trim()),
+    formatDigits(text.trim()),
   );
   if (!match) return null;
   const [, hours = "0", minutes = "0", seconds, fraction = "0"] = match;
@@ -30,7 +30,7 @@ export function parseTime(text: string): number | null {
 }
 
 /** Digits alone written with the separators of `HH:MM:SS.mmm`, filling it from the right; any other text as it is. */
-function separatedTime(text: string): string {
+function formatDigits(text: string): string {
   if (!/^\d+$/.test(text)) return text;
   const digits = text.padStart(9, "0");
   return `${digits.slice(0, -7)}:${digits.slice(-7, -5)}:${digits.slice(-5, -3)}.${digits.slice(-3)}`;

@@ -170,7 +170,7 @@ A choice limited to names like the one already set would hide the others, the ve
 | Then | a Notification says the time cannot be read and nothing is changed |
 
 
-## `ED-098` Reading a time typed as digits alone
+## `ED-108` Reading a time typed as digits alone
 
 Digits fill a time from its milliseconds up, as editing software takes a timecode, so the separators need not be typed.
 
@@ -180,7 +180,7 @@ Digits fill a time from its milliseconds up, as editing software takes a timecod
 | When | its start is changed to `500` |
 | Then | the Project is asked to change its times to 0.5 to 1 second |
 
-## `ED-099` Refusing a time past its part's range
+## `ED-109` Refusing a time past its part's range
 
 | Step | Statement |
 | --- | --- |
@@ -188,7 +188,7 @@ Digits fill a time from its milliseconds up, as editing software takes a timecod
 | When | a Segment's start is changed to `00:75:00.000` |
 | Then | a Notification says the time cannot be read and nothing is changed |
 
-## `ED-100` Choosing a part of a time by clicking it
+## `ED-110` Choosing a part of a time by clicking it
 
 | Step | Statement |
 | --- | --- |
@@ -196,7 +196,7 @@ Digits fill a time from its milliseconds up, as editing software takes a timecod
 | When | its minutes are clicked |
 | Then | the minutes are selected |
 
-## `ED-101` Typing over the chosen part of a time
+## `ED-111` Typing over the chosen part of a time
 
 Digits shift into the chosen part from the right, as they do into a whole time, and the next part is chosen once it is full.
 

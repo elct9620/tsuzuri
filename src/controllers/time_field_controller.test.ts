@@ -10,7 +10,7 @@ describe("TimeFieldController", () => {
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const input = () => document.querySelector<HTMLInputElement>("input")!;
-  const selected = () =>
+  const selection = () =>
     input().value.slice(input().selectionStart!, input().selectionEnd!);
 
   /** Clicks the field with the caret left at `at`, as a click places it. */
@@ -51,22 +51,22 @@ describe("TimeFieldController", () => {
     document.execCommand = execCommand;
   });
 
-  // @behavior ED-100
+  // @behavior ED-110
   it("selects the part of a time clicked", () => {
     clickAt(4);
 
     expect([input().selectionStart, input().selectionEnd]).toEqual([3, 5]);
   });
 
-  // @behavior ED-101
+  // @behavior ED-111
   it("shifts digits into the chosen part and chooses the next once it is full", () => {
     clickAt(4);
 
     type("1");
-    const shifted = [input().value, selected()];
+    const afterOne = [input().value, selection()];
     type("0");
 
-    expect([shifted, input().value, selected()]).toEqual([
+    expect([afterOne, input().value, selection()]).toEqual([
       ["00:01:32.360", "01"],
       "00:10:32.360",
       "32",

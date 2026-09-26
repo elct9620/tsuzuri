@@ -139,13 +139,13 @@ describe("SegmentChangesController", () => {
     ]);
   });
 
-  // @behavior ED-098
+  // @behavior ED-108
   it("reads a time typed as digits alone from its milliseconds up", async () => {
     await hold(threeSegments);
     const start = row(0).querySelector<HTMLInputElement>("input.start")!;
 
-    for (const typed of ["500", "000000500"]) {
-      start.value = typed;
+    for (const digits of ["500", "000000500"]) {
+      start.value = digits;
       start.dispatchEvent(new Event("change"));
       await settle();
     }
@@ -156,7 +156,7 @@ describe("SegmentChangesController", () => {
     ]);
   });
 
-  // @behavior ED-099
+  // @behavior ED-109
   it("refuses a time past its part's range", async () => {
     await hold(threeSegments);
     const start = row(0).querySelector<HTMLInputElement>("input.start")!;
@@ -385,7 +385,7 @@ describe("SegmentChangesController", () => {
         { start_ms: 3000, end_ms: 4000, text: "出門" },
       ],
     });
-    const checked = () =>
+    const checkStates = () =>
       [...document.querySelectorAll<HTMLInputElement>("input.check")].map(
         (check) => check.checked,
       );
@@ -412,7 +412,10 @@ describe("SegmentChangesController", () => {
 
       await shiftClick(2);
 
-      expect([checked(), current()]).toEqual([[false, true, true, false], 1]);
+      expect([checkStates(), current()]).toEqual([
+        [false, true, true, false],
+        1,
+      ]);
     });
 
     // @behavior ED-071
@@ -423,7 +426,7 @@ describe("SegmentChangesController", () => {
 
       await shiftClick(2);
 
-      expect(checked()).toEqual([false, true, true, false]);
+      expect(checkStates()).toEqual([false, true, true, false]);
     });
 
     // @behavior ED-072
@@ -433,7 +436,7 @@ describe("SegmentChangesController", () => {
 
       await shiftClick(0);
 
-      expect(checked()).toEqual([true, true, true]);
+      expect(checkStates()).toEqual([true, true, true]);
     });
 
     // @behavior ED-071
@@ -458,7 +461,7 @@ describe("SegmentChangesController", () => {
       );
       await settle();
 
-      expect([isToggled, isClicked, checked()]).toEqual([
+      expect([isToggled, isClicked, checkStates()]).toEqual([
         false,
         false,
         [true, true, false],
@@ -471,7 +474,7 @@ describe("SegmentChangesController", () => {
 
       await shiftClick(1);
 
-      expect([checked(), current()]).toEqual([[false, false, false], 1]);
+      expect([checkStates(), current()]).toEqual([[false, false, false], 1]);
     });
   });
 

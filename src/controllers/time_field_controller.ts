@@ -9,9 +9,9 @@ import { timeParts } from "../ui/time";
  * writes the time.
  */
 export default class TimeFieldController extends Controller<HTMLInputElement> {
-  /** The digits typed into the part chosen, which begins at `typedStart`. */
-  private typed = "";
-  private typedStart = -1;
+  /** The digits typed into the part chosen, which begins at `partStart`. */
+  private typedDigits = "";
+  private partStart = -1;
 
   /** Chooses the part the caret was clicked into, leaving a range dragged over as it is. */
   choosePart(): void {
@@ -20,7 +20,7 @@ export default class TimeFieldController extends Controller<HTMLInputElement> {
     const part = timeParts(value).find(
       ([start, end]) => start <= selectionStart && selectionStart <= end,
     );
-    if (part) this.select(part);
+    if (part) this.selectPart(part);
   }
 
   /** Shifts a digit into the chosen part; bound to `keydown` with `:!composing`. */
@@ -36,20 +36,27 @@ export default class TimeFieldController extends Controller<HTMLInputElement> {
     if (index === -1) return;
     event.preventDefault();
     const [start, end] = parts[index];
-    if (start !== this.typedStart) this.typed = "";
-    this.typed += event.key;
+    if (start !== this.partStart) this.typedDigits = "";
+    this.typedDigits += event.key;
     const width = end - start;
-    document.execCommand("insertText", false, this.typed.padStart(width, "0"));
+    document.execCommand(
+      "insertText",
+      false,
+      this.typedDigits.padStart(width, "0"),
+    );
     // A full last part starts over, as it has no next part to move on to
-    const isFull = this.typed.length === width;
+    const isFull = this.typedDigits.length === width;
     const next = parts[index + 1];
-    this.select(isFull && next ? next : [start, end], isFull ? "" : this.typed);
+    this.selectPart(
+      isFull && next ? next : [start, end],
+      isFull ? "" : this.typedDigits,
+    );
   }
 
-  /** Selects `part`, with `typed` the digits already shifted into it. */
-  private select([start, end]: [number, number], typed = ""): void {
+  /** Selects `part`, with `typedDigits` the digits already shifted into it. */
+  private selectPart([start, end]: [number, number], typedDigits = ""): void {
     this.element.setSelectionRange(start, end);
-    this.typed = typed;
-    this.typedStart = start;
+    this.typedDigits = typedDigits;
+    this.partStart = start;
   }
 }

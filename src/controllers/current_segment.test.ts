@@ -125,12 +125,12 @@ describe("Current Segment", () => {
       '[data-timeline-target="snapButton"]',
     )!;
 
-  /** The rows scrolled into view since `watchScrolls` began watching. */
-  let scrolled: () => HTMLElement[];
+  /** The rows scrolledRows into view since `watchScrolls` began watching. */
+  let scrolledRows: () => HTMLElement[];
 
   function watchScrolls(): void {
     const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
-    scrolled = () => scroll.mock.contexts as HTMLElement[];
+    scrolledRows = () => scroll.mock.contexts as HTMLElement[];
   }
 
   async function startApplication(): Promise<void> {
@@ -298,7 +298,7 @@ describe("Current Segment", () => {
     expect(media().paused).toBe(true);
   });
 
-  // @behavior PV-121
+  // @behavior PV-125
   it("plays with Space after a button is clicked", async () => {
     await show(twoSegments);
     rows()[1].click();
@@ -314,7 +314,7 @@ describe("Current Segment", () => {
     ]).toEqual([false, true, "true"]);
   });
 
-  // @behavior PV-122
+  // @behavior PV-126
   it("leaves Space to a button reached by keyboard", async () => {
     await show(twoSegments);
     rows()[1].click();
@@ -502,7 +502,7 @@ describe("Current Segment", () => {
 
     playTo(1.5);
 
-    expect(scrolled()).toEqual([rows()[1]]);
+    expect(scrolledRows()).toEqual([rows()[1]]);
   });
 
   // @behavior PV-120
@@ -513,7 +513,7 @@ describe("Current Segment", () => {
 
     playTo(1.2);
 
-    expect(scrolled()).toEqual([rows()[1]]);
+    expect(scrolledRows()).toEqual([rows()[1]]);
   });
 
   // @behavior PV-081
@@ -525,7 +525,7 @@ describe("Current Segment", () => {
 
     playTo(1.5);
 
-    expect([isMarked("data-is-playing"), scrolled()]).toEqual([
+    expect([isMarked("data-is-playing"), scrolledRows()]).toEqual([
       [false, true],
       [],
     ]);
@@ -558,7 +558,7 @@ describe("Current Segment", () => {
 
     followButton().click();
 
-    expect(scrolled()).toEqual([rows()[1]]);
+    expect(scrolledRows()).toEqual([rows()[1]]);
   });
 
   // @behavior PV-084
@@ -583,7 +583,7 @@ describe("Current Segment", () => {
     playTo(1.5);
     session.select(0, "text", { start: 2, end: 2 }, "0a");
 
-    expect(scrolled()).toEqual([rows()[1]]);
+    expect(scrolledRows()).toEqual([rows()[1]]);
   });
 
   // @behavior PV-085

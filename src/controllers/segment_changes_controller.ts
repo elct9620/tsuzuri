@@ -5,7 +5,7 @@ import {
   refreshProject,
   type SegmentChange,
 } from "../backend/project";
-import { caretOffset, fieldValue } from "../editor/field";
+import { fieldSelection, fieldValue } from "../editor/field";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { notify, notifyFailure } from "../ui/notification";
@@ -74,18 +74,22 @@ export default class SegmentChangesController extends Controller {
     await this.change({ kind: "deletion", index: indexOf(currentTarget) });
   }
 
-  /** Splits where the cursor was left in the Segment's text, which keeps its place once the menu takes focus. */
+  /**
+   * Splits where the selection in the Segment's text starts, whether it is chosen from the menu,
+   * after the text was left, or by shortcut while typing, which leaves the text so its edit is written first.
+   */
   async split({ currentTarget }: Event): Promise<void> {
     closeMenu(currentTarget);
     const index = indexOf(currentTarget);
     const text = this.element.querySelector<HTMLElement>(
       `.field[data-index="${index}"][data-field="text"]`,
     );
-    const at = text ? caretOffset(text) : 0;
+    const at = text ? fieldSelection(text).start : 0;
     if (!text || at === 0 || at >= [...fieldValue(text)].length) {
       notify({ title: t("edit.splitWhere"), kind: "warning" });
       return;
     }
+    text.blur();
     await this.change({ kind: "split", index, at });
   }
 

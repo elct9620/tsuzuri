@@ -174,8 +174,18 @@ A choice limited to names like the one already set would hide the others, the ve
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project in the panel whose first Segment reads `你好世界`, with the cursor after `你好` |
+| Given | a Project in the panel whose first Segment reads `你好世界`, its text left with the cursor after `你好` |
 | When | splitting is chosen from its menu |
+| Then | the Project is asked to split it after two characters |
+
+## `ED-043` Splitting a Segment by shortcut while its text is edited
+
+Subtitle editors bind splitting to a modified line break, so a long cue can be split without leaving the keyboard: Ctrl+Alt+Enter, or ⌘+Option+Enter on macOS.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment reads `你好世界`, with the cursor after `你好` in its text |
+| When | Ctrl+Alt+Enter is pressed |
 | Then | the Project is asked to split it after two characters |
 
 ## `ED-018` Merging the Segments selected
@@ -280,13 +290,33 @@ A subtitle has no formatting, so what is pasted or typed into a text field stays
 | When | it is left without its text changing |
 | Then | no edit is written |
 
-## `ED-030` Telling where the caret is in a text field
+## `ED-030` Telling where the selection is in a text field
 
 | Step | Statement |
 | --- | --- |
-| Given | a text field of two lines with the caret after the line break |
-| When | the caret's place is asked |
-| Then | it counts every character before the caret, the line break included |
+| Given | a text field of two lines with a selection from its first line into its second |
+| When | the selection's place is asked |
+| Then | each end counts every character before it, the line break included |
+
+## `ED-042` Keeping a text field's selection once it is left
+
+The document holds one selection, which a click elsewhere moves away, so a field keeps its own as a textarea does, for a menu chosen afterwards.
+
+| Step | Statement |
+| --- | --- |
+| Given | a text field left with the cursor after its second character |
+| When | the document's selection moves elsewhere and the field's is asked |
+| Then | it is still after the second character |
+
+## `ED-044` Dropping a kept selection once the field's text is replaced
+
+A selection kept for one text means nothing in another, so a field whose text is written anew keeps none, as a textarea's value does; the same text written again, as the editor does on every refresh, keeps it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a text field reading `你好世界`, left with the cursor after `你好` |
+| When | `今天天氣很好` is written into it |
+| Then | its selection is a caret after its last character |
 
 ## `ED-031` Leaving Enter to an input method while it composes
 

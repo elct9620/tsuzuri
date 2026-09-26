@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "../backend/project";
 import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 import { projectOf } from "../test_project";
+import FieldController, { composingOption } from "./field_controller";
 import SegmentChangesController from "./segment_changes_controller";
 import TranscriptController from "./transcript_controller";
 
@@ -79,6 +80,8 @@ describe("SegmentChangesController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
+    application.registerActionOption("composing", composingOption);
+    application.register("field", FieldController);
     application.register("transcript", TranscriptController);
     application.register("segment-changes", SegmentChangesController);
     await settle();
@@ -127,17 +130,44 @@ describe("SegmentChangesController", () => {
     expect(changes).toEqual([{ kind: "insertion-after", index: 0 }]);
   });
 
-  // @behavior ED-017
-  it("asks to split a Segment where its cursor was left", async () => {
-    await hold(threeSegments);
+  /** Enters the first Segment's text and leaves the caret after `你好`. */
+  function placeCaret(): HTMLElement {
     const text = row(0).querySelector<HTMLElement>(".field.text")!;
+    text.dispatchEvent(new FocusEvent("focus"));
     const caret = document.createRange();
     caret.setStart(text.firstChild!, 2);
     caret.collapse(true);
     document.getSelection()!.removeAllRanges();
     document.getSelection()!.addRange(caret);
+    return text;
+  }
 
+  // @behavior ED-017
+  it("asks to split a Segment where its cursor was left", async () => {
+    await hold(threeSegments);
+    const text = placeCaret();
+
+    text.dispatchEvent(new FocusEvent("blur"));
+    document.getSelection()!.selectAllChildren(row(0).querySelector("ul")!);
     await choose(0, "split");
+
+    expect(changes).toEqual([{ kind: "split", index: 0, at: 2 }]);
+  });
+
+  // @behavior ED-043
+  it("asks to split a Segment at its caret by shortcut", async () => {
+    await hold(threeSegments);
+    const text = placeCaret();
+
+    text.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        ctrlKey: true,
+        altKey: true,
+        bubbles: true,
+      }),
+    );
+    await settle();
 
     expect(changes).toEqual([{ kind: "split", index: 0, at: 2 }]);
   });

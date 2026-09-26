@@ -638,6 +638,7 @@ whisper 的切段常需手動修正，調整時間戳與段落是校對重點。
 |---|---|
 | 只收純文字 | `contenteditable="plaintext-only"`，字幕沒有格式 |
 | 標記不寫進內容 | CSS Custom Highlight 以範圍著色，欄位值始終是字幕原文 |
+| 選單仍找得到選取 | 離開時由欄位保留 |
 | 不支援 Highlight | 只顯示備份的文字，不標在欄位裡 |
 | 與 Stimulus 搭配 | 由 controller 接上 |
 

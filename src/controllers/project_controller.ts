@@ -4,6 +4,7 @@ import { message, open } from "../backend/dialog";
 import {
   openProject,
   refreshProject,
+  reloadProject,
   selectResource,
   setPrimaryLanguage,
   setProjectOptions,
@@ -35,6 +36,14 @@ function resourceItem(
   name.textContent = resource.name;
   button.append(name);
   const marks: HTMLElement[] = [];
+  if (!resource.has_media) {
+    const kind = document.createElement("span");
+    kind.className = "badge badge-sm badge-outline";
+    kind.dataset.kind = "subtitle";
+    kind.textContent = t("resources.subtitleOnly");
+    kind.dataset.tooltip = t("resources.subtitleOnlyHint");
+    marks.push(kind);
+  }
   if (!resource.has_subtitle) {
     const status = document.createElement("span");
     status.className = "status status-warning";
@@ -135,6 +144,17 @@ export default class ProjectController extends Controller {
     const isSelected = await this.report(() => selectResource(name));
     // Rust announces nothing when it could not select, so the editor is told to read what it holds.
     if (!isSelected) await refreshProject();
+  }
+
+  /**
+   * Reads the Project's directory again, for files added or changed elsewhere. The field being
+   * typed in is left first, so its text is sent to be written before the directory is read.
+   */
+  async reload(): Promise<void> {
+    if (this.feed.project === null) return;
+    if (document.activeElement instanceof HTMLElement)
+      document.activeElement.blur();
+    await this.report(() => reloadProject());
   }
 
   async setLanguage(): Promise<void> {

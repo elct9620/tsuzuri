@@ -14,6 +14,7 @@ describe("ProjectController", () => {
   let calls: { command: string; args: unknown }[];
   let openSrt: () => unknown;
   let selectFailure: unknown;
+  let reloaded: () => unknown;
   let chosenFile: string;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -40,9 +41,13 @@ describe("ProjectController", () => {
     calls = [];
     openSrt = () => null;
     selectFailure = undefined;
+    reloaded = () => null;
     chosenFile = "/subtitles/lecture.srt";
     document.body.innerHTML = `
-      <main data-controller="project">
+      <main
+        data-controller="project"
+        data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent"
+      >
         <section data-project-target="startScreen"></section>
         <div data-project-target="workspace" hidden>
           <h1 data-project-target="name"></h1>
@@ -51,6 +56,7 @@ describe("ProjectController", () => {
             <button id="open-directory" data-action="project#openDirectory">開啟目錄</button>
             <button id="open-srt" data-action="project#openSrt">開啟 SRT</button>
           </div>
+          <button id="reload" data-action="project#reload">重新載入</button>
           <ul data-project-target="resources"></ul>
           <p data-project-target="glossary"></p>
         </div>
@@ -89,6 +95,7 @@ describe("ProjectController", () => {
             ? "/talks"
             : chosenFile;
         if (command === "open_srt") return openSrt();
+        if (command === "reload_project") return reloaded();
         if (command === "select_resource" && selectFailure !== undefined)
           return Promise.reject(selectFailure);
       },
@@ -141,7 +148,7 @@ describe("ProjectController", () => {
     await hold(
       projectOf({
         resources: [
-          resourceOf({ translation_languages: ["en"] }),
+          resourceOf({ has_media: true, translation_languages: ["en"] }),
           resourceOf({ name: "ep02", has_media: true, has_subtitle: false }),
         ],
       }),
@@ -161,6 +168,23 @@ describe("ProjectController", () => {
       { name: "ep01", badges: ["en"], hasNoSubtitle: false, isCurrent: true },
       { name: "ep02", badges: [], hasNoSubtitle: true, isCurrent: false },
     ]);
+  });
+
+  // @behavior PJ-117
+  it("marks a Resource of subtitles alone", async () => {
+    await hold(
+      projectOf({
+        resources: [
+          resourceOf({ has_media: true }),
+          resourceOf({ name: "notes", has_media: false }),
+        ],
+      }),
+    );
+
+    const markedNames = [
+      ...target("resources").querySelectorAll('[data-kind="subtitle"]'),
+    ].map((badge) => badge.closest("button")?.dataset.name);
+    expect(markedNames).toEqual(["notes"]);
   });
 
   // @behavior PJ-038
@@ -227,6 +251,50 @@ describe("ProjectController", () => {
     await click('[data-name="ep02"]');
 
     expect(isAnnounced).toBe(true);
+  });
+
+  // @behavior PJ-116
+  it("reloads the Project from the button above the Resource list or its shortcut", async () => {
+    await hold(projectOf());
+
+    await click("#reload");
+    for (const key of [{ ctrlKey: true }, { metaKey: true }])
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "r", ...key }));
+    await settle();
+
+    expect(
+      calls.filter((call) => call.command === "reload_project").length,
+    ).toBe(3);
+  });
+
+  // @behavior PJ-120
+  it("leaves the field being typed in before reloading", async () => {
+    await hold(projectOf());
+    const field = document.createElement("div");
+    field.tabIndex = 0;
+    const order: string[] = [];
+    field.addEventListener("blur", () => order.push("leave"));
+    target("resources").append(field);
+    field.focus();
+    reloaded = () => order.push("reload");
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "r", ctrlKey: true }),
+    );
+    await settle();
+
+    expect(order).toEqual(["leave", "reload"]);
+  });
+
+  it("reloads nothing without a Project", async () => {
+    await hold(null);
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "r", ctrlKey: true }),
+    );
+    await settle();
+
+    expect(sent("reload_project")).toBeUndefined();
   });
 
   // @behavior PJ-036

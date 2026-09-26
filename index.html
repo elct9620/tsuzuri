@@ -18,7 +18,7 @@
       data-controller="project transcript segment-changes dialog comparison speakers retranslation"
       data-retranslation-progress-outlet="#progress"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith"
+      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent"
     >
       <section class="hero flex-1" data-project-target="startScreen">
         <div class="hero-content flex-col text-center">
@@ -885,6 +885,20 @@
             class="drawer-overlay"
           ></label>
           <div class="flex min-h-full w-56 flex-col bg-base-300">
+            <ul class="menu w-full pb-0">
+              <li class="menu-title flex flex-row items-center justify-between">
+                <span data-i18n="resources.title"></span>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-square btn-xs"
+                  data-action="project#reload"
+                  data-i18n-label="resources.reload"
+                  data-i18n-tooltip="resources.reloadHint"
+                >
+                  <i data-lucide="refresh-cw" class="size-3.5"></i>
+                </button>
+              </li>
+            </ul>
             <ul
               class="menu w-full grow gap-1 [&_button]:flex"
               data-project-target="resources"

@@ -110,6 +110,14 @@ Show the Current Resource's translation in this Language, or none.
 pub fn show_translation(app: AppHandle, current: State<'_, CurrentProject>, language: Option<Language>) -> Result<(), Failure> {}
 ```
 
+## `reload_project`
+
+Pair the Project's files again and read the Current Resource again from them, showing the same translation while its file is there, or the first Resource once the Current Resource is gone. The Undo History is kept unless a subtitle of the Current Resource was changed elsewhere. While a Mode runs on the Current Resource only the Resource list is read again. Emits `project-changed`.
+
+```rust
+pub fn reload_project(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {}
+```
+
 ## `set_primary_language`
 
 Make this the Project's Primary Language, record it in the Project Config, and pair the directory's subtitles again as in it.

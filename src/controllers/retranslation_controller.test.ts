@@ -115,7 +115,7 @@ describe("RetranslationController", () => {
     expect(retranslated).toEqual({ indexes: [0, 2] });
   });
 
-  // @behavior ED-077
+  // @behavior ED-090
   it("offers no translating again without a translation shown", async () => {
     await hold({
       ...projectTranslatedIntoEnglish,

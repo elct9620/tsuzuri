@@ -614,7 +614,7 @@ Drawing on the empty waveform leaves a range to keep with Enter or drop with Esc
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s |
+| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s, on Windows or Linux |
 | When | F11 is pressed outside a field |
 | Then | the Project is asked to change its times to 0.2 to 0.5 s |
 
@@ -633,6 +633,32 @@ Drawing on the empty waveform leaves a range to keep with Enter or drop with Esc
 | Given | a Current Segment from 0 to 0.5 s, the next from 0.6 s, the media at 0.8 s |
 | When | F12 is pressed outside a field |
 | Then | the Project is asked to change its times to 0 to 0.6 s |
+
+## `PV-089` Setting the Current Segment's start with F9 on macOS
+
+macOS takes F11 to show the desktop, so the start is set with F9 there, as Subtitle Edit binds it on macOS; F12 sets the end everywhere.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s, on macOS |
+| When | F9 is pressed outside a field |
+| Then | the Project is asked to change its times to 0.2 to 0.5 s |
+
+## `PV-090` Leaving F11 to macOS
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s, on macOS |
+| When | F11 is pressed outside a field |
+| Then | nothing is asked of the Project and the key is left to the system |
+
+## `PV-091` Naming the keys that set times for the platform
+
+| Step | Statement |
+| --- | --- |
+| Given | the preview on macOS |
+| When | it is shown |
+| Then | its hint names F9 and F12 as the keys that set the start and the end |
 
 ### Reading times on the timeline
 

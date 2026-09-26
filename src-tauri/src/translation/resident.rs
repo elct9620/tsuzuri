@@ -347,8 +347,8 @@ mod tests {
     /// Steps that record each start and stop; a started process runs until `exit` is called.
     #[derive(Default)]
     struct RecordedSteps {
-        started: StdMutex<Vec<Vec<String>>>,
-        stopped: StdMutex<Vec<u32>>,
+        started_args: StdMutex<Vec<Vec<String>>>,
+        stopped_pids: StdMutex<Vec<u32>>,
         running: StdMutex<Vec<Sender<StepEvent>>>,
     }
 
@@ -358,7 +358,7 @@ mod tests {
         }
 
         fn start_count(&self) -> usize {
-            self.started.lock().unwrap().len()
+            self.started_args.lock().unwrap().len()
         }
     }
 
@@ -370,13 +370,13 @@ mod tests {
         ) -> Result<(tokio::sync::mpsc::Receiver<StepEvent>, u32), String> {
             let (sender, events) = channel(8);
             self.running.lock().unwrap().push(sender);
-            let mut started = self.started.lock().unwrap();
+            let mut started = self.started_args.lock().unwrap();
             started.push(args.to_vec());
             Ok((events, started.len() as u32))
         }
 
         fn stop(&self, pid: u32) {
-            self.stopped.lock().unwrap().push(pid);
+            self.stopped_pids.lock().unwrap().push(pid);
         }
 
         fn stop_started(&self) {}
@@ -449,7 +449,7 @@ mod tests {
         fixture.start().await.unwrap();
 
         let preset = fixture.dir.path().join(PRESET_FILE);
-        let args = fixture.steps.started.lock().unwrap()[0].clone();
+        let args = fixture.steps.started_args.lock().unwrap()[0].clone();
         let flags: Vec<&str> = args.iter().map(String::as_str).collect();
         assert!(flags
             .windows(2)
@@ -509,7 +509,7 @@ mod tests {
 
         assert!(!unloaded_at_once);
         assert!(fixture.log().contains(&"unload".to_string()));
-        assert!(fixture.steps.stopped.lock().unwrap().is_empty());
+        assert!(fixture.steps.stopped_pids.lock().unwrap().is_empty());
     }
 
     // @behavior TL-071
@@ -547,7 +547,7 @@ mod tests {
 
         fixture.resident.stop(&fixture.steps).await;
 
-        assert_eq!(*fixture.steps.stopped.lock().unwrap(), vec![1]);
+        assert_eq!(*fixture.steps.stopped_pids.lock().unwrap(), vec![1]);
     }
 
     // @behavior TL-078
@@ -564,7 +564,7 @@ mod tests {
 
         fixture.resident.make_room(&fixture.steps).await;
 
-        assert_eq!(*fixture.steps.stopped.lock().unwrap(), vec![1]);
+        assert_eq!(*fixture.steps.stopped_pids.lock().unwrap(), vec![1]);
     }
 
     // @behavior TL-073

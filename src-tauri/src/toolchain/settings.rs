@@ -50,7 +50,7 @@ pub fn resolver(app: &AppHandle) -> Result<Resolver, Failure> {
     let resources = app.path().resource_dir()?;
     let config = settings_dir(app)?;
     Ok(Resolver {
-        bundled: resources.join(BUNDLED_DIR),
+        bundled_dir: resources.join(BUNDLED_DIR),
         choices: Choices::load(&config)?,
         search_dirs: detection::search_dirs(),
     })

@@ -42,6 +42,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.noTranslationShown");
     case "invalid-times":
       return t("failures.invalidTimes");
+    case "invalid-pattern":
+      return t("failures.invalidPattern", { detail: error.detail });
     case "no-backup":
       return t("failures.noBackup", { backup: error.backup });
     case "no-row":

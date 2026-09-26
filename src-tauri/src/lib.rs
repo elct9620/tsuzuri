@@ -6,6 +6,7 @@ pub mod menu;
 pub mod processes;
 pub mod progress;
 pub mod project;
+pub mod replacement;
 pub mod segment_change;
 pub mod steps;
 pub mod timing;
@@ -91,6 +92,7 @@ pub fn run() {
             project::commands::current_project,
             project::commands::edit_segment,
             project::commands::set_speakers,
+            project::commands::replace_text,
             steps::commands::cancel_task,
             translation::commands::retranslate,
             project::commands::change_segments,

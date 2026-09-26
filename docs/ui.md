@@ -223,11 +223,13 @@
 | 波形框 | 圓角與邊框 | `rounded-box`、border |
 | 取波形中 | 整列閃爍 | skeleton |
 | 段落區段 | 半透明中性色深淺交錯 | Regions |
-| 目前段落 | primary 淡色 | — |
+| 目前段落 | primary 淡色，在最上層 | — |
+| 重疊的段落 | 分上下軌，平分高度 | — |
 | 點區段 | 設為目前段落並暫停 | — |
 | 拖目前段落 | 邊界或整段改時間 | Regions |
 | 點空白處 | 跳到該時間 | — |
 | 空白處拖曳 | 拉出範圍，Enter 新增 | Regions |
+| Ctrl 或 ⌘＋拖曳 | 在段落上拉出範圍 | — |
 | 範圍 | secondary 淡色 | — |
 | 指標時間 | 滑鼠指標處直線與時間 | Hover |
 | 起訖與長度 | 拖動或有範圍時出現 | badge |
@@ -238,7 +240,7 @@
 | 縮放手勢 | Ctrl、Alt 或 ⌘＋滾輪，捏合 | — |
 | 刻度 | 依縮放調整間距 | Timeline |
 
-滾輪捲動、Ctrl＋滾輪縮放是 Windows 的慣例，Alt＋滾輪則是 Subtitle Edit 的縮放方式，兩者都支援；按鈕的 tooltip 寫出這些組合鍵。拖動操作見 `docs/design.md` 10.2。
+滾輪捲動、Ctrl＋滾輪縮放是 Windows 的慣例，Alt＋滾輪則是 Subtitle Edit 的縮放方式，兩者都支援；按鈕的 tooltip 寫出這些組合鍵。拖動與重疊見 `docs/design.md` 10.2、10.12。
 
 ### 4.3 進度
 

@@ -166,6 +166,14 @@ A choice limited to names like the one already set would hide the others, the ve
 | When | a Segment's start is changed to `abc` |
 | Then | a Notification says the time cannot be read and nothing is changed |
 
+
+## `ED-096` Refusing a typed start before the previous Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose Segments run from 1 to 2 and from 3 to 4 seconds |
+| When | the second's start is changed to `00:00:00.500` |
+| Then | a Notification says a Segment cannot start before the one before it or after the one after it, and nothing is changed |
 ## `ED-016` Inserting a Segment from its menu
 
 | Step | Statement |

@@ -11,6 +11,7 @@ use super::{
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::progress::Progress;
+use crate::replacement::Replacement;
 use crate::segment_change::SegmentChange;
 use crate::transcript::SrtContent;
 
@@ -134,6 +135,18 @@ pub fn set_speakers(app: AppHandle, indexes: Vec<usize>, speaker: String) -> Res
     let result = app
         .state::<CurrentProject>()
         .set_speakers(&indexes, &speaker);
+    app.announce_project();
+    result
+}
+
+#[tauri::command]
+pub fn replace_text(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    field: SegmentField,
+    replacement: Replacement,
+) -> Result<usize, Failure> {
+    let result = current.replace_text(field, &replacement);
     app.announce_project();
     result
 }

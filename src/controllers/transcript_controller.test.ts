@@ -567,7 +567,7 @@ describe("TranscriptController", () => {
       false,
     ]);
   });
-  // @behavior ED-074
+  // @behavior ED-090
   it("holds only the translations of the Segments translated again", async () => {
     await hold({
       ...translated,
@@ -584,7 +584,7 @@ describe("TranscriptController", () => {
     expect(translations.map(isFieldHeld)).toEqual([false, true]);
   });
 
-  // @behavior ED-075
+  // @behavior ED-091
   it("holds the choice of translation while a Mode runs", async () => {
     await hold({
       ...translated,

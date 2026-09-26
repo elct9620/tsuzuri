@@ -14,6 +14,7 @@ import {
 } from "./cursor";
 import { segmentCountAfter, splitPoint } from "./rules";
 import type {
+  Replacement,
   Segment,
   SegmentChange,
   SegmentField,
@@ -26,6 +27,8 @@ export interface EditingPort {
   /** Gives each Segment at `indexes` the Speaker `speaker`, or none when it is empty, as one change. */
   setSpeakers(indexes: number[], speaker: string): Promise<void>;
   changeSegments(change: SegmentChange): Promise<void>;
+  /** Replaces every match in `field` of each Segment as one change, answering how many there were. */
+  replaceText(field: CursorField, replacement: Replacement): Promise<number>;
   undo(): Promise<void>;
   redo(): Promise<void>;
 }
@@ -37,6 +40,10 @@ export type Outcome =
   /** Refused before anything was sent: a split needs text on both sides of the Cursor. */
   | { kind: "refused" }
   | { kind: "failed"; error: unknown };
+
+/** How a replacement ended: how many matches were replaced, none when nothing matched. */
+export type ReplacementOutcome =
+  { kind: "replaced"; count: number } | { kind: "failed"; error: unknown };
 
 /**
  * What a listener is told has changed; a `choice` is the user making another Segment current, as a
@@ -159,6 +166,11 @@ export class EditingSession {
     return this.writeText(index, field, text);
   }
 
+  /** The text `field` of the Segment at `index` was entered with, or none unless the live caret stands there. */
+  textAtEntry(index: number, field: CursorField): string | null {
+    return this.holdsCaret(index, field) ? this.entryText : null;
+  }
+
   /** Whether the live caret stands in `field` of the Segment at `index`. */
   private holdsCaret(index: number, field: CursorField): boolean {
     const { caret } = this.state;
@@ -184,6 +196,20 @@ export class EditingSession {
 
   setSpeakers(indexes: number[], speaker: string): Promise<Outcome> {
     return this.write(() => this.port.setSpeakers(indexes, speaker));
+  }
+
+  async replaceText(
+    field: CursorField,
+    replacement: Replacement,
+  ): Promise<ReplacementOutcome> {
+    try {
+      return {
+        kind: "replaced",
+        count: await this.port.replaceText(field, replacement),
+      };
+    } catch (error) {
+      return { kind: "failed", error };
+    }
   }
 
   /**

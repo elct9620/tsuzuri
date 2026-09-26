@@ -8,6 +8,7 @@ import RegionsPlugin, {
 import TimelinePlugin from "wavesurfer.js/plugins/timeline";
 
 import type { ProjectFeed, ProjectView, Segment } from "../backend/project";
+import { isMacOS } from "../backend/system";
 import { extractWaveform, type Waveform } from "../backend/waveform";
 import type { EditingSession, SegmentChange } from "../editor";
 import { t } from "../i18n";
@@ -31,6 +32,14 @@ const SNAP_PX = 8;
 const RANGE_ID = "range";
 /** Where the webview remembers whether Space plays the Current Segment alone. */
 const ALONE_KEY = "tsuzuri.timeline-playing-alone";
+
+/**
+ * The key that sets the Current Segment's start or end where the media is: F11 and F12, as
+ * Subtitle Edit binds them, but F9 for the start on macOS, which takes F11 to show the desktop.
+ */
+function timeKeys(): Record<UpdateSide, string> {
+  return { start: isMacOS() ? "F9" : "F11", end: "F12" };
+}
 
 /** Where a Segment runs on the timeline, in seconds. */
 interface Span {
@@ -156,6 +165,8 @@ export default class TimelineController extends Controller {
     "times",
     "aloneButton",
     "spaceHint",
+    "startKey",
+    "endKey",
   ];
 
   declare readonly feed: ProjectFeed;
@@ -172,6 +183,9 @@ export default class TimelineController extends Controller {
   declare readonly aloneButtonTarget: HTMLButtonElement;
   /** What Space does, beside its key in the Current Segment's card. */
   declare readonly spaceHintTarget: HTMLElement;
+  /** The keys that set the start and the end where the media is, which differ by platform. */
+  declare readonly startKeyTarget: HTMLElement;
+  declare readonly endKeyTarget: HTMLElement;
 
   private media: string | null = null;
   private segments: Segment[] = [];
@@ -194,6 +208,9 @@ export default class TimelineController extends Controller {
   };
 
   connect(): void {
+    const keys = timeKeys();
+    this.startKeyTarget.textContent = keys.start;
+    this.endKeyTarget.textContent = keys.end;
     this.showZoomLevel();
     this.showSnapping();
     this.showPlayingAlone();
@@ -268,12 +285,14 @@ export default class TimelineController extends Controller {
   }
 
   /**
-   * Sets the Current Segment's start where the media is with F11, or its end with F12, as Subtitle
-   * Edit binds them; the time stays clear of its neighbours as a dragged edge does.
+   * Sets the Current Segment's start or end where the media is with the key `timeKeys` names for
+   * it; the time stays clear of its neighbours as a dragged edge does.
    */
   setTimeAtMedia(event: KeyboardEvent): void {
-    const side = { F11: "start", F12: "end" }[event.key] as
-      UpdateSide | undefined;
+    const keys = timeKeys();
+    const side = (Object.keys(keys) as UpdateSide[]).find(
+      (side) => keys[side] === event.key,
+    );
     const index = this.session.cursor.index;
     const segment = this.currentSegment;
     if (!side || index === null || !segment || this.isHeld) return;

@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use crate::project::glossary::GlossaryError;
 use crate::project::ProjectError;
+use crate::replacement::ReplacementError;
 use crate::segment_change::SegmentChangeError;
 use crate::toolchain::{ModelError, ModelSlot};
 use crate::transcript::SrtError;
@@ -50,6 +51,10 @@ pub enum Failure {
     NoTranslationShown,
     /// A Segment Change that would leave a Segment ending before it starts.
     InvalidTimes,
+    /// A Replacement with nothing to find, or a regular expression the `regex` crate cannot read.
+    InvalidPattern {
+        detail: String,
+    },
     /// A restore that named no Backup of the subtitle it was asked for.
     NoBackup {
         backup: String,
@@ -119,6 +124,14 @@ impl From<SegmentChangeError> for Failure {
         match error {
             SegmentChangeError::InvalidTimes => Failure::InvalidTimes,
             SegmentChangeError::InvalidPosition { detail } => Failure::Internal { detail },
+        }
+    }
+}
+
+impl From<ReplacementError> for Failure {
+    fn from(error: ReplacementError) -> Self {
+        match error {
+            ReplacementError::InvalidPattern { detail } => Failure::InvalidPattern { detail },
         }
     }
 }

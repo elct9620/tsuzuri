@@ -70,7 +70,7 @@ export default class SpeakersController extends Controller {
 
   declare readonly dialogTarget: HTMLDialogElement;
   declare readonly scopeTargets: HTMLInputElement[];
-  /** The choice of the rows selected, offered only when the dialog is opened from them. */
+  /** The choice of the Checked Segments, offered only when the dialog is opened for them. */
   declare readonly selectionTarget: HTMLElement;
   declare readonly selectionCountTarget: HTMLElement;
   /** The Speaker whose Segments are renamed. */
@@ -80,7 +80,7 @@ export default class SpeakersController extends Controller {
   /** Each Speaker named, to fill in the Speaker to set. */
   declare readonly namesTarget: HTMLElement;
 
-  /** The rows selected when the dialog was opened from them. */
+  /** The Checked Segments when the dialog was opened for them. */
   private selectedIndexes: number[] = [];
   /** The Project the editor shows, whose Segments and Translation Glossary name the Speakers. */
   private project: ProjectView | null = null;
@@ -142,7 +142,7 @@ export default class SpeakersController extends Controller {
     this.showDialog([]);
   }
 
-  /** Opens the Speaker dialog for the rows selected. */
+  /** Opens the Speaker dialog for the Checked Segments. */
   openForSelection({ detail }: CustomEvent<{ indexes: number[] }>): void {
     this.showDialog(detail.indexes);
   }

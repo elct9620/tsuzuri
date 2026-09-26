@@ -52,7 +52,7 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 │  ├─ main.ts             組裝點（4.3）
 │  ├─ backend/            Rust 的唯一入口
 │  ├─ controllers/        Stimulus controller 與它們的測試
-│  ├─ editor/             編輯核心，不依賴 editor/ 以外（4.4）
+│  ├─ editor/             編輯核心，不依賴 editor/ 以外（4.5）
 │  ├─ ui/                 共用的畫面模組
 │  └─ locales/            en、zh-Hant
 ├─ src-tauri/src/         Rust（第 3 章）
@@ -74,7 +74,7 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 |---|---|---|
 | Rust 用例與規則 | `cargo test`，測試寫在程式旁的 `mod tests` | mock app 建出 `AppPorts`；shell 腳本假裝元件；`fake_llama` 假裝 llama-server |
 | 真的元件 | `cargo test -- --ignored`，需要模型與媒體檔 | 無 |
-| Webview | `pnpm test`（Vitest、happy-dom），測試放在 controller 旁 | `mockIPC` 代替 Rust |
+| Webview | `pnpm test`（Vitest、happy-dom），測試放在 controller 與 `editor/` 的程式旁 | `mockIPC` 代替 Rust；`editor/` 以假的 port 測試 |
 | 規格 | `sumi verify` | 測試以 `@behavior` 宣告實作的情境 |
 
 用例測試使用真的 `Processes` 與 Tauri 的 mock runtime，元件行程與事件依實際的先後發生。
@@ -95,13 +95,15 @@ Rust 是唯一的事實來源。Webview 不另外儲存工作資料的副本，�
 
 ```
 controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs ─▶ 用例／CurrentProject
-    ▲                                                                  │
-    └──────────────────── 回答，或 Failure ◀──────────────────────────┘
+    │    ▲                                                             │
+    │    └─────────────── 回答，或 Failure ◀──────────────────────────┘
+    └─▶ editor/ session ─▶ backend/editing.ts ─▶ invoke             編輯只走這條
 ```
 
 | backend 模組 | Rust 模組 | 指令 |
 |---|---|---|
-| `project.ts` | `project/commands.rs` | 專案、編輯、版本、詞彙表 |
+| `project.ts` | `project/commands.rs` | 專案、版本、詞彙表 |
+| `editing.ts` | `project/commands.rs` | 編輯、段落改動、復原 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
@@ -328,17 +330,17 @@ command ── ModeLock::begin(AppPorts::new(..)) ──▶ ModeRun：執行權�
 ### 4.1 分層
 
 ```
-index.html   data-controller, data-action
+index.html                    data-controller、data-action
     |
-controllers/   Interface: DOM event -> use case; change -> DOM
-    |      +------> ui/        notifications, messages, time, menus
+controllers/ ---------------> ui/、backend/（編輯以外）
+    |                         介面：DOM 事件轉成用例，變化轉成畫面
     v
-editor/   Application: session.ts   the Cursor, Checked Segments, use cases
-          Domain:      cursor.ts, rules.ts, segment.ts
-          DOM:         field.ts, marks.ts, highlight.ts
+editor/  session.ts           應用：Cursor、Checked Segments、用例、port
+         cursor.ts, rules.ts   領域：狀態機與規則
+         field.ts, marks.ts    DOM：欄位換算、畫出 Cursor
     ^
-    | implements EditingPort
-backend/   Gateway: the only place that touches Tauri
+    | 實作 EditingPort
+backend/editing.ts            閘道：唯一呼叫編輯指令的地方
 ```
 
 依賴一律往內，和 Rust 端（3.1）同一套規則：介面呼叫應用，應用使用領域，閘道實作應用宣告的 port。`main.ts` 是組裝點（4.3）。
@@ -356,20 +358,20 @@ backend/   Gateway: the only place that touches Tauri
 |---|---|---|
 | `editor/` | DOM | `editor/` 以外的模組 |
 | `backend/` | Tauri、`editor/` 的 port | controller |
-| controller | `editor/index.ts`、`ui/`、`backend/` | 其他 controller 的函式 |
+| controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
 | `main.ts` | 全部 | — |
 
-Controller 之間只 import outlet 的型別。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算。
+Controller 之間只 import outlet 的型別，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
 
 ### 4.3 組裝
 
 ```
 main.ts
-  |-- feed = followProject()            one current_project per project-changed
+  |-- feed = followProject()          每次變更讀一次 current_project
   |-- session = new EditingSession(editingPort)
-  |-- feed -> session.follow, then each controller
-  |-- session changes -> window editor:cursor, editor:checked
-  +-- application.register(name, class extends Controller { session, feed })
+  |-- feed -> session.follow -> 各 controller
+  |-- session.onChange -> window 的 editor:cursor、editor:checked
+  +-- application.register(名稱, class extends X { session, feed })
 ```
 
 | 模式 | 何時用 | 範例 |
@@ -378,14 +380,26 @@ main.ts
 | 註冊時注入 | controller 取得依賴 | `class extends` |
 | 專案訂閱 | 分送同一份專案 | `followProject` |
 
-Stimulus 自己建立 controller，所以依賴放在註冊的子類別上，測試以同樣方式換成替身。專案每次變更只讀一次，session 先收到，controller 再依它畫面。
+Stimulus 自己建立 controller，所以依賴放在註冊的子類別上，測試以同樣方式換成替身。沒有 controller 自己向 Rust 讀專案。
 
-### 4.4 editor
+### 4.4 先後順序
+
+| 步驟 | 內容 |
+|---|---|
+| 1 | 送出改動前先記下待套用 |
+| 2 | 讀到的專案比上一份舊就丟掉 |
+| 3 | session 換算並套用待套用 |
+| 4 | 各 controller 依專案重畫 |
+| 5 | 送出 `editor:cursor`，移動焦點 |
+
+`project-changed` 可能比指令的回答先到，所以待套用在送出前就記下，被拒絕時清掉。焦點與 Cursor 等列畫完才動，才不會落在即將被取代的舊列上。
+
+### 4.5 editor
 
 | 檔案 | 層 | 內容 |
 |---|---|---|
 | `index.ts` | 對外 | 唯一可 import 的入口 |
-| `segment.ts` | 領域 | 自己的 Segment 型別 |
+| `segment.ts` | 領域 | 自己的段落與專案視圖型別 |
 | `cursor.ts` | 領域 | Cursor 的狀態機 |
 | `rules.ts` | 領域 | 合併、鎖定、分割的規則 |
 | `session.ts` | 應用 | `EditingSession` 與 port |
@@ -395,7 +409,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上，測
 
 `editor/` 是能抽成獨立套件的編輯核心：Current Segment、Cursor、Checked Segments 與改動段落的用例都在這裡。用例回傳結果而不發通知，controller 再轉成介面文字。
 
-### 4.5 Controller
+### 4.6 Controller
 
 | Controller | 畫面區域 |
 |---|---|
@@ -414,7 +428,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上，測
 | `undo` | 全頁的復原與重做 |
 | `field` | 每個編輯欄位接上 session |
 
-畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，只把互動交給 session。`preview` 與 `timeline` 掛在同一個元素，各以自己的 target 共用同一個 `<video>`。
+畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，只把互動交給 session；Checked Segments 也向 session 讀取。`preview` 與 `timeline` 掛在同一個元素，各以自己的 target 共用同一個 `<video>`。
 
 | 事件或 outlet | 送出者 | 接收者與用途 |
 |---|---|---|
@@ -423,13 +437,14 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上，測
 | `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
 | `versions` outlet | `comparison` | 開啟版本 dialog |
 | `versions:compare-with` | `versions` | `comparison` 換對照 |
-| `editor:cursor` | session | 標出 Current Segment 與 Cursor |
-| `editor:checked` | session | 顯示 Checked Segments 的工具列 |
+| `editor:cursor` | session，經 `main.ts` | 標出 Current Segment 與 Cursor |
+| `editor:checked` | session，經 `main.ts` | 顯示勾選工具列 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
+| `segment-changes:retranslate` | `segment-changes` | `retranslation` 重新翻譯 Checked Segments |
 
-### 4.6 backend
+### 4.7 backend
 
 | 模組 | 內容 |
 |---|---|
@@ -442,7 +457,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上，測
 | `failure.ts` | `Failure` 型別 |
 | `dialog.ts`、`system.ts` | 系統對話方塊與語系 |
 
-### 4.7 共用模組
+### 4.8 共用模組
 
 | 模組 | 內容 |
 |---|---|

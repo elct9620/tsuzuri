@@ -174,7 +174,7 @@ A choice limited to names like the one already set would hide the others, the ve
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project in the panel whose first Segment reads `你好世界`, its text left with the cursor after `你好` |
+| Given | a Project in the panel whose first Segment reads `你好世界`, its text left with the Cursor after `你好` |
 | When | splitting is chosen from its menu |
 | Then | the Project is asked to split it after two characters |
 
@@ -184,7 +184,7 @@ Subtitle editors bind splitting to a modified line break, so a long cue can be s
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project in the panel whose first Segment reads `你好世界`, with the cursor after `你好` in its text |
+| Given | a Project in the panel whose first Segment reads `你好世界`, with the Cursor after `你好` in its text |
 | When | Ctrl+Alt+Enter is pressed |
 | Then | the Project is asked to split it after two characters |
 
@@ -250,13 +250,15 @@ A Segment is inserted to be written, so its text is entered at once.
 | When | inserting below is chosen from the first Segment's menu |
 | Then | the new second Segment is current, with the Cursor in its empty text |
 
-## `ED-056` Keeping the Current Segment on its Segment when another is inserted before it
+## `ED-056` Moving into a Segment drawn on the timeline
+
+A Segment drawn on the timeline is inserted to be written, as one inserted from a menu is.
 
 | Step | Statement |
 | --- | --- |
-| Given | three Segments, the third current |
-| When | a Segment is inserted above the first |
-| Then | the Segment that was third, now fourth, is current |
+| Given | a Project in the panel with its first Segment current |
+| When | a range drawn on the timeline after the last Segment is inserted |
+| Then | the new last Segment is current, with the Cursor in its empty text |
 
 ## `ED-057` Moving to the next Segment when the current one is deleted
 
@@ -282,15 +284,33 @@ A Segment is inserted to be written, so its text is entered at once.
 | When | they are merged |
 | Then | the merged second Segment is current |
 
-## `ED-060` Leaving no Current Segment when an undo changes how many Segments there are
+## `ED-063` Keeping the Current Segment on its Segment when others before it are merged
 
-An undo does not say which Segments it brought back or took away, so a Current Segment kept across it could stand on another Segment.
+| Step | Statement |
+| --- | --- |
+| Given | four Segments, the first and second checked and the fourth current |
+| When | they are merged |
+| Then | the Segment that was fourth, now third, is current |
+
+## `ED-060` Leaving no Current Segment when the Segments change in number elsewhere
+
+A change made elsewhere, such as an undo, a redo, a restore or a transcription, does not say which Segments it added or took away, so a Current Segment kept across it could stand on another Segment.
 
 | Step | Statement |
 | --- | --- |
 | Given | three Segments, the second current |
 | When | an undo brings back a fourth |
 | Then | no Segment is current |
+
+## `ED-064` Keeping the Current Segment when the Segments change elsewhere but not in number
+
+Keeping as much of where the user was as the change allows is what makes a change elsewhere cheap to follow.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the second current |
+| When | an undo takes back an edit of the first Segment's text |
+| Then | the second Segment stays current |
 
 ## `ED-022` Offering to add a new Speaker to the Translation Glossary
 
@@ -374,7 +394,7 @@ The document holds one selection, which a click elsewhere moves away, so the Cur
 
 | Step | Statement |
 | --- | --- |
-| Given | the first Segment's text entered with the cursor after its second character |
+| Given | the first Segment's text entered with the Cursor after its second character |
 | When | focus moves to the first Segment's menu |
 | Then | the Cursor is still after the second character of that text |
 
@@ -395,16 +415,8 @@ The Cursor belongs to the Current Segment alone, so entering a text by keyboard 
 | Step | Statement |
 | --- | --- |
 | Given | a Project in the panel with its first Segment current |
-| When | the second Segment's text is entered with Tab |
+| When | the second Segment's text gets focus |
 | Then | the second Segment is the Current Segment, with the Cursor in its text |
-
-## `ED-046` Keeping no Cursor when a text is left with the selection elsewhere
-
-| Step | Statement |
-| --- | --- |
-| Given | the first Segment's text entered |
-| When | it is left while the document's selection is outside it |
-| Then | the first Segment stays current and no Cursor is kept |
 
 ## `ED-047` Dropping the Cursor when another Segment is made current
 
@@ -422,7 +434,7 @@ Opening a Segment's menu makes it current, so a Cursor left in another Segment i
 | --- | --- |
 | Given | the first Segment's text left with the Cursor after its second character |
 | When | splitting is chosen from the second Segment's menu |
-| Then | nothing is split, a Notification asks for the cursor first, and the second Segment is current |
+| Then | nothing is split, a Notification asks for the Cursor first, and the second Segment is current |
 
 ## `ED-049` Drawing the Cursor in place of the platform's caret
 
@@ -430,17 +442,17 @@ A menu, and later a floating one, acts on the Cursor after focus has moved to it
 
 | Step | Statement |
 | --- | --- |
-| Given | the first Segment's text entered with the cursor after its second character |
+| Given | the first Segment's text entered with the Cursor after its second character |
 | When | the editor shows it |
-| Then | the platform's caret and selection are hidden, and a caret is drawn after the second character |
+| Then | the field hides the platform's caret and selection, and the drawn caret stands after the second character |
 
-## `ED-050` Drawing a kept Cursor without blinking
+## `ED-050` Holding a kept Cursor still
 
 | Step | Statement |
 | --- | --- |
-| Given | the first Segment's text entered with the cursor after its second character |
+| Given | the first Segment's text entered with the Cursor after its second character |
 | When | focus moves to the first Segment's menu |
-| Then | the drawn caret stays after the second character and no longer blinks |
+| Then | the drawn caret stays after the second character, marked as kept so it no longer blinks |
 
 ## `ED-051` Drawing a range of text as the Cursor
 
@@ -450,7 +462,7 @@ A range is shown as the platforms show one, without a caret; a split takes its s
 | --- | --- |
 | Given | the first Segment's text entered with its second and third characters selected |
 | When | the editor shows it |
-| Then | those two characters are marked and no caret is drawn |
+| Then | those two characters are marked as the Cursor's range and no caret is drawn |
 
 ## `ED-052` Leaving no Current Segment when another Resource is selected
 
@@ -459,6 +471,24 @@ A range is shown as the platforms show one, without a caret; a split takes its s
 | Given | a Project in the panel with its first Segment current and the Cursor in its text |
 | When | another Resource is selected |
 | Then | no Segment is current and no Cursor is kept |
+
+## `ED-061` Making a Segment current from any of its fields
+
+Any focus within a row makes its Segment current; only a text or a translation holds the Cursor.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with its first Segment current |
+| When | the second Segment's start time gets focus |
+| Then | the second Segment is current and no Cursor is kept |
+
+## `ED-062` Dropping the Cursor when a Mode holds its text
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text left with the Cursor after its second character |
+| When | a transcription of the Current Resource starts |
+| Then | the first Segment stays current and no Cursor is kept |
 
 ## `ED-031` Leaving Enter to an input method while it composes
 

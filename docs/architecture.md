@@ -89,7 +89,7 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 | 設定檔、備份、翻譯詞彙表 | modal、勾選、目前段落、Cursor |
 | 元件行程、進度、失敗原因 | 介面語言、通知、tooltip |
 
-Rust 是唯一的事實來源。Webview 不另外儲存工作資料的副本，所有變更都寫進 Rust，再依事件重讀。
+字幕檔是事實來源，Rust 是唯一的寫入者（3.6）。Webview 不另外儲存工作資料的副本，所有變更都寫進 Rust，再依事件重讀。
 
 ### 2.2 指令（Webview ↔ Rust）
 
@@ -257,26 +257,40 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 ### 3.6 目前專案
 
 ```
-CurrentProject(Mutex<HeldProject>)
-  └─ HeldProject { generation, project: Option<Project>, mode_hold }
-       replace、select、set_language，或重新載入換了目前資源時 generation + 1
-       用例結束時 write_if_current(generation)：資源已換就不寫入畫面
-       Project.undo_histories：每個資源一份復原紀錄（project/history.rs）
+                        CurrentProject(Mutex<HeldProject>)
+                     ┌───────────────────────────────────────┐
+ 指令 ─ 讀檔、改、寫檔 ─▶│ project：從檔案讀出的目前資源、復原紀錄 │─ 寫 ─▶ 字幕檔
+ 任務 ─ 進度 ─────────▶│ mode_hold：任務鎖住的字幕與它的進度     │       （基準）
+ 任務結束 ─ 一次寫完 ──▶│                                       │◀─ 讀 ─┘
+ view() ◀─ 目前資源疊上進度 ─┤                                       │
+                     └───────────────────────────────────────┘
 ```
 
 | 保護 | 做法 |
 |---|---|
+| 事實來源 | 字幕檔，只由 Rust 寫 |
 | 同時存取 | 一把 Mutex，不在鎖內等待 |
-| 任務跨越切換資源 | 比對 generation |
+| 每次寫入 | 鎖內讀檔、改、寫、重讀 |
+| 任務進度 | 放在 `mode_hold` |
+| 任務收尾 | 一次取鎖寫完 |
 | 外部修改 | 比對摘要，不同就拒絕並重讀 |
-| 任務寫入中 | `ModeRun` 保管 |
 | 任務中重新載入 | 只重新配對清單 |
 | 重新配對 | 檔案變了就清復原 |
-| 復原 | 改動前記下所有字幕的內容 |
 
-字幕被外部改過，或重新配對後檔案變了，就清掉它的復原紀錄，免得復原刪掉不認得的檔案。`mode_hold` 鎖住的字幕拒絕改動（`mode-running`）。內容有差才留一步復原，復原與重做換回內容並重讀。
+記憶體裡的目前資源只是檔案讀出的樣子，只在讀檔與寫檔後更新，所以摘要相同就代表兩者一致。任務進度疊在 `view()` 上，任務結束就丟掉，不會被當成字幕寫回。
 
-### 3.7 任務
+### 3.7 任務中的字幕
+
+| 任務 | 拒絕的改動 |
+|---|---|
+| 轉錄 | 資源的所有改動 |
+| 翻譯 | 那份譯文與段落 |
+| 重譯 | 選中段的譯文與段落 |
+| 任一任務 | 切換顯示的譯文 |
+
+`mode_hold` 記下任務寫的資源、語言與段落，拒絕的改動答 `mode-running`。改段落、說話者、復原與還原會重寫整份字幕，任務中一律拒絕。重譯結束時只把選中段合併進當下的檔案。
+
+### 3.8 任務
 
 ```
 transcribe 指令                       translate 指令
@@ -299,7 +313,7 @@ transcribe 指令                       translate 指令
 
 轉錄與翻譯以 `ModeLock::begin` 開始一個 `ModeRun`，關掉常駐 llama-server 也先取得 `ModeLock`，後來的等前一個結束。取消時 `ModeRun` 丟下任務，只結束經它啟動的行程。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
 
-### 3.8 行程
+### 3.9 行程
 
 | 時機 | `Processes` 做什麼 |
 |---|---|
@@ -312,7 +326,7 @@ transcribe 指令                       translate 指令
 
 元件一律經 shell plugin 啟動。介面以 `.spec/contract/processes.md` 為準。
 
-### 3.9 元件解析
+### 3.10 元件解析
 
 ```
 使用者指定（components.json 設定檔）
@@ -323,7 +337,7 @@ transcribe 指令                       translate 指令
 
 偵測會執行元件的版本旗標，所以放在 tokio 的 blocking pool，視窗不會停住。每次找到都記錄來源與耗時。
 
-### 3.10 模式
+### 3.11 模式
 
 ```
 lib.rs run() ── manage ──▶ Processes · CurrentProject · ResidentLlama · ModeLock

@@ -200,7 +200,7 @@ pub fn save_srt(current: State<'_, CurrentProject>, path: PathBuf, content: SrtC
 
 ## `change_segments`
 
-Make a Segment Change to the Current Resource, by position, and write its original and every translation back to the directory, together with the Bilingual SRTs the Project Options keep. A Segment that would end before it starts is refused as `invalid-times`; a subtitle changed elsewhere is handled as `edit_segment` handles it, and one a running Mode writes is refused as `mode-running`.
+Make a Segment Change to the Current Resource, by position, and write its original and every translation back to the directory, together with the Bilingual SRTs the Project Options keep. A Segment that would end before it starts is refused as `invalid-times`, and one that would start before the Segment before it or after the one after it as `unordered-times`; a subtitle changed elsewhere is handled as `edit_segment` handles it, and one a running Mode writes is refused as `mode-running`.
 
 ```rust
 pub fn change_segments(app: AppHandle, current: State<'_, CurrentProject>, change: SegmentChange) -> Result<(), Failure> {}

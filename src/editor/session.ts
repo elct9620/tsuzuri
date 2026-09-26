@@ -117,6 +117,7 @@ export class EditingSession {
         kind: "change",
         change: pendingChange.change,
         before: pendingChange.before,
+        after: view.segments,
       });
       this.clearChecks();
       return;

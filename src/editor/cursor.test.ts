@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { NO_CURSOR, nextCursor, type Cursor } from "./cursor";
+import { NO_CURSOR, nextCursor, type Cursor, type CursorEvent } from "./cursor";
 import type { Segment, TranscriptView } from "./segment";
 
 function segments(...texts: string[]): Segment[] {
@@ -118,8 +118,17 @@ describe("nextCursor", () => {
 
 describe("nextCursor after a Segment Change", () => {
   const before = segments("你好世界", "今天", "天氣");
-  const after = (cursor: Cursor, change: Parameters<typeof nextCursor>[1]) =>
-    nextCursor(cursor, change);
+  type ChangeEvent = Extract<CursorEvent, { kind: "change" }>;
+  /** The Cursor after `event`, whose Segments are left as they were unless it says otherwise. */
+  const after = (
+    cursor: Cursor,
+    event: Omit<ChangeEvent, "after"> & { after?: Segment[] },
+  ) => nextCursor(cursor, { after: event.before, ...event });
+  const empty = (start_ms: number, end_ms: number): Segment => ({
+    start_ms,
+    end_ms,
+    text: "",
+  });
 
   it("moves to the start of the second half of a split", () => {
     expect(
@@ -127,6 +136,11 @@ describe("nextCursor after a Segment Change", () => {
         kind: "change",
         change: { kind: "split", index: 0, at: 2 },
         before,
+        after: [
+          { start_ms: 0, end_ms: 500, text: "你好" },
+          { start_ms: 500, end_ms: 1000, text: "世界" },
+          ...before.slice(1),
+        ],
       }),
     ).toEqual({
       index: 1,
@@ -141,13 +155,55 @@ describe("nextCursor after a Segment Change", () => {
         kind: "change",
         change: { kind: "insertion-before", index: 1 },
         before,
+        after: [before[0], empty(1000, 1000), ...before.slice(1)],
       }).index,
       after(current, {
         kind: "change",
         change: { kind: "insertion-after", index: 1 },
         before,
+        after: [...before.slice(0, 2), empty(2000, 2000), before[2]],
       }).index,
     ]).toEqual([1, 2]);
+  });
+
+  it("moves into a Segment inserted after one the next overlaps, where it starts", () => {
+    const overlapping = [
+      { start_ms: 0, end_ms: 2000, text: "一" },
+      { start_ms: 1000, end_ms: 3000, text: "二" },
+    ];
+    expect(
+      after(
+        { index: 0, caret: null },
+        {
+          kind: "change",
+          change: { kind: "insertion-after", index: 0 },
+          before: overlapping,
+          after: [...overlapping, empty(2000, 4000)],
+        },
+      ).index,
+    ).toBe(2);
+  });
+
+  it("moves to the second half of a split where it starts, past a Segment said over it", () => {
+    const overlapping = [
+      { start_ms: 0, end_ms: 4000, text: "大家好嗎" },
+      { start_ms: 1000, end_ms: 1500, text: "對啊" },
+    ];
+    expect(
+      after(
+        { index: 0, caret: null },
+        {
+          kind: "change",
+          change: { kind: "split", index: 0, at: 2 },
+          before: overlapping,
+          after: [
+            { start_ms: 0, end_ms: 2000, text: "大家" },
+            overlapping[1],
+            { start_ms: 2000, end_ms: 4000, text: "好嗎" },
+          ],
+        },
+      ).index,
+    ).toBe(2);
   });
 
   it("moves into a Segment drawn between others by its start", () => {
@@ -156,6 +212,7 @@ describe("nextCursor after a Segment Change", () => {
         kind: "change",
         change: { kind: "insertion", start_ms: 1500, end_ms: 1800 },
         before,
+        after: [...before.slice(0, 2), empty(1500, 1800), before[2]],
       }),
     ).toEqual({
       index: 2,

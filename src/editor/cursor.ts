@@ -53,7 +53,12 @@ export type CursorEvent =
   /** The typing in the live caret's field given up, which leaves no place in the text to keep. */
   | { kind: "reversion" }
   | { kind: "current-segment"; index: number }
-  | { kind: "change"; change: SegmentChange; before: Segment[] }
+  | {
+      kind: "change";
+      change: SegmentChange;
+      before: Segment[];
+      after: Segment[];
+    }
   | { kind: "view"; before: TranscriptView | null; after: TranscriptView };
 
 /** A caret at `start` of the text of a Segment just made, to type into at once. */
@@ -104,42 +109,51 @@ export function nextCursor(cursor: Cursor, event: CursorEvent): Cursor {
         ? cursor
         : { index: event.index, caret: null };
     case "change":
-      return cursorAfterChange(cursor, event.change, event.before);
+      return cursorAfterChange(cursor, event.change, event.before, event.after);
     case "view":
       return cursorAfterView(cursor, event.before, event.after);
   }
 }
 
 /**
- * Where the Cursor stands once the editor's own `change` is made to `before`: it stays on its
- * Segment, moves to the second half of a split and into a Segment just inserted.
+ * Where the Segment a change made to `before` stands in `after`: the first place from `from` the two
+ * differ, since the Segment takes its place by its start and those before it stay as they were.
+ */
+function madeIndex(before: Segment[], after: Segment[], from: number): number {
+  const isSame = (one?: Segment, other?: Segment) =>
+    JSON.stringify(one) === JSON.stringify(other);
+  for (let at = from; at < after.length; at++)
+    if (!isSame(before[at], after[at])) return at;
+  return after.length - 1;
+}
+
+/**
+ * Where the Cursor stands once the editor's own `change` turned `before` into `after`: it stays on
+ * its Segment, moves to the second half of a split and into a Segment just inserted.
  */
 function cursorAfterChange(
   cursor: Cursor,
   change: SegmentChange,
   before: Segment[],
+  after: Segment[],
 ): Cursor {
   const { index } = cursor;
   switch (change.kind) {
-    case "split":
+    case "split": {
+      const second = madeIndex(before, after, change.index + 1);
       if (index === change.index)
         return {
-          index: index + 1,
+          index: second,
           caret: caretAt(0, [...before[index].text].slice(change.at).join("")),
         };
-      return index !== null && index > change.index
+      return index !== null && index >= second
         ? { ...cursor, index: index + 1 }
         : cursor;
+    }
     case "insertion-before":
-      return { index: change.index, caret: caretAt(0, "") };
     case "insertion-after":
-      return { index: change.index + 1, caret: caretAt(0, "") };
     case "insertion":
-      return {
-        index: before.filter((segment) => segment.start_ms < change.start_ms)
-          .length,
-        caret: caretAt(0, ""),
-      };
+      return { index: madeIndex(before, after, 0), caret: caretAt(0, "") };
     case "deletion": {
       if (index === null) return cursor;
       const deletedIndexes = new Set(change.indexes);

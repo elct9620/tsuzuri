@@ -940,7 +940,7 @@
                 <div
                   class="h-full [--segment-even:color-mix(in_oklab,var(--color-base-content)_6%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-base-content)_12%,transparent)] [--segment-current:color-mix(in_oklab,var(--color-primary)_25%,transparent)] [--segment-range:color-mix(in_oklab,var(--color-secondary)_25%,transparent)]"
                   data-timeline-target="waveform"
-                  data-action="wheel->timeline#scrollOrZoom:prevent"
+                  data-action="wheel->timeline#scrollOrZoom:prevent pointerdown->timeline#drawOver:capture click->timeline#ignoreClickOver:capture"
                 ></div>
               </div>
             </div>

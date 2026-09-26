@@ -6,7 +6,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use super::history::SubtitleSnapshot;
 use super::{
-    segment_at_times, translated_dialogue, Backup, BackupKind, KnownSubtitle, Project,
+    segments_at_times, translated_dialogue, Backup, BackupKind, KnownSubtitle, Project,
     ProjectConfig, Resource,
 };
 use crate::failure::Failure;
@@ -140,7 +140,8 @@ impl Resource {
     }
 
     /// Gives each Segment the dialogue of the cue of its translation into `translation` that has
-    /// the same start and end, and none where no cue does or `translation` is none.
+    /// the same start and end, the cues at the same times taken in order, and none where no cue
+    /// does or `translation` is none.
     pub fn carry_translations(
         &self,
         segments: &mut [Segment],
@@ -151,10 +152,17 @@ impl Resource {
             Some(path) => translation_at(path)?.segments,
             None => vec![],
         };
-        for segment in segments.iter_mut() {
-            segment.translation = segment_at_times(&cues, segment).map(|cue| {
-                translated_dialogue(&cue.text, segment.speaker.as_deref(), speaker_names)
-            });
+        let translations: Vec<Option<String>> = segments_at_times(&cues, segments)
+            .into_iter()
+            .zip(segments.iter())
+            .map(|(cue, segment)| {
+                cue.map(|cue| {
+                    translated_dialogue(&cue.text, segment.speaker.as_deref(), speaker_names)
+                })
+            })
+            .collect();
+        for (segment, translation) in segments.iter_mut().zip(translations) {
+            segment.translation = translation;
         }
         Ok(())
     }
@@ -697,6 +705,27 @@ mod tests {
         assert_eq!(
             texts(&transcript),
             vec![("你好", Some("Hello")), ("世界", None)]
+        );
+    }
+
+    // @behavior PJ-138
+    #[test]
+    fn loads_a_translation_for_segments_with_the_same_times_in_their_order() {
+        let original = format!("{}\n{}", cue("00", "01", "大家好"), cue("00", "01", "對啊"));
+        let translation = format!("{}\n{}", cue("00", "01", "Hello"), cue("00", "01", "Yeah"));
+        let dir = directory_of(
+            "resource-same-times",
+            &[("ep01.srt", &original), ("ep01.en.srt", &translation)],
+        );
+        let resources = resources_in(dir.path(), Language::TraditionalChinese).unwrap();
+
+        let transcript = resources[0]
+            .transcript(Some(Language::English), &HashMap::new())
+            .unwrap();
+
+        assert_eq!(
+            texts(&transcript),
+            vec![("大家好", Some("Hello")), ("對啊", Some("Yeah"))]
         );
     }
 

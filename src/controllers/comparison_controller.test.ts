@@ -391,6 +391,23 @@ describe("ComparisonController", () => {
     expect(references()).toEqual([[["ja", "こんにちは"]], []]);
   });
 
+  // @behavior VR-053
+  it("shows a translation beside cues with the same times in their order", async () => {
+    cuesByLanguage = { en: [cue(0, 1000, "Hello"), cue(0, 1000, "Yeah")] };
+    project = projectOf({
+      resources: [resourceOf({ translation_languages: ["en"] })],
+      segments: [
+        { start_ms: 0, end_ms: 1000, text: "大家好" },
+        { start_ms: 0, end_ms: 1000, text: "對啊" },
+      ],
+    });
+    await show();
+
+    await check('input[data-reference][value="en"]');
+
+    expect(references()).toEqual([[["en", "Hello"]], [["en", "Yeah"]]]);
+  });
+
   // @behavior VR-040
   it("marks each comparison beside the text field it compares", async () => {
     project = translatedProject();

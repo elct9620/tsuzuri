@@ -201,6 +201,47 @@ describe("PreviewController", () => {
     expect(target("caption").textContent).toBe("今天");
   });
 
+  describe("with a Segment said over another", () => {
+    const overlapping = (
+      segments = [
+        { start_ms: 0, end_ms: 2000, text: "大家好" },
+        { start_ms: 1000, end_ms: 1500, text: "對啊" },
+      ],
+    ) => projectWithMedia({ segments });
+
+    // @behavior PV-103
+    it("shows it over the video above the one it overlaps", async () => {
+      await show(overlapping());
+
+      playTo(1.2);
+
+      expect(target("caption").textContent).toBe("對啊\n大家好");
+    });
+
+    // @behavior PV-104
+    it("keeps the Segment it overlapped over the video once it ends", async () => {
+      await show(overlapping());
+
+      playTo(1.8);
+
+      expect(target("caption").textContent).toBe("大家好");
+    });
+
+    // @behavior PV-105
+    it("stacks Segments that start together in their order", async () => {
+      await show(
+        overlapping([
+          { start_ms: 0, end_ms: 1000, text: "大家好" },
+          { start_ms: 0, end_ms: 1000, text: "對啊" },
+        ]),
+      );
+
+      playTo(0.5);
+
+      expect(target("caption").textContent).toBe("對啊\n大家好");
+    });
+  });
+
   // @behavior PV-088
   it("shows the Segment over the video on the frame the media reaches it", async () => {
     await show(
@@ -395,6 +436,22 @@ describe("PreviewController", () => {
     playTo(0.5);
 
     expect(target("caption").textContent).toBe("小明: 今天\nXiao Ming: Today");
+  });
+
+  // @behavior PV-106
+  it("names the Speaker of each overlapping Segment over the video", async () => {
+    await show(
+      projectSpoken({
+        segments: [
+          { start_ms: 0, end_ms: 2000, speaker: "小明", text: "大家好" },
+          { start_ms: 1000, end_ms: 1500, speaker: "小華", text: "對啊" },
+        ],
+      }),
+    );
+
+    playTo(1.2);
+
+    expect(target("caption").textContent).toBe("小華: 對啊\n小明: 大家好");
   });
 
   it("names the Speaker once before a caption of several lines", async () => {

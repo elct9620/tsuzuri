@@ -256,7 +256,7 @@ export default class TranscriptController extends Controller {
   /** The Project shown now. */
   private project: ProjectView | null = null;
   /** The position of the Segment the Preview is playing. */
-  private playingIndex: number | null = null;
+  private playingIndexes: number[] = [];
   /** Whether the row being played is scrolled into view; turned off, the list stays where the user left it. */
   private isFollowing = rememberedChoice(FOLLOWING_KEY) !== "false";
 
@@ -335,9 +335,12 @@ export default class TranscriptController extends Controller {
       check.checked = checkedIndexes.has(Number(check.dataset.index));
   }
 
-  /** Marks the Segment the Preview is playing, keeping its row in view while following playback. */
-  markPlaying({ detail }: CustomEvent<{ index: number | null }>): void {
-    this.playingIndex = detail.index;
+  /**
+   * Marks the Segments the Preview is playing, keeping the row of the one started last in view
+   * while following playback.
+   */
+  markPlaying({ detail }: CustomEvent<{ indexes: number[] }>): void {
+    this.playingIndexes = detail.indexes;
     this.markRows();
     this.scrollToPlaying();
   }
@@ -351,8 +354,9 @@ export default class TranscriptController extends Controller {
   }
 
   private scrollToPlaying(): void {
-    if (!this.isFollowing || this.playingIndex === null) return;
-    this.rowAt(this.playingIndex)?.scrollIntoView({ block: "nearest" });
+    const index = this.playingIndexes[this.playingIndexes.length - 1];
+    if (!this.isFollowing || index === undefined) return;
+    this.rowAt(index)?.scrollIntoView({ block: "nearest" });
   }
 
   private showFollowing(): void {
@@ -373,7 +377,10 @@ export default class TranscriptController extends Controller {
     const current = this.session.cursor.index;
     this.segmentRows().forEach((row, index) => {
       row.toggleAttribute("aria-current", index === current);
-      row.toggleAttribute("data-is-playing", index === this.playingIndex);
+      row.toggleAttribute(
+        "data-is-playing",
+        this.playingIndexes.includes(index),
+      );
     });
   }
 

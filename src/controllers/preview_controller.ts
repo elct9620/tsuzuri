@@ -103,7 +103,7 @@ export default class PreviewController extends Controller {
 
   private media: string | null = null;
   private segments: Segment[] = [];
-  private playingIndex: number | null = null;
+  private playingIndexes: number[] = [];
   private hasTranslation = false;
   private speakerNames: ProjectView["shown_speaker_names"] = {};
   private bilingualOrder: ProjectOptions["bilingual_order"] = "original-first";
@@ -142,7 +142,7 @@ export default class PreviewController extends Controller {
     this.captionLanguage = (target as HTMLInputElement)
       .value as CaptionLanguage;
     rememberChoice(CAPTION_KEY, this.captionLanguage);
-    this.showCaption(this.segmentIndexAtTime());
+    this.showCaption(this.segmentIndexesAtTime());
   }
 
   chooseCaptionBackdrop({ target }: Event): void {
@@ -155,7 +155,7 @@ export default class PreviewController extends Controller {
   toggleCaptionSpeaker(): void {
     this.isSpeakerShown = this.captionSpeakerTarget.checked;
     rememberChoice(SPEAKER_KEY, String(this.isSpeakerShown));
-    this.showCaption(this.segmentIndexAtTime());
+    this.showCaption(this.segmentIndexesAtTime());
   }
 
   togglePlayback(): void {
@@ -181,10 +181,9 @@ export default class PreviewController extends Controller {
 
   follow(): void {
     this.showTime();
-    const index = this.segmentIndexAtTime();
-    this.showCaption(index);
-    const isPlaying = !this.mediaTarget.paused && index !== -1;
-    this.markPlaying(isPlaying ? index : null);
+    const indexes = this.segmentIndexesAtTime();
+    this.showCaption(indexes);
+    this.markPlaying(this.mediaTarget.paused ? [] : indexes);
   }
 
   showPlaying(): void {
@@ -195,7 +194,7 @@ export default class PreviewController extends Controller {
   showPaused(): void {
     this.playbackIconTarget.classList.remove("swap-active");
     this.stopFollowingFrames();
-    this.markPlaying(null);
+    this.markPlaying([]);
   }
 
   showUnplayable(): void {
@@ -225,17 +224,18 @@ export default class PreviewController extends Controller {
     this.frameRequest = null;
   }
 
-  /** The index of the Segment at the media's time, or -1 between Segments. */
-  private segmentIndexAtTime(): number {
+  /** The indexes of the Segments at the media's time, in the order they start; none between Segments. */
+  private segmentIndexesAtTime(): number[] {
     const at = this.mediaTarget.currentTime * 1000;
-    return this.segments.findIndex(
-      (segment) => segment.start_ms <= at && at < segment.end_ms,
+    return this.segments.flatMap((segment, index) =>
+      segment.start_ms <= at && at < segment.end_ms ? [index] : [],
     );
   }
 
-  private showCaption(index: number): void {
-    const segment = this.segments[index];
-    showText(this.captionTarget, segment ? this.caption(segment) : "");
+  /** Shows the Segments at `indexes` over the video, each above those that started before it. */
+  private showCaption(indexes: number[]): void {
+    const captions = indexes.map((index) => this.caption(this.segments[index]));
+    showText(this.captionTarget, captions.reverse().join("\n"));
   }
 
   /**
@@ -295,11 +295,11 @@ export default class PreviewController extends Controller {
     this.foldButtonTarget.setAttribute("aria-pressed", String(this.isFolded));
   }
 
-  /** Tells the editor which Segment is being played, each time that changes. */
-  private markPlaying(index: number | null): void {
-    if (index === this.playingIndex) return;
-    this.playingIndex = index;
-    this.dispatch("playing", { detail: { index } });
+  /** Tells the editor which Segments are being played, each time that changes. */
+  private markPlaying(indexes: number[]): void {
+    if (indexes.join() === this.playingIndexes.join()) return;
+    this.playingIndexes = indexes;
+    this.dispatch("playing", { detail: { indexes } });
   }
 
   private show(project: ProjectView | null): void {
@@ -311,7 +311,7 @@ export default class PreviewController extends Controller {
     const media = project?.media ?? null;
     this.showCurrentSegment();
     if (media === this.media) {
-      this.showCaption(this.segmentIndexAtTime());
+      this.showCaption(this.segmentIndexesAtTime());
       return;
     }
     this.media = media;
@@ -321,7 +321,7 @@ export default class PreviewController extends Controller {
     this.hintTarget.hidden = true;
     this.captionChoiceTarget.hidden = false;
     this.captionTarget.textContent = "";
-    this.markPlaying(null);
+    this.markPlaying([]);
     if (media === null) this.mediaTarget.removeAttribute("src");
     else this.mediaTarget.src = convertFileSrc(media);
   }

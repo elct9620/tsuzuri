@@ -2707,6 +2707,183 @@ mod tests {
         );
     }
 
+    fn times_and_texts(current: &CurrentProject) -> Vec<(u64, u64, String)> {
+        segments(current)
+            .into_iter()
+            .map(|segment| (segment.start_ms, segment.end_ms, segment.text))
+            .collect()
+    }
+
+    fn owned(segments: &[(u64, u64, &str)]) -> Vec<(u64, u64, String)> {
+        segments
+            .iter()
+            .map(|&(start_ms, end_ms, text)| (start_ms, end_ms, text.to_string()))
+            .collect()
+    }
+
+    // @behavior PJ-139
+    #[test]
+    fn changes_a_segments_times_to_overlap_the_next() {
+        let dir = TempDir::new("pj-times-overlap");
+        let current = changing_project_in(&dir, &[(0, 1_000, "一"), (1_000, 2_000, "二")], &[]);
+
+        current
+            .change_segments(SegmentChange::Times {
+                index: 0,
+                start_ms: 0,
+                end_ms: 1_500,
+            })
+            .unwrap();
+
+        assert_eq!(
+            read(&dir, "ep01.srt"),
+            srt_of(&[(0, 1_500, "一"), (1_000, 2_000, "二")])
+        );
+    }
+
+    // @behavior PJ-140
+    #[test]
+    fn refuses_a_start_before_the_previous_segments_start() {
+        let dir = TempDir::new("pj-times-before-previous");
+        let original = [(1_000, 2_000, "一"), (3_000, 4_000, "二")];
+        let current = changing_project_in(&dir, &original, &[]);
+
+        let result = current.change_segments(SegmentChange::Times {
+            index: 1,
+            start_ms: 500,
+            end_ms: 4_000,
+        });
+
+        assert_eq!(
+            (result, read(&dir, "ep01.srt")),
+            (Err(Failure::UnorderedTimes), srt_of(&original))
+        );
+    }
+
+    // @behavior PJ-141
+    #[test]
+    fn refuses_a_start_after_the_next_segments_start() {
+        let dir = TempDir::new("pj-times-after-next");
+        let original = [(1_000, 2_000, "一"), (3_000, 4_000, "二")];
+        let current = changing_project_in(&dir, &original, &[]);
+
+        let result = current.change_segments(SegmentChange::Times {
+            index: 0,
+            start_ms: 3_500,
+            end_ms: 5_000,
+        });
+
+        assert_eq!(
+            (result, read(&dir, "ep01.srt")),
+            (Err(Failure::UnorderedTimes), srt_of(&original))
+        );
+    }
+
+    // @behavior PJ-142
+    #[test]
+    fn inserts_a_segment_after_one_the_next_touches() {
+        let dir = TempDir::new("pj-insert-after-touching");
+        let current = changing_project_in(&dir, &[(0, 1_000, "一"), (1_000, 2_000, "二")], &[]);
+
+        current
+            .change_segments(SegmentChange::InsertionAfter { index: 0 })
+            .unwrap();
+
+        assert_eq!(
+            times_and_texts(&current),
+            owned(&[(0, 1_000, "一"), (1_000, 3_000, ""), (1_000, 2_000, "二")])
+        );
+    }
+
+    // @behavior PJ-143
+    #[test]
+    fn inserts_a_segment_after_one_the_next_overlaps() {
+        let dir = TempDir::new("pj-insert-after-overlapped");
+        let current = changing_project_in(&dir, &[(0, 2_000, "一"), (1_000, 3_000, "二")], &[]);
+
+        current
+            .change_segments(SegmentChange::InsertionAfter { index: 0 })
+            .unwrap();
+
+        assert_eq!(
+            times_and_texts(&current),
+            owned(&[(0, 2_000, "一"), (1_000, 3_000, "二"), (2_000, 4_000, "")])
+        );
+    }
+
+    // @behavior PJ-144
+    #[test]
+    fn inserts_a_segment_before_one_the_previous_overlaps() {
+        let dir = TempDir::new("pj-insert-before-overlapped");
+        let current = changing_project_in(&dir, &[(0, 3_500, "一"), (3_000, 5_000, "二")], &[]);
+
+        current
+            .change_segments(SegmentChange::InsertionBefore { index: 1 })
+            .unwrap();
+
+        assert_eq!(
+            times_and_texts(&current),
+            owned(&[(0, 3_500, "一"), (1_000, 3_000, ""), (3_000, 5_000, "二")])
+        );
+    }
+
+    // @behavior PJ-148
+    #[test]
+    fn splits_a_segment_another_is_said_over() {
+        let dir = TempDir::new("pj-split-overlapped");
+        let current =
+            changing_project_in(&dir, &[(0, 4_000, "大家好嗎"), (1_000, 1_500, "對啊")], &[]);
+
+        current
+            .change_segments(SegmentChange::Split { index: 0, at: 2 })
+            .unwrap();
+
+        assert_eq!(
+            times_and_texts(&current),
+            owned(&[
+                (0, 2_000, "大家"),
+                (1_000, 1_500, "對啊"),
+                (2_000, 4_000, "好嗎")
+            ])
+        );
+    }
+
+    // @behavior PJ-145
+    #[test]
+    fn merges_a_segment_with_one_it_overlaps() {
+        let dir = TempDir::new("pj-merge-overlapped");
+        let current =
+            changing_project_in(&dir, &[(0, 5_000, "大家好"), (2_000, 3_000, "對啊")], &[]);
+
+        current
+            .change_segments(SegmentChange::Merge { first: 0, last: 1 })
+            .unwrap();
+
+        assert_eq!(
+            read(&dir, "ep01.srt"),
+            srt_of(&[(0, 5_000, "大家好\n對啊")])
+        );
+    }
+
+    // @behavior PJ-146
+    #[test]
+    fn refuses_a_shift_past_the_next_segments_start() {
+        let dir = TempDir::new("pj-shift-past-next");
+        let original = [(0, 1_000, "一"), (2_000, 3_000, "二")];
+        let current = changing_project_in(&dir, &original, &[]);
+
+        let result = current.change_segments(SegmentChange::Shift {
+            first: 0,
+            last: 0,
+            offset_ms: 3_000,
+        });
+
+        assert_eq!(
+            (result, read(&dir, "ep01.srt")),
+            (Err(Failure::UnorderedTimes), srt_of(&original))
+        );
+    }
+
     /// Whether `backups` is one Backup of `stem`, stamped with a UTC time, holding `content`.
     fn is_one_backup_of(backups: &[(String, String)], stem: &str, content: &str) -> bool {
         match backups {
@@ -3583,6 +3760,26 @@ mod tests {
         assert_eq!(
             read(&dir, "ep01.en.srt"),
             "1\n00:00:00,500 --> 00:00:01,500\nXiao Ming: Hello\n"
+        );
+    }
+
+    // @behavior PJ-147
+    #[test]
+    fn names_a_speaker_in_a_translation_for_segments_with_the_same_times_in_their_order() {
+        let dir = TempDir::new("pj-speaker-same-times");
+        let current = changing_project_in(
+            &dir,
+            &[(0, 1_000, "大家好"), (0, 1_000, "對啊")],
+            &[(0, 1_000, "Hello"), (0, 1_000, "Yeah")],
+        );
+
+        current
+            .edit(1, SegmentField::Speaker, "co".to_string())
+            .unwrap();
+
+        assert_eq!(
+            read(&dir, "ep01.en.srt"),
+            srt_of(&[(0, 1_000, "Hello"), (0, 1_000, "co: Yeah")])
         );
     }
 

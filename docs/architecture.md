@@ -72,12 +72,12 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 
 | 範圍 | 執行 | 替身 |
 |---|---|---|
-| Rust 用例與規則 | `cargo test`，測試寫在程式旁的 `mod tests` | mock app 建出 `AppPorts`；shell 腳本假裝元件；`fake_llama` 假裝 llama-server |
+| Rust 用例與規則 | `cargo test`，測試寫在程式旁的 `mod tests` | mock app、假元件、`fake_llama` |
 | 真的元件 | `cargo test -- --ignored`，需要模型與媒體檔 | 無 |
 | Webview | `pnpm test`（Vitest、happy-dom），測試放在 controller 與 `editor/` 的程式旁 | `mockIPC` 代替 Rust；`editor/` 以假的 port 測試 |
 | 規格 | `sumi verify` | 測試以 `@behavior` 宣告實作的情境 |
 
-用例測試使用真的 `Processes` 與 Tauri 的 mock runtime，元件行程與事件依實際的先後發生。
+用例測試使用真的 `Processes` 與 Tauri 的 mock runtime，元件行程與事件依實際的先後發生。mock app 建出 `AppPorts`，shell 腳本假裝元件，`fake_llama` 假裝 llama-server。
 
 ## 2 前後端分工
 

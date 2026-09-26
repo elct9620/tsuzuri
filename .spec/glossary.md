@@ -62,6 +62,15 @@ A Model one Project chooses for the transcription or the translation Model Slot 
 
 The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. It appears only for a Resource with a media file.
 
+### Video Window
+
+A window of its own the Preview's video moves into, with the Segment being played over it, so it can sit on another screen and grow while the editor keeps its room. It is the same player, not a copy, so the picture, the sound and the caption never drift apart; the Preview's controls and timeline stay in the editor, and closing the window brings the video back.
+
+#### Rejected
+
+- `Popup` - a popup is a small window the page puts up for a moment; the Video Window is one the user places, sizes and keeps.
+- `Detached Preview` - only the video leaves; the Preview's controls and timeline stay in the editor.
+
 ### Current Segment
 
 The one Segment whose row last took a click or focus in the editor, or whose region was last clicked on the timeline, shown with its own background; Space plays on from it, or plays it alone when the user turns that on. Choosing another one pauses the media there, at its start or where its region was clicked. It stays on its Segment through the Segment Changes around it, moves to the second half of a split and into a Segment just inserted, and is let go only when the Segments change in number by other means. It is the webview's to hold and changes nothing in the Project, unlike the Checked Segments.

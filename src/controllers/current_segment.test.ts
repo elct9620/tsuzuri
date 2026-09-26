@@ -172,10 +172,12 @@ describe("Current Segment", () => {
           <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">
-            <video data-preview-target="media" data-timeline-target="media" data-action="timeupdate->preview#follow pause->preview#showPaused"></video>
+            <video data-preview-target="media" data-timeline-target="media"></video>
             <p data-preview-target="caption"></p>
             <div data-preview-target="hint" hidden></div>
           </div>
+          <div data-preview-target="videoWindowHint" hidden></div>
+          <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
           <span data-preview-target="playbackIcon"></span>
           <button data-transcript-target="followButton" data-action="transcript#toggleFollowing"></button>
           <button data-timeline-target="aloneButton" data-action="timeline#togglePlayingAlone"></button>
@@ -597,6 +599,20 @@ describe("Current Segment", () => {
     playTo(2);
 
     expect([startedAt, media().paused]).toEqual([1, false]);
+  });
+
+  // @behavior PV-132
+  it("plays on from the Current Segment with Space pressed in the Video Window", async () => {
+    await show(twoSegments);
+    rows()[1].click();
+    const video = media();
+    document.querySelector<HTMLElement>("#video-window")!.click();
+
+    pressSpace(video);
+    await settle();
+
+    expect([video.currentTime, video.paused]).toEqual([1, false]);
+    video.ownerDocument.defaultView?.close();
   });
 
   // @behavior PV-122

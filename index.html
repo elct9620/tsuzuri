@@ -289,7 +289,7 @@
           <div
             class="contents"
             data-controller="preview timeline"
-            data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playOrStop:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange:!control pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture"
+            data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor rust:video-window-closing@window->preview#closeVideoWindow editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playOrStop:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange:!control pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture"
           >
             <div
               class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
@@ -659,7 +659,7 @@
             >
               <div class="flex h-[30vh] min-h-40 gap-3">
                 <div
-                  class="relative min-w-0 flex-2 overflow-hidden rounded-box bg-black"
+                  class="group relative min-w-0 flex-2 overflow-hidden rounded-box bg-black data-is-away:rounded-none"
                   data-preview-target="screen"
                 >
                   <video
@@ -667,10 +667,9 @@
                     preload="metadata"
                     data-preview-target="media"
                     data-timeline-target="media"
-                    data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"
                   ></video>
                   <p
-                    class="pointer-events-none absolute inset-x-2 bottom-2 text-center text-sm text-white [text-shadow:0_1px_2px_black]"
+                    class="pointer-events-none absolute inset-x-2 bottom-2 text-center text-sm text-white [text-shadow:0_1px_2px_black] group-data-is-away:bottom-[4vh] group-data-is-away:text-[4vh]"
                   >
                     <span
                       class="rounded-sm px-1 py-0.5 whitespace-pre-line box-decoration-clone empty:hidden data-[backdrop=opaque]:bg-black data-[backdrop=translucent]:bg-black/60"
@@ -686,6 +685,14 @@
                     <i data-lucide="triangle-alert" class="size-4"></i>
                     <span data-i18n="preview.unplayable"></span>
                   </div>
+                </div>
+                <div
+                  class="flex min-w-0 flex-2 flex-col items-center justify-center gap-2 rounded-box border border-base-300 p-3 text-center text-sm text-base-content/60"
+                  data-preview-target="videoWindowHint"
+                  hidden
+                >
+                  <i data-lucide="monitor-play" class="size-6"></i>
+                  <span data-i18n="preview.videoWindowAway"></span>
                 </div>
                 <div class="card card-sm card-border min-w-0 flex-3">
                   <div class="card-body">
@@ -721,6 +728,20 @@
                         data-i18n-tooltip="preview.playingAloneHint"
                       >
                         <i data-lucide="arrow-right-to-line" class="size-4"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-square btn-sm"
+                        aria-pressed="false"
+                        data-preview-target="videoWindowButton"
+                        data-action="preview#toggleVideoWindow"
+                        data-i18n-label="preview.videoWindow"
+                        data-i18n-tooltip="preview.videoWindowHint"
+                      >
+                        <i
+                          data-lucide="picture-in-picture-2"
+                          class="size-4"
+                        ></i>
                       </button>
                       <span
                         class="text-lg font-medium whitespace-nowrap tabular-nums"

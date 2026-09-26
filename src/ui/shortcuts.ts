@@ -12,8 +12,8 @@ export type ShortcutGroup = (typeof SHORTCUT_GROUPS)[number];
 
 /**
  * A key the interface binds, or a mouse action with the keys held, as each platform presses it. A
- * chord is written as a Stimulus key filter, `ctrl+alt+enter`; `click`, `drag` and `wheel` stand
- * for the mouse.
+ * chord is written as a Stimulus key filter, `ctrl+alt+enter`; `click`, `dblclick`, `drag` and
+ * `wheel` stand for the mouse.
  */
 export interface Shortcut {
   id: string;
@@ -101,6 +101,12 @@ export const SHORTCUTS: Shortcut[] = [
     group: "mouse",
     mac: ["meta+wheel", "alt+wheel"],
     other: ["ctrl+wheel", "alt+wheel"],
+  },
+  {
+    id: "videoWindowFullscreen",
+    group: "mouse",
+    mac: ["dblclick"],
+    other: ["dblclick"],
   },
 ];
 

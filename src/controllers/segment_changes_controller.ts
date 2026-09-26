@@ -19,7 +19,7 @@ export default class SegmentChangesController extends Controller {
   static targets = [
     "checkedBar",
     "checkedCount",
-    "merge",
+    "mergeButton",
     "shiftDialog",
     "offset",
   ];
@@ -28,7 +28,7 @@ export default class SegmentChangesController extends Controller {
   /** The bar that shows while Segments are checked. */
   declare readonly checkedBarTarget: HTMLElement;
   declare readonly checkedCountTarget: HTMLElement;
-  declare readonly mergeTarget: HTMLButtonElement;
+  declare readonly mergeButtonTarget: HTMLButtonElement;
   declare readonly shiftDialogTarget: HTMLDialogElement;
   /** Milliseconds to shift by, negative for earlier. */
   declare readonly offsetTarget: HTMLInputElement;
@@ -89,7 +89,7 @@ export default class SegmentChangesController extends Controller {
     this.checkedCountTarget.textContent = t("edit.selected", {
       count: indexes.length,
     });
-    this.mergeTarget.disabled = !isRun(indexes);
+    this.mergeButtonTarget.disabled = !isRun(indexes);
   }
 
   async merge(): Promise<void> {

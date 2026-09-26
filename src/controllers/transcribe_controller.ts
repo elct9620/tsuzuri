@@ -17,28 +17,28 @@ import type TranslationOptionsController from "./translation_options_controller"
 /** The transcribe dialog: it transcribes the Current Resource into its original subtitle. */
 export default class TranscribeController extends Controller {
   static targets = [
-    "open",
+    "openButton",
     "dialog",
     "language",
-    "translate",
-    "overwrite",
+    "translationToggle",
+    "overwriteWarning",
     "overwriteMessage",
-    "start",
+    "startButton",
     "model",
   ];
   static outlets = ["progress", "translation-options"];
 
   /** The toolbar button, usable only for a Current Resource with a media file. */
-  declare readonly openTarget: HTMLButtonElement;
+  declare readonly openButtonTarget: HTMLButtonElement;
   declare readonly dialogTarget: HTMLDialogElement;
   /** Names the Primary Language it is transcribed in. */
   declare readonly languageTarget: HTMLElement;
   /** Whether to translate the Transcript once transcribed, with the translation options it shows. */
-  declare readonly translateTarget: HTMLInputElement;
+  declare readonly translationToggleTarget: HTMLInputElement;
   /** Warns of what starting overwrites: the original subtitle, the translation, or both. */
-  declare readonly overwriteTarget: HTMLElement;
+  declare readonly overwriteWarningTarget: HTMLElement;
   declare readonly overwriteMessageTarget: HTMLElement;
-  declare readonly startTarget: HTMLButtonElement;
+  declare readonly startButtonTarget: HTMLButtonElement;
   /** Names the file of the transcription Model it runs with, the Project Model when there is one. */
   declare readonly modelTarget: HTMLElement;
   declare readonly progressOutlet: ProgressController;
@@ -105,7 +105,7 @@ export default class TranscribeController extends Controller {
           ...phaseItems(transcription.phases),
         ],
       });
-      if (this.translateTarget.checked) {
+      if (this.translationToggleTarget.checked) {
         const choices = this.translationOptionsOutlet;
         progress.begin("translation");
         notifyTranslation(await translate(choices.language, choices.options));
@@ -117,7 +117,8 @@ export default class TranscribeController extends Controller {
   }
 
   showTranslationOptions(): void {
-    this.translationOptionsOutletElement.hidden = !this.translateTarget.checked;
+    this.translationOptionsOutletElement.hidden =
+      !this.translationToggleTarget.checked;
     this.showOverwrite();
   }
 
@@ -131,7 +132,7 @@ export default class TranscribeController extends Controller {
   private showOverwrite(): void {
     const hasSubtitle = currentResource(this.project)?.has_subtitle ?? false;
     const isTranslationOverwritten =
-      this.translateTarget.checked && this.isTranslationOverwriting;
+      this.translationToggleTarget.checked && this.isTranslationOverwriting;
     const warning = hasSubtitle
       ? isTranslationOverwritten
         ? "transcribe.overwriteBoth"
@@ -139,16 +140,18 @@ export default class TranscribeController extends Controller {
       : isTranslationOverwritten
         ? "translate.overwrite"
         : null;
-    this.overwriteTarget.hidden = warning === null;
+    this.overwriteWarningTarget.hidden = warning === null;
     this.overwriteMessageTarget.textContent =
       warning === null ? "" : t(warning);
-    this.startTarget.textContent = t(
+    this.startButtonTarget.textContent = t(
       warning === null ? "transcribe.start" : "transcribe.overwriteAndStart",
     );
   }
 
   private show(project: ProjectView | null): void {
     this.project = project;
-    this.openTarget.disabled = !(currentResource(project)?.has_media ?? false);
+    this.openButtonTarget.disabled = !(
+      currentResource(project)?.has_media ?? false
+    );
   }
 }

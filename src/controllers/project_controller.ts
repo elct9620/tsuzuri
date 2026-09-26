@@ -61,7 +61,7 @@ function resourceItem(
 /** The Project's actions and the Resource list; what they make lives in Rust. */
 export default class ProjectController extends Controller {
   static targets = [
-    "start",
+    "startScreen",
     "workspace",
     "name",
     "resources",
@@ -75,11 +75,11 @@ export default class ProjectController extends Controller {
     "overwriteBackup",
     "transcriptionSetting",
     "projectModel",
-    "followModel",
+    "generalModelButton",
   ];
 
   /** Shown while no Project is open. */
-  declare readonly startTarget: HTMLElement;
+  declare readonly startScreenTarget: HTMLElement;
   /** The toolbar and editor of an open Project. */
   declare readonly workspaceTarget: HTMLElement;
   declare readonly nameTarget: HTMLElement;
@@ -98,7 +98,7 @@ export default class ProjectController extends Controller {
   /** Names the Project Model of the slot in `data-slot`, or that the slot follows the general settings. */
   declare readonly projectModelTargets: HTMLElement[];
   /** Offered for the slot in `data-slot` only while it has a Project Model. */
-  declare readonly followModelTargets: HTMLElement[];
+  declare readonly generalModelButtonTargets: HTMLElement[];
 
   declare readonly feed: ProjectFeed;
 
@@ -220,7 +220,7 @@ export default class ProjectController extends Controller {
   }
 
   private show(project: ProjectView | null): void {
-    this.startTarget.hidden = project !== null;
+    this.startScreenTarget.hidden = project !== null;
     this.workspaceTarget.hidden = project === null;
     this.showSettingsOf(project);
     this.options = project?.options ?? null;
@@ -259,7 +259,7 @@ export default class ProjectController extends Controller {
       const path = models[status.dataset.slot as keyof ProjectModels];
       status.textContent = path ?? t("models.followsGeneral");
     }
-    for (const follow of this.followModelTargets)
+    for (const follow of this.generalModelButtonTargets)
       follow.hidden =
         models[follow.dataset.slot as keyof ProjectModels] === null;
   }

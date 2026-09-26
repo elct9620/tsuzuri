@@ -48,10 +48,10 @@ describe("RetranslationController", () => {
         data-action="transcript:shown->retranslation#follow editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked segment-changes:retranslate->retranslation#translateChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
-        <p data-transcript-target="empty"></p>
+        <p data-transcript-target="emptyHint"></p>
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
-          <button data-segment-changes-target="merge"></button>
+          <button data-segment-changes-target="mergeButton"></button>
           <button id="retranslate-selection" data-retranslation-target="checkedButton"
             data-action="segment-changes#retranslate">重新翻譯</button>
         </div>

@@ -22,7 +22,7 @@ describe("ComponentsController", () => {
 
   function restoreButton(): HTMLButtonElement {
     return document.querySelector<HTMLButtonElement>(
-      '[data-components-target="restore"]',
+      '[data-components-target="restoreButton"]',
     )!;
   }
 
@@ -39,7 +39,7 @@ describe("ComponentsController", () => {
           <span data-components-target="placeholder"></span>
           <span data-components-target="status" data-component="llama" hidden></span>
           <button data-component="llama" data-action="components#choose">指定</button>
-          <button data-components-target="restore" data-component="llama" data-action="components#restore" hidden>還原預設值</button>
+          <button data-components-target="restoreButton" data-component="llama" data-action="components#restore" hidden>還原預設值</button>
         </li>
       </ul>
     `;

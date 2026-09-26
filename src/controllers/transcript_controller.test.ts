@@ -101,12 +101,12 @@ describe("TranscriptController", () => {
         </div>
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage" data-action="change->transcript#showTranslation"></select>
-        <p data-transcript-target="empty">尚無內容</p>
+        <p data-transcript-target="emptyHint">尚無內容</p>
         <div class="dropdown">
           <div tabindex="0" role="button">匯出</div>
-          <button id="save-original" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="original" disabled>原文</button>
-          <button id="save-translation" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="translation" disabled>譯文</button>
-          <button id="save-bilingual" data-transcript-target="export" data-action="transcript#save" data-transcript-content-param="bilingual" disabled>雙語</button>
+          <button id="save-original" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="original" disabled>原文</button>
+          <button id="save-translation" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="translation" disabled>譯文</button>
+          <button id="save-bilingual" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="bilingual" disabled>雙語</button>
         </div>
         <ol data-transcript-target="list"></ol>
       </section>
@@ -291,8 +291,9 @@ describe("TranscriptController", () => {
 
     expect([
       placeholders() > 0,
-      document.querySelector<HTMLElement>('[data-transcript-target="empty"]')!
-        .hidden,
+      document.querySelector<HTMLElement>(
+        '[data-transcript-target="emptyHint"]',
+      )!.hidden,
     ]).toEqual([true, true]);
   });
 

@@ -68,8 +68,8 @@ export default class SpeakersController extends Controller {
     "scope",
     "checkedChoice",
     "checkedCount",
-    "from",
-    "to",
+    "renamedSpeaker",
+    "newSpeaker",
     "names",
   ];
 
@@ -80,9 +80,9 @@ export default class SpeakersController extends Controller {
   declare readonly checkedChoiceTarget: HTMLElement;
   declare readonly checkedCountTarget: HTMLElement;
   /** The Speaker whose Segments are renamed. */
-  declare readonly fromTarget: HTMLSelectElement;
+  declare readonly renamedSpeakerTarget: HTMLSelectElement;
   /** The Speaker to set, none when left empty. */
-  declare readonly toTarget: HTMLInputElement;
+  declare readonly newSpeakerTarget: HTMLInputElement;
   /** Each Speaker named, to fill in the Speaker to set. */
   declare readonly namesTarget: HTMLElement;
 
@@ -155,7 +155,8 @@ export default class SpeakersController extends Controller {
 
   /** Fills in the Speaker a name button names. */
   fill({ currentTarget }: Event): void {
-    this.toTarget.value = (currentTarget as HTMLElement).dataset.speaker ?? "";
+    this.newSpeakerTarget.value =
+      (currentTarget as HTMLElement).dataset.speaker ?? "";
   }
 
   /** Sets the Speaker typed of every Segment the chosen scope takes in, as one change. */
@@ -163,7 +164,7 @@ export default class SpeakersController extends Controller {
     const scope = this.scopeTargets.find((choice) => choice.checked)
       ?.value as SpeakerScope;
     const indexes = this.scopeIndexes(scope);
-    const name = this.toTarget.value.trim();
+    const name = this.newSpeakerTarget.value.trim();
     this.dialogTarget.close();
     this.notifyNamed(await this.session.setSpeakers(indexes, name), name);
   }
@@ -179,9 +180,9 @@ export default class SpeakersController extends Controller {
       choice.checked =
         choice.value === (isChecked ? "checked-segments" : "all-segments");
     const speakers = this.speakers;
-    this.fromTarget.replaceChildren(...speakers.map(speakerOption));
-    this.toTarget.value = "";
-    this.toTarget.placeholder = t("edit.speakersNone");
+    this.renamedSpeakerTarget.replaceChildren(...speakers.map(speakerOption));
+    this.newSpeakerTarget.value = "";
+    this.newSpeakerTarget.placeholder = t("edit.speakersNone");
     this.namesTarget.replaceChildren(...speakers.map(nameButton));
     this.dialogTarget.showModal();
   }
@@ -195,7 +196,8 @@ export default class SpeakersController extends Controller {
     > = {
       "all-segments": () => true,
       "unnamed-segments": (segment) => !segment.speaker,
-      "named-segments": (segment) => segment.speaker === this.fromTarget.value,
+      "named-segments": (segment) =>
+        segment.speaker === this.renamedSpeakerTarget.value,
     };
     return (this.project?.segments ?? []).flatMap((segment, index) =>
       isTaken[scope](segment) ? [index] : [],

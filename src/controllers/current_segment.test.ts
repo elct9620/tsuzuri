@@ -91,7 +91,7 @@ describe("Current Segment", () => {
         data-action="editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying">
         <div data-controller="preview timeline"
           data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playCurrent:!control:prevent">
-          <button data-preview-target="fold" hidden><span data-preview-target="foldIcon"></span></button>
+          <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">
             <video data-preview-target="media" data-timeline-target="media" data-action="timeupdate->preview#follow pause->preview#showPaused"></video>
@@ -101,14 +101,14 @@ describe("Current Segment", () => {
           <span data-preview-target="playback"></span>
           <span data-preview-target="time"></span>
           <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"></div>
-          <p data-preview-target="currentEmpty"></p>
-          <div data-preview-target="current" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
+          <p data-preview-target="currentHint"></p>
+          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
           <button data-timeline-target="snapButton"></button><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
           </div>
         </div>
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
-        <p data-transcript-target="empty"></p>
+        <p data-transcript-target="emptyHint"></p>
         <ol data-transcript-target="list"></ol>
       </main>
     `;

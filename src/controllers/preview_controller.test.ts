@@ -69,7 +69,7 @@ describe("PreviewController", () => {
     });
     document.body.innerHTML = `
       <div data-controller="preview">
-        <button id="fold" data-preview-target="fold" data-action="preview#toggleFold" hidden><span data-preview-target="foldIcon"></span></button>
+        <button id="fold" data-preview-target="foldButton" data-action="preview#toggleFold" hidden><span data-preview-target="foldIcon"></span></button>
         <div data-preview-target="panel" hidden>
         <div data-preview-target="screen">
           <video data-preview-target="media" data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"></video>
@@ -86,8 +86,8 @@ describe("PreviewController", () => {
           <input type="radio" name="backdrop" value="translucent" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
           <input type="radio" name="backdrop" value="opaque" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
         </div>
-          <p data-preview-target="currentEmpty"></p>
-          <div data-preview-target="current" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
+          <p data-preview-target="currentHint"></p>
+          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
         </div>
       </div>
     `;

@@ -13,17 +13,23 @@ import type TranslationOptionsController from "./translation_options_controller"
 
 /** The translate dialog: it translates the Current Resource's original subtitle. */
 export default class TranslateController extends Controller {
-  static targets = ["open", "dialog", "source", "overwrite", "start"];
+  static targets = [
+    "openButton",
+    "dialog",
+    "source",
+    "overwriteWarning",
+    "startButton",
+  ];
   static outlets = ["progress", "translation-options"];
 
   /** The toolbar button, usable only for a Current Resource with an original subtitle. */
-  declare readonly openTarget: HTMLButtonElement;
+  declare readonly openButtonTarget: HTMLButtonElement;
   declare readonly dialogTarget: HTMLDialogElement;
   /** Names the Primary Language it is translated from. */
   declare readonly sourceTarget: HTMLElement;
   /** Warns that the translation into the Language chosen will be overwritten. */
-  declare readonly overwriteTarget: HTMLElement;
-  declare readonly startTarget: HTMLButtonElement;
+  declare readonly overwriteWarningTarget: HTMLElement;
+  declare readonly startButtonTarget: HTMLButtonElement;
   declare readonly progressOutlet: ProgressController;
   declare readonly translationOptionsOutlet: TranslationOptionsController;
 
@@ -50,8 +56,8 @@ export default class TranslateController extends Controller {
 
   /** Warns, and names the start button for, whether the Language chosen is already translated. */
   showOverwrite({ detail }: CustomEvent<{ isOverwriting: boolean }>): void {
-    this.overwriteTarget.hidden = !detail.isOverwriting;
-    this.startTarget.textContent = t(
+    this.overwriteWarningTarget.hidden = !detail.isOverwriting;
+    this.startButtonTarget.textContent = t(
       detail.isOverwriting ? "translate.overwriteAndStart" : "translate.start",
     );
   }
@@ -73,7 +79,7 @@ export default class TranslateController extends Controller {
 
   private show(project: ProjectView | null): void {
     this.project = project;
-    this.openTarget.disabled = !(
+    this.openButtonTarget.disabled = !(
       currentResource(project)?.has_subtitle ?? false
     );
   }

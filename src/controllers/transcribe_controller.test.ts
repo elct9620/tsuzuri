@@ -63,9 +63,9 @@ describe("TranscribeController", () => {
   });
 
   async function start(): Promise<void> {
-    target("open").click();
+    target("openButton").click();
     await settle();
-    target("start").click();
+    target("startButton").click();
     await settle();
   }
 
@@ -81,17 +81,17 @@ describe("TranscribeController", () => {
       <div data-controller="transcribe" data-transcribe-progress-outlet="#progress"
         data-action="translation-options:overwrite->transcribe#followTranslation"
         data-transcribe-translation-options-outlet="#transcribe-options">
-        <button data-transcribe-target="open" data-action="transcribe#open" disabled>轉錄</button>
+        <button data-transcribe-target="openButton" data-action="transcribe#open" disabled>轉錄</button>
         <dialog data-transcribe-target="dialog">
           <span data-transcribe-target="language"></span>
           <span data-transcribe-target="model"></span>
-          <input type="checkbox" data-transcribe-target="translate"
+          <input type="checkbox" data-transcribe-target="translationToggle"
             data-action="transcribe#showTranslationOptions">
           <fieldset id="transcribe-options" data-controller="translation-options" hidden></fieldset>
-          <div data-transcribe-target="overwrite" hidden>
+          <div data-transcribe-target="overwriteWarning" hidden>
             <span data-transcribe-target="overwriteMessage"></span>
           </div>
-          <button data-transcribe-target="start" data-action="transcribe#start">開始</button>
+          <button data-transcribe-target="startButton" data-action="transcribe#start">開始</button>
         </dialog>
       </div>
       <div id="progress" data-controller="progress" hidden>
@@ -189,7 +189,7 @@ describe("TranscribeController", () => {
       phases: [],
     });
     translation = () => new Promise(() => {});
-    target<HTMLInputElement>("translate").checked = true;
+    target<HTMLInputElement>("translationToggle").checked = true;
 
     await start();
 
@@ -245,7 +245,7 @@ describe("TranscribeController", () => {
       transcribe_seconds: 30,
       phases: [],
     });
-    target<HTMLInputElement>("translate").checked = true;
+    target<HTMLInputElement>("translationToggle").checked = true;
 
     await start();
 
@@ -260,7 +260,7 @@ describe("TranscribeController", () => {
       transcribe_seconds: 30,
       phases: [],
     });
-    target<HTMLInputElement>("translate").checked = true;
+    target<HTMLInputElement>("translationToggle").checked = true;
 
     await start();
 
@@ -275,7 +275,7 @@ describe("TranscribeController", () => {
       transcribe_seconds: 30,
       phases: [],
     });
-    target<HTMLInputElement>("translate").checked = true;
+    target<HTMLInputElement>("translationToggle").checked = true;
     translationOption<HTMLInputElement>(
       "#transcribe-options",
       "selfReview",
@@ -299,7 +299,7 @@ describe("TranscribeController", () => {
       },
     });
 
-    target("open").click();
+    target("openButton").click();
     await settle();
 
     expect(target("model").textContent).toBe("kotoba.bin");
@@ -308,10 +308,10 @@ describe("TranscribeController", () => {
   // @behavior TX-024
   it("shows the translation options once translating afterwards is chosen", async () => {
     await hold(media);
-    target("open").click();
+    target("openButton").click();
     await settle();
 
-    target<HTMLInputElement>("translate").click();
+    target<HTMLInputElement>("translationToggle").click();
 
     expect(
       document.querySelector<HTMLElement>("#transcribe-options")!.hidden,
@@ -320,8 +320,10 @@ describe("TranscribeController", () => {
 
   /** What the dialog warns of, or null when it warns of nothing, and what its start button reads. */
   const warning = () => [
-    target("overwrite").hidden ? null : target("overwriteMessage").textContent,
-    target("start").textContent,
+    target("overwriteWarning").hidden
+      ? null
+      : target("overwriteMessage").textContent,
+    target("startButton").textContent,
   ];
 
   const translatedIntoEnglish = (hasSubtitle: boolean) =>
@@ -339,10 +341,10 @@ describe("TranscribeController", () => {
   // @behavior TL-081
   it("warns of an overwritten translation when transcribing", async () => {
     await hold(translatedIntoEnglish(false));
-    target("open").click();
+    target("openButton").click();
     await settle();
 
-    target<HTMLInputElement>("translate").click();
+    target<HTMLInputElement>("translationToggle").click();
 
     expect(warning()).toEqual([
       "這個語言的譯文已存在，開始後會覆蓋",
@@ -353,10 +355,10 @@ describe("TranscribeController", () => {
   // @behavior TX-030
   it("warns once of both the subtitle and the translation it overwrites", async () => {
     await hold(translatedIntoEnglish(true));
-    target("open").click();
+    target("openButton").click();
     await settle();
 
-    target<HTMLInputElement>("translate").click();
+    target<HTMLInputElement>("translationToggle").click();
 
     expect(warning()).toEqual([
       "字幕與這個語言的譯文都已存在，開始後會覆蓋",
@@ -367,9 +369,9 @@ describe("TranscribeController", () => {
   // @behavior TX-031
   it("stops warning of a translation it will not make", async () => {
     await hold(translatedIntoEnglish(false));
-    target("open").click();
+    target("openButton").click();
     await settle();
-    const translate = target<HTMLInputElement>("translate");
+    const translate = target<HTMLInputElement>("translationToggle");
     translate.click();
 
     translate.click();
@@ -409,7 +411,7 @@ describe("TranscribeController", () => {
   it("cannot start transcribing a Resource without a media file", async () => {
     await hold(projectOf());
 
-    expect(target<HTMLButtonElement>("open").disabled).toBe(true);
+    expect(target<HTMLButtonElement>("openButton").disabled).toBe(true);
   });
 
   // @behavior TX-022
@@ -422,7 +424,7 @@ describe("TranscribeController", () => {
 
     await start();
 
-    expect([target("overwrite").hidden, transcribeArgs]).toEqual([
+    expect([target("overwriteWarning").hidden, transcribeArgs]).toEqual([
       false,
       { overwrite: true },
     ]);

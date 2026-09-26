@@ -82,10 +82,10 @@ export default class VersionsController extends Controller {
     "subtitle",
     "backups",
     "comparison",
-    "left",
-    "right",
+    "leftVersion",
+    "rightVersion",
     "rows",
-    "onlyDifferences",
+    "differenceFilter",
   ];
 
   declare readonly dialogTarget: HTMLDialogElement;
@@ -93,11 +93,11 @@ export default class VersionsController extends Controller {
   declare readonly subtitleTarget: HTMLSelectElement;
   declare readonly backupsTarget: HTMLUListElement;
   declare readonly comparisonTarget: HTMLElement;
-  declare readonly leftTarget: HTMLSelectElement;
-  declare readonly rightTarget: HTMLSelectElement;
+  declare readonly leftVersionTarget: HTMLSelectElement;
+  declare readonly rightVersionTarget: HTMLSelectElement;
   declare readonly rowsTarget: HTMLTableSectionElement;
   /** Whether rows that do not differ are hidden. */
-  declare readonly onlyDifferencesTarget: HTMLInputElement;
+  declare readonly differenceFilterTarget: HTMLInputElement;
 
   /** What Rust listed when the dialog opened; shown until it closes. */
   private versions: SubtitleVersions[] = [];
@@ -175,14 +175,14 @@ export default class VersionsController extends Controller {
       option("", t("versions.now")),
       ...backups.map(({ file, taken_at }) => option(file, localTime(taken_at))),
     ];
-    this.leftTarget.replaceChildren(...choices());
-    this.rightTarget.replaceChildren(...choices());
+    this.leftVersionTarget.replaceChildren(...choices());
+    this.rightVersionTarget.replaceChildren(...choices());
     this.comparisonTarget.hidden = true;
   }
 
   async compare({ currentTarget }: Event): Promise<void> {
-    this.leftTarget.value = (currentTarget as HTMLElement).dataset.file!;
-    this.rightTarget.value = "";
+    this.leftVersionTarget.value = (currentTarget as HTMLElement).dataset.file!;
+    this.rightVersionTarget.value = "";
     await this.showComparison();
   }
 
@@ -192,15 +192,16 @@ export default class VersionsController extends Controller {
     try {
       rows = await compareVersions(
         this.shownLanguage(),
-        this.leftTarget.value || null,
-        this.rightTarget.value || null,
+        this.leftVersionTarget.value || null,
+        this.rightVersionTarget.value || null,
       );
     } catch (error) {
       notifyFailure(t("versions.unreadable"), error);
       return;
     }
     const isRevertible =
-      this.leftTarget.value !== "" && this.rightTarget.value === "";
+      this.leftVersionTarget.value !== "" &&
+      this.rightVersionTarget.value === "";
     this.rowsTarget.replaceChildren(
       ...rows.map((row, index) => {
         const isChanged = isDifferent(row);
@@ -230,7 +231,7 @@ export default class VersionsController extends Controller {
 
   /** Hides the rows that do not differ while only the differences are asked for. */
   showOnlyDifferences(): void {
-    const isFiltered = this.onlyDifferencesTarget.checked;
+    const isFiltered = this.differenceFilterTarget.checked;
     for (const tr of this.rowsTarget.querySelectorAll("tr"))
       tr.hidden = isFiltered && !tr.classList.contains("changed");
   }
@@ -249,7 +250,7 @@ export default class VersionsController extends Controller {
     try {
       restoration = await revertRow(
         this.shownLanguage(),
-        this.leftTarget.value,
+        this.leftVersionTarget.value,
         params.row,
         "whole",
       );

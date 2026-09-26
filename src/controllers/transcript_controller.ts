@@ -214,20 +214,20 @@ function item(
 export default class TranscriptController extends Controller {
   static targets = [
     "list",
-    "empty",
-    "export",
+    "emptyHint",
+    "exportButton",
     "heading",
     "translationLanguage",
   ];
 
   declare readonly listTarget: HTMLOListElement;
-  declare readonly emptyTarget: HTMLElement;
+  declare readonly emptyHintTarget: HTMLElement;
   /** Names the Current Resource. */
   declare readonly headingTarget: HTMLElement;
   /** Which of the Current Resource's translations the editor shows, or none. */
   declare readonly translationLanguageTarget: HTMLSelectElement;
   /** Each export, enabled once the Project has the text it writes. */
-  declare readonly exportTargets: HTMLButtonElement[];
+  declare readonly exportButtonTargets: HTMLButtonElement[];
 
   declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
@@ -256,7 +256,7 @@ export default class TranscriptController extends Controller {
   /** Stands Placeholders in for the Segments of a Resource being read. */
   showLoading(): void {
     this.listTarget.replaceChildren(...placeholderRows());
-    this.emptyTarget.hidden = true;
+    this.emptyHintTarget.hidden = true;
   }
 
   /** Makes the Segment of a row current as the row is clicked or anything in it gets focus. */
@@ -368,8 +368,8 @@ export default class TranscriptController extends Controller {
     const hasTranslation = segments.some(
       (segment) => segment.translation !== undefined,
     );
-    this.emptyTarget.hidden = segments.length > 0 || isAwaitingSegments;
-    for (const target of this.exportTargets) {
+    this.emptyHintTarget.hidden = segments.length > 0 || isAwaitingSegments;
+    for (const target of this.exportButtonTargets) {
       const needsTranslation =
         target.dataset.transcriptContentParam !== "original";
       target.disabled =

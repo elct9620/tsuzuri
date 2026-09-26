@@ -57,8 +57,9 @@ describe("SpeakersController", () => {
     document
       .querySelector<HTMLInputElement>(`input[value="${scope}"]`)!
       .click();
-    if (from !== undefined) target<HTMLSelectElement>("from").value = from;
-    target<HTMLInputElement>("to").value = name;
+    if (from !== undefined)
+      target<HTMLSelectElement>("renamedSpeaker").value = from;
+    target<HTMLInputElement>("newSpeaker").value = name;
     document.querySelector<HTMLButtonElement>("#apply")!.click();
     await settle();
   }
@@ -77,7 +78,7 @@ describe("SpeakersController", () => {
         data-action="transcript:shown->speakers#follow editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked segment-changes:speakers->speakers#openForChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
-        <p data-transcript-target="empty"></p>
+        <p data-transcript-target="emptyHint"></p>
         <button id="open-speakers" data-action="speakers#open">說話者</button>
         <dialog data-speakers-target="dialog">
           <label data-speakers-target="checkedChoice">
@@ -87,14 +88,14 @@ describe("SpeakersController", () => {
           <input type="radio" name="speaker-scope" value="all-segments" data-speakers-target="scope">
           <input type="radio" name="speaker-scope" value="unnamed-segments" data-speakers-target="scope">
           <input type="radio" name="speaker-scope" value="named-segments" data-speakers-target="scope">
-          <select data-speakers-target="from"></select>
-          <input data-speakers-target="to">
+          <select data-speakers-target="renamedSpeaker"></select>
+          <input data-speakers-target="newSpeaker">
           <div data-speakers-target="names"></div>
           <button id="apply" data-action="speakers#apply">套用</button>
         </dialog>
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
-          <button data-segment-changes-target="merge"></button>
+          <button data-segment-changes-target="mergeButton"></button>
           <button id="speakers-of-selection" data-action="segment-changes#openSpeakers">說話者</button>
         </div>
         <ol data-transcript-target="list"></ol>

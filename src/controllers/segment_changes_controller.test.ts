@@ -63,10 +63,10 @@ describe("SegmentChangesController", () => {
       <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
-        <p data-transcript-target="empty"></p>
+        <p data-transcript-target="emptyHint"></p>
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
-          <button id="merge" data-segment-changes-target="merge" data-action="segment-changes#merge">合併</button>
+          <button id="merge" data-segment-changes-target="mergeButton" data-action="segment-changes#merge">合併</button>
           <button id="open-shift" data-action="segment-changes#openShift">平移</button>
         </div>
         <dialog data-segment-changes-target="shiftDialog">

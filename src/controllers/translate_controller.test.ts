@@ -36,7 +36,7 @@ describe("TranslateController", () => {
   }
 
   async function openDialog(): Promise<void> {
-    target("open").click();
+    target("openButton").click();
     await settle();
   }
 
@@ -68,12 +68,12 @@ describe("TranslateController", () => {
       <div data-controller="translate" data-translate-progress-outlet="#progress"
         data-action="translation-options:overwrite->translate#showOverwrite"
         data-translate-translation-options-outlet="#translate-options">
-        <button data-translate-target="open" data-action="translate#open" disabled>翻譯</button>
+        <button data-translate-target="openButton" data-action="translate#open" disabled>翻譯</button>
         <dialog data-translate-target="dialog">
           <span data-translate-target="source"></span>
           <div id="translate-options" data-controller="translation-options"></div>
-          <div data-translate-target="overwrite" hidden></div>
-          <button id="start" data-translate-target="start" data-action="translate#start">開始翻譯</button>
+          <div data-translate-target="overwriteWarning" hidden></div>
+          <button id="start" data-translate-target="startButton" data-action="translate#start">開始翻譯</button>
         </dialog>
       </div>
       <div id="progress" data-controller="progress" hidden>
@@ -139,7 +139,7 @@ describe("TranslateController", () => {
     resources: [resourceOf({ translation_languages: ["en"] })],
     translation_language: "en",
   });
-  const isOverwriteWarned = () => !target("overwrite").hidden;
+  const isOverwriteWarned = () => !target("overwriteWarning").hidden;
 
   // @behavior TL-079
   it("asks before overwriting a translation", async () => {
@@ -147,7 +147,7 @@ describe("TranslateController", () => {
 
     await openDialog();
 
-    expect([isOverwriteWarned(), target("start").textContent]).toEqual([
+    expect([isOverwriteWarned(), target("startButton").textContent]).toEqual([
       true,
       "覆蓋並開始",
     ]);
@@ -162,7 +162,7 @@ describe("TranslateController", () => {
     language.value = "ja";
     language.dispatchEvent(new Event("change"));
 
-    expect([isOverwriteWarned(), target("start").textContent]).toEqual([
+    expect([isOverwriteWarned(), target("startButton").textContent]).toEqual([
       false,
       "開始翻譯",
     ]);
@@ -201,7 +201,7 @@ describe("TranslateController", () => {
       }),
     );
 
-    expect(target<HTMLButtonElement>("open").disabled).toBe(true);
+    expect(target<HTMLButtonElement>("openButton").disabled).toBe(true);
   });
 
   // @behavior TL-042

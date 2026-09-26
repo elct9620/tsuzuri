@@ -23,6 +23,11 @@ describe("TimelineController", () => {
   let changes: SegmentChange[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  /**
+   * How long wavesurfer.js keeps swallowing clicks on the document once a drag ends, so the press
+   * that ended it does not click; its draggable lifts the guard on a 10 ms timer.
+   */
+  const CLICK_GUARD_MS = 10;
   const host = () =>
     document.querySelector<HTMLElement>('[data-timeline-target="waveform"]')!
       .firstElementChild!.shadowRoot!;
@@ -100,11 +105,13 @@ describe("TimelineController", () => {
     await settle();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     application.stop();
     clearMocks();
     vi.restoreAllMocks();
     takeLayoutBack();
+    // The document outlives each test, so a drag's guard would swallow the next test's first click
+    await new Promise((resolve) => setTimeout(resolve, CLICK_GUARD_MS));
   });
 
   // @behavior PV-017

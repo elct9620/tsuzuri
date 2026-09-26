@@ -21,11 +21,6 @@ export interface TranscriptionSettings {
   is_context_carried: boolean;
 }
 
-/** The Transcription Settings a Project sets for itself; `null` follows the general ones. */
-export type TranscriptionOverrides = {
-  [Setting in keyof TranscriptionSettings]: boolean | null;
-};
-
 export function transcriptionSettings(): Promise<TranscriptionSettings> {
   return invoke<TranscriptionSettings>("transcription_settings");
 }

@@ -12,12 +12,12 @@ import {
   type ProjectView,
   type ResourceView,
   type ProjectFeed,
+  type TranscriptionOverrides,
 } from "../backend/project";
-import { MODEL_EXTENSIONS } from "../backend/toolchain";
-import type { TranscriptionOverrides } from "../backend/transcription";
 import { interfaceLanguageCode, t } from "../i18n";
 import { failureMessage } from "../ui/failure";
 import { closeMenu } from "../ui/menu";
+import { MODEL_EXTENSIONS } from "../ui/models";
 
 function resourceItem(
   resource: ResourceView,
@@ -181,14 +181,17 @@ export default class ProjectController extends Controller {
       is_bilingual_autosaved: this.bilingualAutosaveTarget.checked,
       is_overwrite_backed_up: this.overwriteBackupTarget.checked,
       models: this.options.models,
-      transcription: this.transcriptionOverrides(),
+      transcription: this.transcriptionOverrides(this.options.transcription),
       ...changes,
     };
     await this.report(() => setProjectOptions(options));
   }
 
-  private transcriptionOverrides(): TranscriptionOverrides {
-    const overrides = { ...this.options!.transcription };
+  /** `overrides` with each Transcription Setting as its select shows it. */
+  private transcriptionOverrides(
+    overrides: TranscriptionOverrides,
+  ): TranscriptionOverrides {
+    overrides = { ...overrides };
     for (const select of this.transcriptionSettingTargets)
       overrides[select.dataset.setting as keyof TranscriptionOverrides] =
         select.value === "" ? null : select.value === "on";

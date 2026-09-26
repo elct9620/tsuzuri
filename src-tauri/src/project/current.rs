@@ -830,7 +830,7 @@ impl CurrentProject {
             subtitle,
             language: project.language,
             model: project.options.models.transcription.clone(),
-            transcription: project.options.transcription,
+            overrides: project.options.transcription,
         })
     }
 

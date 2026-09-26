@@ -16,7 +16,7 @@ pub mod settings;
 mod whisper;
 
 use settings::TranscriptionSettings;
-use whisper::TranscriptionRun;
+use whisper::TranscriptionPlan;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Transcription {
@@ -47,8 +47,8 @@ pub async fn run_transcribe<'a>(
     let models = models
         .clone()
         .with_project_model(ModelSlot::Transcription, job.model.clone());
-    let settings = settings.with_overrides(job.transcription);
-    let whisper_run = TranscriptionRun {
+    let settings = settings.with_overrides(job.overrides);
+    let plan = TranscriptionPlan {
         model: models.ready_path(ModelSlot::Transcription)?,
         vad: settings
             .has_vad
@@ -81,7 +81,7 @@ pub async fn run_transcribe<'a>(
         ports,
         "transcribe",
         &tools.whisper,
-        &whisper::transcription_args(&whisper_run, &wav, &srt_prefix),
+        &whisper::transcription_args(&plan, &wav, &srt_prefix),
         |line| {
             if line.starts_with(whisper::START_MARK) {
                 enter(ports, &mut phases, "transcribe");

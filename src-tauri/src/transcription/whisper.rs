@@ -21,29 +21,29 @@ pub fn conversion_args(input: &Path, wav: &Path) -> Vec<String> {
     args
 }
 
-/// What whisper-cli is run with; `vad` is the VAD Model, given only when the settings turn VAD on.
-pub struct TranscriptionRun<'a> {
+/// What whisper-cli transcribes with; `vad` is the VAD Model, given only when the settings turn VAD on.
+pub struct TranscriptionPlan<'a> {
     pub model: &'a Path,
     pub vad: Option<&'a Path>,
     pub language: Language,
     pub settings: TranscriptionSettings,
 }
 
-pub fn transcription_args(run: &TranscriptionRun, wav: &Path, srt_prefix: &Path) -> Vec<String> {
+pub fn transcription_args(plan: &TranscriptionPlan, wav: &Path, srt_prefix: &Path) -> Vec<String> {
     let mut args = vec![
         "-m".to_string(),
-        run.model.to_string_lossy().into_owned(),
+        plan.model.to_string_lossy().into_owned(),
         "-l".to_string(),
-        run.language.whisper_code().to_string(),
+        plan.language.whisper_code().to_string(),
     ];
-    if let Some(vad) = run.vad {
+    if let Some(vad) = plan.vad {
         args.extend(["--vad".to_string(), "-vm".to_string()]);
         args.push(vad.to_string_lossy().into_owned());
     }
-    if run.settings.is_non_speech_suppressed {
+    if plan.settings.is_non_speech_suppressed {
         args.push("-sns".to_string());
     }
-    if !run.settings.is_context_carried {
+    if !plan.settings.is_context_carried {
         args.extend(["-mc".to_string(), "0".to_string()]);
     }
     args.extend([

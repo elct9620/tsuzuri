@@ -31,7 +31,7 @@ pub async fn transcribe(
         toolchain::find_ready_executables(settings::resolver(&app)?, ["ffmpeg", "whisper"]).await?;
     let tools = Tools { ffmpeg, whisper };
     let models = settings::load_settings(&app)?;
-    let transcription_settings = TranscriptionSettings::load(&settings::settings_dir(&app)?)?;
+    let general_settings = TranscriptionSettings::load(&settings::settings_dir(&app)?)?;
     let started_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |since| since.as_millis());
@@ -46,7 +46,7 @@ pub async fn transcribe(
             current.inner(),
             &tools,
             &models,
-            transcription_settings,
+            general_settings,
             &job,
             &work,
             phases,

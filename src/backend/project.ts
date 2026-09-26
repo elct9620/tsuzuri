@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-import type { TranscriptionOverrides } from "./transcription";
+import type { TranscriptionSettings } from "./transcription";
 
 export type { UnlistenFn };
 
@@ -27,6 +27,11 @@ export interface ProjectModels {
   transcription: string | null;
   translation: string | null;
 }
+
+/** The Transcription Settings a Project sets for itself; `null` follows the general ones. */
+export type TranscriptionOverrides = {
+  [Setting in keyof TranscriptionSettings]: boolean | null;
+};
 
 /** A Resource as the Resource list shows it. */
 export interface ResourceView {

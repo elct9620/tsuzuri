@@ -316,7 +316,8 @@ pub struct TranscriptionTarget {
     pub language: Language,
     /// The Project Model to transcribe with in place of the general one.
     pub model: Option<PathBuf>,
-    pub transcription: TranscriptionOverrides,
+    /// The Transcription Settings the Project sets for itself.
+    pub overrides: TranscriptionOverrides,
 }
 
 /// The files of a Project sharing one name.

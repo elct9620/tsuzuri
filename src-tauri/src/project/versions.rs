@@ -142,7 +142,7 @@ fn row_positions(left: &[ComparedCue], right: &[ComparedCue]) -> Vec<RowPosition
             .or_default()
             .push_back(right_index);
     }
-    let mut timed_alike = vec![false; left.len() + right.len()];
+    let mut is_paired_by_times = vec![false; left.len() + right.len()];
     for (left_index, left_cue) in left.iter().enumerate() {
         if let Some(right_index) = right_by_times
             .get_mut(&(left_cue.start_ms, left_cue.end_ms))
@@ -150,15 +150,15 @@ fn row_positions(left: &[ComparedCue], right: &[ComparedCue]) -> Vec<RowPosition
         {
             let right_node = left.len() + right_index;
             groups.join(left_index, right_node);
-            timed_alike[left_index] = true;
-            timed_alike[right_node] = true;
+            is_paired_by_times[left_index] = true;
+            is_paired_by_times[right_node] = true;
         }
     }
     for (left_index, left_cue) in left.iter().enumerate() {
         for (right_index, right_cue) in right.iter().enumerate() {
             let right_node = left.len() + right_index;
-            if !timed_alike[left_index]
-                && !timed_alike[right_node]
+            if !is_paired_by_times[left_index]
+                && !is_paired_by_times[right_node]
                 && is_overlapping(left_cue, right_cue)
             {
                 groups.join(left_index, right_node);

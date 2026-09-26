@@ -264,9 +264,9 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | Then | its region is coloured more strongly than the other |
 
 
-## `PV-107` Laying overlapping Segments in lanes on the timeline
+## `PV-107` Laying overlapping Segments in Lanes on the timeline
 
-Regions that overlap would hide one another, so each Segment lies in the lowest lane free at its start, the lanes sharing the waveform's height, and each region can be clicked and dragged on its own. The lanes stack upward as the Segments over the video do.
+Regions that overlap would hide one another, so each Segment lies in the lowest Lane free at its start, the Lanes sharing the waveform's height, and each region can be clicked and dragged on its own. The Lanes stack upward as the Segments over the video do.
 
 | Step | Statement |
 | --- | --- |
@@ -282,7 +282,7 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | When | the Project is shown |
 | Then | the third region fills the waveform's full height |
 
-## `PV-109` Making a Segment in an upper lane current from the timeline
+## `PV-109` Making a Segment in an upper Lane current from the timeline
 
 | Step | Statement |
 | --- | --- |
@@ -668,13 +668,13 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | When | it is dragged 100 pixels later |
 | Then | the Project is asked to change its times to 0.6 to 1.1 s |
 
-## `PV-114` Laying a dragged Segment in a lane as it overlaps the next
+## `PV-114` Laying a dragged Segment in a Lane as it overlaps the next
 
 | Step | Statement |
 | --- | --- |
 | Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 to 1.2 s |
 | When | its end is dragged 50 pixels later and not yet let go |
-| Then | the two regions lie in two lanes |
+| Then | the two regions lie in two Lanes |
 
 ## `PV-054` Snapping a dragged edge to the next Segment
 

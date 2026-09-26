@@ -91,7 +91,7 @@ Where an edge dragged on the timeline lands when it comes within 8 pixels of ano
 
 ### Lane
 
-One band of the timeline's height where regions lie. Segments that overlap lie in lanes stacked upward in the order they start, sharing the height; a Segment that overlaps none fills it whole.
+One band of the timeline's height where regions lie. Segments that overlap lie in Lanes stacked upward in the order they start, sharing the height; a Segment that overlaps none fills it whole.
 
 ### Peak
 

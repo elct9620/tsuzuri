@@ -152,7 +152,7 @@ describe("TimelineController", () => {
   });
 
   // @behavior PV-107
-  it("lays overlapping Segments in lanes, the first in the lower one", async () => {
+  it("lays overlapping Segments in Lanes, the first in the lower one", async () => {
     await show(projectWithMedia([segmentAt(0, 2), segmentAt(1, 1.5)]));
 
     expect(lanes()).toEqual([
@@ -461,7 +461,7 @@ describe("TimelineController", () => {
     });
 
     // @behavior PV-114
-    it("lays a dragged Segment in a lane as it overlaps the next", async () => {
+    it("lays a dragged Segment in a Lane as it overlaps the next", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1.2)]);
 
       pressAndMove(endOf(0)!, 50);

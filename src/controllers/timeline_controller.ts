@@ -29,7 +29,7 @@ const WHEEL_ZOOM_SCALE = 200;
 const REGION_COLORS = ["--segment-even", "--segment-odd"];
 /** How near, in pixels, an edge dragged on the timeline comes to a time before it Snaps to it. */
 const SNAP_PX = 8;
-/** The id of the range drawn on the empty waveform, which is no Segment's region. */
+/** The id of the range drawn on the waveform, which is no Segment's region. */
 const RANGE_ID = "range";
 /** Where the webview remembers whether Space plays the Current Segment alone. */
 const ALONE_KEY = "tsuzuri.timeline-playing-alone";
@@ -74,20 +74,20 @@ function snapTime(time: number, times: number[], distance: number): number {
 
 const toMilliseconds = (seconds: number) => Math.round(seconds * 1000);
 
-/** The band of the timeline a region lies in: `lane` of `count`, counted from the bottom. */
-interface Lane {
-  lane: number;
+/** The Lane a region lies in, counted from the bottom, of the `count` Lanes it shares with those it overlaps. */
+interface RegionLane {
+  index: number;
   count: number;
 }
 
 /**
- * The Lane of each of `spans`, in the order they start: each lies in the lowest lane free at its
- * start, and the spans overlapping one another share the lanes they need; one overlapping none
- * has a lane to itself.
+ * The Lane of each of `spans`, in the order they start: each lies in the lowest Lane free at its
+ * start, and the spans overlapping one another share the Lanes they need; one overlapping none
+ * has a Lane to itself.
  */
-function lanesOf(spans: Span[]): Lane[] {
-  const lanes: Lane[] = [];
-  let group: Lane[] = [];
+function regionLanes(spans: Span[]): RegionLane[] {
+  const lanes: RegionLane[] = [];
+  let group: RegionLane[] = [];
   let laneEnds: number[] = [];
   let groupEnd = -Infinity;
   for (const { start, end } of spans) {
@@ -96,8 +96,8 @@ function lanesOf(spans: Span[]): Lane[] {
       [group, laneEnds] = [[], []];
     }
     const free = laneEnds.findIndex((laneEnd) => laneEnd <= start);
-    const lane = { lane: free === -1 ? laneEnds.length : free, count: 1 };
-    laneEnds[lane.lane] = end;
+    const lane = { index: free === -1 ? laneEnds.length : free, count: 1 };
+    laneEnds[lane.index] = end;
     groupEnd = group.length === 0 ? end : Math.max(groupEnd, end);
     group.push(lane);
     lanes.push(lane);
@@ -201,7 +201,7 @@ export function controlOption({
 
 /**
  * The Preview's timeline: the Waveform of the Current Resource's media with a region for each
- * Segment, where the Current Segment is retimed by dragging and a new one drawn on the empty waveform.
+ * Segment, where the Current Segment is retimed by dragging and a new one drawn on the waveform.
  */
 export default class TimelineController extends Controller {
   static targets = [
@@ -246,10 +246,10 @@ export default class TimelineController extends Controller {
   /** The modifier keys held as the pointer last moved, which a region's own events do not carry. */
   private modifiers = { shiftKey: false, altKey: false };
   private drag: Drag | null = null;
-  /** The range drawn on the empty waveform, waiting for Enter to become a Segment or Esc to go. */
+  /** The range drawn on the waveform, waiting for Enter to become a Segment or Esc to go. */
   private range: Region | null = null;
-  /** A range being drawn over the Segments with the drawing key held, from the time it began at. */
-  private drawing: {
+  /** The pointer stroke drawing a range over the Segments with the drawing key held, from the time it began at. */
+  private stroke: {
     from: number;
     clientX: number;
     range: Region | null;
@@ -378,7 +378,7 @@ export default class TimelineController extends Controller {
     event.stopPropagation();
     event.preventDefault();
     if (this.isHeld) return;
-    this.drawing = {
+    this.stroke = {
       from: this.timeAt(event.clientX),
       clientX: event.clientX,
       range: null,
@@ -539,14 +539,16 @@ export default class TimelineController extends Controller {
    */
   private placeRegions(): void {
     const regions = this.segmentRegions();
-    const lanes = lanesOf(regions.map(({ start, end }) => ({ start, end })));
+    const lanes = regionLanes(
+      regions.map(({ start, end }) => ({ start, end })),
+    );
     const current = this.session.cursor.index;
     regions.forEach((region, index) => {
       const style = region.element?.style;
       if (!style) return;
-      const { lane, count } = lanes[index];
-      style.height = `${100 / count}%`;
-      style.top = `${((count - 1 - lane) * 100) / count}%`;
+      const lane = lanes[index];
+      style.height = `${100 / lane.count}%`;
+      style.top = `${((lane.count - 1 - lane.index) * 100) / lane.count}%`;
       style.zIndex = index === current ? "1" : "";
     });
   }
@@ -733,7 +735,7 @@ export default class TimelineController extends Controller {
    * cut in there; one left with no length is dropped.
    */
   private keepRange(range: Region): void {
-    if (this.drawing) return;
+    if (this.stroke) return;
     this.dropRange();
     const lowest = 0;
     const highest = this.surfer?.getDuration() ?? range.end;
@@ -756,18 +758,18 @@ export default class TimelineController extends Controller {
 
   /** Stretches the range being drawn to the pointer, once it has moved far enough to be a drag. */
   private extendDrawing(event: PointerEvent): void {
-    const drawing = this.drawing;
-    if (!drawing || !this.regions) return;
-    if (!drawing.range && Math.abs(event.clientX - drawing.clientX) < 3) return;
+    const stroke = this.stroke;
+    if (!stroke || !this.regions) return;
+    if (!stroke.range && Math.abs(event.clientX - stroke.clientX) < 3) return;
     const to = this.timeAt(event.clientX);
     const span = {
-      start: Math.min(drawing.from, to),
-      end: Math.max(drawing.from, to),
+      start: Math.min(stroke.from, to),
+      end: Math.max(stroke.from, to),
     };
-    if (drawing.range) drawing.range.setOptions(span);
+    if (stroke.range) stroke.range.setOptions(span);
     else {
       this.dropRange();
-      drawing.range = this.regions.addRegion({
+      stroke.range = this.regions.addRegion({
         id: RANGE_ID,
         ...span,
         color: "var(--segment-range)",
@@ -779,8 +781,8 @@ export default class TimelineController extends Controller {
   }
 
   private finishDrawing(): void {
-    const range = this.drawing?.range;
-    this.drawing = null;
+    const range = this.stroke?.range;
+    this.stroke = null;
     if (range) this.keepRange(range);
   }
 

@@ -199,7 +199,7 @@ describe("Current Segment", () => {
   });
 
   // @behavior PV-109
-  it("marks the row of a region clicked in an upper lane as the Current Segment", async () => {
+  it("marks the row of a region clicked in an upper Lane as the Current Segment", async () => {
     await show(overlappingSegments);
     rows()[0].click();
 

@@ -67,7 +67,7 @@ impl SegmentChange {
                 let segment = segment_at(segments, index)?;
                 segment.start_ms = start_ms;
                 segment.end_ms = end_ms;
-                check_order(segments, index)?;
+                refuse_unordered_start(segments, index)?;
             }
             SegmentChange::Boundary { index, at_ms } => {
                 let start_ms = segment_at(segments, index)?.start_ms;
@@ -77,7 +77,7 @@ impl SegmentChange {
                 }
                 segments[index].end_ms = at_ms;
                 segments[index + 1].start_ms = at_ms;
-                check_order(segments, index + 1)?;
+                refuse_unordered_start(segments, index + 1)?;
             }
             SegmentChange::Insertion { start_ms, end_ms } => {
                 if end_ms < start_ms {
@@ -179,8 +179,8 @@ impl SegmentChange {
                     segment.start_ms = shift(segment.start_ms);
                     segment.end_ms = shift(segment.end_ms);
                 }
-                check_order(segments, first)?;
-                check_order(segments, last)?;
+                refuse_unordered_start(segments, first)?;
+                refuse_unordered_start(segments, last)?;
             }
         }
         Ok(())
@@ -194,7 +194,7 @@ fn segment_at(segments: &mut [Segment], index: usize) -> Result<&mut Segment, Se
 }
 
 /// Refuses the Segment at `index` starting before the Segment before it or after the one after it.
-fn check_order(segments: &[Segment], index: usize) -> Result<(), SegmentChangeError> {
+fn refuse_unordered_start(segments: &[Segment], index: usize) -> Result<(), SegmentChangeError> {
     let start_ms = segments[index].start_ms;
     let previous = index.checked_sub(1).map(|previous| &segments[previous]);
     let is_after_previous = previous.is_none_or(|previous| previous.start_ms <= start_ms);

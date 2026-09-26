@@ -89,7 +89,7 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 | 設定檔、備份、翻譯詞彙表 | modal、勾選、目前段落、Cursor |
 | 元件行程、進度、失敗原因 | 介面語言、通知、tooltip |
 
-Rust 是唯一的事實來源。Webview 不另外儲存工作資料的副本，所有變更都寫進 Rust，再依事件重讀。
+字幕檔是事實來源，Rust 是唯一的寫入者（3.6）。Webview 不另外儲存工作資料的副本，所有變更都寫進 Rust，再依事件重讀。
 
 ### 2.2 指令（Webview ↔ Rust）
 
@@ -116,10 +116,11 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | 事件 | 送出者 | 接收者 |
 |---|---|---|
 | `project-changed` | 改變專案的指令 | `ProjectFeed` |
-| 進度 | 用例經 `Progress` | `listenProgress` |
-| 復原、重做、全選 | macOS 編輯選單 | 復原與勾選的處理 |
+| 進度 | 用例經 `Progress` | `progress` |
+| 復原、重做、全選 | macOS 編輯選單 | `undo`、`segment-changes` |
+| 外部修改已留存 | 重新載入 | `project` |
 
-事件只說有變化或到哪一步，不帶資料，內容再用指令取得。進度事件是 `pipeline-progress`；復原、重做與全選是 `menu.rs` 送出的 `edit-command`，給 `followEditCommands`。
+事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`；三者由 `relayEvents` 轉成 window 的 `rust:` 事件。
 
 ### 2.4 錯誤與通知
 
@@ -258,26 +259,107 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 ### 3.6 目前專案
 
 ```
-CurrentProject(Mutex<HeldProject>)
-  └─ HeldProject { generation, project: Option<Project>, mode_hold }
-       replace、select、set_language，或重新載入換了目前資源時 generation + 1
-       用例結束時 write_if_current(generation)：資源已換就不寫入畫面
-       Project.undo_histories：每個資源一份復原紀錄（project/history.rs）
+                        CurrentProject(Mutex<HeldProject>)
+                     ┌───────────────────────────────────────┐
+ 指令 ─ 讀檔、改、寫檔 ─▶│ project：從檔案讀出的目前資源、復原紀錄 │─ 寫 ─▶ 字幕檔
+ 任務 ─ 進度 ─────────▶│ mode_hold：任務鎖住的字幕與它的進度     │       （基準）
+ 任務結束 ─ 一次寫完 ──▶│                                       │◀─ 讀 ─┘
+ view() ◀─ 目前資源疊上進度 ─┤                                       │
+                     └───────────────────────────────────────┘
 ```
 
 | 保護 | 做法 |
 |---|---|
+| 事實來源 | 字幕檔，只由 Rust 寫 |
 | 同時存取 | 一把 Mutex，不在鎖內等待 |
-| 任務跨越切換資源 | 比對 generation |
-| 外部修改 | 比對摘要，不同就拒絕並重讀 |
-| 任務寫入中 | `ModeRun` 保管 |
-| 任務中重新載入 | 只重新配對清單 |
+| 每次寫入 | 鎖內讀檔、改、寫、重讀 |
+| 任務進度 | 放在 `mode_hold` |
+| 任務收尾 | 一次取鎖寫完 |
+| 外部修改 | 先留舊版，再拒絕並重讀 |
+| 任務中重新載入 | 照常重讀，進度照疊 |
 | 重新配對 | 檔案變了就清復原 |
-| 復原 | 改動前記下所有字幕的內容 |
 
-字幕被外部改過，或重新配對後檔案變了，就清掉它的復原紀錄，免得復原刪掉不認得的檔案。`mode_hold` 鎖住的字幕拒絕改動（`mode-running`）。內容有差才留一步復原，復原與重做換回內容並重讀。
+記憶體裡的目前資源只是檔案讀出的樣子，只在讀檔與寫檔後更新，所以記下的內容相同就代表兩者一致。任務進度疊在 `view()` 上，任務結束就丟掉，不會被當成字幕寫回。
 
-### 3.7 任務
+### 3.7 寫入者
+
+```
+ 使用者（指令）              任務（ModeRun）              外部程式
+  編輯、說話者、取代           轉錄 ─▶ 原文                  任何字幕
+  段落變更、復原、重做         翻譯 ─▶ 那份譯文                 │
+  還原、逐句取回               重譯 ─▶ 選中段的譯文             │
+       │ 每次一個指令              │ 進度只進 mode_hold           │
+       │ 鎖內寫完                  │ 結束時一次取鎖寫完           │
+       ▼                           ▼                              ▼
+ ┌──────────────────────── 字幕檔（基準）─────────────────────────┐
+ └────── .tsuzuri/history/：被取代而還沒有備份的版本 ─────────────┘
+```
+
+| 寫入者 | 時機 | 寫入 |
+|---|---|---|
+| 編輯、說話者、取代 | 使用者改動 | 那份字幕 |
+| 段落變更 | 使用者改動 | 原文與每份譯文 |
+| 復原、重做 | 使用者改動 | 資源的所有字幕 |
+| 還原、逐句取回 | 使用者改動 | 那份字幕 |
+| 轉錄 | 任務結束 | 原文與譯文的說話者 |
+| 翻譯 | 任務結束 | 整份譯文 |
+| 重譯 | 任務結束 | 選中段的譯文 |
+| 外部程式 | 任何時候 | 任何字幕 |
+
+雙語 SRT 由字幕產生，跟著寫入更新，不算寫入者。Rust 只在這些時機寫字幕；切換顯示的譯文、重新載入與任務進度都只讀。
+
+### 3.8 一次寫入
+
+```
+ 取鎖 ─▶ 任務鎖住這份字幕？ ── 是 ─▶ mode-running
+         │ 否
+         ▼
+       檔案和記下的內容不同？ ── 是 ─▶ 留下 Tsuzuri 的版本、重讀
+         │ 否                          ─▶ changed-elsewhere
+         ▼
+       讀檔 ─▶ 改 ─▶ 這次開啟還沒備份它？ ── 是 ─▶ 留覆蓋前備份
+                                    │
+                                    ▼
+       寫檔 ─▶ 記下復原與內容 ─▶ 重讀 ─▶ 放鎖 ─▶ project-changed
+```
+
+| 步驟 | 為了 |
+|---|---|
+| 先查任務的鎖 | 不寫任務要寫的字幕 |
+| 比對記下的內容 | 不蓋掉外部修改 |
+| 從檔案改起 | 畫面舊了也不寫錯 |
+| 首次改動前備份 | 關閉後仍能找回 |
+| 寫完就重讀 | 記憶體與檔案一致 |
+
+任務收尾也在一次取鎖內寫完：外部改過就兩邊都留，覆蓋前備份照專案選項每次或每次開啟留一份，寫出後再留產出備份。
+
+### 3.9 任務中的字幕
+
+| 任務 | 拒絕的改動 |
+|---|---|
+| 轉錄 | 資源的所有改動 |
+| 翻譯 | 那份譯文與段落 |
+| 重譯 | 選中段的譯文與段落 |
+| 任一任務 | 切換顯示的譯文 |
+
+`mode_hold` 記下任務寫的資源、語言與段落，拒絕的改動答 `mode-running`。改段落、說話者、復原與還原會重寫整份字幕，任務中一律拒絕。重譯結束時只把選中段合併進當下的檔案。
+
+### 3.10 留下的版本
+
+| 情況 | 留在檔案 | 留成備份 |
+|---|---|---|
+| 使用者改動 | 改動後的內容 | 開啟後首次改動前 |
+| 外部改過，切回視窗 | 外部版本 | Tsuzuri 的版本 |
+| 外部改過，再改動 | 外部版本 | Tsuzuri 的版本 |
+| 任務寫出 | 任務的結果 | 覆蓋前與產出 |
+| 任務中外部改過 | 任務的結果 | 兩邊都留 |
+| 任務取消或失敗 | 原本的檔案 | 不留 |
+| 重譯中改其他段 | 兩者合併 | 首次改動前 |
+| 復原、重做 | 復原的內容 | 不留 |
+
+後寫的留在檔案，被取代而還沒有備份的版本先留進 `.tsuzuri/history/`，所以任何一方的內容都能從「版本」找回。復原與重做換回的內容已在復原紀錄與備份裡，不再多留。
+
+### 3.11 任務
 
 ```
 transcribe 指令                       translate 指令
@@ -286,8 +368,9 @@ transcribe 指令                       translate 指令
   │ Steps：ffmpeg 轉成 WAV              │ 等待載入完成
   │ Steps：whisper-cli，段落逐行出現    │ 分批翻譯 ─▶ show_translations、mark_pending_batch ＋ project-changed
   │   └─ push_segment ＋ project-changed│ 保留 N 秒後釋放（或停止行程）
-  │ write_transcription（備份、寫檔）   │
-  ▼                                    ▼ write_translations（備份、寫檔）
+  │ write_transcription（一次取鎖寫完） │
+  ▼                                    ▼ write_translations（一次取鎖寫完）
+ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 回答各 Phase 耗時                      回答各 Phase 耗時
 ```
 
@@ -300,7 +383,7 @@ transcribe 指令                       translate 指令
 
 轉錄與翻譯以 `ModeLock::begin` 開始一個 `ModeRun`，關掉常駐 llama-server 也先取得 `ModeLock`，後來的等前一個結束。取消時 `ModeRun` 丟下任務，只結束經它啟動的行程。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
 
-### 3.8 行程
+### 3.12 行程
 
 | 時機 | `Processes` 做什麼 |
 |---|---|
@@ -313,7 +396,7 @@ transcribe 指令                       translate 指令
 
 元件一律經 shell plugin 啟動。介面以 `.spec/contract/processes.md` 為準。
 
-### 3.9 元件解析
+### 3.13 元件解析
 
 ```
 使用者指定（components.json 設定檔）
@@ -324,7 +407,7 @@ transcribe 指令                       translate 指令
 
 偵測會執行元件的版本旗標，所以放在 tokio 的 blocking pool，視窗不會停住。每次找到都記錄來源與耗時。
 
-### 3.10 模式
+### 3.14 模式
 
 ```
 lib.rs run() ── manage ──▶ Processes · CurrentProject · ResidentLlama · ModeLock
@@ -381,7 +464,7 @@ backend/editing.ts            閘道：唯一呼叫編輯指令的地方
 | `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
 | `main.ts` | 全部 | — |
 
-Controller 之間只 import outlet 的型別，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
+Controller 之間只 import outlet 的型別，編輯一律經過 session。Controller 不自己訂閱 Rust 或 window 的事件，一律寫成 `data-action`，由 Stimulus 隨元素綁定與解除。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
 
 ### 4.3 組裝
 
@@ -391,6 +474,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
   |-- session = new EditingSession(editingPort)
   |-- feed -> session.follow -> 各 controller -> session.announce
   |-- session.onChange -> window 的 editor:cursor、editor:choice、editor:checks
+  |-- start() -> relayEvents：Rust 事件 -> window 的 rust:<事件名稱>
   +-- application.register(名稱, class extends X { session, feed })
 ```
 
@@ -461,6 +545,9 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
 | `editor:choice` | session，經 `assembly.ts` | `timeline` 暫停在選的段落 |
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
+| `rust:pipeline-progress` | Rust，經 `relayEvents` | `progress` 顯示 Phase |
+| `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
+| `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，跟隨時捲動 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
@@ -475,7 +562,8 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `transcription.ts`、`translation.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄的指令與型別 |
-| `progress.ts` | `pipeline-progress` 與 Phase 耗時的型別 |
+| `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |
+| `events.ts` | 把 Rust 事件轉到 window |
 | `failure.ts` | `Failure` 型別 |
 | `dialog.ts`、`system.ts` | 系統對話方塊、語系與平台 |
 

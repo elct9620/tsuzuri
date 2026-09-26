@@ -446,6 +446,22 @@ Registering a Speaker gives it a name in every Language and lets the editor offe
 | When | the panel shows its Segments |
 | Then | each translation field is disabled and each text field is not |
 
+## `ED-092` Holding only the translations of the Segments translated again
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose second Segment is being translated again into the Language it shows |
+| When | the panel shows its Segments |
+| Then | the second translation field is disabled and the first is not |
+
+## `ED-093` Holding the choice of translation while a Mode runs
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Current Resource is being translated |
+| When | the panel shows its Segments |
+| Then | the choice of translation to show is disabled |
+
 ## `ED-028` Keeping a cue's text plain
 
 A subtitle has no formatting, so what is pasted or typed into a text field stays plain text.
@@ -636,7 +652,7 @@ Subtitle editors confirm a line with Enter and go on to the next, and break a li
 | When | Shift+Enter is pressed |
 | Then | a line break is typed at the Cursor and the field keeps focus |
 
-## `ED-092` Leaving out what follows the last character of an edited text
+## `ED-094` Leaving out what follows the last character of an edited text
 
 A line break typed at the end of a text leaves one behind that the field no longer shows and that cannot be deleted, and SRT writes no blank line or trailing space anyway, so a text keeps nothing after its last character.
 
@@ -646,7 +662,7 @@ A line break typed at the end of a text leaves one behind that the field no long
 | When | its text is edited to `您好` followed by a line break and a space |
 | Then | the Segment's text is `您好` |
 
-## `ED-093` Leaving out what follows the last character of an edited translation
+## `ED-095` Leaving out what follows the last character of an edited translation
 
 | Step | Statement |
 | --- | --- |

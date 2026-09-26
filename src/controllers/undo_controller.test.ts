@@ -26,7 +26,7 @@ describe("UndoController", () => {
   beforeEach(async () => {
     commands = [];
     document.body.innerHTML = `
-      <main data-controller="undo" data-action="keydown.ctrl+z@window->undo#undoInProject:!typing:prevent keydown.meta+z@window->undo#undoInProject:!typing:prevent keydown.ctrl+shift+z@window->undo#redoInProject:!typing:prevent keydown.meta+shift+z@window->undo#redoInProject:!typing:prevent keydown.ctrl+y@window->undo#redoInProject:!typing:prevent keydown.meta+y@window->undo#redoInProject:!typing:prevent">
+      <main data-controller="undo" data-action="keydown.ctrl+z@window->undo#undoInProject:!typing:prevent keydown.meta+z@window->undo#undoInProject:!typing:prevent keydown.ctrl+shift+z@window->undo#redoInProject:!typing:prevent keydown.meta+shift+z@window->undo#redoInProject:!typing:prevent keydown.ctrl+y@window->undo#redoInProject:!typing:prevent keydown.meta+y@window->undo#redoInProject:!typing:prevent rust:edit-command@window->undo#applyEditCommand">
         <div class="field text" contenteditable="plaintext-only" role="textbox" aria-multiline="true" tabindex="0"></div>
         <button type="button">⋮</button>
       </main>

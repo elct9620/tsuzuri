@@ -72,7 +72,7 @@ describe("TranscribeController", () => {
   beforeEach(async () => {
     project = null;
     transcription = () => new Promise(() => {});
-    translation = async () => ({ phases: [] });
+    translation = async () => ({ phases: [], unmatched_count: 0 });
     translateArgs = undefined;
     transcribeArgs = undefined;
     isCancelAsked = false;
@@ -94,7 +94,7 @@ describe("TranscribeController", () => {
           <button data-transcribe-target="startButton" data-action="transcribe#start">開始</button>
         </dialog>
       </div>
-      <div id="progress" data-controller="progress" hidden>
+      <div id="progress" data-controller="progress" data-action="rust:pipeline-progress@window->progress#show" hidden>
         <span data-progress-target="summary"></span>
         <ul data-progress-target="steps"></ul>
         <p data-progress-target="status"></p>

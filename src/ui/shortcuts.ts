@@ -1,7 +1,14 @@
 import { t } from "../i18n";
 
-/** Where a shortcut works, which is how the shortcut list groups them. */
-export type ShortcutGroup = "anywhere" | "playback" | "field" | "mouse";
+/** Where a shortcut works, which is how the shortcut list groups them, in this order. */
+export const SHORTCUT_GROUPS = [
+  "anywhere",
+  "playback",
+  "field",
+  "mouse",
+] as const;
+
+export type ShortcutGroup = (typeof SHORTCUT_GROUPS)[number];
 
 /**
  * A key the interface binds, or a mouse action with the keys held, as each platform presses it. A
@@ -38,7 +45,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: "reload", group: "anywhere", mac: ["meta+r"], other: ["ctrl+r"] },
   { id: "following", group: "anywhere", mac: ["meta+l"], other: ["ctrl+l"] },
   { id: "play", group: "playback", mac: ["space"], other: ["space"] },
-  // macOS shows the desktop with F11
+  // F11 and F12 as Subtitle Edit binds them, but F9 on macOS, which shows the desktop with F11
   { id: "setStart", group: "playback", mac: ["f9"], other: ["f11"] },
   { id: "setEnd", group: "playback", mac: ["f12"], other: ["f12"] },
   { id: "insertRange", group: "playback", mac: ["enter"], other: ["enter"] },
@@ -102,6 +109,7 @@ const OTHER_LABELS: Record<string, string> = {
 /** The keys and mouse actions written as words of the Interface Language. */
 const WORDS = ["space", "click", "drag", "wheel"];
 
+/** The shortcut `id` names, as an element's `data-shortcut` does. */
 export function shortcutById(id: string): Shortcut | undefined {
   return SHORTCUTS.find((shortcut) => shortcut.id === id);
 }
@@ -120,9 +128,18 @@ export function keyLabels(chord: string, isMac: boolean): string[] {
   });
 }
 
-/** `chord` as one piece of text: `⌘⌥F` on macOS, `Ctrl+H` elsewhere. */
+/**
+ * `chord` as one piece of text: `⌘⌥F` on macOS, `Ctrl+H` elsewhere. A word stays apart from the
+ * symbols before it, as in `⌘+滾輪`.
+ */
 export function formatChord(chord: string, isMac: boolean): string {
-  return keyLabels(chord, isMac).join(isMac ? "" : "+");
+  if (!isMac) return keyLabels(chord, isMac).join("+");
+  const keys = chord.split("+");
+  return keyLabels(chord, isMac)
+    .map((label, index) =>
+      index > 0 && WORDS.includes(keys[index]) ? `+${label}` : label,
+    )
+    .join("");
 }
 
 /** Every chord of `shortcut` on this platform as text, for a tooltip or a menu. */

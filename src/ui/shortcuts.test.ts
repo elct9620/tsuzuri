@@ -38,6 +38,10 @@ describe("shortcuts", () => {
     expect(formatChord("meta+alt+enter", true)).toBe("⌘⌥↩");
   });
 
+  it("keeps a word apart from the symbols before it on macOS", () => {
+    expect(formatChord("meta+wheel", true)).toBe("⌘+滾輪");
+  });
+
   it("writes a chord with words joined by + elsewhere", () => {
     expect(formatChord("ctrl+alt+enter", false)).toBe("Ctrl+Alt+Enter");
   });

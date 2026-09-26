@@ -447,7 +447,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `undo` | 全頁的復原與重做 |
 | `field` | 每個編輯欄位接上 session |
 
-畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，只把互動交給 session；Checked Segments 也向 session 讀取。`preview` 與 `timeline` 掛在同一個元素，各以自己的 target 共用同一個 `<video>`。
+畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`；跟隨播放鈕在預覽卡片，屬於捲動清單的 `transcript`。
 
 | 事件或 outlet | 送出者 | 接收者與用途 |
 |---|---|---|
@@ -459,7 +459,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
 | `editor:choice` | session，經 `assembly.ts` | `timeline` 暫停在選的段落 |
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
-| `preview:playing` | `preview` | 字幕編輯標出播放中 |
+| `preview:playing` | `preview` | 字幕編輯標出播放中，跟隨時捲動 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
 | `segment-changes:retranslate` | `segment-changes` | `retranslation` 重新翻譯 Checked Segments |
@@ -483,9 +483,10 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 |---|---|
 | `ui/notification.ts` | 產生 toast 通知，互動交給 `notification` |
 | `ui/failure.ts` | 依錯誤碼產生介面語言的訊息 |
-| `ui/progress.ts` | 任務種類、進度與耗時的列 |
+| `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
 | `ui/models.ts` | 各 Model Slot 的副檔名 |
+| `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 

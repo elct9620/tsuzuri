@@ -323,9 +323,9 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | When | the media is moved to 1 s, the end of the first |
 | Then | no row is marked as playing |
 
-### Choosing a Segment while the media plays
+### Choosing another Segment
 
-Choosing another Segment is where the user means to be heard next, so the media pauses there for Space to play it; a row is taken at its start, and a region where it was clicked, as a click elsewhere on the waveform moves the media. Staying in the Current Segment, or a Segment Change moving it, leaves the media playing, so its text can be corrected while it is heard.
+Another Segment chosen is the one to be heard next, so the media pauses there for Space: a row at its start, a region where it was clicked, as the waveform does elsewhere. Staying in the Current Segment, or a Segment Change moving it, plays on, so a text is corrected while heard.
 
 ## `PV-071` Pausing at the start of a Segment whose row is chosen
 

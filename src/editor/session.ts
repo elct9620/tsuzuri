@@ -42,7 +42,7 @@ export type Outcome =
  * What a listener is told has changed; a `choice` is the user making another Segment current, as a
  * Segment Change moving the Current Segment is not.
  */
-export type SessionChange = "cursor" | "choice" | "checked";
+export type SessionChange = "cursor" | "choice" | "checks";
 
 /** A Segment Change sent and not yet seen in a Transcript, with the Segments it was made to. */
 interface PendingChange {
@@ -232,14 +232,14 @@ export class EditingSession {
   check(index: number, isChecked: boolean): void {
     if (isChecked) this.checked.add(index);
     else this.checked.delete(index);
-    this.unannounced.add("checked");
+    this.unannounced.add("checks");
     this.announce();
   }
 
   clearChecks(): void {
     if (this.checked.size === 0) return;
     this.checked.clear();
-    this.unannounced.add("checked");
+    this.unannounced.add("checks");
   }
 
   /** Clears the checks and tells the listeners at once, as the user does. */

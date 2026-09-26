@@ -74,7 +74,7 @@ describe("SpeakersController", () => {
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes speakers"
-        data-action="transcript:shown->speakers#follow editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked segment-changes:speakers->speakers#openForChecked">
+        data-action="transcript:shown->speakers#follow editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked segment-changes:speakers->speakers#openForChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="empty"></p>

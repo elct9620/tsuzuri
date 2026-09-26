@@ -13,7 +13,7 @@ import { formatClock, formatTime } from "../ui/time";
 /** Where the webview remembers the Preview folded away, a choice of this machine's alone. */
 const FOLDED_KEY = "tsuzuri.preview-folded";
 
-function readFolded(): boolean {
+function isRememberedAsFolded(): boolean {
   try {
     return localStorage.getItem(FOLDED_KEY) === "true";
   } catch {
@@ -35,7 +35,7 @@ type CaptionLanguage = "original" | "translation" | "bilingual";
 /** Where the webview remembers what is shown over the video, a choice of this machine's alone. */
 const CAPTION_KEY = "tsuzuri.preview-caption";
 
-function readCaptionLanguage(): CaptionLanguage {
+function rememberedCaptionLanguage(): CaptionLanguage {
   try {
     const value = localStorage.getItem(CAPTION_KEY);
     return value === "translation" || value === "bilingual"
@@ -61,7 +61,7 @@ type CaptionBackdrop = "none" | "translucent" | "opaque";
 const BACKDROP_KEY = "tsuzuri.preview-backdrop";
 
 /** A shadow alone is lost on a bright picture, so a caption sits on a backdrop until taken away. */
-function readCaptionBackdrop(): CaptionBackdrop {
+function rememberedCaptionBackdrop(): CaptionBackdrop {
   try {
     const value = localStorage.getItem(BACKDROP_KEY);
     return value === "none" || value === "opaque" ? value : "translucent";
@@ -131,9 +131,9 @@ export default class PreviewController extends Controller {
   private playingIndex: number | null = null;
   private hasTranslation = false;
   private bilingualOrder: ProjectOptions["bilingual_order"] = "original-first";
-  private captionLanguage = readCaptionLanguage();
-  private captionBackdrop = readCaptionBackdrop();
-  private isFolded = readFolded();
+  private captionLanguage = rememberedCaptionLanguage();
+  private captionBackdrop = rememberedCaptionBackdrop();
+  private isFolded = isRememberedAsFolded();
   private unfollow?: () => void;
 
   connect(): void {

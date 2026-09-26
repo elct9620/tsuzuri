@@ -60,7 +60,7 @@ describe("SegmentChangesController", () => {
     isRefusing = false;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked">
+      <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="empty"></p>

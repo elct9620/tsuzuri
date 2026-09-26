@@ -45,7 +45,7 @@ describe("RetranslationController", () => {
       ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes retranslation"
         data-retranslation-progress-outlet="#progress"
-        data-action="transcript:shown->retranslation#follow editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked segment-changes:retranslate->retranslation#translateChecked">
+        data-action="transcript:shown->retranslation#follow editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked segment-changes:retranslate->retranslation#translateChecked">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="empty"></p>

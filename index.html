@@ -18,7 +18,7 @@
       data-controller="project transcript segment-changes dialog comparison speakers retranslation"
       data-retranslation-progress-outlet="#progress"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checked@window->transcript#showChecked editor:checked@window->segment-changes#showChecked preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith"
+      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith"
     >
       <section class="hero flex-1" data-project-target="start">
         <div class="hero-content flex-col text-center">

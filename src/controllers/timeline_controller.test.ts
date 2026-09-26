@@ -76,7 +76,7 @@ describe("TimelineController", () => {
         <video data-timeline-target="media"></video>
         <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button>
         <span data-timeline-target="times" hidden></span>
-        <button data-timeline-target="aloneButton"></button><span data-timeline-target="spaceHint"></span>
+        <button data-timeline-target="aloneButton"></button><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd>
         <button data-action="timeline#zoomOut"></button>
         <button data-action="timeline#zoomIn"></button>
         <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent" hidden></div>
@@ -594,6 +594,58 @@ describe("TimelineController", () => {
       await settle();
 
       expect(changes).toEqual([times(0, 0, 600)]);
+    });
+
+    describe("on macOS", () => {
+      /** Runs as macOS, connecting the timeline again so it reads the platform as it starts. */
+      beforeEach(async () => {
+        Object.assign(window, {
+          __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
+        });
+        const timeline = document.querySelector(
+          '[data-controller="timeline"]',
+        )!;
+        timeline.remove();
+        document.body.append(timeline);
+        await settle();
+      });
+
+      afterEach(() => {
+        Object.assign(window, {
+          __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
+        });
+      });
+
+      // @behavior PV-088
+      it("sets the Current Segment's start with F9", async () => {
+        await showCurrent([segmentAt(0, 0.5)]);
+        media().currentTime = 0.2;
+
+        pressKey("F9");
+        await settle();
+
+        expect(changes).toEqual([times(0, 200, 500)]);
+      });
+
+      // @behavior PV-089
+      it("leaves F11 to the system", async () => {
+        await showCurrent([segmentAt(0, 0.5)]);
+        media().currentTime = 0.2;
+
+        pressKey("F11");
+        await settle();
+
+        expect(changes).toEqual([]);
+      });
+
+      // @behavior PV-090
+      it("names F9 and F12 as the keys that set times", () => {
+        const keys = [
+          ...document.querySelectorAll('[data-timeline-target$="Key"]'),
+        ].map((key) => key.textContent);
+
+        expect(keys).toEqual(["F9", "F12"]);
+      });
     });
   });
 });

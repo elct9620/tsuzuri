@@ -45,7 +45,7 @@ export default class ComponentsController extends Controller {
   declare readonly placeholderTargets: HTMLElement[];
 
   async connect(): Promise<void> {
-    this.render(await componentStatuses());
+    this.show(await componentStatuses());
   }
 
   async choose(event: Event): Promise<void> {
@@ -53,17 +53,17 @@ export default class ComponentsController extends Controller {
     const path = await open({ multiple: false, directory: false });
     if (!name || path === null) return;
 
-    this.render(await chooseComponent(name, path));
+    this.show(await chooseComponent(name, path));
   }
 
   async restore(event: Event): Promise<void> {
     const name = (event.currentTarget as HTMLElement).dataset.component;
     if (!name) return;
 
-    this.render(await forgetComponent(name));
+    this.show(await forgetComponent(name));
   }
 
-  private render(statuses: ComponentStatus[]): void {
+  private show(statuses: ComponentStatus[]): void {
     for (const placeholder of this.placeholderTargets)
       placeholder.hidden = true;
     for (const component of statuses) {

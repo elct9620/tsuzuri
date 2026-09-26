@@ -636,6 +636,24 @@ Subtitle editors confirm a line with Enter and go on to the next, and break a li
 | When | Shift+Enter is pressed |
 | Then | a line break is typed at the Cursor and the field keeps focus |
 
+## `ED-092` Leaving out what follows the last character of an edited text
+
+A line break typed at the end of a text leaves one behind that the field no longer shows and that cannot be deleted, and SRT writes no blank line or trailing space anyway, so a text keeps nothing after its last character.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Segment `你好` |
+| When | its text is edited to `您好` followed by a line break and a space |
+| Then | the Segment's text is `您好` |
+
+## `ED-093` Leaving out what follows the last character of an edited translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing `en`, whose Segment reads `你好` translated as `Hi` |
+| When | its translation is edited to `Hello` followed by a line break |
+| Then | the Segment's translation is `Hello` |
+
 ## `ED-034` Setting the Speaker of the Checked Segments
 
 Setting Speakers one Segment at a time is slow across a long transcript, so the Checked Segments and the whole transcript can be named at once.

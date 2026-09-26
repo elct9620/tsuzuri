@@ -574,6 +574,12 @@ fn is_written_by_edit(project: &Project, subtitle: Option<Language>, field: Segm
     }
 }
 
+/// The text `value` holds, without the line breaks and spaces after its last character: a field
+/// keeps a line break typed at the end that it no longer shows, and SRT writes none of them.
+fn text_from(value: &str) -> String {
+    value.trim_end().to_string()
+}
+
 /// Records the subtitles a transcription or translation has just written as Tsuzuri's own.
 /// The Speaker `value` names, trimmed; an empty one names none.
 fn speaker_from(value: &str) -> Option<String> {
@@ -1243,8 +1249,8 @@ impl CurrentProject {
                         detail: format!("no Segment at {index}"),
                     })?;
                 match field {
-                    SegmentField::Text => segment.text = value,
-                    SegmentField::Translation => segment.translation = Some(value),
+                    SegmentField::Text => segment.text = text_from(&value),
+                    SegmentField::Translation => segment.translation = Some(text_from(&value)),
                     SegmentField::Speaker => segment.speaker = speaker_from(&value),
                 }
                 project.write_back(field, &previous)
@@ -3459,6 +3465,33 @@ mod tests {
         assert_eq!(count, 0);
         assert_eq!(file_after, as_written);
         assert_eq!(segments(&current)[0].text, "你好");
+    }
+
+    // @behavior ED-092
+    #[test]
+    fn leaves_out_what_follows_the_last_character_of_an_edited_text() {
+        let dir = directory_of("ed-edit-trailing", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+
+        edit_text(&current, "您好\n ");
+
+        assert_eq!(segments(&current)[0].text, "您好");
+    }
+
+    // @behavior ED-093
+    #[test]
+    fn leaves_out_what_follows_the_last_character_of_an_edited_translation() {
+        let dir = directory_of(
+            "ed-edit-trailing-translation",
+            &[("ep01.srt", &cue("你好")), ("ep01.en.srt", &cue("Hi"))],
+        );
+        let current = project_in(&dir);
+
+        current
+            .edit(0, SegmentField::Translation, "Hello\n".to_string())
+            .unwrap();
+
+        assert_eq!(segments(&current), vec![segment("你好", Some("Hello"))]);
     }
 
     #[test]

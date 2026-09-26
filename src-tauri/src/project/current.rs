@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::SystemTime;
@@ -76,6 +76,13 @@ impl Project {
         resource.carry_translations(&mut current.transcript.segments, language, &speaker_names)?;
         current.translation = language;
         self.remember_subtitles()
+    }
+
+    /// Whether the named Resource is the Current Resource.
+    fn is_current(&self, name: &str) -> bool {
+        self.current
+            .as_ref()
+            .is_some_and(|current| current.name == name)
     }
 
     /// Digests of the Current Resource's original subtitle and the translation file it shows.
@@ -556,17 +563,10 @@ fn version_at(path: &Path, language: Option<Language>) -> Result<Transcript, Fai
     }
 }
 
-/// Records the subtitles a transcription or translation has just written as Tsuzuri's own.
 /// The Speaker `value` names, trimmed; an empty one names none.
 fn speaker_from(value: &str) -> Option<String> {
     let speaker = value.trim();
     (!speaker.is_empty()).then(|| speaker.to_string())
-}
-
-fn remember_written_subtitles(project: &mut Project) {
-    if let Err(failure) = project.remember_subtitles() {
-        log::warn!("could not read back the subtitles just written: {failure:?}");
-    }
 }
 
 /// The Resource of `resources` named `name`, if any.
@@ -660,8 +660,6 @@ impl ProjectView {
 
 #[derive(Debug, Default)]
 struct HeldProject {
-    /// Counts replacements and selections, so a job that outlives its Current Resource can tell.
-    generation: u64,
     project: Option<Project>,
     mode_hold: Option<ModeHold>,
 }
@@ -673,30 +671,12 @@ impl HeldProject {
         files::resources_in(&project.directory, project.language)
     }
 
-    /// Whether a Mode runs on the Current Resource.
-    fn is_current_held(&self) -> bool {
-        match (&self.project, &self.mode_hold) {
-            (Some(project), Some(hold)) => hold.is_on_current(project),
-            _ => false,
-        }
-    }
-
-    /// Takes `resources` as the directory's pairing and reads the Current Resource again, or only
-    /// takes them while a Mode runs on the Current Resource, so what the Mode shows stays.
+    /// Takes `resources` as the directory's pairing and reads the Current Resource again.
     fn reload(&mut self, resources: Vec<Resource>) -> Result<(), Failure> {
-        let is_held = self.is_current_held();
-        let project = self.project.as_mut().ok_or(Failure::NoProject)?;
-        if is_held {
-            project.replace_resources(resources, None);
-            return Ok(());
-        }
-        let name = |project: &Project| project.current.as_ref().map(|current| current.name.clone());
-        let previous_name = name(project);
-        project.reload(resources)?;
-        if name(project) != previous_name {
-            self.generation += 1;
-        }
-        Ok(())
+        self.project
+            .as_mut()
+            .ok_or(Failure::NoProject)?
+            .reload(resources)
     }
 }
 
@@ -725,9 +705,45 @@ struct ModeHold {
     name: String,
     mode: RunningMode,
     pending_batch: Option<SegmentSpan>,
+    progress: Option<ModeProgress>,
+}
+
+/// What a running Mode has made so far, shown in place of what the files hold and never written
+/// as a subtitle: the Mode writes its own result once done, and what it shows ends with it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum ModeProgress {
+    /// The Segments transcribed so far, in place of the whole Transcript.
+    Transcript(Vec<Segment>),
+    /// The translation of each Segment at its position, in place of the translation shown.
+    Translations(BTreeMap<usize, Option<String>>),
 }
 
 impl ModeHold {
+    /// The Segments and the translation shown, given `segments` and `translation` as the files
+    /// hold them: what the Mode has made so far stands in their place.
+    fn shown(
+        &self,
+        segments: &[Segment],
+        translation: Option<Language>,
+    ) -> (Vec<Segment>, Option<Language>) {
+        match (&self.progress, self.mode) {
+            (Some(ModeProgress::Transcript(transcribed)), _) => (transcribed.clone(), None),
+            (
+                Some(ModeProgress::Translations(translations)),
+                RunningMode::Translation { language },
+            ) => {
+                let mut segments = segments.to_vec();
+                for (index, translation) in translations {
+                    if let Some(segment) = segments.get_mut(*index) {
+                        segment.translation = translation.clone();
+                    }
+                }
+                (segments, Some(language))
+            }
+            _ => (segments.to_vec(), translation),
+        }
+    }
+
     fn is_on_current(&self, project: &Project) -> bool {
         self.directory == project.directory
             && project
@@ -752,9 +768,7 @@ pub struct CurrentProject(Mutex<HeldProject>);
 
 impl CurrentProject {
     pub fn replace(&self, project: Project) {
-        let mut held = self.lock();
-        held.generation += 1;
-        held.project = Some(project);
+        self.lock().project = Some(project);
     }
 
     /// Keeps the subtitles `mode` writes of the named Resource in `directory` from being changed
@@ -770,6 +784,7 @@ impl CurrentProject {
             name: name.to_string(),
             mode,
             pending_batch: None,
+            progress: None,
         });
         ResourceHold(self)
     }
@@ -782,10 +797,11 @@ impl CurrentProject {
     }
 
     /// Makes `change` to the Project, refused when a Mode running on the Current Resource holds a
-    /// subtitle `is_written` says it changes: the original as none, or a translation by its Language.
+    /// subtitle `is_written` says it changes, given the translation shown: the original as none, or a
+    /// translation by its Language.
     fn change_unless_held<T>(
         &self,
-        is_written: impl Fn(&Project, Option<Language>) -> bool,
+        is_written: impl Fn(Option<Language>, Option<Language>) -> bool,
         change: impl FnOnce(&mut Project) -> Result<T, Failure>,
     ) -> Result<T, Failure> {
         let mut held = self.lock();
@@ -799,7 +815,14 @@ impl CurrentProject {
         {
             let is_held = match hold.mode {
                 RunningMode::Transcription => true,
-                RunningMode::Translation { language } => is_written(project, Some(language)),
+                RunningMode::Translation { language } => {
+                    let translation = project
+                        .current
+                        .as_ref()
+                        .and_then(|current| current.translation);
+                    let (_, shown) = hold.shown(&[], translation);
+                    is_written(shown, Some(language))
+                }
             };
             if is_held {
                 return Err(Failure::ModeRunning);
@@ -809,13 +832,7 @@ impl CurrentProject {
     }
 
     pub fn select(&self, name: &str) -> Result<(), Failure> {
-        let mut held = self.lock();
-        held.project
-            .as_mut()
-            .ok_or(Failure::NoProject)?
-            .select(name)?;
-        held.generation += 1;
-        Ok(())
+        self.update_project(|project| project.select(name))
     }
 
     /// The Language of the translation the Current Resource shows, which translating again writes into.
@@ -834,10 +851,24 @@ impl CurrentProject {
 
     pub fn view(&self) -> Option<ProjectView> {
         let held = self.lock();
-        let mode_hold = held.mode_hold.as_ref();
         held.project.as_ref().map(|project| {
             let current = project.current.as_ref();
             let history = current.and_then(|current| project.undo_histories.get(&current.name));
+            let mode_hold = held
+                .mode_hold
+                .as_ref()
+                .filter(|hold| hold.is_on_current(project));
+            let (segments, shown_translation) = match current {
+                Some(current) => {
+                    let (segments, translation) =
+                        (&current.transcript.segments[..], current.translation);
+                    match mode_hold {
+                        Some(hold) => hold.shown(segments, translation),
+                        None => (segments.to_vec(), translation),
+                    }
+                }
+                None => (Vec::new(), None),
+            };
             ProjectView {
                 directory: project.directory.clone(),
                 language: project.language,
@@ -865,17 +896,12 @@ impl CurrentProject {
                 media: current
                     .and_then(|current| project.resource(&current.name).ok())
                     .and_then(|resource| resource.media.clone()),
-                segments: current
-                    .map_or_else(Vec::new, |current| current.transcript.segments.clone()),
-                shown_translation: current.and_then(|current| current.translation),
+                segments,
+                shown_translation,
                 has_undo: history.is_some_and(UndoHistory::has_undo),
                 has_redo: history.is_some_and(UndoHistory::has_redo),
-                running_mode: mode_hold
-                    .filter(|hold| hold.is_on_current(project))
-                    .map(|hold| hold.mode),
-                pending_batch: mode_hold
-                    .filter(|hold| hold.is_on_current(project))
-                    .and_then(|hold| hold.pending_batch),
+                running_mode: mode_hold.map(|hold| hold.mode),
+                pending_batch: mode_hold.and_then(|hold| hold.pending_batch),
             }
         })
     }
@@ -887,7 +913,6 @@ impl CurrentProject {
         let project = held.project.as_ref().ok_or(Failure::NoProject)?;
         let current = project.current()?;
         Ok(TranslationSource {
-            generation: held.generation,
             directory: project.directory.clone(),
             name: current.name.clone(),
             transcript: current.transcript.clone(),
@@ -917,7 +942,6 @@ impl CurrentProject {
             None => project.export_path(SrtContent::Original)?,
         };
         Ok(TranscriptionTarget {
-            generation: held.generation,
             directory: project.directory.clone(),
             name: project.current()?.name.clone(),
             media,
@@ -928,152 +952,97 @@ impl CurrentProject {
         })
     }
 
-    /// What the named Resource's subtitles hold before a job writes them, while `directory` is
-    /// still the Project's and so has an Undo History to keep the change in.
-    fn job_snapshot(
-        &self,
-        directory: &Path,
-        name: &str,
-    ) -> Result<Option<SubtitleSnapshot>, Failure> {
-        match self.lock().project.as_ref() {
-            Some(project) if project.directory == directory => {
-                project.subtitle_snapshot(name).map(Some)
-            }
-            _ => Ok(None),
-        }
+    /// Shows `segments` as what the running Mode has transcribed so far.
+    pub fn show_transcribed(&self, segments: Vec<Segment>) {
+        self.show_progress(|progress| *progress = Some(ModeProgress::Transcript(segments)));
     }
 
-    /// Keeps what a job wrote over in the named Resource's Undo History as one change.
-    fn record_job_change(
-        &self,
-        directory: &Path,
-        name: &str,
-        before: Option<SubtitleSnapshot>,
-    ) -> Result<(), Failure> {
-        let Some(before) = before else {
-            return Ok(());
-        };
-        match self.lock().project.as_mut() {
-            Some(project) if project.directory == directory => project.record_change(name, before),
-            _ => Ok(()),
-        }
-    }
-
-    /// Keeps `subtitle` as a Backup before it is overwritten, when the Project in `directory` asks
-    /// for Backups and the file exists.
-    fn back_up_before_overwrite(&self, directory: &Path, subtitle: &Path) -> Result<(), Failure> {
-        let is_backed_up = matches!(
-            self.lock().project.as_ref(),
-            Some(project) if project.directory == directory && project.options.is_overwrite_backed_up
-        );
-        if is_backed_up {
-            files::back_up(
-                directory,
-                subtitle,
-                SystemTime::now(),
-                BackupKind::Overwrite,
-            )?;
-        }
-        Ok(())
-    }
-
-    /// Writes the Bilingual SRTs of the named Resource in `directory`, as the Project's own
-    /// `write_bilingual_subtitles` does, if that directory is still the Project's.
-    fn write_bilingual_subtitles(
-        &self,
-        directory: &Path,
-        name: &str,
-        only: Option<Language>,
-    ) -> Result<(), Failure> {
-        match self.lock().project.as_ref() {
-            Some(project) if project.directory == directory => {
-                project.write_bilingual_subtitles(name, only)
-            }
-            _ => Ok(()),
-        }
-    }
-
-    /// Pairs the directory's files again after a job wrote those of the named Resource, if the
-    /// directory is still the Project's.
-    fn pair_again_after_job(&self, directory: &Path, name: &str) -> Result<(), Failure> {
-        match self.lock().project.as_mut() {
-            Some(project) if project.directory == directory => project.pair_again(Some(name)),
-            _ => Ok(()),
-        }
-    }
-
-    /// Makes `transcript` the Current Resource's, unless another became current since `generation`.
-    pub fn write_transcript(&self, generation: u64, transcript: Transcript) {
-        self.write_if_current(generation, |project| {
-            if let Some(current) = project.current.as_mut() {
-                current.transcript = transcript;
-                current.translation = None;
-            }
-            remember_written_subtitles(project);
+    /// Adds a Segment just transcribed to what the running Mode shows.
+    pub fn push_segment(&self, segment: Segment) {
+        self.show_progress(|progress| match progress {
+            Some(ModeProgress::Transcript(segments)) => segments.push(segment),
+            _ => *progress = Some(ModeProgress::Transcript(vec![segment])),
         });
     }
 
-    /// Adds a Segment just transcribed to the Current Resource, unless another became current
-    /// since `generation`.
-    pub fn push_segment(&self, generation: u64, segment: Segment) {
-        self.write_if_current(generation, |project| {
-            if let Some(current) = project.current.as_mut() {
-                current.transcript.segments.push(segment);
-            }
-        });
+    /// Shows the translations finished so far of the Segments `source` was taken with, by
+    /// position, and none after them.
+    pub fn show_translations(&self, source: &TranslationSource, translated_segments: &[Segment]) {
+        let translations = (0..source.transcript.segments.len())
+            .map(|index| {
+                let translation = translated_segments
+                    .get(index)
+                    .and_then(|segment| segment.translation.clone());
+                (index, translation)
+            })
+            .collect();
+        self.show_progress(|progress| *progress = Some(ModeProgress::Translations(translations)));
     }
 
-    /// Shows the translations into `target` finished so far, by position, and none after them,
-    /// unless another Resource became current since `source` was taken.
-    pub fn show_translations(
-        &self,
-        source: &TranslationSource,
-        target: Language,
-        translated_segments: &[Segment],
-    ) {
-        self.write_if_current(source.generation, |project| {
-            if let Some(current) = project.current.as_mut() {
-                current.translation = Some(target);
-                for (index, segment) in current.transcript.segments.iter_mut().enumerate() {
-                    segment.translation = translated_segments
-                        .get(index)
-                        .and_then(|translated_segment| translated_segment.translation.clone());
-                }
-            }
-            remember_written_subtitles(project);
-        });
+    fn show_progress(&self, change: impl FnOnce(&mut Option<ModeProgress>)) {
+        if let Some(hold) = self.lock().mode_hold.as_mut() {
+            change(&mut hold.progress);
+        }
     }
 
     /// Writes the transcription whisper-cli wrote as the original subtitle of `job`, kept as a
     /// Backup first when the Project Options say so, its Speakers to each translation, and the
-    /// Bilingual SRTs it feeds.
+    /// Bilingual SRTs it feeds, as one change; the Current Resource is then read from them in
+    /// place of what the Mode showed.
     pub fn write_transcription(
         &self,
         job: &TranscriptionTarget,
         srt: String,
     ) -> Result<(), Failure> {
+        let mut held = self.lock();
+        let HeldProject { project, mode_hold } = &mut *held;
+        let mut project = project
+            .as_mut()
+            .filter(|project| project.directory == job.directory);
         let previous = files::transcript_at(&job.subtitle)?;
-        let before = self.job_snapshot(&job.directory, &job.name)?;
-        self.back_up_before_overwrite(&job.directory, &job.subtitle)?;
+        let before = project
+            .as_ref()
+            .map(|project| project.subtitle_snapshot(&job.name))
+            .transpose()?;
+        if project
+            .as_ref()
+            .is_some_and(|project| project.options.is_overwrite_backed_up)
+        {
+            files::back_up(
+                &job.directory,
+                &job.subtitle,
+                SystemTime::now(),
+                BackupKind::Overwrite,
+            )?;
+        }
         files::write_srt(&job.subtitle, srt)?;
-        self.pair_again_after_job(&job.directory, &job.name)?;
+        if let Some(project) = project.as_mut() {
+            project.pair_again(Some(&job.name))?;
+        }
         files::back_up(
             &job.directory,
             &job.subtitle,
             SystemTime::now(),
             BackupKind::Output,
         )?;
-        match self.lock().project.as_ref() {
-            Some(project) if project.directory == job.directory => project
-                .write_speakers_to_translations(
-                    &job.name,
-                    &previous,
-                    project.options.is_overwrite_backed_up,
-                )?,
-            _ => {}
+        if let Some(project) = project.as_mut() {
+            project.write_speakers_to_translations(
+                &job.name,
+                &previous,
+                project.options.is_overwrite_backed_up,
+            )?;
+            project.write_bilingual_subtitles(&job.name, None)?;
+            if let Some(before) = before {
+                project.record_change(&job.name, before)?;
+            }
+            if project.is_current(&job.name) {
+                project.read_again_showing(&job.name, None)?;
+            }
         }
-        self.write_bilingual_subtitles(&job.directory, &job.name, None)?;
-        self.record_job_change(&job.directory, &job.name, before)
+        if let Some(hold) = mode_hold.as_mut() {
+            hold.progress = None;
+        }
+        Ok(())
     }
 
     /// Writes the translations into `target` to the Resource's translation file, whichever
@@ -1101,7 +1070,8 @@ impl CurrentProject {
 
     /// Writes `segments` as the translation into `target` of the Resource `source` was taken
     /// from, with the Bilingual SRTs it feeds, as one change; first keeps the file it replaces
-    /// and afterwards the new one as Backups when `is_backed_up`.
+    /// and afterwards the new one as Backups when `is_backed_up`. The Current Resource, while it is
+    /// that Resource, is then read from the files in place of what the Mode showed.
     fn write_translation_file(
         &self,
         source: &TranslationSource,
@@ -1109,22 +1079,41 @@ impl CurrentProject {
         segments: Vec<Segment>,
         is_backed_up: bool,
     ) -> Result<(), Failure> {
+        let mut held = self.lock();
+        let HeldProject { project, mode_hold } = &mut *held;
+        let mut project = project
+            .as_mut()
+            .filter(|project| project.directory == source.directory);
         let path = source
             .directory
             .join(files::file_name(&source.name, [Some(target)]));
-        let translation = Transcript { segments };
-        let speaker_names = match self.lock().project.as_ref() {
-            Some(project) if project.directory == source.directory => {
-                project.speaker_names(Some(target))
-            }
-            _ => HashMap::new(),
-        };
-        let before = self.job_snapshot(&source.directory, &source.name)?;
-        if is_backed_up {
-            self.back_up_before_overwrite(&source.directory, &path)?;
+        let speaker_names = project
+            .as_ref()
+            .map(|project| project.speaker_names(Some(target)))
+            .unwrap_or_default();
+        let before = project
+            .as_ref()
+            .map(|project| project.subtitle_snapshot(&source.name))
+            .transpose()?;
+        if is_backed_up
+            && project
+                .as_ref()
+                .is_some_and(|project| project.options.is_overwrite_backed_up)
+        {
+            files::back_up(
+                &source.directory,
+                &path,
+                SystemTime::now(),
+                BackupKind::Overwrite,
+            )?;
         }
-        files::write_srt(&path, translation_srt(&translation, speaker_names))?;
-        self.pair_again_after_job(&source.directory, &source.name)?;
+        files::write_srt(
+            &path,
+            translation_srt(&Transcript { segments }, speaker_names),
+        )?;
+        if let Some(project) = project.as_mut() {
+            project.pair_again(Some(&source.name))?;
+        }
         if is_backed_up {
             files::back_up(
                 &source.directory,
@@ -1133,15 +1122,22 @@ impl CurrentProject {
                 BackupKind::Output,
             )?;
         }
-        self.write_bilingual_subtitles(&source.directory, &source.name, Some(target))?;
-        self.record_job_change(&source.directory, &source.name, before)?;
-        self.show_translations(source, target, &translation.segments);
-        self.write_if_current(source.generation, |project| {
-            project.translation_language = Some(target);
-            if let Err(failure) = project.save_config() {
-                log::warn!("could not record the translation Language: {failure:?}");
+        if let Some(project) = project.as_mut() {
+            project.write_bilingual_subtitles(&source.name, Some(target))?;
+            if let Some(before) = before {
+                project.record_change(&source.name, before)?;
             }
-        });
+            if project.is_current(&source.name) {
+                project.read_again_showing(&source.name, Some(target))?;
+                project.translation_language = Some(target);
+                if let Err(failure) = project.save_config() {
+                    log::warn!("could not record the translation Language: {failure:?}");
+                }
+            }
+        }
+        if let Some(hold) = mode_hold.as_mut() {
+            hold.progress = None;
+        }
         Ok(())
     }
 
@@ -1175,13 +1171,7 @@ impl CurrentProject {
     }
 
     pub fn set_language(&self, language: Language) -> Result<(), Failure> {
-        let mut held = self.lock();
-        held.project
-            .as_mut()
-            .ok_or(Failure::NoProject)?
-            .set_language(language)?;
-        held.generation += 1;
-        Ok(())
+        self.update_project(|project| project.set_language(language))
     }
 
     /// Pairs the directory's files again and reads the Current Resource again from them.
@@ -1192,14 +1182,13 @@ impl CurrentProject {
     }
 
     /// Reloads the Project when its directory pairs into other Resources, or a subtitle of the
-    /// Current Resource no Mode holds was changed elsewhere, answering whether it did.
+    /// Current Resource was changed elsewhere, answering whether it did.
     pub fn reload_if_changed(&self) -> Result<bool, Failure> {
         let mut held = self.lock();
         let resources = held.resources_in_directory()?;
-        let is_held = held.is_current_held();
         let project = held.project.as_ref().ok_or(Failure::NoProject)?;
         let is_changed = resources != project.resources
-            || (!is_held && project.current.is_some() && project.is_changed_elsewhere()?);
+            || (project.current.is_some() && project.is_changed_elsewhere()?);
         if is_changed {
             held.reload(resources)?;
         }
@@ -1209,16 +1198,9 @@ impl CurrentProject {
     /// Makes an edit and writes it back, unless a subtitle was changed elsewhere since Tsuzuri last
     /// read or wrote it: then the Current Resource is read again instead, keeping that change.
     pub fn edit(&self, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {
-        let is_written = |project: &Project, subtitle: Option<Language>| match field {
+        let is_written = |shown: Option<Language>, subtitle: Option<Language>| match field {
             SegmentField::Text => subtitle.is_none(),
-            SegmentField::Translation => {
-                subtitle.is_some()
-                    && subtitle
-                        == project
-                            .current
-                            .as_ref()
-                            .and_then(|current| current.translation)
-            }
+            SegmentField::Translation => subtitle.is_some() && subtitle == shown,
             SegmentField::Speaker => true,
         };
         self.change_unless_held(is_written, |project| {
@@ -1376,16 +1358,6 @@ impl CurrentProject {
         read: impl FnOnce(&Project) -> Result<T, Failure>,
     ) -> Result<T, Failure> {
         read(self.lock().project.as_ref().ok_or(Failure::NoProject)?)
-    }
-
-    fn write_if_current(&self, generation: u64, write: impl FnOnce(&mut Project)) {
-        let mut held = self.lock();
-        if held.generation != generation {
-            return;
-        }
-        if let Some(project) = held.project.as_mut() {
-            write(project);
-        }
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, HeldProject> {
@@ -1779,13 +1751,12 @@ mod tests {
     // @behavior PJ-012
     #[test]
     fn names_an_export_by_the_resource_and_its_languages() {
-        let current = current_project_of(vec![segment("大家好", None)]);
-        let source = current.snapshot().unwrap();
-        current.show_translations(
-            &source,
-            Language::English,
-            &[segment("大家好", Some("Hello"))],
-        );
+        let mut project = project_of(vec![segment("大家好", Some("Hello"))]);
+        if let Some(current) = project.current.as_mut() {
+            current.translation = Some(Language::English);
+        }
+        let current = CurrentProject::default();
+        current.replace(project);
 
         let paths = [
             SrtContent::Original,
@@ -2908,7 +2879,7 @@ mod tests {
     }
 
     #[test]
-    fn leaves_a_subtitle_changed_elsewhere_to_the_mode_holding_it_on_focus() {
+    fn reads_again_a_subtitle_changed_elsewhere_on_focus_while_a_mode_runs() {
         let dir = directory_of("pj-focus-held", &[("ep01.srt", &cue("你好"))]);
         let current = project_in(&dir);
         let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
@@ -2918,7 +2889,7 @@ mod tests {
 
         assert_eq!(
             (is_reloaded, texts(&current)),
-            (false, vec!["你好".to_string()])
+            (true, vec!["您好".to_string()])
         );
     }
 
@@ -2954,16 +2925,12 @@ mod tests {
 
     // @behavior PJ-114
     #[test]
-    fn reloads_only_the_resource_list_while_a_mode_runs_on_the_current_resource() {
+    fn keeps_what_a_mode_shows_when_the_project_is_reloaded() {
         let dir = directory_of("pj-reload-held", &[("ep01.srt", &cue("你好"))]);
         let current = project_in(&dir);
         let source = current.snapshot().unwrap();
         let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
-        current.show_translations(
-            &source,
-            Language::English,
-            &[segment("你好", Some("Hello"))],
-        );
+        current.show_translations(&source, &[segment("你好", Some("Hello"))]);
         std::fs::write(dir.path().join("ep02.srt"), cue("再見")).unwrap();
 
         current.reload().unwrap();
@@ -3718,6 +3685,71 @@ mod tests {
     const ENGLISH_TRANSLATION: RunningMode = RunningMode::Translation {
         language: Language::English,
     };
+
+    // @behavior PJ-122
+    #[test]
+    fn keeps_a_translation_whole_when_edited_after_a_translation_ended_early() {
+        let dir = directory_of(
+            "pj-translation-ended",
+            &[
+                ("ep01.srt", &two_cues("你好", "世界")),
+                ("ep01.en.srt", &two_cues("Hello", "World")),
+            ],
+        );
+        let current = project_in(&dir);
+        let source = current.snapshot().unwrap();
+        {
+            let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
+            current.show_translations(&source, &[]);
+        }
+
+        current
+            .edit(0, SegmentField::Translation, "Hi".to_string())
+            .unwrap();
+
+        assert_eq!(file_text(&dir, "ep01.en.srt"), two_cues("Hi", "World"));
+    }
+
+    // @behavior PJ-123
+    #[test]
+    fn keeps_an_original_whole_when_edited_after_a_transcription_ended_early() {
+        let dir = directory_of(
+            "pj-transcription-ended",
+            &[("ep01.srt", &two_cues("你好", "世界"))],
+        );
+        let current = project_in(&dir);
+        {
+            let _hold = hold_ep01(&current, &dir, RunningMode::Transcription);
+            current.show_transcribed(Vec::new());
+            current.push_segment(segment("你好", None));
+        }
+
+        current
+            .edit(0, SegmentField::Text, "您好".to_string())
+            .unwrap();
+
+        assert_eq!(file_text(&dir, "ep01.srt"), two_cues("您好", "世界"));
+    }
+
+    // @behavior PJ-124
+    #[test]
+    fn shows_what_the_files_hold_once_a_mode_ends_without_writing() {
+        let dir = directory_of("pj-mode-ended", &[("ep01.srt", &two_cues("你好", "世界"))]);
+        let current = project_in(&dir);
+        let hold = hold_ep01(&current, &dir, RunningMode::Transcription);
+        current.show_transcribed(vec![segment("大家好", None)]);
+        let shown_while_running = texts(&current);
+
+        drop(hold);
+
+        assert_eq!(
+            (shown_while_running, texts(&current)),
+            (
+                vec!["大家好".to_string()],
+                vec!["你好".to_string(), "世界".to_string()]
+            )
+        );
+    }
 
     // @behavior PJ-090
     #[test]

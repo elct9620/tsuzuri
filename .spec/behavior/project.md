@@ -694,13 +694,39 @@ Undoing puts back the subtitles a change knew of and removes the rest, so a file
 | When | the Project is reloaded |
 | Then | the Current Resource is `ep01` |
 
-## `PJ-114` Reloading only the Resource list while a Mode runs on the Current Resource
+## `PJ-114` Keeping what a Mode shows when the Project is reloaded
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource `ep01` being translated, whose directory gained `ep02.srt` |
 | When | the Project is reloaded |
-| Then | the Project lists `ep02`, and `ep01` keeps the Segments the translation shows |
+| Then | the Project lists `ep02`, and `ep01` still shows the translations made so far |
+
+## `PJ-122` Keeping a translation whole when edited after a translation ended early
+
+What a Mode shows is never written as a subtitle, so an edit after it starts from the file.
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello` and `World`, and a translation into `en` that showed its first empty Batch and was cancelled |
+| When | the translation of the first Segment is edited to `Hi` |
+| Then | `ep01.en.srt` reads `Hi` and `World` |
+
+## `PJ-123` Keeping an original whole when edited after a transcription ended early
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` reading `你好` and `世界`, and a transcription that showed only `你好` and was cancelled |
+| When | the text of the first Segment is edited to `您好` |
+| Then | `ep01.srt` reads `您好` and `世界` |
+
+## `PJ-124` Showing what the files hold once a Mode ends without writing
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` reading `你好` and `世界`, being transcribed with `大家好` shown so far |
+| When | the transcription ends without writing |
+| Then | the editor shows `你好` and `世界` |
 
 ## `PJ-115` Listing files added elsewhere when the window regains focus
 

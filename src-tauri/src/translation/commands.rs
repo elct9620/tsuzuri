@@ -82,6 +82,9 @@ async fn run_translation(
     {
         resident.release_after(*keep).await;
     }
+    // The Mode's hold and what it showed end with its run, however it ended.
+    drop(run);
+    app.announce_project();
     result
 }
 

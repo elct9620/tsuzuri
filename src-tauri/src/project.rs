@@ -292,7 +292,6 @@ pub enum SegmentField {
 /// What a translation needs from the Project when it starts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TranslationSource {
-    pub generation: u64,
     pub directory: PathBuf,
     /// The Resource being translated.
     pub name: String,
@@ -306,7 +305,6 @@ pub struct TranslationSource {
 /// What a transcription needs from the Project when it starts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TranscriptionTarget {
-    pub generation: u64,
     pub directory: PathBuf,
     /// The Resource being transcribed.
     pub name: String,

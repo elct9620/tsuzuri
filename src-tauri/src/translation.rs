@@ -162,7 +162,7 @@ pub async fn run_translate<'a>(
         },
     };
     enter(ports, &mut phases, "load");
-    let on_batch = batch_display(ports, project, &source, plan.target);
+    let on_batch = batch_display(ports, project, &source);
     let result = match server {
         LlamaServer::Job => {
             translate_on_job_server(
@@ -257,16 +257,15 @@ async fn translate_on_job_server(
     result
 }
 
-/// Shows the Segments translated into `target` so far on the Resource `source` was taken from,
-/// and tells the webview, so each Batch appears as it finishes.
+/// Shows the Segments translated so far on the Resource `source` was taken from, and tells the
+/// webview, so each Batch appears as it finishes.
 fn batch_display<'a>(
     progress: &'a impl Progress,
     project: &'a CurrentProject,
     source: &'a TranslationSource,
-    target: Language,
 ) -> impl Fn(&[Segment], Option<SegmentSpan>) + 'a {
     move |translated_segments, pending_batch| {
-        project.show_translations(source, target, translated_segments);
+        project.show_translations(source, translated_segments);
         project.mark_pending_batch(pending_batch);
         progress.announce_project();
     }
@@ -1442,8 +1441,16 @@ mod tests {
         let app = mock_app();
         let mut project = project_of(three_segments());
         project.directory = dir.path().to_path_buf();
-        app.state::<CurrentProject>().replace(project);
-        let source = app.state::<CurrentProject>().snapshot().unwrap();
+        let current = app.state::<CurrentProject>();
+        current.replace(project);
+        let source = current.snapshot().unwrap();
+        let _hold = current.hold_resource(
+            &source.directory,
+            &source.name,
+            RunningMode::Translation {
+                language: Language::Japanese,
+            },
+        );
         let shown = Arc::new(Mutex::new(Vec::new()));
         app.listen_any("project-changed", {
             let shown = Arc::clone(&shown);
@@ -1466,12 +1473,7 @@ mod tests {
             || false,
             &job_in_batches_of_two(&source.transcript.segments),
             &mut Phases::start("translate", "load"),
-            batch_display(
-                app.handle(),
-                &app.state::<CurrentProject>(),
-                &source,
-                Language::Japanese,
-            ),
+            batch_display(app.handle(), &current, &source),
         )
         .await
         .unwrap();
@@ -1514,7 +1516,7 @@ mod tests {
             || false,
             &job_in_batches_of_two(&source.transcript.segments),
             &mut Phases::start("translate", "load"),
-            batch_display(app.handle(), &current, &source, Language::Japanese),
+            batch_display(app.handle(), &current, &source),
         )
         .await
         .unwrap();
@@ -1571,7 +1573,7 @@ mod tests {
 
     // @behavior TL-083
     #[tokio::test]
-    async fn keeps_the_translations_shown_when_cancelled() {
+    async fn drops_the_translations_shown_when_cancelled() {
         let llama = FakeLlama::with_answer_per_request(|asked, lines| {
             if asked > 0 {
                 std::thread::sleep(Duration::from_secs(2));
@@ -1588,6 +1590,13 @@ mod tests {
         let processes = Processes::new(dir.path().join("processes.json"));
         let lock = ModeLock::default();
         let run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
+        run.keep(current.hold_resource(
+            &source.directory,
+            &source.name,
+            RunningMode::Translation {
+                language: Language::Japanese,
+            },
+        ));
         let translated_count = || {
             current
                 .view()
@@ -1614,10 +1623,11 @@ mod tests {
                 || false,
                 &job,
                 &mut phases,
-                batch_display(app.handle(), &current, &source, Language::Japanese),
+                batch_display(app.handle(), &current, &source),
             )),
             cancel_once_shown
         );
+        drop(run);
 
         let written_srts = std::fs::read_dir(dir.path())
             .unwrap()
@@ -1629,7 +1639,7 @@ mod tests {
             .count();
         assert_eq!(
             (result.map(|_| ()), translated_count(), written_srts),
-            (Err(Failure::ModeCancelled), 2, 0)
+            (Err(Failure::ModeCancelled), 0, 0)
         );
     }
 

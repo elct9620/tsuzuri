@@ -274,7 +274,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | 任務進度 | 放在 `mode_hold` |
 | 任務收尾 | 一次取鎖寫完 |
 | 外部修改 | 比對摘要，不同就拒絕並重讀 |
-| 任務中重新載入 | 只重新配對清單 |
+| 任務中重新載入 | 照常重讀，進度照疊 |
 | 重新配對 | 檔案變了就清復原 |
 
 記憶體裡的目前資源只是檔案讀出的樣子，只在讀檔與寫檔後更新，所以摘要相同就代表兩者一致。任務進度疊在 `view()` 上，任務結束就丟掉，不會被當成字幕寫回。
@@ -299,8 +299,9 @@ transcribe 指令                       translate 指令
   │ Steps：ffmpeg 轉成 WAV              │ 等待載入完成
   │ Steps：whisper-cli，段落逐行出現    │ 分批翻譯 ─▶ show_translations、mark_pending_batch ＋ project-changed
   │   └─ push_segment ＋ project-changed│ 保留 N 秒後釋放（或停止行程）
-  │ write_transcription（備份、寫檔）   │
-  ▼                                    ▼ write_translations（備份、寫檔）
+  │ write_transcription（一次取鎖寫完） │
+  ▼                                    ▼ write_translations（一次取鎖寫完）
+ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 回答各 Phase 耗時                      回答各 Phase 耗時
 ```
 

@@ -160,7 +160,7 @@ pub fn set_speakers(app: AppHandle, indexes: Vec<usize>, speaker: String) -> Res
 
 ## `cancel_task`
 
-Ask the running transcription or translation to stop. It stops at once, ending the Components it started, and answers the `mode-cancelled` Failure; what it has shown so far stays shown and nothing more is written. With no task running it changes nothing.
+Ask the running transcription or translation to stop. It stops at once, ending the Components it started, and answers the `mode-cancelled` Failure; nothing more is written, and what it showed gives way to what the files hold, emitting `project-changed`. With no task running it changes nothing.
 
 ```rust
 pub fn cancel_task(mode_lock: State<'_, ModeLock>) {}

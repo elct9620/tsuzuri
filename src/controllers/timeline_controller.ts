@@ -34,7 +34,7 @@ const SNAP_PX = 8;
 const RANGE_ID = "range";
 
 /** Where a Segment runs on the timeline, in seconds. */
-export interface Span {
+interface Span {
   start: number;
   end: number;
 }
@@ -43,7 +43,7 @@ export interface Span {
  * What a dragged Span may reach and land on: the times it stays within, and the times it Snaps to
  * within `snapDistance`.
  */
-export interface Retiming {
+interface DragReach {
   lowest: number;
   highest: number;
   snapTimes: number[];
@@ -51,7 +51,7 @@ export interface Retiming {
 }
 
 /** The time in `times` nearest `time` within `distance`, or `time` itself where none is. */
-function snapped(time: number, times: number[], distance: number): number {
+function snapTime(time: number, times: number[], distance: number): number {
   let nearest = time;
   let nearestGap = distance;
   for (const candidate of times) {
@@ -65,14 +65,14 @@ const toMilliseconds = (seconds: number) => Math.round(seconds * 1000);
 
 /**
  * Where `span`, dragged by its `side` or, without one, as a whole, lands: Snapped to the nearest of
- * the Retiming's times, then kept within its lowest and highest, so it is never dragged over another.
+ * the reach's times, then kept within its lowest and highest, so it is never dragged over another.
  */
-export function retimedSpan(
+function landingSpan(
   span: Span,
   side: UpdateSide | undefined,
-  { lowest, highest, snapTimes, snapDistance }: Retiming,
+  { lowest, highest, snapTimes, snapDistance }: DragReach,
 ): Span {
-  const snap = (time: number) => snapped(time, snapTimes, snapDistance);
+  const snap = (time: number) => snapTime(time, snapTimes, snapDistance);
   const clamp = (time: number, low: number, high: number) =>
     Math.min(high, Math.max(low, time));
   if (side === "start")
@@ -100,8 +100,9 @@ interface Drag {
   side: UpdateSide | undefined;
   origin: Span;
   /** Where the pointer has taken the region, before it Snaps or is kept from its neighbours. */
-  pointed: Span;
-  shown: Span;
+  pointerSpan: Span;
+  /** Where the region is shown now. */
+  span: Span;
   /** Whether the edge it shares with the neighbour on its dragged side moves along with it. */
   isShared: boolean;
   isCancelled: boolean;
@@ -149,7 +150,6 @@ export default class TimelineController extends Controller {
   declare readonly zoomLevelTarget: HTMLElement;
   /** Whether a dragged edge Snaps, pressed to turn it on or off. */
   declare readonly snappingTarget: HTMLButtonElement;
-  declare readonly hasSnappingTarget: boolean;
 
   private media: string | null = null;
   private segments: Segment[] = [];
@@ -232,7 +232,7 @@ export default class TimelineController extends Controller {
     if (!segment) return;
     event.preventDefault();
     const time = this.mediaTarget.currentTime;
-    const { lowest, highest } = this.retiming(this.currentIndex, false);
+    const { lowest, highest } = this.dragReach(this.currentIndex, false);
     const span = spanOf(segment);
     void this.retime(
       this.currentIndex,
@@ -321,7 +321,7 @@ export default class TimelineController extends Controller {
         this.makeCurrent(regions.getRegions().indexOf(region));
     });
     regions.on("region-update", (region, side) => this.follow(region, side));
-    regions.on("region-updated", (region) => this.letGo(region));
+    regions.on("region-updated", () => this.letGo());
     regions.on("region-created", (region) => {
       if (region.id === RANGE_ID) this.keepRange(region);
     });
@@ -402,8 +402,8 @@ export default class TimelineController extends Controller {
       index,
       side,
       origin: spanOf(segment),
-      pointed: spanOf(segment),
-      shown: spanOf(segment),
+      pointerSpan: spanOf(segment),
+      span: spanOf(segment),
       isShared: false,
       isCancelled: false,
     };
@@ -412,38 +412,37 @@ export default class TimelineController extends Controller {
       this.showSpan(drag, drag.origin);
       return;
     }
-    drag.pointed = {
-      start: drag.pointed.start + region.start - drag.shown.start,
-      end: drag.pointed.end + region.end - drag.shown.end,
+    drag.pointerSpan = {
+      start: drag.pointerSpan.start + region.start - drag.span.start,
+      end: drag.pointerSpan.end + region.end - drag.span.end,
     };
     drag.isShared =
       this.modifiers.altKey &&
       side !== undefined &&
       this.sharedNeighbour(index, side) !== null;
-    const retiming = this.retiming(index, drag.isShared, side);
+    const reach = this.dragReach(index, drag.isShared, side);
     const isSnapping = this.isSnapping !== this.modifiers.shiftKey;
     this.showSpan(
       drag,
-      retimedSpan(
-        drag.pointed,
+      landingSpan(
+        drag.pointerSpan,
         side,
-        isSnapping ? retiming : { ...retiming, snapTimes: [] },
+        isSnapping ? reach : { ...reach, snapTimes: [] },
       ),
     );
   }
 
   /** Writes where a region was let go, unless the drag was taken back or ended where it began. */
-  private letGo(region: Region): void {
+  private letGo(): void {
     const drag = this.drag;
     this.drag = null;
-    if (!drag || region.id === RANGE_ID) return;
-    if (drag.isCancelled) return;
-    const { index, side, shown } = drag;
+    if (!drag || drag.isCancelled) return;
+    const { index, side, span } = drag;
     if (!drag.isShared || side === undefined) {
-      void this.retime(index, shown);
+      void this.retime(index, span);
       return;
     }
-    const at = side === "end" ? shown.end : shown.start;
+    const at = side === "end" ? span.end : span.start;
     if (at === drag.origin[side]) return;
     void this.change({
       kind: "boundary",
@@ -456,7 +455,7 @@ export default class TimelineController extends Controller {
   private showSpan(drag: Drag, span: Span): void {
     const regions = this.segmentRegions();
     regions[drag.index]?.setOptions(span);
-    drag.shown = span;
+    drag.span = span;
     for (const side of ["start", "end"] as const) {
       const neighbour = this.sharedNeighbour(drag.index, side);
       if (neighbour === null) continue;
@@ -488,11 +487,11 @@ export default class TimelineController extends Controller {
    * What the Segment at `index` may reach: from its previous neighbour's end to its next's start,
    * or across the neighbour whose shared edge moves with it; and what it Snaps to.
    */
-  private retiming(
+  private dragReach(
     index: number,
     isShared: boolean,
     side?: UpdateSide,
-  ): Retiming {
+  ): DragReach {
     const segment = spanOf(this.segments[index]);
     const previous = this.segments[index - 1];
     const next = this.segments[index + 1];
@@ -510,13 +509,13 @@ export default class TimelineController extends Controller {
     return {
       lowest,
       highest,
-      snapTimes: this.snapTimes(index),
-      snapDistance: SNAP_PX / this.pxPerSecond(),
+      snapTimes: this.snapTargets(index),
+      snapDistance: SNAP_PX / this.wrapperPxPerSec(),
     };
   }
 
   /** The times an edge Snaps to: where the media is, and each edge of the Segments but the one at `index`. */
-  private snapTimes(index: number): number[] {
+  private snapTargets(index: number): number[] {
     return [
       this.mediaTarget.currentTime,
       ...this.segments
@@ -526,7 +525,7 @@ export default class TimelineController extends Controller {
   }
 
   /** How many pixels the waveform draws a second, as the regions measure it while dragged. */
-  private pxPerSecond(): number {
+  private wrapperPxPerSec(): number {
     const width = this.surfer?.getWrapper().getBoundingClientRect().width ?? 0;
     const duration = this.surfer?.getDuration() ?? 0;
     return width > 0 && duration > 0 ? width / duration : this.pxPerSec;
@@ -545,11 +544,11 @@ export default class TimelineController extends Controller {
       nextIndex < this.segments.length
         ? this.segments[nextIndex].start_ms / 1000
         : (this.surfer?.getDuration() ?? range.end);
-    const snapTimes = this.snapTimes(-1);
-    const snapDistance = SNAP_PX / this.pxPerSecond();
+    const snapTimes = this.snapTargets(-1);
+    const snapDistance = SNAP_PX / this.wrapperPxPerSec();
     const snap = (time: number) =>
       this.isSnapping !== this.modifiers.shiftKey
-        ? snapped(time, snapTimes, snapDistance)
+        ? snapTime(time, snapTimes, snapDistance)
         : time;
     const start = Math.max(lowest, snap(range.start));
     const end = Math.min(highest, snap(range.end));
@@ -587,7 +586,6 @@ export default class TimelineController extends Controller {
   }
 
   private showSnapping(): void {
-    if (!this.hasSnappingTarget) return;
     this.snappingTarget.setAttribute("aria-pressed", `${this.isSnapping}`);
     this.snappingTarget.classList.toggle("btn-active", this.isSnapping);
   }

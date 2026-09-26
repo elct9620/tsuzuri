@@ -611,4 +611,13 @@ describe("TranscriptController", () => {
       opener?.querySelector("svg") !== null,
     ]).toEqual(["段落操作", true]);
   });
+
+  // @behavior ED-096
+  it("shows the split shortcut beside splitting in a Segment's menu", async () => {
+    await hold(translated);
+
+    expect(document.querySelector("li button.split kbd")?.textContent).toBe(
+      "Ctrl+Alt+Enter",
+    );
+  });
 });

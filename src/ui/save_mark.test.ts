@@ -19,7 +19,7 @@ describe("showSaveMark", () => {
     expect(saveMark()).toBe("已存檔");
   });
 
-  // @behavior IF-030
+  // @behavior IF-037
   it("lets the Save Mark go on its own", () => {
     showSaveMark();
 
@@ -28,7 +28,7 @@ describe("showSaveMark", () => {
     expect(saveMark()).toBeUndefined();
   });
 
-  // @behavior IF-031
+  // @behavior IF-038
   it("keeps the Save Mark for a whole moment from the latest edit saved", () => {
     showSaveMark();
     vi.advanceTimersByTime(SAVE_MARK_MS - 100);

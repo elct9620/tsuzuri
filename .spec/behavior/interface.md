@@ -1,6 +1,6 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, telling what just happened in Notifications and that an edit was saved in the Save Mark, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
+Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, telling what just happened in Notifications and that an edit was saved in the Save Mark, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
@@ -10,6 +10,8 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/ui/notification.test.ts`
 - `src/ui/save_mark.test.ts`
 - `src/ui/icons.test.ts`
+- `src/ui/shortcuts.test.ts`
+- `src/controllers/shortcuts_controller.test.ts`
 - `src-tauri/src/window.rs`
 
 ## `IF-001` Following the system language
@@ -264,7 +266,69 @@ A scrolling list does not tell its page it scrolled, so the tooltip would stay w
 | When | the pointer comes onto it |
 | Then | its tooltip opens to its left |
 
-## `IF-030` Letting the Save Mark go on its own
+## `IF-030` Opening the shortcut list by shortcut
+
+Shortcuts grow faster than anyone remembers them, so one more opens the list of them, even while a text is being typed.
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux with focus in a text field |
+| When | Ctrl+/ is pressed |
+| Then | the shortcut list is open |
+
+## `IF-031` Opening the shortcut list with a question mark
+
+| Step | Statement |
+| --- | --- |
+| Given | focus outside any text field |
+| When | ? is pressed |
+| Then | the shortcut list is open |
+
+## `IF-032` Leaving a question mark to a text field
+
+| Step | Statement |
+| --- | --- |
+| Given | focus in a text field |
+| When | ? is pressed |
+| Then | the shortcut list stays closed and the field takes the key |
+
+## `IF-033` Listing only this platform's keys
+
+macOS gives some keys to the system, so each platform has keys of its own, and the list shows only the ones that work here.
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on macOS |
+| When | the shortcut list opens |
+| Then | replacing reads `⌘` `⌥` `F`, and no key reads `Ctrl` |
+
+## `IF-034` Explaining every shortcut
+
+A key alone does not say where it works or what it leaves alone, so each shortcut says so in its tooltip.
+
+| Step | Statement |
+| --- | --- |
+| Given | the shortcut list |
+| When | its rows are read in either Interface Language |
+| Then | every row carries a tooltip that explains it |
+
+## `IF-035` Naming a button's shortcut in its tooltip
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux and the button that turns following playback on and off |
+| When | the pointer comes onto it |
+| Then | its tooltip ends with `（Ctrl+L）` |
+
+## `IF-036` Listing every key the interface binds
+
+| Step | Statement |
+| --- | --- |
+| Given | the page as `index.html` writes it and the actions its controllers bind |
+| When | the keys they bind are read |
+| Then | the shortcut list has each of them |
+
+## `IF-037` Letting the Save Mark go on its own
 
 | Step | Statement |
 | --- | --- |
@@ -272,7 +336,7 @@ A scrolling list does not tell its page it scrolled, so the tooltip would stay w
 | When | a moment passes |
 | Then | it is no longer shown |
 
-## `IF-031` Keeping the Save Mark while edits keep being saved
+## `IF-038` Keeping the Save Mark while edits keep being saved
 
 Each edit saved is marked anew rather than stacked, so writing field after field shows one mark for as long as it goes on.
 

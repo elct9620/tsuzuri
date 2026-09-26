@@ -42,7 +42,11 @@ impl Project {
             TranslationGlossary::from_directory(&project.directory, project.source_target())
                 .ok()
                 .flatten();
-        if let Some(first) = project.resources.first().map(|found| found.name.clone()) {
+        if let Some(first) = project
+            .resources
+            .first()
+            .map(|resource| resource.name.clone())
+        {
             project.select(&first)?;
         }
         Ok(project)
@@ -989,8 +993,8 @@ impl CurrentProject {
         target: Language,
         indexes: Option<Vec<usize>>,
     ) -> Result<(TranslationSource, ResourceHold<'_>), Failure> {
-        let mut held = self.lock();
-        let project = held.project.as_mut().ok_or(Failure::NoProject)?;
+        let mut held_project = self.lock();
+        let project = held_project.project.as_mut().ok_or(Failure::NoProject)?;
         let source = project.translation_source(target)?;
         let count = source.transcript.segments.len();
         if let Some(index) = indexes.iter().flatten().find(|index| **index >= count) {
@@ -1001,7 +1005,7 @@ impl CurrentProject {
         if indexes.is_some() {
             project.show_translation(Some(target))?;
         }
-        held.mode_hold = Some(ModeHold {
+        held_project.mode_hold = Some(ModeHold {
             directory: source.directory.clone(),
             name: source.name.clone(),
             mode: RunningMode::Translation {
@@ -1029,10 +1033,10 @@ impl CurrentProject {
         is_written: impl Fn(Option<Language>, Language, Option<&[usize]>) -> bool,
         change: impl FnOnce(&mut Project) -> Result<T, Failure>,
     ) -> Result<T, Failure> {
-        let mut held = self.lock();
+        let mut held_project = self.lock();
         let HeldProject {
             project, mode_hold, ..
-        } = &mut *held;
+        } = &mut *held_project;
         let project = project.as_mut().ok_or(Failure::NoProject)?;
         if let Some(hold) = mode_hold
             .as_ref()
@@ -1080,11 +1084,11 @@ impl CurrentProject {
     }
 
     pub fn view(&self) -> Option<ProjectView> {
-        let held = self.lock();
-        held.project.as_ref().map(|project| {
+        let held_project = self.lock();
+        held_project.project.as_ref().map(|project| {
             let current = project.current.as_ref();
             let history = current.and_then(|current| project.undo_histories.get(&current.name));
-            let mode_hold = held
+            let mode_hold = held_project
                 .mode_hold
                 .as_ref()
                 .filter(|hold| hold.is_on_current(project));
@@ -1145,8 +1149,8 @@ impl CurrentProject {
     /// the hold a translation takes through [`CurrentProject::hold_for_translation`].
     #[cfg(test)]
     pub fn snapshot(&self) -> Result<TranslationSource, Failure> {
-        let held = self.lock();
-        let project = held.project.as_ref().ok_or(Failure::NoProject)?;
+        let held_project = self.lock();
+        let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
         let current = project.current()?;
         Ok(TranslationSource {
             directory: project.directory.clone(),
@@ -1159,8 +1163,8 @@ impl CurrentProject {
 
     /// The Current Resource's media file.
     pub fn current_media(&self) -> Result<PathBuf, Failure> {
-        let held = self.lock();
-        let project = held.project.as_ref().ok_or(Failure::NoProject)?;
+        let held_project = self.lock();
+        let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
         let resource = project.resource(&project.current()?.name)?;
         resource.media.clone().ok_or(Failure::NoMedia)
     }
@@ -1168,8 +1172,8 @@ impl CurrentProject {
     /// The Current Resource's media file, the Language to transcribe it in and the subtitle to
     /// write, refused when that subtitle exists unless `overwrite`.
     pub fn transcription_target(&self, overwrite: bool) -> Result<TranscriptionTarget, Failure> {
-        let held = self.lock();
-        let project = held.project.as_ref().ok_or(Failure::NoProject)?;
+        let held_project = self.lock();
+        let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
         let resource = project.resource(&project.current()?.name)?;
         let media = resource.media.clone().ok_or(Failure::NoMedia)?;
         let subtitle = match &resource.subtitle {
@@ -1204,8 +1208,8 @@ impl CurrentProject {
     /// Shows the translations finished so far of the Segments `source` was taken with, by
     /// position, and none after them; translating chosen Segments again shows only theirs.
     pub fn show_translations(&self, source: &TranslationSource, translated_segments: &[Segment]) {
-        let mut held = self.lock();
-        let Some(hold) = held.mode_hold.as_mut() else {
+        let mut held_project = self.lock();
+        let Some(hold) = held_project.mode_hold.as_mut() else {
             return;
         };
         let indexes = match &hold.mode {
@@ -1242,8 +1246,8 @@ impl CurrentProject {
         job: &TranscriptionTarget,
         srt: String,
     ) -> Result<(), Failure> {
-        let mut held = self.lock();
-        let HeldProject { project, mode_hold } = &mut *held;
+        let mut held_project = self.lock();
+        let HeldProject { project, mode_hold } = &mut *held_project;
         let mut project = project
             .as_mut()
             .filter(|project| project.directory == job.directory);
@@ -1339,8 +1343,8 @@ impl CurrentProject {
         is_backed_up: bool,
         translation: impl FnOnce(Option<&Project>) -> Result<Transcript, Failure>,
     ) -> Result<Restoration, Failure> {
-        let mut held = self.lock();
-        let HeldProject { project, mode_hold } = &mut *held;
+        let mut held_project = self.lock();
+        let HeldProject { project, mode_hold } = &mut *held_project;
         let mut project = project
             .as_mut()
             .filter(|project| project.directory == source.directory);
@@ -1442,23 +1446,23 @@ impl CurrentProject {
 
     /// Pairs the directory's files again and reads the Current Resource again from them.
     pub fn reload(&self) -> Result<Reload, Failure> {
-        let mut held = self.lock();
-        let resources = held.resources_in_directory()?;
-        Ok(Reload::new(held.reload(resources)?))
+        let mut held_project = self.lock();
+        let resources = held_project.resources_in_directory()?;
+        Ok(Reload::new(held_project.reload(resources)?))
     }
 
     /// Reloads the Project when its directory pairs into other Resources, or a subtitle of the
     /// Current Resource was changed elsewhere, answering what it did.
     pub fn reload_if_changed(&self) -> Result<Reload, Failure> {
-        let mut held = self.lock();
-        let resources = held.resources_in_directory()?;
-        let project = held.project.as_ref().ok_or(Failure::NoProject)?;
+        let mut held_project = self.lock();
+        let resources = held_project.resources_in_directory()?;
+        let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
         let is_changed = resources != project.resources
             || (project.current.is_some() && project.is_changed_elsewhere()?);
         if !is_changed {
             return Ok(Reload::Unchanged);
         }
-        Ok(Reload::new(held.reload(resources)?))
+        Ok(Reload::new(held_project.reload(resources)?))
     }
 
     /// Makes an edit and writes it back, unless a subtitle was changed elsewhere since Tsuzuri last
@@ -1669,16 +1673,18 @@ impl CurrentProject {
     }
 
     pub fn export_path(&self, content: SrtContent) -> Result<PathBuf, Failure> {
-        let held = self.lock();
-        held.project
+        let held_project = self.lock();
+        held_project
+            .project
             .as_ref()
             .ok_or(Failure::NoProject)?
             .export_path(content)
     }
 
     pub fn to_srt(&self, content: SrtContent) -> Result<String, Failure> {
-        let held = self.lock();
-        held.project
+        let held_project = self.lock();
+        held_project
+            .project
             .as_ref()
             .ok_or(Failure::NoProject)?
             .to_srt(content)
@@ -2887,11 +2893,11 @@ mod tests {
     /// Whether `backups` is one Backup of `stem`, stamped with a UTC time, holding `content`.
     fn is_one_backup_of(backups: &[(String, String)], stem: &str, content: &str) -> bool {
         match backups {
-            [(name, held)] => {
+            [(name, backup_content)] => {
                 let stamp = name
                     .strip_prefix(&format!("{stem}."))
                     .and_then(|rest| rest.strip_suffix("Z.srt"));
-                stamp.is_some_and(|stamp| stamp.len() == 15) && held == content
+                stamp.is_some_and(|stamp| stamp.len() == 15) && backup_content == content
             }
             _ => false,
         }
@@ -4717,9 +4723,9 @@ mod tests {
         current
             .edit(0, SegmentField::Translation, "Hi".to_string())
             .unwrap();
-        let reopened = project_in(&dir);
+        let reopened_project = project_in(&dir);
 
-        reopened
+        reopened_project
             .edit(0, SegmentField::Translation, "Hey".to_string())
             .unwrap();
 

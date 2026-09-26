@@ -71,12 +71,12 @@ mod tests {
     #[test]
     fn writes_the_log_to_the_chosen_directory() {
         let dir = TempDir::new("ob-log-chosen");
-        let chosen = dir.path().join("logs");
+        let chosen_dir = dir.path().join("logs");
         let settings = LogSettings {
-            directory: Some(chosen.clone()),
+            directory: Some(chosen_dir.clone()),
         };
 
-        assert_eq!(settings.log_dir(PathBuf::from("/os/logs")), chosen);
+        assert_eq!(settings.log_dir(PathBuf::from("/os/logs")), chosen_dir);
     }
 
     // @behavior OB-009

@@ -15,7 +15,7 @@ const CARET_CLASS =
   "cursor-caret pointer-events-none absolute w-0.5 bg-base-content";
 
 /** The field the Cursor is drawn in, watched so the caret follows the text as it is laid out again. */
-let drawn: {
+let drawnCursor: {
   field: HTMLElement;
   caret: LiveCaret | KeptCaret;
   observer?: ResizeObserver;
@@ -33,26 +33,30 @@ export function drawCursor(
     ? `${caret.start}-${caret.end}`
     : `${caret.start}`;
   field.toggleAttribute("data-has-kept-cursor", caret.kind === "kept");
-  drawn = { field, caret };
+  drawnCursor = { field, caret };
   if (isRange) {
     markRanges(CURSOR_HIGHLIGHT, [rangeOf(field, caret)]);
     return;
   }
   placeCaretMark(field, caret);
   if (typeof ResizeObserver !== "undefined") {
-    drawn.observer = new ResizeObserver(() => placeCaretMark(field, caret));
-    drawn.observer.observe(field);
+    drawnCursor.observer = new ResizeObserver(() =>
+      placeCaretMark(field, caret),
+    );
+    drawnCursor.observer.observe(field);
   }
 }
 
 function eraseCursor(): void {
-  if (!drawn) return;
-  drawn.observer?.disconnect();
-  delete drawn.field.dataset.cursor;
-  drawn.field.removeAttribute("data-has-kept-cursor");
-  drawn.field.parentElement?.querySelector(":scope > .cursor-caret")?.remove();
+  if (!drawnCursor) return;
+  drawnCursor.observer?.disconnect();
+  delete drawnCursor.field.dataset.cursor;
+  drawnCursor.field.removeAttribute("data-has-kept-cursor");
+  drawnCursor.field.parentElement
+    ?.querySelector(":scope > .cursor-caret")
+    ?.remove();
   markRanges(CURSOR_HIGHLIGHT, []);
-  drawn = null;
+  drawnCursor = null;
 }
 
 /**

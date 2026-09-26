@@ -23,14 +23,16 @@ function boundChords(source: string): string[] {
 describe("shortcuts", () => {
   // @behavior IF-036
   it("lists every key the page and its controllers bind", () => {
-    const listed = new Set(
+    const listedChords = new Set(
       SHORTCUTS.flatMap((shortcut) => [...shortcut.mac, ...shortcut.other]),
     );
-    const bound = [page, ...Object.values(controllers)].flatMap(boundChords);
+    const usedChords = [page, ...Object.values(controllers)].flatMap(
+      boundChords,
+    );
 
     expect([
-      bound.length > 0,
-      bound.filter((chord) => !listed.has(chord)),
+      usedChords.length > 0,
+      usedChords.filter((chord) => !listedChords.has(chord)),
     ]).toEqual([true, []]);
   });
 

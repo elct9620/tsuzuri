@@ -244,12 +244,12 @@ mod tests {
         }
 
         fn progress_events(&self) -> Arc<Mutex<Vec<String>>> {
-            let received = Arc::new(Mutex::new(Vec::new()));
-            let sink = Arc::clone(&received);
+            let progress_events = Arc::new(Mutex::new(Vec::new()));
+            let sink = Arc::clone(&progress_events);
             self.app.listen_any("pipeline-progress", move |event| {
                 sink.lock().unwrap().push(event.payload().to_string());
             });
-            received
+            progress_events
         }
     }
 
@@ -553,10 +553,10 @@ mod tests {
         std::fs::write(fixture.project_dir().join("lecture.srt"), "").unwrap();
         fixture.open_in(Language::TraditionalChinese);
 
-        let refused = fixture.project().transcription_target(false);
+        let target = fixture.project().transcription_target(false);
 
         assert_eq!(
-            refused.map(|_| ()),
+            target.map(|_| ()),
             Err(Failure::SubtitleExists {
                 path: fixture.project_dir().join("lecture.srt")
             })
@@ -580,13 +580,13 @@ mod tests {
     #[tokio::test]
     async fn reports_each_percentage_whisper_prints() {
         let fixture = Fixture::new("tx-progress", TWO_SECOND_WAV);
-        let received = fixture.progress_events();
+        let progress_events = fixture.progress_events();
 
         fixture.transcribe().await.unwrap();
 
-        let received = received.lock().unwrap();
-        assert!(received.contains(&r#"{"phase":"transcribe","percent":50}"#.to_string()));
-        assert!(received.contains(&r#"{"phase":"transcribe","percent":100}"#.to_string()));
+        let progress_events = progress_events.lock().unwrap();
+        assert!(progress_events.contains(&r#"{"phase":"transcribe","percent":50}"#.to_string()));
+        assert!(progress_events.contains(&r#"{"phase":"transcribe","percent":100}"#.to_string()));
     }
 
     // @behavior TX-003
@@ -627,15 +627,15 @@ mod tests {
     #[tokio::test]
     async fn reports_the_model_load_before_transcription_percentages() {
         let fixture = Fixture::new("tx-load", TWO_SECOND_WAV);
-        let received = fixture.progress_events();
+        let progress_events = fixture.progress_events();
 
         fixture.transcribe().await.unwrap();
 
-        let received = received.lock().unwrap();
-        let load = received
+        let progress_events = progress_events.lock().unwrap();
+        let load = progress_events
             .iter()
             .position(|event| event == r#"{"phase":"load","percent":null}"#);
-        let first_percentage = received
+        let first_percentage = progress_events
             .iter()
             .position(|event| event.starts_with(r#"{"phase":"transcribe","percent":5"#));
         assert!(load.is_some());

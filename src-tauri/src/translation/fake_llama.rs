@@ -135,8 +135,8 @@ impl FakeLlama {
                 _ => {
                     let lines = batch_lines(&body);
                     request_sink.lock().unwrap().push(body);
-                    let asked = translation_requests.fetch_add(1, Ordering::SeqCst);
-                    (replies.translation)((asked, lines))
+                    let request_index = translation_requests.fetch_add(1, Ordering::SeqCst);
+                    (replies.translation)((request_index, lines))
                 }
             }
         });
@@ -181,7 +181,7 @@ impl FakeLlama {
         answer: impl Fn(usize, Lines) -> Response + Send + Sync + 'static,
     ) -> FakeLlama {
         FakeLlama::serve(Replies {
-            translation: Box::new(move |(asked, lines)| answer(asked, lines)),
+            translation: Box::new(move |(request_index, lines)| answer(request_index, lines)),
             ..Replies::default()
         })
     }

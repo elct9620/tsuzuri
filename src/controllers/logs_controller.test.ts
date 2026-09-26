@@ -7,17 +7,17 @@ import LogsController from "./logs_controller";
 describe("LogsController", () => {
   let application: Application;
   let calls: { command: string; args: unknown }[];
-  let chosen: string;
+  let chosenPath: string;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = (name: string) =>
     document.querySelector<HTMLElement>(`[data-logs-target="${name}"]`)!;
-  const sent = (command: string) =>
+  const argsByCommand = (command: string) =>
     calls.filter((call) => call.command === command).map((call) => call.args);
 
   beforeEach(async () => {
     calls = [];
-    chosen = "/os/logs";
+    chosenPath = "/os/logs";
     document.body.innerHTML = `
       <fieldset data-controller="logs">
         <span data-logs-target="path"></span>
@@ -28,11 +28,12 @@ describe("LogsController", () => {
     `;
     mockIPC((command, args) => {
       calls.push({ command, args });
-      if (command === "log_directory") return { in_use: "/os/logs", chosen };
+      if (command === "log_directory")
+        return { in_use: "/os/logs", chosen: chosenPath };
       if (command === "plugin:dialog|open") return "/logs";
       if (command === "choose_log_directory") {
-        chosen = (args as { path: string }).path;
-        return { in_use: "/os/logs", chosen };
+        chosenPath = (args as { path: string }).path;
+        return { in_use: "/os/logs", chosen: chosenPath };
       }
     });
     application = Application.start();
@@ -52,7 +53,7 @@ describe("LogsController", () => {
     await settle();
 
     expect([
-      sent("choose_log_directory"),
+      argsByCommand("choose_log_directory"),
       target("pendingHint").hidden,
       target("path").textContent,
     ]).toEqual([[{ path: "/logs" }], false, "/os/logs"]);
@@ -63,6 +64,6 @@ describe("LogsController", () => {
     document.querySelector<HTMLButtonElement>("#open")!.click();
     await settle();
 
-    expect(sent("open_log_directory")).toHaveLength(1);
+    expect(argsByCommand("open_log_directory")).toHaveLength(1);
   });
 });

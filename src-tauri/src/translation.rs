@@ -331,8 +331,8 @@ async fn find_split_sentences(
             .find_split_sentences(job.languages.source, &lines)
             .await
         {
-            Ok(found) => {
-                for sentence in found {
+            Ok(sentences) => {
+                for sentence in sentences {
                     if !split_sentences.contains(&sentence) {
                         split_sentences.push(sentence);
                     }
@@ -408,12 +408,12 @@ async fn translate_chosen(
         })
         .collect();
     earlier_pairs.drain(..earlier_pairs.len().saturating_sub(CONTEXT_LINES));
-    let following: Vec<&str> = job.segments[last + 1..]
+    let following_lines: Vec<&str> = job.segments[last + 1..]
         .iter()
         .take(CONTEXT_LINES)
         .map(|segment| segment.text.as_str())
         .collect();
-    let following = (!following.is_empty()).then(|| following.join(" "));
+    let following_text = (!following_lines.is_empty()).then(|| following_lines.join(" "));
     on_batch(job.segments, Some(SegmentSpan { first, last }));
     let answer = repair::translate_batch(
         model,
@@ -421,7 +421,7 @@ async fn translate_chosen(
         &lines,
         &earlier_pairs,
         None,
-        following.as_deref(),
+        following_text.as_deref(),
     )
     .await?;
     let mut segments = job.segments.to_vec();
@@ -851,10 +851,11 @@ mod tests {
     // @behavior TL-024
     #[tokio::test]
     async fn retries_a_line_the_model_left_out() {
-        let llama = FakeLlama::with_answer_per_request(|asked, lines| match asked {
-            0 => translations(lines_without(1, lines)),
-            _ => translations(echo_lines(lines)),
-        });
+        let llama =
+            FakeLlama::with_answer_per_request(|request_index, lines| match request_index {
+                0 => translations(lines_without(1, lines)),
+                _ => translations(echo_lines(lines)),
+            });
         let segments = three_segments();
 
         let translated_segments = translate_all(&llama, &segments, japanese_pair())
@@ -871,15 +872,16 @@ mod tests {
     // @behavior TL-025
     #[tokio::test]
     async fn retries_a_translation_shared_by_different_lines() {
-        let llama = FakeLlama::with_answer_per_request(|asked, lines| match asked {
-            0 => translations(
-                lines
-                    .into_iter()
-                    .map(|(index, _)| (index, "the same words".to_string()))
-                    .collect(),
-            ),
-            _ => translations(echo_lines(lines)),
-        });
+        let llama =
+            FakeLlama::with_answer_per_request(|request_index, lines| match request_index {
+                0 => translations(
+                    lines
+                        .into_iter()
+                        .map(|(index, _)| (index, "the same words".to_string()))
+                        .collect(),
+                ),
+                _ => translations(echo_lines(lines)),
+            });
         let segments = three_segments();
 
         translate_all(&llama, &segments, japanese_pair())
@@ -912,10 +914,11 @@ mod tests {
     // @behavior TL-026
     #[tokio::test]
     async fn retries_a_translation_that_kept_the_source_text() {
-        let llama = FakeLlama::with_answer_per_request(|asked, lines| match asked {
-            0 => translations(echo_lines(lines)),
-            _ => translations(english_lines(lines)),
-        });
+        let llama =
+            FakeLlama::with_answer_per_request(|request_index, lines| match request_index {
+                0 => translations(echo_lines(lines)),
+                _ => translations(english_lines(lines)),
+            });
         let segments = [segment(0, 1_000, "大家好")];
 
         let translated_segments = translate_all(&llama, &segments, english_pair())
@@ -932,10 +935,11 @@ mod tests {
     // @behavior TL-027
     #[tokio::test]
     async fn retries_a_placeholder() {
-        let llama = FakeLlama::with_answer_per_request(|asked, lines| match asked {
-            0 => translations(vec![(0, "[inaudible]".to_string())]),
-            _ => translations(echo_lines(lines)),
-        });
+        let llama =
+            FakeLlama::with_answer_per_request(|request_index, lines| match request_index {
+                0 => translations(vec![(0, "[inaudible]".to_string())]),
+                _ => translations(echo_lines(lines)),
+            });
         let segments = [segment(0, 1_000, "大家好")];
 
         let translated_segments = translate_all(&llama, &segments, japanese_pair())
@@ -1008,10 +1012,11 @@ mod tests {
     // @behavior TL-031
     #[tokio::test]
     async fn retries_an_answer_that_is_not_json() {
-        let llama = FakeLlama::with_answer_per_request(|asked, lines| match asked {
-            0 => completion("not json"),
-            _ => translations(echo_lines(lines)),
-        });
+        let llama =
+            FakeLlama::with_answer_per_request(|request_index, lines| match request_index {
+                0 => completion("not json"),
+                _ => translations(echo_lines(lines)),
+            });
         let segments = three_segments();
 
         let translated_segments = translate_all(&llama, &segments, japanese_pair())
@@ -1029,8 +1034,8 @@ mod tests {
     #[tokio::test]
     async fn shows_the_preceding_lines_when_repairing() {
         let retries = TranslationSettings::default().retries;
-        let llama = FakeLlama::with_answer_per_request(move |asked, lines| {
-            if asked < retries {
+        let llama = FakeLlama::with_answer_per_request(move |request_index, lines| {
+            if request_index < retries {
                 translations(lines_without(1, lines))
             } else {
                 translations(echo_lines(lines))
@@ -1321,12 +1326,12 @@ mod tests {
         is_misplaced: impl Fn(usize) -> bool + Send + Sync + 'static,
     ) -> FakeLlama {
         FakeLlama::serve(Replies {
-            review: Box::new(move |(asked, items)| {
+            review: Box::new(move |(request_index, items)| {
                 let placements = items
                     .iter()
                     .map(|item| {
                         let index = item["index"].as_u64().unwrap() as usize;
-                        match index == 1 && is_misplaced(asked) {
+                        match index == 1 && is_misplaced(request_index) {
                             true => (1, 2),
                             false => (index, index),
                         }
@@ -1346,10 +1351,10 @@ mod tests {
         translate_with_self_review(&llama, &three_segments()).await;
 
         let requests = llama.review_requests.lock().unwrap();
-        let reviewed: Vec<Vec<serde_json::Value>> =
+        let reviewed_items: Vec<Vec<serde_json::Value>> =
             requests.iter().map(fake_llama::reviewed_items).collect();
         assert_eq!(
-            reviewed[0][1],
+            reviewed_items[0][1],
             json!({
                 "index": 1,
                 "source": "今天天氣很好",
@@ -1361,7 +1366,7 @@ mod tests {
             })
         );
         assert_eq!(
-            reviewed.iter().map(Vec::len).collect::<Vec<_>>(),
+            reviewed_items.iter().map(Vec::len).collect::<Vec<_>>(),
             vec![2, 1]
         );
         let properties: Vec<&String> = requests[0]["response_format"]["json_schema"]["schema"]
@@ -1384,7 +1389,7 @@ mod tests {
     // @behavior TL-049
     #[tokio::test]
     async fn repairs_a_translation_the_review_places_on_another_line() {
-        let llama = llama_misplacing_line_one(|asked| asked == 0);
+        let llama = llama_misplacing_line_one(|request_index| request_index == 0);
 
         translate_with_self_review(&llama, &three_segments()).await;
 
@@ -1506,13 +1511,13 @@ mod tests {
                 indexes: None,
             },
         );
-        let named = Arc::new(Mutex::new(Vec::new()));
+        let pending_batches = Arc::new(Mutex::new(Vec::new()));
         app.listen_any("project-changed", {
-            let named = Arc::clone(&named);
+            let pending_batches = Arc::clone(&pending_batches);
             let handle = app.handle().clone();
             move |_| {
                 let view = handle.state::<CurrentProject>().view().unwrap();
-                named.lock().unwrap().push(view.pending_batch());
+                pending_batches.lock().unwrap().push(view.pending_batch());
             }
         });
 
@@ -1529,7 +1534,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            *named.lock().unwrap(),
+            *pending_batches.lock().unwrap(),
             vec![
                 Some(SegmentSpan { first: 0, last: 1 }),
                 Some(SegmentSpan { first: 2, last: 2 }),
@@ -1581,8 +1586,8 @@ mod tests {
     // @behavior TL-083
     #[tokio::test]
     async fn drops_the_translations_shown_when_cancelled() {
-        let llama = FakeLlama::with_answer_per_request(|asked, lines| {
-            if asked > 0 {
+        let llama = FakeLlama::with_answer_per_request(|request_index, lines| {
+            if request_index > 0 {
                 std::thread::sleep(Duration::from_secs(2));
             }
             translations(echo_lines(lines))
@@ -1655,10 +1660,15 @@ mod tests {
     async fn progress_events(phase: &str) -> Vec<String> {
         let llama = FakeLlama::with_echo(0);
         let app = mock_app();
-        let received = Arc::new(Mutex::new(Vec::new()));
+        let progress_events = Arc::new(Mutex::new(Vec::new()));
         app.listen_any("pipeline-progress", {
-            let received = Arc::clone(&received);
-            move |event| received.lock().unwrap().push(event.payload().to_string())
+            let progress_events = Arc::clone(&progress_events);
+            move |event| {
+                progress_events
+                    .lock()
+                    .unwrap()
+                    .push(event.payload().to_string())
+            }
         });
         let segments = three_segments();
 
@@ -1675,8 +1685,8 @@ mod tests {
         .unwrap();
 
         let prefix = format!(r#"{{"phase":"{phase}","#);
-        let received = received.lock().unwrap();
-        received
+        let progress_events = progress_events.lock().unwrap();
+        progress_events
             .iter()
             .filter(|event| event.starts_with(&prefix))
             .cloned()

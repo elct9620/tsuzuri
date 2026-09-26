@@ -25,7 +25,7 @@ describe("ComparisonController", () => {
   let unmatchedCount: number;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const sent = (command: string) =>
+  const argsByCommand = (command: string) =>
     calls.filter((call) => call.command === command).map((call) => call.args);
   const cue = (start_ms: number, end_ms: number, text: string) => ({
     start_ms,
@@ -188,7 +188,7 @@ describe("ComparisonController", () => {
   it("compares the editor with the newest Output", async () => {
     await show();
 
-    expect(sent("compare_versions").pop()).toEqual({
+    expect(argsByCommand("compare_versions").pop()).toEqual({
       language: null,
       left: "ep01.20260925T023000Z.output.srt",
       right: null,
@@ -250,7 +250,7 @@ describe("ComparisonController", () => {
     document.querySelector<HTMLButtonElement>("li .revert-text")!.click();
     await settle();
 
-    expect([sent("revert_row"), notifications()]).toEqual([
+    expect([argsByCommand("revert_row"), notifications()]).toEqual([
       [
         {
           language: null,
@@ -295,7 +295,7 @@ describe("ComparisonController", () => {
 
     await show();
 
-    expect(sent("compare_versions").pop()).toEqual({
+    expect(argsByCommand("compare_versions").pop()).toEqual({
       language: null,
       left: "ep01.20260925T040000Z.output.srt",
       right: null,
@@ -306,12 +306,12 @@ describe("ComparisonController", () => {
   it("keeps comparing with nothing once an edit is written", async () => {
     await show();
     await check('input[name="compare-original"][value=""]');
-    const comparedCount = sent("compare_versions").length;
+    const comparedCount = argsByCommand("compare_versions").length;
 
     await show();
 
     expect([
-      sent("compare_versions").length,
+      argsByCommand("compare_versions").length,
       marks(),
       document.querySelector<HTMLInputElement>(
         'input[name="compare-original"]:checked',
@@ -323,7 +323,7 @@ describe("ComparisonController", () => {
   it("keeps comparing with nothing once a newer Output is kept", async () => {
     await show();
     await check('input[name="compare-original"][value=""]');
-    const comparedCount = sent("compare_versions").length;
+    const comparedCount = argsByCommand("compare_versions").length;
     versions[0].backups.unshift({
       file: "ep01.20260925T040000Z.output.srt",
       taken_at: "20260925T040000Z",
@@ -332,7 +332,7 @@ describe("ComparisonController", () => {
 
     await show();
 
-    expect(sent("compare_versions").length).toBe(comparedCount);
+    expect(argsByCommand("compare_versions").length).toBe(comparedCount);
   });
 
   // @behavior VR-030
@@ -348,18 +348,18 @@ describe("ComparisonController", () => {
       ],
     });
     await show();
-    const offered = () =>
+    const isEnglishOffered = () =>
       [
         ...document.querySelectorAll<HTMLInputElement>(
           'input[name="compare-translation"]',
         ),
       ].some((choice) => choice.value.includes("ep01.en."));
-    const beforeShown = offered();
+    const beforeShown = isEnglishOffered();
     project = { ...project, shown_translation: "en" };
 
     await show();
 
-    expect([beforeShown, offered()]).toEqual([false, true]);
+    expect([beforeShown, isEnglishOffered()]).toEqual([false, true]);
   });
   // @behavior VR-038
   it("offers the other translations to read beside the cues", async () => {
@@ -488,7 +488,7 @@ describe("ComparisonController", () => {
     await settle();
 
     expect([
-      sent("compare_versions").pop(),
+      argsByCommand("compare_versions").pop(),
       document.querySelector<HTMLInputElement>(
         'input[name="compare-original"]:checked',
       )?.value,

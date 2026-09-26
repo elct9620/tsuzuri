@@ -22,15 +22,15 @@ describe("rules", () => {
 
   it("holds every field while transcribing, and only the translation written, or its chosen Segments, while translating", () => {
     const kinds = ["text", "translation", "other"] as const;
-    const held = (runningMode: TranscriptView["runningMode"]) =>
+    const heldFlags = (runningMode: TranscriptView["runningMode"]) =>
       kinds.map((kind) => isHeld(kind, view({ runningMode }), 0));
     expect([
-      held(null),
-      held({ mode: "transcription" }),
-      held({ mode: "translation", language: "en", indexes: null }),
-      held({ mode: "translation", language: "ja", indexes: null }),
-      held({ mode: "translation", language: "en", indexes: [0] }),
-      held({ mode: "translation", language: "en", indexes: [1] }),
+      heldFlags(null),
+      heldFlags({ mode: "transcription" }),
+      heldFlags({ mode: "translation", language: "en", indexes: null }),
+      heldFlags({ mode: "translation", language: "ja", indexes: null }),
+      heldFlags({ mode: "translation", language: "en", indexes: [0] }),
+      heldFlags({ mode: "translation", language: "en", indexes: [1] }),
     ]).toEqual([
       [false, false, false],
       [true, true, true],

@@ -31,11 +31,11 @@ function view(...texts: string[]): TranscriptView {
 
 /** A port that records what is sent, refusing it while `isRefusing`. */
 class RecordingPort implements EditingPort {
-  sent: unknown[] = [];
+  sentCalls: unknown[] = [];
   isRefusing = false;
 
   private async send(call: unknown): Promise<void> {
-    this.sent.push(call);
+    this.sentCalls.push(call);
     if (this.isRefusing) throw new Error("refused");
   }
   editSegment(index: number, field: string, value: string) {
@@ -62,16 +62,16 @@ class RecordingPort implements EditingPort {
 describe("EditingSession", () => {
   let port: RecordingPort;
   let session: EditingSession;
-  let heard: SessionChange[];
+  let heardChanges: SessionChange[];
 
   beforeEach(() => {
     port = new RecordingPort();
     session = new EditingSession(port);
-    heard = [];
-    session.onChange((change) => heard.push(change));
+    heardChanges = [];
+    session.onChange((change) => heardChanges.push(change));
     session.follow(view("你好世界", "今天", "天氣"));
     session.announce();
-    heard = [];
+    heardChanges = [];
   });
 
   /** Enters the first Segment's text with the caret after `你好`. */
@@ -84,7 +84,7 @@ describe("EditingSession", () => {
 
     expect([
       await session.leave(0, "text", null, "你好世界"),
-      port.sent,
+      port.sentCalls,
     ]).toEqual([{ kind: "unchanged" }, []]);
   });
 
@@ -98,7 +98,7 @@ describe("EditingSession", () => {
       "你好啊世界",
     );
 
-    expect([outcome, port.sent, session.cursor.caret]).toEqual([
+    expect([outcome, port.sentCalls, session.cursor.caret]).toEqual([
       { kind: "written" },
       [{ edit: [0, "text", "你好啊世界"] }],
       { kind: "kept", field: "text", start: 3, end: 3, text: "你好啊世界" },
@@ -108,7 +108,7 @@ describe("EditingSession", () => {
   it("refuses a split with no text on one side of the Cursor", async () => {
     session.enter(0, "text", { start: 0, end: 0 }, "你好世界");
 
-    expect([await session.split(), port.sent]).toEqual([
+    expect([await session.split(), port.sentCalls]).toEqual([
       { kind: "refused" },
       [],
     ]);
@@ -126,7 +126,7 @@ describe("EditingSession", () => {
 
     await session.split();
 
-    expect(port.sent).toEqual([
+    expect(port.sentCalls).toEqual([
       { edit: [0, "text", "你好啊世界"] },
       { kind: "split", index: 0, at: 3 },
     ]);
@@ -135,12 +135,12 @@ describe("EditingSession", () => {
   it("moves the Cursor only once a Transcript shows the split, whichever comes first", async () => {
     enterFirst();
     await session.leave(0, "text", null, "你好世界");
-    const split = session.split();
+    const pendingSplit = session.split();
     session.follow(view("你好世界", "今天", "天氣"));
     const beforeShown = session.cursor.index;
 
     session.follow(view("你好", "世界", "今天", "天氣"));
-    await split;
+    await pendingSplit;
 
     expect([beforeShown, session.cursor]).toEqual([
       0,
@@ -184,39 +184,39 @@ describe("EditingSession", () => {
 
   it("tells of a Cursor moved by a Transcript only when asked to", () => {
     session.makeCurrent(2);
-    heard = [];
+    heardChanges = [];
 
     session.follow(view("一", "二"));
-    const beforeAnnounced = [...heard];
+    const beforeAnnounced = [...heardChanges];
     session.announce();
 
-    expect([beforeAnnounced, heard]).toEqual([[], ["cursor"]]);
+    expect([beforeAnnounced, heardChanges]).toEqual([[], ["cursor"]]);
   });
 
   it("tells of a choice after the Cursor as the user makes another Segment current", () => {
     session.makeCurrent(1);
 
-    expect(heard).toEqual(["cursor", "choice"]);
+    expect(heardChanges).toEqual(["cursor", "choice"]);
   });
 
   it("tells of no choice as the user enters a field of the Current Segment", () => {
     session.makeCurrent(1);
-    heard = [];
+    heardChanges = [];
 
     session.enter(1, "text", { start: 0, end: 0 }, "今天");
 
-    expect(heard).toEqual(["cursor"]);
+    expect(heardChanges).toEqual(["cursor"]);
   });
 
   it("tells of no choice as a Segment Change moves the Current Segment", async () => {
     session.makeCurrent(0);
-    heard = [];
+    heardChanges = [];
 
     await session.change({ kind: "insertion-after", index: 0 });
     session.follow(view("你好世界", "", "今天", "天氣"));
     session.announce();
 
-    expect(heard).toEqual(["cursor"]);
+    expect(heardChanges).toEqual(["cursor"]);
   });
 
   it("clears the checks once a Segment Change is shown", async () => {
@@ -240,11 +240,14 @@ describe("EditingSession", () => {
 
   it("checks a run in place of the checks before it, and tells of it", () => {
     session.check(0, true);
-    heard = [];
+    heardChanges = [];
 
     session.checkRange(2, 1);
 
-    expect([session.checkedIndexes, heard]).toEqual([[1, 2], ["checks"]]);
+    expect([session.checkedIndexes, heardChanges]).toEqual([
+      [1, 2],
+      ["checks"],
+    ]);
   });
 
   it("changes nothing as a field without the Cursor is left", async () => {
@@ -252,7 +255,7 @@ describe("EditingSession", () => {
 
     const outcome = await session.leave(1, "text", null, "今天啊");
 
-    expect([outcome, session.cursor.caret?.kind, port.sent]).toEqual([
+    expect([outcome, session.cursor.caret?.kind, port.sentCalls]).toEqual([
       { kind: "unchanged" },
       "live",
       [],

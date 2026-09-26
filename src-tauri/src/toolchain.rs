@@ -186,12 +186,12 @@ impl Resolver {
             problem: Some(problem),
             install: component.install.clone(),
         };
-        if let Some(chosen) = self
+        if let Some(chosen_tool) = self
             .choices
             .path_by_name(&component.name)
             .filter(|path| path.is_file())
         {
-            return ready_status(chosen.to_path_buf(), Origin::Choice, None);
+            return ready_status(chosen_tool.to_path_buf(), Origin::Choice, None);
         }
         if let Some(detected) = detection::detect(
             &component.program,
@@ -426,15 +426,15 @@ mod tests {
     #[test]
     fn uses_the_executable_the_user_chose() {
         let dir = TempDir::new("cp-chosen");
-        let chosen = dir.file("my-tool");
+        let chosen_tool = dir.file("my-tool");
         let mut resolver = resolver(&dir);
-        resolver.choices.choose("tool", chosen.clone());
+        resolver.choices.choose("tool", chosen_tool.clone());
 
         let status = resolver.find(&tool());
 
         assert_eq!(
             (status.path, status.origin),
-            (Some(chosen), Some(Origin::Choice))
+            (Some(chosen_tool), Some(Origin::Choice))
         );
     }
 
@@ -443,7 +443,7 @@ mod tests {
     #[test]
     fn detects_an_installed_executable_that_runs() {
         let dir = TempDir::new("cp-detect");
-        let installed = script(&dir.path().join("bin"), "tool", 0);
+        let installed_tool = script(&dir.path().join("bin"), "tool", 0);
         script(&dir.path().join("components/tool/first/bin"), "tool", 0);
         let mut resolver = resolver(&dir);
         resolver.search_dirs = vec![dir.path().join("empty"), dir.path().join("bin")];
@@ -452,7 +452,7 @@ mod tests {
 
         assert_eq!(
             (status.path, status.origin),
-            (Some(installed), Some(Origin::Detection))
+            (Some(installed_tool), Some(Origin::Detection))
         );
     }
 
@@ -462,13 +462,13 @@ mod tests {
     fn passes_over_an_executable_that_does_not_run() {
         let dir = TempDir::new("cp-broken");
         script(&dir.path().join("broken"), "tool", 1);
-        let working = script(&dir.path().join("working"), "tool", 0);
+        let working_tool = script(&dir.path().join("working"), "tool", 0);
         let mut resolver = resolver(&dir);
         resolver.search_dirs = vec![dir.path().join("broken"), dir.path().join("working")];
 
         let status = resolver.find(&tool());
 
-        assert_eq!(status.path, Some(working));
+        assert_eq!(status.path, Some(working_tool));
     }
 
     // @behavior CP-015
@@ -476,13 +476,17 @@ mod tests {
     #[test]
     fn uses_the_bundled_variant() {
         let dir = TempDir::new("cp-bundled");
-        let bundled = script(&dir.path().join("components/tool/first/bin"), "tool", 0);
+        let bundled_tool = script(&dir.path().join("components/tool/first/bin"), "tool", 0);
 
         let status = resolver(&dir).find(&tool());
 
         assert_eq!(
             (status.path, status.origin, status.variant.as_deref()),
-            (Some(bundled), Some(Origin::BundledVariant), Some("first"))
+            (
+                Some(bundled_tool),
+                Some(Origin::BundledVariant),
+                Some("first")
+            )
         );
     }
 
@@ -491,7 +495,7 @@ mod tests {
     #[test]
     fn returns_to_the_bundled_variant_once_the_choice_is_forgotten() {
         let dir = TempDir::new("cp-forget");
-        let bundled = script(&dir.path().join("components/tool/first/bin"), "tool", 0);
+        let bundled_tool = script(&dir.path().join("components/tool/first/bin"), "tool", 0);
         let mut resolver = resolver(&dir);
         resolver.choices.choose("tool", dir.file("my-tool"));
 
@@ -500,7 +504,7 @@ mod tests {
         let status = resolver.find(&tool());
         assert_eq!(
             (status.path, status.origin),
-            (Some(bundled), Some(Origin::BundledVariant))
+            (Some(bundled_tool), Some(Origin::BundledVariant))
         );
     }
 
@@ -552,7 +556,7 @@ mod tests {
     fn logs_where_a_component_was_found_and_how_long_it_took() {
         use crate::test_support::captured_logs;
         let dir = TempDir::new("cp-log");
-        let installed = script(&dir.path().join("bin"), "tool", 0);
+        let installed_tool = script(&dir.path().join("bin"), "tool", 0);
         let mut resolver = resolver(&dir);
         resolver.search_dirs = vec![dir.path().join("bin")];
 
@@ -562,7 +566,7 @@ mod tests {
 
         let expected = format!(
             "components: tool found (Detection) at {} in ",
-            installed.display()
+            installed_tool.display()
         );
         assert_eq!(logs.len(), 1);
         assert!(logs[0].starts_with(&expected), "{}", logs[0]);
@@ -578,10 +582,10 @@ mod tests {
         settings.choose(ModelSlot::Transcription, model.clone());
         settings.save(dir.path()).unwrap();
 
-        let reloaded = ModelSettings::load(dir.path()).unwrap();
+        let reloaded_settings = ModelSettings::load(dir.path()).unwrap();
 
         assert_eq!(
-            reloaded.ready_path(ModelSlot::Transcription),
+            reloaded_settings.ready_path(ModelSlot::Transcription),
             Ok(model.as_path())
         );
     }

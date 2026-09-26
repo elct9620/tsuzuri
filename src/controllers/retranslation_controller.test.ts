@@ -15,7 +15,7 @@ import TranscriptController from "./transcript_controller";
 describe("RetranslationController", () => {
   let application: Application;
   let project: ProjectView | null;
-  let retranslated: unknown;
+  let retranslateArgs: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const rows = () => document.querySelectorAll<HTMLLIElement>("ol > li");
@@ -40,7 +40,7 @@ describe("RetranslationController", () => {
 
   beforeEach(async () => {
     project = null;
-    retranslated = undefined;
+    retranslateArgs = undefined;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes retranslation"
@@ -68,7 +68,7 @@ describe("RetranslationController", () => {
       (command, args) => {
         if (command === "current_project") return project;
         if (command === "retranslate") {
-          retranslated = args;
+          retranslateArgs = args;
           return new Promise(() => {});
         }
       },
@@ -96,7 +96,10 @@ describe("RetranslationController", () => {
     rows()[1].querySelector<HTMLButtonElement>("button.retranslate")!.click();
     await settle();
 
-    expect([retranslated, isProgressShown()]).toEqual([{ indexes: [1] }, true]);
+    expect([retranslateArgs, isProgressShown()]).toEqual([
+      { indexes: [1] },
+      true,
+    ]);
   });
 
   // @behavior ED-040
@@ -112,7 +115,7 @@ describe("RetranslationController", () => {
     document.querySelector<HTMLButtonElement>("#retranslate-checked")!.click();
     await settle();
 
-    expect(retranslated).toEqual({ indexes: [0, 2] });
+    expect(retranslateArgs).toEqual({ indexes: [0, 2] });
   });
 
   // @behavior ED-090

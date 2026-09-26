@@ -341,7 +341,7 @@ describe("TranscriptController", () => {
   // @behavior ED-041
   it("shows each Batch's translations as they are written", async () => {
     const texts = Array.from({ length: 15 }, (_, at) => `第${at}句`);
-    const translatedUpTo = (done: number) =>
+    const translatedUpTo = (translatedCount: number) =>
       projectOf({
         shown_translation: "en",
         running_mode: { mode: "translation", language: "en", indexes: null },
@@ -349,7 +349,7 @@ describe("TranscriptController", () => {
           start_ms: at * 1000,
           end_ms: (at + 1) * 1000,
           text,
-          ...(at < done ? { translation: `line ${at}` } : {}),
+          ...(at < translatedCount ? { translation: `line ${at}` } : {}),
         })),
       });
     progress().begin("translation");

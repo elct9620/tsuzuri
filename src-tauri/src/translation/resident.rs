@@ -152,10 +152,10 @@ impl ResidentLlama {
         preset_dir: &Path,
         timeout: Duration,
     ) -> Result<(), Failure> {
-        let is_usable = router.as_ref().is_some_and(|running| {
-            !running.has_exited.load(Ordering::SeqCst)
-                && running.llama == llama
-                && running.model == model
+        let is_usable = router.as_ref().is_some_and(|running_router| {
+            !running_router.has_exited.load(Ordering::SeqCst)
+                && running_router.llama == llama
+                && running_router.model == model
         });
         if is_usable {
             return Ok(());

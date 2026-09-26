@@ -66,7 +66,7 @@ describe("ModelsController", () => {
 
   // @behavior MD-006
   it("remembers a model chosen in the panel and shows its path", async () => {
-    let chosen: unknown;
+    let chooseModelArgs: unknown;
     await mountWith(
       {
         transcription: { path: null, has_file: false },
@@ -75,7 +75,7 @@ describe("ModelsController", () => {
       {
         "plugin:dialog|open": () => "/models/qwen3-4b.gguf",
         choose_model: (args) => {
-          chosen = args;
+          chooseModelArgs = args;
           return {
             transcription: { path: null, has_file: false },
             translation: { path: "/models/qwen3-4b.gguf", has_file: true },
@@ -87,7 +87,7 @@ describe("ModelsController", () => {
     document.querySelector<HTMLButtonElement>("button")!.click();
     await settle();
 
-    expect(chosen).toEqual({
+    expect(chooseModelArgs).toEqual({
       slot: "translation",
       path: "/models/qwen3-4b.gguf",
     });

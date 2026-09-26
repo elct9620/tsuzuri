@@ -129,11 +129,17 @@ describe("ShortcutsController", () => {
 
       document.querySelector<HTMLElement>("#elsewhere")!.click();
 
-      const unexplained = rows().filter(
+      const rowsWithoutTip = rows().filter(
         (row) => !row.tip || row.tip.startsWith("shortcuts."),
       );
-      const unnamed = rows().filter((row) => row.text?.includes("shortcuts."));
-      expect([rows().length > 0, unexplained, unnamed]).toEqual([true, [], []]);
+      const rowsWithoutName = rows().filter((row) =>
+        row.text?.includes("shortcuts."),
+      );
+      expect([rows().length > 0, rowsWithoutTip, rowsWithoutName]).toEqual([
+        true,
+        [],
+        [],
+      ]);
     },
   );
 });

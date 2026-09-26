@@ -75,6 +75,7 @@ describe("TimelineController", () => {
       <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange">
         <video data-timeline-target="media"></video>
         <button data-timeline-target="snapping" data-action="timeline#toggleSnapping"></button>
+        <span data-timeline-target="times" hidden></span>
         <button data-action="timeline#zoomOut"></button>
         <button data-action="timeline#zoomIn"></button>
         <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent" hidden></div>
@@ -232,6 +233,22 @@ describe("TimelineController", () => {
 
     expect(wrapper().style.width).toBe("200px");
   });
+  const spanTimes = () =>
+    document.querySelector<HTMLElement>('[data-timeline-target="times"]')!;
+
+  // @behavior PV-071
+  it("reads the time under the pointer", async () => {
+    await show(projectWithMedia());
+
+    wrapper().dispatchEvent(
+      new PointerEvent("pointermove", { clientX: 150, bubbles: true }),
+    );
+
+    expect(host().querySelector('[part="hover-label"]')!.textContent).toBe(
+      "00:00:01.500",
+    );
+  });
+
   describe("retiming", () => {
     const media = () =>
       document.querySelector<HTMLVideoElement>(
@@ -284,6 +301,9 @@ describe("TimelineController", () => {
         new PointerEvent("pointerup", { pointerId: 1, button: 0 }),
       );
     }
+
+    // A pointer a test leaves pressed would hold every later drag
+    afterEach(letGo);
 
     async function drag(
       element: Element,
@@ -500,6 +520,46 @@ describe("TimelineController", () => {
         "35%",
         "50%",
       ]);
+    });
+
+    // @behavior PV-072
+    it("reads where a dragged Segment lands before it is let go", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
+
+      pressAndMove(endOf(0)!, 5);
+
+      expect([spanTimes().hidden, spanTimes().textContent]).toEqual([
+        false,
+        "00:00:00.000 → 00:00:00.600",
+      ]);
+    });
+
+    // @behavior PV-073
+    it("reads the times of a range as it is drawn", async () => {
+      await show(projectWithMedia());
+      const at = { pointerId: 1, button: 0, bubbles: true, cancelable: true };
+
+      wrapper().dispatchEvent(
+        new PointerEvent("pointerdown", { ...at, clientX: 100 }),
+      );
+      window.dispatchEvent(
+        new PointerEvent("pointermove", { ...at, clientX: 145 }),
+      );
+
+      expect([spanTimes().hidden, spanTimes().textContent]).toEqual([
+        false,
+        "00:00:01.000 → 00:00:01.500",
+      ]);
+    });
+
+    // @behavior PV-074
+    it("reads no times once the drawn range is dropped", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5)]));
+      await draw(100, 45);
+
+      pressKey("Escape");
+
+      expect([spanTimes().hidden, spanTimes().textContent]).toEqual([true, ""]);
     });
 
     // @behavior PV-065

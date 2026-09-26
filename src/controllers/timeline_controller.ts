@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 import WaveSurfer from "wavesurfer.js";
+import HoverPlugin from "wavesurfer.js/plugins/hover";
 import RegionsPlugin, {
   type Region,
   type UpdateSide,
@@ -11,6 +12,7 @@ import { extractWaveform, type Waveform } from "../backend/waveform";
 import type { EditingSession, SegmentChange } from "../editor";
 import { t } from "../i18n";
 import { notifyEdit, notifyFailure } from "../ui/notification";
+import { formatTime } from "../ui/time";
 
 const INITIAL_PX_PER_SEC = 100;
 /** The time scale's height, which the page leaves free beneath the waveform. */
@@ -56,6 +58,9 @@ function snapTime(time: number, times: number[], distance: number): number {
 }
 
 const toMilliseconds = (seconds: number) => Math.round(seconds * 1000);
+
+/** `seconds` as the editor writes a time, so what the timeline reads can be typed into a Segment. */
+const formatSeconds = (seconds: number) => formatTime(toMilliseconds(seconds));
 
 /**
  * Where `span`, dragged by its `side` or, without one, as a whole, lands: Snapped to the nearest of
@@ -136,7 +141,7 @@ export function controlOption({
  * Segment, where the Current Segment is retimed by dragging and a new one drawn on the empty waveform.
  */
 export default class TimelineController extends Controller {
-  static targets = ["media", "waveform", "zoomLevel", "snapping"];
+  static targets = ["media", "waveform", "zoomLevel", "snapping", "times"];
 
   declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
@@ -146,6 +151,8 @@ export default class TimelineController extends Controller {
   declare readonly zoomLevelTarget: HTMLElement;
   /** Whether a dragged edge Snaps, pressed to turn it on or off. */
   declare readonly snappingTarget: HTMLButtonElement;
+  /** The times a dragged region or a drawn range will be written with, shown only while there is one. */
+  declare readonly timesTarget: HTMLElement;
 
   private media: string | null = null;
   private segments: Segment[] = [];
@@ -279,6 +286,7 @@ export default class TimelineController extends Controller {
     // Redrawing takes the dragged region away, so a drag cannot outlive the Segments it began on
     this.drag = null;
     this.range = null;
+    this.showTimes(null);
     const media = project?.media ?? null;
     if (media === this.media) {
       this.markSegments();
@@ -315,6 +323,10 @@ export default class TimelineController extends Controller {
     });
     regions.on("region-update", (region, side) => this.follow(region, side));
     regions.on("region-updated", () => this.letGo());
+    regions.on("region-initialized", (region) => {
+      if (region.id === RANGE_ID)
+        region.on("update", () => this.showTimes(region, true));
+    });
     regions.on("region-created", (region) => {
       if (region.id === RANGE_ID) this.keepRange(region);
     });
@@ -330,7 +342,16 @@ export default class TimelineController extends Controller {
       waveColor: this.themeColor("--color-base-content", "#888"),
       progressColor: this.themeColor("--color-primary", "#555"),
       cursorColor: this.themeColor("--color-primary", "#555"),
-      plugins: [regions, TimelinePlugin.create({ height: TIMELINE_HEIGHT })],
+      plugins: [
+        regions,
+        TimelinePlugin.create({ height: TIMELINE_HEIGHT }),
+        HoverPlugin.create({
+          lineColor: this.themeColor("--color-neutral", "#333"),
+          labelBackground: this.themeColor("--color-neutral", "#333"),
+          labelColor: this.themeColor("--color-neutral-content", "#fff"),
+          formatTimeCallback: formatSeconds,
+        }),
+      ],
     });
     this.surfer.on("ready", () => this.markSegments());
     this.surfer.on("interaction", () => this.dropRange());
@@ -432,6 +453,7 @@ export default class TimelineController extends Controller {
   private letGo(): void {
     const drag = this.drag;
     this.drag = null;
+    this.showTimes(this.range);
     if (!drag || drag.isCancelled) return;
     const { index, side, span } = drag;
     if (!drag.isShared || side === undefined) {
@@ -452,6 +474,7 @@ export default class TimelineController extends Controller {
     const regions = this.segmentRegions();
     regions[drag.index]?.setOptions(span);
     drag.span = span;
+    this.showTimes(span, true);
     for (const side of ["start", "end"] as const) {
       const neighbour = this.sharedNeighbour(drag.index, side);
       if (neighbour === null) continue;
@@ -554,11 +577,25 @@ export default class TimelineController extends Controller {
     }
     range.setOptions({ start, end });
     this.range = range;
+    this.showTimes(range);
   }
 
   private dropRange(): void {
     this.range?.remove();
     this.range = null;
+    this.showTimes(null);
+  }
+
+  /**
+   * Shows the times of `span`, or none; while the pointer drags it, the time under the pointer
+   * gives way, since the times it lands on may be Snapped away from it.
+   */
+  private showTimes(span: Span | null, isDragging = false): void {
+    this.timesTarget.hidden = span === null;
+    this.timesTarget.textContent = span
+      ? `${formatSeconds(span.start)} → ${formatSeconds(span.end)}`
+      : "";
+    this.waveformTarget.toggleAttribute("data-dragging", isDragging);
   }
 
   /** Asks the Project for new times for the Segment at `index`, unless they are the ones it has. */

@@ -579,3 +579,39 @@ Drawing on the empty waveform leaves a range to keep with Enter or drop with Esc
 | Given | a Current Segment from 0 to 0.5 s, the next from 0.6 s, the media at 0.8 s |
 | When | F12 is pressed outside a field |
 | Then | the Project is asked to change its times to 0 to 0.6 s |
+
+### Reading times on the timeline
+
+A time typed into a Segment is found on the waveform first, so the timeline tells the time under the pointer, and while a Segment is dragged or a range drawn, the times it will be written with.
+
+## `PV-071` Showing the time under the pointer on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second |
+| When | the pointer rests 150 pixels from its start |
+| Then | the time under it reads `00:00:01.500` |
+
+## `PV-072` Showing where a dragged Segment lands
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| When | its end is dragged 5 pixels later and not yet let go |
+| Then | the times read `00:00:00.000 → 00:00:00.600` |
+
+## `PV-073` Showing the times of a range as it is drawn
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second |
+| When | a range is drawn from 1 to 1.5 s and not yet let go |
+| Then | the times read `00:00:01.000 → 00:00:01.500` |
+
+## `PV-074` Showing the times of a drawn range until it is dropped
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline with a range drawn from 1 to 1.5 s |
+| When | Esc is pressed |
+| Then | no times are shown |

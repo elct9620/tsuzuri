@@ -4,6 +4,11 @@
 @source "./";
 @plugin "daisyui";
 
+/* While the timeline is dragged, the time under the pointer gives way to the times it lands on */
+[data-dragging] ::part(hover) {
+  visibility: hidden;
+}
+
 @theme {
   --font-sans: system-ui, -apple-system, "Noto Sans TC", sans-serif;
   /* The Cursor's own caret blinks as a platform's does, and holds still once kept */

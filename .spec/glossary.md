@@ -64,7 +64,7 @@ The Current Resource's media above the editor: a player, its Waveform with a reg
 
 ### Current Segment
 
-The one Segment whose row last took a click or focus in the editor, or whose region was last clicked on the timeline, shown with its own background; Space plays it alone. Choosing another one pauses the media there, at its start or where its region was clicked. It stays on its Segment through the Segment Changes around it, moves to the second half of a split and into a Segment just inserted, and is let go only when the Segments change in number by other means. It is the webview's to hold and changes nothing in the Project, unlike the Checked Segments.
+The one Segment whose row last took a click or focus in the editor, or whose region was last clicked on the timeline, shown with its own background; Space plays on from it, or plays it alone when the user turns that on. Choosing another one pauses the media there, at its start or where its region was clicked. It stays on its Segment through the Segment Changes around it, moves to the second half of a split and into a Segment just inserted, and is let go only when the Segments change in number by other means. It is the webview's to hold and changes nothing in the Project, unlike the Checked Segments.
 
 ### Cursor
 

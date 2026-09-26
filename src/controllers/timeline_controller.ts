@@ -11,6 +11,7 @@ import type { ProjectFeed, ProjectView, Segment } from "../backend/project";
 import { extractWaveform, type Waveform } from "../backend/waveform";
 import type { EditingSession, SegmentChange } from "../editor";
 import { t } from "../i18n";
+import { rememberChoice, rememberedChoice } from "../ui/choices";
 import { notifyEdit, notifyFailure } from "../ui/notification";
 import { formatTime } from "../ui/time";
 
@@ -28,6 +29,8 @@ const REGION_COLORS = ["--segment-even", "--segment-odd"];
 const SNAP_PX = 8;
 /** The id of the range drawn on the empty waveform, which is no Segment's region. */
 const RANGE_ID = "range";
+/** Where the webview remembers whether Space plays the Current Segment alone. */
+const ALONE_KEY = "tsuzuri.timeline-playing-alone";
 
 /** Where a Segment runs on the timeline, in seconds. */
 interface Span {
@@ -145,7 +148,15 @@ export function controlOption({
  * Segment, where the Current Segment is retimed by dragging and a new one drawn on the empty waveform.
  */
 export default class TimelineController extends Controller {
-  static targets = ["media", "waveform", "zoomLevel", "snapButton", "times"];
+  static targets = [
+    "media",
+    "waveform",
+    "zoomLevel",
+    "snapButton",
+    "times",
+    "aloneButton",
+    "spaceHint",
+  ];
 
   declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
@@ -157,6 +168,12 @@ export default class TimelineController extends Controller {
   declare readonly snapButtonTarget: HTMLButtonElement;
   /** The times a dragged region or a drawn range will be written with, shown only while there is one. */
   declare readonly timesTarget: HTMLElement;
+  /** Whether Space plays the Current Segment alone, pressed to turn it on or off. */
+  declare readonly aloneButtonTarget: HTMLButtonElement;
+  declare readonly hasAloneButtonTarget: boolean;
+  /** What Space does, beside its key in the Current Segment's card. */
+  declare readonly spaceHintTarget: HTMLElement;
+  declare readonly hasSpaceHintTarget: boolean;
 
   private media: string | null = null;
   private segments: Segment[] = [];
@@ -164,6 +181,8 @@ export default class TimelineController extends Controller {
   private isHeld = false;
   private pxPerSec = INITIAL_PX_PER_SEC;
   private isSnapping = true;
+  /** Whether Space plays the Current Segment alone and stops at its end, rather than on from where the media is. */
+  private isPlayingAlone = rememberedChoice(ALONE_KEY) === "true";
   /** The modifier keys held as the pointer last moved, which a region's own events do not carry. */
   private modifiers = { shiftKey: false, altKey: false };
   private drag: Drag | null = null;
@@ -179,6 +198,7 @@ export default class TimelineController extends Controller {
   connect(): void {
     this.showZoomLevel();
     this.showSnapping();
+    this.showPlayingAlone();
     // Capturing, so the modifiers are known before a region hears the same move
     window.addEventListener("pointerdown", this.followModifiers, true);
     window.addEventListener("pointermove", this.followModifiers, true);
@@ -209,15 +229,28 @@ export default class TimelineController extends Controller {
     this.showSnapping();
   }
 
-  /** Stops the media when it plays, or else plays the Current Segment alone. */
+  /**
+   * Stops the media when it plays, or else plays on from where it is, or the Current Segment alone
+   * while playing alone is turned on.
+   */
   playCurrent(): void {
     if (!this.mediaTarget.paused) {
       this.mediaTarget.pause();
       return;
     }
+    if (!this.isPlayingAlone) {
+      void this.mediaTarget.play();
+      return;
+    }
     const segment = this.currentSegment;
     if (segment)
       void this.surfer?.play(segment.start_ms / 1000, segment.end_ms / 1000);
+  }
+
+  togglePlayingAlone(): void {
+    this.isPlayingAlone = !this.isPlayingAlone;
+    rememberChoice(ALONE_KEY, String(this.isPlayingAlone));
+    this.showPlayingAlone();
   }
 
   /**
@@ -633,6 +666,27 @@ export default class TimelineController extends Controller {
   private showSnapping(): void {
     this.snapButtonTarget.setAttribute("aria-pressed", `${this.isSnapping}`);
     this.snapButtonTarget.classList.toggle("btn-active", this.isSnapping);
+  }
+
+  private showPlayingAlone(): void {
+    if (this.hasAloneButtonTarget) {
+      this.aloneButtonTarget.setAttribute(
+        "aria-pressed",
+        `${this.isPlayingAlone}`,
+      );
+      this.aloneButtonTarget.classList.toggle(
+        "btn-active",
+        this.isPlayingAlone,
+      );
+    }
+    if (this.hasSpaceHintTarget) {
+      // Kept as the key, so translating the page again says the same
+      const hint = this.isPlayingAlone
+        ? "preview.playCurrent"
+        : "preview.playOn";
+      this.spaceHintTarget.dataset.i18n = hint;
+      this.spaceHintTarget.textContent = t(hint);
+    }
   }
 
   private showZoomLevel(): void {

@@ -63,7 +63,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | `.spec/contract/commands.md` | Tauri 指令名稱，例如 `component_statuses` |
 | serde 序列化的欄位 | TypeScript 介面照 Rust 欄位名，例如 `start_ms` |
 | 對應的 Rust 型別 | `ComponentStatus`、`ProjectView`、`SegmentField` |
-| 測試 | Rust 測試函式與 `it()` 標題是描述行為的句子 |
+| 測試 | Rust 測試與 `it()` 標題是描述行為的句子 |
 
 ### 1.5 加入名稱之前
 

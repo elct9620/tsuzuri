@@ -69,15 +69,19 @@ export interface ProjectView {
   pending_batch: SegmentSpan | null;
 }
 
-/** A transcription holds every subtitle of its Resource; a translation, the one it writes. */
 /** The Segments from `first` through `last`, by position. */
 export interface SegmentSpan {
   first: number;
   last: number;
 }
 
+/**
+ * A transcription holds every subtitle of its Resource; a translation, the one it writes, or only
+ * its Segments at `indexes` while they are translated again.
+ */
 export type RunningMode =
-  { mode: "transcription" } | { mode: "translation"; language: string };
+  | { mode: "transcription" }
+  | { mode: "translation"; language: string; indexes: number[] | null };
 
 /** The Current Resource as the Resource list shows it, or none. */
 export function currentResource(

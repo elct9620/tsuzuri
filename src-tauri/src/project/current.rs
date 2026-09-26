@@ -193,6 +193,21 @@ impl Project {
         }
     }
 
+    /// What a translation of the Current Resource into `target` starts from: its Segments and
+    /// that translation as the files hold them.
+    fn translation_source(&self, target: Language) -> Result<TranslationSource, Failure> {
+        let current = self.current()?;
+        Ok(TranslationSource {
+            directory: self.directory.clone(),
+            name: current.name.clone(),
+            transcript: self
+                .resource(&current.name)?
+                .transcript(Some(target), &self.speaker_names(Some(target)))?,
+            language: self.language,
+            model: self.options.models.translation.clone(),
+        })
+    }
+
     /// Reads the Current Resource's Transcript from its files, with the same translation shown,
     /// so a change starts from what they hold rather than from what was last shown.
     fn read_current_transcript(&mut self) -> Result<(), Failure> {
@@ -582,6 +597,18 @@ fn speaker_from(value: &str) -> Option<String> {
     (!speaker.is_empty()).then(|| speaker.to_string())
 }
 
+/// The Resource `source` was taken from, as `project` pairs it while `source` is from it, else as
+/// its directory pairs now.
+fn resource_in(project: Option<&Project>, source: &TranslationSource) -> Result<Resource, Failure> {
+    match project {
+        Some(project) => Ok(project.resource(&source.name)?.clone()),
+        None => files::resources_in(&source.directory, source.language)?
+            .into_iter()
+            .find(|resource| resource.name == source.name)
+            .ok_or(Failure::NoResource),
+    }
+}
+
 /// The Resource of `resources` named `name`, if any.
 fn resource_by_name<'a>(resources: &'a [Resource], name: &str) -> Option<&'a Resource> {
     resources.iter().find(|resource| resource.name == name)
@@ -667,7 +694,7 @@ impl ProjectView {
     }
 
     pub fn running_mode(&self) -> Option<RunningMode> {
-        self.running_mode
+        self.running_mode.clone()
     }
 }
 
@@ -694,13 +721,17 @@ impl HeldProject {
 }
 
 /// A Mode running on one Resource, and so which of its subtitles nothing else may change.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "mode", rename_all = "kebab-case")]
 pub enum RunningMode {
     /// Holds every subtitle of the Resource.
     Transcription,
-    /// Holds only the translation into `language`.
-    Translation { language: Language },
+    /// Holds only the translation into `language`, or only its Segments at `indexes` while they
+    /// are translated again.
+    Translation {
+        language: Language,
+        indexes: Option<Vec<usize>>,
+    },
 }
 
 /// The Segments from `first` through `last`, by position.
@@ -739,11 +770,11 @@ impl ModeHold {
         segments: &[Segment],
         translation: Option<Language>,
     ) -> (Vec<Segment>, Option<Language>) {
-        match (&self.progress, self.mode) {
+        match (&self.progress, &self.mode) {
             (Some(ModeProgress::Transcript(transcribed)), _) => (transcribed.clone(), None),
             (
                 Some(ModeProgress::Translations(translations)),
-                RunningMode::Translation { language },
+                RunningMode::Translation { language, .. },
             ) => {
                 let mut segments = segments.to_vec();
                 for (index, translation) in translations {
@@ -751,7 +782,7 @@ impl ModeHold {
                         segment.translation = translation.clone();
                     }
                 }
-                (segments, Some(language))
+                (segments, Some(*language))
             }
             _ => (segments.to_vec(), translation),
         }
@@ -802,6 +833,40 @@ impl CurrentProject {
         ResourceHold(self)
     }
 
+    /// Holds the Current Resource's translation into `target`, or only its Segments at `indexes`,
+    /// for a translation to write, answering what it starts from: the Segments and that
+    /// translation as the files hold them. Both are taken in one hold of the lock, so nothing
+    /// changes between them; translating chosen Segments again also shows `target`.
+    pub fn hold_for_translation(
+        &self,
+        target: Language,
+        indexes: Option<Vec<usize>>,
+    ) -> Result<(TranslationSource, ResourceHold<'_>), Failure> {
+        let mut held = self.lock();
+        let project = held.project.as_mut().ok_or(Failure::NoProject)?;
+        let source = project.translation_source(target)?;
+        let count = source.transcript.segments.len();
+        if let Some(index) = indexes.iter().flatten().find(|index| **index >= count) {
+            return Err(Failure::Internal {
+                detail: format!("no Segment at {index}"),
+            });
+        }
+        if indexes.is_some() {
+            project.show_translation(Some(target))?;
+        }
+        held.mode_hold = Some(ModeHold {
+            directory: source.directory.clone(),
+            name: source.name.clone(),
+            mode: RunningMode::Translation {
+                language: target,
+                indexes,
+            },
+            pending_batch: None,
+            progress: None,
+        });
+        Ok((source, ResourceHold(self)))
+    }
+
     /// Names the Batch the running Mode translates next, or none once every Batch is done.
     pub fn mark_pending_batch(&self, pending_batch: Option<SegmentSpan>) {
         if let Some(hold) = self.lock().mode_hold.as_mut() {
@@ -810,11 +875,11 @@ impl CurrentProject {
     }
 
     /// Makes `change` to the Project, refused when a Mode running on the Current Resource holds a
-    /// subtitle `is_written` says it changes, given the translation shown: the original as none, or a
-    /// translation by its Language.
+    /// translation `is_written` says it changes, given the translation shown, the Language the Mode
+    /// writes and the Segments it holds, if only some; a transcription holds every change.
     fn change_unless_held<T>(
         &self,
-        is_written: impl Fn(Option<Language>, Option<Language>) -> bool,
+        is_written: impl Fn(Option<Language>, Language, Option<&[usize]>) -> bool,
         change: impl FnOnce(&mut Project) -> Result<T, Failure>,
     ) -> Result<T, Failure> {
         let mut held = self.lock();
@@ -826,15 +891,15 @@ impl CurrentProject {
             .as_ref()
             .filter(|hold| hold.is_on_current(project))
         {
-            let is_held = match hold.mode {
+            let is_held = match &hold.mode {
                 RunningMode::Transcription => true,
-                RunningMode::Translation { language } => {
+                RunningMode::Translation { language, indexes } => {
                     let translation = project
                         .current
                         .as_ref()
                         .and_then(|current| current.translation);
                     let (_, shown) = hold.shown(&[], translation);
-                    is_written(shown, Some(language))
+                    is_written(shown, *language, indexes.as_deref())
                 }
             };
             if is_held {
@@ -858,8 +923,10 @@ impl CurrentProject {
         })
     }
 
+    /// Shows the Current Resource's translation into `language`, or none; refused while a Mode
+    /// runs on it, since what it shows is then the Mode's.
     pub fn show_translation(&self, language: Option<Language>) -> Result<(), Failure> {
-        self.update_project(|project| project.show_translation(language))
+        self.change_unless_held(|_, _, _| true, |project| project.show_translation(language))
     }
 
     pub fn view(&self) -> Option<ProjectView> {
@@ -913,7 +980,7 @@ impl CurrentProject {
                 shown_translation,
                 has_undo: history.is_some_and(UndoHistory::has_undo),
                 has_redo: history.is_some_and(UndoHistory::has_redo),
-                running_mode: mode_hold.map(|hold| hold.mode),
+                running_mode: mode_hold.map(|hold| hold.mode.clone()),
                 pending_batch: mode_hold.and_then(|hold| hold.pending_batch),
             }
         })
@@ -921,6 +988,7 @@ impl CurrentProject {
 
     /// What a translation of the Current Resource starts from, to hand back to
     /// [`CurrentProject::show_translations`] and [`CurrentProject::write_translations`].
+    #[cfg(test)]
     pub fn snapshot(&self) -> Result<TranslationSource, Failure> {
         let held = self.lock();
         let project = held.project.as_ref().ok_or(Failure::NoProject)?;
@@ -979,9 +1047,21 @@ impl CurrentProject {
     }
 
     /// Shows the translations finished so far of the Segments `source` was taken with, by
-    /// position, and none after them.
+    /// position, and none after them; translating chosen Segments again shows only theirs.
     pub fn show_translations(&self, source: &TranslationSource, translated_segments: &[Segment]) {
-        let translations = (0..source.transcript.segments.len())
+        let mut held = self.lock();
+        let Some(hold) = held.mode_hold.as_mut() else {
+            return;
+        };
+        let indexes = match &hold.mode {
+            RunningMode::Translation {
+                indexes: Some(indexes),
+                ..
+            } => indexes.clone(),
+            _ => (0..source.transcript.segments.len()).collect(),
+        };
+        let translations = indexes
+            .into_iter()
             .map(|index| {
                 let translation = translated_segments
                     .get(index)
@@ -989,7 +1069,7 @@ impl CurrentProject {
                 (index, translation)
             })
             .collect();
-        self.show_progress(|progress| *progress = Some(ModeProgress::Translations(translations)));
+        hold.progress = Some(ModeProgress::Translations(translations));
     }
 
     fn show_progress(&self, change: impl FnOnce(&mut Option<ModeProgress>)) {
@@ -1067,30 +1147,47 @@ impl CurrentProject {
         target: Language,
         segments: Vec<Segment>,
     ) -> Result<(), Failure> {
-        self.write_translation_file(source, target, segments, true)
+        self.write_translation_file(source, target, true, |_| Ok(Transcript { segments }))
     }
 
-    /// Writes the translation into `target` of Segments translated again, as one change with no
-    /// Backup, since it only corrects lines of a translation already kept.
+    /// Writes the translations into `target` of the Segments at `indexes`, translated again, into
+    /// the translation file as it is now, so each other cue keeps what it holds, as one change with
+    /// no Backup, since it only corrects lines of a translation already kept.
     pub fn write_retranslations(
         &self,
         source: &TranslationSource,
         target: Language,
+        indexes: &[usize],
         segments: Vec<Segment>,
     ) -> Result<(), Failure> {
-        self.write_translation_file(source, target, segments, false)
+        self.write_translation_file(source, target, false, |project| {
+            let speaker_names = project
+                .map(|project| project.speaker_names(Some(target)))
+                .unwrap_or_default();
+            let mut translation =
+                resource_in(project, source)?.transcript(Some(target), &speaker_names)?;
+            for index in indexes {
+                if let (Some(segment), Some(translated_segment)) =
+                    (translation.segments.get_mut(*index), segments.get(*index))
+                {
+                    segment.translation = translated_segment.translation.clone();
+                }
+            }
+            Ok(translation)
+        })
     }
 
-    /// Writes `segments` as the translation into `target` of the Resource `source` was taken
-    /// from, with the Bilingual SRTs it feeds, as one change; first keeps the file it replaces
-    /// and afterwards the new one as Backups when `is_backed_up`. The Current Resource, while it is
-    /// that Resource, is then read from the files in place of what the Mode showed.
+    /// Writes the translation into `target` that `translation` makes, given the Project while
+    /// `source` is still from it, to the Resource `source` was taken from, with the Bilingual SRTs
+    /// it feeds, as one change; first keeps the file it replaces and afterwards the new one as
+    /// Backups when `is_backed_up`. The Current Resource, while it is that Resource, is then read
+    /// from the files in place of what the Mode showed.
     fn write_translation_file(
         &self,
         source: &TranslationSource,
         target: Language,
-        segments: Vec<Segment>,
         is_backed_up: bool,
+        translation: impl FnOnce(Option<&Project>) -> Result<Transcript, Failure>,
     ) -> Result<(), Failure> {
         let mut held = self.lock();
         let HeldProject { project, mode_hold } = &mut *held;
@@ -1100,6 +1197,7 @@ impl CurrentProject {
         let path = source
             .directory
             .join(files::file_name(&source.name, [Some(target)]));
+        let translation = translation(project.as_deref())?;
         let speaker_names = project
             .as_ref()
             .map(|project| project.speaker_names(Some(target)))
@@ -1120,10 +1218,7 @@ impl CurrentProject {
                 BackupKind::Overwrite,
             )?;
         }
-        files::write_srt(
-            &path,
-            translation_srt(&Transcript { segments }, speaker_names),
-        )?;
+        files::write_srt(&path, translation_srt(&translation, speaker_names))?;
         if let Some(project) = project.as_mut() {
             project.pair_again(Some(&source.name))?;
         }
@@ -1211,11 +1306,14 @@ impl CurrentProject {
     /// Makes an edit and writes it back, unless a subtitle was changed elsewhere since Tsuzuri last
     /// read or wrote it: then the Current Resource is read again instead, keeping that change.
     pub fn edit(&self, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {
-        let is_written = |shown: Option<Language>, subtitle: Option<Language>| match field {
-            SegmentField::Text => subtitle.is_none(),
-            SegmentField::Translation => subtitle.is_some() && subtitle == shown,
-            SegmentField::Speaker => true,
-        };
+        let is_written =
+            |shown: Option<Language>, written: Language, indexes: Option<&[usize]>| match field {
+                SegmentField::Text => false,
+                SegmentField::Translation => {
+                    shown == Some(written) && indexes.is_none_or(|indexes| indexes.contains(&index))
+                }
+                SegmentField::Speaker => true,
+            };
         self.change_unless_held(is_written, |project| {
             project.refuse_changed_elsewhere()?;
             project.make_undoable_change(|project| {
@@ -1243,7 +1341,7 @@ impl CurrentProject {
     /// change, written back as an edited Speaker is.
     pub fn set_speakers(&self, indexes: &[usize], speaker: &str) -> Result<(), Failure> {
         self.change_unless_held(
-            |_, _| true,
+            |_, _, _| true,
             |project| {
                 project.refuse_changed_elsewhere()?;
                 project.make_undoable_change(|project| {
@@ -1282,7 +1380,7 @@ impl CurrentProject {
         backup: &str,
     ) -> Result<Restoration, Failure> {
         self.change_unless_held(
-            |_, subtitle| subtitle == language,
+            |_, written, _| Some(written) == language,
             |project| {
                 project.make_undoable_change(|project| project.restore_version(language, backup))
             },
@@ -1309,7 +1407,7 @@ impl CurrentProject {
         part: RevertPart,
     ) -> Result<Restoration, Failure> {
         self.change_unless_held(
-            |_, subtitle| subtitle == language,
+            |_, written, _| Some(written) == language,
             |project| {
                 project
                     .make_undoable_change(|project| project.revert_row(language, backup, row, part))
@@ -1318,16 +1416,16 @@ impl CurrentProject {
     }
 
     pub fn undo(&self) -> Result<(), Failure> {
-        self.change_unless_held(|_, _| true, Project::undo)
+        self.change_unless_held(|_, _, _| true, Project::undo)
     }
 
     pub fn redo(&self) -> Result<(), Failure> {
-        self.change_unless_held(|_, _| true, Project::redo)
+        self.change_unless_held(|_, _, _| true, Project::redo)
     }
 
     pub fn change_segments(&self, change: SegmentChange) -> Result<(), Failure> {
         self.change_unless_held(
-            |_, _| true,
+            |_, _, _| true,
             |project| {
                 project.refuse_changed_elsewhere()?;
                 project.make_undoable_change(|project| project.change_segments(change))
@@ -3199,7 +3297,7 @@ mod tests {
         segments[1].translation = Some("B2".to_string());
 
         current
-            .write_retranslations(&source, Language::English, segments)
+            .write_retranslations(&source, Language::English, &[1], segments)
             .unwrap();
         let translation = read(&dir, "ep01.en.srt");
         let has_backups = dir.path().join(files::HISTORY_DIR).exists();
@@ -3699,6 +3797,7 @@ mod tests {
 
     const ENGLISH_TRANSLATION: RunningMode = RunningMode::Translation {
         language: Language::English,
+        indexes: None,
     };
 
     // @behavior PJ-122
@@ -3749,6 +3848,98 @@ mod tests {
             .unwrap();
 
         assert_eq!(file_text(&dir, "ep01.en.srt"), two_cues("Hi", "World"));
+    }
+
+    fn translated_again(source: &TranslationSource, index: usize, text: &str) -> Vec<Segment> {
+        let mut segments = source.transcript.segments.clone();
+        segments[index].translation = Some(text.to_string());
+        segments
+    }
+
+    fn translated_in_english(name: &str) -> (TempDir, CurrentProject) {
+        let dir = directory_of(
+            name,
+            &[
+                ("ep01.srt", &two_cues("你好", "世界")),
+                ("ep01.en.srt", &two_cues("Hello", "World")),
+            ],
+        );
+        let current = project_in(&dir);
+        (dir, current)
+    }
+
+    // @behavior PJ-125
+    #[test]
+    fn translates_again_the_translation_chosen_whichever_is_shown_when_it_starts() {
+        let (dir, current) = translated_in_english("pj-retranslate-shown");
+        current.show_translation(None).unwrap();
+        let (source, _hold) = current
+            .hold_for_translation(Language::English, Some(vec![0]))
+            .unwrap();
+
+        current
+            .write_retranslations(
+                &source,
+                Language::English,
+                &[0],
+                translated_again(&source, 0, "Hi"),
+            )
+            .unwrap();
+
+        assert_eq!(file_text(&dir, "ep01.en.srt"), two_cues("Hi", "World"));
+    }
+
+    // @behavior PJ-126
+    #[test]
+    fn keeps_an_edit_made_while_other_segments_are_translated_again() {
+        let (dir, current) = translated_in_english("pj-retranslate-edit");
+        let (source, _hold) = current
+            .hold_for_translation(Language::English, Some(vec![0]))
+            .unwrap();
+        current
+            .edit(1, SegmentField::Translation, "Earth".to_string())
+            .unwrap();
+
+        current
+            .write_retranslations(
+                &source,
+                Language::English,
+                &[0],
+                translated_again(&source, 0, "Hi"),
+            )
+            .unwrap();
+
+        assert_eq!(file_text(&dir, "ep01.en.srt"), two_cues("Hi", "Earth"));
+    }
+
+    // @behavior PJ-127
+    #[test]
+    fn refuses_an_edit_of_a_segment_being_translated_again() {
+        let (dir, current) = translated_in_english("pj-retranslate-held");
+        let _held = current
+            .hold_for_translation(Language::English, Some(vec![0]))
+            .unwrap();
+
+        let result = current.edit(0, SegmentField::Translation, "Hi".to_string());
+
+        assert_eq!(
+            (result, file_text(&dir, "ep01.en.srt")),
+            (Err(Failure::ModeRunning), two_cues("Hello", "World"))
+        );
+    }
+
+    // @behavior PJ-128
+    #[test]
+    fn refuses_to_show_another_translation_while_a_mode_runs() {
+        let (dir, current) = translated_in_english("pj-show-held");
+        let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
+
+        let result = current.show_translation(None);
+
+        assert_eq!(
+            (result, current.view().unwrap().shown_translation),
+            (Err(Failure::ModeRunning), Some(Language::English))
+        );
     }
 
     // @behavior PJ-123

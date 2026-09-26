@@ -712,6 +712,42 @@ What a Mode shows is never written as a subtitle, so an edit after it starts fro
 | When | the translation of the first Segment is edited to `Hi` |
 | Then | `ep01.en.srt` reads `Hi` and `World` |
 
+## `PJ-125` Translating again the translation chosen, whichever is shown when it starts
+
+The translation a Segment is translated again into is read from its file when the Mode takes it, so switching the translation shown while it waits changes nothing it writes.
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello` and `World`, and the first Segment asked to be translated again into `en` while no translation is shown |
+| When | it is translated again as `Hi` |
+| Then | `ep01.en.srt` reads `Hi` and `World` |
+
+## `PJ-126` Keeping an edit made while other Segments are translated again
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello` and `World`, and the first Segment being translated again into `en` |
+| When | the second Segment's translation is edited to `Earth`, then the first is translated again as `Hi` |
+| Then | `ep01.en.srt` reads `Hi` and `Earth` |
+
+## `PJ-127` Refusing an edit of a Segment being translated again
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello` and `World`, and the first Segment being translated again into `en` |
+| When | its translation is edited to `Hi` |
+| Then | the edit is refused as `mode-running` and `ep01.en.srt` is left as it was |
+
+## `PJ-128` Refusing to show another translation while a Mode runs
+
+What a Mode shows is its own, so the translation shown stays until it ends.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en`, showing its `en` translation |
+| When | no translation is asked to be shown |
+| Then | it is refused as `mode-running` and `en` is still shown |
+
 ## `PJ-123` Keeping an original whole when edited after a transcription ended early
 
 | Step | Statement |

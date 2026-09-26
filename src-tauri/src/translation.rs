@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::progress::{enter, Progress};
-use crate::project::{CurrentProject, RunningMode, SegmentSpan, TranslationSource};
+use crate::project::{CurrentProject, SegmentSpan, TranslationSource};
 use crate::steps::{ModeRun, StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -128,18 +128,18 @@ pub async fn run_translate<'a>(
     ready_timeout: Duration,
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
-    let source = project.snapshot()?;
+    let (source, hold) = project.hold_for_translation(
+        plan.target,
+        match &plan.scope {
+            TranslationScope::Whole => None,
+            TranslationScope::Segments(indexes) => Some(indexes.clone()),
+        },
+    )?;
+    run.keep(hold);
     let model_settings = model_settings
         .clone()
         .with_project_model(ModelSlot::Translation, source.model.clone());
     let model = model_settings.ready_path(ModelSlot::Translation)?;
-    run.keep(project.hold_resource(
-        &source.directory,
-        &source.name,
-        RunningMode::Translation {
-            language: plan.target,
-        },
-    ));
     let ports = run.ports();
     let languages = LanguagePair {
         source: source.language,
@@ -203,10 +203,10 @@ pub async fn run_translate<'a>(
             result
         }
     };
-    match plan.scope {
+    match &plan.scope {
         TranslationScope::Whole => project.write_translations(&source, plan.target, result?)?,
-        TranslationScope::Segments(_) => {
-            project.write_retranslations(&source, plan.target, result?)?
+        TranslationScope::Segments(indexes) => {
+            project.write_retranslations(&source, plan.target, indexes, result?)?
         }
     }
     ports.announce_project();
@@ -503,7 +503,7 @@ mod tests {
 
     use super::*;
     use crate::processes::{AppPorts, Processes};
-    use crate::project::{Project, SegmentField};
+    use crate::project::{Project, RunningMode, SegmentField};
     use crate::steps::ModeLock;
     use crate::test_support::Response;
     use crate::test_support::{project_of, TempDir};
@@ -1449,6 +1449,7 @@ mod tests {
             &source.name,
             RunningMode::Translation {
                 language: Language::Japanese,
+                indexes: None,
             },
         );
         let shown = Arc::new(Mutex::new(Vec::new()));
@@ -1497,6 +1498,7 @@ mod tests {
             &source.name,
             RunningMode::Translation {
                 language: Language::Japanese,
+                indexes: None,
             },
         );
         let named = Arc::new(Mutex::new(Vec::new()));
@@ -1595,6 +1597,7 @@ mod tests {
             &source.name,
             RunningMode::Translation {
                 language: Language::Japanese,
+                indexes: None,
             },
         ));
         let translated_count = || {
@@ -2013,7 +2016,8 @@ mod tests {
             (seen, running_mode()),
             (
                 Some(RunningMode::Translation {
-                    language: Language::Japanese
+                    language: Language::Japanese,
+                    indexes: None
                 }),
                 None
             )

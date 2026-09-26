@@ -104,7 +104,7 @@ pub fn select_resource(app: AppHandle, current: State<'_, CurrentProject>, name:
 
 ## `show_translation`
 
-Show the Current Resource's translation in this Language, or none.
+Show the Current Resource's translation in this Language, or none. While a Mode runs on the Current Resource it is refused as `mode-running`, since what is shown is then the Mode's.
 
 ```rust
 pub fn show_translation(app: AppHandle, current: State<'_, CurrentProject>, language: Option<Language>) -> Result<(), Failure> {}
@@ -168,7 +168,7 @@ pub fn cancel_task(mode_lock: State<'_, ModeLock>) {}
 
 ## `retranslate`
 
-Translate the Current Resource's Segments at `indexes` again, into the translation shown, as one Batch carrying the translated lines before them and the source lines after them; no Split Sentences are searched for and no Rolling Summary is kept. The translations are written as one change in the Undo History, with no Backup, and the answer is how long each Phase took. With no translation shown it is refused as `no-translation-shown`; it runs, waits and can be cancelled as `translate` does.
+Translate the Current Resource's Segments at `indexes` again, into the translation shown, as one Batch carrying the translated lines before them and the source lines after them; no Split Sentences are searched for and no Rolling Summary is kept. It holds only those Segments of that translation, and their translations are written into its file as it then is, so an edit of another Segment made meanwhile is kept, as one change in the Undo History, with no Backup; the answer is how long each Phase took. A position the Segments do not have is refused before any Model is loaded. With no translation shown it is refused as `no-translation-shown`; it runs, waits and can be cancelled as `translate` does.
 
 ```rust
 pub async fn retranslate(app: AppHandle, current: State<'_, CurrentProject>, indexes: Vec<usize>) -> Result<Translation, Failure> {}

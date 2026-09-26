@@ -302,7 +302,7 @@ describe("TranscriptController", () => {
     await hold(
       projectOf({
         shown_translation: "en",
-        running_mode: { mode: "translation", language: "en" },
+        running_mode: { mode: "translation", language: "en", indexes: null },
         pending_batch: { first: 0, last: 1 },
         segments: [
           { start_ms: 0, end_ms: 1000, text: "大家好" },
@@ -341,7 +341,7 @@ describe("TranscriptController", () => {
     const translatedUpTo = (done: number) =>
       projectOf({
         shown_translation: "en",
-        running_mode: { mode: "translation", language: "en" },
+        running_mode: { mode: "translation", language: "en", indexes: null },
         segments: texts.map((text, at) => ({
           start_ms: at * 1000,
           end_ms: (at + 1) * 1000,
@@ -557,7 +557,7 @@ describe("TranscriptController", () => {
   it("holds only the translation while it is written", async () => {
     await hold({
       ...translated,
-      running_mode: { mode: "translation", language: "en" },
+      running_mode: { mode: "translation", language: "en", indexes: null },
     });
 
     const isHeld = (selector: string) =>
@@ -567,6 +567,37 @@ describe("TranscriptController", () => {
       false,
     ]);
   });
+  // @behavior ED-074
+  it("holds only the translations of the Segments translated again", async () => {
+    await hold({
+      ...translated,
+      running_mode: { mode: "translation", language: "en", indexes: [1] },
+      segments: [
+        { start_ms: 0, end_ms: 1000, text: "你好", translation: "Hello" },
+        { start_ms: 1000, end_ms: 2000, text: "世界", translation: "World" },
+      ],
+    });
+
+    const translations = [
+      ...document.querySelectorAll<HTMLElement>("li .field.translation"),
+    ];
+    expect(translations.map(isFieldHeld)).toEqual([false, true]);
+  });
+
+  // @behavior ED-075
+  it("holds the choice of translation while a Mode runs", async () => {
+    await hold({
+      ...translated,
+      running_mode: { mode: "translation", language: "en", indexes: null },
+    });
+
+    expect(
+      document.querySelector<HTMLSelectElement>(
+        '[data-transcript-target="translationLanguage"]',
+      )!.disabled,
+    ).toBe(true);
+  });
+
   it("names the icon that opens a Segment's changes", async () => {
     await hold(translated);
 

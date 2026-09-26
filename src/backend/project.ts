@@ -154,6 +154,8 @@ export function showTranslation(language: string | null): Promise<void> {
 /** A change to the Segments themselves, named as Rust names it. */
 export type SegmentChange =
   | { kind: "times"; index: number; start_ms: number; end_ms: number }
+  | { kind: "boundary"; index: number; at_ms: number }
+  | { kind: "insertion"; start_ms: number; end_ms: number }
   | { kind: "insertion-before"; index: number }
   | { kind: "insertion-after"; index: number }
   | { kind: "deletion"; index: number }

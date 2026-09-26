@@ -454,6 +454,30 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | its times are changed to 2 to 1 seconds |
 | Then | the change is refused as `invalid-times` and the subtitle is left as it was |
 
+## `PJ-101` Moving the edge two Segments share in every subtitle
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01` has Segments from 0 to 1 and from 1 to 2 seconds in `ep01.srt` and `ep01.en.srt` |
+| When | the edge after the first is moved to 1.5 seconds |
+| Then | the first runs from 0 to 1.5 and the second from 1.5 to 2 seconds in both files |
+
+## `PJ-102` Refusing to move a shared edge past either Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1 and from 1 to 2 seconds |
+| When | the edge after the first is moved to 2.5 seconds |
+| Then | the change is refused as `invalid-times` and the subtitle is left as it was |
+
+## `PJ-103` Inserting a Segment at times of its own
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1 and from 3 to 4 seconds |
+| When | a Segment is inserted from 1.5 to 2.5 seconds |
+| Then | an empty Segment from 1.5 to 2.5 seconds stands between them |
+
 ## `PJ-066` Backing up the original before a transcription overwrites it
 
 | Step | Statement |

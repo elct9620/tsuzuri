@@ -180,7 +180,7 @@ A grey shape standing where content is still being made or read, such as a row b
 
 ### Segment Change
 
-A change to the Segments themselves rather than to a text: new times for one, one inserted before or after another, one deleted, one split in two at a point in its text, a run of them merged, or a run of them shifted in time. It is made to the original and every translation of the Current Resource together, since a translation is matched to its original by time.
+A change to the Segments themselves rather than to a text: new times for one, the edge two neighbours share moved for both, one inserted before or after another or at times of its own, one deleted, one split in two at a point in its text, a run of them merged, or a run of them shifted in time. It is made to the original and every translation of the Current Resource together, since a translation is matched to its original by time.
 
 ### Backup
 

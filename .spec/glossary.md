@@ -66,6 +66,10 @@ The one Segment the user last clicked in the editor or on the timeline, shown wi
 
 How loud the Current Resource's media is over time, as one Peak for every 10 ms. Rust takes it from the media with ffmpeg, so the webview never decodes the whole audio.
 
+### Snap
+
+Where an edge dragged on the timeline lands when it comes within 8 pixels of another Segment's edge or of where the media is: on that time instead. Shift held while dragging does the opposite of what the timeline is set to.
+
 ### Peak
 
 The loudest sample within one 10 ms slice of a Waveform, from 0 for silence to 1 for full scale.

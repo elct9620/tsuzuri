@@ -402,3 +402,154 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | a Current Resource with a media file |
 | When | its media loads without a picture |
 | Then | no choice of what is shown over the video is offered |
+### Retiming on the timeline
+
+Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragged and written once let go, snapping to what is near unless Shift is held. Only the Current Segment moves, so a click on a narrow region still selects it, and no Segment is dragged over another, since a translation is matched to its original by time.
+
+## `PV-050` Dragging the Current Segment's end on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s |
+| When | its end is dragged 20 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.7 s |
+
+## `PV-051` Moving the Current Segment on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0.5 to 1 s |
+| When | it is dragged 20 pixels later |
+| Then | the Project is asked to change its times to 0.7 to 1.2 s |
+
+## `PV-052` Leaving every other Segment in place on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline whose Current Segment is the first of two |
+| When | the second's end is dragged 20 pixels later |
+| Then | nothing is asked of the Project |
+
+## `PV-053` Stopping a dragged edge at the next Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| When | its end is dragged 50 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.6 s |
+
+## `PV-054` Snapping a dragged edge to the next Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| When | its end is dragged 5 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.6 s |
+
+## `PV-055` Snapping a dragged edge to where the media is
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the media at 0.8 s |
+| When | its end is dragged 25 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.8 s |
+
+## `PV-056` Not snapping while Shift is held
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| When | its end is dragged 5 pixels later with Shift held |
+| Then | the Project is asked to change its times to 0 to 0.55 s |
+
+## `PV-057` Turning snapping off on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| Given | snapping turned off |
+| When | its end is dragged 5 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.55 s |
+
+## `PV-058` Taking a drag back with Esc
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline whose Current Segment's end is dragged 20 pixels later |
+| Given | Esc pressed before it is let go |
+| When | it is let go |
+| Then | nothing is asked of the Project |
+
+## `PV-059` Writing nothing for a drag that ends where it began
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline whose Current Segment's end is dragged 20 pixels later and back |
+| When | it is let go |
+| Then | nothing is asked of the Project |
+
+## `PV-060` Moving the edge two Segments share with Alt held
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.5 to 1 s |
+| When | its end is dragged 20 pixels later with Alt held |
+| Then | the Project is asked to move the edge after the first to 0.7 s |
+
+## `PV-061` Holding the timeline while a Mode writes
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline whose Current Resource is being transcribed, its Current Segment from 0 to 0.5 s |
+| When | its end is dragged 20 pixels later |
+| Then | nothing is asked of the Project |
+
+## `PV-062` Inserting a Segment drawn on the timeline
+
+Drawing on the empty waveform leaves a range to keep with Enter or drop with Esc, as Subtitle Edit does.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
+| When | Enter is pressed |
+| Then | the Project is asked to insert a Segment from 1 to 1.5 s |
+
+## `PV-063` Dropping a drawn range with Esc
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline with one Segment and a range drawn where no Segment is |
+| When | Esc is pressed |
+| Then | the timeline marks only the Segment |
+
+## `PV-064` Keeping a drawn range out of the next Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with Segments from 0 to 0.5 s and from 1 to 1.5 s |
+| When | a range is drawn from 0.7 to 1.2 s |
+| Then | the range runs from 0.7 to 1 s |
+
+## `PV-065` Setting the Current Segment's start where the media is with F11
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s |
+| When | F11 is pressed outside a field |
+| Then | the Project is asked to change its times to 0.2 to 0.5 s |
+
+## `PV-066` Setting the Current Segment's end where the media is with F12
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0 to 0.5 s, the media at 0.8 s |
+| When | F12 is pressed outside a field |
+| Then | the Project is asked to change its times to 0 to 0.8 s |
+
+## `PV-067` Keeping a time set with a key out of the next Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0 to 0.5 s, the next from 0.6 s, the media at 0.8 s |
+| When | F12 is pressed outside a field |
+| Then | the Project is asked to change its times to 0 to 0.6 s |

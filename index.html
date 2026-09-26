@@ -279,7 +279,7 @@
           <div
             class="contents"
             data-controller="preview timeline"
-            data-action="transcript:current@window->timeline#showCurrent transcript:current@window->preview#showCurrent timeline:current->preview#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent"
+            data-action="transcript:current@window->timeline#showCurrent transcript:current@window->preview#showCurrent timeline:current->preview#showCurrent keydown.space@window->timeline#playCurrent:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange:!control"
           >
             <div
               class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
@@ -664,6 +664,17 @@
                         <kbd class="kbd kbd-xs" data-i18n="preview.space"></kbd>
                         <span data-i18n="preview.playCurrent"></span>
                       </p>
+                      <p class="text-xs text-base-content/60">
+                        <kbd
+                          class="kbd kbd-xs"
+                          data-i18n="preview.setStart"
+                        ></kbd>
+                        <kbd
+                          class="kbd kbd-xs"
+                          data-i18n="preview.setEnd"
+                        ></kbd>
+                        <span data-i18n="preview.setTimes"></span>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -671,35 +682,47 @@
               <div
                 class="relative h-28 rounded-box border border-base-300 px-2 pt-2 pb-6"
               >
-                <div class="join absolute top-1 right-1 z-10">
+                <div class="absolute top-1 right-1 z-10 flex gap-1">
                   <button
                     type="button"
-                    class="btn btn-square btn-xs join-item"
-                    data-action="timeline#zoomOut"
-                    data-i18n-label="preview.zoomOut"
-                    data-i18n-tooltip="preview.zoomHint"
+                    class="btn btn-square btn-xs"
+                    data-timeline-target="snapping"
+                    data-action="timeline#toggleSnapping"
+                    data-i18n-label="preview.snapping"
+                    data-i18n-tooltip="preview.snappingHint"
                   >
-                    <i data-lucide="zoom-out" class="size-3.5"></i>
+                    <i data-lucide="magnet" class="size-3.5"></i>
                   </button>
-                  <button
-                    type="button"
-                    class="btn btn-xs join-item tabular-nums"
-                    data-timeline-target="zoomLevel"
-                    data-action="timeline#resetZoom"
-                    data-i18n-tooltip="preview.resetZoom"
-                  ></button>
-                  <button
-                    type="button"
-                    class="btn btn-square btn-xs join-item"
-                    data-action="timeline#zoomIn"
-                    data-i18n-label="preview.zoomIn"
-                    data-i18n-tooltip="preview.zoomHint"
-                  >
-                    <i data-lucide="zoom-in" class="size-3.5"></i>
-                  </button>
+                  <div class="join">
+                    <button
+                      type="button"
+                      class="btn btn-square btn-xs join-item"
+                      data-action="timeline#zoomOut"
+                      data-i18n-label="preview.zoomOut"
+                      data-i18n-tooltip="preview.zoomHint"
+                    >
+                      <i data-lucide="zoom-out" class="size-3.5"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs join-item tabular-nums"
+                      data-timeline-target="zoomLevel"
+                      data-action="timeline#resetZoom"
+                      data-i18n-tooltip="preview.resetZoom"
+                    ></button>
+                    <button
+                      type="button"
+                      class="btn btn-square btn-xs join-item"
+                      data-action="timeline#zoomIn"
+                      data-i18n-label="preview.zoomIn"
+                      data-i18n-tooltip="preview.zoomHint"
+                    >
+                      <i data-lucide="zoom-in" class="size-3.5"></i>
+                    </button>
+                  </div>
                 </div>
                 <div
-                  class="h-full [--segment-even:color-mix(in_oklab,var(--color-base-content)_6%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-base-content)_12%,transparent)] [--segment-current:color-mix(in_oklab,var(--color-primary)_25%,transparent)]"
+                  class="h-full [--segment-even:color-mix(in_oklab,var(--color-base-content)_6%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-base-content)_12%,transparent)] [--segment-current:color-mix(in_oklab,var(--color-primary)_25%,transparent)] [--segment-range:color-mix(in_oklab,var(--color-secondary)_25%,transparent)]"
                   data-timeline-target="waveform"
                   data-action="wheel->timeline#scrollOrZoom:prevent"
                 ></div>

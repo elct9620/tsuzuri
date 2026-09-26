@@ -2,8 +2,8 @@
 import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ProjectView, Segment } from "../backend/project";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ProjectView, Segment, SegmentChange } from "../backend/project";
 import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test_layout";
 import { projectOf } from "../test_project";
@@ -13,6 +13,7 @@ describe("TimelineController", () => {
   let application: Application;
   let project: ProjectView | null;
   let waveform: Waveform;
+  let changes: SegmentChange[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const host = () =>
@@ -45,23 +46,31 @@ describe("TimelineController", () => {
 
   beforeEach(async () => {
     takeLayoutBack = layOutTimeline();
+    // The regions measure a drag against their own width: 200 pixels over two seconds of Peaks
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 200, height: 100 }),
+    );
     project = null;
+    changes = [];
     waveform = {
       media: "/talks/ep01.mp4",
       peaks_per_second: 100,
       peaks: Array.from({ length: 200 }, (_, index) => (index % 10) / 10),
     };
     mockIPC(
-      (command) => {
+      (command, args) => {
         if (command === "current_project") return project;
         if (command === "extract_waveform") return waveform;
+        if (command === "change_segments")
+          changes.push((args as { change: SegmentChange }).change);
         return null;
       },
       { shouldMockEvents: true },
     );
     document.body.innerHTML = `
-      <div data-controller="timeline">
+      <div data-controller="timeline" data-action="transcript:current@window->timeline#showCurrent keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel keydown.enter@window->timeline#insertRange">
         <video data-timeline-target="media"></video>
+        <button data-timeline-target="snapping" data-action="timeline#toggleSnapping"></button>
         <button data-action="timeline#zoomOut"></button>
         <button data-action="timeline#zoomIn"></button>
         <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent" hidden></div>
@@ -75,6 +84,7 @@ describe("TimelineController", () => {
   afterEach(() => {
     application.stop();
     clearMocks();
+    vi.restoreAllMocks();
     takeLayoutBack();
   });
 
@@ -213,5 +223,283 @@ describe("TimelineController", () => {
       .click();
 
     expect(wrapper().style.width).toBe("200px");
+  });
+  describe("retiming", () => {
+    const media = () =>
+      document.querySelector<HTMLVideoElement>(
+        '[data-timeline-target="media"]',
+      )!;
+
+    /** Shows `segments` and makes the one at `current` the Current Segment, as a click on its row does. */
+    async function showCurrent(
+      segments: Segment[],
+      current = 0,
+      changes: Partial<ProjectView> = {},
+    ): Promise<void> {
+      await show({ ...projectWithMedia(segments), ...changes });
+      window.dispatchEvent(
+        new CustomEvent("transcript:current", { detail: { index: current } }),
+      );
+    }
+
+    const endOf = (index: number) =>
+      regions()[index].querySelector<HTMLElement>(
+        '[part~="region-handle-right"]',
+      );
+
+    /** Presses the pointer on `element`, then moves it `by` pixels and back `back` more, with `keys` held. */
+    function pressAndMove(
+      element: Element,
+      by: number,
+      keys: PointerEventInit = {},
+      back = 0,
+    ): void {
+      const at = {
+        pointerId: 1,
+        button: 0,
+        bubbles: true,
+        cancelable: true,
+        ...keys,
+      };
+      element.dispatchEvent(
+        new PointerEvent("pointerdown", { ...at, clientX: 100 }),
+      );
+      window.dispatchEvent(
+        new PointerEvent("pointermove", { ...at, clientX: 100 + by }),
+      );
+      if (back !== 0)
+        window.dispatchEvent(
+          new PointerEvent("pointermove", { ...at, clientX: 100 + by + back }),
+        );
+    }
+
+    function letGo(): void {
+      window.dispatchEvent(
+        new PointerEvent("pointerup", { pointerId: 1, button: 0 }),
+      );
+    }
+
+    async function drag(
+      element: Element,
+      by: number,
+      keys: PointerEventInit = {},
+    ): Promise<void> {
+      pressAndMove(element, by, keys);
+      letGo();
+      await settle();
+    }
+
+    /** Draws a range on the empty waveform from `from` pixels across `by` more; it begins five pixels wide. */
+    async function draw(from: number, by: number): Promise<void> {
+      const at = { pointerId: 1, button: 0, bubbles: true, cancelable: true };
+      wrapper().dispatchEvent(
+        new PointerEvent("pointerdown", { ...at, clientX: from }),
+      );
+      window.dispatchEvent(
+        new PointerEvent("pointermove", { ...at, clientX: from + by }),
+      );
+      window.dispatchEvent(
+        new PointerEvent("pointerup", { ...at, clientX: from + by }),
+      );
+      await settle();
+    }
+
+    function pressKey(key: string): void {
+      document.body.dispatchEvent(
+        new KeyboardEvent("keydown", { key, bubbles: true }),
+      );
+    }
+
+    const times = (index: number, start_ms: number, end_ms: number) => ({
+      kind: "times",
+      index,
+      start_ms,
+      end_ms,
+    });
+
+    // @behavior PV-050
+    it("asks for the times the Current Segment's end is dragged to", async () => {
+      await showCurrent([segmentAt(0, 0.5)]);
+
+      await drag(endOf(0)!, 20);
+
+      expect(changes).toEqual([times(0, 0, 700)]);
+    });
+
+    // @behavior PV-051
+    it("moves the Current Segment as a whole when its body is dragged", async () => {
+      await showCurrent([segmentAt(0.5, 1)]);
+
+      await drag(regions()[0], 20);
+
+      expect(changes).toEqual([times(0, 700, 1200)]);
+    });
+
+    // @behavior PV-052
+    it("leaves a Segment other than the Current Segment where it is", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.5, 1)]);
+
+      await drag(regions()[1], 20);
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior PV-053
+    it("stops a dragged edge at the next Segment", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1.5)]);
+
+      await drag(endOf(0)!, 50);
+
+      expect(changes).toEqual([times(0, 0, 600)]);
+    });
+
+    // @behavior PV-054
+    it("snaps a dragged edge to the next Segment", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
+
+      await drag(endOf(0)!, 5);
+
+      expect(changes).toEqual([times(0, 0, 600)]);
+    });
+
+    // @behavior PV-055
+    it("snaps a dragged edge to where the media is", async () => {
+      await showCurrent([segmentAt(0, 0.5)]);
+      media().currentTime = 0.8;
+
+      await drag(endOf(0)!, 25);
+
+      expect(changes).toEqual([times(0, 0, 800)]);
+    });
+
+    // @behavior PV-056
+    it("does not snap while Shift is held", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
+
+      await drag(endOf(0)!, 5, { shiftKey: true });
+
+      expect(changes).toEqual([times(0, 0, 550)]);
+    });
+
+    // @behavior PV-057
+    it("does not snap once snapping is turned off", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
+      press("timeline#toggleSnapping");
+
+      await drag(endOf(0)!, 5);
+
+      expect(changes).toEqual([times(0, 0, 550)]);
+    });
+
+    // @behavior PV-058
+    it("writes nothing for a drag taken back with Esc", async () => {
+      await showCurrent([segmentAt(0, 0.5)]);
+      pressAndMove(endOf(0)!, 20);
+      pressKey("Escape");
+
+      letGo();
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior PV-059
+    it("writes nothing for a drag that ends where it began", async () => {
+      await showCurrent([segmentAt(0, 0.5)]);
+      pressAndMove(endOf(0)!, 20, {}, -20);
+
+      letGo();
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior PV-060
+    it("moves the edge two Segments share while Alt is held", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.5, 1)]);
+
+      await drag(endOf(0)!, 20, { altKey: true });
+
+      expect(changes).toEqual([{ kind: "boundary", index: 0, at_ms: 700 }]);
+    });
+
+    // @behavior PV-061
+    it("holds every region while a Mode writes the Current Resource", async () => {
+      await showCurrent([segmentAt(0, 0.5)], 0, {
+        running_mode: { mode: "transcription" },
+      });
+
+      await drag(regions()[0], 20);
+
+      expect([endOf(0), changes]).toEqual([null, []]);
+    });
+
+    // @behavior PV-062
+    it("inserts a Segment over the range drawn with Enter", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5)]));
+      await draw(100, 45);
+
+      pressKey("Enter");
+      await settle();
+
+      expect(changes).toEqual([
+        { kind: "insertion", start_ms: 1000, end_ms: 1500 },
+      ]);
+    });
+
+    // @behavior PV-063
+    it("drops the range drawn with Esc", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5)]));
+      await draw(100, 45);
+
+      pressKey("Escape");
+
+      expect(regions().length).toBe(1);
+    });
+
+    // @behavior PV-064
+    it("keeps a drawn range out of the next Segment", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5), segmentAt(1, 1.5)]));
+
+      await draw(70, 45);
+
+      expect([regions()[2].style.left, regions()[2].style.right]).toEqual([
+        "35%",
+        "50%",
+      ]);
+    });
+
+    // @behavior PV-065
+    it("sets the Current Segment's start where the media is with F11", async () => {
+      await showCurrent([segmentAt(0, 0.5)]);
+      media().currentTime = 0.2;
+
+      pressKey("F11");
+      await settle();
+
+      expect(changes).toEqual([times(0, 200, 500)]);
+    });
+
+    // @behavior PV-066
+    it("sets the Current Segment's end where the media is with F12", async () => {
+      await showCurrent([segmentAt(0, 0.5)]);
+      media().currentTime = 0.8;
+
+      pressKey("F12");
+      await settle();
+
+      expect(changes).toEqual([times(0, 0, 800)]);
+    });
+
+    // @behavior PV-067
+    it("keeps a time set with a key out of the next Segment", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
+      media().currentTime = 0.8;
+
+      pressKey("F12");
+      await settle();
+
+      expect(changes).toEqual([times(0, 0, 600)]);
+    });
   });
 });

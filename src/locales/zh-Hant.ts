@@ -119,6 +119,12 @@ const zhHant: typeof en = {
     captionTranslation: "譯文",
     captionBilingual: "雙語",
     zoomHint: "Ctrl 或 Alt 加滾輪也能縮放",
+    snapping: "對齊其他段落與播放位置",
+    snappingHint:
+      "拖曳時按住 Shift 可暫時切換對齊。按住 Alt 會連相鄰段落的共用邊界一起移動；在空白波形上拖出範圍後按 Enter 新增段落。",
+    setStart: "F11",
+    setEnd: "F12",
+    setTimes: "以播放位置設定開始與結束",
     resetZoom: "回到 100%",
     current: "目前段落",
     pickSegment: "點一段字幕，就能單獨播放。",

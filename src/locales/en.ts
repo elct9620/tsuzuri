@@ -121,6 +121,12 @@ const en = {
     captionTranslation: "Translation",
     captionBilingual: "Both",
     zoomHint: "Ctrl or Alt with the wheel also zooms",
+    snapping: "Snap to other Segments and the playhead",
+    snappingHint:
+      "Hold Shift while dragging to switch snapping for that drag. Alt moves an edge shared with the next Segment too; drag on empty waveform and press Enter to add a Segment.",
+    setStart: "F11",
+    setEnd: "F12",
+    setTimes: "set start and end at the playhead",
     resetZoom: "Back to 100%",
     current: "Current Segment",
     pickSegment: "Click a Segment to play it on its own.",

@@ -291,6 +291,90 @@ Deleting the Checked Segments at once is one change, so a single undo brings the
 | When | deleting is chosen from the bar for Checked Segments |
 | Then | the Project is asked to delete Segments 0 and 2 as one change |
 
+## `ED-098` Deleting the Current Segment with Delete
+
+Proofreading line by line, reaching for a menu to drop a stray line is slow, so Delete deletes the Current Segment where no text is typed, as subtitle editors do. A single undo brings it back, so nothing asks first.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the second current, with focus outside any text field |
+| When | Delete is pressed |
+| Then | the Project is asked to delete Segment 1 |
+
+## `ED-099` Deleting the Checked Segments with Delete
+
+Checked Segments are the ones chosen to act on, so Delete takes them over the Current Segment.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the first and third checked and the second current, with focus outside any text field |
+| When | Delete is pressed |
+| Then | the Project is asked to delete Segments 0 and 2 as one change |
+
+## `ED-100` Deleting with Backspace on macOS
+
+The key a Mac keyboard labels delete types Backspace, and a forward Delete takes Fn with it, so both delete there.
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on macOS, three Segments, the second current, with focus outside any text field |
+| When | Backspace is pressed |
+| Then | the Project is asked to delete Segment 1 |
+
+## `ED-101` Leaving Delete to a text field
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, with focus in the second Segment's text |
+| When | Delete is pressed |
+| Then | no Segment is deleted and the key is left to the field |
+
+## `ED-102` Leaving Delete to an open dialog
+
+Focus in a dialog, a menu or a drop-down list means the user is working there, so Delete does not reach past it to the Segments.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the second current, with a dialog open over the editor |
+| When | Delete is pressed |
+| Then | no Segment is deleted |
+
+## `ED-103` Leaving Delete to a menu or a list with focus
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the second current, with focus on the second Segment's menu |
+| When | Delete is pressed |
+| Then | no Segment is deleted |
+
+## `ED-104` Deleting nothing while a Mode holds the Segments
+
+A running Mode holds the Segments from being deleted from a menu, and Delete follows the same hold.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the second current, while a transcription runs on the Current Resource |
+| When | Delete is pressed |
+| Then | no Segment is deleted |
+
+## `ED-105` Deleting one Segment for a held key
+
+The Current Segment moves only once the deletion shows, so a key repeating before then would delete by a place already gone.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, the second current, with focus outside any text field |
+| When | Delete is held down until it repeats |
+| Then | the Project is asked to delete Segment 1 once |
+
+## `ED-106` Leaving Delete alone with nothing to delete
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, none current or checked |
+| When | Delete is pressed |
+| Then | no Segment is deleted and the key is left to the page |
+
 ## `ED-096` Showing the split shortcut in a Segment's menu
 
 | Step | Statement |
@@ -298,6 +382,14 @@ Deleting the Checked Segments at once is one change, so a single undo brings the
 | Given | the interface on Linux |
 | When | a Segment's menu is read |
 | Then | splitting at the Cursor reads `Ctrl+Alt+Enter` beside it |
+
+## `ED-107` Showing the delete shortcut in a Segment's menu
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux |
+| When | a Segment's menu is read |
+| Then | deleting reads `Delete` beside it |
 
 ## `ED-066` Checking every Segment by shortcut
 

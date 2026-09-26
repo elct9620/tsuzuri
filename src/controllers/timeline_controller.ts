@@ -266,6 +266,11 @@ export default class TimelineController extends Controller {
   private surfer?: WaveSurfer;
   private regions?: ReturnType<typeof RegionsPlugin.create>;
   private unfollow?: () => void;
+  /**
+   * Where the media was as it last reported its time, to see it play across the Current Segment's
+   * end rather than jump past it; none after a seek.
+   */
+  private lastTime: number | null = null;
 
   connect(): void {
     const keys = timeKeys();
@@ -309,8 +314,8 @@ export default class TimelineController extends Controller {
   }
 
   /**
-   * Stops the media when it plays, or else plays on from where it is, or the Current Segment alone
-   * while playing alone is turned on.
+   * Stops the media when it plays, or else plays on from where it is, or from the Current Segment's
+   * start while playing alone is turned on, for `pauseAtCurrentEnd` to stop at its end.
    */
   playOrStop(): void {
     if (!this.mediaTarget.paused) {
@@ -322,8 +327,7 @@ export default class TimelineController extends Controller {
       return;
     }
     const segment = this.currentSegment;
-    if (segment)
-      void this.surfer?.play(segment.start_ms / 1000, segment.end_ms / 1000);
+    if (segment) void this.surfer?.play(segment.start_ms / 1000);
   }
 
   togglePlayingAlone(): void {
@@ -520,6 +524,8 @@ export default class TimelineController extends Controller {
       ],
     });
     this.surfer.on("ready", () => this.markSegments());
+    this.surfer.on("timeupdate", (time) => this.pauseAtCurrentEnd(time));
+    this.surfer.on("seeking", () => (this.lastTime = null));
     this.surfer.on("interaction", () => this.dropRange());
     regions.enableDragSelection({
       id: RANGE_ID,
@@ -560,6 +566,22 @@ export default class TimelineController extends Controller {
       style.top = `${((lane.count - 1 - lane.index) * 100) / lane.count}%`;
       style.zIndex = index === current ? "1" : "";
     });
+  }
+
+  /**
+   * Pauses the media as it plays across the Current Segment's end while playing alone is turned on.
+   * The end is read each time rather than fixed as the media starts, so turning playing alone on or
+   * off, or retiming the Current Segment, takes effect on the media already playing.
+   */
+  private pauseAtCurrentEnd(time: number): void {
+    const from = this.lastTime;
+    this.lastTime = time;
+    const segment = this.currentSegment;
+    if (!this.isPlayingAlone || !segment || from === null) return;
+    const end = segment.end_ms / 1000;
+    if (this.mediaTarget.paused || from >= end || time < end) return;
+    this.mediaTarget.pause();
+    this.mediaTarget.currentTime = end;
   }
 
   private get currentSegment(): Segment | undefined {

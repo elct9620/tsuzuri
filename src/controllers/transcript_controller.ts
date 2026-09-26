@@ -169,16 +169,17 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
     choice.append(button);
     menu.append(choice);
   }
-  const again = document.createElement("button");
-  again.type = "button";
-  again.className = "retranslate";
-  again.disabled = !isTranslationShown;
-  again.dataset.action = "retranslation#translateSegment";
-  again.dataset.retranslationIndexParam = String(index);
-  again.textContent = t("edit.retranslate");
-  const choice = document.createElement("li");
-  choice.append(again);
-  menu.append(choice);
+  if (isTranslationShown) {
+    const again = document.createElement("button");
+    again.type = "button";
+    again.className = "retranslate";
+    again.dataset.action = "retranslation#translateSegment";
+    again.dataset.retranslationIndexParam = String(index);
+    again.textContent = t("edit.retranslate");
+    const choice = document.createElement("li");
+    choice.append(again);
+    menu.append(choice);
+  }
   dropdown.append(opener, menu);
   return dropdown;
 }

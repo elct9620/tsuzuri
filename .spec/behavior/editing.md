@@ -662,3 +662,13 @@ Setting Speakers one Segment at a time is slow across a long transcript, so the 
 | Given | a Current Resource showing its `en` translation, its first and third Segments checked |
 | When | translating them again is chosen |
 | Then | the Project is asked to translate Segments 0 and 2 again |
+
+## `ED-077` Not offering to translate again without a translation shown
+
+Translating again writes into the translation shown, so without one it is not offered at all.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing no translation, its first Segment checked |
+| When | the editor shows it |
+| Then | neither the Segment menu nor the bar for Checked Segments offers translating again |

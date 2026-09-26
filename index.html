@@ -747,14 +747,14 @@
                             tabindex="0"
                             role="button"
                             class="btn btn-square btn-xs"
-                            data-i18n-label="preview.captionBackdrop"
-                            data-i18n-tooltip="preview.captionBackdrop"
+                            data-i18n-label="preview.captionOptions"
+                            data-i18n-tooltip="preview.captionOptions"
                           >
                             <i data-lucide="captions" class="size-4"></i>
                           </div>
                           <div
                             tabindex="-1"
-                            class="dropdown-content z-20 mt-1 w-28 bg-base-100 shadow-md"
+                            class="dropdown-content z-20 mt-1 w-32 bg-base-100 shadow-md"
                           >
                             <!-- The join sits inside, as its display would keep a closed menu over the buttons beside it -->
                             <div
@@ -790,6 +790,17 @@
                                 data-i18n-label="preview.captionBackdropOpaque"
                               />
                             </div>
+                            <label
+                              class="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+                            >
+                              <span data-i18n="preview.captionSpeaker"></span>
+                              <input
+                                type="checkbox"
+                                class="toggle toggle-sm"
+                                data-preview-target="captionSpeaker"
+                                data-action="preview#toggleCaptionSpeaker"
+                              />
+                            </label>
                           </div>
                         </div>
                       </div>
@@ -814,6 +825,11 @@
                         <span
                           class="text-xs font-normal tabular-nums text-base-content/60"
                           data-preview-target="currentTimes"
+                        ></span>
+                        <span
+                          class="badge badge-sm badge-neutral max-w-32 truncate"
+                          data-preview-target="currentSpeaker"
+                          hidden
                         ></span>
                       </h3>
                       <p

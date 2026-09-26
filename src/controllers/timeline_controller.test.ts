@@ -423,7 +423,7 @@ describe("TimelineController", () => {
       expect(changes).toEqual([times(0, 0, 550)]);
     });
 
-    // @behavior PV-092
+    // @behavior PV-099
     it("does not snap unless snapping is chosen", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
 
@@ -432,7 +432,7 @@ describe("TimelineController", () => {
       expect(changes).toEqual([times(0, 0, 550)]);
     });
 
-    // @behavior PV-093
+    // @behavior PV-100
     it("snaps while Shift is held", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
 

@@ -327,7 +327,7 @@ Hearing and watching the Current Resource's media above the editor while its sub
 
 Another Segment chosen is the one to be heard next, so the media pauses there for Space: a row at its start, a region where it was clicked, as the waveform does elsewhere. Staying in the Current Segment, or a Segment Change moving it, plays on, so a text is corrected while heard.
 
-## `PV-071` Pausing at the start of a Segment whose row is chosen
+## `PV-075` Pausing at the start of a Segment whose row is chosen
 
 | Step | Statement |
 | --- | --- |
@@ -335,7 +335,7 @@ Another Segment chosen is the one to be heard next, so the media pauses there fo
 | When | the second Segment's row is clicked |
 | Then | the media pauses at 1 s |
 
-## `PV-072` Moving the paused media to a Segment whose row is chosen
+## `PV-076` Moving the paused media to a Segment whose row is chosen
 
 | Step | Statement |
 | --- | --- |
@@ -343,7 +343,7 @@ Another Segment chosen is the one to be heard next, so the media pauses there fo
 | When | the second Segment's row is clicked |
 | Then | the media stays paused at 1 s |
 
-## `PV-073` Pausing where a Segment's region is clicked
+## `PV-077` Pausing where a Segment's region is clicked
 
 | Step | Statement |
 | --- | --- |
@@ -351,7 +351,7 @@ Another Segment chosen is the one to be heard next, so the media pauses there fo
 | When | the second Segment's region is clicked at 1.5 s |
 | Then | the media pauses at 1.5 s |
 
-## `PV-074` Playing on when the Current Segment's row is clicked
+## `PV-078` Playing on when the Current Segment's row is clicked
 
 | Step | Statement |
 | --- | --- |
@@ -359,7 +359,7 @@ Another Segment chosen is the one to be heard next, so the media pauses there fo
 | When | the second Segment's row is clicked |
 | Then | the media keeps playing |
 
-## `PV-075` Playing on when a Segment Change moves the Current Segment
+## `PV-079` Playing on when a Segment Change moves the Current Segment
 
 | Step | Statement |
 | --- | --- |
@@ -623,3 +623,39 @@ Drawing on the empty waveform leaves a range to keep with Enter or drop with Esc
 | Given | a Current Segment from 0 to 0.5 s, the next from 0.6 s, the media at 0.8 s |
 | When | F12 is pressed outside a field |
 | Then | the Project is asked to change its times to 0 to 0.6 s |
+
+### Reading times on the timeline
+
+A time typed into a Segment is found on the waveform first, so the timeline tells the time under the pointer in the form the field takes, as Aegisub does; and while a Segment is dragged or a range drawn, the times it will be written with and how long it runs, as Subtitle Edit shows a drawn range's length.
+
+## `PV-071` Showing the time under the pointer on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second |
+| When | the pointer rests 150 pixels from its start |
+| Then | the time under it reads `00:00:01.500` |
+
+## `PV-072` Showing where a dragged Segment lands
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| When | its end is dragged 5 pixels later and not yet let go |
+| Then | the times read `00:00:00.000 → 00:00:00.600 (0.600s)` |
+
+## `PV-073` Showing the times of a range as it is drawn
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second |
+| When | a range is drawn from 1 to 1.5 s and not yet let go |
+| Then | the times read `00:00:01.000 → 00:00:01.500 (0.500s)` |
+
+## `PV-074` Showing the times of a drawn range until it is dropped
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline with a range drawn from 1 to 1.5 s |
+| When | Esc is pressed |
+| Then | no times are shown |

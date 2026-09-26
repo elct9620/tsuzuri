@@ -103,7 +103,7 @@ describe("Current Segment", () => {
           <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"></div>
           <p data-preview-target="currentHint"></p>
           <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div>
-          <button data-timeline-target="snapButton"></button><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
+          <button data-timeline-target="snapButton"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
           </div>
         </div>
         <h2 data-transcript-target="heading"></h2>
@@ -215,7 +215,7 @@ describe("Current Segment", () => {
     expect(isMarked("data-playing")).toEqual([false, true]);
   });
 
-  // @behavior PV-071
+  // @behavior PV-075
   it("pauses at the start of a Segment whose row is chosen while the media plays", async () => {
     await show(twoSegments);
     await media().play();
@@ -226,7 +226,7 @@ describe("Current Segment", () => {
     expect([media().paused, media().currentTime]).toEqual([true, 1]);
   });
 
-  // @behavior PV-072
+  // @behavior PV-076
   it("moves the paused media to the start of a Segment whose row is chosen", async () => {
     await show(twoSegments);
     playTo(0.5);
@@ -236,7 +236,7 @@ describe("Current Segment", () => {
     expect([media().paused, media().currentTime]).toEqual([true, 1]);
   });
 
-  // @behavior PV-073
+  // @behavior PV-077
   it("pauses where a Segment's region is clicked while the media plays", async () => {
     // The waveform takes a click's time from its width: 200 pixels over two seconds of Peaks
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
@@ -257,7 +257,7 @@ describe("Current Segment", () => {
     expect([media().paused, media().currentTime]).toEqual([true, 1.5]);
   });
 
-  // @behavior PV-074
+  // @behavior PV-078
   it("plays on when the Current Segment's row is clicked", async () => {
     await show(twoSegments);
     rows()[1].click();
@@ -269,7 +269,7 @@ describe("Current Segment", () => {
     expect([media().paused, media().currentTime]).toEqual([false, 1.5]);
   });
 
-  // @behavior PV-075
+  // @behavior PV-079
   it("plays on when a Segment Change moves the Current Segment", async () => {
     await show(twoSegments);
     rows()[0].click();

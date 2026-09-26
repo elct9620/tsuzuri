@@ -20,7 +20,7 @@ describe("notify", () => {
   let application: Application;
 
   /** Lets Stimulus connect what was just added, which it does as the DOM reports the change. */
-  const connected = async () => {
+  const waitForConnect = async () => {
     await Promise.resolve();
     await Promise.resolve();
   };
@@ -28,7 +28,7 @@ describe("notify", () => {
   /** Shows `notification` and waits for its controller to connect, as the page does. */
   async function notify(notification: Notification): Promise<void> {
     show(notification);
-    await connected();
+    await waitForConnect();
   }
 
   beforeEach(async () => {
@@ -38,7 +38,7 @@ describe("notify", () => {
     document.body.innerHTML = NOTIFICATION_STACK;
     application = Application.start();
     application.register("notification", NotificationController);
-    await connected();
+    await waitForConnect();
   });
 
   afterEach(() => {

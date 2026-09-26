@@ -115,11 +115,11 @@ describe("FieldController", () => {
     field().focus();
     field().textContent = "大家好啊";
 
-    const taken = isEnterTaken({ code: "NumpadEnter" });
+    const isTaken = isEnterTaken({ code: "NumpadEnter" });
     await settle();
 
     expect([
-      taken,
+      isTaken,
       execCommand.mock.calls,
       document.activeElement,
       edits,
@@ -151,9 +151,9 @@ describe("FieldController", () => {
     document.execCommand = execCommand;
     field().focus();
 
-    const taken = isEnterTaken({ shiftKey: true });
+    const isTaken = isEnterTaken({ shiftKey: true });
 
-    expect([taken, execCommand.mock.calls, document.activeElement]).toEqual([
+    expect([isTaken, execCommand.mock.calls, document.activeElement]).toEqual([
       true,
       [["insertLineBreak"]],
       field(),

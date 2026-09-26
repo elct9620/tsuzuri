@@ -210,7 +210,7 @@ fn is_overlapping(a: &ComparedCue, b: &ComparedCue) -> bool {
 /// Pairs each cue left alone with the first cue alone on the other side reading the same, as a
 /// cue moved in time is.
 fn pair_moved_cues(left: &[ComparedCue], right: &[ComparedCue], groups: &mut Groups) {
-    let mut taken = vec![false; right.len()];
+    let mut is_taken = vec![false; right.len()];
     for (left_index, left_cue) in left.iter().enumerate() {
         if !groups.is_alone(left_index) {
             continue;
@@ -219,12 +219,12 @@ fn pair_moved_cues(left: &[ComparedCue], right: &[ComparedCue], groups: &mut Gro
             .iter()
             .enumerate()
             .position(|(right_index, right_cue)| {
-                !taken[right_index]
+                !is_taken[right_index]
                     && groups.is_alone(left.len() + right_index)
                     && right_cue.text == left_cue.text
             });
         if let Some(right_index) = moved_index {
-            taken[right_index] = true;
+            is_taken[right_index] = true;
             groups.join(left_index, left.len() + right_index);
         }
     }

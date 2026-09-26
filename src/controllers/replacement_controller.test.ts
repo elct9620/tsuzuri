@@ -14,7 +14,7 @@ import TranscriptController from "./transcript_controller";
 describe("ReplacementController", () => {
   let application: Application;
   let project: ProjectView | null;
-  let replaced: unknown[];
+  let replaceArgs: unknown[];
   let count: number;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -42,7 +42,7 @@ describe("ReplacementController", () => {
 
   beforeEach(async () => {
     project = null;
-    replaced = [];
+    replaceArgs = [];
     count = 1;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
@@ -66,7 +66,7 @@ describe("ReplacementController", () => {
       (command, args) => {
         if (command === "current_project") return project;
         if (command === "replace_text") {
-          replaced.push(args);
+          replaceArgs.push(args);
           return count;
         }
       },
@@ -161,7 +161,7 @@ describe("ReplacementController", () => {
     await settle();
 
     expect([
-      replaced,
+      replaceArgs,
       target<HTMLDialogElement>("dialog").open,
       notifications(),
     ]).toEqual([

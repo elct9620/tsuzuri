@@ -130,11 +130,12 @@ function earlierText(row: ComparedRow): HTMLParagraphElement {
 
 /** The ranges of `field` holding the characters a Pair's text gained, while the field still reads that text. */
 function addedRanges(field: HTMLElement, row: ComparedRow): Range[] {
-  const kept = row.text_spans.filter((span) => span.kind !== "removal");
-  if (kept.map((span) => span.text).join("") !== fieldValue(field)) return [];
+  const keptSpans = row.text_spans.filter((span) => span.kind !== "removal");
+  if (keptSpans.map((span) => span.text).join("") !== fieldValue(field))
+    return [];
   const ranges: Range[] = [];
   let offset = 0;
-  for (const span of kept) {
+  for (const span of keptSpans) {
     const end = offset + span.text.length;
     const range =
       span.kind === "addition" ? textRange(field, offset, end) : null;

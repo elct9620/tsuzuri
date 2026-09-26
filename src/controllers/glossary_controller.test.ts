@@ -96,11 +96,11 @@ describe("GlossaryController", () => {
   it("sends the rows of the dialog to be saved", async () => {
     await openDialog();
     document.querySelector<HTMLButtonElement>("#add")!.click();
-    const added = target("rows").querySelectorAll<HTMLInputElement>(
+    const newRowInputs = target("rows").querySelectorAll<HTMLInputElement>(
       "tr:last-child input[type=text]",
     );
-    added[0].value = "阿福";
-    added[1].value = "Alfred";
+    newRowInputs[0].value = "阿福";
+    newRowInputs[1].value = "Alfred";
 
     document.querySelector<HTMLButtonElement>("#save")!.click();
     await settle();

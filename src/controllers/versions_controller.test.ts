@@ -9,8 +9,8 @@ import VersionsController from "./versions_controller";
 
 describe("VersionsController", () => {
   let application: Application;
-  let restored: unknown;
-  let reverted: unknown;
+  let restoreArgs: unknown;
+  let revertArgs: unknown;
   let rows: ComparedRow[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -34,8 +34,8 @@ describe("VersionsController", () => {
   }
 
   beforeEach(async () => {
-    restored = undefined;
-    reverted = undefined;
+    restoreArgs = undefined;
+    revertArgs = undefined;
     rows = [
       {
         kind: "pair",
@@ -103,11 +103,11 @@ describe("VersionsController", () => {
         ];
       if (command === "compare_versions") return rows;
       if (command === "revert_row") {
-        reverted = args;
+        revertArgs = args;
         return { unmatched_count: 0 };
       }
       if (command === "restore_version") {
-        restored = args;
+        restoreArgs = args;
         return { unmatched_count: 0 };
       }
     });
@@ -123,18 +123,21 @@ describe("VersionsController", () => {
 
   // @behavior VR-043
   it("hands the editor a Backup set as the comparison, and closes", async () => {
-    const handed: unknown[] = [];
+    const compareWithDetails: unknown[] = [];
     document
       .querySelector("[data-controller=versions]")!
       .addEventListener("versions:compare-with", (event) =>
-        handed.push((event as CustomEvent).detail),
+        compareWithDetails.push((event as CustomEvent).detail),
       );
     await openVersions();
     await chooseSubtitle("en");
 
     await click(".set-comparison");
 
-    expect([handed, target<HTMLDialogElement>("dialog").open]).toEqual([
+    expect([
+      compareWithDetails,
+      target<HTMLDialogElement>("dialog").open,
+    ]).toEqual([
       [{ language: "en", file: "ep01.en.20260925T030000Z.srt" }],
       false,
     ]);
@@ -144,10 +147,10 @@ describe("VersionsController", () => {
   it("lists the Backups of the original by their local time", async () => {
     await openVersions();
 
-    const listed = [...target("backups").querySelectorAll("li")].map(
+    const backupTexts = [...target("backups").querySelectorAll("li")].map(
       (li) => li.textContent,
     );
-    expect(listed[1]).toContain(localTime("20260925T023000Z"));
+    expect(backupTexts[1]).toContain(localTime("20260925T023000Z"));
   });
 
   // @behavior VR-008
@@ -171,7 +174,7 @@ describe("VersionsController", () => {
 
     await click("button.restore");
 
-    expect([restored, notifications()]).toEqual([
+    expect([restoreArgs, notifications()]).toEqual([
       { language: "en", backup: "ep01.en.20260925T030000Z.srt" },
       ["已還原"],
     ]);
@@ -225,7 +228,7 @@ describe("VersionsController", () => {
     target("rows").querySelector<HTMLButtonElement>("button.revert")!.click();
     await settle();
 
-    expect([reverted, notifications()]).toEqual([
+    expect([revertArgs, notifications()]).toEqual([
       {
         language: null,
         backup: "ep01.20260925T023000Z.srt",
@@ -251,12 +254,12 @@ describe("VersionsController", () => {
     await openVersions();
     await click("button.compare");
 
-    const added = [
+    const additions = [
       ...target("rows")
         .querySelectorAll("tr")[0]
         .querySelectorAll("td")[2]
         .querySelectorAll("[data-span=addition]"),
     ].map((span) => span.textContent);
-    expect(added).toEqual(["會"]);
+    expect(additions).toEqual(["會"]);
   });
 });

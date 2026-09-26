@@ -316,11 +316,11 @@ mod tests {
 
     fn record(dir: &TempDir, pid: u32, name: &str) -> PathBuf {
         let record = dir.path().join("processes.json");
-        let recorded = vec![RecordedProcess {
+        let records = vec![RecordedProcess {
             pid,
             name: name.to_string(),
         }];
-        std::fs::write(&record, serde_json::to_vec(&recorded).unwrap()).unwrap();
+        std::fs::write(&record, serde_json::to_vec(&records).unwrap()).unwrap();
         record
     }
 
@@ -335,12 +335,12 @@ mod tests {
             .spawn(app.handle(), &sleep_path(), &["30".to_string()])
             .unwrap();
 
-        let recorded: Vec<RecordedProcess> =
+        let records: Vec<RecordedProcess> =
             serde_json::from_slice(&std::fs::read(dir.path().join("processes.json")).unwrap())
                 .unwrap();
         processes.kill_all();
         assert_eq!(
-            recorded,
+            records,
             vec![RecordedProcess {
                 pid,
                 name: "sleep".to_string()

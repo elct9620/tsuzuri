@@ -171,7 +171,7 @@ mod tests {
         let order = Arc::new(std::sync::Mutex::new(Vec::new()));
         let turn = lock.wait_turn().await;
 
-        let waiting = tokio::spawn({
+        let waiting_task = tokio::spawn({
             let (lock, order) = (Arc::clone(&lock), Arc::clone(&order));
             async move {
                 let _turn = lock.wait_turn().await;
@@ -181,7 +181,7 @@ mod tests {
         tokio::time::sleep(Duration::from_millis(50)).await;
         order.lock().unwrap().push("first ends");
         drop(turn);
-        waiting.await.unwrap();
+        waiting_task.await.unwrap();
 
         assert_eq!(*order.lock().unwrap(), vec!["first ends", "second starts"]);
     }

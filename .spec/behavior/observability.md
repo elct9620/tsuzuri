@@ -65,6 +65,32 @@ What a run leaves in the log, so a slow or failed run can be diagnosed afterward
 | When | a directory is chosen for the log |
 | Then | it is recorded as the log directory, and the settings say it takes effect after a restart |
 
+## `OB-010` Naming the directory the log moves to after a restart
+
+| Step | Statement |
+| --- | --- |
+| Given | the general settings, with the log written to `/os/logs` |
+| When | `/logs` is chosen for the log |
+| Then | the settings say the log is written to `/logs` after a restart |
+
+## `OB-011` Saying nothing of a restart while the chosen directory is in use
+
+| Step | Statement |
+| --- | --- |
+| Given | the log written to `/os/logs`, the directory chosen for it |
+| When | the general settings open |
+| Then | the settings say nothing of a restart |
+
+## `OB-012` Telling on opening the settings of a directory waiting for a restart
+
+A directory chosen earlier in this launch takes effect only at the next, so the settings keep saying so each time they open.
+
+| Step | Statement |
+| --- | --- |
+| Given | the log written to `/os/logs`, with `/logs` chosen for the next launch |
+| When | the general settings open |
+| Then | the settings say the log is written to `/logs` after a restart |
+
 ## `OB-008` Opening the log directory
 
 | Step | Statement |

@@ -14,7 +14,7 @@ import TranscriptController from "./transcript_controller";
 describe("SpeakersController", () => {
   let application: Application;
   let project: ProjectView | null;
-  let named: unknown;
+  let setSpeakersArgs: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = <T extends HTMLElement>(name: string) =>
@@ -71,7 +71,7 @@ describe("SpeakersController", () => {
 
   beforeEach(async () => {
     project = null;
-    named = undefined;
+    setSpeakersArgs = undefined;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes speakers"
@@ -104,7 +104,7 @@ describe("SpeakersController", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
-        if (command === "set_speakers") named = args;
+        if (command === "set_speakers") setSpeakersArgs = args;
       },
       { shouldMockEvents: true },
     );
@@ -131,7 +131,7 @@ describe("SpeakersController", () => {
 
     await apply("checked-segments", "co");
 
-    expect(named).toEqual({ indexes: [0, 2], speaker: "co" });
+    expect(setSpeakersArgs).toEqual({ indexes: [0, 2], speaker: "co" });
   });
 
   // @behavior ED-035
@@ -141,7 +141,7 @@ describe("SpeakersController", () => {
 
     await apply("all-segments", "co");
 
-    expect(named).toEqual({ indexes: [0, 1, 2], speaker: "co" });
+    expect(setSpeakersArgs).toEqual({ indexes: [0, 1, 2], speaker: "co" });
   });
 
   // @behavior ED-036
@@ -151,7 +151,7 @@ describe("SpeakersController", () => {
 
     await apply("unnamed-segments", "co");
 
-    expect(named).toEqual({ indexes: [0, 2], speaker: "co" });
+    expect(setSpeakersArgs).toEqual({ indexes: [0, 2], speaker: "co" });
   });
 
   // @behavior ED-037
@@ -161,6 +161,6 @@ describe("SpeakersController", () => {
 
     await apply("named-segments", "小明", "co");
 
-    expect(named).toEqual({ indexes: [0, 2], speaker: "小明" });
+    expect(setSpeakersArgs).toEqual({ indexes: [0, 2], speaker: "小明" });
   });
 });

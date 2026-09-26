@@ -36,8 +36,8 @@ impl Phases {
         self.timings
     }
 
-    fn record(&mut self, phase: &'static str, started: Instant) {
-        let seconds = started.elapsed().as_secs_f64();
+    fn record(&mut self, phase: &'static str, start: Instant) {
+        let seconds = start.elapsed().as_secs_f64();
         log::info!("{}: {phase} took {seconds:.2}s", self.mode);
         self.timings.push(PhaseTiming { phase, seconds });
     }

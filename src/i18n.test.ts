@@ -74,13 +74,13 @@ describe("interface language", () => {
     const rows = [
       ...settings.querySelectorAll('[data-dialog-target="dialog"] .list-row'),
     ];
-    const unexplained = rows.filter((row) => {
+    const rowsWithoutTip = rows.filter((row) => {
       const help = row.querySelector<HTMLElement>("[data-i18n-tooltip]");
       return (
         !help?.dataset.tooltip ||
         help.dataset.tooltip === help.dataset.i18nTooltip
       );
     });
-    expect([rows.length > 0, unexplained.length]).toEqual([true, 0]);
+    expect([rows.length > 0, rowsWithoutTip.length]).toEqual([true, 0]);
   });
 });

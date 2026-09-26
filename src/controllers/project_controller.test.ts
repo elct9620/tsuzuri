@@ -19,7 +19,7 @@ describe("ProjectController", () => {
   let calls: { command: string; args: unknown }[];
   let openSrt: () => unknown;
   let selectFailure: unknown;
-  let reloaded: () => unknown;
+  let reloadProject: () => unknown;
   let chosenFile: string;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -46,7 +46,7 @@ describe("ProjectController", () => {
     calls = [];
     openSrt = () => null;
     selectFailure = undefined;
-    reloaded = () => null;
+    reloadProject = () => null;
     chosenFile = "/subtitles/lecture.srt";
     document.body.innerHTML = `
       <main
@@ -100,7 +100,7 @@ describe("ProjectController", () => {
             ? "/talks"
             : chosenFile;
         if (command === "open_srt") return openSrt();
-        if (command === "reload_project") return reloaded();
+        if (command === "reload_project") return reloadProject();
         if (command === "select_resource" && selectFailure !== undefined)
           return Promise.reject(selectFailure);
       },
@@ -232,7 +232,7 @@ describe("ProjectController", () => {
       }),
     );
     selectFailure = { code: "malformed-srt", cue: 2 };
-    const asked = calls.filter(
+    const currentProjectReads = calls.filter(
       (call) => call.command === "current_project",
     ).length;
 
@@ -240,7 +240,7 @@ describe("ProjectController", () => {
 
     expect(
       calls.filter((call) => call.command === "current_project").length,
-    ).toBeGreaterThan(asked);
+    ).toBeGreaterThan(currentProjectReads);
   });
 
   // @behavior ED-010
@@ -281,7 +281,7 @@ describe("ProjectController", () => {
     field.addEventListener("blur", () => order.push("leave"));
     target("resources").append(field);
     field.focus();
-    reloaded = () => order.push("reload");
+    reloadProject = () => order.push("reload");
 
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: "r", ctrlKey: true }),

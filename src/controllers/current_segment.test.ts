@@ -306,12 +306,12 @@ describe("Current Segment", () => {
     rows()[1].click();
 
     clickWithPointer(aloneButton());
-    const taken = isSpaceTaken(aloneButton());
+    const isTaken = isSpaceTaken(aloneButton());
     await settle();
 
     expect([
       media().paused,
-      taken,
+      isTaken,
       aloneButton().getAttribute("aria-pressed"),
     ]).toEqual([false, true, "true"]);
   });
@@ -322,10 +322,10 @@ describe("Current Segment", () => {
     rows()[1].click();
 
     aloneButton().focus();
-    const taken = isSpaceTaken(aloneButton());
+    const isTaken = isSpaceTaken(aloneButton());
     await settle();
 
-    expect([media().paused, taken]).toEqual([true, false]);
+    expect([media().paused, isTaken]).toEqual([true, false]);
   });
 
   // @behavior PV-032

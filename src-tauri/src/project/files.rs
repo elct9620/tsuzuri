@@ -804,11 +804,11 @@ mod tests {
 
         back_up(dir.path(), &subtitle, at, BackupKind::Overwrite).unwrap();
 
-        let taken: Vec<String> = backups_of(dir.path(), &subtitle)
+        let taken_times: Vec<String> = backups_of(dir.path(), &subtitle)
             .unwrap()
             .into_iter()
             .map(|backup| backup.taken_at)
             .collect();
-        assert_eq!(taken, ["20260925T023001Z", "20260925T023000Z"]);
+        assert_eq!(taken_times, ["20260925T023001Z", "20260925T023000Z"]);
     }
 }

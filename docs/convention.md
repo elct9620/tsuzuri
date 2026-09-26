@@ -42,16 +42,20 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 
 ### 1.3 分詞與 -ing
 
-單獨的分詞藏起了角色，讀者分不出它是查詢、尋找、問句還是動作。接在動詞或名詞後面的分詞只描述狀態，可以用。
+單獨的分詞藏起了角色，讀者分不出它是查詢、尋找、問句還是動作，區域變數也一樣。接在名詞前後或動詞後的分詞只描述狀態，可以用。測試的 `expected` 與實際值成對，訊息的鍵有命名空間，都不會被誤讀。
 
 | 情況 | 錯誤的名稱 | 角色 | 修正後 |
 |---|---|---|---|
 | 過去分詞單獨使用 | `translated(...)` | 動作 | `write_translations` |
 | 過去分詞單獨使用 | `Held`、`Recorded` | 型別 | `HeldProject`、`RecordedProcess` |
 | 現在分詞單獨使用 | `running` | 問句 | `isRunning` |
+| 分詞單獨當變數 | `received`、`recorded` | 值 | `progress_events`、`records` |
 | 字典列為名詞的 -ing | `setting`、`heading` | 名詞 | 保留 |
 | 動詞後的分詞 | `release_queued` | 動作＋狀態 | 保留 |
 | 名詞後的分詞，說出該事物的狀態 | `StepFailed`、`ModelNotChosen` | 型別的一種 | 保留 |
+| 名詞前的分詞 | `running_router`、`keptSpans` | 值 | 保留 |
+| 測試的預期值 | `expected` | 值 | 保留 |
+| 訊息的鍵 | `transcribe.failed` | 訊息 | 保留 |
 
 ### 1.4 由另一方決定的名稱
 
@@ -62,6 +66,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | Stimulus | `connect`、`disconnect`、`static targets`、`*Target`、`*Targets`、action option 的 `value` |
 | Rust trait | `fmt`、`from`、`drop`、`enabled`、`log`、`flush` |
 | i18next、Vitest | `t`、`describe`、`it` |
+| DOM、Rust 標準函式庫 | `Event` 的 `composed`、`PoisonError` 的 `poisoned` |
 | `.spec/contract/commands.md` | Tauri 指令名稱，例如 `component_statuses` |
 | serde 序列化的欄位 | TypeScript 介面照 Rust 欄位名，例如 `start_ms` |
 | 外部程式的 JSON | 照原樣，例如 llama-server 的 `failed` |

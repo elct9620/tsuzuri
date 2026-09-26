@@ -25,7 +25,7 @@ const live: Cursor = {
   index: 0,
   caret: { kind: "live", field: "text", start: 2, end: 2, text: "你好世界" },
 };
-const kept: Cursor = {
+const keptCursor: Cursor = {
   index: 0,
   caret: { kind: "kept", field: "text", start: 2, end: 2, text: "你好世界" },
 };
@@ -45,7 +45,7 @@ describe("nextCursor", () => {
 
   it("makes a Segment current without a caret when a time of it is entered", () => {
     expect(
-      nextCursor(kept, {
+      nextCursor(keptCursor, {
         kind: "entry",
         index: 1,
         field: null,
@@ -57,14 +57,14 @@ describe("nextCursor", () => {
 
   it("keeps the caret when a time of the Current Segment is entered", () => {
     expect(
-      nextCursor(kept, {
+      nextCursor(keptCursor, {
         kind: "entry",
         index: 0,
         field: null,
         range: null,
         text: "",
       }),
-    ).toBe(kept);
+    ).toBe(keptCursor);
   });
 
   it("follows a live caret as the selection moves", () => {
@@ -101,18 +101,22 @@ describe("nextCursor", () => {
   });
 
   it("keeps a kept caret when typing is given up elsewhere", () => {
-    expect(nextCursor(kept, { kind: "reversion" })).toBe(kept);
+    expect(nextCursor(keptCursor, { kind: "reversion" })).toBe(keptCursor);
   });
 
   it("drops the caret when another Segment is made current", () => {
-    expect(nextCursor(kept, { kind: "current-segment", index: 1 })).toEqual({
+    expect(
+      nextCursor(keptCursor, { kind: "current-segment", index: 1 }),
+    ).toEqual({
       index: 1,
       caret: null,
     });
   });
 
   it("keeps the caret when its own Segment is made current again", () => {
-    expect(nextCursor(kept, { kind: "current-segment", index: 0 })).toBe(kept);
+    expect(nextCursor(keptCursor, { kind: "current-segment", index: 0 })).toBe(
+      keptCursor,
+    );
   });
 });
 
@@ -132,7 +136,7 @@ describe("nextCursor after a Segment Change", () => {
 
   it("moves to the start of the second half of a split", () => {
     expect(
-      after(kept, {
+      after(keptCursor, {
         kind: "change",
         change: { kind: "split", index: 0, at: 2 },
         before,
@@ -167,7 +171,7 @@ describe("nextCursor after a Segment Change", () => {
   });
 
   it("moves into a Segment inserted after one the next overlaps, where it starts", () => {
-    const overlapping = [
+    const overlappingSegments = [
       { start_ms: 0, end_ms: 2000, text: "一" },
       { start_ms: 1000, end_ms: 3000, text: "二" },
     ];
@@ -177,15 +181,15 @@ describe("nextCursor after a Segment Change", () => {
         {
           kind: "change",
           change: { kind: "insertion-after", index: 0 },
-          before: overlapping,
-          after: [...overlapping, empty(2000, 4000)],
+          before: overlappingSegments,
+          after: [...overlappingSegments, empty(2000, 4000)],
         },
       ).index,
     ).toBe(2);
   });
 
   it("moves to the second half of a split where it starts, past a Segment said over it", () => {
-    const overlapping = [
+    const overlappingSegments = [
       { start_ms: 0, end_ms: 4000, text: "大家好嗎" },
       { start_ms: 1000, end_ms: 1500, text: "對啊" },
     ];
@@ -195,10 +199,10 @@ describe("nextCursor after a Segment Change", () => {
         {
           kind: "change",
           change: { kind: "split", index: 0, at: 2 },
-          before: overlapping,
+          before: overlappingSegments,
           after: [
             { start_ms: 0, end_ms: 2000, text: "大家" },
-            overlapping[1],
+            overlappingSegments[1],
             { start_ms: 2000, end_ms: 4000, text: "好嗎" },
           ],
         },
@@ -268,7 +272,7 @@ describe("nextCursor after a Segment Change", () => {
   });
 
   it("stands on the merged Segment, or stays on its own when merged ones come before it", () => {
-    const merging = (index: number) =>
+    const indexAfterMerge = (index: number) =>
       after(
         { index, caret: null },
         {
@@ -277,17 +281,17 @@ describe("nextCursor after a Segment Change", () => {
           before: segments("一", "二", "三", "四"),
         },
       ).index;
-    expect([merging(1), merging(3)]).toEqual([0, 2]);
+    expect([indexAfterMerge(1), indexAfterMerge(3)]).toEqual([0, 2]);
   });
 
   it("keeps the Cursor through a change of times", () => {
     expect(
-      after(kept, {
+      after(keptCursor, {
         kind: "change",
         change: { kind: "times", index: 0, start_ms: 100, end_ms: 900 },
         before,
       }),
-    ).toBe(kept);
+    ).toBe(keptCursor);
   });
 });
 
@@ -321,18 +325,18 @@ describe("nextCursor after a Transcript changed elsewhere", () => {
 
   it("keeps a kept caret while its text stays, and drops it once the text is replaced", () => {
     expect([
-      nextCursor(kept, { kind: "view", before: view(), after: view() }),
-      nextCursor(kept, {
+      nextCursor(keptCursor, { kind: "view", before: view(), after: view() }),
+      nextCursor(keptCursor, {
         kind: "view",
         before: view(),
         after: view({ segments: segments("今天天氣很好", "今天", "天氣") }),
       }),
-    ]).toEqual([kept, { index: 0, caret: null }]);
+    ]).toEqual([keptCursor, { index: 0, caret: null }]);
   });
 
   it("drops the caret once a Mode holds its field", () => {
     expect(
-      nextCursor(kept, {
+      nextCursor(keptCursor, {
         kind: "view",
         before: view(),
         after: view({ runningMode: { mode: "transcription" } }),

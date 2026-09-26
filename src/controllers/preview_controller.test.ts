@@ -235,7 +235,7 @@ describe("PreviewController", () => {
   });
 
   describe("with a Segment said over another", () => {
-    const overlapping = (
+    const overlappingProject = (
       segments = [
         { start_ms: 0, end_ms: 2000, text: "大家好" },
         { start_ms: 1000, end_ms: 1500, text: "對啊" },
@@ -244,7 +244,7 @@ describe("PreviewController", () => {
 
     // @behavior PV-103
     it("shows it over the video above the one it overlaps", async () => {
-      await show(overlapping());
+      await show(overlappingProject());
 
       playTo(1.2);
 
@@ -253,7 +253,7 @@ describe("PreviewController", () => {
 
     // @behavior PV-104
     it("keeps the Segment it overlapped over the video once it ends", async () => {
-      await show(overlapping());
+      await show(overlappingProject());
 
       playTo(1.8);
 
@@ -263,7 +263,7 @@ describe("PreviewController", () => {
     // @behavior PV-105
     it("stacks Segments that start together in their order", async () => {
       await show(
-        overlapping([
+        overlappingProject([
           { start_ms: 0, end_ms: 1000, text: "大家好" },
           { start_ms: 0, end_ms: 1000, text: "對啊" },
         ]),

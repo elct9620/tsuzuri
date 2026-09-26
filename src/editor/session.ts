@@ -244,8 +244,8 @@ export class EditingSession {
     const at = splitPoint(caret.text, caret.start);
     if (at === null) return { kind: "refused" };
     if (caret.kind === "live") {
-      const written = await this.writeText(index, "text", caret.text);
-      if (written.kind === "failed") return written;
+      const writeResult = await this.writeText(index, "text", caret.text);
+      if (writeResult.kind === "failed") return writeResult;
     }
     const before = (this.view?.segments ?? []).map((segment, at) =>
       at === index ? { ...segment, text: caret.text } : segment,

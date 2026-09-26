@@ -1,7 +1,7 @@
 /** The page's `#translation-options` template, reduced to the fields a test reads and sets. */
 export const translationOptionsTemplate = `
   <template id="translation-options">
-    <select data-translation-options-target="language" data-action="translation-options#showOverwrite">
+    <select data-translation-options-target="language" data-action="translation-options#reportOverwrite">
       <option value="en">English</option>
       <option value="ja" selected>日本語</option>
     </select>
@@ -10,7 +10,6 @@ export const translationOptionsTemplate = `
     <input type="checkbox" data-translation-options-target="selfReview">
     <input type="checkbox" data-translation-options-target="summary">
     <input type="number" value="100" data-translation-options-target="summaryWords">
-    <div data-translation-options-target="overwrite" hidden></div>
   </template>
 `;
 

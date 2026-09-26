@@ -23,6 +23,7 @@ export default class TranscribeController extends Controller {
     "language",
     "translate",
     "overwrite",
+    "overwriteMessage",
     "start",
     "model",
   ];
@@ -35,8 +36,9 @@ export default class TranscribeController extends Controller {
   declare readonly languageTarget: HTMLElement;
   /** Whether to translate the Transcript once transcribed, with the translation options it shows. */
   declare readonly translateTarget: HTMLInputElement;
-  /** Warns that the original subtitle will be overwritten. */
+  /** Warns of what starting overwrites: the original subtitle, the translation, or both. */
   declare readonly overwriteTarget: HTMLElement;
+  declare readonly overwriteMessageTarget: HTMLElement;
   declare readonly startTarget: HTMLButtonElement;
   /** Names the transcription Model's file. */
   declare readonly modelTarget: HTMLElement;
@@ -46,6 +48,8 @@ export default class TranscribeController extends Controller {
 
   private unlisten?: UnlistenFn;
   private project: ProjectView | null = null;
+  /** Whether the Language the translation options have chosen is already translated. */
+  private isTranslationOverwriting = false;
 
   async connect(): Promise<void> {
     this.unlisten = await followProject((project) => this.show(project));
@@ -56,11 +60,6 @@ export default class TranscribeController extends Controller {
   }
 
   async open(): Promise<void> {
-    const hasSubtitle = currentResource(this.project)?.has_subtitle ?? false;
-    this.overwriteTarget.hidden = !hasSubtitle;
-    this.startTarget.textContent = t(
-      hasSubtitle ? "transcribe.overwriteAndStart" : "transcribe.start",
-    );
     if (this.project !== null) {
       this.languageTarget.textContent = t(`languages.${this.project.language}`);
       this.translationOptionsOutlet.show(this.project);
@@ -116,6 +115,33 @@ export default class TranscribeController extends Controller {
 
   showTranslationOptions(): void {
     this.translationOptionsOutletElement.hidden = !this.translateTarget.checked;
+    this.showOverwrite();
+  }
+
+  /** Follows whether the Language the translation options have chosen is already translated. */
+  followTranslation({ detail }: CustomEvent<{ isOverwriting: boolean }>): void {
+    this.isTranslationOverwriting = detail.isOverwriting;
+    this.showOverwrite();
+  }
+
+  /** Warns once of all that starting overwrites, and names the start button for it. */
+  private showOverwrite(): void {
+    const hasSubtitle = currentResource(this.project)?.has_subtitle ?? false;
+    const isTranslationOverwritten =
+      this.translateTarget.checked && this.isTranslationOverwriting;
+    const warning = hasSubtitle
+      ? isTranslationOverwritten
+        ? "transcribe.overwriteBoth"
+        : "transcribe.overwrite"
+      : isTranslationOverwritten
+        ? "translate.overwrite"
+        : null;
+    this.overwriteTarget.hidden = warning === null;
+    this.overwriteMessageTarget.textContent =
+      warning === null ? "" : t(warning);
+    this.startTarget.textContent = t(
+      warning === null ? "transcribe.start" : "transcribe.overwriteAndStart",
+    );
   }
 
   private show(project: ProjectView | null): void {

@@ -89,6 +89,7 @@
               <div
                 class="contents"
                 data-controller="transcribe"
+                data-action="translation-options:overwrite->transcribe#followTranslation"
                 data-transcribe-progress-outlet="#progress"
                 data-transcribe-translation-options-outlet="#transcribe-options"
               >
@@ -141,11 +142,11 @@
                     </fieldset>
                     <div
                       role="alert"
-                      class="alert alert-warning alert-soft mt-2"
+                      class="alert alert-warning mt-2"
                       data-transcribe-target="overwrite"
                       hidden
                     >
-                      <span data-i18n="transcribe.overwrite"></span>
+                      <span data-transcribe-target="overwriteMessage"></span>
                     </div>
                     <div class="modal-action">
                       <form method="dialog">
@@ -169,7 +170,7 @@
               <div
                 class="contents"
                 data-controller="translate"
-                data-action="translation-options:overwrite->translate#labelStart"
+                data-action="translation-options:overwrite->translate#showOverwrite"
                 data-translate-progress-outlet="#progress"
                 data-translate-translation-options-outlet="#translate-options"
               >
@@ -198,6 +199,14 @@
                         data-controller="translation-options"
                       ></div>
                     </fieldset>
+                    <div
+                      role="alert"
+                      class="alert alert-warning mt-2"
+                      data-translate-target="overwrite"
+                      hidden
+                    >
+                      <span data-i18n="translate.overwrite"></span>
+                    </div>
                     <div class="modal-action">
                       <form method="dialog">
                         <button class="btn" data-i18n="work.cancel"></button>
@@ -560,7 +569,7 @@
                   ></p>
                   <div
                     role="alert"
-                    class="alert alert-warning alert-soft absolute inset-2 text-sm"
+                    class="alert alert-warning absolute inset-2 text-sm"
                     data-preview-target="hint"
                     hidden
                   >
@@ -779,7 +788,7 @@
                   ></h3>
                   <div
                     role="alert"
-                    class="alert alert-warning alert-soft mb-2"
+                    class="alert alert-warning mb-2"
                     data-glossary-target="warning"
                     hidden
                   >
@@ -787,7 +796,7 @@
                   </div>
                   <div
                     role="alert"
-                    class="alert alert-error alert-soft mb-2"
+                    class="alert alert-error mb-2"
                     data-glossary-target="failure"
                     hidden
                   ></div>
@@ -1255,7 +1264,7 @@
                   </ul>
                   <div
                     role="alert"
-                    class="alert alert-info alert-soft text-sm"
+                    class="alert alert-info text-sm"
                     data-logs-target="pending"
                     hidden
                   ></div>
@@ -1297,7 +1306,7 @@
         <select
           class="select select-sm w-auto"
           data-translation-options-target="language"
-          data-action="translation-options#showOverwrite"
+          data-action="translation-options#reportOverwrite"
         >
           <option value="en" selected>English</option>
           <option value="ja">日本語</option>
@@ -1342,14 +1351,6 @@
         />
         <span data-i18n="translate.words"></span>
       </label>
-      <div
-        role="alert"
-        class="alert alert-warning alert-soft"
-        data-translation-options-target="overwrite"
-        hidden
-      >
-        <span data-i18n="translate.overwrite"></span>
-      </div>
     </template>
     <div class="toast toast-end toast-bottom z-40" data-notifications></div>
     <div

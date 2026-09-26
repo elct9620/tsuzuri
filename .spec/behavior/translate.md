@@ -632,7 +632,7 @@ Translating keeps the translation it replaces as a Backup, yet saying so before 
 | --- | --- |
 | Given | the transcribe dialog for a Current Resource translated into `en` |
 | When | translating afterwards into `en` is chosen |
-| Then | its translation options warn the translation will be overwritten |
+| Then | it warns the translation will be overwritten, and its start button reads 覆蓋並開始 |
 
 ## `TL-082` Naming the Batch being translated
 

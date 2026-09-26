@@ -44,6 +44,8 @@ const en = {
     language: "Language",
     model: "Model",
     overwrite: "The subtitle will be overwritten",
+    overwriteBoth:
+      "The subtitle and the translation into this language will be overwritten",
     start: "Transcribe",
     overwriteAndStart: "Overwrite and transcribe",
     translateAfter: "Translate once transcribed",

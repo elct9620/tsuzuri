@@ -65,12 +65,13 @@ describe("TranslateController", () => {
     document.body.innerHTML = `
       ${translationOptionsTemplate}
       <div data-controller="translate" data-translate-progress-outlet="#progress"
-        data-action="translation-options:overwrite->translate#labelStart"
+        data-action="translation-options:overwrite->translate#showOverwrite"
         data-translate-translation-options-outlet="#translate-options">
         <button data-translate-target="open" data-action="translate#open" disabled>翻譯</button>
         <dialog data-translate-target="dialog">
           <span data-translate-target="source"></span>
           <div id="translate-options" data-controller="translation-options"></div>
+          <div data-translate-target="overwrite" hidden></div>
           <button id="start" data-translate-target="start" data-action="translate#start">開始翻譯</button>
         </dialog>
       </div>
@@ -135,7 +136,7 @@ describe("TranslateController", () => {
     resources: [resourceOf({ translation_languages: ["en"] })],
     translation_language: "en",
   });
-  const isOverwriteWarned = () => !option("overwrite").hidden;
+  const isOverwriteWarned = () => !target("overwrite").hidden;
 
   // @behavior TL-079
   it("asks before overwriting a translation", async () => {

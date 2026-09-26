@@ -187,6 +187,24 @@ Transcribing leads into translating, so the transcribe dialog offers the same tr
 | When | the transcribe dialog is started |
 | Then | it warns the subtitle will be overwritten and transcribes asking to overwrite |
 
+## `TX-030` Warning once of all a transcription overwrites
+
+Translating afterwards shares the translate dialog's options, yet the dialog warns once, below them, of everything starting overwrites.
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog for a Current Resource with an original subtitle and translated into `en` |
+| When | translating afterwards into `en` is chosen |
+| Then | one warning says the subtitle and the translation will be overwritten, and its start button reads 覆蓋並開始 |
+
+## `TX-031` Warning only of a translation it will make
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog for a Current Resource translated into `en` alone, translating afterwards into `en` |
+| When | translating afterwards is no longer chosen |
+| Then | no overwrite is warned of, and its start button reads 開始轉錄 |
+
 ## `TX-025` Clearing the progress once a transcription ends
 
 The progress belongs to a running task, so what is left to say afterwards goes to a Notification.

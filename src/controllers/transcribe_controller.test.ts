@@ -78,6 +78,7 @@ describe("TranscribeController", () => {
     document.body.innerHTML = `
       ${translationOptionsTemplate}
       <div data-controller="transcribe" data-transcribe-progress-outlet="#progress"
+        data-action="translation-options:overwrite->transcribe#followTranslation"
         data-transcribe-translation-options-outlet="#transcribe-options">
         <button data-transcribe-target="open" data-action="transcribe#open" disabled>轉錄</button>
         <dialog data-transcribe-target="dialog">
@@ -86,7 +87,9 @@ describe("TranscribeController", () => {
           <input type="checkbox" data-transcribe-target="translate"
             data-action="transcribe#showTranslationOptions">
           <fieldset id="transcribe-options" data-controller="translation-options" hidden></fieldset>
-          <div data-transcribe-target="overwrite" hidden>字幕已存在</div>
+          <div data-transcribe-target="overwrite" hidden>
+            <span data-transcribe-target="overwriteMessage"></span>
+          </div>
           <button data-transcribe-target="start" data-action="transcribe#start">開始</button>
         </dialog>
       </div>
@@ -296,24 +299,63 @@ describe("TranscribeController", () => {
     ).toBe(false);
   });
 
+  /** What the dialog warns of, or null when it warns of nothing, and what its start button reads. */
+  const warning = () => [
+    target("overwrite").hidden ? null : target("overwriteMessage").textContent,
+    target("start").textContent,
+  ];
+
+  const translatedIntoEnglish = (hasSubtitle: boolean) =>
+    projectOf({
+      resources: [
+        resourceOf({
+          has_media: true,
+          has_subtitle: hasSubtitle,
+          translation_languages: ["en"],
+        }),
+      ],
+      translation_language: "en",
+    });
+
   // @behavior TL-081
   it("warns of an overwritten translation when transcribing", async () => {
-    await hold(
-      projectOf({
-        resources: [
-          resourceOf({ has_media: true, translation_languages: ["en"] }),
-        ],
-        translation_language: "en",
-      }),
-    );
+    await hold(translatedIntoEnglish(false));
     target("open").click();
     await settle();
 
     target<HTMLInputElement>("translate").click();
 
-    expect(translationOption("#transcribe-options", "overwrite").hidden).toBe(
-      false,
-    );
+    expect(warning()).toEqual([
+      "這個語言的譯文已存在，開始後會覆蓋",
+      "覆蓋並開始",
+    ]);
+  });
+
+  // @behavior TX-030
+  it("warns once of both the subtitle and the translation it overwrites", async () => {
+    await hold(translatedIntoEnglish(true));
+    target("open").click();
+    await settle();
+
+    target<HTMLInputElement>("translate").click();
+
+    expect(warning()).toEqual([
+      "字幕與這個語言的譯文都已存在，開始後會覆蓋",
+      "覆蓋並開始",
+    ]);
+  });
+
+  // @behavior TX-031
+  it("stops warning of a translation it will not make", async () => {
+    await hold(translatedIntoEnglish(false));
+    target("open").click();
+    await settle();
+    const translate = target<HTMLInputElement>("translate");
+    translate.click();
+
+    translate.click();
+
+    expect(warning()).toEqual([null, "開始轉錄"]);
   });
 
   // @behavior TX-029

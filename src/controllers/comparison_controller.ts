@@ -72,7 +72,7 @@ function markLabels(row: ComparedRow): string[] {
 function badge(label: string): HTMLSpanElement {
   const mark = document.createElement("span");
   mark.dataset.mark = "";
-  mark.className = "badge badge-soft badge-warning badge-xs";
+  mark.className = "badge badge-warning badge-xs";
   mark.textContent = t(label);
   return mark;
 }

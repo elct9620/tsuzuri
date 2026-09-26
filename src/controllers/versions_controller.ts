@@ -150,7 +150,7 @@ export default class VersionsController extends Controller {
         const li = document.createElement("li");
         li.className = "list-row items-center";
         const label = document.createElement("span");
-        label.className = "kind badge badge-soft badge-sm";
+        label.className = "kind badge badge-sm";
         label.textContent = t(`compare.${kind}`);
         const time = document.createElement("span");
         time.className = "list-col-grow";

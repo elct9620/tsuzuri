@@ -530,6 +530,16 @@ A menu, and later a floating one, acts on the Cursor after focus has moved to it
 | When | the editor shows it |
 | Then | the field hides the platform's caret and selection, and the drawn caret stands after the second character |
 
+## `ED-090` Drawing the Cursor at the start of a line typed into a text
+
+A typed line break stands in the field's text apart from the text on either side, and the end of the break lies on the line it ends, so the Cursor where the two meet is taken at the start of the next line, as the platform's caret is.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text typed to `你好`, a line break and `世界` |
+| When | the Cursor is moved before `世` |
+| Then | the drawn caret stands at the start of the second line |
+
 ## `ED-050` Holding a kept Cursor still
 
 | Step | Statement |
@@ -582,7 +592,7 @@ Esc gives up what was typed since the field was entered, as an inline edit in a 
 | --- | --- |
 | Given | the first Segment's text entered reading `你好`, then typed to `你好嗎` |
 | When | Esc is pressed |
-| Then | the field reads `你好` again, focus leaves it, and no edit is written |
+| Then | the field reads `你好` again, focus leaves it, no edit is written, and the first Segment stays current with no Cursor kept |
 
 ## `ED-078` Leaving Esc to an input method while it composes
 

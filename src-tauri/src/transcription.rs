@@ -666,7 +666,7 @@ mod tests {
         let media = PathBuf::from(std::env::var("TSUZURI_E2E_MEDIA").unwrap());
         // vendor/ is laid out as the installer lays out its Bundled Variants.
         let vendor = Resolver {
-            bundled: Path::new(env!("CARGO_MANIFEST_DIR")).join("../vendor"),
+            bundled_dir: Path::new(env!("CARGO_MANIFEST_DIR")).join("../vendor"),
             choices: toolchain::Choices::default(),
             search_dirs: Vec::new(),
         };

@@ -141,7 +141,7 @@ impl Choices {
 /// Finds each Component in order: the user's choice, Detection, then the Bundled Variant Auto-Selection takes.
 pub struct Resolver {
     /// Where the installer puts the Bundled Variants, one `<name>/<variant>/bin` each.
-    pub bundled: PathBuf,
+    pub bundled_dir: PathBuf,
     pub choices: Choices,
     pub search_dirs: Vec<PathBuf>,
 }
@@ -219,7 +219,7 @@ impl Resolver {
     }
 
     fn bundled_executable(&self, component: &Component, variant: &str) -> PathBuf {
-        self.bundled
+        self.bundled_dir
             .join(&component.name)
             .join(variant)
             .join("bin")
@@ -391,7 +391,7 @@ mod tests {
     /// A resolver with no choices, no Detection directories and no Bundled Variants, so nothing is found.
     fn resolver(dir: &TempDir) -> Resolver {
         Resolver {
-            bundled: dir.path().join("components"),
+            bundled_dir: dir.path().join("components"),
             choices: Choices::default(),
             search_dirs: Vec::new(),
         }

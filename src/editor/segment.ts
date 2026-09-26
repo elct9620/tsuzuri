@@ -14,6 +14,15 @@ export interface Segment {
 /** Which text of a Segment an edit replaces. */
 export type SegmentField = "text" | "translation" | "speaker";
 
+/** What to look for in the texts and what to put in its place; Rust reads the pattern. */
+export interface Replacement {
+  pattern: string;
+  /** Put in place of each match; groups of a regular expression are `$1` or `${name}`. */
+  substitute: string;
+  /** Whether `pattern` is a regular expression of the `regex` crate rather than text taken as written. */
+  is_regex: boolean;
+}
+
 /** A change to the Segments themselves rather than to a text. */
 export type SegmentChange =
   | { kind: "times"; index: number; start_ms: number; end_ms: number }

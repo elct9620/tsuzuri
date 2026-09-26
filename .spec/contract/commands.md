@@ -158,6 +158,14 @@ Give each Segment of the Current Resource at `indexes` the Speaker `speaker`, wh
 pub fn set_speakers(app: AppHandle, indexes: Vec<usize>, speaker: String) -> Result<(), Failure> {}
 ```
 
+## `replace_text`
+
+Replace every match of a Replacement in the `text` or the `translation` of each Segment of the Current Resource, where a Segment with no translation is passed over, as one change in the Undo History written back as `edit_segment` writes the field, and answer how many matches were replaced. The Replacement's `pattern` is taken as written unless `is_regex` marks it a regular expression of the `regex` crate, whose groups `substitute` names as `$1` or `${name}`; an empty pattern, or one that cannot be read, is refused as `invalid-pattern`. With no match nothing is written and the answer is 0. A `translation` with none shown is refused as `no-translation-shown`, a `speaker` as `internal`, and a subtitle changed elsewhere or written by a running Mode as `edit_segment` refuses it.
+
+```rust
+pub fn replace_text(app: AppHandle, current: State<'_, CurrentProject>, field: SegmentField, replacement: Replacement) -> Result<usize, Failure> {}
+```
+
 ## `cancel_task`
 
 Ask the running transcription or translation to stop. It stops at once, ending the Components it started, and answers the `mode-cancelled` Failure; what it has shown so far stays shown and nothing more is written. With no task running it changes nothing.

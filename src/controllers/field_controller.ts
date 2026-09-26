@@ -4,6 +4,7 @@ import {
   fieldSelection,
   fieldValue,
   insertLineBreak,
+  setFieldValue,
   type CursorField,
   type EditingSession,
 } from "../editor";
@@ -33,8 +34,8 @@ export function composingOption({
 
 /**
  * One text or translation field of the editor, handing the session what the user does in it:
- * entering it, moving the selection, leaving it, and splitting its Segment by shortcut; its keys
- * also break a line and move on to the next Segment.
+ * entering it, moving the selection, leaving it or giving up its typing, and splitting its
+ * Segment by shortcut; its keys also break a line and move on to the next Segment.
  */
 export default class FieldController extends Controller<HTMLElement> {
   declare readonly session: EditingSession;
@@ -80,6 +81,14 @@ export default class FieldController extends Controller<HTMLElement> {
   /** Keeps a line break as a character of the text rather than as markup; bound with `:!composing:prevent`. */
   breakLine(): void {
     insertLineBreak();
+  }
+
+  /** Puts back the text the field was entered with and leaves it, so nothing is written; bound to Esc with `:!composing:prevent`. */
+  revert(): void {
+    const text = this.session.textAtEntry(this.index, this.field);
+    if (text === null) return;
+    setFieldValue(this.element, text);
+    this.element.blur();
   }
 
   /**

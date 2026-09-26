@@ -115,11 +115,11 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 | 事件 | 送出者 | 接收者 |
 |---|---|---|
-| `project-changed` | 改變專案的指令、用例；`refreshProject` | `ProjectFeed` 讀一次 `current_project` 再分送 |
-| `pipeline-progress` | 用例經由 `Progress` 回報 Phase 與百分比 | `backend/progress.ts` 的 `listenProgress` |
-| `edit-command` | macOS 編輯選單的復原與重做（`menu.rs`） | `backend/project.ts` 的 `followEditCommands` |
+| `project-changed` | 改變專案的指令 | `ProjectFeed` |
+| 進度 | 用例經 `Progress` | `listenProgress` |
+| 復原與重做 | macOS 編輯選單 | 復原的處理 |
 
-事件只說「有變化」或「到哪一步」，不帶工作資料；畫面要顯示的內容一律再用指令向 Rust 取得。
+事件只說有變化或到哪一步，不帶資料，內容再用指令取得。進度事件是 `pipeline-progress`；復原與重做是 `menu.rs` 送出的 `edit-command`，給 `followEditCommands`。
 
 ### 2.4 錯誤與通知
 
@@ -192,28 +192,43 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 
 ### 3.3 模組
 
-| 檔案 | 層 | 負責 |
-|---|---|---|
-| `menu.rs` | 轉接 | macOS 編輯選單的復原與重做 |
-| `logs.rs` | 轉接 | 啟動時決定 log 目錄 |
-| `transcript.rs`、`segment_change.rs`、`language.rs` | 領域 | Segment、Transcript、SRT、段落變更、語言 |
-| `project.rs` | 領域 | Project 聚合、雙語順序、寫回 |
-| `project/versions.rs` | 領域 | 逐 cue 比較兩個版本 |
-| `project/history.rs` | 領域 | 每個資源的復原紀錄 |
-| `project/current.rs` | 應用 | `CurrentProject` 與開啟、編輯、寫回、還原 |
-| `project/files.rs` | 轉接 | 檔名、配對、備份等讀寫 |
-| `translation.rs`、`translation/{batching,repair,speaker_labels}.rs` | 應用、領域 | 翻譯用例、分批、修復 |
-| `translation/prompt.rs` | 領域 | 請求內容與回答格式 |
-| `translation/{llama,settings}.rs` | 轉接 | llama-server、翻譯設定檔 |
-| `translation/resident.rs` | 轉接 | 常駐的 llama-server |
-| `transcription.rs`、`transcription/whisper.rs` | 應用、轉接 | 轉錄用例；ffmpeg 與 whisper-cli 的參數與輸出 |
-| `transcription/settings.rs` | 轉接 | 轉錄設定檔 |
-| `waveform.rs` | 應用、領域 | 波形用例：ffmpeg 轉 PCM，每 10 ms 取峰值 |
-| `toolchain.rs`、`toolchain/{detection,settings}.rs` | 應用、轉接 | 尋找元件、偵測、設定檔 |
-| `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、執行 Step、`ModeLock`、`ModeRun`、Phase 計時、錯誤碼 |
-| `steps/commands.rs` | 介面 | `cancel_task` |
-| `processes.rs` | 轉接 | 子行程的啟動、紀錄與清理，以及 `AppPorts` |
-| `*/commands.rs`、`window.rs`、`lib.rs` | 介面 | 指令、視窗大小、組裝 |
+| 目錄 | 模組 | 層 | 負責 |
+|---|---|---|---|
+| — | `lib` | 介面 | 組裝 |
+| — | `window` | 介面 | 視窗大小 |
+| — | `menu` | 轉接 | macOS 復原與重做 |
+| — | `logs` | 轉接 | 決定 log 目錄 |
+| — | `transcript` | 領域 | 段落與 SRT |
+| — | `segment_change` | 領域 | 段落變更 |
+| — | `language` | 領域 | 語言代碼 |
+| — | `project` | 領域 | 專案聚合、寫回 |
+| `project/` | `versions` | 領域 | 逐 cue 比較版本 |
+| `project/` | `history` | 領域 | 資源的復原紀錄 |
+| `project/` | `glossary` | 領域、轉接 | 詞彙表與 CSV |
+| `project/` | `current` | 應用 | 開啟、編輯、重新載入 |
+| `project/` | `files` | 轉接 | 檔名、配對、備份 |
+| — | `translation` | 應用 | 翻譯用例 |
+| `translation/` | `batching` | 領域 | 分批 |
+| `translation/` | `speaker_labels` | 領域 | 說話者標籤 |
+| `translation/` | `prompt` | 領域 | 請求與回答格式 |
+| `translation/` | `repair` | 應用 | 修復與自我檢查 |
+| `translation/` | `llama` | 轉接 | llama-server |
+| `translation/` | `settings` | 轉接 | 翻譯設定檔 |
+| `translation/` | `resident` | 轉接 | 常駐 llama-server |
+| — | `transcription` | 應用 | 轉錄用例 |
+| `transcription/` | `whisper` | 轉接 | whisper-cli 參數 |
+| `transcription/` | `settings` | 轉接 | 轉錄設定檔 |
+| — | `waveform` | 應用、領域 | 波形與峰值 |
+| — | `toolchain` | 應用 | 尋找元件 |
+| `toolchain/` | `detection` | 轉接 | 偵測已安裝的元件 |
+| `toolchain/` | `settings` | 轉接 | 元件設定檔 |
+| — | `progress` | 應用 | 回報進度的 Port |
+| — | `steps` | 應用 | Step 與 `ModeRun` |
+| — | `timing` | 應用 | Phase 計時 |
+| — | `failure` | 應用 | 錯誤碼 |
+| — | `processes` | 轉接 | 子行程與 `AppPorts` |
+
+目錄以 `src-tauri/src/` 為根，— 是根目錄，模組省略 `.rs`。各目錄的 `commands` 是介面層的指令，不另列。波形以 ffmpeg 轉成 PCM，每 10 ms 取一個峰值。
 
 ### 3.4 Port 與轉接
 

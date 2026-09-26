@@ -820,7 +820,7 @@ impl CurrentProject {
 
     /// The Language of the translation the Current Resource shows, which translating again writes into.
     pub fn shown_translation(&self) -> Result<Language, Failure> {
-        self.update_project(|project| {
+        self.read_project(|project| {
             project
                 .current()?
                 .translation
@@ -1156,7 +1156,7 @@ impl CurrentProject {
 
     /// The directory's `glossary.csv` as a table to edit, or an empty one without the file.
     pub fn glossary_table(&self) -> Result<GlossaryTable, Failure> {
-        self.update_project(|project| {
+        self.read_project(|project| {
             Ok(
                 TranslationGlossary::from_directory(&project.directory, project.source_target())?
                     .map_or_else(GlossaryTable::empty, |glossary| glossary.table()),
@@ -1268,7 +1268,7 @@ impl CurrentProject {
     }
 
     pub fn subtitle_versions(&self) -> Result<Vec<SubtitleVersions>, Failure> {
-        self.update_project(|project| project.subtitle_versions())
+        self.read_project(|project| project.subtitle_versions())
     }
 
     pub fn version_transcript(
@@ -1276,7 +1276,7 @@ impl CurrentProject {
         language: Option<Language>,
         backup: Option<&str>,
     ) -> Result<Transcript, Failure> {
-        self.update_project(|project| project.version_transcript(language, backup))
+        self.read_project(|project| project.version_transcript(language, backup))
     }
 
     pub fn restore_version(
@@ -1294,7 +1294,7 @@ impl CurrentProject {
 
     /// The cues of the Current Resource's translation into `language` as its file is written.
     pub fn translation_cues(&self, language: Language) -> Result<Vec<ComparedCue>, Failure> {
-        self.update_project(|project| {
+        self.read_project(|project| {
             let resource = project.resource(&project.current()?.name)?;
             let Some(path) = resource.translation_path(language) else {
                 return Ok(Vec::new());
@@ -1369,6 +1369,13 @@ impl CurrentProject {
         change: impl FnOnce(&mut Project) -> Result<T, Failure>,
     ) -> Result<T, Failure> {
         change(self.lock().project.as_mut().ok_or(Failure::NoProject)?)
+    }
+
+    fn read_project<T>(
+        &self,
+        read: impl FnOnce(&Project) -> Result<T, Failure>,
+    ) -> Result<T, Failure> {
+        read(self.lock().project.as_ref().ok_or(Failure::NoProject)?)
     }
 
     fn write_if_current(&self, generation: u64, write: impl FnOnce(&mut Project)) {
@@ -2448,7 +2455,7 @@ mod tests {
         let current = project_in(&dir);
         let source = current.snapshot().unwrap();
 
-        let written = current.write_translations(
+        let result = current.write_translations(
             &source,
             Language::English,
             vec![segment("大家好", Some("Hello"))],
@@ -2456,7 +2463,7 @@ mod tests {
 
         assert_eq!(
             (
-                written.is_err(),
+                result.is_err(),
                 current.view().unwrap().resources[0]
                     .translation_languages
                     .clone()
@@ -3160,12 +3167,12 @@ mod tests {
         current
             .write_retranslations(&source, Language::English, segments)
             .unwrap();
-        let written = read(&dir, "ep01.en.srt");
+        let translation = read(&dir, "ep01.en.srt");
         let has_backups = dir.path().join(files::HISTORY_DIR).exists();
         current.undo().unwrap();
 
         assert_eq!(
-            (written, has_backups, read(&dir, "ep01.en.srt")),
+            (translation, has_backups, read(&dir, "ep01.en.srt")),
             (three("B2"), false, three("B"))
         );
     }

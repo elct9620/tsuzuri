@@ -57,7 +57,7 @@ pub fn subtitle_snapshot(resource: &Resource) -> Result<SubtitleSnapshot, Failur
 /// Makes the subtitles of `now` hold what `snapshot` does, removing those it has none of.
 pub fn put_back(now: &SubtitleSnapshot, snapshot: &SubtitleSnapshot) -> Result<(), Failure> {
     for (path, _) in &now.0 {
-        if !snapshot.0.iter().any(|(kept, _)| kept == path) {
+        if !snapshot.0.iter().any(|(kept_path, _)| kept_path == path) {
             fs::remove_file(path)?;
         }
     }

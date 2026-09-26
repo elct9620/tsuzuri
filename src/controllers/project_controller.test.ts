@@ -181,10 +181,10 @@ describe("ProjectController", () => {
       }),
     );
 
-    const marked = [
+    const markedNames = [
       ...target("resources").querySelectorAll('[data-kind="subtitle"]'),
     ].map((badge) => badge.closest("button")?.dataset.name);
-    expect(marked).toEqual(["notes"]);
+    expect(markedNames).toEqual(["notes"]);
   });
 
   // @behavior PJ-038

@@ -110,8 +110,9 @@ export class ProjectFeed {
   private latest: ProjectView | null | undefined = undefined;
   private readonly followers = new Set<(project: ProjectView | null) => void>();
   private readonly settlers: (() => void)[] = [];
-  private asked = 0;
-  private shown = 0;
+  private readsAsked = 0;
+  /** The number of the latest read handed to the followers. */
+  private latestShownRead = 0;
 
   /** The Project last read, or none. */
   get project(): ProjectView | null {
@@ -138,10 +139,10 @@ export class ProjectFeed {
   }
 
   private async read(): Promise<void> {
-    const asked = ++this.asked;
+    const readNumber = ++this.readsAsked;
     const project = await currentProject();
-    if (asked < this.shown) return;
-    this.shown = asked;
+    if (readNumber < this.latestShownRead) return;
+    this.latestShownRead = readNumber;
     this.latest = project;
     for (const show of this.followers) show(project);
     for (const settle of this.settlers) settle();

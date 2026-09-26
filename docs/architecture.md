@@ -115,7 +115,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 | 事件 | 送出者 | 接收者 |
 |---|---|---|
-| `project-changed` | 改變專案的指令、用例；`refreshProject` | `main.ts` 以 `followProject` 讀一次 `current_project` 再分送 |
+| `project-changed` | 改變專案的指令、用例；`refreshProject` | `ProjectFeed` 讀一次 `current_project` 再分送 |
 | `pipeline-progress` | 用例經由 `Progress` 回報 Phase 與百分比 | `backend/progress.ts` 的 `listenProgress` |
 | `edit-command` | macOS 編輯選單的復原與重做（`menu.rs`） | `backend/project.ts` 的 `followEditCommands` |
 
@@ -244,7 +244,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 ```
 CurrentProject(Mutex<HeldProject>)
   └─ HeldProject { generation, project: Option<Project>, mode_hold }
-       replace／select，或重新載入換了目前資源時 generation + 1
+       replace、select、set_language，或重新載入換了目前資源時 generation + 1
        用例結束時 write_if_current(generation)：資源已換就不寫入畫面
        Project.undo_histories：每個資源一份復原紀錄（project/history.rs）
 ```
@@ -252,13 +252,14 @@ CurrentProject(Mutex<HeldProject>)
 | 保護 | 做法 |
 |---|---|
 | 同時存取 | 一把 Mutex，不在鎖內等待 |
-| 任務跨越切換資源 | 寫回畫面前比對 generation |
+| 任務跨越切換資源 | 比對 generation |
 | 外部修改 | 比對摘要，不同就拒絕並重讀 |
-| 任務寫入中 | `mode_hold` 由 `ModeRun` 保管 |
+| 任務寫入中 | `ModeRun` 保管 |
 | 任務中重新載入 | 只重新配對清單 |
+| 重新配對 | 檔案變了就清復原 |
 | 復原 | 改動前記下所有字幕的內容 |
 
-字幕被外部改過時，重讀並清掉該資源的復原紀錄。任務寫入中的字幕，改動會被拒絕為 `mode-running`。改動後內容有差才留下一步復原，復原與重做換回那份內容並重讀。
+字幕被外部改過，或重新配對後檔案變了，就清掉它的復原紀錄，免得復原刪掉不認得的檔案。`mode_hold` 鎖住的字幕拒絕改動（`mode-running`）。內容有差才留一步復原，復原與重做換回內容並重讀。
 
 ### 3.7 任務
 

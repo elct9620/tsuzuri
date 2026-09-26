@@ -12,7 +12,11 @@ use crate::toolchain::{ModelSettings, ModelSlot};
 use crate::transcript::Transcript;
 
 pub mod commands;
+pub mod settings;
 mod whisper;
+
+use settings::TranscriptionSettings;
+use whisper::TranscriptionRun;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Transcription {
@@ -26,11 +30,13 @@ pub struct Tools {
     pub whisper: PathBuf,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run_transcribe<'a>(
     run: &ModeRun<'a, impl Progress + Steps>,
     project: &'a CurrentProject,
     tools: &Tools,
-    settings: &ModelSettings,
+    models: &ModelSettings,
+    settings: TranscriptionSettings,
     job: &TranscriptionTarget,
     work: &Path,
     mut phases: Phases,
@@ -38,7 +44,19 @@ pub async fn run_transcribe<'a>(
     run.keep(project.hold_resource(&job.directory, &job.name, RunningMode::Transcription));
     let ports = run.ports();
     let input = job.media.as_path();
-    let model = settings.ready_path(ModelSlot::Transcription)?;
+    let models = models
+        .clone()
+        .with_project_model(ModelSlot::Transcription, job.model.clone());
+    let settings = settings.with_overrides(job.transcription);
+    let whisper_run = TranscriptionRun {
+        model: models.ready_path(ModelSlot::Transcription)?,
+        vad: settings
+            .has_vad
+            .then(|| models.ready_path(ModelSlot::Vad))
+            .transpose()?,
+        language: job.language,
+        settings,
+    };
     std::fs::create_dir_all(work)?;
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
@@ -63,7 +81,7 @@ pub async fn run_transcribe<'a>(
         ports,
         "transcribe",
         &tools.whisper,
-        &whisper::transcription_args(model, job.language, &wav, &srt_prefix),
+        &whisper::transcription_args(&whisper_run, &wav, &srt_prefix),
         |line| {
             if line.starts_with(whisper::START_MARK) {
                 enter(ports, &mut phases, "transcribe");
@@ -105,7 +123,7 @@ mod tests {
     use super::*;
     use crate::language::Language;
     use crate::processes::{AppPorts, Processes};
-    use crate::project::Project;
+    use crate::project::{Project, ProjectModels, ProjectOptions, TranscriptionOverrides};
     use crate::steps::ModeLock;
     use crate::test_support::{write_executable, TempDir};
     use crate::toolchain::{self, Resolver};
@@ -134,6 +152,7 @@ mod tests {
         app: tauri::App<MockRuntime>,
         tools: Tools,
         settings: ModelSettings,
+        transcription: TranscriptionSettings,
         whisper_started: PathBuf,
     }
 
@@ -157,6 +176,7 @@ mod tests {
                 app,
                 tools,
                 settings,
+                transcription: TranscriptionSettings::default(),
                 whisper_started,
             }
         }
@@ -203,11 +223,24 @@ mod tests {
                 app.state::<CurrentProject>().inner(),
                 &self.tools,
                 &self.settings,
+                self.transcription,
                 target,
                 &self.dir.path().join("work"),
                 Phases::start("transcribe", "prepare"),
             )
             .await
+        }
+
+        /// The arguments whisper-cli last ran with.
+        fn whisper_args(&self) -> String {
+            std::fs::read_to_string(self.whisper_started.with_extension("args")).unwrap()
+        }
+
+        /// Records `options` as the Project's, as the settings do, and takes what transcribing needs.
+        fn target_with(&self, options: ProjectOptions) -> TranscriptionTarget {
+            self.open_in(Language::TraditionalChinese);
+            self.project().set_options(options).unwrap();
+            self.project().transcription_target(false).unwrap()
         }
 
         fn progress_events(&self) -> Arc<Mutex<Vec<String>>> {
@@ -254,6 +287,112 @@ mod tests {
 
         let args = std::fs::read_to_string(fixture.whisper_started.with_extension("args")).unwrap();
         assert!(args.contains("-l ja "), "whisper-cli ran with {args}");
+    }
+
+    // @behavior TX-032
+    #[tokio::test]
+    async fn leaves_whisper_as_it_behaves_on_its_own_by_default() {
+        let fixture = Fixture::new("tx-defaults", TWO_SECOND_WAV);
+
+        fixture.transcribe().await.unwrap();
+
+        let args = fixture.whisper_args();
+        for flag in ["--vad", "-sns", "-mc"] {
+            assert!(!args.contains(flag), "whisper-cli ran with {args}");
+        }
+    }
+
+    // @behavior TX-033
+    #[tokio::test]
+    async fn transcribes_with_vad() {
+        let mut fixture = Fixture::new("tx-vad", TWO_SECOND_WAV);
+        let vad = fixture.dir.file("ggml-silero-v6.2.0.bin");
+        fixture.settings.choose(ModelSlot::Vad, vad.clone());
+        fixture.transcription.has_vad = true;
+
+        fixture.transcribe().await.unwrap();
+
+        let args = fixture.whisper_args();
+        assert!(
+            args.contains(&format!("--vad -vm {} ", vad.display())),
+            "whisper-cli ran with {args}"
+        );
+    }
+
+    // @behavior TX-034
+    #[tokio::test]
+    async fn refuses_vad_without_its_model() {
+        let mut fixture = Fixture::new("tx-vad-no-model", TWO_SECOND_WAV);
+        fixture.transcription.has_vad = true;
+
+        let result = fixture.transcribe().await;
+
+        assert_eq!(
+            result.err(),
+            Some(Failure::ModelNotChosen {
+                slot: ModelSlot::Vad
+            })
+        );
+        assert!(!fixture.dir.path().join("work").join("audio.wav").exists());
+    }
+
+    // @behavior TX-035
+    #[tokio::test]
+    async fn suppresses_non_speech_tokens_and_carries_no_context() {
+        let mut fixture = Fixture::new("tx-no-context", TWO_SECOND_WAV);
+        fixture.transcription.is_non_speech_suppressed = true;
+        fixture.transcription.is_context_carried = false;
+
+        fixture.transcribe().await.unwrap();
+
+        let args = fixture.whisper_args();
+        assert!(
+            args.contains(" -sns ") && args.contains(" -mc 0 "),
+            "whisper-cli ran with {args}"
+        );
+    }
+
+    // @behavior TX-036
+    #[tokio::test]
+    async fn takes_the_project_transcription_settings_over_the_general_ones() {
+        let mut fixture = Fixture::new("tx-project-vad", TWO_SECOND_WAV);
+        fixture
+            .settings
+            .choose(ModelSlot::Vad, fixture.dir.file("ggml-silero-v6.2.0.bin"));
+        let target = fixture.target_with(ProjectOptions {
+            transcription: TranscriptionOverrides {
+                has_vad: Some(true),
+                ..TranscriptionOverrides::default()
+            },
+            ..ProjectOptions::default()
+        });
+
+        fixture.run(&target).await.unwrap();
+
+        let args = fixture.whisper_args();
+        assert!(args.contains("--vad "), "whisper-cli ran with {args}");
+    }
+
+    // @behavior TX-037
+    #[tokio::test]
+    async fn transcribes_with_the_project_model() {
+        let fixture = Fixture::new("tx-project-model", TWO_SECOND_WAV);
+        let project_model = fixture.dir.file("kotoba.bin");
+        let target = fixture.target_with(ProjectOptions {
+            models: ProjectModels {
+                transcription: Some(project_model.clone()),
+                ..ProjectModels::default()
+            },
+            ..ProjectOptions::default()
+        });
+
+        fixture.run(&target).await.unwrap();
+
+        let args = fixture.whisper_args();
+        assert!(
+            args.starts_with(&format!("-m {} ", project_model.display())),
+            "whisper-cli ran with {args}"
+        );
     }
 
     // @behavior PJ-022
@@ -563,6 +702,7 @@ mod tests {
             &project,
             &tools,
             &settings,
+            TranscriptionSettings::default(),
             &target,
             &dir.path().join("work"),
             Phases::start("transcribe", "prepare"),

@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 
+import type { TranscriptionOverrides } from "./transcription";
+
 export type { UnlistenFn };
 
 export interface Segment {
@@ -16,6 +18,14 @@ export interface ProjectOptions {
   bilingual_order: "original-first" | "translation-first";
   is_bilingual_autosaved: boolean;
   is_overwrite_backed_up: boolean;
+  /** The Project Models; a slot without one uses the general settings' Model. */
+  models: ProjectModels;
+  transcription: TranscriptionOverrides;
+}
+
+export interface ProjectModels {
+  transcription: string | null;
+  translation: string | null;
 }
 
 /** A Resource as the Resource list shows it. */

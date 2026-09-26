@@ -1047,6 +1047,164 @@
                     </li>
                   </ul>
                 </fieldset>
+                <fieldset class="fieldset text-sm">
+                  <legend
+                    class="fieldset-legend"
+                    data-i18n="settings.transcription"
+                  ></legend>
+                  <ul class="list rounded-box border border-base-300">
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.vad"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.projectTranscriptionHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <select
+                        class="select select-sm w-auto"
+                        data-project-target="transcriptionSetting"
+                        data-setting="has_vad"
+                        data-action="change->project#setOptions"
+                      >
+                        <option
+                          value=""
+                          data-i18n="settings.followGeneral"
+                        ></option>
+                        <option value="on" data-i18n="settings.on"></option>
+                        <option value="off" data-i18n="settings.off"></option>
+                      </select>
+                    </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.nonSpeechSuppressed"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.projectTranscriptionHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <select
+                        class="select select-sm w-auto"
+                        data-project-target="transcriptionSetting"
+                        data-setting="is_non_speech_suppressed"
+                        data-action="change->project#setOptions"
+                      >
+                        <option
+                          value=""
+                          data-i18n="settings.followGeneral"
+                        ></option>
+                        <option value="on" data-i18n="settings.on"></option>
+                        <option value="off" data-i18n="settings.off"></option>
+                      </select>
+                    </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.contextCarried"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.projectTranscriptionHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <select
+                        class="select select-sm w-auto"
+                        data-project-target="transcriptionSetting"
+                        data-setting="is_context_carried"
+                        data-action="change->project#setOptions"
+                      >
+                        <option
+                          value=""
+                          data-i18n="settings.followGeneral"
+                        ></option>
+                        <option value="on" data-i18n="settings.on"></option>
+                        <option value="off" data-i18n="settings.off"></option>
+                      </select>
+                    </li>
+                  </ul>
+                </fieldset>
+                <fieldset class="fieldset text-sm">
+                  <legend
+                    class="fieldset-legend"
+                    data-i18n="settings.models"
+                  ></legend>
+                  <ul class="list rounded-box border border-base-300">
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="slots.transcription"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.projectModelHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <span
+                        class="break-all text-base-content/70"
+                        data-project-target="projectModel"
+                        data-slot="transcription"
+                        data-i18n="models.followsGeneral"
+                      ></span>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-slot="transcription"
+                          data-action="project#chooseModel"
+                          data-i18n="settings.chooseFile"
+                        ></button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm"
+                          data-project-target="followModel"
+                          data-slot="transcription"
+                          data-action="project#followModel"
+                          data-i18n="settings.useGeneral"
+                          hidden
+                        ></button>
+                      </div>
+                    </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="slots.translation"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.projectModelHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <span
+                        class="break-all text-base-content/70"
+                        data-project-target="projectModel"
+                        data-slot="translation"
+                        data-i18n="models.followsGeneral"
+                      ></span>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-slot="translation"
+                          data-action="project#chooseModel"
+                          data-i18n="settings.chooseFile"
+                        ></button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm"
+                          data-project-target="followModel"
+                          data-slot="translation"
+                          data-action="project#followModel"
+                          data-i18n="settings.useGeneral"
+                          hidden
+                        ></button>
+                      </div>
+                    </li>
+                  </ul>
+                </fieldset>
               </div>
             </div>
             <input
@@ -1281,6 +1439,69 @@
                   </ul>
                 </fieldset>
 
+                <fieldset
+                  class="fieldset text-sm"
+                  data-controller="transcription-settings"
+                >
+                  <legend
+                    class="fieldset-legend"
+                    data-i18n="settings.transcription"
+                  ></legend>
+                  <ul class="list rounded-box border border-base-300">
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.vad"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.vadHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        class="toggle"
+                        data-transcription-settings-target="vad"
+                        data-action="change->transcription-settings#save"
+                      />
+                    </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.nonSpeechSuppressed"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.nonSpeechSuppressedHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        class="toggle"
+                        data-transcription-settings-target="nonSpeechSuppressed"
+                        data-action="change->transcription-settings#save"
+                      />
+                    </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.contextCarried"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.contextCarriedHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        class="toggle"
+                        data-transcription-settings-target="contextCarried"
+                        data-action="change->transcription-settings#save"
+                      />
+                    </li>
+                  </ul>
+                </fieldset>
+
                 <fieldset class="fieldset text-sm" data-controller="models">
                   <legend
                     class="fieldset-legend"
@@ -1307,6 +1528,30 @@
                         type="button"
                         class="btn btn-sm"
                         data-slot="transcription"
+                        data-action="models#choose"
+                        data-i18n="settings.chooseFile"
+                      ></button>
+                    </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="slots.vad"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.vadModelHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <span
+                        class="break-all text-base-content/70 [&.missing]:text-error"
+                        data-models-target="status"
+                        data-slot="vad"
+                        data-i18n="models.notChosen"
+                      ></span>
+                      <button
+                        type="button"
+                        class="btn btn-sm"
+                        data-slot="vad"
                         data-action="models#choose"
                         data-i18n="settings.chooseFile"
                       ></button>

@@ -825,3 +825,11 @@ A name changed in the Translation Glossary since a translation was written leave
 | Given | a Current Resource showing no translation |
 | When | a Segment is asked to be translated again |
 | Then | it is refused as `no-translation-shown` before any Model is loaded |
+
+## `PJ-104` Keeping the Project Models and Transcription Settings in the Project Config
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project with a transcription Project Model that sets VAD on for itself |
+| When | its directory is opened again |
+| Then | it has that Project Model and VAD on, and follows the general settings in the rest |

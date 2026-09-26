@@ -423,7 +423,7 @@ fn civil_date(days: i64) -> (i64, u32, u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::{BilingualOrder, ProjectOptions};
+    use crate::project::{BilingualOrder, ProjectModels, ProjectOptions, TranscriptionOverrides};
     use crate::test_support::TempDir;
 
     fn directory_of(name: &str, files: &[(&str, &str)]) -> TempDir {
@@ -589,10 +589,18 @@ mod tests {
                 bilingual_order: BilingualOrder::TranslationFirst,
                 is_bilingual_autosaved: true,
                 is_overwrite_backed_up: true,
+                models: ProjectModels {
+                    transcription: Some(PathBuf::from("/models/kotoba.bin")),
+                    translation: None,
+                },
+                transcription: TranscriptionOverrides {
+                    has_vad: Some(true),
+                    ..TranscriptionOverrides::default()
+                },
             },
         };
 
-        config.save(dir.path()).unwrap();
+        config.clone().save(dir.path()).unwrap();
 
         assert_eq!(ProjectConfig::load(dir.path()).unwrap(), config);
     }

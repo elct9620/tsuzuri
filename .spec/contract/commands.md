@@ -48,10 +48,26 @@ pub async fn forget_component(app: AppHandle, name: String) -> Result<Vec<Compon
 
 ## `transcribe`
 
-Run the Transcribe Mode on the Current Resource's media file in the Primary Language, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes and `project-changed` as each Segment arrives. The Resource's original subtitle is written from what whisper-cli wrote, refused when it exists unless `overwrite`, and each cue of its translations that has the times of a cue written takes that cue's Speaker; the answer is how long the audio is and the seconds each Phase took.
+Run the Transcribe Mode on the Current Resource's media file in the Primary Language, with the Project's Transcription Settings and Project Model where it sets them and the general ones elsewhere, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes and `project-changed` as each Segment arrives. The Resource's original subtitle is written from what whisper-cli wrote, refused when it exists unless `overwrite`, and each cue of its translations that has the times of a cue written takes that cue's Speaker; the answer is how long the audio is and the seconds each Phase took.
 
 ```rust
 pub async fn transcribe(app: AppHandle, current: State<'_, CurrentProject>, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, resident: State<'_, ResidentLlama>, overwrite: bool) -> Result<Transcription, Failure> {}
+```
+
+## `transcription_settings`
+
+The general Transcription Settings: whether VAD runs, whether non-speech tokens are suppressed, and whether each window carries the text before it as context.
+
+```rust
+pub fn transcription_settings(app: AppHandle) -> Result<TranscriptionSettings, Failure> {}
+```
+
+## `save_transcription_settings`
+
+Save the general Transcription Settings and answer them as saved.
+
+```rust
+pub fn save_transcription_settings(app: AppHandle, settings: TranscriptionSettings) -> Result<TranscriptionSettings, Failure> {}
 ```
 
 ## `extract_waveform`
@@ -152,7 +168,7 @@ pub async fn retranslate(app: AppHandle, current: State<'_, CurrentProject>, ind
 
 ## `translate`
 
-Run the Translate Mode on the Current Resource from the Primary Language into the target Language, given by its code, with the options the Translate panel offers and the saved translation settings, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. Each Batch's translations are shown as it finishes, emitting `project-changed`; once all are done they are written to the Resource's translation file and the target is recorded as the Project's translation Language; the answer is the seconds each Phase took.
+Run the Translate Mode on the Current Resource from the Primary Language into the target Language, given by its code, with the options the Translate panel offers, the saved translation settings and the Project Model where the Project has one, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. Each Batch's translations are shown as it finishes, emitting `project-changed`; once all are done they are written to the Resource's translation file and the target is recorded as the Project's translation Language; the answer is the seconds each Phase took.
 
 ```rust
 pub async fn translate(app: AppHandle, target: Language, options: TranslationOptions) -> Result<Translation, Failure> {}

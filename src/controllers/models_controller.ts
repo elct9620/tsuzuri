@@ -2,16 +2,12 @@ import { Controller } from "@hotwired/stimulus";
 import { open } from "../backend/dialog";
 import {
   chooseModel,
+  MODEL_EXTENSIONS,
   modelSettings,
   type ModelSettingsView,
   type ModelSlot,
 } from "../backend/toolchain";
 import { t } from "../i18n";
-
-const MODEL_EXTENSIONS: Record<ModelSlot, string[]> = {
-  transcription: ["bin"],
-  translation: ["gguf"],
-};
 
 export default class ModelsController extends Controller {
   static targets = ["status"];

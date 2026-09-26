@@ -7,11 +7,14 @@ import {
   selectResource,
   setPrimaryLanguage,
   setProjectOptions,
+  type ProjectModels,
   type ProjectOptions,
   type ProjectView,
   type ResourceView,
   type ProjectFeed,
 } from "../backend/project";
+import { MODEL_EXTENSIONS } from "../backend/toolchain";
+import type { TranscriptionOverrides } from "../backend/transcription";
 import { interfaceLanguageCode, t } from "../i18n";
 import { failureMessage } from "../ui/failure";
 import { closeMenu } from "../ui/menu";
@@ -70,6 +73,9 @@ export default class ProjectController extends Controller {
     "bilingualOrder",
     "bilingualAutosave",
     "overwriteBackup",
+    "transcriptionSetting",
+    "projectModel",
+    "followModel",
   ];
 
   /** Shown while no Project is open. */
@@ -87,10 +93,17 @@ export default class ProjectController extends Controller {
   declare readonly bilingualOrderTarget: HTMLSelectElement;
   declare readonly bilingualAutosaveTarget: HTMLInputElement;
   declare readonly overwriteBackupTarget: HTMLInputElement;
+  /** One per Transcription Setting named by `data-setting`: follow the general settings, `on` or `off`. */
+  declare readonly transcriptionSettingTargets: HTMLSelectElement[];
+  /** Names the Project Model of the slot in `data-slot`, or that the slot follows the general settings. */
+  declare readonly projectModelTargets: HTMLElement[];
+  /** Offered for the slot in `data-slot` only while it has a Project Model. */
+  declare readonly followModelTargets: HTMLElement[];
 
   declare readonly feed: ProjectFeed;
 
   private unfollow?: () => void;
+  private options: ProjectOptions | null = null;
 
   connect(): void {
     this.unfollow = this.feed.follow((project) => this.show(project));
@@ -129,13 +142,57 @@ export default class ProjectController extends Controller {
   }
 
   async setOptions(): Promise<void> {
+    await this.saveOptions({});
+  }
+
+  async chooseModel({ currentTarget }: Event): Promise<void> {
+    const slot = (currentTarget as HTMLElement).dataset
+      .slot as keyof ProjectModels;
+    const path = await open({
+      multiple: false,
+      directory: false,
+      filters: [{ name: "Model", extensions: MODEL_EXTENSIONS[slot] }],
+    });
+    if (path !== null) await this.saveModel(slot, path);
+  }
+
+  async followModel({ currentTarget }: Event): Promise<void> {
+    const slot = (currentTarget as HTMLElement).dataset
+      .slot as keyof ProjectModels;
+    await this.saveModel(slot, null);
+  }
+
+  private async saveModel(
+    slot: keyof ProjectModels,
+    path: string | null,
+  ): Promise<void> {
+    if (this.options === null) return;
+    await this.saveOptions({
+      models: { ...this.options.models, [slot]: path },
+    });
+  }
+
+  /** Sets the Project Options as the settings show them, with `changes` in their place. */
+  private async saveOptions(changes: Partial<ProjectOptions>): Promise<void> {
+    if (this.options === null) return;
     const options: ProjectOptions = {
       bilingual_order: this.bilingualOrderTarget
         .value as ProjectOptions["bilingual_order"],
       is_bilingual_autosaved: this.bilingualAutosaveTarget.checked,
       is_overwrite_backed_up: this.overwriteBackupTarget.checked,
+      models: this.options.models,
+      transcription: this.transcriptionOverrides(),
+      ...changes,
     };
     await this.report(() => setProjectOptions(options));
+  }
+
+  private transcriptionOverrides(): TranscriptionOverrides {
+    const overrides = { ...this.options!.transcription };
+    for (const select of this.transcriptionSettingTargets)
+      overrides[select.dataset.setting as keyof TranscriptionOverrides] =
+        select.value === "" ? null : select.value === "on";
+    return overrides;
   }
 
   /** Opens `path` with the Interface Language for a directory that records none. */
@@ -163,6 +220,7 @@ export default class ProjectController extends Controller {
     this.startTarget.hidden = project !== null;
     this.workspaceTarget.hidden = project === null;
     this.showSettingsOf(project);
+    this.options = project?.options ?? null;
     if (project === null) return;
     this.nameTarget.textContent =
       project.directory.split(/[\\/]/).pop() ?? project.directory;
@@ -181,6 +239,26 @@ export default class ProjectController extends Controller {
     this.bilingualAutosaveTarget.checked =
       project.options.is_bilingual_autosaved;
     this.overwriteBackupTarget.checked = project.options.is_overwrite_backed_up;
+    this.showTranscriptionOverrides(project.options.transcription);
+    this.showProjectModels(project.options.models);
+  }
+
+  private showTranscriptionOverrides(overrides: TranscriptionOverrides): void {
+    for (const select of this.transcriptionSettingTargets) {
+      const value =
+        overrides[select.dataset.setting as keyof TranscriptionOverrides];
+      select.value = value === null ? "" : value ? "on" : "off";
+    }
+  }
+
+  private showProjectModels(models: ProjectModels): void {
+    for (const status of this.projectModelTargets) {
+      const path = models[status.dataset.slot as keyof ProjectModels];
+      status.textContent = path ?? t("models.followsGeneral");
+    }
+    for (const follow of this.followModelTargets)
+      follow.hidden =
+        models[follow.dataset.slot as keyof ProjectModels] === null;
   }
 
   /** The Project's own settings while one is open, opened at their tab when it has just opened. */

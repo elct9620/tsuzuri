@@ -206,7 +206,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | `translation/prompt.rs` | 領域 | 請求內容與回答格式 |
 | `translation/{llama,settings}.rs` | 轉接 | llama-server、翻譯設定檔 |
 | `translation/resident.rs` | 轉接 | 常駐的 llama-server |
-| `transcription.rs`、`transcription/whisper.rs` | 應用、轉接 | 轉錄用例；ffmpeg 與 whisper-cli 的參數與輸出 |
+| `transcription.rs`、`transcription/{whisper,settings}.rs` | 應用、轉接 | 轉錄用例；ffmpeg 與 whisper-cli 的參數與輸出；轉錄設定檔 |
 | `waveform.rs` | 應用、領域 | 波形用例：ffmpeg 轉成 PCM，每 10 ms 取一個峰值 |
 | `toolchain.rs`、`toolchain/{detection,settings}.rs` | 應用、轉接 | 尋找元件、偵測、設定檔 |
 | `progress.rs`、`steps.rs`、`timing.rs`、`failure.rs` | 應用 | Port、執行一個 Step、`ModeLock` 與 `ModeRun`、Phase 計時、錯誤碼 |

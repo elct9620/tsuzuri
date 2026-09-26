@@ -41,11 +41,12 @@ sudo apt install libgomp1 libvulkan1
 
 ## Models
 
-Tsuzuri does not download models; point it at files you already have.
+Tsuzuri does not download models; point it at files you already have. A project can choose its own transcription and translation models, such as a Japanese model for a Japanese project.
 
 | Purpose | Format | Tested with |
 |---|---|---|
 | Transcription | whisper.cpp GGML (`.bin`) | Breeze-ASR-25 (Chinese) |
+| VAD, when turned on | whisper.cpp GGML (`.bin`) | Silero v6.2.0 (`ggml-silero-v6.2.0.bin`) |
 | Translation | GGUF | Qwen3-4B-Instruct-2507 |
 
 ## Development

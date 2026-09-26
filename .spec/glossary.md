@@ -52,7 +52,11 @@ The Language a Project's Resources are spoken and transcribed in, and the one ev
 
 ### Project Options
 
-What the user sets for one Project in the settings, beside its Primary Language: its Bilingual Order, whether a Bilingual SRT is saved beside each translation, and whether a subtitle about to be overwritten is kept as an Overwrite Backup. Each has a default the Project keeps until it is changed.
+What the user sets for one Project in the settings, beside its Primary Language: its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, its Project Models, and the Transcription Settings it sets for itself. Each has a default the Project keeps until it is changed.
+
+### Project Model
+
+A Model one Project chooses for the transcription or the translation Model Slot in place of the one the general settings hold, as for Resources spoken in a Language the general Model does not suit. A slot without one uses the general settings' Model.
 
 ### Preview
 
@@ -167,7 +171,15 @@ An optional second look in which the Model, two lines at a time, restates what e
 
 ### Model Slot
 
-Which job a Model is chosen for: transcription (whisper-cli) or translation (llama-server). Each slot holds one Model path.
+Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli) or translation (llama-server). Each slot holds one Model path.
+
+### Transcription Settings
+
+How whisper-cli transcribes beyond the Language and the Model: whether VAD runs first, whether non-speech tokens are suppressed, and whether each window carries the text before it as context. The general settings hold their defaults, which leave whisper-cli as it behaves on its own; a Project may set any of them for itself and follows the general settings in the rest.
+
+### VAD
+
+Voice activity detection: whisper-cli finds where speech is with the VAD Model and transcribes only there, so silence and music do not lead a Model to write text nobody said.
 
 ### Step
 

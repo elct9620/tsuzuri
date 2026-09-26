@@ -110,7 +110,7 @@ impl Project {
         ProjectConfig {
             language: Some(self.language),
             translation_language: self.translation_language,
-            options: self.options,
+            options: self.options.clone(),
         }
     }
 
@@ -299,6 +299,8 @@ pub struct TranslationSource {
     pub transcript: Transcript,
     /// The Primary Language it is translated from.
     pub language: Language,
+    /// The Project Model to translate with in place of the general one.
+    pub model: Option<PathBuf>,
 }
 
 /// What a transcription needs from the Project when it starts.
@@ -312,6 +314,9 @@ pub struct TranscriptionTarget {
     /// Where the Resource's original subtitle is written.
     pub subtitle: PathBuf,
     pub language: Language,
+    /// The Project Model to transcribe with in place of the general one.
+    pub model: Option<PathBuf>,
+    pub transcription: TranscriptionOverrides,
 }
 
 /// The files of a Project sharing one name.
@@ -335,7 +340,7 @@ impl Resource {
 }
 
 /// What a Project records about itself in its directory, so it opens the same way next time.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ProjectConfig {
     /// The Primary Language, or none to follow the Interface Language.
@@ -347,7 +352,7 @@ pub struct ProjectConfig {
 }
 
 /// What the user sets for one Project in the settings beside its Primary Language.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ProjectOptions {
     pub bilingual_order: BilingualOrder,
@@ -355,6 +360,25 @@ pub struct ProjectOptions {
     pub is_bilingual_autosaved: bool,
     /// Whether a subtitle about to be overwritten is first kept as a Backup.
     pub is_overwrite_backed_up: bool,
+    pub models: ProjectModels,
+    pub transcription: TranscriptionOverrides,
+}
+
+/// The Project Models by the slot each is chosen for; a slot without one uses the general settings' Model.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ProjectModels {
+    pub transcription: Option<PathBuf>,
+    pub translation: Option<PathBuf>,
+}
+
+/// The Transcription Settings a Project sets for itself; one left `None` follows the general settings.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct TranscriptionOverrides {
+    pub has_vad: Option<bool>,
+    pub is_non_speech_suppressed: Option<bool>,
+    pub is_context_carried: Option<bool>,
 }
 
 /// Which text a Bilingual SRT puts first in each cue and in its file name.

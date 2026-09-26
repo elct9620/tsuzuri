@@ -29,7 +29,14 @@ export function forgetComponent(name: string): Promise<ComponentStatus[]> {
   return invoke<ComponentStatus[]>("forget_component", { name });
 }
 
-export type ModelSlot = "transcription" | "translation";
+export type ModelSlot = "transcription" | "vad" | "translation";
+
+/** The file extensions a Model for each slot is picked by. */
+export const MODEL_EXTENSIONS: Record<ModelSlot, string[]> = {
+  transcription: ["bin"],
+  vad: ["bin"],
+  translation: ["gguf"],
+};
 
 export interface SlotView {
   path: string | null;

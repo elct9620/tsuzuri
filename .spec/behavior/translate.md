@@ -659,3 +659,11 @@ A line translated alone loses the context a Batch gives, so it carries the lines
 | Given | five Segments translated into `en`, shown in the editor |
 | When | the third is translated again |
 | Then | one request asks for the third line alone, with the two before as translated reference and the two after as following source text |
+
+## `TL-085` Translating with the Project Model
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Project Model for the translation slot differs from the general one |
+| When | its Current Resource is translated |
+| Then | llama-server loads the Project Model |

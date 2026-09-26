@@ -220,9 +220,8 @@ describe("PreviewController", () => {
     await show(
       projectTranslated({
         options: {
+          ...projectOf().options,
           bilingual_order: "translation-first",
-          is_bilingual_autosaved: false,
-          is_overwrite_backed_up: false,
         },
       }),
     );

@@ -14,6 +14,7 @@ describe("ProjectController", () => {
   let calls: { command: string; args: unknown }[];
   let openSrt: () => unknown;
   let selectFailure: unknown;
+  let chosenFile: string;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = <T extends HTMLElement>(name: string) =>
@@ -39,6 +40,7 @@ describe("ProjectController", () => {
     calls = [];
     openSrt = () => null;
     selectFailure = undefined;
+    chosenFile = "/subtitles/lecture.srt";
     document.body.innerHTML = `
       <main data-controller="project">
         <section data-project-target="start"></section>
@@ -66,6 +68,15 @@ describe("ProjectController", () => {
           </select>
           <input type="checkbox" data-project-target="bilingualAutosave" data-action="change->project#setOptions" />
           <input type="checkbox" data-project-target="overwriteBackup" data-action="change->project#setOptions" />
+          <select data-project-target="transcriptionSetting" data-setting="has_vad" data-action="change->project#setOptions">
+            <option value="">依整體設定</option>
+            <option value="on">開啟</option>
+            <option value="off">關閉</option>
+          </select>
+          <span data-project-target="projectModel" data-slot="transcription"></span>
+          <button id="follow-transcription-model" data-project-target="followModel" data-slot="transcription" data-action="project#followModel">改用整體設定</button>
+          <span data-project-target="projectModel" data-slot="translation"></span>
+          <button id="choose-translation-model" data-slot="translation" data-action="project#chooseModel">指定檔案</button>
         </fieldset>
       </main>
     `;
@@ -76,7 +87,7 @@ describe("ProjectController", () => {
         if (command === "plugin:dialog|open")
           return (args as { options: { directory: boolean } }).options.directory
             ? "/talks"
-            : "/subtitles/lecture.srt";
+            : chosenFile;
         if (command === "open_srt") return openSrt();
         if (command === "select_resource" && selectFailure !== undefined)
           return Promise.reject(selectFailure);
@@ -252,10 +263,70 @@ describe("ProjectController", () => {
 
     expect(sent("set_project_options")).toEqual({
       options: {
+        ...projectOf().options,
         bilingual_order: "translation-first",
-        is_bilingual_autosaved: false,
-        is_overwrite_backed_up: false,
       },
+    });
+  });
+
+  // @behavior TX-040
+  it("sets VAD on for the Project with the rest following the general settings", async () => {
+    await hold(projectOf());
+    const vad = target<HTMLSelectElement>("transcriptionSetting");
+
+    vad.value = "on";
+    vad.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(sent("set_project_options")).toEqual({
+      options: {
+        ...projectOf().options,
+        transcription: {
+          has_vad: true,
+          is_non_speech_suppressed: null,
+          is_context_carried: null,
+        },
+      },
+    });
+  });
+
+  // @behavior MD-008
+  it("sets the file picked for the translation slot as the Project Model", async () => {
+    await hold(projectOf());
+    chosenFile = "/models/gemma-ja.gguf";
+
+    await click("#choose-translation-model");
+
+    expect(sent("set_project_options")).toEqual({
+      options: {
+        ...projectOf().options,
+        models: { transcription: null, translation: "/models/gemma-ja.gguf" },
+      },
+    });
+  });
+
+  // @behavior MD-009
+  it("says a slot without a Project Model follows the general settings", async () => {
+    await hold(projectOf());
+
+    expect([
+      document.querySelector('[data-project-target="projectModel"]')!
+        .textContent,
+      document.querySelector<HTMLElement>("#follow-transcription-model")!
+        .hidden,
+    ]).toEqual(["依整體設定", true]);
+  });
+
+  // @behavior MD-010
+  it("sets the Project Options without the Project Model once the slot follows the general settings", async () => {
+    const withModel = projectOf();
+    withModel.options.models.transcription = "/models/kotoba.bin";
+    await hold(withModel);
+
+    await click("#follow-transcription-model");
+
+    expect(sent("set_project_options")).toEqual({
+      options: projectOf().options,
     });
   });
 
@@ -291,11 +362,7 @@ describe("ProjectController", () => {
     await settle();
 
     expect(sent("set_project_options")).toEqual({
-      options: {
-        bilingual_order: "original-first",
-        is_bilingual_autosaved: true,
-        is_overwrite_backed_up: false,
-      },
+      options: { ...projectOf().options, is_bilingual_autosaved: true },
     });
   });
 
@@ -309,11 +376,7 @@ describe("ProjectController", () => {
     await settle();
 
     expect(sent("set_project_options")).toEqual({
-      options: {
-        bilingual_order: "original-first",
-        is_bilingual_autosaved: false,
-        is_overwrite_backed_up: true,
-      },
+      options: { ...projectOf().options, is_overwrite_backed_up: true },
     });
   });
 });

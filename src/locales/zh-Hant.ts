@@ -241,10 +241,31 @@ const zhHant: typeof en = {
     choose: "指定",
     chooseFile: "指定檔案",
     restoreDefault: "還原預設值",
+    transcription: "轉錄",
+    vad: "VAD",
+    vadHelp:
+      "轉錄前先找出有人說話的片段，只轉錄這些地方，避免模型在靜音或背景音樂寫出沒人說的話。需要在模型指定 VAD 模型，例如 ggml-silero-v6.2.0.bin。",
+    nonSpeechSuppressed: "抑制非語音",
+    nonSpeechSuppressedHelp:
+      "不讓模型輸出掌聲、音樂等非語音的標記，減少多出來的雜訊文字。",
+    contextCarried: "延續上文",
+    contextCarriedHelp:
+      "轉錄每一段時參考前面已轉錄的文字，用詞較一致；關掉可避免一句錯誤在後面不斷重複。",
+    followGeneral: "依整體設定",
+    on: "開啟",
+    off: "關閉",
+    useGeneral: "改用整體設定",
+    projectTranscriptionHelp:
+      "這個專案自己的轉錄設定；選「依整體設定」時沿用整體頁的設定。只影響這個專案。",
+    projectModelHelp:
+      "這個專案改用的模型，例如日文專案用日文的轉錄模型；沒有指定時使用整體頁的模型。只影響這個專案。",
+    vadModelHelp:
+      "whisper 的 VAD 模型檔（.bin），例如 ggml-silero-v6.2.0.bin。開啟 VAD 時才會用到。",
     license: "Tsuzuri 以 Apache-2.0 授權釋出。",
   },
   slots: {
     transcription: "轉錄",
+    vad: "VAD",
     translation: "翻譯",
   },
   components: {
@@ -260,6 +281,7 @@ const zhHant: typeof en = {
   },
   models: {
     notChosen: "尚未指定",
+    followsGeneral: "依整體設定",
     missing: "找不到 {{path}}，請重新指定",
   },
   phases: {

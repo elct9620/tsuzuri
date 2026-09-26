@@ -41,11 +41,12 @@ sudo apt install libgomp1 libvulkan1
 
 ## 模型
 
-Tsuzuri 不會下載模型，請指定電腦上已有的模型檔。
+Tsuzuri 不會下載模型，請指定電腦上已有的模型檔。每個專案可以另外指定自己的轉錄與翻譯模型，例如日文專案用日文模型。
 
 | 用途 | 格式 | 已測試 |
 |---|---|---|
 | 轉錄 | whisper.cpp GGML（`.bin`） | Breeze-ASR-25（中文） |
+| VAD（開啟時） | whisper.cpp GGML（`.bin`） | Silero v6.2.0（`ggml-silero-v6.2.0.bin`） |
 | 翻譯 | GGUF | Qwen3-4B-Instruct-2507 |
 
 ## 開發

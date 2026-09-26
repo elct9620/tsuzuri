@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use super::settings::TranscriptionSettings;
 use crate::language::Language;
 use crate::transcript::{parse_timestamp, Segment};
 
@@ -20,24 +21,40 @@ pub fn conversion_args(input: &Path, wav: &Path) -> Vec<String> {
     args
 }
 
-pub fn transcription_args(
-    model: &Path,
-    language: Language,
-    wav: &Path,
-    srt_prefix: &Path,
-) -> Vec<String> {
-    vec![
+/// What whisper-cli is run with; `vad` is the VAD Model, given only when the settings turn VAD on.
+pub struct TranscriptionRun<'a> {
+    pub model: &'a Path,
+    pub vad: Option<&'a Path>,
+    pub language: Language,
+    pub settings: TranscriptionSettings,
+}
+
+pub fn transcription_args(run: &TranscriptionRun, wav: &Path, srt_prefix: &Path) -> Vec<String> {
+    let mut args = vec![
         "-m".to_string(),
-        model.to_string_lossy().into_owned(),
+        run.model.to_string_lossy().into_owned(),
         "-l".to_string(),
-        language.whisper_code().to_string(),
+        run.language.whisper_code().to_string(),
+    ];
+    if let Some(vad) = run.vad {
+        args.extend(["--vad".to_string(), "-vm".to_string()]);
+        args.push(vad.to_string_lossy().into_owned());
+    }
+    if run.settings.is_non_speech_suppressed {
+        args.push("-sns".to_string());
+    }
+    if !run.settings.is_context_carried {
+        args.extend(["-mc".to_string(), "0".to_string()]);
+    }
+    args.extend([
         "-osrt".to_string(),
         "-pp".to_string(),
         "-f".to_string(),
         wav.to_string_lossy().into_owned(),
         "-of".to_string(),
         srt_prefix.to_string_lossy().into_owned(),
-    ]
+    ]);
+    args
 }
 
 /// whisper-cli prints this on stderr once its Model is loaded and it starts on the audio.

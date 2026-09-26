@@ -51,7 +51,7 @@ describe("field", () => {
     expect(fieldSelection(field)).toBeNull();
   });
 
-  // @behavior ED-090
+  // @behavior ED-091
   it("places a caret at the start of the line a typed line break begins", () => {
     const field = createField("");
     const later = document.createTextNode("世界");

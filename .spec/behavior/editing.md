@@ -530,7 +530,7 @@ A menu, and later a floating one, acts on the Cursor after focus has moved to it
 | When | the editor shows it |
 | Then | the field hides the platform's caret and selection, and the drawn caret stands after the second character |
 
-## `ED-090` Drawing the Cursor at the start of a line typed into a text
+## `ED-091` Drawing the Cursor at the start of a line typed into a text
 
 A caret between a line break and the text after it stands at the start of the next line, as in any editor, however the text was typed.
 

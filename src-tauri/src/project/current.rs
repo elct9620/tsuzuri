@@ -385,6 +385,33 @@ impl Project {
         files::write_srt(&path, srt)
     }
 
+    /// Keeps what a change made elsewhere replaced in the named Resource's subtitles while it is the
+    /// Current Resource, as reading that change in does, before a Mode writes over them.
+    fn keep_changed_elsewhere_of(&mut self, name: &str) -> Result<(), Failure> {
+        if self.is_current(name) {
+            self.forget_changed_elsewhere()?;
+        }
+        Ok(())
+    }
+
+    /// Keeps `subtitle` of the named Resource before a transcription or translation writes over
+    /// it: what a change made elsewhere replaced first, then the file as it is, every time when
+    /// the Project Options ask for it and else once since the Project was opened.
+    fn keep_before_mode_writes(&mut self, name: &str, subtitle: &Path) -> Result<(), Failure> {
+        self.keep_changed_elsewhere_of(name)?;
+        if !self.options.is_overwrite_backed_up {
+            return self.back_up_first_change(subtitle);
+        }
+        files::back_up(
+            &self.directory,
+            subtitle,
+            SystemTime::now(),
+            BackupKind::Overwrite,
+        )?;
+        self.backed_up_subtitles.insert(subtitle.to_path_buf());
+        Ok(())
+    }
+
     /// Keeps `subtitle` as an Overwrite Backup before Tsuzuri first changes it since the Project
     /// was opened, unless a Backup of it was kept since, so what the Undo History held can still
     /// be taken back once the Project is closed.
@@ -1154,8 +1181,8 @@ impl CurrentProject {
         }
     }
 
-    /// Writes the transcription whisper-cli wrote as the original subtitle of `job`, kept as a
-    /// Backup first when the Project Options say so, its Speakers to each translation, and the
+    /// Writes the transcription whisper-cli wrote as the original subtitle of `job`, kept first as
+    /// `keep_before_mode_writes` keeps it, its Speakers to each translation, and the
     /// Bilingual SRTs it feeds, as one change; the Current Resource is then read from them in
     /// place of what the Mode showed.
     pub fn write_transcription(
@@ -1169,21 +1196,13 @@ impl CurrentProject {
             .as_mut()
             .filter(|project| project.directory == job.directory);
         let previous = files::transcript_at(&job.subtitle)?;
+        if let Some(project) = project.as_mut() {
+            project.keep_before_mode_writes(&job.name, &job.subtitle)?;
+        }
         let before = project
             .as_ref()
             .map(|project| project.subtitle_snapshot(&job.name))
             .transpose()?;
-        if project
-            .as_ref()
-            .is_some_and(|project| project.options.is_overwrite_backed_up)
-        {
-            files::back_up(
-                &job.directory,
-                &job.subtitle,
-                SystemTime::now(),
-                BackupKind::Overwrite,
-            )?;
-        }
         files::write_srt(&job.subtitle, srt)?;
         if let Some(project) = project.as_mut() {
             project.pair_again(Some(&job.name))?;
@@ -1256,9 +1275,9 @@ impl CurrentProject {
 
     /// Writes the translation into `target` that `translation` makes, given the Project while
     /// `source` is still from it, to the Resource `source` was taken from, with the Bilingual SRTs
-    /// it feeds, as one change; with `is_backed_up` it first keeps the file it replaces when the
-    /// Project Options ask, and afterwards the new one, as Backups, and else keeps the file as its
-    /// first change since the Project was opened does. The Current Resource, while it is that Resource, is then read
+    /// it feeds, as one change; with `is_backed_up` it keeps the file it replaces as a Mode does
+    /// and afterwards the new one as an Output, and else keeps the file as its first change since
+    /// the Project was opened does. The Current Resource, while it is that Resource, is then read
     /// from the files in place of what the Mode showed.
     fn write_translation_file(
         &self,
@@ -1280,25 +1299,19 @@ impl CurrentProject {
             .as_ref()
             .map(|project| project.speaker_names(Some(target)))
             .unwrap_or_default();
+        if let Some(project) = project.as_mut() {
+            match is_backed_up {
+                true => project.keep_before_mode_writes(&source.name, &path)?,
+                false => {
+                    project.keep_changed_elsewhere_of(&source.name)?;
+                    project.back_up_first_change(&path)?;
+                }
+            }
+        }
         let before = project
             .as_ref()
             .map(|project| project.subtitle_snapshot(&source.name))
             .transpose()?;
-        if is_backed_up
-            && project
-                .as_ref()
-                .is_some_and(|project| project.options.is_overwrite_backed_up)
-        {
-            files::back_up(
-                &source.directory,
-                &path,
-                SystemTime::now(),
-                BackupKind::Overwrite,
-            )?;
-        }
-        if let Some(project) = project.as_mut().filter(|_| !is_backed_up) {
-            project.back_up_first_change(&path)?;
-        }
         files::write_srt(&path, translation_srt(&translation, speaker_names))?;
         if let Some(project) = project.as_mut() {
             project.pair_again(Some(&source.name))?;
@@ -2621,25 +2634,24 @@ mod tests {
 
     // @behavior PJ-068
     #[test]
-    fn keeps_no_overwrite_unless_asked() {
+    fn keeps_one_overwrite_each_opening_unless_asked_for_more() {
         let dir = TempDir::new("pj-backup-off");
         let current = backup_project_in(&dir, false);
         let source = current.snapshot().unwrap();
 
-        current
-            .write_translations(
-                &source,
-                Language::English,
-                vec![segment("大家好", Some("Hi"))],
-            )
-            .unwrap();
+        for translation in ["Hi", "Hey"] {
+            current
+                .write_translations(
+                    &source,
+                    Language::English,
+                    vec![segment("大家好", Some(translation))],
+                )
+                .unwrap();
+        }
 
-        let files: Vec<String> = backups(dir.path())
-            .into_iter()
-            .map(|(file, _)| file)
-            .collect();
-        assert!(
-            matches!(files.as_slice(), [file] if file.starts_with("ep01.en.") && file.ends_with(".output.srt"))
+        assert_eq!(
+            (kept_overwrites(&dir), output_backups(dir.path()).len()),
+            (vec![cue("Hello")], 2)
         );
     }
 
@@ -3052,6 +3064,33 @@ mod tests {
         assert_eq!(
             kept_overwrites(&dir),
             vec![cue("你好"), cue("您好"), cue("外面改的")]
+        );
+    }
+
+    // @behavior PJ-135
+    #[test]
+    fn keeps_a_change_made_elsewhere_during_a_mode_before_writing_over_it() {
+        let (dir, current) = translated_in_english("pj-kept-during-mode");
+        let (source, _hold) = current
+            .hold_for_translation(Language::English, None)
+            .unwrap();
+        let changed = two_cues("外面改的", "World");
+        std::fs::write(dir.path().join("ep01.en.srt"), &changed).unwrap();
+
+        current
+            .write_translations(
+                &source,
+                Language::English,
+                translated_again(&source, 0, "Hi"),
+            )
+            .unwrap();
+
+        assert_eq!(
+            (file_text(&dir, "ep01.en.srt"), kept_overwrites(&dir)),
+            (
+                two_cues("Hi", "World"),
+                vec![two_cues("Hello", "World"), changed]
+            )
         );
     }
 

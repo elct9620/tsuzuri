@@ -562,13 +562,15 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | its translation into `en` is written again |
 | Then | `.tsuzuri/history/` holds an Overwrite of `ep01.en.srt` reading `Hello` |
 
-## `PJ-068` Keeping no Overwrite unless asked
+## `PJ-068` Keeping one Overwrite each opening unless asked for more
+
+Without the Project Option a Mode keeps what it writes over as any first change does, once each time the Project is opened.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project not keeping Backups, whose `ep01.en.srt` exists |
-| When | its translation into `en` is written again |
-| Then | `.tsuzuri/history/` holds only the Output of `ep01.en.srt` |
+| Given | a Project not keeping Backups, whose `ep01.en.srt` reads `Hello` |
+| When | its translation into `en` is written twice |
+| Then | `.tsuzuri/history/` holds one Overwrite of `ep01.en.srt`, reading `Hello`, and an Output of each translation |
 
 ## `PJ-088` Keeping what a transcription wrote as an Output
 
@@ -799,6 +801,14 @@ The files decide what is shown, so a change made elsewhere is read in; what Tsuz
 | Given | an opened Project |
 | When | Rust says it read in a subtitle changed elsewhere and kept what Tsuzuri held of it |
 | Then | a warning Notification says so and points at the Versions |
+
+## `PJ-135` Keeping a change made elsewhere during a Mode before writing over it
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.en.srt` reading `Hello` and `World`, being translated into `en`, and changed elsewhere meanwhile to `外面改的` and `World` |
+| When | the translation writes `Hi` and `World` |
+| Then | `ep01.en.srt` reads `Hi` and `World`, and `.tsuzuri/history/` holds an Overwrite of what Tsuzuri held and one of the change made elsewhere |
 
 ## `PJ-123` Keeping an original whole when edited after a transcription ended early
 

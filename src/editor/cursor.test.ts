@@ -156,7 +156,7 @@ describe("nextCursor after a Segment Change", () => {
     expect(
       after(
         { index: 2, caret: null },
-        { kind: "change", change: { kind: "deletion", index: 0 }, before },
+        { kind: "change", change: { kind: "deletion", indexes: [0] }, before },
       ).index,
     ).toBe(1);
   });
@@ -165,9 +165,22 @@ describe("nextCursor after a Segment Change", () => {
     const deleting = (index: number) =>
       after(
         { index, caret: null },
-        { kind: "change", change: { kind: "deletion", index }, before },
+        {
+          kind: "change",
+          change: { kind: "deletion", indexes: [index] },
+          before,
+        },
       ).index;
     expect([deleting(1), deleting(2)]).toEqual([1, 1]);
+  });
+
+  it("moves past every Segment deleted with the current one, or back before them at the end", () => {
+    const deleting = (index: number, indexes: number[]) =>
+      after(
+        { index, caret: null },
+        { kind: "change", change: { kind: "deletion", indexes }, before },
+      ).index;
+    expect([deleting(0, [0, 1]), deleting(1, [1, 2])]).toEqual([0, 0]);
   });
 
   it("keeps no Current Segment once the only one is deleted", () => {
@@ -176,7 +189,7 @@ describe("nextCursor after a Segment Change", () => {
         { index: 0, caret: null },
         {
           kind: "change",
-          change: { kind: "deletion", index: 0 },
+          change: { kind: "deletion", indexes: [0] },
           before: segments("你好"),
         },
       ),

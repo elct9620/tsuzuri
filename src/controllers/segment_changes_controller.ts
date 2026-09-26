@@ -1,11 +1,16 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { refreshProject } from "../backend/project";
+import {
+  followEditCommands,
+  refreshProject,
+  type UnlistenFn,
+} from "../backend/project";
 import { isRun, type EditingSession, type SegmentChange } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { notify, notifyEdit } from "../ui/notification";
 import { parseTime } from "../ui/time";
+import { isTextField } from "./undo_controller";
 
 function indexOf(element: EventTarget | null): number {
   return Number((element as HTMLElement).dataset.index);
@@ -32,6 +37,22 @@ export default class SegmentChangesController extends Controller {
   declare readonly shiftDialogTarget: HTMLDialogElement;
   /** Milliseconds to shift by, negative for earlier. */
   declare readonly offsetTarget: HTMLInputElement;
+
+  private unlisten?: UnlistenFn;
+
+  /** Select All chosen from the Edit menu selects the text in focus, or else checks every Segment. */
+  async connect(): Promise<void> {
+    this.unlisten = await followEditCommands((command) => {
+      if (command !== "select-all") return;
+      if (isTextField(document.activeElement))
+        document.execCommand("selectAll");
+      else this.checkAll();
+    });
+  }
+
+  disconnect(): void {
+    this.unlisten?.();
+  }
 
   async changeTimes({ currentTarget }: Event): Promise<void> {
     const index = indexOf(currentTarget);
@@ -68,7 +89,17 @@ export default class SegmentChangesController extends Controller {
 
   async delete({ currentTarget }: Event): Promise<void> {
     closeMenu(currentTarget);
-    await this.change({ kind: "deletion", index: indexOf(currentTarget) });
+    await this.change({
+      kind: "deletion",
+      indexes: [indexOf(currentTarget)],
+    });
+  }
+
+  async deleteChecked(): Promise<void> {
+    await this.change({
+      kind: "deletion",
+      indexes: this.session.checkedIndexes,
+    });
   }
 
   /** Splits the Segment whose menu was used where the Cursor in its text starts, which is kept while the menu has focus. */
@@ -125,6 +156,11 @@ export default class SegmentChangesController extends Controller {
   /** Hands the Checked Segments to the Speaker dialog. */
   openSpeakers(): void {
     this.dispatch("speakers");
+  }
+
+  /** Ctrl/⌘+A outside a text field; bound with `:!typing:prevent`. */
+  checkAll(): void {
+    this.session.checkAll();
   }
 
   clearChecks(): void {

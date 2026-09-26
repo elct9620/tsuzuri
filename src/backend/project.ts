@@ -149,10 +149,10 @@ export class ProjectFeed {
   }
 }
 
-/** Undo or Redo chosen from the Edit menu. */
-export type EditCommand = "undo" | "redo";
+/** Undo, Redo or Select All chosen from the Edit menu. */
+export type EditCommand = "undo" | "redo" | "select-all";
 
-/** Calls `apply` with each Undo or Redo chosen from the Edit menu, which takes their shortcuts first. */
+/** Calls `apply` with each Undo, Redo or Select All chosen from the Edit menu, which takes their shortcuts first. */
 export function followEditCommands(
   apply: (command: EditCommand) => void,
 ): Promise<UnlistenFn> {

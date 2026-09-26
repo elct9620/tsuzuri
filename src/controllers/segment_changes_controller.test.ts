@@ -2,7 +2,7 @@
 import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import page from "../../index.html?raw";
@@ -12,6 +12,7 @@ import { fieldValue } from "../editor";
 import FieldController, { composingOption } from "./field_controller";
 import SegmentChangesController from "./segment_changes_controller";
 import TranscriptController from "./transcript_controller";
+import { typingOption } from "./undo_controller";
 
 describe("SegmentChangesController", () => {
   let application: Application;
@@ -60,7 +61,7 @@ describe("SegmentChangesController", () => {
     isRefusing = false;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
+      <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="emptyHint"></p>
@@ -68,6 +69,7 @@ describe("SegmentChangesController", () => {
           <span data-segment-changes-target="checkedCount"></span>
           <button id="merge" data-segment-changes-target="mergeButton" data-action="segment-changes#merge">合併</button>
           <button id="open-shift" data-action="segment-changes#openShift">平移</button>
+          <button id="delete-checked" data-action="segment-changes#deleteChecked">刪除</button>
         </div>
         <dialog data-segment-changes-target="shiftDialog">
           <input type="number" data-segment-changes-target="offset" />
@@ -88,6 +90,7 @@ describe("SegmentChangesController", () => {
     );
     application = Application.start();
     application.registerActionOption("composing", composingOption);
+    application.registerActionOption("typing", typingOption);
     await assemble(application, {
       field: FieldController,
       transcript: TranscriptController,
@@ -99,6 +102,7 @@ describe("SegmentChangesController", () => {
   afterEach(() => {
     application.stop();
     clearMocks();
+    vi.restoreAllMocks();
   });
 
   // @behavior ED-014
@@ -234,6 +238,85 @@ describe("SegmentChangesController", () => {
         '[data-segment-changes-target="checkedBar"]',
       )!.hidden,
     ]).toEqual([0, true]);
+  });
+
+  // @behavior ED-065
+  it("asks to delete the Segments checked as one change", async () => {
+    await hold(threeSegments);
+    await select(0, 2);
+
+    document.querySelector<HTMLButtonElement>("#delete-checked")!.click();
+    await settle();
+
+    expect(changes).toEqual([{ kind: "deletion", indexes: [0, 2] }]);
+  });
+
+  describe("checking every Segment", () => {
+    const checkedCount = () =>
+      document.querySelectorAll("input.check:checked").length;
+    const isBarHidden = () =>
+      document.querySelector<HTMLElement>(
+        '[data-segment-changes-target="checkedBar"]',
+      )!.hidden;
+    const textOf = (index: number) =>
+      row(index).querySelector<HTMLElement>(".field.text")!;
+
+    function pressCtrlA(target: EventTarget): KeyboardEvent {
+      const event = new KeyboardEvent("keydown", {
+        key: "a",
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      target.dispatchEvent(event);
+      return event;
+    }
+
+    // @behavior ED-066
+    it("checks every Segment by Ctrl+A outside a text field", async () => {
+      await hold(threeSegments);
+
+      pressCtrlA(document.body);
+      await settle();
+
+      expect([checkedCount(), isBarHidden()]).toEqual([3, false]);
+    });
+
+    // @behavior ED-067
+    it("leaves Ctrl+A in a text field to the field", async () => {
+      await hold(threeSegments);
+
+      const event = pressCtrlA(textOf(0));
+      await settle();
+
+      expect([checkedCount(), event.defaultPrevented]).toEqual([0, false]);
+    });
+
+    // @behavior ED-068
+    it("checks every Segment when Select All is chosen from the Edit menu", async () => {
+      await hold(threeSegments);
+
+      await emit("edit-command", "select-all");
+      await settle();
+
+      expect(checkedCount()).toBe(3);
+    });
+
+    // @behavior ED-069
+    it("selects a text field's text when Select All is chosen from the Edit menu", async () => {
+      await hold(threeSegments);
+      const execCommand = vi.fn(() => true);
+      document.execCommand = execCommand;
+      textOf(0).focus();
+
+      await emit("edit-command", "select-all");
+      await settle();
+
+      expect([execCommand.mock.calls, checkedCount()]).toEqual([
+        [["selectAll"]],
+        0,
+      ]);
+    });
   });
 
   describe("the Cursor", () => {
@@ -452,6 +535,19 @@ describe("SegmentChangesController", () => {
       await hold(texts("你好世界", "今天"));
 
       expect(current()).toBe(1);
+    });
+
+    // @behavior ED-070
+    it("moves past every Segment deleted", async () => {
+      await hold(texts("一", "二", "三", "四"));
+      await select(1, 2);
+      row(1).click();
+
+      document.querySelector<HTMLButtonElement>("#delete-checked")!.click();
+      await settle();
+      await hold(texts("一", "四"));
+
+      expect([current(), fieldValue(field(1))]).toEqual([1, "四"]);
     });
 
     // @behavior ED-059

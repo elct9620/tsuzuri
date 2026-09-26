@@ -236,6 +236,14 @@ export class EditingSession {
     this.announce();
   }
 
+  /** Checks every Segment and tells the listeners at once, as the user does. */
+  checkAll(): void {
+    const count = this.view?.segments.length ?? 0;
+    for (let index = 0; index < count; index++) this.checks.add(index);
+    this.unannouncedChanges.add("checks");
+    this.announce();
+  }
+
   clearChecks(): void {
     if (this.checks.size === 0) return;
     this.checks.clear();

@@ -22,7 +22,7 @@ export type SegmentChange =
   | { kind: "insertion"; start_ms: number; end_ms: number }
   | { kind: "insertion-before"; index: number }
   | { kind: "insertion-after"; index: number }
-  | { kind: "deletion"; index: number }
+  | { kind: "deletion"; indexes: number[] }
   | { kind: "split"; index: number; at: number }
   | { kind: "merge"; first: number; last: number }
   | { kind: "shift"; first: number; last: number; offset_ms: number };

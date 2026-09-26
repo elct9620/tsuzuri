@@ -16,6 +16,7 @@ use super::{
 };
 use crate::failure::Failure;
 use crate::language::Language;
+use crate::replacement::Replacement;
 use crate::segment_change::SegmentChange;
 use crate::transcript::{Segment, SpeakerNames, SrtContent, Transcript};
 
@@ -553,6 +554,23 @@ fn version_at(path: &Path, language: Option<Language>) -> Result<Transcript, Fai
     match language {
         None => files::transcript_at(path),
         Some(_) => files::translation_at(path),
+    }
+}
+
+/// Whether an edit of `field` writes `subtitle`, the original as none: a text the original, a
+/// translation the one shown, and a Speaker both.
+fn is_edited(project: &Project, subtitle: Option<Language>, field: SegmentField) -> bool {
+    match field {
+        SegmentField::Text => subtitle.is_none(),
+        SegmentField::Translation => {
+            subtitle.is_some()
+                && subtitle
+                    == project
+                        .current
+                        .as_ref()
+                        .and_then(|current| current.translation)
+        }
+        SegmentField::Speaker => true,
     }
 }
 
@@ -1209,18 +1227,8 @@ impl CurrentProject {
     /// Makes an edit and writes it back, unless a subtitle was changed elsewhere since Tsuzuri last
     /// read or wrote it: then the Current Resource is read again instead, keeping that change.
     pub fn edit(&self, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {
-        let is_written = |project: &Project, subtitle: Option<Language>| match field {
-            SegmentField::Text => subtitle.is_none(),
-            SegmentField::Translation => {
-                subtitle.is_some()
-                    && subtitle
-                        == project
-                            .current
-                            .as_ref()
-                            .and_then(|current| current.translation)
-            }
-            SegmentField::Speaker => true,
-        };
+        let is_written =
+            |project: &Project, subtitle: Option<Language>| is_edited(project, subtitle, field);
         self.change_unless_held(is_written, |project| {
             project.refuse_changed_elsewhere()?;
             project.make_undoable_change(|project| {
@@ -1265,6 +1273,62 @@ impl CurrentProject {
                 })
             },
         )
+    }
+
+    /// Replaces every match of `replacement` in the `field` of each Segment of the Current
+    /// Resource as one change, written back as an edit of that field is, and answers how many
+    /// there were; with none nothing is written.
+    pub fn replace_text(
+        &self,
+        field: SegmentField,
+        replacement: &Replacement,
+    ) -> Result<usize, Failure> {
+        if field == SegmentField::Speaker {
+            return Err(Failure::Internal {
+                detail: "a Speaker is not searched".to_string(),
+            });
+        }
+        let replacer = replacement.replacer()?;
+        let is_written =
+            |project: &Project, subtitle: Option<Language>| is_edited(project, subtitle, field);
+        self.change_unless_held(is_written, |project| {
+            project.refuse_changed_elsewhere()?;
+            let current = project.current()?;
+            if field == SegmentField::Translation && current.translation.is_none() {
+                return Err(Failure::NoTranslationShown);
+            }
+            let replaced: Vec<(usize, String, usize)> = current
+                .transcript
+                .segments
+                .iter()
+                .enumerate()
+                .filter_map(|(index, segment)| {
+                    let text = match field {
+                        SegmentField::Translation => segment.translation.as_deref()?,
+                        _ => &segment.text,
+                    };
+                    let (text, count) = replacer.replace(text)?;
+                    Some((index, text, count))
+                })
+                .collect();
+            if replaced.is_empty() {
+                return Ok(0);
+            }
+            project.make_undoable_change(|project| {
+                let previous = project.current()?.transcript.clone();
+                let segments = &mut project.current_mut()?.transcript.segments;
+                for (index, text, _) in &replaced {
+                    match field {
+                        SegmentField::Translation => {
+                            segments[*index].translation = Some(text.clone())
+                        }
+                        _ => segments[*index].text = text.clone(),
+                    }
+                }
+                project.write_back(field, &previous)
+            })?;
+            Ok(replaced.iter().map(|(_, _, count)| count).sum())
+        })
     }
 
     pub fn subtitle_versions(&self) -> Result<Vec<SubtitleVersions>, Failure> {
@@ -3298,6 +3362,112 @@ mod tests {
         current.undo().unwrap();
 
         assert_eq!(read(&dir, "ep01.srt"), three);
+    }
+
+    fn replacement(pattern: &str, substitute: &str, is_regex: bool) -> Replacement {
+        Replacement {
+            pattern: pattern.to_string(),
+            substitute: substitute.to_string(),
+            is_regex,
+        }
+    }
+
+    // @behavior ED-076
+    #[test]
+    fn replaces_a_text_across_the_current_resource() {
+        let dir = directory_of(
+            "ed-replace-original",
+            &[("ep01.srt", &two_cues("你好，世界。", "再見，朋友。"))],
+        );
+        let current = project_in(&dir);
+
+        let count = current
+            .replace_text(SegmentField::Text, &replacement("，", " ", false))
+            .unwrap();
+
+        assert_eq!(count, 2);
+        assert_eq!(
+            read(&dir, "ep01.srt"),
+            two_cues("你好 世界。", "再見 朋友。")
+        );
+    }
+
+    // @behavior ED-080
+    #[test]
+    fn refuses_a_regular_expression_that_cannot_be_read() {
+        let dir = directory_of("ed-replace-invalid", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+
+        let result = current.replace_text(SegmentField::Text, &replacement("(", "", true));
+
+        assert!(matches!(result, Err(Failure::InvalidPattern { .. })));
+        assert_eq!(read(&dir, "ep01.srt"), cue("你好"));
+    }
+
+    // @behavior ED-081
+    #[test]
+    fn replaces_in_the_translation_shown() {
+        let dir = directory_of(
+            "ed-replace-translation",
+            &[
+                ("ep01.srt", &two_cues("你好，世界", "再見")),
+                ("ep01.en.srt", &cue("Hello, world")),
+            ],
+        );
+        let current = project_in(&dir);
+
+        current
+            .replace_text(SegmentField::Translation, &replacement(",", "", false))
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.en.srt"), cue("Hello world"));
+        assert_eq!(read(&dir, "ep01.srt"), two_cues("你好，世界", "再見"));
+        assert_eq!(segments(&current)[1].translation, None);
+    }
+
+    // @behavior ED-082
+    #[test]
+    fn undoes_a_replacement_at_once() {
+        let original = two_cues("你好，世界", "再見，朋友");
+        let dir = directory_of("ed-replace-undo", &[("ep01.srt", &original)]);
+        let current = project_in(&dir);
+        current
+            .replace_text(SegmentField::Text, &replacement("，", " ", false))
+            .unwrap();
+
+        current.undo().unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), original);
+    }
+
+    // @behavior ED-083
+    #[test]
+    fn writes_nothing_when_nothing_matches() {
+        let as_written = "1\r\n00:00:00,000 --> 00:00:01,000\r\n你好\r\n";
+        let dir = directory_of("ed-replace-none", &[("ep01.srt", as_written)]);
+        let current = project_in(&dir);
+        let nothing = replacement("。", "", false);
+
+        let count = current.replace_text(SegmentField::Text, &nothing).unwrap();
+        let file_after = read(&dir, "ep01.srt");
+        edit_text(&current, "您好");
+        current.replace_text(SegmentField::Text, &nothing).unwrap();
+        current.undo().unwrap();
+
+        assert_eq!(count, 0);
+        assert_eq!(file_after, as_written);
+        assert_eq!(segments(&current)[0].text, "你好");
+    }
+
+    #[test]
+    fn refuses_a_translation_with_none_shown() {
+        let dir = directory_of("ed-replace-no-translation", &[("ep01.srt", &cue("你好"))]);
+        let current = project_in(&dir);
+
+        let result =
+            current.replace_text(SegmentField::Translation, &replacement("你", "您", false));
+
+        assert_eq!(result, Err(Failure::NoTranslationShown));
     }
 
     // @behavior PJ-078

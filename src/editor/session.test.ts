@@ -1,6 +1,11 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from "vitest";
-import type { Segment, SegmentChange, TranscriptView } from "./segment";
+import type {
+  Replacement,
+  Segment,
+  SegmentChange,
+  TranscriptView,
+} from "./segment";
 import {
   EditingSession,
   type EditingPort,
@@ -41,6 +46,10 @@ class RecordingPort implements EditingPort {
   }
   changeSegments(change: SegmentChange) {
     return this.send(change);
+  }
+  async replaceText(field: string, replacement: Replacement) {
+    await this.send({ replace: [field, replacement] });
+    return 0;
   }
   undo() {
     return this.send("undo");

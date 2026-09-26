@@ -34,6 +34,8 @@ export const editingPort: EditingPort = {
     invoke("set_speakers", { indexes, speaker }),
   changeSegments: (change: SegmentChange) =>
     invoke("change_segments", { change }),
+  replaceText: (field, replacement) =>
+    invoke<number>("replace_text", { field, replacement }),
   undo: () => invoke("undo"),
   redo: () => invoke("redo"),
 };

@@ -50,7 +50,7 @@ function editor(index: number, field: CursorField, value: string): HTMLElement {
   element.dataset.field = field;
   element.dataset.controller = "field";
   element.dataset.action =
-    "focus->field#enter selectionchange@document->field#select compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent blur->field#leave";
+    "focus->field#enter selectionchange@document->field#select compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent keydown.esc->field#revert:!composing:prevent blur->field#leave";
   if (field === "text") element.dataset.action += ` ${SPLIT_SHORTCUTS}`;
   return element;
 }

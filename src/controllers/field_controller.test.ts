@@ -18,7 +18,7 @@ describe("FieldController", () => {
     document.body.innerHTML = `
       <div id="editor">
         <div contenteditable="plaintext-only" data-controller="field" data-index="0" data-field="text"
-          data-action="focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent">大家好</div>
+          data-action="focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent keydown.esc->field#revert:!composing:prevent">大家好</div>
       </div>
     `;
     mockIPC(
@@ -94,5 +94,48 @@ describe("FieldController", () => {
       typedAfterward,
       typed.mock.calls,
     ]).toEqual([false, false, false, true, [["insertLineBreak"]]]);
+  });
+
+  /** Presses Esc in the field, answering whether the field took the key. */
+  function isEscTaken(init: KeyboardEventInit = {}): boolean {
+    const esc = new KeyboardEvent("keydown", {
+      key: "Escape",
+      cancelable: true,
+      ...init,
+    });
+    field().dispatchEvent(esc);
+    return esc.defaultPrevented;
+  }
+
+  // @behavior ED-074
+  it("puts back the text it was entered with on Esc", async () => {
+    field().focus();
+    field().dispatchEvent(new FocusEvent("focus"));
+    field().textContent = "大家好啊";
+
+    isEscTaken();
+    await settle();
+
+    expect([
+      field().textContent,
+      document.activeElement === field(),
+      edits,
+    ]).toEqual(["大家好", false, []]);
+  });
+
+  // @behavior ED-075
+  it("leaves Esc to an input method while it composes", async () => {
+    field().focus();
+    field().dispatchEvent(new FocusEvent("focus"));
+    field().textContent = "大家好ㄋ";
+
+    const isTaken = isEscTaken({ isComposing: true });
+    await settle();
+
+    expect([
+      isTaken,
+      field().textContent,
+      document.activeElement === field(),
+    ]).toEqual([false, "大家好ㄋ", true]);
   });
 });

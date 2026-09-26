@@ -103,7 +103,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | backend 模組 | Rust 模組 | 指令 |
 |---|---|---|
 | `project.ts` | `project/commands.rs` | 專案、版本、詞彙表 |
-| `editing.ts` | `project/commands.rs` | 編輯、段落改動、復原 |
+| `editing.ts` | `project/commands.rs` | 編輯、取代、段落改動、復原 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
@@ -177,7 +177,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 ```
    ┌──────── 字幕（共用核心）────────┐
    │ transcript、segment_change、    │
-   │ language                        │
+   │ replacement、language           │
    └───▲──────────▲───────────▲──────┘
        │          │           │
   ┌────┴───┐ ┌────┴─────┐ ┌───┴──────────┐
@@ -200,6 +200,7 @@ controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
 | — | `logs` | 轉接 | 決定 log 目錄 |
 | — | `transcript` | 領域 | 段落與 SRT |
 | — | `segment_change` | 領域 | 段落變更 |
+| — | `replacement` | 領域 | 搜尋取代 |
 | — | `language` | 領域 | 語言代碼 |
 | — | `project` | 領域 | 專案聚合、寫回 |
 | `project/` | `versions` | 領域 | 逐 cue 比較版本 |
@@ -434,6 +435,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 |---|---|
 | `project`、`transcript`、`segment-changes`、`dialog` | 資源清單、字幕編輯、設定 |
 | `speakers` | 說話者選單與設定 modal |
+| `replacement` | 搜尋取代 modal |
 | `retranslation` | 重新翻譯一段或 Checked Segments |
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |

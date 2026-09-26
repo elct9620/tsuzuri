@@ -11,7 +11,10 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/retranslation_controller.test.ts`
 - `src/controllers/field_controller.test.ts`
 - `src/controllers/timeline_controller.test.ts`
+- `src/controllers/replacement_controller.test.ts`
 - `src/editor/*.test.ts`
+- `src-tauri/src/replacement.rs`
+- `src-tauri/src/project/current.rs`
 
 ## `ED-001` Writing an edited text to the Project
 
@@ -571,6 +574,24 @@ Any focus within a row makes its Segment current; only a text or a translation h
 | When | a transcription of the Current Resource starts |
 | Then | the first Segment stays current and no Cursor is kept |
 
+## `ED-074` Putting back a text's entry with Esc
+
+Esc gives up what was typed since the field was entered, as an inline edit in a list does, so a correction gone wrong costs no undo.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered reading `你好`, then typed to `你好嗎` |
+| When | Esc is pressed |
+| Then | the field reads `你好` again, focus leaves it, and no edit is written |
+
+## `ED-075` Leaving Esc to an input method while it composes
+
+| Step | Statement |
+| --- | --- |
+| Given | a text field where an input method is composing text |
+| When | Esc is pressed to give up the composition |
+| Then | the field keeps focus and its text, and the input method keeps the key |
+
 ## `ED-031` Leaving Enter to an input method while it composes
 
 | Step | Statement |
@@ -636,3 +657,101 @@ Setting Speakers one Segment at a time is slow across a long transcript, so the 
 | Given | a Current Resource showing its `en` translation, its first and third Segments checked |
 | When | translating them again is chosen |
 | Then | the Project is asked to translate Segments 0 and 2 again |
+
+## `ED-076` Replacing a text across the Current Resource
+
+Punctuation a transcription put in is corrected across a whole subtitle at once, rather than a Segment at a time.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose `ep01.srt` reads `你好，世界。` and `再見，朋友。` |
+| When | `，` is replaced with a space in the original |
+| Then | `ep01.srt` reads `你好 世界。` and `再見 朋友。`, and the answer is 2 |
+
+## `ED-077` Removing a text by replacing it with nothing
+
+| Step | Statement |
+| --- | --- |
+| Given | the Segments `你好。` and `再見。` |
+| When | `。` is replaced with nothing |
+| Then | they read `你好` and `再見` |
+
+## `ED-078` Taking the text to find as written
+
+What is typed to find is looked for character by character unless it is marked a regular expression, so a `.` or a `?` in a subtitle is found as itself.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Segment `真的?好.` |
+| When | `.` is replaced with `。` without marking it a regular expression |
+| Then | it reads `真的?好。` |
+
+## `ED-079` Replacing by a regular expression with its groups
+
+Rust reads the regular expression, so the syntax is the `regex` crate's alone, with no lookaround or backreference, and a group in the replacement is `$1` or `${1}`, braced where a letter or digit follows.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Segment `第1集 第12集` |
+| When | `第(\d+)集` is replaced as a regular expression with `EP${1}` |
+| Then | it reads `EP1 EP12` |
+
+## `ED-080` Refusing a regular expression that cannot be read
+
+| Step | Statement |
+| --- | --- |
+| Given | the Segment `你好` |
+| When | `(` is replaced as a regular expression |
+| Then | it is refused as `invalid-pattern` and `ep01.srt` is left as it was |
+
+## `ED-081` Replacing in the translation shown
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing `en`, whose Segments read `你好，世界` and `再見` with the translations `Hello, world` and none |
+| When | `,` is replaced with nothing in the translation |
+| Then | `ep01.en.srt` reads `Hello world`, the original is left as it was, and the second Segment still has no translation |
+
+## `ED-082` Undoing a replacement at once
+
+| Step | Statement |
+| --- | --- |
+| Given | the Segments `你好，世界` and `再見，朋友`, whose `，` were replaced with a space |
+| When | the change is undone |
+| Then | they read `你好，世界` and `再見，朋友` again |
+
+## `ED-083` Writing nothing when nothing matches
+
+| Step | Statement |
+| --- | --- |
+| Given | the Segment `你好` |
+| When | `。` is replaced with nothing |
+| Then | the answer is 0, `ep01.srt` is not written and nothing is added to the Undo History |
+
+## `ED-084` Opening the replace dialog by shortcut
+
+Subtitle editors open replacing with Ctrl+H; macOS keeps ⌘+H to hide the app, so there it is ⌘+Option+F, as its editors bind it. A range selected in a text is what is looked for.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered reading `你好，世界` with `，` selected |
+| When | Ctrl+H is pressed |
+| Then | the replace dialog opens with `，` as the text to find, and the text to find has focus |
+
+## `ED-085` Replacing from the dialog with Enter
+
+The dialog is kept to the keyboard: Enter in either box replaces, as Esc closes it.
+
+| Step | Statement |
+| --- | --- |
+| Given | the replace dialog with `，` to find, a space to replace it with, the translation chosen and the regular expression marked |
+| When | Enter is pressed in the text to replace with |
+| Then | the Project is asked to replace `，` with a space in the translation as a regular expression, the dialog closes, and a Notification says how many were replaced |
+
+## `ED-086` Keeping the dialog open when nothing matches
+
+| Step | Statement |
+| --- | --- |
+| Given | the replace dialog with `。` to find |
+| When | it is applied and the Project answers that nothing was replaced |
+| Then | the dialog stays open and a Notification says nothing matched |

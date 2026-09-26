@@ -5,12 +5,16 @@ import {
   refreshProject,
   type UnlistenFn,
 } from "../backend/project";
-import { isRun, type EditingSession, type SegmentChange } from "../editor";
+import {
+  isRun,
+  isTextField,
+  type EditingSession,
+  type SegmentChange,
+} from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { notify, notifyEdit } from "../ui/notification";
 import { parseTime } from "../ui/time";
-import { isTextField } from "./undo_controller";
 
 function indexOf(element: EventTarget | null): number {
   return Number((element as HTMLElement).dataset.index);
@@ -95,6 +99,7 @@ export default class SegmentChangesController extends Controller {
     });
   }
 
+  /** Deletes the Checked Segments as one change. */
   async deleteChecked(): Promise<void> {
     await this.change({
       kind: "deletion",
@@ -117,7 +122,7 @@ export default class SegmentChangesController extends Controller {
   showChecked(): void {
     const indexes = this.session.checkedIndexes;
     this.checkedBarTarget.hidden = indexes.length === 0;
-    this.checkedCountTarget.textContent = t("edit.selected", {
+    this.checkedCountTarget.textContent = t("edit.checkedCount", {
       count: indexes.length,
     });
     this.mergeButtonTarget.disabled = !isRun(indexes);

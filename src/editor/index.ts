@@ -18,6 +18,7 @@ export {
   insertLineBreak,
   isField,
   isFieldHeld,
+  isTextField,
   placeSelection,
   setFieldHeld,
   setFieldValue,

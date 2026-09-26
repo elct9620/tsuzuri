@@ -117,9 +117,9 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 |---|---|---|
 | `project-changed` | 改變專案的指令 | `ProjectFeed` |
 | 進度 | 用例經 `Progress` | `listenProgress` |
-| 復原與重做 | macOS 編輯選單 | 復原的處理 |
+| 復原、重做、全選 | macOS 編輯選單 | 復原與勾選的處理 |
 
-事件只說有變化或到哪一步，不帶資料，內容再用指令取得。進度事件是 `pipeline-progress`；復原與重做是 `menu.rs` 送出的 `edit-command`，給 `followEditCommands`。
+事件只說有變化或到哪一步，不帶資料，內容再用指令取得。進度事件是 `pipeline-progress`；復原、重做與全選是 `menu.rs` 送出的 `edit-command`，給 `followEditCommands`。
 
 ### 2.4 錯誤與通知
 
@@ -422,7 +422,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `cursor.ts` | 領域 | Cursor 的狀態機 |
 | `rules.ts` | 領域 | 合併、鎖定、分割的規則 |
 | `session.ts` | 應用 | `EditingSession` 與 port |
-| `field.ts` | DOM | 欄位內容與選取換算 |
+| `field.ts` | DOM | 欄位內容、選取與文字欄位 |
 | `marks.ts` | DOM | 畫出 Cursor |
 | `highlight.ts` | DOM | CSS Custom Highlight |
 
@@ -483,7 +483,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 |---|---|
 | `ui/notification.ts` | 產生 toast 通知，互動交給 `notification` |
 | `ui/failure.ts` | 依錯誤碼產生介面語言的訊息 |
-| `ui/progress.ts` | 進度文字與各 Phase 耗時的列 |
+| `ui/progress.ts` | 任務種類、進度與耗時的列 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
 | `ui/models.ts` | 各 Model Slot 的副檔名 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |

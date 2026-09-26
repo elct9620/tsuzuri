@@ -2182,11 +2182,14 @@ mod tests {
                 indexes: vec![2, 0],
             })
             .unwrap();
-        let deleted = [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")];
+        let after_deletion = [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")];
         current.undo().unwrap();
 
         assert_eq!(
-            (deleted, [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")]),
+            (
+                after_deletion,
+                [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")]
+            ),
             (
                 [
                     srt_of(&[(1_000, 2_000, "今天")]),

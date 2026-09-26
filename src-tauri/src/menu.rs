@@ -27,11 +27,11 @@ pub fn build_app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> 
             &MenuItem::with_id(app, REDO_ID, "Redo", true, Some("CmdOrCtrl+Shift+Z"))?,
             1,
         )?;
-        let select_all = edit.items()?.len() - 1;
-        edit.remove_at(select_all)?;
+        let select_all_position = edit.items()?.len() - 1;
+        edit.remove_at(select_all_position)?;
         edit.insert(
             &MenuItem::with_id(app, SELECT_ALL_ID, "Select All", true, Some("CmdOrCtrl+A"))?,
-            select_all,
+            select_all_position,
         )?;
     }
     Ok(menu)

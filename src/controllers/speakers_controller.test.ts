@@ -37,7 +37,7 @@ describe("SpeakersController", () => {
       })),
     });
 
-  async function select(...indexes: number[]): Promise<void> {
+  async function check(...indexes: number[]): Promise<void> {
     const rows = document.querySelectorAll<HTMLLIElement>("ol > li");
     for (const index of indexes) {
       const checkbox =
@@ -96,7 +96,7 @@ describe("SpeakersController", () => {
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
           <button data-segment-changes-target="mergeButton"></button>
-          <button id="speakers-of-selection" data-action="segment-changes#openSpeakers">說話者</button>
+          <button id="speakers-of-checked" data-action="segment-changes#openSpeakers">說話者</button>
         </div>
         <ol data-transcript-target="list"></ol>
       </section>
@@ -123,12 +123,10 @@ describe("SpeakersController", () => {
   });
 
   // @behavior ED-034
-  it("sets the Speaker of the selected Segments", async () => {
+  it("sets the Speaker of the Checked Segments", async () => {
     await hold(saidBy("", "", ""));
-    await select(0, 2);
-    document
-      .querySelector<HTMLButtonElement>("#speakers-of-selection")!
-      .click();
+    await check(0, 2);
+    document.querySelector<HTMLButtonElement>("#speakers-of-checked")!.click();
     await settle();
 
     await apply("checked-segments", "co");

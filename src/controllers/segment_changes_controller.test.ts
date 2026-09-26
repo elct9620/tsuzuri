@@ -37,7 +37,7 @@ describe("SegmentChangesController", () => {
     await settle();
   }
 
-  async function select(...indexes: number[]): Promise<void> {
+  async function check(...indexes: number[]): Promise<void> {
     for (const index of indexes) {
       const checkbox =
         row(index).querySelector<HTMLInputElement>("input.check")!;
@@ -186,9 +186,9 @@ describe("SegmentChangesController", () => {
   });
 
   // @behavior ED-018
-  it("asks to merge the Segments selected", async () => {
+  it("asks to merge the Checked Segments", async () => {
     await hold(threeSegments);
-    await select(0, 1);
+    await check(0, 1);
 
     document.querySelector<HTMLButtonElement>("#merge")!.click();
     await settle();
@@ -197,9 +197,9 @@ describe("SegmentChangesController", () => {
   });
 
   // @behavior ED-019
-  it("asks to shift the Segments selected", async () => {
+  it("asks to shift the Checked Segments", async () => {
     await hold(threeSegments);
-    await select(1, 2);
+    await check(1, 2);
     document.querySelector<HTMLButtonElement>("#open-shift")!.click();
     document.querySelector<HTMLInputElement>(
       '[data-segment-changes-target="offset"]',
@@ -217,7 +217,7 @@ describe("SegmentChangesController", () => {
   it("offers no merge for Segments apart from each other", async () => {
     await hold(threeSegments);
 
-    await select(0, 2);
+    await check(0, 2);
 
     expect(document.querySelector<HTMLButtonElement>("#merge")!.disabled).toBe(
       true,
@@ -227,7 +227,7 @@ describe("SegmentChangesController", () => {
   // @behavior ED-021
   it("clears the checks once the Segments change", async () => {
     await hold(threeSegments);
-    await select(0, 1);
+    await check(0, 1);
 
     await choose(2, "delete");
     await hold(projectOf({ segments: threeSegments.segments.slice(0, 2) }));
@@ -241,9 +241,9 @@ describe("SegmentChangesController", () => {
   });
 
   // @behavior ED-065
-  it("asks to delete the Segments checked as one change", async () => {
+  it("asks to delete the Checked Segments as one change", async () => {
     await hold(threeSegments);
-    await select(0, 2);
+    await check(0, 2);
 
     document.querySelector<HTMLButtonElement>("#delete-checked")!.click();
     await settle();
@@ -540,7 +540,7 @@ describe("SegmentChangesController", () => {
     // @behavior ED-070
     it("moves past every Segment deleted", async () => {
       await hold(texts("一", "二", "三", "四"));
-      await select(1, 2);
+      await check(1, 2);
       row(1).click();
 
       document.querySelector<HTMLButtonElement>("#delete-checked")!.click();
@@ -553,7 +553,7 @@ describe("SegmentChangesController", () => {
     // @behavior ED-059
     it("keeps the merged Segment current", async () => {
       await hold(threeSegments);
-      await select(1, 2);
+      await check(1, 2);
       row(2).click();
 
       document.querySelector<HTMLButtonElement>("#merge")!.click();
@@ -566,7 +566,7 @@ describe("SegmentChangesController", () => {
     // @behavior ED-063
     it("keeps the Current Segment on its Segment when others before it are merged", async () => {
       await hold(texts("一", "二", "三", "四"));
-      await select(0, 1);
+      await check(0, 1);
       row(3).click();
 
       document.querySelector<HTMLButtonElement>("#merge")!.click();

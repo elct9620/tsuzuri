@@ -27,6 +27,24 @@ export function isField(element: EventTarget | null): element is HTMLElement {
   );
 }
 
+/** The input types holding typed text, whose own history an undo or a select all in them belongs to. */
+const TEXT_INPUT_TYPES = new Set([
+  "text",
+  "search",
+  "url",
+  "email",
+  "tel",
+  "number",
+]);
+
+/** Whether `element` holds typed text of its own: a field, or an input of a text type. */
+export function isTextField(element: EventTarget | null): boolean {
+  return (
+    isField(element) ||
+    (element instanceof HTMLInputElement && TEXT_INPUT_TYPES.has(element.type))
+  );
+}
+
 /** The text the field holds. */
 export function fieldValue(field: HTMLElement): string {
   return field.textContent ?? "";

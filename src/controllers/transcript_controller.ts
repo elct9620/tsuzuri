@@ -27,7 +27,7 @@ import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
 import { formatTime } from "../ui/time";
-import type { TaskKind } from "./progress_controller";
+import type { TaskKind } from "../ui/progress";
 
 /** Ctrl+Alt+Enter, or ⌘+Option+Enter, splits a Segment at the Cursor in its text, as subtitle editors bind splitting to a modified line break. */
 const SPLIT_SHORTCUTS = [

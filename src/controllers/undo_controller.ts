@@ -4,25 +4,8 @@ import {
   type EditCommand,
   type UnlistenFn,
 } from "../backend/project";
-import { isField, type EditingSession } from "../editor";
+import { isTextField, type EditingSession } from "../editor";
 import { notifyEdit } from "../ui/notification";
-
-/** The input types holding typed text, whose own history an undo or a select all in them belongs to. */
-const TEXT_INPUT_TYPES = new Set([
-  "text",
-  "search",
-  "url",
-  "email",
-  "tel",
-  "number",
-]);
-
-export function isTextField(element: EventTarget | null): boolean {
-  return (
-    isField(element) ||
-    (element instanceof HTMLInputElement && TEXT_INPUT_TYPES.has(element.type))
-  );
-}
 
 /**
  * Routes a key event by whether it was typed in a text field: `:typing` routes only those,

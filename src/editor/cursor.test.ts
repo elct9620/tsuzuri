@@ -162,7 +162,7 @@ describe("nextCursor after a Segment Change", () => {
   });
 
   it("moves to the next Segment when the current one is deleted, or the previous for the last", () => {
-    const deleting = (index: number) =>
+    const indexAfterDeleting = (index: number) =>
       after(
         { index, caret: null },
         {
@@ -171,16 +171,19 @@ describe("nextCursor after a Segment Change", () => {
           before,
         },
       ).index;
-    expect([deleting(1), deleting(2)]).toEqual([1, 1]);
+    expect([indexAfterDeleting(1), indexAfterDeleting(2)]).toEqual([1, 1]);
   });
 
   it("moves past every Segment deleted with the current one, or back before them at the end", () => {
-    const deleting = (index: number, indexes: number[]) =>
+    const indexAfterDeleting = (index: number, indexes: number[]) =>
       after(
         { index, caret: null },
         { kind: "change", change: { kind: "deletion", indexes }, before },
       ).index;
-    expect([deleting(0, [0, 1]), deleting(1, [1, 2])]).toEqual([0, 0]);
+    expect([
+      indexAfterDeleting(0, [0, 1]),
+      indexAfterDeleting(1, [1, 2]),
+    ]).toEqual([0, 0]);
   });
 
   it("keeps no Current Segment once the only one is deleted", () => {

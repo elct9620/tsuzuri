@@ -383,8 +383,8 @@ Hearing and watching the Current Resource's media above the editor while its sub
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource with a media file |
-| When | it is shown with no translation shown |
+| Given | a Current Resource with a media file and no translation shown |
+| When | the Project is shown |
 | Then | only the original can be chosen over the video |
 
 ## `PV-048` Keeping what is shown over the video for the next Resource

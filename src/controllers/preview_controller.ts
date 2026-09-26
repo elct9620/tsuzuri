@@ -127,11 +127,11 @@ export default class PreviewController extends Controller {
     this.showPanel();
   }
 
-  chooseCaption({ target }: Event): void {
+  chooseCaptionLanguage({ target }: Event): void {
     this.captionLanguage = (target as HTMLInputElement)
       .value as CaptionLanguage;
     writeCaptionLanguage(this.captionLanguage);
-    this.showCaption();
+    this.showCaption(this.segmentIndexAtTime());
   }
 
   togglePlayback(): void {
@@ -154,7 +154,8 @@ export default class PreviewController extends Controller {
 
   follow(): void {
     this.showTime();
-    const index = this.showCaption();
+    const index = this.segmentIndexAtTime();
+    this.showCaption(index);
     const isPlaying = !this.mediaTarget.paused && index !== -1;
     this.markPlaying(isPlaying ? index : null);
   }
@@ -175,15 +176,17 @@ export default class PreviewController extends Controller {
     this.captionChoiceTarget.hidden = true;
   }
 
-  /** Shows the Segment at the media's time over the video, answering its index or -1 between Segments. */
-  private showCaption(): number {
+  /** The index of the Segment at the media's time, or -1 between Segments. */
+  private segmentIndexAtTime(): number {
     const at = this.mediaTarget.currentTime * 1000;
-    const index = this.segments.findIndex(
+    return this.segments.findIndex(
       (segment) => segment.start_ms <= at && at < segment.end_ms,
     );
+  }
+
+  private showCaption(index: number): void {
     const segment = this.segments[index];
     this.captionTarget.textContent = segment ? this.caption(segment) : "";
-    return index;
   }
 
   /** The text over the video, laid out as a Bilingual SRT cue lays out both languages. */
@@ -241,7 +244,7 @@ export default class PreviewController extends Controller {
     if (media !== this.media) this.currentIndex = null;
     this.showCurrentSegment();
     if (media === this.media) {
-      this.showCaption();
+      this.showCaption(this.segmentIndexAtTime());
       return;
     }
     this.media = media;

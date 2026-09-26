@@ -582,7 +582,7 @@ Drawing on the empty waveform leaves a range to keep with Enter or drop with Esc
 
 ### Reading times on the timeline
 
-A time typed into a Segment is found on the waveform first, so the timeline tells the time under the pointer, and while a Segment is dragged or a range drawn, the times it will be written with.
+A time typed into a Segment is found on the waveform first, so the timeline tells the time under the pointer in the form the field takes, as Aegisub does; and while a Segment is dragged or a range drawn, the times it will be written with and how long it runs, as Subtitle Edit shows a drawn range's length.
 
 ## `PV-071` Showing the time under the pointer on the timeline
 
@@ -598,7 +598,7 @@ A time typed into a Segment is found on the waveform first, so the timeline tell
 | --- | --- |
 | Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
 | When | its end is dragged 5 pixels later and not yet let go |
-| Then | the times read `00:00:00.000 → 00:00:00.600` |
+| Then | the times read `00:00:00.000 → 00:00:00.600 (0.600s)` |
 
 ## `PV-073` Showing the times of a range as it is drawn
 
@@ -606,7 +606,7 @@ A time typed into a Segment is found on the waveform first, so the timeline tell
 | --- | --- |
 | Given | a timeline at 100 pixels a second |
 | When | a range is drawn from 1 to 1.5 s and not yet let go |
-| Then | the times read `00:00:01.000 → 00:00:01.500` |
+| Then | the times read `00:00:01.000 → 00:00:01.500 (0.500s)` |
 
 ## `PV-074` Showing the times of a drawn range until it is dropped
 

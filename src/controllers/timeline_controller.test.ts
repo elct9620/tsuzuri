@@ -530,7 +530,7 @@ describe("TimelineController", () => {
 
       expect([spanTimes().hidden, spanTimes().textContent]).toEqual([
         false,
-        "00:00:00.000 → 00:00:00.600",
+        "00:00:00.000 → 00:00:00.600 (0.600s)",
       ]);
     });
 
@@ -548,7 +548,7 @@ describe("TimelineController", () => {
 
       expect([spanTimes().hidden, spanTimes().textContent]).toEqual([
         false,
-        "00:00:01.000 → 00:00:01.500",
+        "00:00:01.000 → 00:00:01.500 (0.500s)",
       ]);
     });
 

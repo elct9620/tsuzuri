@@ -62,6 +62,10 @@ const toMilliseconds = (seconds: number) => Math.round(seconds * 1000);
 /** `seconds` as the editor writes a time, so what the timeline reads can be typed into a Segment. */
 const formatSeconds = (seconds: number) => formatTime(toMilliseconds(seconds));
 
+/** How long `span` runs, in seconds to the millisecond. */
+const formatLength = ({ start, end }: Span) =>
+  `${(toMilliseconds(end - start) / 1000).toFixed(3)}s`;
+
 /**
  * Where `span`, dragged by its `side` or, without one, as a whole, lands: Snapped to the nearest of
  * the reach's times, then kept within its lowest and highest, so it is never dragged over another.
@@ -587,13 +591,14 @@ export default class TimelineController extends Controller {
   }
 
   /**
-   * Shows the times of `span`, or none; while the pointer drags it, the time under the pointer
-   * gives way, since the times it lands on may be Snapped away from it.
+   * Shows the times of `span` and how long it runs, as Subtitle Edit shows a drawn range's length,
+   * or none; while the pointer drags it, the time under the pointer gives way, since the times it
+   * lands on may be Snapped away from it.
    */
   private showTimes(span: Span | null, isDragging = false): void {
     this.timesTarget.hidden = span === null;
     this.timesTarget.textContent = span
-      ? `${formatSeconds(span.start)} → ${formatSeconds(span.end)}`
+      ? `${formatSeconds(span.start)} → ${formatSeconds(span.end)} (${formatLength(span)})`
       : "";
     this.waveformTarget.toggleAttribute("data-dragging", isDragging);
   }

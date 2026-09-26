@@ -12,7 +12,7 @@ pub struct PhaseTiming {
 pub struct Phases {
     mode: &'static str,
     current: (&'static str, Instant),
-    finished: Vec<PhaseTiming>,
+    timings: Vec<PhaseTiming>,
 }
 
 impl Phases {
@@ -20,7 +20,7 @@ impl Phases {
         Phases {
             mode,
             current: (phase, Instant::now()),
-            finished: Vec::new(),
+            timings: Vec::new(),
         }
     }
 
@@ -33,13 +33,13 @@ impl Phases {
     pub fn finish(mut self) -> Vec<PhaseTiming> {
         let (phase, started) = self.current;
         self.record(phase, started);
-        self.finished
+        self.timings
     }
 
     fn record(&mut self, phase: &'static str, started: Instant) {
         let seconds = started.elapsed().as_secs_f64();
         log::info!("{}: {phase} took {seconds:.2}s", self.mode);
-        self.finished.push(PhaseTiming { phase, seconds });
+        self.timings.push(PhaseTiming { phase, seconds });
     }
 }
 

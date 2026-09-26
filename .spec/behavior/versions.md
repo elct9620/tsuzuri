@@ -243,6 +243,16 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | When | a transcription keeps a newer Output of the original |
 | Then | its comparison is of the newer Output |
 
+## `VR-049` Keeping the comparison with nothing once chosen
+
+Nothing chosen to compare is the user's choice, so writing the subtitle keeps it until the user chooses again or another Resource is shown.
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor comparing the original with nothing, though it has an Output |
+| When | an edit is written, or a transcription keeps a newer Output of the original |
+| Then | the original is still compared with nothing |
+
 ## `VR-030` Offering the Backups of the translation shown
 
 | Step | Statement |

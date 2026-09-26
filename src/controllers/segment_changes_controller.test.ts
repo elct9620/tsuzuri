@@ -319,6 +319,103 @@ describe("SegmentChangesController", () => {
     });
   });
 
+  describe("checking with Shift", () => {
+    const fourSegments = projectOf({
+      segments: [
+        ...threeSegments.segments,
+        { start_ms: 3000, end_ms: 4000, text: "出門" },
+      ],
+    });
+    const checked = () =>
+      [...document.querySelectorAll<HTMLInputElement>("input.check")].map(
+        (check) => check.checked,
+      );
+    const current = () =>
+      [...document.querySelectorAll("ol > li")].findIndex((li) =>
+        li.hasAttribute("aria-current"),
+      );
+
+    /** Clicks the text of row `index` with Shift held; the text takes focus unless the press is prevented, as in a browser. */
+    async function shiftClick(index: number): Promise<void> {
+      const text = row(index).querySelector<HTMLElement>(".field.text")!;
+      const options = { bubbles: true, cancelable: true, shiftKey: true };
+      if (text.dispatchEvent(new MouseEvent("mousedown", options)))
+        text.focus();
+      text.dispatchEvent(new MouseEvent("click", options));
+      await settle();
+    }
+
+    // @behavior ED-071
+    it("checks the Segments from the Current Segment through a row clicked with Shift", async () => {
+      await hold(fourSegments);
+      row(1).click();
+      await check(3);
+
+      await shiftClick(2);
+
+      expect([checked(), current()]).toEqual([[false, true, true, false], 1]);
+    });
+
+    // @behavior ED-071
+    it("resizes the run as another row is clicked with Shift", async () => {
+      await hold(fourSegments);
+      row(1).click();
+      await shiftClick(3);
+
+      await shiftClick(2);
+
+      expect(checked()).toEqual([false, true, true, false]);
+    });
+
+    // @behavior ED-072
+    it("checks upward from the Current Segment", async () => {
+      await hold(threeSegments);
+      row(2).click();
+
+      await shiftClick(0);
+
+      expect(checked()).toEqual([true, true, true]);
+    });
+
+    // @behavior ED-071
+    it("leaves the check of a row clicked with Shift as the run makes it", async () => {
+      await hold(threeSegments);
+      row(0).click();
+      const box = row(1).querySelector<HTMLInputElement>("input.check")!;
+
+      const isToggled = box.dispatchEvent(
+        new MouseEvent("mousedown", {
+          bubbles: true,
+          cancelable: true,
+          shiftKey: true,
+        }),
+      );
+      const isClicked = box.dispatchEvent(
+        new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          shiftKey: true,
+        }),
+      );
+      await settle();
+
+      expect([isToggled, isClicked, checked()]).toEqual([
+        false,
+        false,
+        [true, true, false],
+      ]);
+    });
+
+    // @behavior ED-073
+    it("makes a row clicked with Shift current when no Segment is", async () => {
+      await hold(threeSegments);
+
+      await shiftClick(1);
+
+      expect([checked(), current()]).toEqual([[false, false, false], 1]);
+    });
+  });
+
   describe("the Cursor", () => {
     const texts = (...values: string[]) =>
       projectOf({

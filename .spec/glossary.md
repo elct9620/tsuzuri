@@ -72,7 +72,7 @@ Where editing stands in the Current Segment: a caret, or a range of text, in one
 
 ### Checked Segment
 
-A Segment whose box is checked in the editor, so one change reaches many at once: merging neighbours, shifting, deleting, naming a Speaker, or translating again. Checking changes nothing in the Project, and the checks are cleared once the Segments change.
+A Segment checked in the editor, by its box or in a run Shift-clicked from the Current Segment, so one change reaches many at once: merging neighbours, shifting, deleting, naming a Speaker, or translating again. Checking changes nothing in the Project, and the checks are cleared once the Segments change.
 
 #### Rejected
 

@@ -229,6 +229,15 @@ describe("EditingSession", () => {
     expect(session.checkedIndexes).toEqual([0, 2]);
   });
 
+  it("checks a run in place of the checks before it, and tells of it", () => {
+    session.check(0, true);
+    heard = [];
+
+    session.checkRange(2, 1);
+
+    expect([session.checkedIndexes, heard]).toEqual([[1, 2], ["checks"]]);
+  });
+
   it("changes nothing as a field without the Cursor is left", async () => {
     enterFirst();
 

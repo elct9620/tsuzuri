@@ -41,18 +41,18 @@ const SPLIT_SHORTCUTS = [
 
 /** The field of the text or the translation of a Segment, which hands the session what the user does in it. */
 function editor(index: number, field: CursorField, value: string): HTMLElement {
-  const editor = createField(
+  const element = createField(
     value,
     field === "translation" ? t("edit.untranslated") : "",
   );
-  editor.className = `field ${field}`;
-  editor.dataset.index = String(index);
-  editor.dataset.field = field;
-  editor.dataset.controller = "field";
-  editor.dataset.action =
+  element.className = `field ${field}`;
+  element.dataset.index = String(index);
+  element.dataset.field = field;
+  element.dataset.controller = "field";
+  element.dataset.action =
     "focus->field#enter selectionchange@document->field#select compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#breakLine:!composing:prevent blur->field#leave";
-  if (field === "text") editor.dataset.action += ` ${SPLIT_SHORTCUTS}`;
-  return editor;
+  if (field === "text") element.dataset.action += ` ${SPLIT_SHORTCUTS}`;
+  return element;
 }
 
 /** Rows standing for Segments still being made or read, three unless `count` says otherwise. */
@@ -191,7 +191,7 @@ function item(
 ): HTMLLIElement {
   const li = document.createElement("li");
   li.dataset.action =
-    "click->transcript#makeCurrent focusin->transcript#makeCurrent";
+    "mousedown->transcript#checkThrough click->transcript#makeCurrent focusin->transcript#makeCurrent";
   li.dataset.transcriptIndexParam = String(index);
   const check = document.createElement("input");
   check.type = "checkbox";
@@ -270,9 +270,33 @@ export default class TranscriptController extends Controller {
     this.emptyHintTarget.hidden = true;
   }
 
-  /** Makes the Segment of a row current as the row is clicked or anything in it gets focus. */
-  makeCurrent({ params }: { params: { index: number } }): void {
-    this.session.makeCurrent(params.index);
+  /**
+   * Checks the Segments from the Current Segment through a row pressed with Shift, keeping the
+   * focus where it is so the Current Segment stays the run's fixed end. Within the Current Segment,
+   * Shift is left to extend the selection of its text.
+   */
+  checkThrough(event: MouseEvent & { params: { index: number } }): void {
+    const start = this.runStart(event, event.params.index);
+    if (start === null) return;
+    event.preventDefault();
+    this.session.checkRange(start, event.params.index);
+  }
+
+  /** Makes the Segment of a row current as the row is clicked or anything in it gets focus, unless the click checks a run. */
+  makeCurrent(event: Event & { params: { index: number } }): void {
+    if (this.runStart(event, event.params.index) !== null) {
+      // Keeps a checkbox clicked from toggling the check the run just set
+      event.preventDefault();
+      return;
+    }
+    this.session.makeCurrent(event.params.index);
+  }
+
+  /** The Current Segment a run checked by `event` on row `index` starts from, or none unless Shift is held on another row. */
+  private runStart(event: Event, index: number): number | null {
+    const current = this.session.cursor.index;
+    const isShiftHeld = event instanceof MouseEvent && event.shiftKey;
+    return isShiftHeld && current !== index ? current : null;
   }
 
   /**
@@ -436,9 +460,9 @@ export default class TranscriptController extends Controller {
     const rows = this.listTarget.querySelectorAll(
       ":scope > li:not([data-ghost]):not([data-placeholder])",
     );
-    const sameShape =
+    const isSameShape =
       rows.length === segments.length && editors.length === values.length;
-    if (!sameShape) {
+    if (!isSameShape) {
       this.listTarget.replaceChildren(
         ...segments.map((segment, index) =>
           item(segment, index, isTranslationShown),

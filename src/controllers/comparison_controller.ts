@@ -180,8 +180,9 @@ export default class ComparisonController extends Controller {
 
   /**
    * Compares the Segments just shown, offering the Backups there are now: the newest Output of the
-   * original is chosen for a new Resource and once a newer one is kept, and the translation is
-   * compared with nothing once another translation is shown.
+   * original is chosen for a new Resource, in place of a Backup no longer kept, and once a newer
+   * one is kept unless nothing was chosen; the translation is compared with nothing once another
+   * translation is shown.
    */
   async mark({
     detail,
@@ -192,20 +193,23 @@ export default class ComparisonController extends Controller {
     this.versions = await this.readVersions(project);
     const output = newestOutput(this.versions, null);
     const isNewResource = resource !== this.resource;
-    const isListed = (language: string | null, file: string | null) =>
-      this.versions
+    const isGone = (language: string | null, file: string | null) =>
+      file !== null &&
+      !this.versions
         .find((each) => each.language === language)
-        ?.backups.some((backup) => backup.file === file) ?? false;
+        ?.backups.some((backup) => backup.file === file);
+    const isNothingChosen =
+      this.fileBySide.original === null && this.newestOutputFile !== null;
     if (
       isNewResource ||
-      output !== this.newestOutputFile ||
-      !isListed(null, this.fileBySide.original)
+      isGone(null, this.fileBySide.original) ||
+      (output !== this.newestOutputFile && !isNothingChosen)
     )
       this.fileBySide.original = output;
     if (
       isNewResource ||
       shown !== this.shownTranslation ||
-      !isListed(shown, this.fileBySide.translation)
+      isGone(shown, this.fileBySide.translation)
     )
       this.fileBySide.translation = null;
     this.offeredReferences = (

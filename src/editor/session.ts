@@ -236,6 +236,15 @@ export class EditingSession {
     this.announce();
   }
 
+  /** Checks the Segments from `from` through `to`, either way round, and no others. */
+  checkRange(from: number, to: number): void {
+    this.checks.clear();
+    for (let index = Math.min(from, to); index <= Math.max(from, to); index++)
+      this.checks.add(index);
+    this.unannouncedChanges.add("checks");
+    this.announce();
+  }
+
   /** Checks every Segment and tells the listeners at once, as the user does. */
   checkAll(): void {
     const count = this.view?.segments.length ?? 0;

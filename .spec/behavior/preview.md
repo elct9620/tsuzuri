@@ -402,6 +402,32 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | a Current Resource with a media file |
 | When | its media loads without a picture |
 | Then | no choice of what is shown over the video is offered |
+## `PV-068` Showing what is over the video on a translucent black by default
+
+A caption drawn with a shadow alone is lost on a bright picture, so it sits on a backdrop unless the user takes it away.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, and no backdrop ever chosen on this machine |
+| When | the Project is shown |
+| Then | what is shown over the video sits on a translucent black |
+
+## `PV-069` Choosing the backdrop of what is over the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file |
+| When | an opaque black is chosen as the backdrop over the video |
+| Then | what is shown over the video sits on an opaque black |
+
+## `PV-070` Keeping the backdrop over the video for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | the backdrop over the video taken away |
+| When | another Resource with a media file becomes current |
+| Then | what is shown over the video still has no backdrop |
+
 ### Retiming on the timeline
 
 Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragged and written once let go, snapping to what is near unless Shift is held. Only the Current Segment moves, so a click on a narrow region still selects it, and no Segment is dragged over another, since a translation is matched to its original by time.

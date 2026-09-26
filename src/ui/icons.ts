@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  Captions,
   Check,
   ChevronDown,
   ChevronUp,
@@ -24,6 +25,7 @@ import {
 /** The Lucide icons the interface draws; only these are bundled. Markup names one in kebab case. */
 const ICONS = {
   ArrowLeftRight,
+  Captions,
   Check,
   ChevronDown,
   ChevronUp,

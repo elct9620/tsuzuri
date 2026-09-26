@@ -564,9 +564,13 @@
                     data-action="loadedmetadata->preview#measure durationchange->preview#showTime timeupdate->preview#follow play->preview#showPlaying pause->preview#showPaused error->preview#showUnplayable"
                   ></video>
                   <p
-                    class="pointer-events-none absolute inset-x-2 bottom-2 text-center text-sm whitespace-pre-line text-white [text-shadow:0_1px_2px_black]"
-                    data-preview-target="caption"
-                  ></p>
+                    class="pointer-events-none absolute inset-x-2 bottom-2 text-center text-sm text-white [text-shadow:0_1px_2px_black]"
+                  >
+                    <span
+                      class="rounded-sm px-1 py-0.5 whitespace-pre-line box-decoration-clone empty:hidden data-[backdrop=opaque]:bg-black data-[backdrop=translucent]:bg-black/60"
+                      data-preview-target="caption"
+                    ></span>
+                  </p>
                   <div
                     role="alert"
                     class="alert alert-warning absolute inset-2 text-sm"
@@ -596,38 +600,87 @@
                         data-preview-target="time"
                       ></span>
                       <div
-                        role="radiogroup"
-                        class="join ml-auto"
+                        class="ml-auto flex items-center gap-2"
                         data-preview-target="captionChoice"
-                        data-i18n-label="preview.captionLanguage"
                       >
-                        <input
-                          type="radio"
-                          name="preview-caption"
-                          value="original"
-                          class="join-item btn btn-xs"
-                          data-preview-target="captionLanguage"
-                          data-action="preview#chooseCaptionLanguage"
-                          data-i18n-label="preview.captionOriginal"
-                        />
-                        <input
-                          type="radio"
-                          name="preview-caption"
-                          value="translation"
-                          class="join-item btn btn-xs"
-                          data-preview-target="captionLanguage"
-                          data-action="preview#chooseCaptionLanguage"
-                          data-i18n-label="preview.captionTranslation"
-                        />
-                        <input
-                          type="radio"
-                          name="preview-caption"
-                          value="bilingual"
-                          class="join-item btn btn-xs"
-                          data-preview-target="captionLanguage"
-                          data-action="preview#chooseCaptionLanguage"
-                          data-i18n-label="preview.captionBilingual"
-                        />
+                        <div
+                          role="radiogroup"
+                          class="join"
+                          data-i18n-label="preview.captionLanguage"
+                        >
+                          <input
+                            type="radio"
+                            name="preview-caption"
+                            value="original"
+                            class="join-item btn btn-xs"
+                            data-preview-target="captionLanguage"
+                            data-action="preview#chooseCaptionLanguage"
+                            data-i18n-label="preview.captionOriginal"
+                          />
+                          <input
+                            type="radio"
+                            name="preview-caption"
+                            value="translation"
+                            class="join-item btn btn-xs"
+                            data-preview-target="captionLanguage"
+                            data-action="preview#chooseCaptionLanguage"
+                            data-i18n-label="preview.captionTranslation"
+                          />
+                          <input
+                            type="radio"
+                            name="preview-caption"
+                            value="bilingual"
+                            class="join-item btn btn-xs"
+                            data-preview-target="captionLanguage"
+                            data-action="preview#chooseCaptionLanguage"
+                            data-i18n-label="preview.captionBilingual"
+                          />
+                        </div>
+                        <div class="dropdown dropdown-end">
+                          <div
+                            tabindex="0"
+                            role="button"
+                            class="btn btn-square btn-xs"
+                            data-i18n-label="preview.captionBackdrop"
+                            data-i18n-tooltip="preview.captionBackdrop"
+                          >
+                            <i data-lucide="captions" class="size-4"></i>
+                          </div>
+                          <div
+                            tabindex="-1"
+                            role="radiogroup"
+                            class="dropdown-content join join-vertical z-20 mt-1 w-28 bg-base-100 shadow-md"
+                            data-i18n-label="preview.captionBackdrop"
+                          >
+                            <input
+                              type="radio"
+                              name="preview-backdrop"
+                              value="none"
+                              class="join-item btn btn-sm"
+                              data-preview-target="captionBackdrop"
+                              data-action="preview#chooseCaptionBackdrop"
+                              data-i18n-label="preview.captionBackdropNone"
+                            />
+                            <input
+                              type="radio"
+                              name="preview-backdrop"
+                              value="translucent"
+                              class="join-item btn btn-sm"
+                              data-preview-target="captionBackdrop"
+                              data-action="preview#chooseCaptionBackdrop"
+                              data-i18n-label="preview.captionBackdropTranslucent"
+                            />
+                            <input
+                              type="radio"
+                              name="preview-backdrop"
+                              value="opaque"
+                              class="join-item btn btn-sm"
+                              data-preview-target="captionBackdrop"
+                              data-action="preview#chooseCaptionBackdrop"
+                              data-i18n-label="preview.captionBackdropOpaque"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <div class="divider my-0"></div>

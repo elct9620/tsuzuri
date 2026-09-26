@@ -604,11 +604,11 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | 規則 | 做法 |
 |---|---|
 | 播放器 | 只有一個，移動不複製 |
-| 移出去的元素 | controller 在 connect 時留下參照 |
+| 移出去的元素 | connect 時留下參照 |
 | 播放器的事件 | `preview` 自己綁在元素上 |
 | 每格畫面 | 用影片所在視窗的 rAF |
-| 移動時被暫停 | WebKit 會暫停，移完接著播 |
+| WebKit 移動時暫停 | 移完接著播 |
 | 呼叫 Rust | 只從主視窗 |
 | 關閉 | 先移回，再 destroy |
 
-元素離開主視窗的 document，Stimulus 就找不到 target、解除 `data-action`，所以 `preview` 與 `timeline` 在 connect 時留下參照，播放器的事件由 `preview` 以 `addEventListener` 綁定。關閉前先移回，播放器才不會隨影片視窗的 document 一起結束。
+元素離開主視窗的 document 後，Stimulus 找不到 target，也解除 `data-action`，所以參照在 connect 時留下，播放器的事件由 `preview` 自己綁定。關閉前先移回，播放器才不隨影片視窗結束。

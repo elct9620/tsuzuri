@@ -131,7 +131,7 @@ mod tests {
         assert_eq!(size, Size::Logical(LogicalSize::new(1200.0, 900.0)));
     }
 
-    // @behavior PV-135
+    // @behavior PV-137
     #[test]
     fn opens_no_window_but_the_video_window() {
         let url = Url::parse("https://example.com").unwrap();
@@ -139,7 +139,7 @@ mod tests {
         assert!(!is_video_window_request(&url, false));
     }
 
-    // @behavior PV-136
+    // @behavior PV-138
     #[test]
     fn opens_one_video_window_at_a_time() {
         let url = Url::parse("about:blank").unwrap();

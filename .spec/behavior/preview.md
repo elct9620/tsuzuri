@@ -176,7 +176,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | Given | a Current Resource with Segments `大家好` and `對啊`, both from 0 to 1 s |
 | When | it plays to 0.5 s |
 | Then | `對啊` is shown over the video above `大家好` |
-## `PV-125` Moving the video into the Video Window
+## `PV-127` Moving the video into the Video Window
 
 | Step | Statement |
 | --- | --- |
@@ -184,7 +184,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | the Video Window button is pressed |
 | Then | the video plays on from 3 s in a window of its own |
 
-## `PV-126` Telling where the video went
+## `PV-128` Telling where the video went
 
 | Step | Statement |
 | --- | --- |
@@ -192,7 +192,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | the Video Window button is pressed |
 | Then | the Preview says the video is in the Video Window, where the video was |
 
-## `PV-127` Showing the Segment being played over the video in the Video Window
+## `PV-129` Showing the Segment being played over the video in the Video Window
 
 | Step | Statement |
 | --- | --- |
@@ -201,7 +201,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | the media plays to 0.5 s |
 | Then | `今天` is shown over the video in the Video Window |
 
-## `PV-128` Bringing the video back as the Video Window is closed
+## `PV-130` Bringing the video back as the Video Window is closed
 
 | Step | Statement |
 | --- | --- |
@@ -209,7 +209,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | the Video Window is closed |
 | Then | the video plays on from 3 s in the Preview |
 
-## `PV-129` Closing the Video Window with its button
+## `PV-131` Closing the Video Window with its button
 
 | Step | Statement |
 | --- | --- |
@@ -217,7 +217,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | the Video Window button is pressed again |
 | Then | the Video Window closes with the video back in the Preview |
 
-## `PV-130` Hearing a key pressed in the Video Window
+## `PV-132` Hearing a key pressed in the Video Window
 
 | Step | Statement |
 | --- | --- |
@@ -225,7 +225,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | Space is pressed in the Video Window |
 | Then | the media plays on as Space pressed in the editor plays it |
 
-## `PV-131` Filling the screen with the Video Window
+## `PV-133` Filling the screen with the Video Window
 
 | Step | Statement |
 | --- | --- |
@@ -233,7 +233,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | the video is double-clicked |
 | Then | the Video Window fills its screen |
 
-## `PV-132` Leaving the full screen with Esc
+## `PV-134` Leaving the full screen with Esc
 
 | Step | Statement |
 | --- | --- |
@@ -241,7 +241,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | Esc is pressed in the Video Window |
 | Then | the Video Window leaves the full screen |
 
-## `PV-133` Keeping the video in the Video Window for the next Resource
+## `PV-135` Keeping the video in the Video Window for the next Resource
 
 | Step | Statement |
 | --- | --- |
@@ -249,7 +249,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | another Resource with a video is chosen |
 | Then | its video is shown in the Video Window |
 
-## `PV-134` Bringing the video back for media without a picture
+## `PV-136` Bringing the video back for media without a picture
 
 | Step | Statement |
 | --- | --- |
@@ -257,7 +257,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | another Resource is chosen whose media has no picture |
 | Then | the Video Window closes |
 
-## `PV-135` Opening no window but the Video Window from the webview
+## `PV-137` Opening no window but the Video Window from the webview
 
 | Step | Statement |
 | --- | --- |
@@ -265,7 +265,7 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | its page asks to open `https://example.com` in a new window |
 | Then | no window opens |
 
-## `PV-136` Opening one Video Window at a time
+## `PV-138` Opening one Video Window at a time
 
 | Step | Statement |
 | --- | --- |

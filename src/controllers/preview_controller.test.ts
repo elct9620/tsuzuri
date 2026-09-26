@@ -83,7 +83,7 @@ describe("PreviewController", () => {
   const videoWindow = () =>
     player.ownerDocument === document ? null : player.ownerDocument.defaultView;
 
-  const inVideoWindow = (name: string) =>
+  const videoWindowTarget = (name: string) =>
     player.ownerDocument.querySelector<HTMLElement>(
       `[data-preview-target="${name}"]`,
     )!;
@@ -557,7 +557,7 @@ describe("PreviewController", () => {
   });
 
   describe("the Video Window", () => {
-    // @behavior PV-125
+    // @behavior PV-127
     it("plays the video on from where it was in a window of its own", async () => {
       await show(projectWithMedia());
       pressPlay();
@@ -572,7 +572,7 @@ describe("PreviewController", () => {
       ]).toEqual([true, false, 3]);
     });
 
-    // @behavior PV-126
+    // @behavior PV-128
     it("says where the video went in its place", async () => {
       await show(projectWithMedia());
 
@@ -581,7 +581,7 @@ describe("PreviewController", () => {
       expect(target("videoWindowHint").hidden).toBe(false);
     });
 
-    // @behavior PV-127
+    // @behavior PV-129
     it("shows the Segment being played over the video in the Video Window", async () => {
       await show(
         projectWithMedia({
@@ -592,10 +592,10 @@ describe("PreviewController", () => {
 
       playTo(0.5);
 
-      expect(inVideoWindow("caption").textContent).toBe("今天");
+      expect(videoWindowTarget("caption").textContent).toBe("今天");
     });
 
-    // @behavior PV-128
+    // @behavior PV-130
     it("plays the video on from where it was in the Preview as the Video Window is closed", async () => {
       await show(projectWithMedia());
       pressPlay();
@@ -612,7 +612,7 @@ describe("PreviewController", () => {
       ]);
     });
 
-    // @behavior PV-129
+    // @behavior PV-131
     it("closes the Video Window with the video back in the Preview when its button is pressed again", async () => {
       await show(projectWithMedia());
       pressVideoWindowButton();
@@ -626,7 +626,7 @@ describe("PreviewController", () => {
       ]);
     });
 
-    // @behavior PV-131
+    // @behavior PV-133
     it("fills the screen with the Video Window when the video is double-clicked", async () => {
       await show(projectWithMedia());
       pressVideoWindowButton();
@@ -639,7 +639,7 @@ describe("PreviewController", () => {
       ]);
     });
 
-    // @behavior PV-132
+    // @behavior PV-134
     it("leaves the full screen when Esc is pressed in the Video Window", async () => {
       await show(projectWithMedia());
       pressVideoWindowButton();
@@ -655,7 +655,7 @@ describe("PreviewController", () => {
       ]);
     });
 
-    // @behavior PV-133
+    // @behavior PV-135
     it("shows the next Resource's video in the Video Window", async () => {
       await show(projectWithMedia());
       pressVideoWindowButton();
@@ -668,7 +668,7 @@ describe("PreviewController", () => {
       ]);
     });
 
-    // @behavior PV-134
+    // @behavior PV-136
     it("closes the Video Window for media without a picture", async () => {
       await show(projectWithMedia());
       pressVideoWindowButton();

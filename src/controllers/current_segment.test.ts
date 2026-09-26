@@ -601,7 +601,7 @@ describe("Current Segment", () => {
     expect([startedAt, media().paused]).toEqual([1, false]);
   });
 
-  // @behavior PV-130
+  // @behavior PV-132
   it("plays on from the Current Segment with Space pressed in the Video Window", async () => {
     await show(twoSegments);
     rows()[1].click();

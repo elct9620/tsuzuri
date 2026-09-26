@@ -385,6 +385,7 @@ const en = {
     keys: {
       space: "Space",
       click: "Click",
+      dblclick: "Double-click",
       drag: "Drag",
       wheel: "Wheel",
     },
@@ -411,6 +412,7 @@ const en = {
       shareBoundary: "Move a shared boundary",
       drawOver: "Draw a range over Segments",
       zoom: "Zoom the timeline",
+      videoWindowFullscreen: "Video Window full screen",
     },
     hints: {
       list: "Outside a text field, ? opens this list too",
@@ -427,7 +429,8 @@ const en = {
       setStart: "Moves the Current Segment's start to where the media is",
       setEnd: "Moves the Current Segment's end to where the media is",
       insertRange: "Adds a Segment over the range drawn on the waveform",
-      cancel: "Takes a drag back before it is let go, or drops the drawn range",
+      cancel:
+        "Takes a drag back before it is let go, or drops the drawn range; in a Video Window filling the screen, leaves the full screen",
       next: "Writes the text and goes to the same field of the next Segment",
       lineBreak: "Starts a new line within the Segment",
       revert:
@@ -440,6 +443,8 @@ const en = {
       drawOver:
         "Draws a range for a Segment said over others, as when someone cuts in",
       zoom: "Pinching on a trackpad zooms too",
+      videoWindowFullscreen:
+        "Double-click the video in the Video Window to fill the screen or leave it",
     },
   },
 };

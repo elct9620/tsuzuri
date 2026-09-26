@@ -371,6 +371,7 @@ const zhHant: typeof en = {
     keys: {
       space: "空白鍵",
       click: "點一下",
+      dblclick: "點兩下",
       drag: "拖動",
       wheel: "滾輪",
     },
@@ -397,6 +398,7 @@ const zhHant: typeof en = {
       shareBoundary: "移動共用邊界",
       drawOver: "在段落上拉出範圍",
       zoom: "縮放時間軸",
+      videoWindowFullscreen: "影片視窗全螢幕",
     },
     hints: {
       list: "不在文字欄位時，也可以按 ? 開啟",
@@ -404,7 +406,7 @@ const zhHant: typeof en = {
       redo: "在欄位中重做打的字，其他時候重做上一次復原的改動",
       checkAll: "在欄位中全選文字，其他時候勾選全部段落",
       delete:
-        "有勾選刪除勾選的段落，否則刪除目前段落；在欄位、選單、清單或對話框中不作用",
+        "有勾選刪除勾選的段落，否則刪除目前段落；在欄位、選單、清單或對話方塊中不作用",
       replace: "欄位中選取的文字會帶入「尋找」",
       reload: "重新讀取目錄，帶入別處改動的檔案",
       following: "清單捲到正在播放的段落；在欄位中也可以切換",
@@ -412,7 +414,8 @@ const zhHant: typeof en = {
       setStart: "把目前段落的開始設為播放位置",
       setEnd: "把目前段落的結束設為播放位置",
       insertRange: "在波形上拉出範圍後，新增一段",
-      cancel: "拖動中還沒放開時退回原位，否則捨棄拉出的範圍",
+      cancel:
+        "拖動中還沒放開時退回原位，否則捨棄拉出的範圍；在全螢幕的影片視窗按下則離開全螢幕",
       next: "寫回，移到下一段的同一欄",
       lineBreak: "在這段字幕裡換行",
       revert: "放棄進入欄位後打的字，不佔復原步驟",
@@ -422,6 +425,7 @@ const zhHant: typeof en = {
       shareBoundary: "相鄰段落的共用邊界一起移動",
       drawOver: "有人插話時，在其他段落上拉出新段落的範圍",
       zoom: "也可以在觸控板上捏合",
+      videoWindowFullscreen: "在影片視窗的影片上點兩下，切換全螢幕",
     },
   },
 };

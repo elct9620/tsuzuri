@@ -90,17 +90,24 @@ export function fieldSelection(field: HTMLElement): TextRange | null {
   };
 }
 
-/** Where `at` characters into the field fall in its DOM, past its end when the text is shorter. */
+/**
+ * Where `at` characters into the field fall in its DOM, past its end when the text is shorter. Typing
+ * splits the text into several nodes, and where two meet the place is taken at the start of the later
+ * one, as the platform places a caret: the end of a line break's own node lays out on the line it ends.
+ */
 function boundaryAt(field: HTMLElement, at: number): [Node, number] {
   const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT);
   let left = at;
+  let end: [Node, number] | null = null;
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const characters = [...(node.textContent ?? "")];
-    if (left <= characters.length)
+    const text = node.textContent ?? "";
+    const characters = [...text];
+    if (left < characters.length)
       return [node, characters.slice(0, left).join("").length];
     left -= characters.length;
+    if (left === 0) end = [node, text.length];
   }
-  return [field, field.childNodes.length];
+  return end ?? [field, field.childNodes.length];
 }
 
 /** The DOM Range covering characters `start` to `end` of the field. */

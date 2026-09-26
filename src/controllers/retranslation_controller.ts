@@ -12,12 +12,12 @@ export default class RetranslationController extends Controller {
   static outlets = ["progress"];
 
   declare readonly session: EditingSession;
-  /** The button on the bar for Checked Segments, usable only while a translation is shown. */
+  /** The button on the bar for Checked Segments, offered only while a translation is shown. */
   declare readonly checkedButtonTarget: HTMLButtonElement;
   declare readonly progressOutlet: ProgressController;
 
   follow({ detail }: CustomEvent<{ project: ProjectView | null }>): void {
-    this.checkedButtonTarget.disabled =
+    this.checkedButtonTarget.hidden =
       (detail.project?.shown_translation ?? null) === null;
   }
 

@@ -93,6 +93,17 @@ describe("nextCursor", () => {
     });
   });
 
+  it("drops a live caret once its typing is given up, keeping the Segment current", () => {
+    expect(nextCursor(live, { kind: "reversion" })).toEqual({
+      index: 0,
+      caret: null,
+    });
+  });
+
+  it("keeps a kept caret when typing is given up elsewhere", () => {
+    expect(nextCursor(kept, { kind: "reversion" })).toBe(kept);
+  });
+
   it("drops the caret when another Segment is made current", () => {
     expect(nextCursor(kept, { kind: "current-segment", index: 1 })).toEqual({
       index: 1,

@@ -66,7 +66,7 @@ export class EditingSession {
   private state: Cursor = NO_CURSOR;
   private checks = new Set<number>();
   private pendingChange: PendingChange | null = null;
-  /** The text the live caret's field held when entered, so leaving it unchanged writes nothing. */
+  /** The text the live caret's field held when entered, so leaving it unchanged writes nothing and Esc puts it back. */
   private entryText = "";
   private readonly listeners = new Set<(change: SessionChange) => void>();
   private readonly unannouncedChanges = new Set<SessionChange>();
@@ -147,7 +147,7 @@ export class EditingSession {
     range: TextRange,
     text: string,
   ): void {
-    if (this.holdsCaret(index, field))
+    if (this.hasLiveCaret(index, field))
       this.act({ kind: "selection", range, text });
   }
 
@@ -161,18 +161,24 @@ export class EditingSession {
     range: TextRange | null,
     text: string,
   ): Promise<Outcome> {
-    if (!this.holdsCaret(index, field)) return { kind: "unchanged" };
+    if (!this.hasLiveCaret(index, field)) return { kind: "unchanged" };
     this.act({ kind: "exit", range, text });
     return this.writeText(index, field, text);
   }
 
-  /** The text `field` of the Segment at `index` was entered with, or none unless the live caret stands there. */
-  textAtEntry(index: number, field: CursorField): string | null {
-    return this.holdsCaret(index, field) ? this.entryText : null;
+  /**
+   * Gives up the typing in `field` of the Segment at `index`, dropping the live caret there so
+   * leaving the field keeps no Cursor and writes nothing; answers the text the field was entered
+   * with, to put back, or none unless the live caret stands there.
+   */
+  revert(index: number, field: CursorField): string | null {
+    if (!this.hasLiveCaret(index, field)) return null;
+    this.act({ kind: "reversion" });
+    return this.entryText;
   }
 
   /** Whether the live caret stands in `field` of the Segment at `index`. */
-  private holdsCaret(index: number, field: CursorField): boolean {
+  private hasLiveCaret(index: number, field: CursorField): boolean {
     const { caret } = this.state;
     return (
       this.state.index === index &&

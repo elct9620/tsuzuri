@@ -83,9 +83,9 @@ export default class FieldController extends Controller<HTMLElement> {
     insertLineBreak();
   }
 
-  /** Puts back the text the field was entered with and leaves it, so nothing is written; bound to Esc with `:!composing:prevent`. */
+  /** Puts back the text the field was entered with and leaves it, so nothing is written and no Cursor kept; bound to Esc with `:!composing:prevent`. */
   revert(): void {
-    const text = this.session.textAtEntry(this.index, this.field);
+    const text = this.session.revert(this.index, this.field);
     if (text === null) return;
     setFieldValue(this.element, text);
     this.element.blur();

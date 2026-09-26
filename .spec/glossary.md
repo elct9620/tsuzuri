@@ -68,7 +68,7 @@ The one Segment whose row last took a click or focus in the editor, or whose reg
 
 ### Cursor
 
-Where editing stands in the Current Segment: a caret, or a range of text, in one of its fields. It is live while that field has focus and kept once focus leaves, so a menu chosen afterwards still acts where the user was; Tsuzuri draws it itself in both cases, so it looks the same. It belongs to the Current Segment alone, is the webview's to hold, and changes nothing in the Project.
+Where editing stands in the Current Segment: a caret, or a range of text, in one of its fields. It is live while that field has focus and kept once focus leaves, so a menu chosen afterwards still acts where the user was, unless Esc gave up the typing, which keeps none; Tsuzuri draws it itself in both cases, so it looks the same. It belongs to the Current Segment alone, is the webview's to hold, and changes nothing in the Project.
 
 ### Checked Segment
 

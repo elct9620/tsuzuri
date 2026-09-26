@@ -446,7 +446,7 @@ Registering a Speaker gives it a name in every Language and lets the editor offe
 | When | the panel shows its Segments |
 | Then | each translation field is disabled and each text field is not |
 
-## `ED-090` Holding only the translations of the Segments translated again
+## `ED-092` Holding only the translations of the Segments translated again
 
 | Step | Statement |
 | --- | --- |
@@ -454,7 +454,7 @@ Registering a Speaker gives it a name in every Language and lets the editor offe
 | When | the panel shows its Segments |
 | Then | the second translation field is disabled and the first is not |
 
-## `ED-091` Holding the choice of translation while a Mode runs
+## `ED-093` Holding the choice of translation while a Mode runs
 
 | Step | Statement |
 | --- | --- |
@@ -546,6 +546,16 @@ A menu, and later a floating one, acts on the Cursor after focus has moved to it
 | When | the editor shows it |
 | Then | the field hides the platform's caret and selection, and the drawn caret stands after the second character |
 
+## `ED-091` Drawing the Cursor at the start of a line typed into a text
+
+A caret between a line break and the text after it stands at the start of the next line, as in any editor, however the text was typed.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text typed to `你好`, a line break and `世界` |
+| When | the Cursor is moved before `世` |
+| Then | the drawn caret stands at the start of the second line |
+
 ## `ED-050` Holding a kept Cursor still
 
 | Step | Statement |
@@ -598,7 +608,7 @@ Esc gives up what was typed since the field was entered, as an inline edit in a 
 | --- | --- |
 | Given | the first Segment's text entered reading `你好`, then typed to `你好嗎` |
 | When | Esc is pressed |
-| Then | the field reads `你好` again, focus leaves it, and no edit is written |
+| Then | the field reads `你好` again, focus leaves it, no edit is written, and the first Segment stays current with no Cursor kept |
 
 ## `ED-078` Leaving Esc to an input method while it composes
 
@@ -797,3 +807,13 @@ The dialog is kept to the keyboard: Enter in either box replaces, as Esc closes 
 | Given | the replace dialog with `。` to find |
 | When | it is applied and the Project answers that nothing was replaced |
 | Then | the dialog stays open and a Notification says nothing matched |
+
+## `ED-090` Not offering to translate again without a translation shown
+
+Translating again writes into the translation shown, so without one it is not offered at all.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing no translation, its first Segment checked |
+| When | the editor shows it |
+| Then | neither the Segment menu nor the bar for Checked Segments offers translating again |

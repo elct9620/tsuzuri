@@ -4,11 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { assemble } from "../assembly";
 import { projectOf } from "../test_project";
+import type { EditingSession } from "../editor";
 import FieldController, { composingOption } from "./field_controller";
 
 describe("FieldController", () => {
   let application: Application;
   let edits: unknown[];
+  let session: EditingSession;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const fieldAt = (index: number) =>
@@ -42,9 +44,11 @@ describe("FieldController", () => {
     );
     application = Application.start();
     application.registerActionOption("composing", composingOption);
-    await assemble(application, {
+    const assembly = assemble(application, {
       field: FieldController,
-    }).start();
+    });
+    session = assembly.session;
+    await assembly.start();
     await settle();
   });
 
@@ -175,7 +179,8 @@ describe("FieldController", () => {
       field().textContent,
       document.activeElement === field(),
       edits,
-    ]).toEqual(["大家好", false, []]);
+      session.cursor,
+    ]).toEqual(["大家好", false, [], { index: 0, caret: null }]);
   });
 
   // @behavior ED-078

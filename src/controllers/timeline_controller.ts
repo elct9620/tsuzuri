@@ -682,7 +682,7 @@ export default class TimelineController extends Controller {
 
   private showSnapping(): void {
     this.snapButtonTarget.setAttribute("aria-pressed", `${this.isSnapping}`);
-    this.snapButtonTarget.classList.toggle("btn-active", this.isSnapping);
+    this.snapButtonTarget.classList.toggle("btn-primary", this.isSnapping);
   }
 
   private showPlayingAlone(): void {
@@ -690,7 +690,7 @@ export default class TimelineController extends Controller {
       "aria-pressed",
       `${this.isPlayingAlone}`,
     );
-    this.aloneButtonTarget.classList.toggle("btn-active", this.isPlayingAlone);
+    this.aloneButtonTarget.classList.toggle("btn-primary", this.isPlayingAlone);
     // Kept as the key, so translating the page again says the same
     const hint = this.isPlayingAlone ? "preview.playCurrent" : "preview.playOn";
     this.spaceHintTarget.dataset.i18n = hint;

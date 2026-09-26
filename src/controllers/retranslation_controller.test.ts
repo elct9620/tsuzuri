@@ -114,4 +114,24 @@ describe("RetranslationController", () => {
 
     expect(retranslated).toEqual({ indexes: [0, 2] });
   });
+
+  // @behavior ED-090
+  it("offers no translating again without a translation shown", async () => {
+    await hold({
+      ...projectTranslatedIntoEnglish,
+      shown_translation: null,
+      segments: projectTranslatedIntoEnglish.segments.map(
+        ({ translation: _, ...segment }) => segment,
+      ),
+    });
+    const checkbox = rows()[0].querySelector<HTMLInputElement>("input.check")!;
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    await settle();
+
+    expect([
+      rows()[0].querySelector("button.retranslate"),
+      document.querySelector<HTMLButtonElement>("#retranslate-checked")!.hidden,
+    ]).toEqual([null, true]);
+  });
 });

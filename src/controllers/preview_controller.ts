@@ -38,8 +38,8 @@ function captionBackdropOf(value: string | null): CaptionBackdrop {
 /** Where the webview remembers the Speaker over the video turned off. */
 const SPEAKER_KEY = "tsuzuri.preview-speaker";
 
-/** `text` after the `name` of who says it, as a cue names its Speaker; a line with nothing to say names no one. */
-function speakerLine(text: string, name: string | undefined): string {
+/** `text` after a Speaker Label naming `name`, as a cue names its Speaker; with nothing to say, no one is named. */
+function withSpeakerLabel(text: string, name: string | undefined): string {
   return name && text ? `${name}: ${text}` : text;
 }
 
@@ -245,8 +245,8 @@ export default class PreviewController extends Controller {
   private caption({ speaker, text, translation }: Segment): string {
     const language = this.hasTranslation ? this.captionLanguage : "original";
     const name = this.isSpeakerShown ? speaker : undefined;
-    const original = speakerLine(text, name);
-    const translated = speakerLine(
+    const original = withSpeakerLabel(text, name);
+    const translated = withSpeakerLabel(
       translation ?? "",
       name && (this.speakerNames[name] ?? name),
     );

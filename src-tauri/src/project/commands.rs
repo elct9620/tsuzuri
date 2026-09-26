@@ -35,13 +35,14 @@ fn replace_project<R: Runtime>(app: &AppHandle<R>, project: Project) -> Result<(
     Ok(())
 }
 
-/// Reads the Current Resource again when a subtitle of it was changed elsewhere, and tells the
-/// webview; a failure is logged, since nobody asked for this read.
-pub fn read_again_if_changed<R: Runtime>(app: &AppHandle<R>) {
-    match app.state::<CurrentProject>().read_again_if_changed() {
+/// Reloads the Project when its files were changed elsewhere, and tells the webview; a failure
+/// is logged, since nobody asked for this read.
+pub fn reload_if_changed<R: Runtime>(app: &AppHandle<R>) {
+    match app.state::<CurrentProject>().reload_if_changed() {
         Ok(true) => app.announce_project(),
         Ok(false) => {}
-        Err(failure) => log::warn!("could not read the Current Resource again: {failure:?}"),
+        Err(Failure::NoProject) => {}
+        Err(failure) => log::warn!("could not reload the Project: {failure:?}"),
     }
 }
 
@@ -63,6 +64,13 @@ pub fn show_translation(
     language: Option<Language>,
 ) -> Result<(), Failure> {
     current.show_translation(language)?;
+    app.announce_project();
+    Ok(())
+}
+
+#[tauri::command]
+pub fn reload_project(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
+    current.reload()?;
     app.announce_project();
     Ok(())
 }

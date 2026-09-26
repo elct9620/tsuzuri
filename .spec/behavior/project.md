@@ -52,6 +52,48 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | it is opened in `zh-TW` |
 | Then | the Project lists only `ep01`, with no translation |
 
+## `PJ-105` Pairing subtitles with a media file whose name ends like a Language code
+
+A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri writes for it are found again.
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `talk.hd.mp4`, `talk.hd.srt` and `talk.hd.en.srt` |
+| When | it is opened in `zh-TW` |
+| Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
+
+## `PJ-106` Naming a Resource by a subtitle whose name ends like an unknown Language code
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `talk.hd.srt` and `talk.hd.en.srt` |
+| When | it is opened in `zh-TW` |
+| Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
+
+## `PJ-118` Leaving out an unknown Language code after a Resource of subtitles alone
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `talk.hd.srt` and `talk.hd.ko.srt`, or `talk.hd.srt` and `talk.hd.vi.srt` |
+| When | it is opened in `zh-TW` |
+| Then | the Project lists only `talk.hd` |
+
+## `PJ-107` Pairing a subtitle with the Resource its whole name before the code names
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `lecture.mp4`, `lecture.ja.mp4` and `lecture.ja.en.srt` |
+| When | it is opened in `zh-TW` |
+| Then | `lecture.ja` has the `en` translation and `lecture` has none |
+
+## `PJ-108` Showing a translation again after showing none
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `talk.hd` of `talk.hd.mp4` and `talk.hd.srt` just translated into `en`, with no translation shown since |
+| When | `en` is shown |
+| Then | the Segments carry the `en` translation |
+
 ## `PJ-019` Loading a translation by the times of its cues
 
 | Step | Statement |
@@ -292,6 +334,24 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | the Resource list shows it |
 | Then | it lists `ep01` with `en` and `ep02` marked as having no subtitle |
 
+## `PJ-120` Writing the text being typed before a reload
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's text being typed in and not yet written |
+| When | ⌘R or Ctrl+R is pressed |
+| Then | the text is written before the Project is reloaded |
+
+## `PJ-117` Marking a Resource of subtitles alone
+
+A Resource without a media file only edits its subtitles, so the list says so before it is selected.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project of `ep01` with a media file and `notes` of `notes.srt` alone |
+| When | the Resource list shows it |
+| Then | only `notes` is marked as subtitles alone |
+
 ## `PJ-038` Naming a Resource in full when its name is cut short
 
 | Step | Statement |
@@ -518,6 +578,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | its translation into `en` is written as `Hello` |
 | Then | `.tsuzuri/history/` holds an Output of `ep01.en.srt` reading `Hello` |
 
+## `PJ-109` Listing a translation whose Output could not be kept
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose `ep01.srt` has no translation, and where `.tsuzuri` is a file, so no Backup can be kept |
+| When | its translation into `en` is written |
+| Then | the writing fails, and `ep01` lists the `en` translation it wrote |
+
 ## `PJ-069` Leaving Backups out of the Resources
 
 | Step | Statement |
@@ -575,6 +643,72 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | Given | a Current Resource `ep01` whose `ep01.srt` another program rewrote after Tsuzuri read it |
 | When | the window regains focus |
 | Then | the Current Resource holds what the other program wrote |
+
+## `PJ-110` Listing files added elsewhere when the Project is reloaded
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project of `ep01.srt` whose directory gained `ep01.en.srt` and `ep02.srt` after it was opened |
+| When | the Project is reloaded |
+| Then | the Project lists `ep01` with the `en` translation, and `ep02` |
+
+## `PJ-111` Keeping the Undo History of a Current Resource no one else changed
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose first Segment's text was just edited |
+| When | the Project is reloaded |
+| Then | the edit can still be undone |
+
+## `PJ-119` Forgetting the Undo History of a Resource that gained a subtitle elsewhere
+
+Undoing puts back the subtitles a change knew of and removes the rest, so a file added since would be removed.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose first Segment's text was just edited, and whose `ep01.en.srt` another program then wrote |
+| When | the Project is reloaded |
+| Then | there is nothing to undo, and `ep01.en.srt` stays |
+
+## `PJ-112` Showing the same translation after a reload
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` showing no translation, though `ep01.en.srt` is there |
+| When | the Project is reloaded |
+| Then | the Current Resource shows no translation |
+
+## `PJ-113` Selecting the first Resource once the Current Resource is gone
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep02` whose `ep02.srt` was removed elsewhere, beside `ep01.srt` |
+| When | the Project is reloaded |
+| Then | the Current Resource is `ep01` |
+
+## `PJ-114` Reloading only the Resource list while a Mode runs on the Current Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated, whose directory gained `ep02.srt` |
+| When | the Project is reloaded |
+| Then | the Project lists `ep02`, and `ep01` keeps the Segments the translation shows |
+
+## `PJ-115` Listing files added elsewhere when the window regains focus
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project of `ep01.srt` whose directory gained `ep02.srt` after it was opened |
+| When | the window regains focus |
+| Then | the Project lists `ep01` and `ep02` |
+
+## `PJ-116` Reloading the Project from the Resource list
+
+| Step | Statement |
+| --- | --- |
+| Given | an open Project |
+| When | the reload button above the Resource list is clicked, or ⌘R or Ctrl+R is pressed |
+| Then | the Project is reloaded |
 
 ## `PJ-042` Writing edit after edit
 

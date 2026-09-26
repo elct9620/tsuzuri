@@ -36,7 +36,7 @@ A directory the user opens, holding the Resources of one series of work, a Proje
 
 ### Resource
 
-The files of a Project sharing one name: a media file, the Primary Language subtitle `[name].srt` or `[name].[code].srt`, and a translation `[name].[code].srt` for each other Language. A Resource may have any of them but needs one of the first two.
+The files of a Project sharing one name: a media file, the Primary Language subtitle `[name].srt` or `[name].[code].srt`, and a translation `[name].[code].srt` for each other Language. A Resource may have any of them but needs one of the first two. The name is the whole name of its media file or of a subtitle without a Language code, even one ending like a code, as `talk.hd` does.
 
 ### Current Resource
 

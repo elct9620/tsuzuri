@@ -92,6 +92,11 @@ describe("Current Segment", () => {
       '[data-timeline-target="aloneButton"]',
     )!;
 
+  const snapButton = () =>
+    document.querySelector<HTMLButtonElement>(
+      '[data-timeline-target="snapButton"]',
+    )!;
+
   /** The rows scrolled into view since `watchScrolls` began watching. */
   let scrolled: () => HTMLElement[];
 
@@ -150,7 +155,7 @@ describe("Current Segment", () => {
           <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"><input type="checkbox" data-preview-target="captionSpeaker"></div>
           <p data-preview-target="currentHint"></p>
           <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd></div>
-          <button data-timeline-target="snapButton"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
+          <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
           </div>
         </div>
         <h2 data-transcript-target="heading"></h2>
@@ -507,5 +512,17 @@ describe("Current Segment", () => {
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
     expect(aloneButton().getAttribute("aria-pressed")).toBe("true");
+  });
+
+  // @behavior PV-101
+  it("keeps snapping on for the next Resource", async () => {
+    await show(twoSegments);
+    snapButton().click();
+    application.stop();
+    await startApplication();
+
+    await show({ ...twoSegments, media: "/talks/ep02.mp4" });
+
+    expect(snapButton().getAttribute("aria-pressed")).toBe("true");
   });
 });

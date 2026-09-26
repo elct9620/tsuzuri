@@ -542,7 +542,7 @@ A cue is saved with its Speaker's name before the dialogue, so what is over the 
 
 ### Retiming on the timeline
 
-Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragged and written once let go, snapping to what is near unless Shift is held. Only the Current Segment moves, so a click on a narrow region still selects it, and no Segment is dragged over another, since a translation is matched to its original by time.
+Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragged and written once let go, snapping to what is near only while Shift is held, unless snapping is turned on, as in Aegisub. Only the Current Segment moves, so a click on a narrow region still selects it, and no Segment is dragged over another, since a translation is matched to its original by time.
 
 ## `PV-050` Dragging the Current Segment's end on the timeline
 
@@ -581,6 +581,7 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | Step | Statement |
 | --- | --- |
 | Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| Given | snapping turned on |
 | When | its end is dragged 5 pixels later |
 | Then | the Project is asked to change its times to 0 to 0.6 s |
 
@@ -589,6 +590,7 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | Step | Statement |
 | --- | --- |
 | Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the media at 0.8 s |
+| Given | snapping turned on |
 | When | its end is dragged 25 pixels later |
 | Then | the Project is asked to change its times to 0 to 0.8 s |
 
@@ -597,6 +599,7 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | Step | Statement |
 | --- | --- |
 | Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| Given | snapping turned on |
 | When | its end is dragged 5 pixels later with Shift held |
 | Then | the Project is asked to change its times to 0 to 0.55 s |
 
@@ -608,6 +611,30 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | Given | snapping turned off |
 | When | its end is dragged 5 pixels later |
 | Then | the Project is asked to change its times to 0 to 0.55 s |
+
+## `PV-099` Not snapping unless it is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s, and no choice about snapping ever made on this machine |
+| When | its end is dragged 5 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.55 s |
+
+## `PV-100` Snapping while Shift is held
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s, and no choice about snapping ever made on this machine |
+| When | its end is dragged 5 pixels later with Shift held |
+| Then | the Project is asked to change its times to 0 to 0.6 s |
+
+## `PV-101` Keeping snapping on for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | snapping turned on |
+| When | another Resource with a media file becomes current |
+| Then | snapping stays on |
 
 ## `PV-058` Taking a drag back with Esc
 
@@ -735,6 +762,7 @@ A time typed into a Segment is found on the waveform first, so the timeline tell
 | Step | Statement |
 | --- | --- |
 | Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| Given | snapping turned on |
 | When | its end is dragged 5 pixels later and not yet let go |
 | Then | the times read `00:00:00.000 → 00:00:00.600 (0.600s)` |
 

@@ -283,11 +283,11 @@ export default class TranscriptController extends Controller {
 
   /** Checks the rows of the Checked Segments and no others. */
   showChecked(): void {
-    const checked = new Set(this.session.checkedIndexes);
+    const checkedIndexes = new Set(this.session.checkedIndexes);
     for (const check of this.listTarget.querySelectorAll<HTMLInputElement>(
       "input.check",
     ))
-      check.checked = checked.has(Number(check.dataset.index));
+      check.checked = checkedIndexes.has(Number(check.dataset.index));
   }
 
   /** Marks the Segment the Preview is playing, keeping its row in view. */
@@ -310,7 +310,7 @@ export default class TranscriptController extends Controller {
     const current = this.session.cursor.index;
     this.segmentRows().forEach((row, index) => {
       row.toggleAttribute("aria-current", index === current);
-      row.toggleAttribute("data-playing", index === this.playingIndex);
+      row.toggleAttribute("data-is-playing", index === this.playingIndex);
     });
   }
 

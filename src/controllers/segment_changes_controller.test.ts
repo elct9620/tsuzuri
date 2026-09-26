@@ -286,7 +286,7 @@ describe("SegmentChangesController", () => {
 
       expect([
         field(0).dataset.cursor,
-        field(0).hasAttribute("data-cursor-kept"),
+        field(0).hasAttribute("data-has-kept-cursor"),
       ]).toEqual(["2", true]);
     });
 

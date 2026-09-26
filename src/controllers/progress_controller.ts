@@ -125,10 +125,10 @@ export default class ProgressController extends Controller {
     if (progress.percent === null) this.barTarget.removeAttribute("value");
     else this.barTarget.value = progress.percent;
     const steps = [...this.stepsTarget.children] as HTMLElement[];
-    const reached = steps.findIndex(
+    const reachedIndex = steps.findIndex(
       (step) => step.dataset.phase === progress.phase,
     );
-    steps.forEach((step, index) => markStep(step, index - reached));
+    steps.forEach((step, index) => markStep(step, index - reachedIndex));
   }
 
   private end(): void {

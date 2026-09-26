@@ -38,6 +38,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | 動作（有副作用） | 動詞開頭，後面可接狀態 | `write_translations`、`probe`、`kill_all` | `notifyFailure`、`translatePage` |
 | 建構錯誤或訊息 | 所建構之物的名詞 | — | `failureMessage`、`phasesSummary` |
 | 畫面元素（target） | 元素的名詞，不用動作 | — | `startButton`、`emptyHint` |
+| 標記元素的 data 屬性 | 狀態用問句，身分用名詞 | — | `data-is-playing`、`data-ghost` |
 
 ### 1.3 分詞與 -ing
 

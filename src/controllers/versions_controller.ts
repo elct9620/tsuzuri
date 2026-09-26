@@ -269,7 +269,7 @@ export default class VersionsController extends Controller {
     ];
     if (differences.length === 0) return;
     const current = differences.findIndex((tr) =>
-      tr.hasAttribute("data-current"),
+      tr.hasAttribute("data-is-current"),
     );
     const next =
       current === -1
@@ -277,9 +277,9 @@ export default class VersionsController extends Controller {
           ? 0
           : differences.length - 1
         : (current + step + differences.length) % differences.length;
-    differences[current]?.removeAttribute("data-current");
+    differences[current]?.removeAttribute("data-is-current");
     differences[current]?.classList.replace("bg-info/20", "bg-warning/15");
-    differences[next].setAttribute("data-current", "");
+    differences[next].setAttribute("data-is-current", "");
     differences[next].classList.replace("bg-warning/15", "bg-info/20");
     differences[next].scrollIntoView?.({ block: "nearest" });
   }

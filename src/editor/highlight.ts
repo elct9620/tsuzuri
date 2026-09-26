@@ -17,19 +17,19 @@ export function textRange(
 ): Range | null {
   const range = document.createRange();
   const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT);
-  let passed = 0;
+  let passedLength = 0;
   let hasStart = false;
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const length = node.textContent?.length ?? 0;
-    if (!hasStart && start <= passed + length) {
-      range.setStart(node, start - passed);
+    if (!hasStart && start <= passedLength + length) {
+      range.setStart(node, start - passedLength);
       hasStart = true;
     }
-    if (hasStart && end <= passed + length) {
-      range.setEnd(node, end - passed);
+    if (hasStart && end <= passedLength + length) {
+      range.setEnd(node, end - passedLength);
       return range;
     }
-    passed += length;
+    passedLength += length;
   }
   return null;
 }

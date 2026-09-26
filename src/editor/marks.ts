@@ -32,7 +32,7 @@ export function drawCursor(
   field.dataset.cursor = isRange
     ? `${caret.start}-${caret.end}`
     : `${caret.start}`;
-  field.toggleAttribute("data-cursor-kept", caret.kind === "kept");
+  field.toggleAttribute("data-has-kept-cursor", caret.kind === "kept");
   drawn = { field, caret };
   if (isRange) {
     markRanges(CURSOR_HIGHLIGHT, [rangeOf(field, caret)]);
@@ -49,7 +49,7 @@ function eraseCursor(): void {
   if (!drawn) return;
   drawn.observer?.disconnect();
   delete drawn.field.dataset.cursor;
-  drawn.field.removeAttribute("data-cursor-kept");
+  drawn.field.removeAttribute("data-has-kept-cursor");
   drawn.field.parentElement?.querySelector(":scope > .cursor-caret")?.remove();
   markRanges(CURSOR_HIGHLIGHT, []);
   drawn = null;

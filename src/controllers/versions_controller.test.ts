@@ -212,7 +212,7 @@ describe("VersionsController", () => {
     document.querySelector<HTMLButtonElement>("#next")!.click();
 
     const current = [...target("rows").querySelectorAll("tr")].findIndex((tr) =>
-      tr.hasAttribute("data-current"),
+      tr.hasAttribute("data-is-current"),
     );
     expect(current).toBe(1);
   });

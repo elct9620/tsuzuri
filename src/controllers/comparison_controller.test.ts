@@ -226,7 +226,7 @@ describe("ComparisonController", () => {
   it("shows what a changed text read before", async () => {
     await show();
 
-    expect(document.querySelector("li [data-was]")?.textContent).toBe(
+    expect(document.querySelector("li [data-earlier-text]")?.textContent).toBe(
       "原：你好",
     );
   });
@@ -497,7 +497,7 @@ describe("ComparisonController", () => {
 
     expect([
       highlights.get("compare-addition")?.ranges.map(String),
-      document.querySelector("[data-was]")?.textContent,
+      document.querySelector("[data-earlier-text]")?.textContent,
     ]).toEqual([["會"], "原：資料不上傳"]);
   });
 

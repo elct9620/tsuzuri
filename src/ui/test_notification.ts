@@ -5,7 +5,7 @@ export const NOTIFICATION_STACK = `<div data-notifications></div>`;
 function shown(): HTMLElement[] {
   return [
     ...document.querySelectorAll<HTMLElement>(
-      '[role="alert"]:not([data-leaving])',
+      '[role="alert"]:not([data-is-leaving])',
     ),
   ];
 }
@@ -37,12 +37,14 @@ export function notificationItems(index: number): [string, string][] {
 
 /** The button the Notification at `index` offers, or none. */
 export function notificationAction(index: number): HTMLButtonElement | null {
-  return shown()[index]?.querySelector("button:not([data-close])") ?? null;
+  return (
+    shown()[index]?.querySelector("button:not([data-close-button])") ?? null
+  );
 }
 
 /** The close button of the Notification at `index`, or none. */
 export function notificationClose(index: number): HTMLButtonElement | null {
-  return shown()[index]?.querySelector("button[data-close]") ?? null;
+  return shown()[index]?.querySelector("button[data-close-button]") ?? null;
 }
 
 /** The countdown bar of the Notification at `index`, or none. */

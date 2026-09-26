@@ -212,7 +212,7 @@ describe("Current Segment", () => {
 
     playTo(1.5);
 
-    expect(isMarked("data-playing")).toEqual([false, true]);
+    expect(isMarked("data-is-playing")).toEqual([false, true]);
   });
 
   // @behavior PV-075
@@ -329,7 +329,7 @@ describe("Current Segment", () => {
 
     media().pause();
 
-    expect(isMarked("data-playing")).toEqual([false, false]);
+    expect(isMarked("data-is-playing")).toEqual([false, false]);
   });
 
   // @behavior PV-039
@@ -338,6 +338,6 @@ describe("Current Segment", () => {
 
     playTo(1);
 
-    expect(isMarked("data-playing")).toEqual([false, false]);
+    expect(isMarked("data-is-playing")).toEqual([false, false]);
   });
 });

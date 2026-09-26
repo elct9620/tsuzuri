@@ -129,12 +129,12 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 領域的錯誤 ─┐  SrtError、SegmentChangeError、ReplacementError、ProjectError、GlossaryError、ModelError
 函式庫的錯誤 ┼─From─▶ Failure { code, … } ──serde──▶ backend/failure.ts（型別）
              │        （failure.rs，應用層）                  │
-             │                        ui/failure.ts（依 code 產生訊息）◀┘
+             │                    ui/failure.ts（依 code 給訊息與種類）◀┘
              │                                                │
              │                        ui/notification.ts（toast）◀┘
 ```
 
-`Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤則由 `llama.rs` 轉換。
+`Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤則由 `llama.rs` 轉換。通知種類也依錯誤碼決定：拒絕是自動消失的 warning，出錯是留到關閉的 error。
 
 ### 2.5 媒體檔（asset protocol）
 
@@ -578,7 +578,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 |---|---|
 | `ui/notification.ts` | 產生 toast 通知，互動交給 `notification` |
 | `ui/save_mark.ts` | 標題列的存檔提示與計時 |
-| `ui/failure.ts` | 依錯誤碼產生介面語言的訊息 |
+| `ui/failure.ts` | 錯誤碼的訊息與通知種類 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
 | `ui/models.ts` | 各 Model Slot 的副檔名 |

@@ -5,6 +5,7 @@ import NotificationController from "../controllers/notification_controller";
 import {
   NOTIFICATION_MS,
   notify as show,
+  notifyFailure,
   type Notification,
 } from "./notification";
 import {
@@ -62,6 +63,16 @@ describe("notify", () => {
     vi.advanceTimersByTime(NOTIFICATION_MS);
 
     expect(notifications()).toEqual(["轉錄失敗"]);
+  });
+
+  // @behavior IF-039
+  it("lets a refusal go on its own", async () => {
+    notifyFailure("編輯未寫入", { code: "invalid-times" });
+    await waitForConnect();
+
+    vi.advanceTimersByTime(NOTIFICATION_MS);
+
+    expect(notifications()).toEqual([]);
   });
 
   // @behavior IF-016

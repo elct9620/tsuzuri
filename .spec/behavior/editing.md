@@ -167,7 +167,7 @@ A choice limited to names like the one already set would hide the others, the ve
 | --- | --- |
 | Given | a Project in the panel |
 | When | a Segment's start is changed to `abc` |
-| Then | a Notification says the time cannot be read and nothing is changed |
+| Then | a Notification says the time cannot be read, goes on its own, and nothing is changed |
 
 
 ## `ED-108` Reading a time typed as digits alone
@@ -213,6 +213,15 @@ Digits shift into the chosen part from the right, as they do into a whole time, 
 | Given | a Project in the panel whose Segments run from 1 to 2 and from 3 to 4 seconds |
 | When | the second's start is changed to `00:00:00.500` |
 | Then | a Notification says a Segment cannot start before the one before it or after the one after it, and nothing is changed |
+
+## `ED-112` Refusing a typed start after the Segment's end
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment runs from 1 to 2 seconds |
+| When | its start is changed to `00:00:03.000` |
+| Then | a Notification says a Segment cannot end before it starts, goes on its own, and nothing is changed |
+
 ## `ED-016` Inserting a Segment from its menu
 
 | Step | Statement |

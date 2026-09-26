@@ -8,6 +8,7 @@ import type { ProjectView } from "../backend/project";
 import page from "../../index.html?raw";
 import {
   NOTIFICATION_STACK,
+  notificationCountdown,
   notificationDetail,
   notifications,
 } from "../ui/test_notification";
@@ -133,10 +134,11 @@ describe("SegmentChangesController", () => {
     start.dispatchEvent(new Event("change"));
     await settle();
 
-    expect([changes, notifications()]).toEqual([
-      [],
-      ["時間要寫成 00:00:01.000 的格式"],
-    ]);
+    expect([
+      changes,
+      notifications(),
+      notificationCountdown(0) !== null,
+    ]).toEqual([[], ["時間要寫成 00:00:01.000 的格式"], true]);
   });
 
   // @behavior ED-108
@@ -168,6 +170,24 @@ describe("SegmentChangesController", () => {
     expect([changes, notifications()]).toEqual([
       [],
       ["時間要寫成 00:00:01.000 的格式"],
+    ]);
+  });
+
+  // @behavior ED-112
+  it("says why a typed start after the Segment's end is refused, and lets it go on its own", async () => {
+    await hold(
+      projectOf({ segments: [{ start_ms: 1000, end_ms: 2000, text: "一" }] }),
+    );
+    refusal = { code: "invalid-times" };
+    const start = row(0).querySelector<HTMLInputElement>("input.start")!;
+
+    start.value = "00:00:03.000";
+    start.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect([notificationDetail(0), notificationCountdown(0) !== null]).toEqual([
+      "結束時間不能早於開始時間",
+      true,
     ]);
   });
 

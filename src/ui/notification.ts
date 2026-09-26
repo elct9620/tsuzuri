@@ -3,7 +3,7 @@ import type { Translation } from "../backend/translation";
 import type { Outcome } from "../editor";
 import { iconElement, type IconName } from "./icons";
 import { t } from "../i18n";
-import { failureCode, failureMessage } from "./failure";
+import { failureKind, failureMessage } from "./failure";
 import { phaseItems } from "./progress";
 import { showSaveMark } from "./save_mark";
 
@@ -163,7 +163,7 @@ function keepMostShown(stack: HTMLElement): void {
   if (shownAlerts.length > MOST_SHOWN) leave(shownAlerts[0]);
 }
 
-/** Shows `notification` in the corner of the window, stacked under the ones already shown. A failure stays until closed; anything else counts down `NOTIFICATION_MS`, its action within reach while the pointer or focus rests on it. */
+/** Shows `notification` in the corner of the window, stacked under the ones already shown. An error stays until closed; anything else counts down `NOTIFICATION_MS`, its action within reach while the pointer or focus rests on it. */
 export function notify(notification: Notification): void {
   const stack = document.querySelector<HTMLElement>("[data-notifications]");
   if (!stack) return;
@@ -182,13 +182,9 @@ export function notify(notification: Notification): void {
   keepMostShown(stack);
 }
 
-/** Says `title` did not happen and why; one refused over a change made elsewhere is a warning. */
+/** Says `title` did not happen and why, as a warning for a refusal and an error for a fault. */
 export function notifyFailure(title: string, error: unknown): void {
-  notify({
-    title,
-    detail: failureMessage(error),
-    kind: failureCode(error) === "changed-elsewhere" ? "warning" : "error",
-  });
+  notify({ title, detail: failureMessage(error), kind: failureKind(error) });
 }
 
 /**

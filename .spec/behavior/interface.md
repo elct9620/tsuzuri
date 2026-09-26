@@ -144,6 +144,16 @@ Each setting says what it is for and how to use it, since its name alone rarely 
 | When | a few seconds pass |
 | Then | it is still shown |
 
+## `IF-039` Letting a refusal go on its own
+
+A refusal is fixed by asking again, so it goes like any other rather than piling up.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that an edit was refused as `invalid-times` |
+| When | a few seconds pass |
+| Then | it is no longer shown |
+
 ## `IF-016` Closing a Notification that stays by its close button
 
 | Step | Statement |

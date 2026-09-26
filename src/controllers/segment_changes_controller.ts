@@ -77,7 +77,7 @@ export default class SegmentChangesController extends Controller {
       );
     const [start_ms, end_ms] = [time("start"), time("end")];
     if (start_ms === null || end_ms === null) {
-      notify({ title: t("edit.unreadableTime"), kind: "error" });
+      notify({ title: t("edit.unreadableTime"), kind: "warning" });
       await refreshProject();
       return;
     }

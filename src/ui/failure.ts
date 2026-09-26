@@ -1,5 +1,38 @@
 import type { Failure } from "../backend/failure";
 import { t } from "../i18n";
+import type { NotificationKind } from "./notification";
+
+/**
+ * The kind of Notification each code comes as: a refusal, which asking again differently or later
+ * will do, is a warning that goes on its own; a fault stays as an error until it is closed.
+ */
+const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
+  io: "error",
+  "malformed-srt": "error",
+  "glossary-without-header": "error",
+  "malformed-glossary": "error",
+  "model-not-chosen": "warning",
+  "model-missing": "error",
+  "no-project": "warning",
+  "no-resource": "warning",
+  "no-media": "warning",
+  "changed-elsewhere": "warning",
+  "mode-running": "warning",
+  "mode-cancelled": "warning",
+  "no-translation-shown": "warning",
+  "invalid-times": "warning",
+  "unordered-times": "warning",
+  "invalid-pattern": "warning",
+  "no-backup": "error",
+  "no-row": "warning",
+  "subtitle-exists": "warning",
+  "component-not-ready": "error",
+  "step-failed": "error",
+  "llama-exited": "error",
+  "llama-timed-out": "error",
+  "llama-request": "error",
+  internal: "error",
+};
 
 function isFailure(error: unknown): error is Failure {
   return typeof error === "object" && error !== null && "code" in error;
@@ -8,6 +41,11 @@ function isFailure(error: unknown): error is Failure {
 /** The code of a Failure, or none for an error that is not one. */
 export function failureCode(error: unknown): Failure["code"] | undefined {
   return isFailure(error) ? error.code : undefined;
+}
+
+/** The kind of Notification `error` comes as; anything that is not a Failure is a fault. */
+export function failureKind(error: unknown): NotificationKind {
+  return isFailure(error) ? KIND_BY_CODE[error.code] : "error";
 }
 
 /** A sentence for a failed command; anything that is not a Failure, such as a plugin's error, is shown as it came. */

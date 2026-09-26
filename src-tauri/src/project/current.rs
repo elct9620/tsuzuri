@@ -580,13 +580,13 @@ fn text_from(value: &str) -> String {
     value.trim_end().to_string()
 }
 
-/// Records the subtitles a transcription or translation has just written as Tsuzuri's own.
 /// The Speaker `value` names, trimmed; an empty one names none.
 fn speaker_from(value: &str) -> Option<String> {
     let speaker = value.trim();
     (!speaker.is_empty()).then(|| speaker.to_string())
 }
 
+/// Records the subtitles a transcription or translation has just written as Tsuzuri's own.
 fn remember_written_subtitles(project: &mut Project) {
     if let Err(failure) = project.remember_subtitles() {
         log::warn!("could not read back the subtitles just written: {failure:?}");

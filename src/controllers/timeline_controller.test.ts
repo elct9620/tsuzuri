@@ -108,7 +108,7 @@ describe("TimelineController", () => {
     );
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture pointermove@window->timeline#extendDrawing pointerup@window->timeline#finishDrawing">
+      <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange focusin@window->timeline#followFocus pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture pointermove@window->timeline#extendDrawing pointerup@window->timeline#finishDrawing">
         <video data-timeline-target="media"></video>
         <input id="typing" />
         <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button>

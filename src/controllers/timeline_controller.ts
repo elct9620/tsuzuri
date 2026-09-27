@@ -99,14 +99,17 @@ const CONTROL_SELECTOR =
 /**
  * Routes a key event by whether a control has the focus: `:!control` leaves a key to the field
  * typed in, or to the control reached by keyboard, which Space presses. A control clicked keeps
- * the focus without being meant for the keys that follow, as `:focus-visible` tells.
+ * the focus without being meant for the keys that follow; the timeline tells the two apart as
+ * the focus arrives, since any key pressed makes the focus visible from then on.
  */
 export function controlOption({
   event,
   value,
+  controller,
 }: {
   event: Event;
   value: boolean;
+  controller: Controller;
 }): boolean {
   const control =
     event.target instanceof Element
@@ -114,7 +117,9 @@ export function controlOption({
       : null;
   const isControl =
     control !== null &&
-    (isTextField(control) || control.matches(":focus-visible"));
+    (isTextField(control) ||
+      (controller instanceof TimelineController &&
+        controller.isReachedByKeyboard(control)));
   return isControl === value;
 }
 
@@ -164,6 +169,8 @@ export default class TimelineController extends Controller {
   private isPlayingAlone = rememberedFlag(ALONE_KEY, false);
   /** The modifier keys held as the pointer last moved, which a region's own events do not carry. */
   private modifiers = { shiftKey: false, altKey: false };
+  /** The element the focus last reached by keyboard, or none once a pointer took it. */
+  private keyboardFocus: Element | null = null;
   private drag: Drag | null = null;
   /** The range drawn on the waveform, waiting for Enter to become a Segment or Esc to go. */
   private range: Region | null = null;
@@ -217,6 +224,18 @@ export default class TimelineController extends Controller {
    */
   followModifiers({ shiftKey, altKey }: PointerEvent): void {
     this.modifiers = { shiftKey, altKey };
+  }
+
+  /** Notes whether the focus arrived by keyboard, as its showing tells before any key follows. */
+  followFocus({ target }: FocusEvent): void {
+    this.keyboardFocus =
+      target instanceof Element && target.matches(":focus-visible")
+        ? target
+        : null;
+  }
+
+  isReachedByKeyboard(control: Element): boolean {
+    return control === this.keyboardFocus;
   }
 
   zoomIn(): void {

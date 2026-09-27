@@ -93,13 +93,18 @@ describe("Current Segment", () => {
   }
 
   /**
-   * Clicks `button` as a pointer does: it takes the focus without showing it, which happy-dom
-   * cannot tell from focus reached by keyboard.
+   * Clicks `button` as a pointer does in Chromium: it takes the focus without showing it, and
+   * shows it from the next key on, which happy-dom cannot tell from focus reached by keyboard.
    */
   function clickWithPointer(button: HTMLElement): void {
+    let isKeyPressed = false;
+    window.addEventListener("keydown", () => (isKeyPressed = true), {
+      capture: true,
+      once: true,
+    });
     const matches = button.matches.bind(button);
-    vi.spyOn(button, "matches").mockImplementation(
-      (selector) => selector !== ":focus-visible" && matches(selector),
+    vi.spyOn(button, "matches").mockImplementation((selector) =>
+      selector === ":focus-visible" ? isKeyPressed : matches(selector),
     );
     button.focus();
     button.click();
@@ -200,7 +205,7 @@ describe("Current Segment", () => {
       <main data-controller="transcript"
         data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
         <div data-controller="preview timeline"
-          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent">
+          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
           <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">

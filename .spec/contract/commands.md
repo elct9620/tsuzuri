@@ -48,10 +48,10 @@ pub async fn forget_component(app: AppHandle, name: String) -> Result<Vec<Compon
 
 ## `transcribe`
 
-Run the Transcribe Mode on the Current Resource's media file in the Primary Language, with the Project's Transcription Settings and Project Model where it sets them and the general ones elsewhere, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes and `project-changed` as each Segment arrives. The Resource's original subtitle is written from what whisper-cli wrote, refused when it exists unless `overwrite`, and each cue of its translations that has the times of a cue written takes that cue's Speaker; the answer is how long the audio is and the seconds each Phase took.
+Run the Transcribe Mode on the Current Resource's media file in the Primary Language, with the Project's Transcription Settings and Project Model where it sets them and the general ones elsewhere, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes and `project-changed` as each Segment arrives. The Resource's original subtitle is written from what whisper-cli wrote, refused when it exists unless `overwrite`, and each cue of its translations that has the times of a cue written takes that cue's Speaker; the answer is how long the audio is and the seconds each Phase took. The `scope` is `{"kind":"whole"}`, `{"kind":"rest","first":i}` or `{"kind":"span","first":i,"last":j}` by the positions the Current Resource shows: a scope other than whole transcribes only its Audio Window, keeps every Segment starting outside it, and answers as `written_span` the positions of the Segments it wrote, none when it wrote none. A position the Segments do not have is refused before any Step runs.
 
 ```rust
-pub async fn transcribe(app: AppHandle, current: State<'_, CurrentProject>, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, resident: State<'_, ResidentLlama>, overwrite: bool) -> Result<Transcription, Failure> {}
+pub async fn transcribe(app: AppHandle, current: State<'_, CurrentProject>, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, resident: State<'_, ResidentLlama>, overwrite: bool, scope: TranscriptionScope) -> Result<Transcription, Failure> {}
 ```
 
 ## `transcription_settings`

@@ -138,3 +138,11 @@ A Speaker Label's colon is followed by the dialogue, while a clock time's is fol
 | When | it is read |
 | Then | its Segment has no Speaker and keeps the line as written |
 
+
+## `TR-017` Keeping a Segment that starts where an Audio Window ends
+
+| Step | Statement |
+| --- | --- |
+| Given | Segments starting at 0, 5 and 10 s, and an Audio Window from 5 to 10 s |
+| When | the window's Segments are replaced by one from 6 to 7 s |
+| Then | the Segments start at 0, 6 and 10 s, the new one at the second position |

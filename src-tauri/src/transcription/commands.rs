@@ -6,7 +6,7 @@ use super::{run_transcribe, Tools, Transcription, TranscriptionSettings};
 use crate::failure::Failure;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
-use crate::project::CurrentProject;
+use crate::project::{CurrentProject, TranscriptionScope};
 use crate::steps::ModeLock;
 use crate::timing::Phases;
 use crate::toolchain::{self, settings};
@@ -20,8 +20,9 @@ pub async fn transcribe(
     processes: State<'_, Processes>,
     resident: State<'_, ResidentLlama>,
     overwrite: bool,
+    scope: TranscriptionScope,
 ) -> Result<Transcription, Failure> {
-    let job = current.transcription_target(overwrite)?;
+    let job = current.transcription_target(overwrite, scope)?;
     let phases = Phases::start("transcribe", "prepare");
     app.report("prepare", None);
     let run = mode_lock.begin(AppPorts::new(&app, &processes)).await;

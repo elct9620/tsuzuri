@@ -12,7 +12,7 @@ use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
     translation_only, translation_srt, translation_with_speakers, BackupKind, CurrentResource,
     KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource, Restoration, SegmentField,
-    TranscriptionTarget, TranslationSource,
+    SegmentSpan, TranscriptionScope, TranscriptionTarget, TranslationSource,
 };
 use crate::failure::Failure;
 use crate::language::Language;
@@ -879,13 +879,6 @@ pub enum RunningMode {
     },
 }
 
-/// The Segments from `first` through `last`, by position.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-pub struct SegmentSpan {
-    pub first: usize,
-    pub last: usize,
-}
-
 /// The Resource a Mode runs on, by the directory it is in and its name, what the Mode holds of
 /// it, the Batch it is translating, if any, and what it has made so far to show.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1169,13 +1162,23 @@ impl CurrentProject {
         resource.media.clone().ok_or(Failure::NoMedia)
     }
 
-    /// The Current Resource's media file, the Language to transcribe it in and the subtitle to
-    /// write, refused when that subtitle exists unless `overwrite`.
-    pub fn transcription_target(&self, overwrite: bool) -> Result<TranscriptionTarget, Failure> {
+    /// The Current Resource's media file, the Language to transcribe it in, the subtitle to
+    /// write and the Audio Window `scope` covers, refused when that subtitle exists unless
+    /// `overwrite`.
+    pub fn transcription_target(
+        &self,
+        overwrite: bool,
+        scope: TranscriptionScope,
+    ) -> Result<TranscriptionTarget, Failure> {
         let held_project = self.lock();
         let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
         let resource = project.resource(&project.current()?.name)?;
         let media = resource.media.clone().ok_or(Failure::NoMedia)?;
+        let window = scope
+            .audio_window(&project.current()?.transcript.segments)
+            .map_err(|SegmentSpan { first, last }| Failure::Internal {
+                detail: format!("no Segments at {first}..={last}"),
+            })?;
         let subtitle = match &resource.subtitle {
             Some(path) if !overwrite => return Err(Failure::SubtitleExists { path: path.clone() }),
             Some(path) => path.clone(),
@@ -1189,6 +1192,7 @@ impl CurrentProject {
             language: project.language,
             model: project.options.models.transcription.clone(),
             overrides: project.options.transcription,
+            window,
         })
     }
 
@@ -1197,10 +1201,13 @@ impl CurrentProject {
         self.change_progress(|progress| *progress = Some(ModeProgress::Transcript(segments)));
     }
 
-    /// Adds a Segment just transcribed to what the running Mode shows.
+    /// Adds a Segment just transcribed to what the running Mode shows, among the others by its start.
     pub fn push_segment(&self, segment: Segment) {
         self.change_progress(|progress| match progress {
-            Some(ModeProgress::Transcript(segments)) => segments.push(segment),
+            Some(ModeProgress::Transcript(segments)) => {
+                let position = segments.partition_point(|shown| shown.start_ms <= segment.start_ms);
+                segments.insert(position, segment);
+            }
             _ => *progress = Some(ModeProgress::Transcript(vec![segment])),
         });
     }
@@ -1237,21 +1244,51 @@ impl CurrentProject {
         }
     }
 
-    /// Writes the transcription whisper-cli wrote as the original subtitle of `job`, kept first as
+    /// The Segments of `job`'s original subtitle that start outside its Audio Window, none when it
+    /// covers the whole media file.
+    pub fn kept_segments(&self, job: &TranscriptionTarget) -> Result<Vec<Segment>, Failure> {
+        let Some(window) = job.window else {
+            return Ok(Vec::new());
+        };
+        let mut segments = files::transcript_at(&job.subtitle)?.segments;
+        segments.retain(|segment| !window.has_start_of(segment));
+        Ok(segments)
+    }
+
+    /// Writes the transcription whisper-cli wrote as the original subtitle of `job`, in place of
+    /// the Segments starting within its Audio Window when it has one, kept first as
     /// `keep_before_mode_writes` keeps it, its Speakers to each translation, and the
     /// Bilingual SRTs it feeds, as one change; the Current Resource is then read from them in
-    /// place of what the Mode showed.
+    /// place of what the Mode showed. It answers the positions of the Segments written within an
+    /// Audio Window, none for the whole media file or when it wrote none.
     pub fn write_transcription(
         &self,
         job: &TranscriptionTarget,
         srt: String,
-    ) -> Result<(), Failure> {
+    ) -> Result<Option<SegmentSpan>, Failure> {
         let mut held_project = self.lock();
         let HeldProject { project, mode_hold } = &mut *held_project;
         let mut project = project
             .as_mut()
             .filter(|project| project.directory == job.directory);
         let previous = files::transcript_at(&job.subtitle)?;
+        let (srt, written_span) = match job.window {
+            None => (srt, None),
+            Some(window) => {
+                let mut merged = previous.clone();
+                let written = Transcript::from_srt(&srt)?
+                    .segments
+                    .into_iter()
+                    .map(|segment| window.segment_in_media(segment))
+                    .collect();
+                let positions = merged.replace_within(window, written);
+                let written_span = (!positions.is_empty()).then(|| SegmentSpan {
+                    first: positions.start,
+                    last: positions.end - 1,
+                });
+                (merged.to_srt(SrtContent::Original), written_span)
+            }
+        };
         if let Some(project) = project.as_mut() {
             project.keep_before_mode_writes(&job.name, &job.subtitle)?;
         }
@@ -1281,13 +1318,15 @@ impl CurrentProject {
                 project.record_change(&job.name, before)?;
             }
             if project.is_current(&job.name) {
-                project.read_again_showing(&job.name, None)?;
+                // Only the window changed, so the translation shown stays shown.
+                let translation = job.window.and(project.current()?.translation);
+                project.read_again_showing(&job.name, translation)?;
             }
         }
         if let Some(hold) = mode_hold.as_mut() {
             hold.progress = None;
         }
-        Ok(())
+        Ok(written_span)
     }
 
     /// Writes the translations into `target` to the Resource's translation file, whichever
@@ -2967,7 +3006,9 @@ mod tests {
     fn keeps_what_a_transcription_wrote_as_an_output() {
         let dir = directory_of("pj-output-transcribed", &[("lecture.mp4", "")]);
         let current = project_in(&dir);
-        let target = current.transcription_target(true).unwrap();
+        let target = current
+            .transcription_target(true, TranscriptionScope::Whole)
+            .unwrap();
 
         current.write_transcription(&target, cue("你好")).unwrap();
 
@@ -3251,7 +3292,10 @@ mod tests {
     fn refuses_to_transcribe_a_resource_without_media() {
         let current = current_project_of(vec![]);
 
-        assert_eq!(current.transcription_target(false), Err(Failure::NoMedia));
+        assert_eq!(
+            current.transcription_target(false, TranscriptionScope::Whole),
+            Err(Failure::NoMedia)
+        );
     }
 
     // @behavior PJ-006
@@ -4158,7 +4202,9 @@ mod tests {
                 ..ProjectOptions::default()
             })
             .unwrap();
-        let target = current.transcription_target(true).unwrap();
+        let target = current
+            .transcription_target(true, TranscriptionScope::Whole)
+            .unwrap();
 
         current.write_transcription(&target, cue("你好")).unwrap();
     }
@@ -4382,7 +4428,9 @@ mod tests {
             &[("ep01.mp4", ""), ("ep01.srt", &cue("舊的"))],
         );
         let current = project_in(&dir);
-        let target = current.transcription_target(true).unwrap();
+        let target = current
+            .transcription_target(true, TranscriptionScope::Whole)
+            .unwrap();
         current.write_transcription(&target, cue("新的")).unwrap();
 
         current.undo().unwrap();

@@ -426,7 +426,7 @@ describe("TranscribeController", () => {
 
     expect([target("overwriteWarning").hidden, transcribeArgs]).toEqual([
       false,
-      { overwrite: true },
+      { overwrite: true, scope: { kind: "whole" } },
     ]);
   });
 });

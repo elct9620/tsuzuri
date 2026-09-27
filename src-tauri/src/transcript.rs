@@ -39,6 +39,34 @@ pub struct Transcript {
     pub segments: Vec<Segment>,
 }
 
+/// The stretch of a media file a transcription covers when it does not cover the whole: from
+/// `start_ms` to `end_ms`, or to the media's end.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AudioWindow {
+    pub start_ms: u64,
+    pub end_ms: Option<u64>,
+}
+
+impl AudioWindow {
+    /// Whether `segment` starts within the window, which is what makes it the window's to replace.
+    pub fn has_start_of(&self, segment: &Segment) -> bool {
+        segment.start_ms >= self.start_ms && self.end_ms.is_none_or(|end| segment.start_ms < end)
+    }
+
+    pub fn duration_ms(&self) -> Option<u64> {
+        self.end_ms.map(|end| end.saturating_sub(self.start_ms))
+    }
+
+    /// `segment`, timed from the window's start, at its times in the whole media.
+    pub fn segment_in_media(&self, segment: Segment) -> Segment {
+        Segment {
+            start_ms: segment.start_ms + self.start_ms,
+            end_ms: segment.end_ms + self.start_ms,
+            ..segment
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SrtError {
     /// 1-based position of the cue in the file, which is what a person counts when looking for it.
@@ -65,6 +93,23 @@ impl Transcript {
 
     pub fn to_srt(&self, content: SrtContent) -> String {
         self.to_srt_with(content, &SpeakerNames::default())
+    }
+
+    /// Puts `segments`, timed in the whole media, where the Segments starting within `window`
+    /// were, keeping every other one; answers the positions `segments` now take.
+    pub fn replace_within(
+        &mut self,
+        window: AudioWindow,
+        segments: Vec<Segment>,
+    ) -> std::ops::Range<usize> {
+        self.segments
+            .retain(|segment| !window.has_start_of(segment));
+        let first = self
+            .segments
+            .partition_point(|segment| segment.start_ms < window.start_ms);
+        let count = segments.len();
+        self.segments.splice(first..first, segments);
+        first..first + count
     }
 
     pub fn to_srt_with(&self, content: SrtContent, names: &SpeakerNames) -> String {
@@ -485,5 +530,27 @@ mod tests {
             transcript.segments[0],
             segment(1000, 2000, "Meet me at the station at 10:30")
         );
+    }
+
+    // @behavior TR-017
+    #[test]
+    fn keeps_a_segment_that_starts_where_an_audio_window_ends() {
+        let mut transcript = Transcript {
+            segments: vec![
+                segment(0, 4_000, "一"),
+                segment(5_000, 9_000, "二"),
+                segment(10_000, 14_000, "三"),
+            ],
+        };
+        let window = AudioWindow {
+            start_ms: 5_000,
+            end_ms: Some(10_000),
+        };
+
+        let positions = transcript.replace_within(window, vec![segment(6_000, 7_000, "新")]);
+
+        let starts: Vec<u64> = transcript.segments.iter().map(|s| s.start_ms).collect();
+        assert_eq!(starts, [0, 6_000, 10_000]);
+        assert_eq!(positions, 1..2);
     }
 }

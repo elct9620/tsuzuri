@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::language::{Language, LanguagePair};
-use crate::transcript::{split_label, Segment, SpeakerNames, SrtContent, Transcript};
+use crate::transcript::{split_label, AudioWindow, Segment, SpeakerNames, SrtContent, Transcript};
 
 pub mod commands;
 mod current;
@@ -13,7 +13,7 @@ pub mod glossary;
 mod history;
 pub mod versions;
 
-pub use current::{CurrentProject, ProjectView, Reload, ResourceView, RunningMode, SegmentSpan};
+pub use current::{CurrentProject, ProjectView, Reload, ResourceView, RunningMode};
 #[cfg(test)]
 pub(crate) use files::HISTORY_DIR;
 use glossary::TranslationGlossary;
@@ -320,6 +320,44 @@ pub struct TranslationSource {
     pub model: Option<PathBuf>,
 }
 
+/// The Segments from `first` through `last`, by position.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SegmentSpan {
+    pub first: usize,
+    pub last: usize,
+}
+
+/// Which Segments a transcription replaces, by the positions the Current Resource shows: every
+/// one, those from `first` on to the media's end, or those of a span.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(tag = "kind", rename_all = "lowercase")]
+pub enum TranscriptionScope {
+    Whole,
+    Rest { first: usize },
+    Span(SegmentSpan),
+}
+
+impl TranscriptionScope {
+    /// The Audio Window the scope covers over `segments`, none for the whole media file; the
+    /// positions it names are answered back when `segments` do not have them.
+    pub fn audio_window(self, segments: &[Segment]) -> Result<Option<AudioWindow>, SegmentSpan> {
+        let span = match self {
+            TranscriptionScope::Whole => return Ok(None),
+            TranscriptionScope::Rest { first } => SegmentSpan { first, last: first },
+            TranscriptionScope::Span(span) => span,
+        };
+        let span_segments = segments.get(span.first..=span.last).ok_or(span)?;
+        let end_ms = match self {
+            TranscriptionScope::Span(_) => span_segments.iter().map(|segment| segment.end_ms).max(),
+            _ => None,
+        };
+        Ok(Some(AudioWindow {
+            start_ms: span_segments[0].start_ms,
+            end_ms,
+        }))
+    }
+}
+
 /// What a transcription needs from the Project when it starts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TranscriptionTarget {
@@ -334,6 +372,8 @@ pub struct TranscriptionTarget {
     pub model: Option<PathBuf>,
     /// The Transcription Settings the Project sets for itself.
     pub overrides: TranscriptionOverrides,
+    /// The Audio Window it covers, none for the whole media file.
+    pub window: Option<AudioWindow>,
 }
 
 /// The files of a Project sharing one name.

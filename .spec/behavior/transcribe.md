@@ -332,3 +332,57 @@ The default Transcription Settings change nothing, so a Model that transcribes w
 | Given | a Project with a Project Model for the transcription slot |
 | When | the transcribe dialog is opened |
 | Then | it names the Project Model's file |
+
+## `TX-042` Transcribing from a Segment onward
+
+What comes before the chosen Segment is what the user already put right, so it stays as it is.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `ep01.mp4` and `ep01.srt` with Segments starting at 0, 5 and 10 s |
+| When | it is transcribed from the second Segment onward |
+| Then | the first Segment is kept and whisper-cli's Segments, moved 5 s later, take the place of the other two |
+
+## `TX-043` Transcribing a span of Segments
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments starting at 0, 5, 10 and 15 s |
+| When | it is transcribed from the second through the third |
+| Then | the first and the last are kept and whisper-cli's Segments, moved 5 s later, lie between them |
+
+## `TX-044` Converting only the Audio Window
+
+whisper-cli's own offset and duration neither stop at the duration nor keep their times once VAD runs, so ffmpeg cuts the audio instead.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 5 to 9 s and from 10 to 14 s |
+| When | it is transcribed from the first through the second |
+| Then | ffmpeg is asked for 9 s of audio from 5 s, and whisper-cli for no offset |
+
+## `TX-045` Showing the kept Segments while transcribing a span
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments starting at 0, 5 and 10 s, transcribed from the second through the second |
+| When | whisper-cli prints one Segment and has not exited |
+| Then | the Project shows the first Segment, the printed one moved 5 s later, and the last, in that order |
+
+## `TX-046` Answering the Segments a span wrote
+
+Translating afterwards covers what the transcription wrote and nothing around it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments starting at 0, 5 and 10 s, and whisper-cli writing two Segments |
+| When | it is transcribed from the second Segment onward |
+| Then | the answer's written span runs from the second position through the third |
+
+## `TX-047` Refusing a Segment the Current Resource does not have
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of three Segments |
+| When | it is transcribed from the fifth Segment onward |
+| Then | it is refused before any Step runs |

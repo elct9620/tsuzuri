@@ -12,14 +12,16 @@ mod current;
 mod files;
 pub mod glossary;
 mod history;
+mod mode_hold;
 pub mod versions;
 
 use backups::Backups;
-pub use current::{CurrentProject, ProjectView, Reload, ResourceView, RunningMode};
+pub use current::{CurrentProject, ProjectView, Reload, ResourceView};
 #[cfg(test)]
 pub(crate) use files::HISTORY_DIR;
 use glossary::TranslationGlossary;
 use history::UndoHistory;
+pub use mode_hold::RunningMode;
 
 /// The opened directory: its Primary Language, the Language of its last translation,
 /// its Resources, the Current Resource and the Translation Glossary once loaded.

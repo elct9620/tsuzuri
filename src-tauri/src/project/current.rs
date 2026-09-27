@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::SystemTime;
@@ -9,6 +9,9 @@ use super::backups::BackupPolicy;
 use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 use super::history::{SubtitleSnapshot, UndoHistory};
+use super::mode_hold::{
+    is_always_written, is_written_by_edit, ModeHold, ModeProgress, RunningMode,
+};
 use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
     translation_only, translation_srt, translation_with_speakers, BackupKind, CurrentResource,
@@ -797,35 +800,6 @@ fn version_at(path: &Path, language: Option<Language>) -> Result<Transcript, Fai
     }
 }
 
-/// Whether an edit of `field` writes what a translation Mode holds, given the translation shown,
-/// the Language the Mode writes and the Segments it holds, if only some: a text never, a Speaker
-/// always, and a translation when it is the one written, of a held Segment at `index`, or of any
-/// held Segment when `index` is none.
-/// Whether a running Mode writes what a change changes, which it does for every change that
-/// reaches the whole Current Resource.
-fn is_always_written(_: Option<Language>, _: Language, _: Option<&[usize]>) -> bool {
-    true
-}
-
-fn is_written_by_edit(
-    field: SegmentField,
-    index: Option<usize>,
-    translation_shown: Option<Language>,
-    mode_language: Language,
-    held_indexes: Option<&[usize]>,
-) -> bool {
-    match field {
-        SegmentField::Text => false,
-        SegmentField::Translation => {
-            translation_shown == Some(mode_language)
-                && held_indexes.is_none_or(|held_indexes| {
-                    index.is_none_or(|index| held_indexes.contains(&index))
-                })
-        }
-        SegmentField::Speaker => true,
-    }
-}
-
 /// The text `value` holds, without the line breaks and spaces after its last character: a field
 /// keeps a line break typed at the end that it no longer shows, and SRT writes none of them.
 fn text_from(value: &str) -> String {
@@ -991,82 +965,6 @@ impl Reload {
     }
 }
 
-/// A Mode running on one Resource, and so which of its subtitles nothing else may change.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "mode", rename_all = "kebab-case")]
-pub enum RunningMode {
-    /// Holds every subtitle of the Resource.
-    Transcription,
-    /// Holds only the translation into `language`, or only its Segments at `indexes` while they
-    /// are translated again.
-    Translation {
-        language: Language,
-        indexes: Option<Vec<usize>>,
-    },
-}
-
-/// The Resource a Mode runs on, by the directory it is in and its name, what the Mode holds of
-/// it, the Batch it is translating, if any, and what it has made so far to show.
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct ModeHold {
-    directory: PathBuf,
-    name: String,
-    mode: RunningMode,
-    pending_batch: Option<SegmentSpan>,
-    progress: Option<ModeProgress>,
-}
-
-/// What a running Mode has made so far, shown in place of what the files hold and never written
-/// as a subtitle: the Mode writes its own result once done, and what it shows ends with it.
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum ModeProgress {
-    /// The Segments transcribed so far, in place of the whole Transcript.
-    Transcript(Vec<Segment>),
-    /// The translation of each Segment at its position, in place of the translation shown.
-    Translations(BTreeMap<usize, Option<String>>),
-}
-
-impl ModeHold {
-    /// The Segments shown, given `segments` as the files hold them: what the Mode has made so far
-    /// stands in their place.
-    fn segments_shown(&self, segments: &[Segment]) -> Vec<Segment> {
-        match &self.progress {
-            Some(ModeProgress::Transcript(progress_segments)) => progress_segments.clone(),
-            Some(ModeProgress::Translations(translations)) => {
-                let mut segments = segments.to_vec();
-                for (index, translation) in translations {
-                    if let Some(segment) = segments.get_mut(*index) {
-                        segment.translation = translation.clone();
-                    }
-                }
-                segments
-            }
-            None => segments.to_vec(),
-        }
-    }
-
-    /// The translation shown, given `translation` as the Current Resource shows it: none while a
-    /// transcription shows its progress, the one written while a translation does.
-    fn translation_shown(&self, translation: Option<Language>) -> Option<Language> {
-        match (&self.progress, &self.mode) {
-            (Some(ModeProgress::Transcript(_)), _) => None,
-            (Some(ModeProgress::Translations(_)), RunningMode::Translation { language, .. }) => {
-                Some(*language)
-            }
-            _ => translation,
-        }
-    }
-
-    /// Whether the Mode runs on the Current Resource of `project`.
-    fn is_on_current(&self, project: &Project) -> bool {
-        self.directory == project.directory
-            && project
-                .current
-                .as_ref()
-                .is_some_and(|current| current.name == self.name)
-    }
-}
-
 /// A Mode's hold on its Resource, let go when dropped, however the Mode ends.
 pub struct ResourceHold<'a>(&'a CurrentProject);
 
@@ -1093,13 +991,7 @@ impl CurrentProject {
         name: &str,
         mode: RunningMode,
     ) -> ResourceHold<'_> {
-        self.lock().mode_hold = Some(ModeHold {
-            directory: directory.to_path_buf(),
-            name: name.to_string(),
-            mode,
-            pending_batch: None,
-            progress: None,
-        });
+        self.lock().mode_hold = Some(ModeHold::new(directory, name, mode));
         ResourceHold(self)
     }
 
@@ -1124,16 +1016,14 @@ impl CurrentProject {
         if indexes.is_some() {
             project.show_translation(Some(target))?;
         }
-        held_project.mode_hold = Some(ModeHold {
-            directory: source.directory.clone(),
-            name: source.name.clone(),
-            mode: RunningMode::Translation {
+        held_project.mode_hold = Some(ModeHold::new(
+            &source.directory,
+            &source.name,
+            RunningMode::Translation {
                 language: target,
                 indexes,
             },
-            pending_batch: None,
-            progress: None,
-        });
+        ));
         Ok((source, ResourceHold(self)))
     }
 
@@ -1157,27 +1047,11 @@ impl CurrentProject {
             project, mode_hold, ..
         } = &mut *held_project;
         let project = project.as_mut().ok_or(Failure::NoProject)?;
-        if let Some(hold) = mode_hold
+        if mode_hold
             .as_ref()
-            .filter(|hold| hold.is_on_current(project))
+            .is_some_and(|hold| hold.is_holding(project, is_written))
         {
-            let is_held = match &hold.mode {
-                RunningMode::Transcription => true,
-                RunningMode::Translation { language, indexes } => {
-                    let translation = project
-                        .current
-                        .as_ref()
-                        .and_then(|current| current.translation);
-                    is_written(
-                        hold.translation_shown(translation),
-                        *language,
-                        indexes.as_deref(),
-                    )
-                }
-            };
-            if is_held {
-                return Err(Failure::ModeRunning);
-            }
+            return Err(Failure::ModeRunning);
         }
         change(project)
     }

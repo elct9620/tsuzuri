@@ -39,8 +39,8 @@
 |---|---|
 | `components.json` | 原始程式碼釘版、變體順序 |
 | `src-tauri/tauri.bundle.conf.json` | 打包時把 `vendor/` 放進資源的 `components/` |
-| CI 的 cargo-about | 產生 `THIRD-PARTY-LICENSES.html`，隨建置提供 |
-| CI 的 `scripts/webview-licenses.ts` | 檢查 webview 套件授權並產生 `THIRD-PARTY-LICENSES-WEBVIEW.html` |
+| CI 的 cargo-about | 列出 Rust 套件的授權 |
+| `scripts/licenses.ts` | 檢查授權並寫出授權聲明 |
 
 App 依 `components.json` 列出的順序，使用第一個能執行的內建變體。
 
@@ -62,7 +62,7 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 │  └─ toolchain/          元件與模型的轉接與指令
 ├─ vendor/                編譯好的元件，不進版控
 ├─ scripts/vendor.sh      依 components.json 編譯元件
-├─ scripts/webview-licenses.ts  webview 套件的授權檢查與聲明
+├─ scripts/licenses.ts    授權檢查與授權聲明
 └─ .spec/                 glossary、behavior、contract
 ```
 

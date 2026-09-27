@@ -1,10 +1,10 @@
 # Licenses
 
-Which licenses the packages the webview bundles may carry, and the notice every build ships with their texts, so the app keeps each license's terms beside the Rust crates' own.
+Which licenses the packages the webview bundles may carry, and the License Notice each build writes with every text Tsuzuri ships, so the app keeps each license's terms beside the work it covers.
 
 ## Includes
 
-- `scripts/webview-licenses.test.ts`
+- `scripts/licenses.test.ts`
 
 ## `LC-001` Accepting a package under a license the project accepts
 
@@ -27,5 +27,31 @@ Which licenses the packages the webview bundles may carry, and the notice every 
 | Step | Statement |
 | --- | --- |
 | Given | `lucide` 1.48.0 under `ISC`, with its license file |
-| When | the notice is written |
+| When | the License Notice is written |
 | Then | it names `lucide` 1.48.0 and `ISC` beside the text of that file |
+
+## `LC-004` Opening the notice with Tsuzuri's own license
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri's `LICENSE` holding the Apache License 2.0 |
+| When | the License Notice is written |
+| Then | its first section is Tsuzuri under that text |
+
+## `LC-005` Carrying the licenses a Bundled Variant keeps
+
+A Bundled Variant keeps, beside its programs, the license files of everything they carry, one directory per project.
+
+| Step | Statement |
+| --- | --- |
+| Given | the `metal` Variant of `llama` at `b11149`, keeping the `LICENSE` of `cpp-httplib` |
+| When | the License Notice is written |
+| Then | it names `llama` `metal` `b11149`, and under it `cpp-httplib` beside the text of that file |
+
+## `LC-006` Carrying each crate's license with the crates it covers
+
+| Step | Statement |
+| --- | --- |
+| Given | cargo-about attributing `MIT` to `serde` 1.0.228 |
+| When | the License Notice is written |
+| Then | it names `MIT` with `serde` 1.0.228 beside that license's text |

@@ -150,6 +150,10 @@ One build of a Component for a kind of hardware: `cpu`, `openblas`, `vulkan` or 
 
 A Variant the installer carries in its resources, under `components/<component>/<variant>/`. Until every Variant is bundled, each platform carries the first the Build Manifest lists: `vulkan` on Windows and Linux, `metal` on macOS, `audio` for ffmpeg.
 
+### License Notice
+
+The one page carrying the license texts of Tsuzuri and of everything it ships: the programs of each Bundled Variant with what they compile in and the libraries they load, the data compiled into Tsuzuri, the Rust crates, and the packages the webview bundles. Each build writes it for the Bundled Variants it carries, and the settings open it in full.
+
 ### Auto-Selection
 
 Taking the first Bundled Variant, in the Build Manifest's order for the platform, whose executable answers its version flag. A Variant that does not run, as when the driver or library its backend loads is missing, is passed over for the next.

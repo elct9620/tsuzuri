@@ -11,9 +11,9 @@ pub struct BatchRequest<'a> {
     pub reference: &'a [(String, String)],
     /// The Rolling Summary so far, when one is kept.
     pub summary: Option<&'a str>,
-    pub preceding: Option<String>,
+    pub preceding_text: Option<String>,
     /// The source text just after the lines, which they may lead into.
-    pub following: Option<String>,
+    pub following_text: Option<String>,
     /// The Translation Glossary's terms the lines use.
     pub glossary_terms: &'a [(String, String)],
     pub correction: Option<String>,
@@ -110,14 +110,14 @@ pub fn user_message(batch: &BatchRequest<'_>) -> String {
             "Running summary of the file so far (for consistency only, not to be translated):\n{summary}"
         ));
     }
-    if let Some(preceding) = &batch.preceding {
+    if let Some(preceding_text) = &batch.preceding_text {
         parts.push(format!(
-            "Note: the original-language text below immediately precedes the lines you are about to translate, and their sentence may continue from it. Use it only to understand grammar and meaning - do not translate it or include it in your output:\n{preceding}"
+            "Note: the original-language text below immediately precedes the lines you are about to translate, and their sentence may continue from it. Use it only to understand grammar and meaning - do not translate it or include it in your output:\n{preceding_text}"
         ));
     }
-    if let Some(following) = &batch.following {
+    if let Some(following_text) = &batch.following_text {
         parts.push(format!(
-            "Note: the original-language text below immediately follows the lines you are about to translate, and their sentence may continue into it. Use it only to understand grammar and meaning - do not translate it or include it in your output:\n{following}"
+            "Note: the original-language text below immediately follows the lines you are about to translate, and their sentence may continue into it. Use it only to understand grammar and meaning - do not translate it or include it in your output:\n{following_text}"
         ));
     }
     if !batch.reference.is_empty() {

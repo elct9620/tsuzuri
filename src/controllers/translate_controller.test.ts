@@ -123,7 +123,7 @@ describe("TranslateController", () => {
     await emit("pipeline-progress", {
       phase: "translate",
       percent: 63,
-      count: { done: 132, total: 210 },
+      count: { done_count: 132, total: 210 },
     });
     await settle();
 

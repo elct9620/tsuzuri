@@ -1107,8 +1107,8 @@ impl CurrentProject {
                         (&current.transcript.segments[..], current.translation);
                     match mode_hold {
                         Some(hold) => (
-                            hold.segments_shown(segments),
-                            hold.translation_shown(translation),
+                            hold.shown_segments(segments),
+                            hold.shown_translation(translation),
                         ),
                         None => (segments.to_vec(), translation),
                     }
@@ -1180,10 +1180,10 @@ impl CurrentProject {
 
     /// The Current Resource's media file, the Language to transcribe it in, the subtitle to
     /// write and the Audio Window `scope` covers, refused when that subtitle exists unless
-    /// `overwrite`.
+    /// `is_overwrite_allowed`.
     pub fn transcription_target(
         &self,
-        overwrite: bool,
+        is_overwrite_allowed: bool,
         scope: TranscriptionScope,
     ) -> Result<TranscriptionTarget, Failure> {
         let held_project = self.lock();
@@ -1196,7 +1196,9 @@ impl CurrentProject {
                 detail: format!("no Segments at {first}..={last}"),
             })?;
         let subtitle = match &resource.subtitle {
-            Some(path) if !overwrite => return Err(Failure::SubtitleExists { path: path.clone() }),
+            Some(path) if !is_overwrite_allowed => {
+                return Err(Failure::SubtitleExists { path: path.clone() })
+            }
             Some(path) => path.clone(),
             None => project.export_path(SrtContent::Original)?,
         };
@@ -1291,18 +1293,18 @@ impl CurrentProject {
         let (srt, written_span) = match job.window {
             None => (srt, None),
             Some(window) => {
-                let mut merged = previous.clone();
-                let written = Transcript::from_srt(&srt)?
+                let mut transcript = previous.clone();
+                let window_segments = Transcript::from_srt(&srt)?
                     .segments
                     .into_iter()
                     .map(|segment| window.segment_in_media(segment))
                     .collect();
-                let positions = merged.replace_within(window, written);
+                let positions = transcript.replace_within(window, window_segments);
                 let written_span = (!positions.is_empty()).then(|| SegmentSpan {
                     first: positions.start,
                     last: positions.end - 1,
                 });
-                (merged.to_srt(SrtContent::Original), written_span)
+                (transcript.to_srt(SrtContent::Original), written_span)
             }
         };
         write_mode_result(

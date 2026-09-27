@@ -16,8 +16,8 @@ const LINES_PER_REVIEW: usize = 2;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BatchSurroundings<'a> {
     pub summary: Option<&'a str>,
-    pub preceding: Option<&'a str>,
-    pub following: Option<&'a str>,
+    pub preceding_text: Option<&'a str>,
+    pub following_text: Option<&'a str>,
 }
 
 /// Translates one Batch, repairing what the Model gets wrong: a group of lines still failing after
@@ -36,7 +36,7 @@ pub async fn translate_batch(
         lines,
         earlier_pairs,
         summary: surroundings.summary,
-        following: surroundings.following,
+        following_text: surroundings.following_text,
         accepted_translations: HashMap::new(),
         imperfect_translations: HashMap::new(),
     };
@@ -47,7 +47,7 @@ pub async fn translate_batch(
         .attempt(
             lines,
             reference.to_vec(),
-            surroundings.preceding.map(str::to_string),
+            surroundings.preceding_text.map(str::to_string),
         )
         .await?;
     failing_reasons.extend(repair.review(lines).await?);
@@ -88,7 +88,7 @@ struct BatchRepair<'a> {
     earlier_pairs: &'a [(String, String)],
     summary: Option<&'a str>,
     /// The source text after the Batch, shown with every request for it.
-    following: Option<&'a str>,
+    following_text: Option<&'a str>,
     accepted_translations: HashMap<usize, String>,
     /// The latest translation of a line that is valid but imperfect, kept in case nothing better comes.
     imperfect_translations: HashMap<usize, String>,
@@ -101,7 +101,7 @@ impl BatchRepair<'_> {
         &mut self,
         group: &[(usize, &str)],
         reference: Vec<(String, String)>,
-        preceding: Option<String>,
+        preceding_text: Option<String>,
     ) -> Result<BTreeMap<usize, String>, Failure> {
         let wanted_indices: HashSet<usize> = group.iter().map(|(index, _)| *index).collect();
         let used_terms = used_terms(self.job.glossary_terms, group);
@@ -115,8 +115,8 @@ impl BatchRepair<'_> {
                     summary: self.summary,
                     lines: group.to_vec(),
                     reference: &reference,
-                    preceding: preceding.clone(),
-                    following: self.following.map(str::to_string),
+                    preceding_text: preceding_text.clone(),
+                    following_text: self.following_text.map(str::to_string),
                     glossary_terms: &used_terms,
                     correction: correction.take(),
                 })

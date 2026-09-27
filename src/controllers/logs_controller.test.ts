@@ -42,11 +42,11 @@ describe("LogsController", () => {
     mockIPC((command, args) => {
       calls.push({ command, args });
       if (command === "log_directory")
-        return { in_use: "/os/logs", chosen: chosenPath };
+        return { in_use: "/os/logs", next_launch: chosenPath };
       if (command === "plugin:dialog|open") return "/logs";
       if (command === "choose_log_directory") {
         chosenPath = (args as { path: string }).path;
-        return { in_use: "/os/logs", chosen: chosenPath };
+        return { in_use: "/os/logs", next_launch: chosenPath };
       }
     });
   });

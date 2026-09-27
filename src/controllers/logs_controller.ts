@@ -47,9 +47,9 @@ export default class LogsController extends Controller {
   private show(directory: LogDirectory): void {
     this.pathTarget.textContent = directory.in_use;
     this.pathTarget.title = directory.in_use;
-    this.pendingHintTarget.hidden = directory.chosen === directory.in_use;
+    this.pendingHintTarget.hidden = directory.next_launch === directory.in_use;
     this.pendingHintTarget.textContent = t("settings.logsAfterRestart", {
-      path: directory.chosen,
+      path: directory.next_launch,
     });
   }
 }

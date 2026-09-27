@@ -42,7 +42,7 @@ impl LogSettings {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct LogDirectory {
     pub in_use: PathBuf,
-    pub chosen: PathBuf,
+    pub next_launch: PathBuf,
 }
 
 /// The directory this launch writes the log to, as the app started with it.

@@ -13,7 +13,7 @@ export interface PipelineProgress {
 
 /** How many of the things a Phase works through it has finished. */
 export interface Count {
-  done: number;
+  done_count: number;
   total: number;
 }
 

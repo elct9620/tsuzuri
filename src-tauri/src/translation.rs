@@ -302,8 +302,8 @@ async fn translate_once_ready(
     llama::wait_until_ready(base_url, ready_timeout, has_exited).await?;
     let model = TranslationModel::new(base_url);
     enter(progress, phases, Phase::Detect);
-    let split_sentences = find_split_sentences(&model, job, |done, total| {
-        progress.report_count(Phase::Detect, done, total)
+    let split_sentences = find_split_sentences(&model, job, |done_count, total| {
+        progress.report_count(Phase::Detect, done_count, total)
     })
     .await;
     enter(progress, phases, Phase::Translate);
@@ -314,12 +314,12 @@ async fn translate_once_ready(
             job,
             &split_sentences,
             |segments, pending_batch| {
-                let done = pending_batch.map_or(total, |span| {
+                let done_count = pending_batch.map_or(total, |span| {
                     job.chosen_indexes
                         .partition_point(|index| *index < span.first)
                 });
-                if done > 0 {
-                    progress.report_count(Phase::Translate, done, total);
+                if done_count > 0 {
+                    progress.report_count(Phase::Translate, done_count, total);
                 }
                 on_batch(segments, pending_batch);
             },
@@ -359,7 +359,7 @@ async fn find_split_sentences(
     );
     let windows = batching::windows(search_range.len(), job.settings.batch_size);
     let mut split_sentences = Vec::new();
-    for (done, window) in windows.iter().enumerate() {
+    for (position, window) in windows.iter().enumerate() {
         let lines: Vec<(usize, &str)> = window
             .clone()
             .map(|position| search_range.start + position)
@@ -378,7 +378,7 @@ async fn find_split_sentences(
             }
             Err(failure) => log::warn!("skipped a window looking for split sentences: {failure:?}"),
         }
-        on_progress(done + 1, windows.len());
+        on_progress(position + 1, windows.len());
     }
     split_sentences
 }
@@ -470,8 +470,8 @@ async fn translate_chosen_segments(
             &translated_pairs,
             BatchSurroundings {
                 summary: None,
-                preceding: (at == 0).then_some(preceding_text.as_deref()).flatten(),
-                following: is_last_batch.then_some(following_text.as_deref()).flatten(),
+                preceding_text: (at == 0).then_some(preceding_text.as_deref()).flatten(),
+                following_text: is_last_batch.then_some(following_text.as_deref()).flatten(),
             },
         )
         .await?;
@@ -1964,8 +1964,8 @@ mod tests {
             events,
             vec![
                 r#"{"phase":"translate","percent":null}"#,
-                r#"{"phase":"translate","percent":66,"count":{"done":2,"total":3}}"#,
-                r#"{"phase":"translate","percent":100,"count":{"done":3,"total":3}}"#,
+                r#"{"phase":"translate","percent":66,"count":{"done_count":2,"total":3}}"#,
+                r#"{"phase":"translate","percent":100,"count":{"done_count":3,"total":3}}"#,
             ]
         );
     }
@@ -1979,8 +1979,8 @@ mod tests {
             events,
             vec![
                 r#"{"phase":"detect","percent":null}"#,
-                r#"{"phase":"detect","percent":50,"count":{"done":1,"total":2}}"#,
-                r#"{"phase":"detect","percent":100,"count":{"done":2,"total":2}}"#,
+                r#"{"phase":"detect","percent":50,"count":{"done_count":1,"total":2}}"#,
+                r#"{"phase":"detect","percent":100,"count":{"done_count":2,"total":2}}"#,
             ]
         );
     }

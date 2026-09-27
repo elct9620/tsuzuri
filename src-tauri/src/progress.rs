@@ -32,8 +32,8 @@ impl fmt::Display for Phase {
 
 pub trait Progress {
     fn report(&self, phase: Phase, percent: Option<u8>);
-    /// Reports a Phase that works through `total` things and has finished `done` of them.
-    fn report_count(&self, phase: Phase, done: usize, total: usize);
+    /// Reports a Phase that works through `total` things and has finished `done_count` of them.
+    fn report_count(&self, phase: Phase, done_count: usize, total: usize);
     fn announce_project(&self);
 }
 
@@ -55,7 +55,7 @@ struct PipelineProgress {
 /// How many of the things a Phase works through it has finished.
 #[derive(Clone, Serialize)]
 struct Count {
-    done: usize,
+    done_count: usize,
     total: usize,
 }
 
@@ -76,13 +76,13 @@ impl<R: Runtime> Progress for AppHandle<R> {
         );
     }
 
-    fn report_count(&self, phase: Phase, done: usize, total: usize) {
+    fn report_count(&self, phase: Phase, done_count: usize, total: usize) {
         emit_progress(
             self,
             PipelineProgress {
                 phase,
-                percent: Some((done * 100 / total.max(1)) as u8),
-                count: Some(Count { done, total }),
+                percent: Some((done_count * 100 / total.max(1)) as u8),
+                count: Some(Count { done_count, total }),
             },
         );
     }

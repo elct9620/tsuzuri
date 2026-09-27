@@ -353,7 +353,7 @@ const en = {
     waveform: "Taking the waveform",
     firstLoad: "{{phase}} (slower the first time)",
     percent: "{{phase}} {{percent}}%",
-    count: "{{phase}} {{percent}}%, {{done}} / {{total}}",
+    count: "{{phase}} {{percent}}%, {{done_count}} / {{total}}",
     seconds: "{{seconds}} s",
   },
   failures: {

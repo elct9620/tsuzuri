@@ -73,7 +73,7 @@ impl ModeHold {
                     .as_ref()
                     .and_then(|current| current.translation);
                 is_written(
-                    self.translation_shown(translation),
+                    self.shown_translation(translation),
                     *language,
                     indexes.as_deref(),
                 )
@@ -83,7 +83,7 @@ impl ModeHold {
 
     /// The Segments shown, given `segments` as the files hold them: what the Mode has made so far
     /// stands in their place.
-    pub(super) fn segments_shown(&self, segments: &[Segment]) -> Vec<Segment> {
+    pub(super) fn shown_segments(&self, segments: &[Segment]) -> Vec<Segment> {
         match &self.progress {
             Some(ModeProgress::Transcript(progress_segments)) => progress_segments.clone(),
             Some(ModeProgress::Translations(translations)) => {
@@ -101,7 +101,7 @@ impl ModeHold {
 
     /// The translation shown, given `translation` as the Current Resource shows it: none while a
     /// transcription shows its progress, the one written while a translation does.
-    pub(super) fn translation_shown(&self, translation: Option<Language>) -> Option<Language> {
+    pub(super) fn shown_translation(&self, translation: Option<Language>) -> Option<Language> {
         match (&self.progress, &self.mode) {
             (Some(ModeProgress::Transcript(_)), _) => None,
             (Some(ModeProgress::Translations(_)), RunningMode::Translation { language, .. }) => {

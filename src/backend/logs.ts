@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 /** The directory the log is written to in this launch, and the one chosen for the next. */
 export interface LogDirectory {
   in_use: string;
-  chosen: string;
+  next_launch: string;
 }
 
 export function logDirectory(): Promise<LogDirectory> {

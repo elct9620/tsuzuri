@@ -15,7 +15,7 @@ pub fn log_directory(
     let settings = LogSettings::load(&settings_dir(&app)?)?;
     let in_use = log_dir.0.clone();
     Ok(LogDirectory {
-        chosen: settings.log_dir(in_use.clone()),
+        next_launch: settings.log_dir(in_use.clone()),
         in_use,
     })
 }

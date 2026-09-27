@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
-use crate::progress::{enter, Progress};
+use crate::progress::{enter, Phase, Progress};
 use crate::project::{CurrentProject, SegmentSpan, TranslationSource};
 use crate::steps::{ModeRun, StepEvent, Steps};
 use crate::timing::{PhaseTiming, Phases};
@@ -165,7 +165,7 @@ pub async fn run_translate<'a>(
             TranslationScope::Segments(indexes) => indexes,
         },
     };
-    enter(ports, &mut phases, "load");
+    enter(ports, &mut phases, Phase::Load);
     let on_batch = batch_display(ports, project, &source);
     let result = match server {
         LlamaServer::Job => {
@@ -291,12 +291,12 @@ async fn translate_once_ready(
 ) -> Result<Vec<Segment>, Failure> {
     llama::wait_until_ready(base_url, ready_timeout, has_exited).await?;
     let model = TranslationModel::new(base_url);
-    enter(progress, phases, "detect");
+    enter(progress, phases, Phase::Detect);
     let split_sentences = find_split_sentences(&model, job, |done, total| {
-        progress.report_count("detect", done, total)
+        progress.report_count(Phase::Detect, done, total)
     })
     .await;
-    enter(progress, phases, "translate");
+    enter(progress, phases, Phase::Translate);
     if !job.chosen_indexes.is_empty() {
         let total = job.chosen_indexes.len();
         return translate_chosen_segments(
@@ -309,7 +309,7 @@ async fn translate_once_ready(
                         .partition_point(|index| *index < span.first)
                 });
                 if done > 0 {
-                    progress.report_count("translate", done, total);
+                    progress.report_count(Phase::Translate, done, total);
                 }
                 on_batch(segments, pending_batch);
             },
@@ -322,7 +322,11 @@ async fn translate_once_ready(
         &split_sentences,
         |translated_segments, pending_batch| {
             if !translated_segments.is_empty() {
-                progress.report_count("translate", translated_segments.len(), job.segments.len());
+                progress.report_count(
+                    Phase::Translate,
+                    translated_segments.len(),
+                    job.segments.len(),
+                );
             }
             on_batch(translated_segments, pending_batch);
         },
@@ -618,7 +622,7 @@ mod tests {
             Duration::from_secs(5),
             || false,
             job,
-            &mut Phases::start("translate", "load"),
+            &mut Phases::start("translate", Phase::Load),
             |_, _| {},
         )
         .await
@@ -1557,7 +1561,7 @@ mod tests {
             Duration::from_secs(5),
             || false,
             &job_in_batches_of_two(&source.transcript.segments),
-            &mut Phases::start("translate", "load"),
+            &mut Phases::start("translate", Phase::Load),
             batch_display(app.handle(), &current, &source),
         )
         .await
@@ -1601,7 +1605,7 @@ mod tests {
             Duration::from_secs(5),
             || false,
             &job_in_batches_of_two(&source.transcript.segments),
-            &mut Phases::start("translate", "load"),
+            &mut Phases::start("translate", Phase::Load),
             batch_display(app.handle(), &current, &source),
         )
         .await
@@ -1638,7 +1642,7 @@ mod tests {
                 chosen_indexes: &[2],
                 ..job(&segments)
             },
-            &mut Phases::start("translate", "load"),
+            &mut Phases::start("translate", Phase::Load),
             |_, _| {},
         )
         .await
@@ -1861,7 +1865,7 @@ mod tests {
         };
 
         let job = job_in_batches_of_two(&source.transcript.segments);
-        let mut phases = Phases::start("translate", "load");
+        let mut phases = Phases::start("translate", Phase::Load);
         let (result, ()) = tokio::join!(
             run.run_until_cancelled(translate_once_ready(
                 app.handle(),
@@ -1912,7 +1916,7 @@ mod tests {
             Duration::from_secs(5),
             || false,
             &job_in_batches_of_two(&segments),
-            &mut Phases::start("translate", "load"),
+            &mut Phases::start("translate", Phase::Load),
             |_, _| {},
         )
         .await
@@ -2082,7 +2086,7 @@ mod tests {
             &plan_for(Language::Japanese),
             &LlamaServer::Job,
             Duration::from_secs(1),
-            Phases::start("translate", "prepare"),
+            Phases::start("translate", Phase::Prepare),
         )
         .await;
 
@@ -2113,7 +2117,7 @@ mod tests {
             &plan_for(Language::English),
             &LlamaServer::Job,
             Duration::from_secs(1),
-            Phases::start("translate", "prepare"),
+            Phases::start("translate", Phase::Prepare),
         )
         .await;
 
@@ -2152,7 +2156,7 @@ mod tests {
             &plan_for(Language::Japanese),
             &LlamaServer::Job,
             Duration::from_secs(1),
-            Phases::start("translate", "prepare"),
+            Phases::start("translate", Phase::Prepare),
         )
         .await;
 
@@ -2203,7 +2207,7 @@ mod tests {
             &plan_for(Language::Japanese),
             &LlamaServer::Job,
             Duration::from_secs(1),
-            Phases::start("translate", "prepare"),
+            Phases::start("translate", Phase::Prepare),
         )
         .await;
 
@@ -2255,7 +2259,7 @@ mod tests {
             &plan,
             &LlamaServer::Job,
             Duration::from_secs(1),
-            Phases::start("translate", "prepare"),
+            Phases::start("translate", Phase::Prepare),
         );
 
         let (_, seen) = tokio::join!(run, watch);
@@ -2278,7 +2282,7 @@ mod tests {
     async fn answers_how_long_each_phase_took() {
         let llama = FakeLlama::with_echo(2);
         let app = mock_app();
-        let mut phases = Phases::start("translate", "load");
+        let mut phases = Phases::start("translate", Phase::Load);
         let segments = [
             segment(0, 1_000, "大家好"),
             segment(1_000, 2_000, "今天天氣很好"),
@@ -2297,7 +2301,7 @@ mod tests {
         .unwrap();
 
         let names: Vec<_> = phases.finish().iter().map(|timing| timing.phase).collect();
-        assert_eq!(names, vec!["load", "detect", "translate"]);
+        assert_eq!(names, vec![Phase::Load, Phase::Detect, Phase::Translate]);
     }
 
     /// Translates three Segments into English on a real llama-server run as `server`, printing each translation.
@@ -2342,7 +2346,7 @@ mod tests {
             },
             server,
             llama::READY_TIMEOUT,
-            Phases::start("translate", "prepare"),
+            Phases::start("translate", Phase::Prepare),
         )
         .await
         .unwrap();
@@ -2364,7 +2368,7 @@ mod tests {
             },
             server,
             llama::READY_TIMEOUT,
-            Phases::start("translate", "prepare"),
+            Phases::start("translate", Phase::Prepare),
         )
         .await
         .unwrap();

@@ -4,7 +4,7 @@ use std::time::Instant;
 use serde::Serialize;
 
 use crate::failure::Failure;
-use crate::progress::{enter, Progress};
+use crate::progress::{enter, Phase, Progress};
 use crate::project::{CurrentProject, RunningMode, SegmentSpan, TranscriptionTarget};
 use crate::steps::{run_step, ModeRun, Steps};
 use crate::timing::{PhaseTiming, Phases};
@@ -63,7 +63,7 @@ pub async fn run_transcribe<'a>(
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
 
-    enter(ports, &mut phases, "convert");
+    enter(ports, &mut phases, Phase::Convert);
     run_step(
         ports,
         "convert",
@@ -75,7 +75,7 @@ pub async fn run_transcribe<'a>(
     .await?;
     let audio_bytes = std::fs::metadata(&wav)?.len();
 
-    enter(ports, &mut phases, "load");
+    enter(ports, &mut phases, Phase::Load);
     let start = Instant::now();
     project.show_transcript(project.kept_segments(job)?);
     ports.announce_project();
@@ -86,9 +86,9 @@ pub async fn run_transcribe<'a>(
         &whisper::transcription_args(&plan, &wav, &srt_prefix),
         |line| {
             if line.starts_with(whisper::START_MARK) {
-                enter(ports, &mut phases, "transcribe");
+                enter(ports, &mut phases, Phase::Transcribe);
             } else if let Some(percent) = whisper::progress(line) {
-                ports.report("transcribe", Some(percent));
+                ports.report(Phase::Transcribe, Some(percent));
             }
         },
         |line| {
@@ -238,7 +238,7 @@ mod tests {
                 self.transcription,
                 target,
                 &self.dir.path().join("work"),
-                Phases::start("transcribe", "prepare"),
+                Phases::start("transcribe", Phase::Prepare),
             )
             .await
         }
@@ -855,12 +855,20 @@ mod tests {
 
         let transcription = fixture.transcribe().await.unwrap();
 
-        let phases: Vec<&str> = transcription
+        let phases: Vec<Phase> = transcription
             .phases
             .iter()
             .map(|timing| timing.phase)
             .collect();
-        assert_eq!(phases, vec!["prepare", "convert", "load", "transcribe"]);
+        assert_eq!(
+            phases,
+            vec![
+                Phase::Prepare,
+                Phase::Convert,
+                Phase::Load,
+                Phase::Transcribe
+            ]
+        );
     }
 
     /// Runs the real vendored whisper-cli and ffmpeg:
@@ -914,7 +922,7 @@ mod tests {
             TranscriptionSettings::default(),
             &target,
             &dir.path().join("work"),
-            Phases::start("transcribe", "prepare"),
+            Phases::start("transcribe", Phase::Prepare),
         )
         .await
         .unwrap();

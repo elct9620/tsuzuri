@@ -29,8 +29,20 @@ Tell the webview a Phase has started, with no percentage, or how far into it the
 
 ```rust
 pub trait Progress {
-    fn report(&self, phase: &'static str, percent: Option<u8>);
+    fn report(&self, phase: Phase, percent: Option<u8>);
 }
+```
+
+## `Phase`
+
+The Phases a Mode goes through: `prepare`, `convert`, `load`, `transcribe`, `detect` and `translate`, the names `pipeline-progress` and the seconds each took carry to the webview.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+pub enum Phase {}
 ```
 
 ## `Progress::announce_project`

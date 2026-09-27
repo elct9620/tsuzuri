@@ -8,7 +8,7 @@ use super::{
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::processes::{AppPorts, Processes};
-use crate::progress::Progress;
+use crate::progress::{Phase, Progress};
 use crate::project::CurrentProject;
 use crate::steps::ModeLock;
 use crate::timing::Phases;
@@ -56,8 +56,8 @@ async fn run_translation(
     let mode_lock = app.state::<ModeLock>();
     let processes = app.state::<Processes>().inner().clone();
     let run = mode_lock.begin(AppPorts::new(app, &processes)).await;
-    let phases = Phases::start("translate", "prepare");
-    app.report("prepare", None);
+    let phases = Phases::start("translate", Phase::Prepare);
+    app.report(Phase::Prepare, None);
     let [llama] =
         toolchain::find_ready_executables(settings::resolver(app)?, [toolchain::LLAMA]).await?;
     let model_settings = settings::load_settings(app)?;

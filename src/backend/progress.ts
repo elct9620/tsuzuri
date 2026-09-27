@@ -1,7 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
+/** One timed part of a Mode's run, as Rust names it. */
+export type Phase =
+  "prepare" | "convert" | "load" | "transcribe" | "detect" | "translate";
+
 /** Sent as each Phase starts and as its percentage changes; a Phase that cannot tell how far along it is has no percentage. */
 export interface PipelineProgress {
-  phase: string;
+  phase: Phase;
   percent: number | null;
   /** How many of the things the Phase works through it has finished, when it counts them. */
   count?: Count;
@@ -15,7 +19,7 @@ export interface Count {
 
 /** How long one Phase of a task took. */
 export interface PhaseTiming {
-  phase: string;
+  phase: Phase;
   seconds: number;
 }
 

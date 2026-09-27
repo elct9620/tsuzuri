@@ -2,21 +2,23 @@ use std::time::Instant;
 
 use serde::Serialize;
 
+use crate::progress::Phase;
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PhaseTiming {
-    pub phase: &'static str,
+    pub phase: Phase,
     pub seconds: f64,
 }
 
 /// Times the Phases of one Mode run: each Phase ends when the next is entered, and is logged as it ends.
 pub struct Phases {
     mode: &'static str,
-    current: (&'static str, Instant),
+    current: (Phase, Instant),
     timings: Vec<PhaseTiming>,
 }
 
 impl Phases {
-    pub fn start(mode: &'static str, phase: &'static str) -> Phases {
+    pub fn start(mode: &'static str, phase: Phase) -> Phases {
         Phases {
             mode,
             current: (phase, Instant::now()),
@@ -24,7 +26,7 @@ impl Phases {
         }
     }
 
-    pub fn enter(&mut self, phase: &'static str) {
+    pub fn enter(&mut self, phase: Phase) {
         let (finished, started) = std::mem::replace(&mut self.current, (phase, Instant::now()));
         self.record(finished, started);
     }
@@ -36,7 +38,7 @@ impl Phases {
         self.timings
     }
 
-    fn record(&mut self, phase: &'static str, start: Instant) {
+    fn record(&mut self, phase: Phase, start: Instant) {
         let seconds = start.elapsed().as_secs_f64();
         log::info!("{}: {phase} took {seconds:.2}s", self.mode);
         self.timings.push(PhaseTiming { phase, seconds });
@@ -51,9 +53,9 @@ mod tests {
     // @behavior OB-001
     #[test]
     fn logs_a_phase_when_the_next_one_starts() {
-        let mut phases = Phases::start("transcribe", "prepare");
+        let mut phases = Phases::start("transcribe", Phase::Prepare);
 
-        let logs = captured_logs(|| phases.enter("convert"));
+        let logs = captured_logs(|| phases.enter(Phase::Convert));
 
         assert_eq!(logs.len(), 1);
         assert!(logs[0].starts_with("transcribe: prepare took "));
@@ -63,13 +65,13 @@ mod tests {
     // @behavior OB-002
     #[test]
     fn answers_every_phase_in_the_order_it_ran() {
-        let mut phases = Phases::start("transcribe", "prepare");
-        phases.enter("convert");
+        let mut phases = Phases::start("transcribe", Phase::Prepare);
+        phases.enter(Phase::Convert);
 
         let timings = phases.finish();
 
         let names: Vec<_> = timings.iter().map(|timing| timing.phase).collect();
-        assert_eq!(names, vec!["prepare", "convert"]);
+        assert_eq!(names, vec![Phase::Prepare, Phase::Convert]);
         assert!(timings.iter().all(|timing| timing.seconds >= 0.0));
     }
 }

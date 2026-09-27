@@ -1,6 +1,10 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { cancelTask, type PipelineProgress } from "../backend/progress";
+import {
+  cancelTask,
+  type Phase,
+  type PipelineProgress,
+} from "../backend/progress";
 import { t } from "../i18n";
 import { iconElement } from "../ui/icons";
 import { failureCode } from "../ui/failure";
@@ -13,7 +17,7 @@ import {
 } from "../ui/progress";
 
 /** The Phases each task goes through, in the order Rust enters them. */
-const PHASES_BY_TASK: Record<TaskKind, string[]> = {
+const PHASES_BY_TASK: Record<TaskKind, Phase[]> = {
   transcription: ["prepare", "convert", "load", "transcribe"],
   translation: ["prepare", "load", "detect", "translate"],
 };

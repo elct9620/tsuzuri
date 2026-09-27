@@ -1,17 +1,44 @@
+use std::fmt;
+
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Runtime};
 
 use crate::timing::Phases;
 
+/// One timed part of a Mode's run, named in `pipeline-progress`, in the seconds each took and in the log.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Phase {
+    Prepare,
+    Convert,
+    Load,
+    Transcribe,
+    Detect,
+    Translate,
+}
+
+impl fmt::Display for Phase {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Phase::Prepare => "prepare",
+            Phase::Convert => "convert",
+            Phase::Load => "load",
+            Phase::Transcribe => "transcribe",
+            Phase::Detect => "detect",
+            Phase::Translate => "translate",
+        })
+    }
+}
+
 pub trait Progress {
-    fn report(&self, phase: &'static str, percent: Option<u8>);
+    fn report(&self, phase: Phase, percent: Option<u8>);
     /// Reports a Phase that works through `total` things and has finished `done` of them.
-    fn report_count(&self, phase: &'static str, done: usize, total: usize);
+    fn report_count(&self, phase: Phase, done: usize, total: usize);
     fn announce_project(&self);
 }
 
 /// Ends the current Phase and tells the webview the next one has started.
-pub fn enter(progress: &impl Progress, phases: &mut Phases, phase: &'static str) {
+pub fn enter(progress: &impl Progress, phases: &mut Phases, phase: Phase) {
     phases.enter(phase);
     progress.report(phase, None);
 }
@@ -19,7 +46,7 @@ pub fn enter(progress: &impl Progress, phases: &mut Phases, phase: &'static str)
 /// Sent as each Phase starts and as its percentage changes; a Phase that cannot tell how far along it is has no percentage.
 #[derive(Clone, Serialize)]
 struct PipelineProgress {
-    phase: &'static str,
+    phase: Phase,
     percent: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
     count: Option<Count>,
@@ -38,7 +65,7 @@ fn emit_progress<R: Runtime>(app: &AppHandle<R>, progress: PipelineProgress) {
 }
 
 impl<R: Runtime> Progress for AppHandle<R> {
-    fn report(&self, phase: &'static str, percent: Option<u8>) {
+    fn report(&self, phase: Phase, percent: Option<u8>) {
         emit_progress(
             self,
             PipelineProgress {
@@ -49,7 +76,7 @@ impl<R: Runtime> Progress for AppHandle<R> {
         );
     }
 
-    fn report_count(&self, phase: &'static str, done: usize, total: usize) {
+    fn report_count(&self, phase: Phase, done: usize, total: usize) {
         emit_progress(
             self,
             PipelineProgress {

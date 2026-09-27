@@ -8,7 +8,7 @@ use tauri::{AppHandle, Runtime};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
-use crate::progress::Progress;
+use crate::progress::{Phase, Progress};
 use crate::steps::{StepEvent, Steps};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -170,11 +170,11 @@ impl<'a, R: Runtime> AppPorts<'a, R> {
 }
 
 impl<R: Runtime> Progress for AppPorts<'_, R> {
-    fn report(&self, phase: &'static str, percent: Option<u8>) {
+    fn report(&self, phase: Phase, percent: Option<u8>) {
         self.app.report(phase, percent);
     }
 
-    fn report_count(&self, phase: &'static str, done: usize, total: usize) {
+    fn report_count(&self, phase: Phase, done: usize, total: usize) {
         self.app.report_count(phase, done, total);
     }
 

@@ -55,6 +55,8 @@ export const SHORTCUTS: Shortcut[] = [
   // F11 and F12 as Subtitle Edit binds them, but F9 on macOS, which shows the desktop with F11
   { id: "setStart", group: "playback", mac: ["f9"], other: ["f11"] },
   { id: "setEnd", group: "playback", mac: ["f12"], other: ["f12"] },
+  { id: "stepBack", group: "playback", mac: ["left"], other: ["left"] },
+  { id: "stepForward", group: "playback", mac: ["right"], other: ["right"] },
   { id: "insertRange", group: "playback", mac: ["enter"], other: ["enter"] },
   { id: "cancel", group: "playback", mac: ["esc"], other: ["esc"] },
   { id: "next", group: "field", mac: ["enter"], other: ["enter"] },
@@ -119,6 +121,8 @@ const MAC_LABELS: Record<string, string> = {
   enter: "↩",
   backspace: "⌫",
   delete: "⌦",
+  left: "←",
+  right: "→",
 };
 
 const OTHER_LABELS: Record<string, string> = {
@@ -127,6 +131,8 @@ const OTHER_LABELS: Record<string, string> = {
   shift: "Shift",
   enter: "Enter",
   delete: "Delete",
+  left: "←",
+  right: "→",
 };
 
 /** The keys and mouse actions written as words of the Interface Language. */

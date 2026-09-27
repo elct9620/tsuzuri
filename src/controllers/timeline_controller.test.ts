@@ -116,7 +116,7 @@ describe("TimelineController", () => {
         <button data-timeline-target="aloneButton"></button><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd>
         <button data-action="timeline#zoomOut"></button>
         <button data-action="timeline#zoomIn"></button>
-        <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" data-action="wheel->timeline#scrollOrZoom:prevent pointerdown->timeline#drawOver:capture click->timeline#ignoreClickOver:capture" hidden></div>
+        <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" tabindex="0" data-action="wheel->timeline#scrollOrZoom:prevent pointerdown->timeline#drawOver:capture click->timeline#ignoreClickOver:capture keydown.left->timeline#stepBack:prevent keydown.right->timeline#stepForward:prevent" hidden></div>
       </div>
     `;
     application = Application.start();
@@ -960,6 +960,56 @@ describe("TimelineController", () => {
       expect(Number(range().style.zIndex)).toBeGreaterThan(
         Number(regions()[0].style.zIndex),
       );
+    });
+
+    /** Clicks the waveform at `at` seconds and presses `key` there. */
+    async function pressOnWaveform(at: number, key: string): Promise<void> {
+      await show(projectWithMedia([segmentAt(0, 0.5)]));
+      pressOnTimeline(at, key);
+    }
+
+    /** Focuses the timeline with the media at `at` seconds and presses `key` there. */
+    function pressOnTimeline(at: number, key: string): void {
+      const waveform = document.querySelector<HTMLElement>(
+        '[data-timeline-target="waveform"]',
+      )!;
+      waveform.focus();
+      media().currentTime = at;
+      waveform.dispatchEvent(
+        new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }),
+      );
+    }
+
+    // @behavior PV-160
+    it("moves the media 0.1 s earlier with ← once the waveform is clicked", async () => {
+      await pressOnWaveform(1, "ArrowLeft");
+
+      expect(media().currentTime).toBe(0.9);
+    });
+
+    // @behavior PV-161
+    it("moves the media 0.1 s later with → once the waveform is clicked", async () => {
+      await pressOnWaveform(1, "ArrowRight");
+
+      expect(media().currentTime).toBe(1.1);
+    });
+
+    // @behavior PV-162
+    it("keeps the media within its length when it is moved with an arrow key", async () => {
+      await pressOnWaveform(0.05, "ArrowLeft");
+
+      expect(media().currentTime).toBe(0);
+    });
+
+    // @behavior PV-163
+    it("leaves the media where it is when an arrow key is pressed with no Waveform", async () => {
+      takeWaveform = () =>
+        Promise.reject({ code: "step-failed", step: "waveform", detail: "" });
+      await show(projectWithMedia());
+
+      pressOnTimeline(1, "ArrowLeft");
+
+      expect(media().currentTime).toBe(1);
     });
 
     // @behavior PV-065

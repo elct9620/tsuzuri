@@ -1116,6 +1116,40 @@ The Current Segment's region is drawn above the others, so a range drawn over it
 | When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
 | Then | the range is drawn above the Current Segment's region |
 
+## `PV-160` Moving the media 0.1 s earlier with ← once the waveform is clicked
+
+A time set where the media is lands only as closely as the media can be put, so after a click on the waveform the arrow keys move it a tenth of a second at a time. They are left to the fields and the lists elsewhere, where they move the caret or the choice.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second, clicked at 1 s |
+| When | ← is pressed |
+| Then | the media is at 0.9 s |
+
+## `PV-161` Moving the media 0.1 s later with → once the waveform is clicked
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second, clicked at 1 s |
+| When | → is pressed |
+| Then | the media is at 1.1 s |
+
+## `PV-162` Keeping the media within its length when it is moved with an arrow key
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second, clicked at 0.05 s |
+| When | ← is pressed |
+| Then | the media is at 0 s |
+
+## `PV-163` Leaving the media where it is when an arrow key is pressed with no Waveform
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Waveform could not be taken, its media at 1 s, and the timeline focused |
+| When | ← is pressed |
+| Then | the media stays at 1 s |
+
 ## `PV-065` Setting the Current Segment's start where the media is with F11
 
 | Step | Statement |

@@ -417,6 +417,8 @@ const en = {
       play: "Play or stop",
       setStart: "Set the start",
       setEnd: "Set the end",
+      stepBack: "Back 0.1 s",
+      stepForward: "Forward 0.1 s",
       insertRange: "Add a Segment",
       cancel: "Cancel",
       next: "Next Segment",
@@ -444,6 +446,10 @@ const en = {
       play: "Plays on from where the media is, or only the Current Segment when playing alone",
       setStart: "Moves the Current Segment's start to where the media is",
       setEnd: "Moves the Current Segment's end to where the media is",
+      stepBack:
+        "Once the waveform is clicked, moves the media earlier, to set a time where it is",
+      stepForward:
+        "Once the waveform is clicked, moves the media later, to set a time where it is",
       insertRange: "Adds a Segment over the range drawn on the waveform",
       cancel:
         "Takes a drag back before it is let go, or drops the drawn range; in a Video Window filling the screen, leaves the full screen",

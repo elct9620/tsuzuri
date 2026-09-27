@@ -45,6 +45,8 @@ const WHEEL_ZOOM_SCALE = 200;
 const REGION_COLORS = ["--segment-even", "--segment-odd"];
 /** How near, in pixels, an edge dragged on the timeline comes to a time before it Snaps to it. */
 const SNAP_PX = 8;
+/** How far an arrow key moves the media, fine enough to set a time where it is. */
+const STEP_SECONDS = 0.1;
 /** The id of the range drawn on the waveform, which is no Segment's region. */
 const RANGE_ID = "range";
 /** How the drawn range shows: dragged by its edges or as a whole, to set it right before it is kept. */
@@ -293,6 +295,26 @@ export default class TimelineController extends Controller {
     }
     const segment = this.currentSegment;
     if (segment) void this.surfer?.play(toSeconds(segment.start_ms));
+  }
+
+  /** Moves the media a step earlier; bound to ← on the waveform, so the fields keep the key. */
+  stepBack(): void {
+    this.moveMediaBy(-STEP_SECONDS);
+  }
+
+  /** Moves the media a step later; bound to → on the waveform, so the fields keep the key. */
+  stepForward(): void {
+    this.moveMediaBy(STEP_SECONDS);
+  }
+
+  /** Moves the media `seconds` on, within its length as the Waveform knows it; without a Waveform, not at all. */
+  private moveMediaBy(seconds: number): void {
+    const duration = this.surfer?.getDuration();
+    if (duration === undefined) return;
+    this.player.currentTime = Math.min(
+      duration,
+      Math.max(0, this.player.currentTime + seconds),
+    );
   }
 
   togglePlayingAlone(): void {

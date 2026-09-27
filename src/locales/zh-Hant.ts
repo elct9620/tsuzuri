@@ -402,6 +402,8 @@ const zhHant: typeof en = {
       play: "播放或停止",
       setStart: "設開始",
       setEnd: "設結束",
+      stepBack: "往前 0.1 秒",
+      stepForward: "往後 0.1 秒",
       insertRange: "新增段落",
       cancel: "取消",
       next: "下一段",
@@ -428,6 +430,8 @@ const zhHant: typeof en = {
       play: "從目前位置播放；開啟單句播放時只播目前段落",
       setStart: "把目前段落的開始設為播放位置",
       setEnd: "把目前段落的結束設為播放位置",
+      stepBack: "點過波形後，把播放位置往前移，方便設時間",
+      stepForward: "點過波形後，把播放位置往後移，方便設時間",
       insertRange: "在波形上拉出範圍後，新增一段",
       cancel:
         "拖動中還沒放開時退回原位，否則捨棄拉出的範圍；在全螢幕的影片視窗按下則離開全螢幕",

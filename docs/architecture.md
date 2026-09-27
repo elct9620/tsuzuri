@@ -103,7 +103,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | backend 模組 | Rust 模組 | 指令 |
 |---|---|---|
 | `project.ts` | `project/commands.rs` | 專案、版本、詞彙表 |
-| `editing.ts` | `project/commands.rs` | 編輯、取代、清理、段落改動、復原 |
+| `editing.ts` | `project/commands.rs` | 編輯、搜尋、取代、清理、段落改動、復原 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
@@ -532,6 +532,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `speakers` | 說話者選單與設定 modal |
 | `replacement` | 搜尋取代 modal |
 | `cleanup` | 清理簡體的選單、工具列與快速鍵 |
+| `search` | 搜尋列與符合處標記 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 任務 modal，含重做 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
@@ -601,6 +602,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/timeline_spans.ts` | 時間軸區段與選段的落點 |
 | `ui/file_name.ts` | 路徑的最後一段 |
 | `ui/shortcuts.ts` | 各平台的快速鍵與寫法 |
+| `ui/text_fields.ts` | 原文或譯文的選擇、選取的文字 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
 圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。快速鍵綁在 `data-action` 與 controller，`ui/shortcuts.ts` 只供顯示，由測試確認一致。

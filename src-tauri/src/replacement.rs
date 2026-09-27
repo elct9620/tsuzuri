@@ -12,6 +12,13 @@ pub struct Replacement {
     pub is_regex: bool,
 }
 
+/// What to look for in the texts, read as a Replacement's `pattern` is.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct Search {
+    pub pattern: String,
+    pub is_regex: bool,
+}
+
 /// Why a Replacement cannot be made: its pattern is empty or is not a regular expression.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ReplacementError {
@@ -26,18 +33,8 @@ pub struct Replacer<'a> {
 
 impl<'a> Replacer<'a> {
     pub fn try_new(replacement: &'a Replacement) -> Result<Replacer<'a>, ReplacementError> {
-        let invalid_pattern = |detail: String| ReplacementError::InvalidPattern { detail };
-        if replacement.pattern.is_empty() {
-            return Err(invalid_pattern("nothing to find".to_string()));
-        }
-        let pattern = if replacement.is_regex {
-            replacement.pattern.clone()
-        } else {
-            regex::escape(&replacement.pattern)
-        };
-        let matcher = Regex::new(&pattern).map_err(|error| invalid_pattern(error.to_string()))?;
         Ok(Replacer {
-            matcher,
+            matcher: matcher(&replacement.pattern, replacement.is_regex)?,
             replacement,
         })
     }
@@ -56,6 +53,47 @@ impl<'a> Replacer<'a> {
         };
         Some((replaced_text.into_owned(), count))
     }
+}
+
+/// A Search ready to look through one text after another.
+pub struct Finder(Regex);
+
+impl Finder {
+    pub fn try_new(search: &Search) -> Result<Finder, ReplacementError> {
+        Ok(Finder(matcher(&search.pattern, search.is_regex)?))
+    }
+
+    /// The characters `start` to `end` of each match in `text`, in order, leaving out a match of
+    /// no characters, which marks nothing.
+    pub fn match_ranges(&self, text: &str) -> Vec<(usize, usize)> {
+        let mut counted_bytes = 0;
+        let mut counted_characters = 0;
+        let mut character_at = |byte: usize| {
+            counted_characters += text[counted_bytes..byte].chars().count();
+            counted_bytes = byte;
+            counted_characters
+        };
+        self.0
+            .find_iter(text)
+            .filter(|found| !found.is_empty())
+            .map(|found| (character_at(found.start()), character_at(found.end())))
+            .collect()
+    }
+}
+
+/// The expression finding `pattern`, taken as written unless `is_regex`; an empty pattern, or one
+/// the `regex` crate cannot read, is refused.
+fn matcher(pattern: &str, is_regex: bool) -> Result<Regex, ReplacementError> {
+    let invalid_pattern = |detail: String| ReplacementError::InvalidPattern { detail };
+    if pattern.is_empty() {
+        return Err(invalid_pattern("nothing to find".to_string()));
+    }
+    let pattern = if is_regex {
+        pattern.to_string()
+    } else {
+        regex::escape(pattern)
+    };
+    Regex::new(&pattern).map_err(|error| invalid_pattern(error.to_string()))
 }
 
 #[cfg(test)]
@@ -131,6 +169,36 @@ mod tests {
     #[test]
     fn refuses_an_empty_pattern() {
         assert!(Replacer::try_new(&replacement("", "x", false)).is_err());
+    }
+
+    fn finder(pattern: &str, is_regex: bool) -> Finder {
+        Finder::try_new(&Search {
+            pattern: pattern.to_string(),
+            is_regex,
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn finds_each_match_by_its_characters() {
+        assert_eq!(
+            finder("，", false).match_ranges("你好，世界，再見"),
+            vec![(2, 3), (5, 6)]
+        );
+    }
+
+    #[test]
+    fn leaves_out_a_match_of_no_characters() {
+        assert_eq!(finder("好*", true).match_ranges("你好"), vec![(1, 2)]);
+    }
+
+    #[test]
+    fn refuses_a_search_that_cannot_be_read() {
+        assert!(Finder::try_new(&Search {
+            pattern: "(".to_string(),
+            is_regex: true,
+        })
+        .is_err());
     }
 
     #[test]

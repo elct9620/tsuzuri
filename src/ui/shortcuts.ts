@@ -49,6 +49,14 @@ export const SHORTCUTS: Shortcut[] = [
     other: ["delete"],
   },
   { id: "replace", group: "anywhere", mac: ["meta+alt+f"], other: ["ctrl+h"] },
+  { id: "search", group: "anywhere", mac: ["meta+f"], other: ["ctrl+f"] },
+  { id: "searchNext", group: "anywhere", mac: ["meta+g"], other: ["f3"] },
+  {
+    id: "searchPrevious",
+    group: "anywhere",
+    mac: ["meta+shift+g"],
+    other: ["shift+f3"],
+  },
   {
     id: "cleanup",
     group: "anywhere",

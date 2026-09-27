@@ -14,6 +14,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/timeline_controller.test.ts`
 - `src/controllers/replacement_controller.test.ts`
 - `src/controllers/cleanup_controller.test.ts`
+- `src/controllers/search_controller.test.ts`
 - `src/editor/*.test.ts`
 - `src-tauri/src/replacement.rs`
 - `src-tauri/src/project/current.rs`
@@ -1200,3 +1201,71 @@ A dialog holding focus is doing something else, as with deleting by key.
 | Given | a Checked Segment and a dialog's box holding focus |
 | When | the cleanup shortcut is pressed |
 | Then | nothing is cleaned and the box keeps focus |
+
+## `ED-137` Finding every match across the Current Resource
+
+What is typed to find is read as a replacement reads it: as written, or as a regular expression of the `regex` crate.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Segments `你好，世界`, `再見` and `好，走吧` |
+| When | `，` is searched for in the original |
+| Then | the Project answers the characters 2 to 3 of the first Segment and 1 to 2 of the third |
+
+## `ED-138` Opening the search bar by shortcut
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered with `，` selected |
+| When | Ctrl+F, or ⌘F on macOS, is pressed |
+| Then | the search bar opens with `，` to find and focus, every match is marked, and it counts `1/2` |
+
+## `ED-139` Moving to the next match
+
+Moving to a match makes its Segment current, so the list scrolls to it and the Preview follows as a click would.
+
+| Step | Statement |
+| --- | --- |
+| Given | the search bar finding two matches, at the first |
+| When | Enter is pressed in it, or F3, or ⌘G on macOS |
+| Then | the second match is the current one, its Segment is the Current Segment, and it counts `2/2` |
+
+## `ED-140` Going round from the last match
+
+| Step | Statement |
+| --- | --- |
+| Given | the search bar at the second of two matches |
+| When | Enter is pressed in it |
+| Then | the first match is the current one again |
+
+## `ED-141` Moving to the previous match
+
+| Step | Statement |
+| --- | --- |
+| Given | the search bar at the first of two matches |
+| When | Shift+Enter is pressed in it, or Shift+F3, or ⇧⌘G on macOS |
+| Then | the second match is the current one |
+
+## `ED-142` Following the Segments as they change
+
+| Step | Statement |
+| --- | --- |
+| Given | the search bar finding two matches of `，` |
+| When | an edit takes one of them away |
+| Then | the Project is searched again and it counts one match |
+
+## `ED-143` Closing the search bar
+
+| Step | Statement |
+| --- | --- |
+| Given | the search bar open with its matches marked |
+| When | Esc is pressed in it |
+| Then | the bar closes and no match stays marked |
+
+## `ED-144` Telling of a regular expression that cannot be read
+
+| Step | Statement |
+| --- | --- |
+| Given | the search bar open |
+| When | `(` is searched for as a regular expression |
+| Then | nothing is marked and the bar says the pattern cannot be read |

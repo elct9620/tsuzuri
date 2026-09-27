@@ -310,6 +310,14 @@ pub enum SegmentField {
     Speaker,
 }
 
+/// Where a Search matches: characters `start` to `end` of the Segment at `index`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct TextMatch {
+    pub index: usize,
+    pub start: usize,
+    pub end: usize,
+}
+
 /// Where a Simplified Cleanup cleans the Current Resource's `zh-TW` text.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]

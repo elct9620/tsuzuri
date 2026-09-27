@@ -1,9 +1,14 @@
 import { Controller } from "@hotwired/stimulus";
 
 import { isMacOS } from "../backend/system";
-import type { CursorField, EditingSession } from "../editor";
+import type { EditingSession } from "../editor";
 import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
+import {
+  chosenTextField,
+  offerTextFields,
+  selectedText,
+} from "../ui/text_fields";
 
 /**
  * Whether `event` asks for the replace dialog: Ctrl+H, as subtitle editors bind it, or ⌘+Option+F
@@ -49,13 +54,12 @@ export default class ReplacementController extends Controller {
 
   /** Opens the dialog, looking for the range the Cursor selects, if any. */
   open(): void {
-    const selection = this.selectedText;
+    const selection = selectedText(this.session.cursor);
     if (selection !== "") this.patternTarget.value = selection;
-    const hasTranslation = Boolean(this.session.transcript?.shownTranslation);
-    for (const choice of this.fieldTargets)
-      choice.disabled = choice.value === "translation" && !hasTranslation;
-    if (!this.fieldTargets.some((choice) => choice.checked && !choice.disabled))
-      this.choose("text");
+    offerTextFields(
+      this.fieldTargets,
+      Boolean(this.session.transcript?.shownTranslation),
+    );
     this.substituteTarget.placeholder = t("replace.substituteNone");
     this.dialogTarget.showModal();
     this.patternTarget.focus();
@@ -66,8 +70,7 @@ export default class ReplacementController extends Controller {
   async apply(): Promise<void> {
     const pattern = this.patternTarget.value;
     if (pattern === "") return;
-    const field = (this.fieldTargets.find((choice) => choice.checked)?.value ??
-      "text") as CursorField;
+    const field = chosenTextField(this.fieldTargets);
     const outcome = await this.session.replaceText(field, {
       pattern,
       substitute: this.substituteTarget.value,
@@ -86,17 +89,5 @@ export default class ReplacementController extends Controller {
       title: t("replace.done", { count: outcome.count }),
       kind: "success",
     });
-  }
-
-  /** The text of the range the Cursor selects, empty for a caret or no Cursor. */
-  private get selectedText(): string {
-    const caret = this.session.cursor.caret;
-    if (!caret || caret.start === caret.end) return "";
-    return [...caret.text].slice(caret.start, caret.end).join("");
-  }
-
-  private choose(field: CursorField): void {
-    for (const choice of this.fieldTargets)
-      choice.checked = choice.value === field;
   }
 }

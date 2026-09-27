@@ -104,6 +104,7 @@ pub fn run() {
             project::commands::set_speakers,
             project::commands::replace_text,
             project::commands::clean_simplified,
+            project::commands::find_text,
             steps::commands::cancel_task,
             translation::commands::retranslate,
             project::commands::change_segments,

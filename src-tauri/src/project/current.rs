@@ -16,12 +16,13 @@ use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
     translation_only, translation_srt, translation_with_speakers, BackupKind, CleanupScope,
     CurrentResource, KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource, Restoration,
-    SegmentField, SegmentSpan, TranscriptionScope, TranscriptionTarget, TranslationSource,
+    SegmentField, SegmentSpan, TextMatch, TranscriptionScope, TranscriptionTarget,
+    TranslationSource,
 };
 use crate::cleanup::{clean_range, clean_text};
 use crate::failure::Failure;
 use crate::language::Language;
-use crate::replacement::{Replacement, Replacer};
+use crate::replacement::{Finder, Replacement, Replacer, Search};
 use crate::segment_change::SegmentChange;
 use crate::transcript::{Segment, SpeakerNames, SrtContent, Transcript};
 
@@ -532,6 +533,30 @@ impl Project {
     fn replace_text(&mut self, field: SegmentField, replacer: &Replacer) -> Result<usize, Failure> {
         self.read_current_transcript()?;
         self.rewrite_texts(field, |_, text| replacer.replace_matches(text))
+    }
+
+    /// Where `finder` matches `field` of each Segment of the Current Resource, in order.
+    fn find_text(&self, field: SegmentField, finder: &Finder) -> Result<Vec<TextMatch>, Failure> {
+        let current = self.current()?;
+        if field == SegmentField::Translation && current.translation.is_none() {
+            return Err(Failure::NoTranslationShown);
+        }
+        Ok(current
+            .transcript
+            .segments
+            .iter()
+            .enumerate()
+            .flat_map(|(index, segment)| {
+                let text = match field {
+                    SegmentField::Translation => segment.translation.as_deref().unwrap_or_default(),
+                    _ => &segment.text,
+                };
+                finder
+                    .match_ranges(text)
+                    .into_iter()
+                    .map(move |(start, end)| TextMatch { index, start, end })
+            })
+            .collect())
     }
 
     /// Cleans Simplified Chinese out of the Current Resource's `zh-TW` text within `scope`, read
@@ -1633,6 +1658,22 @@ impl CurrentProject {
             project.refuse_changed_elsewhere()?;
             project.replace_text(field, &replacer)
         })
+    }
+
+    /// Where `search` matches `field` of each Segment of the Current Resource, in order; nothing
+    /// is changed.
+    pub fn find_text(
+        &self,
+        field: SegmentField,
+        search: &Search,
+    ) -> Result<Vec<TextMatch>, Failure> {
+        if field == SegmentField::Speaker {
+            return Err(Failure::Internal {
+                detail: "a Speaker is not searched".to_string(),
+            });
+        }
+        let finder = Finder::try_new(search)?;
+        self.read_project(|project| project.find_text(field, &finder))
     }
 
     /// Cleans Simplified Chinese out of the Current Resource's `zh-TW` text within `scope` as one
@@ -4115,6 +4156,40 @@ mod tests {
             current.replace_text(SegmentField::Translation, &replacement("你", "您", false));
 
         assert_eq!(result, Err(Failure::NoTranslationShown));
+    }
+
+    // @behavior ED-137
+    #[test]
+    fn finds_every_match_across_the_current_resource() {
+        let cues = "1\n00:00:00,000 --> 00:00:01,000\n你好，世界\n\n2\n00:00:01,000 --> 00:00:02,000\n再見\n\n3\n00:00:02,000 --> 00:00:03,000\n好，走吧\n";
+        let dir = directory_of("ed-find", &[("ep01.srt", cues)]);
+        let current = project_in(&dir);
+
+        let matches = current
+            .find_text(
+                SegmentField::Text,
+                &Search {
+                    pattern: "，".to_string(),
+                    is_regex: false,
+                },
+            )
+            .unwrap();
+
+        assert_eq!(
+            matches,
+            vec![
+                TextMatch {
+                    index: 0,
+                    start: 2,
+                    end: 3
+                },
+                TextMatch {
+                    index: 2,
+                    start: 1,
+                    end: 2
+                },
+            ]
+        );
     }
 
     fn chosen_segments(indexes: &[usize]) -> CleanupScope {

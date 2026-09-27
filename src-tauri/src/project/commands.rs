@@ -7,12 +7,12 @@ use super::glossary::{GlossaryRow, GlossaryTable};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
 use super::{
     CleanupScope, CurrentProject, Project, ProjectOptions, ProjectView, Reload, Restoration,
-    SegmentField,
+    SegmentField, TextMatch,
 };
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::progress::Progress;
-use crate::replacement::Replacement;
+use crate::replacement::{Replacement, Search};
 use crate::segment_change::SegmentChange;
 use crate::transcript::SrtContent;
 
@@ -157,6 +157,15 @@ pub fn replace_text(
     replacement: Replacement,
 ) -> Result<usize, Failure> {
     announce_after(&app, current.replace_text(field, &replacement))
+}
+
+#[tauri::command]
+pub fn find_text(
+    current: State<'_, CurrentProject>,
+    field: SegmentField,
+    search: Search,
+) -> Result<Vec<TextMatch>, Failure> {
+    current.find_text(field, &search)
 }
 
 #[tauri::command]

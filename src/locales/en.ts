@@ -151,6 +151,14 @@ const en = {
     nothing: "Nothing matched",
     failed: "Nothing replaced",
   },
+  search: {
+    open: "Search",
+    pattern: "Text to find",
+    previous: "Previous",
+    next: "Next",
+    close: "Close search",
+    nothing: "No match",
+  },
   cleanup: {
     action: "Clean Simplified Chinese",
     done: "{{count}} Simplified characters cleaned",
@@ -426,6 +434,9 @@ const en = {
       delete: "Delete Segments",
       replace: "Replace",
       cleanup: "Clean Simplified Chinese",
+      search: "Search",
+      searchNext: "Next match",
+      searchPrevious: "Previous match",
       reload: "Reload",
       following: "Follow playback",
       play: "Play or stop",
@@ -456,6 +467,9 @@ const en = {
       replace: "Text selected in a field is what is looked for",
       cleanup:
         "Cleans the Checked Segments, else the text selected, else the Current Segment",
+      search: "Text selected in a field is what is looked for",
+      searchNext: "Works while the search bar is open, as Enter does in it",
+      searchPrevious: "Works while the search bar is open, as Shift+Enter does in it",
       reload: "Reads the folder again for files changed elsewhere",
       following:
         "Scrolls the list to the Segment being played; works in a text field too",

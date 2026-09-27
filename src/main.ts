@@ -17,6 +17,7 @@ import PreviewController from "./controllers/preview_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
 import ReplacementController from "./controllers/replacement_controller";
+import SearchController from "./controllers/search_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
 import ShortcutsController from "./controllers/shortcuts_controller";
 import SpeakersController from "./controllers/speakers_controller";
@@ -62,6 +63,7 @@ async function start(): Promise<void> {
     project: ProjectController,
     replacement: ReplacementController,
     cleanup: CleanupController,
+    search: SearchController,
     "segment-changes": SegmentChangesController,
     shortcuts: ShortcutsController,
     speakers: SpeakersController,

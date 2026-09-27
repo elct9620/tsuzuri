@@ -27,6 +27,27 @@ export type SegmentChange =
   | { kind: "merge"; first: number; last: number }
   | { kind: "shift"; first: number; last: number; offset_ms: number };
 
+/** What to look for in the texts, read as a replacement's pattern is. */
+export interface Search {
+  pattern: string;
+  is_regex: boolean;
+}
+
+/** Where a Search matches: characters `start` to `end` of the Segment at `index`. */
+export interface TextMatch {
+  index: number;
+  start: number;
+  end: number;
+}
+
+/** Where `search` matches `field` of each Segment of the Current Resource, in order. */
+export function findText(
+  field: "text" | "translation",
+  search: Search,
+): Promise<TextMatch[]> {
+  return invoke<TextMatch[]>("find_text", { field, search });
+}
+
 export const editingPort: EditingPort = {
   editSegment: (index, field: SegmentField, value) =>
     invoke("edit_segment", { index, field, value }),

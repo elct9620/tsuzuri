@@ -166,6 +166,14 @@ Replace every match of a Replacement in the `text` or the `translation` of each 
 pub fn replace_text(app: AppHandle, current: State<'_, CurrentProject>, field: SegmentField, replacement: Replacement) -> Result<usize, Failure> {}
 ```
 
+## `find_text`
+
+Find every match of a Search in the `text` or the `translation` of each Segment of the Current Resource, where a Segment with no translation is passed over, and answer each as the position of its Segment and its characters `start` to `end`, in the order they stand; a match of no characters is left out. The Search's `pattern` is read as a Replacement's is, taken as written unless `is_regex` marks it a regular expression; an empty pattern, or one that cannot be read, is refused as `invalid-pattern`, a `translation` with none shown as `no-translation-shown`, and a `speaker` as `internal`. It changes nothing.
+
+```rust
+pub fn find_text(current: State<'_, CurrentProject>, field: SegmentField, search: Search) -> Result<Vec<TextMatch>, Failure> {}
+```
+
 ## `clean_simplified`
 
 Clean Simplified Chinese out of the `zh-TW` text of the Current Resource within a CleanupScope, as one change in the Undo History written back as `edit_segment` writes the field, and answer how many characters were cleaned. The `zh-TW` text is the original when the Primary Language is `zh-TW`, otherwise the translation shown when it is in `zh-TW`; with neither the cleanup is refused as `no-traditional-chinese`. A scope is `{ "kind": "segments", "indexes": [...] }`, the Segments at those positions, or `{ "kind": "range", "index", "field", "start", "end" }`, characters `start` to `end` of one field of one Segment, refused as `no-traditional-chinese` when that field is not the `zh-TW` text. A position the Segments or the text do not have is refused as `internal`, and a subtitle changed elsewhere or written by a running Mode as `edit_segment` refuses it. With nothing cleaned nothing is written and the answer is 0.

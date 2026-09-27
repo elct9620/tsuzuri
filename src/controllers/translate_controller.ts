@@ -5,7 +5,7 @@ import {
   type ProjectView,
   type ProjectFeed,
 } from "../backend/project";
-import { retranslate, translate } from "../backend/translation";
+import { translateSegments } from "../backend/translation";
 import { t } from "../i18n";
 import { notifyTranslation } from "../ui/notification";
 import type ProgressController from "./progress_controller";
@@ -90,11 +90,13 @@ export default class TranslateController extends Controller {
     progress.begin("translation");
     try {
       const choices = this.translationOptionsOutlet;
-      const translation =
-        this.chosenIndexes === null
-          ? await translate(choices.language, choices.options)
-          : await retranslate(this.chosenIndexes, choices.options);
-      notifyTranslation(translation);
+      notifyTranslation(
+        await translateSegments(
+          choices.language,
+          choices.options,
+          this.chosenIndexes,
+        ),
+      );
       progress.finish();
     } catch (error) {
       progress.fail(error);

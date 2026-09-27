@@ -5,10 +5,11 @@ import {
   type ProjectView,
   type ProjectFeed,
   type SegmentSpan,
+  spanIndexes,
 } from "../backend/project";
 import { modelSettings } from "../backend/toolchain";
 import { transcribe, type TranscriptionScope } from "../backend/transcription";
-import { retranslate, translate } from "../backend/translation";
+import { translateSegments } from "../backend/translation";
 import { t } from "../i18n";
 import { fileName } from "../ui/file_name";
 import { notify, notifyTranslation } from "../ui/notification";
@@ -164,18 +165,17 @@ export default class TranscribeController extends Controller {
    * or within an Audio Window the Segments it wrote again, none when it wrote none.
    */
   private async translateAfterwards(span: SegmentSpan | null): Promise<void> {
+    const isWhole = this.transcriptionScope.kind === "whole";
+    if (!isWhole && span === null) return;
     const choices = this.translationOptionsOutlet;
-    if (this.transcriptionScope.kind === "whole") {
-      this.progressOutlet.begin("translation");
-      notifyTranslation(await translate(choices.language, choices.options));
-    } else if (span !== null) {
-      const indexes = Array.from(
-        { length: span.last - span.first + 1 },
-        (_, at) => span.first + at,
-      );
-      this.progressOutlet.begin("translation");
-      notifyTranslation(await retranslate(indexes, choices.options));
-    }
+    this.progressOutlet.begin("translation");
+    notifyTranslation(
+      await translateSegments(
+        choices.language,
+        choices.options,
+        isWhole || span === null ? null : spanIndexes(span),
+      ),
+    );
   }
 
   showTranslationOptions(): void {

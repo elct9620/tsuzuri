@@ -77,6 +77,14 @@ export interface SegmentSpan {
   last: number;
 }
 
+/** The position of every Segment `span` covers, first to last. */
+export function spanIndexes(span: SegmentSpan): number[] {
+  return Array.from(
+    { length: span.last - span.first + 1 },
+    (_, at) => span.first + at,
+  );
+}
+
 /**
  * A transcription holds every subtitle of its Resource; a translation, the one it writes, or only
  * its Segments at `indexes` while they are translated again.

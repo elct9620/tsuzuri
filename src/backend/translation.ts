@@ -40,6 +40,17 @@ export function retranslate(
   return invoke<Translation>("retranslate", { indexes, options });
 }
 
+/** Translates the whole Current Resource into `target`, or with `indexes` the Segments at them again into the translation shown. */
+export function translateSegments(
+  target: string,
+  options: TranslationOptions,
+  indexes: number[] | null,
+): Promise<Translation> {
+  return indexes === null
+    ? translate(target, options)
+    : retranslate(indexes, options);
+}
+
 export function translationSettings(): Promise<TranslationSettings> {
   return invoke<TranslationSettings>("translation_settings");
 }

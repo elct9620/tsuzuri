@@ -22,6 +22,8 @@ pub struct TranslationSettings {
     pub has_resident_llama: bool,
     /// Seconds the Resident llama-server keeps the Model after a translation ends.
     pub model_keep_seconds: u64,
+    /// Whether a Simplified Cleanup follows a translation into `zh-TW`.
+    pub is_simplified_cleaned: bool,
 }
 
 impl Default for TranslationSettings {
@@ -32,6 +34,7 @@ impl Default for TranslationSettings {
             retries: 3,
             has_resident_llama: true,
             model_keep_seconds: 0,
+            is_simplified_cleaned: true,
         }
     }
 }
@@ -72,6 +75,7 @@ mod tests {
             retries: 2,
             has_resident_llama: false,
             model_keep_seconds: 30,
+            is_simplified_cleaned: false,
         };
 
         settings.save(dir.path()).unwrap();

@@ -358,6 +358,7 @@ describe("ProjectController", () => {
           has_vad: true,
           is_non_speech_suppressed: null,
           is_context_carried: null,
+          is_simplified_cleaned: null,
         },
       },
     });

@@ -25,12 +25,14 @@ export function transcribe(
   return invoke<Transcription>("transcribe", { overwrite, scope });
 }
 
-/** How whisper-cli transcribes beyond the Language and the Model. */
+/** How a transcription runs beyond the Language and the Model. */
 export interface TranscriptionSettings {
   has_vad: boolean;
   is_non_speech_suppressed: boolean;
   /** Whether each window carries the text before it as context. */
   is_context_carried: boolean;
+  /** Whether a Simplified Cleanup follows a transcription in `zh-TW`. */
+  is_simplified_cleaned: boolean;
 }
 
 export function transcriptionSettings(): Promise<TranscriptionSettings> {

@@ -769,3 +769,19 @@ The lines before the chosen ones are what the user already put right, so when th
 | Given | the rolling summary turned on with its word limit left empty |
 | When | the translation is started |
 | Then | nothing is translated and the word limit asks for a number |
+
+## `TL-098` Cleaning Simplified Chinese out of a translation into `zh-TW`
+
+| Step | Statement |
+| --- | --- |
+| Given | translation settings with the cleanup on, and a Model answering `你们好` for a translation into `zh-TW` |
+| When | the Current Resource is translated |
+| Then | its Batch is shown as `你們好`, and the translation file reads `你們好` |
+
+## `TL-099` Leaving a translation as the Model wrote it with the cleanup off
+
+| Step | Statement |
+| --- | --- |
+| Given | translation settings with the cleanup off, and a Model answering `你们好` for a translation into `zh-TW` |
+| When | the Current Resource is translated |
+| Then | the translation file reads `你们好` |

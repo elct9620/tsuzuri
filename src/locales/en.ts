@@ -316,6 +316,11 @@ const en = {
     contextCarried: "Carry context",
     contextCarriedHelp:
       "Transcribes each part with the text before it as context, for more consistent wording; turn it off to keep one mistake from repeating.",
+    simplifiedCleaned: "Clean Simplified",
+    transcriptionCleanedHelp:
+      "When the Primary Language is Traditional Chinese, writes the Simplified characters a transcription leaves in Taiwan's Traditional forms, changing no words.",
+    translationCleanedHelp:
+      "When translating into Traditional Chinese, writes the Simplified characters a translation leaves in Taiwan's Traditional forms, changing no words.",
     followGeneral: "Follow general settings",
     on: "On",
     off: "Off",

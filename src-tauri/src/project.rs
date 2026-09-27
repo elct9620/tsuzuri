@@ -457,6 +457,7 @@ pub struct TranscriptionOverrides {
     pub has_vad: Option<bool>,
     pub is_non_speech_suppressed: Option<bool>,
     pub is_context_carried: Option<bool>,
+    pub is_simplified_cleaned: Option<bool>,
 }
 
 /// Which text a Bilingual SRT puts first in each cue and in its file name.

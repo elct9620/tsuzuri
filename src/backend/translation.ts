@@ -16,6 +16,8 @@ export interface TranslationSettings {
   reference_lines: number;
   has_resident_llama: boolean;
   model_keep_seconds: number;
+  /** Whether a Simplified Cleanup follows a translation into `zh-TW`. */
+  is_simplified_cleaned: boolean;
 }
 
 export interface Translation {

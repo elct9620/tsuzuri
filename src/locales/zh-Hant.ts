@@ -306,6 +306,11 @@ const zhHant: typeof en = {
     contextCarried: "延續上文",
     contextCarriedHelp:
       "轉錄每一段時參考前面已轉錄的文字，用詞較一致；關掉可避免一句錯誤在後面不斷重複。",
+    simplifiedCleaned: "清理簡體",
+    transcriptionCleanedHelp:
+      "主語言是繁體中文時，轉錄後自動清理簡體字，改用台灣繁體；只改字，不換用詞。",
+    translationCleanedHelp:
+      "譯成繁體中文時，翻譯後自動清理簡體字，改用台灣繁體；只改字，不換用詞。",
     followGeneral: "依整體設定",
     on: "開啟",
     off: "關閉",

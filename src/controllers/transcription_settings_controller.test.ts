@@ -26,6 +26,7 @@ describe("TranscriptionSettingsController", () => {
         <input type="checkbox" data-transcription-settings-target="vad" data-action="change->transcription-settings#save">
         <input type="checkbox" data-transcription-settings-target="nonSpeechSuppressed" data-action="change->transcription-settings#save">
         <input type="checkbox" data-transcription-settings-target="contextCarried" data-action="change->transcription-settings#save">
+        <input type="checkbox" data-transcription-settings-target="simplifiedCleaned" data-action="change->transcription-settings#save">
       </div>
     `;
     mockIPC((command, args) => {
@@ -36,6 +37,7 @@ describe("TranscriptionSettingsController", () => {
           has_vad: false,
           is_non_speech_suppressed: false,
           is_context_carried: true,
+          is_simplified_cleaned: true,
         };
       if (command === "save_transcription_settings") {
         savedArgs = args;
@@ -68,6 +70,7 @@ describe("TranscriptionSettingsController", () => {
         has_vad: true,
         is_non_speech_suppressed: false,
         is_context_carried: true,
+        is_simplified_cleaned: true,
       },
     });
   });

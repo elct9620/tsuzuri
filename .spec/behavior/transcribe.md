@@ -462,3 +462,21 @@ The converted audio and whisper-cli's own SRT sit in a directory of the transcri
 | Given | a media file transcribed into a directory of its own |
 | When | the transcription ends, finished or failed |
 | Then | the directory is gone |
+
+## `TX-057` Cleaning Simplified Chinese out of a transcription in `zh-TW`
+
+A speech recognition Model writing Traditional Chinese still leaves Simplified characters behind, so a Simplified Cleanup follows it by default.
+
+| Step | Statement |
+| --- | --- |
+| Given | Transcription Settings with the cleanup on, a Project in `zh-TW`, and whisper-cli writing `这是测试` |
+| When | the Current Resource is transcribed |
+| Then | the Segment is shown as `這是測試` as whisper-cli writes it, and the subtitle reads `這是測試` |
+
+## `TX-058` Leaving a transcription as whisper-cli wrote it with the cleanup off
+
+| Step | Statement |
+| --- | --- |
+| Given | Transcription Settings with the cleanup off, a Project in `zh-TW`, and whisper-cli writing `这是测试` |
+| When | the Current Resource is transcribed |
+| Then | the subtitle reads `这是测试` |

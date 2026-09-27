@@ -28,6 +28,7 @@ describe("TranslationSettingsController", () => {
         <input data-translation-settings-target="referenceLines" data-action="change->translation-settings#save">
         <input type="checkbox" data-translation-settings-target="residentLlama" data-action="change->translation-settings#save">
         <input data-translation-settings-target="modelKeepSeconds" data-action="change->translation-settings#save">
+        <input type="checkbox" data-translation-settings-target="simplifiedCleaned" data-action="change->translation-settings#save">
       </div>
     `;
     mockIPC((command, args) => {
@@ -40,6 +41,7 @@ describe("TranslationSettingsController", () => {
           reference_lines: 2,
           has_resident_llama: true,
           model_keep_seconds: 0,
+          is_simplified_cleaned: true,
         };
       if (command === "save_translation_settings") {
         savedArgs = args;
@@ -71,6 +73,7 @@ describe("TranslationSettingsController", () => {
         reference_lines: 2,
         has_resident_llama: true,
         model_keep_seconds: 0,
+        is_simplified_cleaned: true,
       },
     });
   });

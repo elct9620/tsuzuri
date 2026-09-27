@@ -3,6 +3,8 @@ use std::sync::LazyLock;
 
 use aho_corasick::{AhoCorasick, MatchKind};
 
+use crate::transcript::Segment;
+
 const PHRASES: &str = include_str!("../opencc/STPhrases.txt");
 const CHARACTERS: &str = include_str!("../opencc/STCharacters.txt");
 const TW_VARIANTS: &str = include_str!("../opencc/TWVariants.txt");
@@ -19,6 +21,24 @@ pub fn load_tables() {
 /// characters changed; none when nothing did.
 pub fn clean_text(text: &str) -> Option<(String, usize)> {
     CLEANUP_TABLES.cleaned_text(text)
+}
+
+/// Cleans Simplified Chinese out of the text of each of `segments`.
+pub fn clean_texts(segments: &mut [Segment]) {
+    for segment in segments {
+        if let Some((text, _)) = clean_text(&segment.text) {
+            segment.text = text;
+        }
+    }
+}
+
+/// Cleans Simplified Chinese out of the translation of each of `segments` that has one.
+pub fn clean_translations(segments: &mut [Segment]) {
+    for segment in segments {
+        if let Some((translation, _)) = segment.translation.as_deref().and_then(clean_text) {
+            segment.translation = Some(translation);
+        }
+    }
 }
 
 /// `text` with its characters `start` to `end` cleaned as `clean_text` cleans a text, and how many

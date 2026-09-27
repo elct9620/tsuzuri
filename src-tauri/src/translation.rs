@@ -7,10 +7,11 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
+use crate::cleanup::clean_translations;
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::progress::{enter, Progress};
-use crate::project::{CurrentProject, SegmentSpan, TranslationSource};
+use crate::project::{CurrentProject, Restoration, SegmentSpan, TranslationSource};
 use crate::steps::{ModeRun, StepEvent, Steps};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
@@ -179,7 +180,9 @@ pub async fn run_translate<'a>(
         chosen_indexes: plan.scope.indexes().unwrap_or_default(),
     };
     enter(ports, &mut phases, Phase::Loading);
-    let on_batch = batch_display(ports, project, &source);
+    let is_cleaned =
+        plan.settings.is_simplified_cleaned && plan.target == Language::TraditionalChinese;
+    let on_batch = batch_display(ports, project, &source, is_cleaned);
     let result = match server {
         LlamaServer::Job => {
             translate_on_job_server(
@@ -220,16 +223,33 @@ pub async fn run_translate<'a>(
             result
         }
     };
-    let unmatched_count = match plan.scope.indexes() {
-        None => project.write_translations(&source, plan.target, result?)?,
-        Some(indexes) => project.write_retranslations(&source, plan.target, indexes, result?)?,
-    }
-    .unmatched_count;
+    let unmatched_count =
+        write_translated_segments(project, &source, plan, result?, is_cleaned)?.unmatched_count;
     ports.announce_project();
     Ok(Translation {
         phases: phases.finish(),
         unmatched_count,
     })
+}
+
+/// Writes the Segments translated into `plan.target`, cleaned of Simplified Chinese when
+/// `is_cleaned`: every translation, or those of the chosen Segments when translating them again.
+fn write_translated_segments(
+    project: &CurrentProject,
+    source: &TranslationSource,
+    plan: &TranslationPlan,
+    mut translated_segments: Vec<Segment>,
+    is_cleaned: bool,
+) -> Result<Restoration, Failure> {
+    if is_cleaned {
+        clean_translations(&mut translated_segments);
+    }
+    match plan.scope.indexes() {
+        None => project.write_translations(source, plan.target, translated_segments),
+        Some(indexes) => {
+            project.write_retranslations(source, plan.target, indexes, translated_segments)
+        }
+    }
 }
 
 /// Starts llama-server with `model` for this translation alone, translates once it is ready, and stops it.
@@ -274,15 +294,22 @@ async fn translate_on_job_server(
     result
 }
 
-/// Shows the Segments translated so far on the Resource `source` was taken from, and tells the
-/// webview, so each Batch appears as it finishes.
+/// Shows the Segments translated so far on the Resource `source` was taken from, cleaned of
+/// Simplified Chinese when `is_cleaned`, and tells the webview, so each Batch appears as it finishes.
 fn batch_display<'a>(
     progress: &'a impl Progress,
     project: &'a CurrentProject,
     source: &'a TranslationSource,
+    is_cleaned: bool,
 ) -> impl Fn(&[Segment], Option<SegmentSpan>) + 'a {
     move |translated_segments, pending_batch| {
-        project.show_translations(source, translated_segments);
+        if is_cleaned {
+            let mut cleaned_segments = translated_segments.to_vec();
+            clean_translations(&mut cleaned_segments);
+            project.show_translations(source, &cleaned_segments);
+        } else {
+            project.show_translations(source, translated_segments);
+        }
         project.mark_pending_batch(pending_batch);
         progress.announce_project();
     }
@@ -1554,7 +1581,7 @@ mod tests {
             || false,
             &job_in_batches_of_two(&source.transcript.segments),
             &mut Phases::start("translate", Phase::Loading),
-            batch_display(app.handle(), &current, &source),
+            batch_display(app.handle(), &current, &source, false),
         )
         .await
         .unwrap();
@@ -1598,7 +1625,7 @@ mod tests {
             || false,
             &job_in_batches_of_two(&source.transcript.segments),
             &mut Phases::start("translate", Phase::Loading),
-            batch_display(app.handle(), &current, &source),
+            batch_display(app.handle(), &current, &source, false),
         )
         .await
         .unwrap();
@@ -1866,7 +1893,7 @@ mod tests {
                 || false,
                 &job,
                 &mut phases,
-                batch_display(app.handle(), &current, &source),
+                batch_display(app.handle(), &current, &source, false),
             )),
             cancel_once_shown
         );
@@ -1984,6 +2011,86 @@ mod tests {
                 r#"{"phase":"detect","percent":100,"count":{"done_count":2,"total":2}}"#,
             ]
         );
+    }
+
+    /// A Project in `ja` whose `lecture.srt` holds one Segment, translated into `zh-TW` by a
+    /// Model answering 你们好, as the translation file then reads with the cleanup on or off.
+    async fn translation_file_into_traditional_chinese(name: &str, is_cleaned: bool) -> String {
+        let llama = FakeLlama::with_answer(|lines| {
+            lines
+                .into_iter()
+                .map(|(index, _)| (index, "你们好".to_string()))
+                .collect()
+        });
+        let dir = TempDir::new(name);
+        std::fs::write(
+            dir.path().join("lecture.srt"),
+            "1\n00:00:00,000 --> 00:00:01,000\nこんにちは\n",
+        )
+        .unwrap();
+        let project = CurrentProject::default();
+        project.replace(Project::open(dir.path().to_path_buf(), Language::Japanese).unwrap());
+        let source = project.snapshot().unwrap();
+        let translated_segments = translate_segments(
+            &llama.model(),
+            &job(&source.transcript.segments),
+            &[],
+            |_, _| {},
+        )
+        .await
+        .unwrap();
+
+        write_translated_segments(
+            &project,
+            &source,
+            &plan_for(Language::TraditionalChinese),
+            translated_segments,
+            is_cleaned,
+        )
+        .unwrap();
+        std::fs::read_to_string(dir.path().join("lecture.zh-TW.srt")).unwrap()
+    }
+
+    // @behavior TL-098
+    #[tokio::test]
+    async fn writes_a_translation_into_traditional_chinese_cleaned() {
+        let file = translation_file_into_traditional_chinese("tl-clean-write", true).await;
+
+        assert!(file.contains("你們好"), "{file}");
+    }
+
+    // @behavior TL-098
+    #[test]
+    fn shows_a_batch_into_traditional_chinese_cleaned() {
+        let app = mock_app();
+        let current = app.state::<CurrentProject>();
+        current.replace(project_of(vec![segment(0, 1_000, "こんにちは")]));
+        let source = current.snapshot().unwrap();
+        let _hold = current.hold_resource(
+            &source.directory,
+            &source.name,
+            RunningMode::Translation {
+                language: Language::TraditionalChinese,
+                indexes: None,
+            },
+        );
+        let mut translated = segment(0, 1_000, "こんにちは");
+        translated.translation = Some("你们好".to_string());
+
+        batch_display(app.handle(), &current, &source, true)(&[translated], None);
+
+        assert_eq!(
+            current.view().unwrap().segments()[0].translation.as_deref(),
+            Some("你們好")
+        );
+    }
+
+    // @behavior TL-099
+    #[tokio::test]
+    async fn leaves_a_translation_as_the_model_wrote_it_with_the_cleanup_off() {
+        let file = translation_file_into_traditional_chinese("tl-clean-off", false).await;
+
+        assert!(file.contains("你们好"), "{file}");
     }
 
     // @behavior TL-010

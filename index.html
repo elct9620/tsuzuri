@@ -1383,6 +1383,30 @@
                         <option value="off" data-i18n="settings.off"></option>
                       </select>
                     </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.simplifiedCleaned"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.projectTranscriptionHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <select
+                        class="select select-sm w-auto"
+                        data-project-target="transcriptionSetting"
+                        data-setting="is_simplified_cleaned"
+                        data-action="change->project#setOptions"
+                      >
+                        <option
+                          value=""
+                          data-i18n="settings.followGeneral"
+                        ></option>
+                        <option value="on" data-i18n="settings.on"></option>
+                        <option value="off" data-i18n="settings.off"></option>
+                      </select>
+                    </li>
                   </ul>
                 </fieldset>
                 <fieldset class="fieldset text-sm">
@@ -1694,6 +1718,23 @@
                         <span data-i18n="settings.seconds"></span>
                       </label>
                     </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.simplifiedCleaned"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.translationCleanedHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        class="toggle"
+                        data-translation-settings-target="simplifiedCleaned"
+                        data-action="change->translation-settings#save"
+                      />
+                    </li>
                   </ul>
                 </fieldset>
 
@@ -1754,6 +1795,23 @@
                         type="checkbox"
                         class="toggle"
                         data-transcription-settings-target="contextCarried"
+                        data-action="change->transcription-settings#save"
+                      />
+                    </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.simplifiedCleaned"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.transcriptionCleanedHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        class="toggle"
+                        data-transcription-settings-target="simplifiedCleaned"
                         data-action="change->transcription-settings#save"
                       />
                     </li>

@@ -9,8 +9,9 @@ use crate::project::TranscriptionOverrides;
 
 const SETTINGS_FILE: &str = "transcription.json";
 
-/// How whisper-cli transcribes beyond the Language and the Model, saved across launches as the
-/// default of every Project. The defaults leave whisper-cli as it behaves on its own.
+/// How a transcription runs beyond the Language and the Model, saved across launches as the default
+/// of every Project. The defaults leave whisper-cli as it behaves on its own and clean what it
+/// writes in `zh-TW`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TranscriptionSettings {
@@ -19,6 +20,8 @@ pub struct TranscriptionSettings {
     pub is_non_speech_suppressed: bool,
     /// Whether each window carries the text before it as context, which can repeat a mistake.
     pub is_context_carried: bool,
+    /// Whether a Simplified Cleanup follows a transcription in `zh-TW`.
+    pub is_simplified_cleaned: bool,
 }
 
 impl Default for TranscriptionSettings {
@@ -27,6 +30,7 @@ impl Default for TranscriptionSettings {
             has_vad: false,
             is_non_speech_suppressed: false,
             is_context_carried: true,
+            is_simplified_cleaned: true,
         }
     }
 }
@@ -42,6 +46,9 @@ impl TranscriptionSettings {
             is_context_carried: overrides
                 .is_context_carried
                 .unwrap_or(self.is_context_carried),
+            is_simplified_cleaned: overrides
+                .is_simplified_cleaned
+                .unwrap_or(self.is_simplified_cleaned),
         }
     }
 
@@ -104,6 +111,7 @@ mod tests {
                 has_vad: true,
                 is_non_speech_suppressed: true,
                 is_context_carried: false,
+                is_simplified_cleaned: true,
             }
         );
     }

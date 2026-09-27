@@ -15,6 +15,7 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
         has_vad: null,
         is_non_speech_suppressed: null,
         is_context_carried: null,
+        is_simplified_cleaned: null,
       },
     },
     translation_glossary: null,

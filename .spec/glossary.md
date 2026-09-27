@@ -192,7 +192,7 @@ Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli) 
 
 ### Transcription Settings
 
-How whisper-cli transcribes beyond the Language and the Model: whether VAD runs first, whether non-speech tokens are suppressed, and whether each window carries the text before it as context. The general settings hold their defaults, which leave whisper-cli as it behaves on its own; a Project may set any of them for itself and follows the general settings in the rest.
+How a transcription runs beyond the Language and the Model: whether VAD runs first, whether non-speech tokens are suppressed, whether each window carries the text before it as context, and whether a Simplified Cleanup follows a transcription in `zh-TW`. The general settings hold their defaults, which leave whisper-cli as it behaves on its own and clean what it writes; a Project may set any of them for itself and follows the general settings in the rest.
 
 ### VAD
 

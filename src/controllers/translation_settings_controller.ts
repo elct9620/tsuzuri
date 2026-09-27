@@ -14,6 +14,7 @@ export default class TranslationSettingsController extends Controller {
     "referenceLines",
     "residentLlama",
     "modelKeepSeconds",
+    "simplifiedCleaned",
   ];
 
   declare readonly batchSizeTarget: HTMLInputElement;
@@ -21,6 +22,7 @@ export default class TranslationSettingsController extends Controller {
   declare readonly referenceLinesTarget: HTMLInputElement;
   declare readonly residentLlamaTarget: HTMLInputElement;
   declare readonly modelKeepSecondsTarget: HTMLInputElement;
+  declare readonly simplifiedCleanedTarget: HTMLInputElement;
 
   async connect(): Promise<void> {
     try {
@@ -37,6 +39,7 @@ export default class TranslationSettingsController extends Controller {
       reference_lines: Number(this.referenceLinesTarget.value),
       has_resident_llama: this.residentLlamaTarget.checked,
       model_keep_seconds: Number(this.modelKeepSecondsTarget.value),
+      is_simplified_cleaned: this.simplifiedCleanedTarget.checked,
     };
     try {
       this.show(await saveTranslationSettings(settings));
@@ -53,5 +56,6 @@ export default class TranslationSettingsController extends Controller {
     // The Model is only kept by the Resident llama-server.
     this.modelKeepSecondsTarget.disabled = !settings.has_resident_llama;
     this.modelKeepSecondsTarget.value = String(settings.model_keep_seconds);
+    this.simplifiedCleanedTarget.checked = settings.is_simplified_cleaned;
   }
 }

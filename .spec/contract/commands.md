@@ -56,7 +56,7 @@ pub async fn transcribe(app: AppHandle, current: State<'_, CurrentProject>, mode
 
 ## `transcription_settings`
 
-The general Transcription Settings: whether VAD runs, whether non-speech tokens are suppressed, and whether each window carries the text before it as context.
+The general Transcription Settings: whether VAD runs, whether non-speech tokens are suppressed, whether each window carries the text before it as context, and whether a Simplified Cleanup follows a transcription in `zh-TW`.
 
 ```rust
 pub fn transcription_settings(app: AppHandle) -> Result<TranscriptionSettings, Failure> {}
@@ -280,7 +280,7 @@ pub fn export_path(current: State<'_, CurrentProject>, content: SrtContent) -> R
 
 ## `translation_settings`
 
-The saved translation settings: Batch size, retries before a failing group is split, and reference lines.
+The saved translation settings: Batch size, retries before a failing group is split, reference lines, whether translations run on the Resident llama-server and how many seconds it keeps the Model after one, and whether a Simplified Cleanup follows a translation into `zh-TW`.
 
 ```rust
 pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failure> {}
@@ -288,7 +288,7 @@ pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failu
 
 ## `save_translation_settings`
 
-Save the translation settings, each raised to at least one, and answer them as saved.
+Save the translation settings, with the Batch size, retries and reference lines each raised to at least one, and answer them as saved.
 
 ```rust
 pub async fn save_translation_settings(app: AppHandle, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, resident: State<'_, ResidentLlama>, settings: TranslationSettings) -> Result<TranslationSettings, Failure> {}

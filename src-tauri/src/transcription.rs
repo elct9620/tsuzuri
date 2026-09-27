@@ -3,14 +3,16 @@ use std::time::Instant;
 
 use serde::Serialize;
 
+use crate::cleanup::clean_texts;
 use crate::failure::Failure;
+use crate::language::Language;
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, RunningMode, SegmentSpan, TranscriptionTarget};
 use crate::steps::{run_step, ModeRun, Steps};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
-use crate::transcript::Transcript;
+use crate::transcript::{SrtContent, Transcript};
 
 pub mod commands;
 pub mod settings;
@@ -61,6 +63,7 @@ pub async fn run_transcribe<'a>(
         .clone()
         .with_project_model(ModelSlot::Transcription, job.model.clone());
     let settings = settings.with_overrides(job.overrides);
+    let is_cleaned = settings.is_simplified_cleaned && job.language == Language::TraditionalChinese;
     let plan = TranscriptionPlan {
         model: models.ready_path(ModelSlot::Transcription)?,
         vad: settings
@@ -104,7 +107,10 @@ pub async fn run_transcribe<'a>(
             }
         },
         |line| {
-            if let Some(segment) = whisper::segment(line) {
+            if let Some(mut segment) = whisper::segment(line) {
+                if is_cleaned {
+                    clean_texts(std::slice::from_mut(&mut segment));
+                }
                 project.push_segment(match job.window {
                     Some(window) => window.segment_in_media(segment),
                     None => segment,
@@ -116,9 +122,13 @@ pub async fn run_transcribe<'a>(
     .await?;
     let transcribe_seconds = start.elapsed().as_secs_f64();
 
-    let srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
+    let mut srt = std::fs::read_to_string(srt_prefix.with_extension("srt"))?;
     // What whisper-cli wrote must read as a Transcript before it replaces the subtitle.
-    Transcript::from_srt(&srt)?;
+    let mut transcript = Transcript::from_srt(&srt)?;
+    if is_cleaned {
+        clean_texts(&mut transcript.segments);
+        srt = transcript.to_srt(SrtContent::Original);
+    }
     let written_span = project.write_transcription(job, srt)?;
     ports.announce_project();
     Ok(Transcription {
@@ -156,16 +166,22 @@ mod tests {
         "#!/bin/sh\necho 'Invalid data found when processing input' >&2\nexit 1\n";
 
     fn whisper_script(started_marker: &Path) -> String {
+        whisper_script_writing(started_marker, "大家好")
+    }
+
+    /// A whisper-cli writing `first_text` as its first cue, and 今天天氣很好 after it.
+    fn whisper_script_writing(started_marker: &Path, first_text: &str) -> String {
         format!(
             "#!/bin/sh\ntouch '{0}'\necho \"$@\" > '{0}.args'\nwhile [ $# -gt 0 ]; do case \"$1\" in -of) of=\"$2\"; shift;; esac; shift; done\n\
              echo 'whisper_model_load: model size = 1 MB' >&2\n\
              echo \"main: processing '$of.wav' (32000 samples, 2.0 sec)\" >&2\n\
-             echo '[00:00:00.000 --> 00:00:01.000]  大家好'\n\
+             echo '[00:00:00.000 --> 00:00:01.000]  {1}'\n\
              while [ -e '{0}.hold' ]; do sleep 0.02; done\n\
              echo 'whisper_print_progress_callback: progress = 50%' >&2\n\
              echo 'whisper_print_progress_callback: progress = 100%' >&2\n\
-             printf '1\\n00:00:00,000 --> 00:00:01,000\\n大家好\\n\\n2\\n00:00:01,000 --> 00:00:02,000\\n今天天氣很好\\n' > \"$of.srt\"\n",
-            started_marker.display()
+             printf '1\\n00:00:00,000 --> 00:00:01,000\\n{1}\\n\\n2\\n00:00:01,000 --> 00:00:02,000\\n今天天氣很好\\n' > \"$of.srt\"\n",
+            started_marker.display(),
+            first_text
         )
     }
 
@@ -201,6 +217,37 @@ mod tests {
                 transcription: TranscriptionSettings::default(),
                 whisper_started,
             }
+        }
+
+        /// This fixture with whisper-cli writing `first_text` as its first cue.
+        fn with_whisper_writing(self, first_text: &str) -> Fixture {
+            write_executable(
+                &self.tools.whisper,
+                &whisper_script_writing(&self.whisper_started, first_text),
+            );
+            self
+        }
+
+        /// Transcribes in `zh-TW`, answering the Segments shown once whisper-cli writes its first.
+        async fn segments_shown_while_transcribing(&self) -> Vec<(u64, String)> {
+            let target = self.target_in(Language::TraditionalChinese);
+            let hold = self.whisper_started.with_extension("hold");
+            std::fs::write(&hold, b"").unwrap();
+            let watch = async {
+                for _ in 0..250 {
+                    let shown = segment_starts(self.project().view().unwrap().segments());
+                    if !shown.is_empty() {
+                        std::fs::remove_file(&hold).unwrap();
+                        return shown;
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+                }
+                std::fs::remove_file(&hold).unwrap();
+                Vec::new()
+            };
+            let (result, shown) = tokio::join!(self.run(&target), watch);
+            result.unwrap();
+            shown
         }
 
         fn project(&self) -> tauri::State<'_, CurrentProject> {
@@ -760,6 +807,39 @@ mod tests {
                 (10_000, "三".to_string()),
             ]
         );
+    }
+
+    // @behavior TX-057
+    #[tokio::test]
+    async fn cleans_simplified_chinese_out_of_a_transcription_in_traditional_chinese() {
+        let fixture = Fixture::new("tx-clean", TWO_SECOND_WAV).with_whisper_writing("这是测试");
+
+        let shown = fixture.segments_shown_while_transcribing().await;
+
+        assert_eq!(shown, [(0, "這是測試".to_string())]);
+        assert_eq!(fixture.subtitle_segments()[0], (0, "這是測試".to_string()));
+    }
+
+    // @behavior TX-058
+    #[tokio::test]
+    async fn leaves_a_transcription_as_whisper_wrote_it_with_the_cleanup_off() {
+        let mut fixture =
+            Fixture::new("tx-clean-off", TWO_SECOND_WAV).with_whisper_writing("这是测试");
+        fixture.transcription.is_simplified_cleaned = false;
+
+        fixture.transcribe().await.unwrap();
+
+        assert_eq!(fixture.subtitle_segments()[0], (0, "这是测试".to_string()));
+    }
+
+    #[tokio::test]
+    async fn leaves_a_transcription_in_another_language_as_whisper_wrote_it() {
+        let fixture = Fixture::new("tx-clean-ja", TWO_SECOND_WAV).with_whisper_writing("这是测试");
+        let target = fixture.target_in(Language::Japanese);
+
+        fixture.run(&target).await.unwrap();
+
+        assert_eq!(fixture.subtitle_segments()[0], (0, "这是测试".to_string()));
     }
 
     // @behavior TX-046

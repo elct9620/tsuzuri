@@ -182,13 +182,23 @@ Digits fill a time from its milliseconds up, as editing software takes a timecod
 | When | its start is changed to `500` |
 | Then | the Project is asked to change its times to 0.5 to 1 second |
 
-## `ED-109` Refusing a time past its part's range
+## `ED-109` Carrying a time past its part's range
+
+A part past its range carries into the part above it, as Aegisub reads a time, so a digit typed over any part still gives a time.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project in the panel |
-| When | a Segment's start is changed to `00:75:00.000` |
-| Then | a Notification says the time cannot be read and nothing is changed |
+| Given | a Project in the panel whose first Segment runs from 0 to 1 second |
+| When | its end is changed to `00:00:75.000` |
+| Then | the Project is asked to change its times to 0 to 75 seconds |
+
+## `ED-145` Holding a time within the longest one written
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment runs from 0 to 1 second |
+| When | its end is changed to `99:99:99.999` |
+| Then | the Project is asked to change its end to `99:59:59.999` |
 
 ## `ED-110` Choosing a part of a time by clicking it
 

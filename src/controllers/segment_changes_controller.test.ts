@@ -159,17 +159,30 @@ describe("SegmentChangesController", () => {
   });
 
   // @behavior ED-109
-  it("refuses a time past its part's range", async () => {
+  it("carries a part of a time past its range into the part above", async () => {
     await hold(threeSegments);
-    const start = row(0).querySelector<HTMLInputElement>("input.start")!;
+    const end = row(0).querySelector<HTMLInputElement>("input.end")!;
 
-    start.value = "00:75:00.000";
-    start.dispatchEvent(new Event("change"));
+    end.value = "00:00:75.000";
+    end.dispatchEvent(new Event("change"));
     await settle();
 
-    expect([changes, notifications()]).toEqual([
-      [],
-      ["時間要寫成 00:00:01.000 的格式"],
+    expect(changes).toEqual([
+      { kind: "times", index: 0, start_ms: 0, end_ms: 75_000 },
+    ]);
+  });
+
+  // @behavior ED-145
+  it("holds a time within the longest one written", async () => {
+    await hold(threeSegments);
+    const end = row(0).querySelector<HTMLInputElement>("input.end")!;
+
+    end.value = "99:99:99.999";
+    end.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(changes).toEqual([
+      { kind: "times", index: 0, start_ms: 0, end_ms: 359_999_999 },
     ]);
   });
 

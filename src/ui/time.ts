@@ -9,10 +9,14 @@ export function formatTime(ms: number): string {
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(ms % 1000, 3)}`;
 }
 
+/** The longest time the editor writes: `99:59:59.999`. */
+const LONGEST_MS = 100 * 3_600_000 - 1;
+
 /**
  * The milliseconds of a time typed as `HH:MM:SS.mmm`, `MM:SS.mmm` or `SS.mmm`, a comma standing
  * for the dot as SRT writes it, or as digits alone filling `HHMMSSmmm` from the right, or none
- * for text that is not a time.
+ * for text that is not a time. A part past its range carries into the part above, as Aegisub
+ * reads a time, and the whole is held within `LONGEST_MS`.
  */
 export function parseTime(text: string): number | null {
   const match = /^(?:(?:(\d+):)?(\d{1,2}):)?(\d{1,2})(?:[.,](\d{1,3}))?$/.exec(
@@ -20,12 +24,12 @@ export function parseTime(text: string): number | null {
   );
   if (!match) return null;
   const [, hours = "0", minutes = "0", seconds, fraction = "0"] = match;
-  if (Number(minutes) > 59 || Number(seconds) > 59) return null;
-  return (
+  return Math.min(
     Number(hours) * 3_600_000 +
-    Number(minutes) * 60_000 +
-    Number(seconds) * 1000 +
-    Number(fraction.padEnd(3, "0"))
+      Number(minutes) * 60_000 +
+      Number(seconds) * 1000 +
+      Number(fraction.padEnd(3, "0")),
+    LONGEST_MS,
   );
 }
 

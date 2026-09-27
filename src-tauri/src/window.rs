@@ -9,6 +9,8 @@ use tauri::{
 };
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
+use crate::json_settings;
+
 /// The label of the window the main window's page opens for the Preview's video.
 pub const VIDEO_WINDOW: &str = "video";
 
@@ -168,8 +170,7 @@ pub fn video_window_place(
 fn save_and_read_video_window_place<R: Runtime>(app: &AppHandle<R>) -> Option<WindowPlace> {
     app.save_window_state(StateFlags::all()).ok()?;
     let path = app.path().app_config_dir().ok()?.join(app.filename());
-    let places: HashMap<String, WindowPlace> =
-        serde_json::from_slice(&std::fs::read(path).ok()?).ok()?;
+    let places: HashMap<String, WindowPlace> = json_settings::settings_at(&path).ok()?;
     places.get(VIDEO_WINDOW).copied()
 }
 

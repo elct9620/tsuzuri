@@ -2,7 +2,8 @@
  * The webview's Composition Root: one Project feed and one editing session, handed to each controller
  * as it is registered. The session reads each Project before any controller does and tells of the
  * Cursor only after all of them have drawn it, as the page's `editor:cursor`, `editor:choice` and
- * `editor:checks`; the other Rust events reach the page as `rust:<name>`.
+ * `editor:checks`; the other Rust events reach the page as `rust:<name>`, and the system turning
+ * to a light or dark theme as `system:color-scheme`.
  */
 
 import type { Application, ControllerConstructor } from "@hotwired/stimulus";
@@ -26,6 +27,15 @@ export interface Assembly extends Dependencies {
   start(): Promise<UnlistenFn>;
 }
 
+/** Tells the page, as `system:color-scheme`, each time the system turns to a light or dark theme. */
+function relayColorScheme(): UnlistenFn {
+  const darkScheme = matchMedia("(prefers-color-scheme: dark)");
+  const tell = () =>
+    window.dispatchEvent(new CustomEvent("system:color-scheme"));
+  darkScheme.addEventListener("change", tell);
+  return () => darkScheme.removeEventListener("change", tell);
+}
+
 export function assemble(
   application: Application,
   controllers: Record<string, ControllerConstructor>,
@@ -47,9 +57,11 @@ export function assemble(
     );
   const start = async () => {
     const unrelay = await relayEvents();
+    const unrelayScheme = relayColorScheme();
     const unfollow = await feed.start();
     return () => {
       unfollow();
+      unrelayScheme();
       unrelay();
     };
   };

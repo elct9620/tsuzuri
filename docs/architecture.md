@@ -486,6 +486,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
   |-- feed -> session.follow -> 各 controller -> session.announce
   |-- session.onChange -> window 的 editor:cursor、editor:choice、editor:checks
   |-- start() -> relayEvents：Rust 事件 -> window 的 rust:<事件名稱>
+  |-- start() -> 系統換深淺色 -> window 的 system:color-scheme
   +-- application.register(名稱, class extends X { session, feed })
 ```
 

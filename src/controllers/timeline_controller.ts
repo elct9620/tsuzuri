@@ -194,10 +194,6 @@ export default class TimelineController extends Controller {
   private lastTime: number | null = null;
   /** The player, kept from `connect`, as the Video Window takes it out of the controller's element. */
   private player!: HTMLMediaElement;
-  /** The system's choice of a dark theme, which the page's colours follow. */
-  private readonly darkScheme = matchMedia("(prefers-color-scheme: dark)");
-  private readonly repaintWaveform = () =>
-    this.surfer?.setOptions(this.waveformColors());
 
   connect(): void {
     this.player = this.mediaTarget;
@@ -208,11 +204,14 @@ export default class TimelineController extends Controller {
     this.showSnapping();
     this.showPlayingAlone();
     this.unfollow = this.feed.follow((project) => this.show(project));
-    this.darkScheme.addEventListener("change", this.repaintWaveform);
+  }
+
+  /** Paints the Waveform in the colours of the theme the system turned to; bound to `system:color-scheme`. */
+  repaintWaveform(): void {
+    this.surfer?.setOptions(this.waveformColors());
   }
 
   disconnect(): void {
-    this.darkScheme.removeEventListener("change", this.repaintWaveform);
     this.unfollow?.();
     this.waveformRequest = undefined;
     this.surfer?.destroy();

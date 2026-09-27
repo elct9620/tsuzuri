@@ -67,7 +67,7 @@ describe("SegmentChangesController", () => {
     refusal = null;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <section data-controller="transcript segment-changes" data-action="editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing rust:edit-command@window->segment-changes#applyEditCommand">
+      <section data-controller="transcript segment-changes" data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing rust:edit-command@window->segment-changes#applyEditCommand">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="emptyHint"></p>
@@ -587,6 +587,21 @@ describe("SegmentChangesController", () => {
         field(0).dataset.cursor,
         field(0).hasAttribute("data-has-kept-cursor"),
       ]).toEqual(["2", true]);
+    });
+
+    // @behavior ED-117
+    it("follows the selection as it moves in a text", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+      const range = document.createRange();
+      range.setStart(field(0).firstChild!, 3);
+      document.getSelection()!.removeAllRanges();
+      document.getSelection()!.addRange(range);
+
+      document.dispatchEvent(new Event("selectionchange"));
+      await settle();
+
+      expect(field(0).dataset.cursor).toBe("3");
     });
 
     // @behavior ED-116

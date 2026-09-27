@@ -166,7 +166,7 @@ describe("Current Segment", () => {
     );
     document.body.innerHTML = `
       <main data-controller="transcript"
-        data-action="editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
+        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
         <div data-controller="preview timeline"
           data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playOrStop:!control:prevent">
           <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>

@@ -65,7 +65,7 @@ export default class FieldController extends Controller<HTMLElement> {
     );
   }
 
-  /** Follows the selection while the field has focus, as it moves or text is typed. */
+  /** Follows the selection while the field has focus, as the transcript hands it each change. */
   select(): void {
     if (document.activeElement !== this.element) return;
     const range = fieldSelection(this.element);

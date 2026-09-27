@@ -552,6 +552,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `project:select` | `project` | 字幕編輯顯示 skeleton |
 | `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
 | `transcript:shown` | 字幕編輯 | `segment-changes` 顯示入口 |
+| `transcript:selection` | 字幕編輯 | 焦點欄位跟上選取 |
 | `versions` outlet | `comparison` | 開啟版本 dialog |
 | `versions:compare-with` | `versions` | `comparison` 換對照 |
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |

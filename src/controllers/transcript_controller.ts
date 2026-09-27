@@ -53,7 +53,7 @@ function editor(index: number, field: CursorField, value: string): HTMLElement {
   element.dataset.field = field;
   element.dataset.controller = "field";
   element.dataset.action =
-    "focus->field#enter selectionchange@document->field#select compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#enterNext:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent keydown.esc->field#revert:!composing:prevent blur->field#leave";
+    "focus->field#enter transcript:selection->field#select compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#enterNext:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent keydown.esc->field#revert:!composing:prevent blur->field#leave";
   if (field === "text") element.dataset.action += ` ${SPLIT_SHORTCUTS}`;
   return element;
 }
@@ -345,6 +345,16 @@ export default class TranscriptController extends Controller {
       placeSelection(field, caret);
     }
     this.drawCursor();
+  }
+
+  /**
+   * Hands a selection change to the text that has focus; bound once on the document, as each
+   * change reaches every listener there and a row drawn with its time fields reports one each.
+   */
+  followSelection(): void {
+    const field = document.activeElement;
+    if (isField(field) && this.listTarget.contains(field))
+      this.dispatch("selection", { target: field, bubbles: false });
   }
 
   /** Checks the rows of the Checked Segments and no others. */

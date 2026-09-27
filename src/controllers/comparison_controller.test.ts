@@ -148,7 +148,7 @@ describe("ComparisonController", () => {
     ];
     document.body.innerHTML = `
       <main data-controller="transcript comparison"
-        data-action="transcript:shown->comparison#mark versions:compare-with->comparison#compareWith">
+        data-action="selectionchange@document->transcript#followSelection transcript:shown->comparison#mark versions:compare-with->comparison#compareWith">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <div data-comparison-target="menu"></div>

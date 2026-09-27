@@ -654,6 +654,14 @@ The document holds one selection, which a click elsewhere moves away, so the Cur
 | When | focus moves to the first Segment's menu |
 | Then | the Cursor is still after the second character of that text |
 
+## `ED-117` Following the selection as it moves in a text
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered with the Cursor after its second character |
+| When | the selection moves after its third character |
+| Then | the drawn caret stands after the third character |
+
 ## `ED-116` Telling of the Cursor only when it moves
 
 Chromium reports a selection change for each time field a row is drawn with, so one leaving the Cursor in place tells nobody.

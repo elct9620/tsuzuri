@@ -97,7 +97,7 @@ describe("TranscriptController", () => {
       ${NOTIFICATION_STACK}
       ${SAVE_MARK}
       <section data-controller="transcript speakers"
-        data-action="progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->speakers#follow">
+        data-action="selectionchange@document->transcript#followSelection progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->speakers#follow">
         <div id="progress" data-controller="progress" hidden>
           <span data-progress-target="summary"></span>
           <ul data-progress-target="steps"></ul>

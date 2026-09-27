@@ -47,7 +47,7 @@ describe("ReplacementController", () => {
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
       <section data-controller="transcript replacement"
-        data-action="editor:cursor@window->transcript#showCursor keydown@window->replacement#openByShortcut">
+        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor keydown@window->replacement#openByShortcut">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="emptyHint"></p>

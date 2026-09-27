@@ -516,7 +516,7 @@ describe("TranscribeController", () => {
       document.body.insertAdjacentHTML(
         "afterbegin",
         `<section data-controller="transcript segment-changes"
-          data-action="transcript:shown->segment-changes#followTasks editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
+          data-action="selectionchange@document->transcript#followSelection transcript:shown->segment-changes#followTasks editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
           <h2 data-transcript-target="heading"></h2>
           <select data-transcript-target="translationLanguage"></select>
           <p data-transcript-target="emptyHint"></p>

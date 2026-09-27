@@ -62,6 +62,16 @@ pub enum TranslationScope {
     Segments(Vec<usize>),
 }
 
+impl TranslationScope {
+    /// The positions of the Segments translated again, or none for every Segment.
+    fn indexes(&self) -> Option<&[usize]> {
+        match self {
+            TranslationScope::Whole => None,
+            TranslationScope::Segments(indexes) => Some(indexes),
+        }
+    }
+}
+
 /// Lines on either side of chosen Segments shown for context: before them translated, after them
 /// as source text.
 const CONTEXT_LINES: usize = 3;
@@ -81,6 +91,16 @@ struct TranslationJob<'a> {
     has_speaker_labels: bool,
     /// The positions of the Segments translated again, or none for every Segment.
     chosen_indexes: &'a [usize],
+}
+
+impl TranslationJob<'_> {
+    /// `text` as the Model is sent it: its Speaker Labels kept apart when they are to be.
+    fn labelled_text(&self, text: &str) -> LabelledText {
+        match self.has_speaker_labels {
+            true => LabelledText::split_labels(text),
+            false => LabelledText::new(text),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -132,13 +152,8 @@ pub async fn run_translate<'a>(
     ready_timeout: Duration,
     mut phases: Phases,
 ) -> Result<Translation, Failure> {
-    let (source, hold) = project.hold_for_translation(
-        plan.target,
-        match &plan.scope {
-            TranslationScope::Whole => None,
-            TranslationScope::Segments(indexes) => Some(indexes.clone()),
-        },
-    )?;
+    let (source, hold) =
+        project.hold_for_translation(plan.target, plan.scope.indexes().map(<[usize]>::to_vec))?;
     run.keep(hold);
     let model_settings = model_settings
         .clone()
@@ -160,10 +175,7 @@ pub async fn run_translate<'a>(
         has_self_review: plan.options.has_self_review,
         summary_word_limit: plan.options.summary_word_limit,
         glossary_terms: &glossary_terms,
-        chosen_indexes: match &plan.scope {
-            TranslationScope::Whole => &[],
-            TranslationScope::Segments(indexes) => indexes,
-        },
+        chosen_indexes: plan.scope.indexes().unwrap_or_default(),
     };
     enter(ports, &mut phases, Phase::Load);
     let on_batch = batch_display(ports, project, &source);
@@ -207,11 +219,9 @@ pub async fn run_translate<'a>(
             result
         }
     };
-    let unmatched_count = match &plan.scope {
-        TranslationScope::Whole => project.write_translations(&source, plan.target, result?)?,
-        TranslationScope::Segments(indexes) => {
-            project.write_retranslations(&source, plan.target, indexes, result?)?
-        }
+    let unmatched_count = match plan.scope.indexes() {
+        None => project.write_translations(&source, plan.target, result?)?,
+        Some(indexes) => project.write_retranslations(&source, plan.target, indexes, result?)?,
     }
     .unmatched_count;
     ports.announce_project();
@@ -342,13 +352,11 @@ async fn find_split_sentences(
     job: &TranslationJob<'_>,
     on_progress: impl Fn(usize, usize),
 ) -> Vec<Vec<usize>> {
-    let search_range = match job.chosen_indexes {
-        [] => 0..job.segments.len(),
-        [first, .., last] | [first @ last] => {
-            first.saturating_sub(job.settings.batch_size)
-                ..(last + 1 + job.settings.batch_size).min(job.segments.len())
-        }
-    };
+    let search_range = batching::search_range(
+        job.segments.len(),
+        job.settings.batch_size,
+        job.chosen_indexes,
+    );
     let windows = batching::windows(search_range.len(), job.settings.batch_size);
     let mut split_sentences = Vec::new();
     for (done, window) in windows.iter().enumerate() {
@@ -415,13 +423,7 @@ async fn translate_chosen_segments(
     let (first, last) = (indexes[0], indexes[indexes.len() - 1]);
     let labelled_texts: Vec<LabelledText> = indexes
         .iter()
-        .map(|index| {
-            let text = &job.segments[*index].text;
-            match job.has_speaker_labels {
-                true => LabelledText::split_labels(text),
-                false => LabelledText::new(text),
-            }
-        })
+        .map(|index| job.labelled_text(&job.segments[*index].text))
         .collect();
     let mut translated_pairs: Vec<(String, String)> = job.segments[..first]
         .iter()
@@ -440,15 +442,7 @@ async fn translate_chosen_segments(
         .map(|segment| segment.text.as_str())
         .collect();
     let following_text = (!following_lines.is_empty()).then(|| following_lines.join(" "));
-    let chosen_sentences: Vec<Vec<usize>> = split_sentences
-        .iter()
-        .map(|sentence| {
-            sentence
-                .iter()
-                .filter_map(|index| indexes.binary_search(index).ok())
-                .collect()
-        })
-        .collect();
+    let chosen_sentences = batching::chosen_sentences(split_sentences, indexes);
     let ranges = batching::batches(indexes.len(), job.settings.batch_size, &chosen_sentences);
     let span_at = |at: usize| {
         ranges.get(at).map(|range| SegmentSpan {
@@ -522,10 +516,7 @@ async fn translate_segments(
     let labelled_texts: Vec<LabelledText> = job
         .segments
         .iter()
-        .map(|segment| match job.has_speaker_labels {
-            true => LabelledText::split_labels(&segment.text),
-            false => LabelledText::new(&segment.text),
-        })
+        .map(|segment| job.labelled_text(&segment.text))
         .collect();
     let mut translated_segments: Vec<Segment> = Vec::with_capacity(job.segments.len());
     let mut translated_pairs: Vec<(String, String)> = Vec::new();

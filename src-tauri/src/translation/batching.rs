@@ -5,6 +5,31 @@ const WINDOW_OVERLAP: usize = 2;
 /// How far past the Batch size a merged run of Split Sentences may grow and still be kept whole.
 const SPLIT_SENTENCE_LIMIT: usize = 2;
 
+/// The positions Split Sentences are looked for over among `len` Segments: every one, or with
+/// `chosen` positions, from `size` before the first of them to `size` after the last.
+pub fn search_range(len: usize, size: usize, chosen: &[usize]) -> Range<usize> {
+    match chosen {
+        [] => 0..len,
+        [first, .., last] | [first @ last] => {
+            first.saturating_sub(size)..(last + 1 + size).min(len)
+        }
+    }
+}
+
+/// Each Split Sentence as the positions among `chosen` of the Segments it holds that are chosen,
+/// so the chosen Segments can be batched on their own.
+pub fn chosen_sentences(split_sentences: &[Vec<usize>], chosen: &[usize]) -> Vec<Vec<usize>> {
+    split_sentences
+        .iter()
+        .map(|sentence| {
+            sentence
+                .iter()
+                .filter_map(|index| chosen.binary_search(index).ok())
+                .collect()
+        })
+        .collect()
+}
+
 /// The windows Split Sentences are looked for in: `size` Segments each, overlapping by two.
 pub fn windows(len: usize, size: usize) -> Vec<Range<usize>> {
     let step = size.saturating_sub(WINDOW_OVERLAP).max(1);

@@ -57,8 +57,8 @@ pub async fn transcribe(
             phases,
         ))
         .await;
-    let _ = std::fs::remove_dir_all(&work);
-    // The Mode's hold and what it showed end with its run, however it ended.
+    // The Mode's hold, what it showed and its intermediate files end with its run, however it
+    // ended.
     drop(run);
     app.announce_project();
     result

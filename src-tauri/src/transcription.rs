@@ -32,6 +32,16 @@ pub struct Tools {
     pub whisper: PathBuf,
 }
 
+/// The directory a transcription writes its intermediate files to, removed with them once the
+/// Mode's run ends, however it ends.
+struct WorkDir(PathBuf);
+
+impl Drop for WorkDir {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub async fn run_transcribe<'a>(
     run: &ModeRun<'a, impl Progress + Steps>,
@@ -59,6 +69,7 @@ pub async fn run_transcribe<'a>(
         language: job.language,
         settings,
     };
+    run.keep(WorkDir(work.to_path_buf()));
     std::fs::create_dir_all(work)?;
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
@@ -804,6 +815,19 @@ mod tests {
 
         assert!(matches!(error, Failure::StepFailed { step, .. } if step == "convert"));
         assert!(!fixture.whisper_started.exists());
+    }
+
+    // @behavior TX-056
+    #[tokio::test]
+    async fn leaves_no_intermediate_files_once_it_ends() {
+        let finished = Fixture::new("tx-work-finished", TWO_SECOND_WAV);
+        let failed = Fixture::new("tx-work-failed", FAILING_FFMPEG);
+
+        finished.transcribe().await.unwrap();
+        failed.transcribe().await.unwrap_err();
+
+        assert!(!finished.dir.path().join("work").exists());
+        assert!(!failed.dir.path().join("work").exists());
     }
 
     // @behavior TX-004

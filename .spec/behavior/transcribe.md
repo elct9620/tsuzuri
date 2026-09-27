@@ -452,3 +452,13 @@ A transcription from a Segment writes only part of the subtitle, so what follows
 | Given | an Audio Window that starts past the end of the media |
 | When | its transcription finishes with no audio |
 | Then | the Notification lists no real-time factor |
+
+## `TX-056` Leaving no intermediate files once a transcription ends
+
+The converted audio and whisper-cli's own SRT sit in a directory of the transcription's own, removed however it ends.
+
+| Step | Statement |
+| --- | --- |
+| Given | a media file transcribed into a directory of its own |
+| When | the transcription ends, finished or failed |
+| Then | the directory is gone |

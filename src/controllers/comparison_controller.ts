@@ -198,6 +198,8 @@ export default class ComparisonController extends Controller {
   private versionsRequest?: Promise<SubtitleVersions[]>;
   /** The comparison asked for last; an answer to an earlier one is dropped. */
   private comparisonRequest?: object;
+  /** How many Segments the marked rows held; rows kept through a change in number hold others. */
+  private markedSegmentCount = 0;
 
   /**
    * Compares the Segments just shown, offering the Backups there are now: the newest Output of the
@@ -209,6 +211,10 @@ export default class ComparisonController extends Controller {
     detail,
   }: CustomEvent<{ project: ProjectView | null }>): Promise<void> {
     const project = detail.project;
+    const segmentCount = project?.segments.length ?? 0;
+    if (segmentCount !== this.markedSegmentCount)
+      this.decorate({ original: [], translation: [] });
+    this.markedSegmentCount = segmentCount;
     const resource = project?.current_resource ?? null;
     const shownLanguage = project?.shown_translation ?? null;
     const request = this.readVersions(project);

@@ -52,6 +52,16 @@ A subtitle changed elsewhere may list its cues in any order, so pairs are found 
 | When | the two are compared |
 | Then | the rows are two Pairs, `你好` with `您好` then `世界` with `世間` |
 
+## `VR-058` Taking the marks away at once when the Segments change in number
+
+The editor keeps its rows when Segments are split or merged, so marks left on them would name another Segment's changes.
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor marking what changed on each of its two rows against a Backup |
+| When | the first Segment is split, before the comparison of the three is answered |
+| Then | no row shows a mark |
+
 ## `VR-057` Pairing a moved cue with the first cue reading the same
 
 | Step | Statement |

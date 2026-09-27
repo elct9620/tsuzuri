@@ -228,6 +228,31 @@ describe("ComparisonController", () => {
     ]);
   });
 
+  // @behavior VR-058
+  it("takes the marks away at once when the Segments change in number", async () => {
+    rows = [
+      pair(cue(0, 1000, "你好"), cue(0, 1000, "您好")),
+      pair(cue(2000, 2500, "再見"), cue(2000, 3000, "再見")),
+    ];
+    await show();
+    const markedBefore = marks();
+    takeVersions = () => new Promise(() => {});
+    project = projectOf({
+      segments: [
+        { start_ms: 0, end_ms: 500, text: "您" },
+        { start_ms: 500, end_ms: 1000, text: "好" },
+        { start_ms: 2000, end_ms: 3000, text: "再見" },
+      ],
+    });
+
+    await show();
+
+    expect([markedBefore, marks()]).toEqual([
+      [["文"], ["時"]],
+      [[], [], []],
+    ]);
+  });
+
   // @behavior VR-054
   it("marks the rows of the comparison asked for last", async () => {
     let answerEarlier: (rows: ComparedRow[]) => void = () => {};

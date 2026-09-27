@@ -624,5 +624,6 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | 移動會暫停或重載 | 設回時間再播 |
 | 呼叫 Rust | 只從主視窗 |
 | 關閉 | 先移回，再 destroy |
+| 再開 | 等上一個關完 |
 
 元素離開主視窗的 document 後，Stimulus 找不到 target，也解除 `data-action`，所以參照在 connect 時留下，播放器的事件由 `preview` 自己綁定。關閉前先移回，播放器才不隨影片視窗結束。

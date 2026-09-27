@@ -175,6 +175,11 @@ impl SegmentChange {
                 last,
                 offset_ms,
             } => {
+                if first > last {
+                    return Err(invalid_position(format!(
+                        "no shift of {first} through {last}"
+                    )));
+                }
                 segment_at(segments, last)?;
                 let shift = |ms: u64| (ms as i64 + offset_ms).max(0) as u64;
                 for segment in &mut segments[first..=last] {
@@ -275,5 +280,31 @@ mod tests {
                 },
             ]
         );
+    }
+
+    #[test]
+    fn refuses_a_shift_whose_first_segment_comes_after_its_last() {
+        let mut segments = vec![
+            Segment {
+                start_ms: 0,
+                end_ms: 1_000,
+                speaker: None,
+                text: "a".to_string(),
+                translation: None,
+            };
+            3
+        ];
+
+        let result = SegmentChange::Shift {
+            first: 2,
+            last: 0,
+            offset_ms: 500,
+        }
+        .apply(&mut segments);
+
+        assert!(matches!(
+            result,
+            Err(SegmentChangeError::InvalidPosition { .. })
+        ));
     }
 }

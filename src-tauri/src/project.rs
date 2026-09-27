@@ -346,7 +346,10 @@ impl TranscriptionScope {
             TranscriptionScope::Rest { first } => SegmentSpan { first, last: first },
             TranscriptionScope::Span(span) => span,
         };
-        let span_segments = segments.get(span.first..=span.last).ok_or(span)?;
+        let span_segments = segments
+            .get(span.first..=span.last)
+            .filter(|span_segments| !span_segments.is_empty())
+            .ok_or(span)?;
         let end_ms = match self {
             TranscriptionScope::Span(_) => span_segments.iter().map(|segment| segment.end_ms).max(),
             _ => None,
@@ -462,4 +465,28 @@ pub struct Backup {
 pub enum BackupKind {
     Output,
     Overwrite,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn answers_back_a_span_whose_first_segment_comes_after_its_last() {
+        let segments = vec![
+            Segment {
+                start_ms: 0,
+                end_ms: 1_000,
+                speaker: None,
+                text: "a".to_string(),
+                translation: None,
+            };
+            3
+        ];
+        let span = SegmentSpan { first: 2, last: 1 };
+
+        let window = TranscriptionScope::Span(span).audio_window(&segments);
+
+        assert_eq!(window, Err(span));
+    }
 }

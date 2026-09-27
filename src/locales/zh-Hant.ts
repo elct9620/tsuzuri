@@ -339,6 +339,7 @@ const zhHant: typeof en = {
     detect: "找出被切開的句子",
     transcribe: "轉錄",
     translate: "翻譯",
+    waveform: "擷取波形",
     firstLoad: "{{phase}}（第一次使用會比較久）",
     percent: "{{phase}} {{percent}}%",
     count: "{{phase}} {{percent}}%，{{done}} / {{total}}",

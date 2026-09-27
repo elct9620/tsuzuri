@@ -350,6 +350,7 @@ const en = {
     detect: "Finding split sentences",
     transcribe: "Transcribing",
     translate: "Translating",
+    waveform: "Taking the waveform",
     firstLoad: "{{phase}} (slower the first time)",
     percent: "{{phase}} {{percent}}%",
     count: "{{phase}} {{percent}}%, {{done}} / {{total}}",

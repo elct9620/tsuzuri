@@ -10,7 +10,11 @@ import type { ProjectView, Segment } from "../backend/project";
 import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test_layout";
 import { projectOf } from "../test_project";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import {
+  NOTIFICATION_STACK,
+  notificationDetail,
+  notifications,
+} from "../ui/test_notification";
 import TimelineController, {
   controlOption,
   regionColor,
@@ -170,6 +174,23 @@ describe("TimelineController", () => {
     for (let turn = 0; turn < 3; turn++) await settle();
 
     expect(notifications()).toEqual([]);
+  });
+
+  // @behavior PV-143
+  it("names the step that failed to take a Waveform", async () => {
+    takeWaveform = () =>
+      Promise.reject({
+        code: "step-failed",
+        step: "waveform",
+        detail: "Invalid data",
+      });
+
+    await show(projectWithMedia());
+
+    expect([notifications(), notificationDetail(0)]).toEqual([
+      ["無法畫出波形"],
+      "擷取波形 失敗：Invalid data",
+    ]);
   });
 
   // @behavior PV-019

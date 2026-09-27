@@ -1193,3 +1193,11 @@ Space plays on from where the media is, so a Segment chosen is heard with the on
 | Given | `ep01.mp4` current, its Waveform still being taken |
 | When | a Resource without media becomes current and taking it fails |
 | Then | no Notification is shown |
+
+## `PV-143` Naming the step that failed to take a Waveform
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media ffmpeg cannot read |
+| When | taking its Waveform fails |
+| Then | the Notification names the failed step in the Interface Language |

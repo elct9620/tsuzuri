@@ -1,10 +1,11 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::SystemTime;
 
 use serde::Serialize;
 
+use super::backups::BackupPolicy;
 use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
 use super::history::{SubtitleSnapshot, UndoHistory};
@@ -36,7 +37,7 @@ impl Project {
             options: config.options,
             current: None,
             undo_histories: HashMap::new(),
-            backed_up_subtitles: HashSet::new(),
+            backups: Default::default(),
         };
         project.translation_glossary =
             TranslationGlossary::from_directory(&project.directory, project.source_target())
@@ -149,7 +150,7 @@ impl Project {
                 continue;
             }
             self.undo_histories.remove(&name);
-            self.backed_up_subtitles.remove(&path);
+            self.backups.forget(&path);
             if let Some(known) = known {
                 files::keep_as_backup(
                     &self.directory,
@@ -358,7 +359,7 @@ impl Project {
         self.write_subtitle(content)?;
         self.pair_again(Some(&name))?;
         if field == SegmentField::Speaker {
-            self.write_speakers_to_translations(&name, previous, false)?;
+            self.write_speakers_to_translations(&name, previous, BackupPolicy::FirstChange)?;
         }
         self.write_bilingual_subtitles(&name, written_translation)?;
         self.remember_subtitles()
@@ -404,43 +405,38 @@ impl Project {
     /// the Project Options ask for it and else once since the Project was opened.
     fn keep_before_mode_writes(&mut self, name: &str, subtitle: &Path) -> Result<(), Failure> {
         self.back_up_changed_elsewhere_of(name)?;
-        if !self.options.is_overwrite_backed_up {
-            return self.back_up_first_change(subtitle);
+        let policy = self.mode_backup_policy();
+        Ok(self
+            .backups
+            .keep_before_write(&self.directory, subtitle, policy)?)
+    }
+
+    /// How a Mode keeps the subtitles it writes over: every time when the Project Options ask for
+    /// it, else once since the Project was opened.
+    fn mode_backup_policy(&self) -> BackupPolicy {
+        match self.options.is_overwrite_backed_up {
+            true => BackupPolicy::EveryWrite,
+            false => BackupPolicy::FirstChange,
         }
-        files::back_up(
-            &self.directory,
-            subtitle,
-            SystemTime::now(),
-            BackupKind::Overwrite,
-        )?;
-        self.backed_up_subtitles.insert(subtitle.to_path_buf());
-        Ok(())
     }
 
     /// Keeps `subtitle` as an Overwrite Backup before Tsuzuri first changes it since the Project
-    /// was opened, unless a Backup of it was kept since, so what the Undo History held can still
-    /// be taken back once the Project is closed.
+    /// was opened.
     fn back_up_first_change(&mut self, subtitle: &Path) -> Result<(), Failure> {
-        if self.backed_up_subtitles.insert(subtitle.to_path_buf()) {
-            files::back_up(
-                &self.directory,
-                subtitle,
-                SystemTime::now(),
-                BackupKind::Overwrite,
-            )?;
-        }
-        Ok(())
+        Ok(self
+            .backups
+            .keep_before_write(&self.directory, subtitle, BackupPolicy::FirstChange)?)
     }
 
     /// Gives each cue of the named Resource's translations the Speaker of its original's Segment with
     /// the same times, named as the Translation Glossary names it in that Language, in place of the
-    /// label it carried for that Segment in `previous`; first keeps each translation it changes as a
-    /// Backup when `is_backed_up`, else as its first change does.
+    /// label it carried for that Segment in `previous`; first keeps each translation it changes as
+    /// `policy` asks.
     fn write_speakers_to_translations(
         &mut self,
         name: &str,
         previous: &Transcript,
-        is_backed_up: bool,
+        policy: BackupPolicy,
     ) -> Result<(), Failure> {
         let resource = self.resource(name)?;
         let Some(subtitle) = &resource.subtitle else {
@@ -465,17 +461,8 @@ impl Project {
             }
         }
         for (path, srt) in writes {
-            if is_backed_up {
-                files::back_up(
-                    &self.directory,
-                    &path,
-                    SystemTime::now(),
-                    BackupKind::Overwrite,
-                )?;
-                self.backed_up_subtitles.insert(path.clone());
-            } else {
-                self.back_up_first_change(&path)?;
-            }
+            self.backups
+                .keep_before_write(&self.directory, &path, policy)?;
             files::write_srt(&path, srt)?;
         }
         Ok(())
@@ -592,13 +579,8 @@ impl Project {
         let backup_path = self.backup_of(language, backup)?;
         let subtitle = self.subtitle_path(language)?;
         let name = self.current()?.name.clone();
-        files::back_up(
-            &self.directory,
-            &subtitle,
-            SystemTime::now(),
-            BackupKind::Overwrite,
-        )?;
-        self.backed_up_subtitles.insert(subtitle.clone());
+        self.backups
+            .keep(&self.directory, &subtitle, BackupKind::Overwrite)?;
         files::copy(&backup_path, &subtitle)?;
         self.read_current_again()?;
         self.write_bilingual_subtitles(&name, language)?;
@@ -1300,19 +1282,22 @@ impl CurrentProject {
         if let Some(project) = project.as_mut() {
             project.pair_again(Some(&job.name))?;
         }
-        files::back_up(
-            &job.directory,
-            &job.subtitle,
-            SystemTime::now(),
-            BackupKind::Output,
-        )?;
+        match project.as_mut() {
+            Some(project) => {
+                project
+                    .backups
+                    .keep(&job.directory, &job.subtitle, BackupKind::Output)?
+            }
+            None => files::back_up(
+                &job.directory,
+                &job.subtitle,
+                SystemTime::now(),
+                BackupKind::Output,
+            )?,
+        }
         if let Some(project) = project.as_mut() {
-            project.backed_up_subtitles.insert(job.subtitle.clone());
-            project.write_speakers_to_translations(
-                &job.name,
-                &previous,
-                project.options.is_overwrite_backed_up,
-            )?;
+            let policy = project.mode_backup_policy();
+            project.write_speakers_to_translations(&job.name, &previous, policy)?;
             project.write_bilingual_subtitles(&job.name, None)?;
             if let Some(before) = before {
                 project.record_change(&job.name, before)?;
@@ -1413,14 +1398,18 @@ impl CurrentProject {
             project.pair_again(Some(&source.name))?;
         }
         if is_backed_up {
-            files::back_up(
-                &source.directory,
-                &path,
-                SystemTime::now(),
-                BackupKind::Output,
-            )?;
-            if let Some(project) = project.as_mut() {
-                project.backed_up_subtitles.insert(path.clone());
+            match project.as_mut() {
+                Some(project) => {
+                    project
+                        .backups
+                        .keep(&source.directory, &path, BackupKind::Output)?
+                }
+                None => files::back_up(
+                    &source.directory,
+                    &path,
+                    SystemTime::now(),
+                    BackupKind::Output,
+                )?,
             }
         }
         if let Some(project) = project.as_mut() {

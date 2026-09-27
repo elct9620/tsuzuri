@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::language::{Language, LanguagePair};
 use crate::transcript::{split_label, AudioWindow, Segment, SpeakerNames, SrtContent, Transcript};
 
+mod backups;
 pub mod commands;
 mod current;
 mod files;
@@ -13,6 +14,7 @@ pub mod glossary;
 mod history;
 pub mod versions;
 
+use backups::Backups;
 pub use current::{CurrentProject, ProjectView, Reload, ResourceView, RunningMode};
 #[cfg(test)]
 pub(crate) use files::HISTORY_DIR;
@@ -32,8 +34,7 @@ pub struct Project {
     pub current: Option<CurrentResource>,
     /// The Undo History of each Resource changed since the Project was opened, by its name.
     pub undo_histories: HashMap<String, UndoHistory>,
-    /// The subtitles a Backup was kept of since the Project was opened.
-    pub backed_up_subtitles: HashSet<PathBuf>,
+    pub backups: Backups,
 }
 
 /// The Resource the editor shows, with its Segments as its files hold them.

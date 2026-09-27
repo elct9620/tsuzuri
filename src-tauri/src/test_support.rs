@@ -14,7 +14,7 @@ pub fn project_of(segments: Vec<Segment>) -> Project {
         translation_glossary: None,
         options: ProjectOptions::default(),
         undo_histories: Default::default(),
-        backed_up_subtitles: Default::default(),
+        backups: Default::default(),
         resources: vec![Resource {
             name: "lecture".to_string(),
             media: None,

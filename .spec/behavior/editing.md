@@ -276,6 +276,24 @@ Chromium reports a selection change for each time field drawn, so a change keeps
 | When | it is split there |
 | Then | the first Segment's text reads `你好` |
 
+## `ED-120` Writing no text before splitting the second half again
+
+The second half is entered as the split leaves it, whether or not its text gets focus in time to say so.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment reading `你好世界` split after `你好`, the Cursor after `世` in `世界` |
+| When | it is split there with nothing typed |
+| Then | the Project is asked for the split alone |
+
+## `ED-121` Putting back the second half's text with Esc after a split
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment reading `你好世界` split after `你好`, the Cursor at the start of `世界` |
+| When | Esc is pressed in that text |
+| Then | the text is put back as `世界` |
+
 ## `ED-054` Keeping the Cursor when a split fails
 
 | Step | Statement |

@@ -167,6 +167,31 @@ describe("EditingSession", () => {
     ]).toEqual([0, 1, "世界"]);
   });
 
+  /** Splits the first Segment after `你好` and shows the Transcript that holds the split. */
+  async function splitFirst(): Promise<void> {
+    enterFirst();
+    await session.split();
+    session.follow(view("你好", "世界", "今天", "天氣"));
+    port.sentCalls = [];
+  }
+
+  // @behavior ED-120
+  it("writes no text before splitting the second half again", async () => {
+    await splitFirst();
+    session.select(1, "text", { start: 1, end: 1 }, "世界");
+
+    await session.split();
+
+    expect(port.sentCalls).toEqual([{ kind: "split", index: 1, at: 1 }]);
+  });
+
+  // @behavior ED-121
+  it("puts back the second half's text with Esc after a split", async () => {
+    await splitFirst();
+
+    expect(session.revert(1, "text")).toBe("世界");
+  });
+
   it("keeps the Cursor where it was when a split is refused", async () => {
     enterFirst();
     await session.leave(0, "text", null, "你好世界");

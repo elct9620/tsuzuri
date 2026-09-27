@@ -119,6 +119,7 @@ export class EditingSession {
         before: pendingChange.before,
         after: view.segments,
       });
+      this.enterCaretLeftByChange();
       this.clearChecks();
       return;
     }
@@ -128,6 +129,15 @@ export class EditingSession {
       before.resource === view.resource &&
       before.segments.length === view.segments.length;
     if (!isSameShape) this.clearChecks();
+  }
+
+  /**
+   * Takes a live caret a Segment Change leaves as entering its text, since that text may get focus
+   * before it can say so, as a row just drawn does.
+   */
+  private enterCaretLeftByChange(): void {
+    const { caret } = this.state;
+    if (caret?.kind === "live") this.entryText = caret.text;
   }
 
   /** Makes the Segment at `index` current as one of its fields gets focus, with a live caret in a text or a translation. */

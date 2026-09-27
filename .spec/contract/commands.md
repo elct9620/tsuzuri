@@ -334,6 +334,22 @@ Record `path` as the directory to write the log to from the next launch, and ans
 pub fn choose_log_directory(app: AppHandle, log_dir: State<'_, LogDirInUse>, path: PathBuf) -> Result<LogDirectory, Failure> {}
 ```
 
+## `debug_log`
+
+Whether the Debug Log is written in this launch, and whether it is chosen for the next.
+
+```rust
+pub fn debug_log(app: AppHandle, debug_log: State<'_, DebugLogInUse>) -> Result<DebugLog, Failure> {}
+```
+
+## `choose_debug_log`
+
+Record whether the Debug Log is written from the next launch, keeping the chosen log directory, and answer as `debug_log` does.
+
+```rust
+pub fn choose_debug_log(app: AppHandle, debug_log: State<'_, DebugLogInUse>, has_debug_log: bool) -> Result<DebugLog, Failure> {}
+```
+
 ## `open_log_directory`
 
 Open the directory the log is written to in this launch with the system's file manager.

@@ -52,6 +52,7 @@ impl Processes {
             .map_err(|error| error.to_string())?;
         let pid = child.pid();
         let name = executable_name(&program.to_string_lossy());
+        log::debug!("{name}: started as {} {args:?}", program.display());
         self.running_processes.lock().unwrap().insert(
             pid,
             RunningProcess {
@@ -129,6 +130,10 @@ async fn forward_in_order(
     while let Some(event) = events.recv().await {
         let event = match event {
             CommandEvent::Terminated(payload) => {
+                match payload.code {
+                    Some(code) => log::debug!("{name}: exited with code {code}"),
+                    None => log::debug!("{name}: ended by a signal"),
+                }
                 exit = Some(StepEvent::Exit(payload.code));
                 continue;
             }
@@ -441,6 +446,43 @@ mod tests {
         });
 
         assert_eq!(logs, vec!["whisper-cli: load time = 1384 ms"]);
+    }
+
+    // @behavior OB-022
+    #[test]
+    fn logs_how_a_component_was_started_and_how_it_ended() {
+        let dir = TempDir::new("ob-component-debug");
+        let app = mock_app();
+        let processes = Processes::new(dir.path().join("processes.json"));
+        let (sender, events) = async_runtime::channel(8);
+        let (forward, _received) = async_runtime::channel(8);
+        async_runtime::block_on(async move {
+            sender
+                .send(CommandEvent::Terminated(TerminatedPayload {
+                    code: Some(0),
+                    signal: None,
+                }))
+                .await
+                .unwrap();
+        });
+
+        let logs = captured_logs(|| {
+            processes
+                .spawn(app.handle(), &sleep_path(), &["60".to_string()])
+                .unwrap();
+            async_runtime::block_on(forward_in_order("sleep", events, forward));
+        });
+        processes.kill_all();
+
+        assert_eq!(
+            logs.into_iter()
+                .filter(|line| line.starts_with("sleep:"))
+                .collect::<Vec<_>>(),
+            vec![
+                r#"sleep: started as /bin/sleep ["60"]"#,
+                "sleep: exited with code 0"
+            ]
+        );
     }
 
     /// A Component that sleeps for a minute, started through `steps`, by its PID.

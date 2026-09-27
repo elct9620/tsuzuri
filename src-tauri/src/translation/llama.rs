@@ -211,6 +211,7 @@ impl TranslationModel {
         task: Task,
         schema: serde_json::Value,
     ) -> Result<T, AnswerError> {
+        log::debug!("{}: asking llama-server: {user}", task.name);
         let request = CreateChatCompletionRequestArgs::default()
             .model(MODEL_NAME)
             .messages([
@@ -240,6 +241,7 @@ impl TranslationModel {
             .next()
             .and_then(|choice| choice.message.content)
             .ok_or_else(|| AnswerError::MalformedAnswer("answered without content".to_string()))?;
+        log::debug!("{}: llama-server answered: {content}", task.name);
         serde_json::from_str(&content)
             .map_err(|error| AnswerError::MalformedAnswer(error.to_string()))
     }
@@ -256,5 +258,50 @@ impl From<reqwest::Error> for Failure {
         Failure::LlamaRequest {
             detail: error.to_string(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::super::fake_llama::{numbered_summary, FakeLlama};
+    use super::*;
+    use crate::test_support::captured_logs;
+
+    fn language(code: &str) -> Language {
+        serde_json::from_value(json!(code)).unwrap()
+    }
+
+    // @behavior OB-023
+    #[test]
+    fn logs_what_llama_server_was_asked_and_answered() {
+        let llama = FakeLlama::with_summaries(numbered_summary);
+        let languages = LanguagePair {
+            source: language("ja"),
+            target: language("zh-TW"),
+        };
+        let pairs = [("おはよう".to_string(), "早安".to_string())];
+
+        let logs = captured_logs(|| {
+            let runtime = tokio::runtime::Runtime::new().unwrap();
+            runtime
+                .block_on(llama.model().rewrite_summary(languages, None, &pairs, 50))
+                .unwrap();
+        });
+
+        let summary_lines: Vec<_> = logs
+            .iter()
+            .filter(|line| line.starts_with("rolling_summary:"))
+            .collect();
+        assert_eq!(summary_lines.len(), 2);
+        assert!(
+            summary_lines[0].starts_with("rolling_summary: asking llama-server: ")
+                && summary_lines[0].contains("おはよう")
+        );
+        assert_eq!(
+            summary_lines[1],
+            r#"rolling_summary: llama-server answered: {"summary":"summary 0"}"#
+        );
     }
 }

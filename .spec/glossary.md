@@ -158,6 +158,10 @@ The one page carrying the license texts of Tsuzuri and of everything it ships: t
 
 The release number of the running Tsuzuri and the commit it was built from, which the settings show under About so a report names exactly what ran. Its release number is not a Version, which is a subtitle's.
 
+### Debug Log
+
+The lines Tsuzuri writes into the log beyond what it always writes: how each Component was started and how it ended, and what llama-server was asked and answered. The settings turn it on or off for the next launch, and it is off until turned on.
+
 ### Auto-Selection
 
 Taking the first Bundled Variant, in the Build Manifest's order for the platform, whose executable answers its version flag. A Variant that does not run, as when the driver or library its backend loads is missing, is passed over for the next.

@@ -265,6 +265,12 @@ const en = {
     logsUnreadable: "Log directory not read",
     logsNotChosen: "Log directory not changed",
     logsNotOpened: "Log directory not opened",
+    debugLog: "Debug log",
+    debugLogHelp:
+      "Also writes how each component was started and ended and what llama-server was asked and answered, for a report; takes effect after a restart",
+    debugLogOnAfterRestart: "The debug log starts after a restart",
+    debugLogOffAfterRestart: "The debug log stops after a restart",
+    debugLogNotChosen: "Debug log not switched",
     general: "General",
     primaryLanguageHelp:
       "The language spoken in the media. Transcription listens for it and translation starts from it; changing it pairs the subtitle files again. Applies to this project only.",

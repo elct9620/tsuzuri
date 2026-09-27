@@ -257,6 +257,12 @@ const zhHant: typeof en = {
     logsUnreadable: "讀不到日誌目錄",
     logsNotChosen: "沒有切換日誌目錄",
     logsNotOpened: "沒有開啟日誌目錄",
+    debugLog: "除錯紀錄",
+    debugLogHelp:
+      "另外寫入各元件如何啟動與結束、llama-server 收到的請求與回答，回報問題時可以附上；重新啟動後生效",
+    debugLogOnAfterRestart: "重新啟動後開始寫入除錯紀錄",
+    debugLogOffAfterRestart: "重新啟動後停止寫入除錯紀錄",
+    debugLogNotChosen: "沒有切換除錯紀錄",
     general: "整體",
     primaryLanguageHelp:
       "影音裡說的語言。轉錄用它辨識語音，翻譯從它譯出；改了之後會依這個語言重新配對字幕檔。只影響這個專案。",

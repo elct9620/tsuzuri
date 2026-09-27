@@ -8,6 +8,8 @@ describe("LogsController", () => {
   let application: Application;
   let calls: { command: string; args: unknown }[];
   let chosenPath: string;
+  let debugLogInUse: boolean;
+  let hasDebugLogChosen: boolean;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = (name: string) =>
@@ -31,12 +33,16 @@ describe("LogsController", () => {
   beforeEach(async () => {
     calls = [];
     chosenPath = "/os/logs";
+    debugLogInUse = false;
+    hasDebugLogChosen = false;
     document.body.innerHTML = `
       <fieldset data-controller="logs">
         <span data-logs-target="path"></span>
         <button id="choose" data-action="logs#choose">切換目錄</button>
         <button id="open" data-action="logs#openDirectory">開啟目錄</button>
         <div data-logs-target="pendingHint" hidden></div>
+        <input type="checkbox" data-logs-target="debugLogToggle" data-action="change->logs#chooseDebugLog" />
+        <div data-logs-target="debugLogPendingHint" hidden></div>
       </fieldset>
     `;
     mockIPC((command, args) => {
@@ -44,6 +50,13 @@ describe("LogsController", () => {
       if (command === "log_directory")
         return { in_use: "/os/logs", next_launch: chosenPath };
       if (command === "plugin:dialog|open") return "/logs";
+      if (command === "choose_debug_log")
+        hasDebugLogChosen = (args as { hasDebugLog: boolean }).hasDebugLog;
+      if (command === "debug_log" || command === "choose_debug_log")
+        return {
+          is_written_now: debugLogInUse,
+          is_written_next_launch: hasDebugLogChosen,
+        };
       if (command === "choose_log_directory") {
         chosenPath = (args as { path: string }).path;
         return { in_use: "/os/logs", next_launch: chosenPath };
@@ -95,6 +108,41 @@ describe("LogsController", () => {
       target("pendingHint").hidden,
       target("pendingHint").textContent,
     ]).toEqual([false, "重新啟動後改寫到 /logs"]);
+  });
+
+  // @behavior OB-020
+  it("turns the Debug Log on for the next launch", async () => {
+    await openSettings();
+    const toggle = target("debugLogToggle") as HTMLInputElement;
+
+    toggle.click();
+    await settle();
+    await settle();
+
+    expect([
+      argsByCommand("choose_debug_log"),
+      toggle.checked,
+      target("debugLogPendingHint").hidden,
+      target("debugLogPendingHint").textContent,
+    ]).toEqual([
+      [{ hasDebugLog: true }],
+      true,
+      false,
+      "重新啟動後開始寫入除錯紀錄",
+    ]);
+  });
+
+  // @behavior OB-021
+  it("says nothing of a restart while the Debug Log is as chosen", async () => {
+    debugLogInUse = true;
+    hasDebugLogChosen = true;
+
+    await openSettings();
+
+    expect([
+      (target("debugLogToggle") as HTMLInputElement).checked,
+      target("debugLogPendingHint").hidden,
+    ]).toEqual([true, true]);
   });
 
   // @behavior OB-008

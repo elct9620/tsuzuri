@@ -27,7 +27,7 @@ mod test_support;
 use tauri::{Manager, RunEvent, WindowEvent};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 
-use logs::{LogDirInUse, LogSettings};
+use logs::{DebugLogInUse, LogDirInUse, LogSettings};
 use processes::Processes;
 use project::CurrentProject;
 use steps::ModeLock;
@@ -50,11 +50,12 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
-            let log_dir = LogSettings::load(&app.path().app_config_dir()?)?
-                .log_dir(app.path().app_log_dir()?);
+            let log_settings = LogSettings::load(&app.path().app_config_dir()?)?;
+            let log_dir = log_settings.log_dir(app.path().app_log_dir()?);
             app.handle().plugin(
                 tauri_plugin_log::Builder::new()
                     .level(log::LevelFilter::Info)
+                    .level_for("tsuzuri_lib", log_settings.tsuzuri_level())
                     .timezone_strategy(TimezoneStrategy::UseLocal)
                     // Room for several whole runs, so the slow one is still there when someone looks.
                     .max_file_size(1_000_000)
@@ -71,6 +72,7 @@ pub fn run() {
             )?;
             log::info!("log written to {}", log_dir.display());
             app.manage(LogDirInUse(log_dir));
+            app.manage(DebugLogInUse(log_settings.has_debug_log));
             let record = app.path().app_data_dir()?.join("processes.json");
             processes::reap_strays(&record);
             app.manage(Processes::new(record));
@@ -113,6 +115,8 @@ pub fn run() {
             project::commands::translation_cues,
             logs::commands::log_directory,
             logs::commands::choose_log_directory,
+            logs::commands::debug_log,
+            logs::commands::choose_debug_log,
             logs::commands::open_log_directory,
             about::commands::app_build,
             about::commands::open_releases,

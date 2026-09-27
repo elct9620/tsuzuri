@@ -7,6 +7,7 @@ What a run leaves in the log, so a slow or failed run can be diagnosed afterward
 - `src-tauri/src/timing.rs`
 - `src-tauri/src/processes.rs`
 - `src-tauri/src/logs.rs`
+- `src-tauri/src/translation/llama.rs`
 - `src/controllers/logs_controller.test.ts`
 - `src-tauri/src/about.rs`
 - `src/controllers/about_controller.test.ts`
@@ -132,3 +133,67 @@ A directory chosen earlier in this launch takes effect only at the next, so the 
 | Given | the App Build shown under About |
 | When | copying it is chosen |
 | Then | the clipboard holds Tsuzuri, the release number and the short commit, and a Notification says it was copied |
+
+## `OB-016` Leaving the Debug Log out until it is turned on
+
+| Step | Statement |
+| --- | --- |
+| Given | log settings never saved |
+| When | the app starts |
+| Then | Tsuzuri writes no line below info into the log |
+
+## `OB-017` Writing the Debug Log from the next launch
+
+| Step | Statement |
+| --- | --- |
+| Given | log settings that turn the Debug Log on |
+| When | the app starts |
+| Then | Tsuzuri writes its debug lines into the log, while other libraries still write from info up |
+
+## `OB-018` Remembering the Debug Log across launches
+
+| Step | Statement |
+| --- | --- |
+| Given | the Debug Log turned on |
+| When | the log settings are read again |
+| Then | they turn the Debug Log on |
+
+## `OB-019` Keeping the Debug Log when the log directory is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the Debug Log turned on |
+| When | a directory is chosen for the log |
+| Then | the log settings still turn the Debug Log on |
+
+## `OB-020` Turning the Debug Log on in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the general settings, with the Debug Log off in this launch |
+| When | the Debug Log is turned on |
+| Then | it is recorded for the next launch, and the settings say it takes effect after a restart |
+
+## `OB-021` Saying nothing of a restart while the Debug Log is as chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the Debug Log on in this launch and chosen for the next |
+| When | the general settings open |
+| Then | the Debug Log shows on and the settings say nothing of a restart |
+
+## `OB-022` Logging how a Component was started and how it ended
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component process |
+| When | it is started and then exits |
+| Then | the debug lines name its executable with the arguments it was given, and its exit code |
+
+## `OB-023` Logging what llama-server was asked and answered
+
+| Step | Statement |
+| --- | --- |
+| Given | a running llama-server |
+| When | it is asked for an answer |
+| Then | the debug lines hold the task, the message it was sent and the content it answered |

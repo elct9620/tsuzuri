@@ -11,6 +11,15 @@ const PRECEDING_LINES: usize = 2;
 /// Lines one Self-Review request asks about; a small Model judges a couple at a time far more reliably.
 const LINES_PER_REVIEW: usize = 2;
 
+/// What a Batch is read with besides the lines before it: the Rolling Summary, the source text
+/// its first sentence goes on from, and the source text after it.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct BatchSurroundings<'a> {
+    pub summary: Option<&'a str>,
+    pub preceding: Option<&'a str>,
+    pub following: Option<&'a str>,
+}
+
 /// Translates one Batch, repairing what the Model gets wrong: a group of lines still failing after
 /// its retries is split in half until each line stands alone, and a lone line that still fails
 /// keeps its best imperfect translation, or else its original text.
@@ -19,23 +28,28 @@ pub async fn translate_batch(
     job: &TranslationJob<'_>,
     lines: &[(usize, &str)],
     earlier_pairs: &[(String, String)],
-    summary: Option<&str>,
-    following: Option<&str>,
+    surroundings: BatchSurroundings<'_>,
 ) -> Result<HashMap<usize, String>, Failure> {
     let mut repair = BatchRepair {
         model,
         job,
         lines,
         earlier_pairs,
-        summary,
-        following,
+        summary: surroundings.summary,
+        following: surroundings.following,
         accepted_translations: HashMap::new(),
         imperfect_translations: HashMap::new(),
     };
     let reference = &earlier_pairs[earlier_pairs
         .len()
         .saturating_sub(job.settings.reference_lines)..];
-    let mut failing_reasons = repair.attempt(lines, reference.to_vec(), None).await?;
+    let mut failing_reasons = repair
+        .attempt(
+            lines,
+            reference.to_vec(),
+            surroundings.preceding.map(str::to_string),
+        )
+        .await?;
     failing_reasons.extend(repair.review(lines).await?);
     let mut groups: Vec<Vec<(usize, &str)>> = vec![lines
         .iter()

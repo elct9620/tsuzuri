@@ -176,10 +176,10 @@ pub fn cancel_task(mode_lock: State<'_, ModeLock>) {}
 
 ## `retranslate`
 
-Translate the Current Resource's Segments at `indexes` again, into the translation shown, as one Batch carrying the translated lines before them and the source lines after them; no Split Sentences are searched for and no Rolling Summary is kept. It holds only those Segments of that translation, and their translations are written into its file as it then is, so an edit of another Segment made meanwhile is kept, as one change in the Undo History, kept as a Backup first as `edit_segment` keeps one; the answer is how long each Phase took. A position the Segments do not have is refused before any Model is loaded. With no translation shown it is refused as `no-translation-shown`; it runs, waits and can be cancelled as `translate` does.
+Translate the Current Resource's Segments at `indexes` again, into the translation shown, with the Speaker Labels and Self-Review `options` asks for; no Rolling Summary is kept. Split Sentences are looked for among them and a Batch size of Segments on each side, and they are translated in Batches keeping each Split Sentence among them whole, carrying the translated lines before them, the source text of a Split Sentence begun before the first of them, and the source lines after them. It holds only those Segments of that translation, and their translations are written into its file as it then is, so an edit of another Segment made meanwhile is kept, as one change in the Undo History, kept as a Backup first as `edit_segment` keeps one; no other Segment's translation is written. The answer is how long each Phase took. A position the Segments do not have is refused before any Model is loaded. With no translation shown it is refused as `no-translation-shown`; it runs, waits and can be cancelled as `translate` does.
 
 ```rust
-pub async fn retranslate(app: AppHandle, current: State<'_, CurrentProject>, indexes: Vec<usize>) -> Result<Translation, Failure> {}
+pub async fn retranslate(app: AppHandle, current: State<'_, CurrentProject>, indexes: Vec<usize>, options: TranslationOptions) -> Result<Translation, Failure> {}
 ```
 
 ## `translate`

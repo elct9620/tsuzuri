@@ -27,13 +27,19 @@ pub async fn translate(
 pub async fn retranslate(
     app: AppHandle,
     current: State<'_, CurrentProject>,
-    indexes: Vec<usize>,
+    mut indexes: Vec<usize>,
+    options: TranslationOptions,
 ) -> Result<Translation, Failure> {
     let target = current.shown_translation()?;
+    indexes.sort_unstable();
+    indexes.dedup();
     run_translation(
         &app,
         target,
-        TranslationOptions::default(),
+        TranslationOptions {
+            summary_word_limit: None,
+            ..options
+        },
         TranslationScope::Segments(indexes),
     )
     .await

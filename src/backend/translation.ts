@@ -32,9 +32,12 @@ export function translate(
   return invoke<Translation>("translate", { target, options });
 }
 
-/** Translates the Segments at `indexes` again into the translation shown, as one change. */
-export function retranslate(indexes: number[]): Promise<Translation> {
-  return invoke<Translation>("retranslate", { indexes });
+/** Translates the Segments at `indexes` again into the translation shown with `options`, save the Rolling Summary, as one change. */
+export function retranslate(
+  indexes: number[],
+  options: TranslationOptions,
+): Promise<Translation> {
+  return invoke<Translation>("retranslate", { indexes, options });
 }
 
 export function translationSettings(): Promise<TranslationSettings> {

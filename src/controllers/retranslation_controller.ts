@@ -38,7 +38,13 @@ export default class RetranslationController extends Controller {
     if (progress.isBusy) return;
     progress.begin("translation");
     try {
-      notifyTranslation(await retranslate(indexes));
+      notifyTranslation(
+        await retranslate(indexes, {
+          has_speaker_labels: false,
+          has_self_review: false,
+          summary_word_limit: null,
+        }),
+      );
       progress.finish();
     } catch (error) {
       progress.fail(error);

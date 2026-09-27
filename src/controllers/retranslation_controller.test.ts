@@ -97,7 +97,14 @@ describe("RetranslationController", () => {
     await settle();
 
     expect([retranslateArgs, isProgressShown()]).toEqual([
-      { indexes: [1] },
+      {
+        indexes: [1],
+        options: {
+          has_speaker_labels: false,
+          has_self_review: false,
+          summary_word_limit: null,
+        },
+      },
       true,
     ]);
   });
@@ -115,7 +122,14 @@ describe("RetranslationController", () => {
     document.querySelector<HTMLButtonElement>("#retranslate-checked")!.click();
     await settle();
 
-    expect(retranslateArgs).toEqual({ indexes: [0, 2] });
+    expect(retranslateArgs).toEqual({
+      indexes: [0, 2],
+      options: {
+        has_speaker_labels: false,
+        has_self_review: false,
+        summary_word_limit: null,
+      },
+    });
   });
 
   // @behavior ED-090

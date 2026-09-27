@@ -668,7 +668,7 @@ A line translated alone loses the context a Batch gives, so it carries the lines
 | --- | --- |
 | Given | five Segments translated into `en`, shown in the editor |
 | When | the third is translated again |
-| Then | one request asks for the third line alone, with the two before as translated reference and the two after as following source text |
+| Then | one translation request asks for the third line alone, with the two before as translated reference and the two after as following source text |
 
 ## `TL-085` Translating with the Project Model
 
@@ -677,3 +677,53 @@ A line translated alone loses the context a Batch gives, so it carries the lines
 | Given | a Project whose Project Model for the translation slot differs from the general one |
 | When | its Current Resource is translated |
 | Then | llama-server loads the Project Model |
+
+## `TL-087` Translating chosen Segments again in Batches
+
+| Step | Statement |
+| --- | --- |
+| Given | five Segments translated into `en` and a Batch size of two |
+| When | the last four are translated again |
+| Then | two translation requests carry two lines each |
+
+## `TL-088` Keeping a Split Sentence among the chosen Segments in one Batch
+
+| Step | Statement |
+| --- | --- |
+| Given | five Segments translated into `en` whose third and fourth the Model reports as one sentence, and a Batch size of two |
+| When | the second through the fourth are translated again |
+| Then | the translation requests carry the second line, then the third and fourth |
+
+## `TL-089` Telling the Model a chosen Segment goes on from a sentence before it
+
+What comes before the chosen Segments is what the user already put right, so the half of a sentence there is read for meaning and never written.
+
+| Step | Statement |
+| --- | --- |
+| Given | five Segments translated into `en` whose second and third the Model reports as one sentence |
+| When | the third onward are translated again |
+| Then | the first translation request carries the second line's source text as the text its sentence goes on from, and the second keeps its translation |
+
+## `TL-090` Looking for Split Sentences a Batch around the chosen Segments
+
+| Step | Statement |
+| --- | --- |
+| Given | ten Segments translated into `en` and a Batch size of four |
+| When | the seventh onward are translated again |
+| Then | the Model is shown the Segments from the third on when looking for Split Sentences, and never the first two |
+
+## `TL-091` Translating again with Speaker Labels
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment `小明：你好` translated into `en` |
+| When | it is translated again with Speaker Labels turned on |
+| Then | the Model is sent `你好` alone and the translation keeps `小明` before it |
+
+## `TL-092` Keeping no Rolling Summary when translating again
+
+| Step | Statement |
+| --- | --- |
+| Given | five Segments translated into `en` and a Rolling Summary asked for |
+| When | the last four are translated again in Batches of two |
+| Then | no summary request is sent |

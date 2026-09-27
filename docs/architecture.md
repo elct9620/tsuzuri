@@ -175,7 +175,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `progress.rs` 與 `Progress` 放在同一檔的 `AppHandle` 實作 | 只發兩個事件，放一起最清楚 |
 | `failure.rs` 把 `tauri::Error` 轉成 `Failure` | 統一轉換指令的錯誤 |
 | 轉錄指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（`docs/design.md` 6.4） |
-| `logs/commands.rs` 直接開啟目錄 | 系統程式，不是元件 |
+| `system_opener` 直接執行系統程式 | 開啟目錄與網頁，不是元件 |
 | 各情境的設定檔經 `json_settings` | 同一種讀寫 |
 
 ### 3.2 情境
@@ -204,6 +204,8 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `window` | 介面 | 視窗大小、影片視窗 |
 | — | `menu` | 轉接 | macOS 復原與重做 |
 | — | `logs` | 轉接 | 決定 log 目錄 |
+| — | `system_opener` | 轉接 | 交給系統開啟 |
+| — | `about` | 介面 | 釋出頁面 |
 | — | `transcript` | 領域 | 段落與 SRT |
 | — | `segment_change` | 領域 | 段落變更 |
 | — | `replacement` | 領域 | 搜尋取代 |

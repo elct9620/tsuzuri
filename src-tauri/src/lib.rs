@@ -1,3 +1,4 @@
+pub mod about;
 pub mod cleanup;
 pub mod failure;
 pub mod json_settings;
@@ -11,6 +12,7 @@ pub mod project;
 pub mod replacement;
 pub mod segment_change;
 pub mod steps;
+pub mod system_opener;
 pub mod timing;
 pub mod toolchain;
 pub mod transcript;
@@ -112,6 +114,7 @@ pub fn run() {
             logs::commands::log_directory,
             logs::commands::choose_log_directory,
             logs::commands::open_log_directory,
+            about::commands::open_releases,
             project::commands::revert_row,
             project::commands::undo,
             project::commands::redo,

@@ -1,11 +1,11 @@
 use std::path::PathBuf;
-use std::process::Command;
 
 use tauri::{AppHandle, State};
 
 use super::{LogDirInUse, LogDirectory, LogSettings};
 use crate::failure::Failure;
 use crate::json_settings::settings_dir;
+use crate::system_opener::open_in_system;
 
 #[tauri::command]
 pub fn log_directory(
@@ -35,14 +35,6 @@ pub fn choose_log_directory(
 
 #[tauri::command]
 pub fn open_log_directory(log_dir: State<'_, LogDirInUse>) -> Result<(), Failure> {
-    let directory = log_dir.0.clone();
-    #[cfg(target_os = "macos")]
-    let opener = "open";
-    #[cfg(target_os = "windows")]
-    let opener = "explorer";
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    let opener = "xdg-open";
-    // The file manager answers at once; its status says nothing about the directory opening.
-    let _ = Command::new(opener).arg(&directory).status()?;
+    open_in_system(&log_dir.0)?;
     Ok(())
 }

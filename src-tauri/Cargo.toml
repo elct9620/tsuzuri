@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Local transcription, subtitle editing and translation"
 authors = ["Aotokitsuruya <contact@aotoki.me>"]
 license = "Apache-2.0"
+repository = "https://github.com/elct9620/tsuzuri"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

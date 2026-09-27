@@ -342,3 +342,11 @@ Open the directory the log is written to in this launch with the system's file m
 pub fn open_log_directory(log_dir: State<'_, LogDirInUse>) -> Result<(), Failure> {}
 ```
 
+## `open_releases`
+
+Open the page listing Tsuzuri's releases, where each release carries the source of the ffmpeg it bundles, in the system's browser. The page is fixed on the Rust side, so the webview cannot have any other address opened.
+
+```rust
+pub fn open_releases() -> Result<(), Failure> {}
+```
+

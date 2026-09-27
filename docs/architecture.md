@@ -41,6 +41,7 @@
 | `src-tauri/tauri.bundle.conf.json` | 打包時把 `vendor/` 放進資源的 `components/` |
 | CI 的 cargo-about | 列出 Rust 套件的授權 |
 | `scripts/licenses.ts` | 檢查授權並寫出授權頁 |
+| `src-tauri/build.rs` | 把建置的 commit 寫進執行檔 |
 
 App 依 `components.json` 列出的順序，使用第一個能執行的內建變體。
 
@@ -108,8 +109,8 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
 | `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
-| `logs.ts` | `logs/commands.rs` | log 目錄 |
-| `about.ts` | `about/commands.rs` | 釋出頁面 |
+| `logs.ts` | `logs/commands.rs` | log 目錄、除錯紀錄 |
+| `about.ts` | `about/commands.rs` | App Build、釋出頁面 |
 | `progress.ts` | `steps/commands.rs` | `cancel_task` |
 
 指令名稱與參數以 `.spec/contract/commands.md` 為準。
@@ -204,9 +205,9 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `lib` | 介面 | 組裝 |
 | — | `window` | 介面 | 視窗大小、影片視窗 |
 | — | `menu` | 轉接 | macOS 復原與重做 |
-| — | `logs` | 轉接 | 決定 log 目錄 |
+| — | `logs` | 轉接 | log 目錄與層級 |
 | — | `system_opener` | 轉接 | 交給系統開啟 |
-| — | `about` | 介面 | 釋出頁面 |
+| — | `about` | 介面 | App Build、釋出頁面 |
 | — | `transcript` | 領域 | 段落與 SRT |
 | — | `segment_change` | 領域 | 段落變更 |
 | — | `replacement` | 領域 | 搜尋取代 |
@@ -582,8 +583,8 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `editing.ts` | 實作 `editor/` 的 port |
 | `transcription.ts`、`translation.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
-| `logs.ts` | log 目錄的指令與型別 |
-| `about.ts` | 開啟釋出頁面的指令 |
+| `logs.ts` | log 目錄、除錯紀錄的指令 |
+| `about.ts` | App Build、開啟釋出頁面 |
 | `waveform.ts` | 波形的指令與型別 |
 | `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |
 | `events.ts` | 把 Rust 事件轉到 window |
@@ -599,7 +600,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/save_mark.ts` | 標題列的存檔提示與計時 |
 | `ui/failure.ts` | 錯誤碼的訊息與通知種類 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
-| `ui/time.ts`、`ui/menu.ts` | 時間格式、關閉工具列選單 |
+| `ui/time.ts`、`ui/menu.ts` | 時間格式與欄位綁定、關閉選單 |
 | `ui/models.ts` | 各 Model Slot 的副檔名 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |

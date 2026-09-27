@@ -227,6 +227,16 @@ Once the video has left, the Current Segment's card repeats the row being edited
 | When | the Video Window button is pressed again |
 | Then | the Video Window closes with the video back in the Preview |
 
+## `PV-167` Opening the Video Window again before the last one is gone
+
+A window closes a moment after it is asked to, and a window opened by the same name meanwhile is the closing one, which would take the video with it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window |
+| When | the Video Window button is pressed twice, before the Video Window is gone |
+| Then | a new Video Window opens with the video once the last one is gone |
+
 ## `PV-132` Hearing a key pressed in the Video Window
 
 | Step | Statement |

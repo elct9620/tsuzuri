@@ -158,6 +158,11 @@ export default class PreviewController extends Controller {
   private screenRow!: HTMLElement;
   /** The window the video is in while it is out of the Preview. */
   private videoWindow: Window | null = null;
+  /**
+   * The last Video Window's removal: until it lands, a window opened by the same name would be
+   * the one closing, and take the video away with it.
+   */
+  private videoWindowRemoval: Promise<void> | null = null;
   private readonly playerListeners: [string, () => void][] = [
     ["loadedmetadata", () => this.measure()],
     ["durationchange", () => this.showTime()],
@@ -229,6 +234,8 @@ export default class PreviewController extends Controller {
 
   toggleVideoWindow(): void {
     if (this.videoWindow) this.closeVideoWindow();
+    else if (this.videoWindowRemoval)
+      void this.videoWindowRemoval.then(() => this.moveVideoOut());
     else this.moveVideoOut();
   }
 
@@ -238,7 +245,10 @@ export default class PreviewController extends Controller {
    */
   closeVideoWindow(): void {
     this.bringVideoBack();
-    void destroyVideoWindow();
+    const removal = destroyVideoWindow().finally(() => {
+      if (this.videoWindowRemoval === removal) this.videoWindowRemoval = null;
+    });
+    this.videoWindowRemoval = removal;
   }
 
   togglePlayback(): void {
@@ -312,6 +322,7 @@ export default class PreviewController extends Controller {
   }
 
   private moveVideoOut(): void {
+    if (this.videoWindow) return;
     const videoWindow = openVideoWindow(t("preview.videoWindowTitle"));
     if (!videoWindow) return;
     forwardKeys(videoWindow);

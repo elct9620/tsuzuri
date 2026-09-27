@@ -2,7 +2,7 @@
 import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf } from "../test_project";
@@ -154,6 +154,7 @@ describe("PreviewController", () => {
     application.stop();
     videoWindow()?.close();
     clearMocks();
+    vi.restoreAllMocks();
   });
 
   // @behavior PV-008
@@ -672,6 +673,29 @@ describe("PreviewController", () => {
       expect([videoWindow(), windowCalls]).toEqual([
         null,
         [["plugin:window|destroy", { label: "video" }]],
+      ]);
+    });
+
+    // @behavior PV-167
+    it("opens the Video Window again only once the last one is gone", async () => {
+      await show(projectWithMedia());
+      pressVideoWindowButton();
+      const open = window.open.bind(window);
+      vi.spyOn(window, "open").mockImplementation((url, name, features) => {
+        windowCalls.push(["window.open", name]);
+        return open(url, name, features);
+      });
+
+      pressVideoWindowButton();
+      pressVideoWindowButton();
+      await settle();
+
+      expect([videoWindow() !== null, windowCalls]).toEqual([
+        true,
+        [
+          ["plugin:window|destroy", { label: "video" }],
+          ["window.open", "video"],
+        ],
       ]);
     });
 

@@ -71,9 +71,12 @@ export function resumeVolumeBoost(player: HTMLMediaElement): void {
   void boostByPlayer.get(player)?.context.resume();
 }
 
-/** How many milliseconds the boosted sound takes to reach the speakers; none before any boost. */
+/**
+ * How many milliseconds the boosted sound takes to reach the speakers; none until a boost has
+ * played, since a context not yet running has no output to measure.
+ */
 export function outputLatencyMs(): number | null {
-  if (!boostedContext) return null;
+  if (boostedContext?.state !== "running") return null;
   const { baseLatency, outputLatency } = boostedContext;
   return Math.round((baseLatency + (outputLatency ?? 0)) * 1000);
 }

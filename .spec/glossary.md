@@ -68,7 +68,7 @@ The Current Resource's media above the editor: a player, its Waveform with a reg
 
 ### Volume Boost
 
-An experimental choice, off unless turned on in the settings on this machine, that lets the Preview play above 100% of the media's volume through Web Audio, at the cost of its sound possibly lagging behind the picture. It takes effect when the app opens.
+An experimental choice, off unless turned on in the settings on this machine, that lets the Preview play above 100% of the media's volume through Web Audio, at the cost of its sound possibly lagging behind the picture. It takes effect after a restart.
 
 ### Video Window
 

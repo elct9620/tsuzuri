@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-/** Opens a dialog that needs nothing prepared first, such as the settings. */
+/** Opens a dialog that needs nothing prepared first, such as the settings, and says it opened for what reads its state anew. */
 export default class DialogController extends Controller {
   static targets = ["dialog"];
 
@@ -8,5 +8,6 @@ export default class DialogController extends Controller {
 
   open(): void {
     this.dialogTarget.showModal();
+    this.dispatch("opened");
   }
 }

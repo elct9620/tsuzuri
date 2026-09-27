@@ -11,6 +11,7 @@ Hearing and watching the Current Resource's media above the editor while its sub
 - `src/controllers/preview_controller.test.ts`
 - `src/controllers/timeline_controller.test.ts`
 - `src/controllers/current_segment.test.ts`
+- `src/controllers/volume_boost_controller.test.ts`
 
 ## `PV-001` Letting the webview read a media file of the Project
 
@@ -868,6 +869,30 @@ Web Audio plays a media file of another origin as silence unless the file was re
 | Given | the Volume Boost on |
 | When | the Preview opens |
 | Then | the media is read with anonymous CORS |
+
+## `PV-174` Turning the Volume Boost on from the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the Volume Boost off since the app opened |
+| When | it is turned on in the settings |
+| Then | it is remembered on this machine and a hint says it takes effect after a restart |
+
+## `PV-175` Showing how late the boosted sound reaches the speakers
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview having played above 100 through Web Audio 30 ms ahead of the speakers |
+| When | the settings open |
+| Then | the output latency reads about 30 ms |
+
+## `PV-176` Leaving the output latency out before the boost plays
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview not yet played above 100 |
+| When | the settings open |
+| Then | no output latency is shown |
 
 ## `PV-092` Showing the Speaker over the video by default
 

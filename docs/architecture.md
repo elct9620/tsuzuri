@@ -545,7 +545,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
-| `components`、`models`、`transcription-settings`、`translation-settings`、`logs`、`about` | 設定頁 |
+| `components`、`models`、`transcription-settings`、`translation-settings`、`logs`、`volume-boost`、`about` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |
 | `shortcuts` | 快速鍵一覽 |
 | `notification` | 每則通知的倒數、暫停與按鈕 |
@@ -571,6 +571,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
+| `dialog:opened` | `dialog` | `volume-boost` 讀取輸出延遲 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
 | `segment-changes:retranslate` | `segment-changes` | `translate` 開啟重新翻譯 |

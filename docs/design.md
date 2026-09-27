@@ -312,7 +312,7 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 | Webview 打包套件 | 同 `about.toml` | 腳本檢查 |
 | OpenCC 字典 | Apache-2.0 | 收進授權頁 |
 
-`vendor.sh` 把每個變體帶著的授權檔放進 `licenses/`，`scripts/licenses.ts` 再把全部寫成授權頁，從設定的「關於」開啟（`docs/ui.md` 7.5）。ffmpeg 不開 GPL、nonfree，是獨立執行檔，原始程式碼附在每次釋出。
+`vendor.sh` 把每個變體帶著的授權檔放進 `licenses/`，`scripts/licenses.ts` 再把全部寫成授權頁，從設定的「關於」開啟（`docs/ui.md` 7.6）。ffmpeg 不開 GPL、nonfree，是獨立執行檔，原始程式碼附在每次釋出。
 
 ## 5 模型
 
@@ -842,14 +842,14 @@ textarea 不能在文字裡標記，後續的詞彙標記與選取都需要。Pr
 ```
   音量 ≤ 100 ─▶ <video>.volume ─────────────────▶ 喇叭（瀏覽器補償延遲）
   音量 > 100 ─▶ Web Audio：來源 ─▶ GainNode ─▶ 喇叭（不補償）
-                 └ 接上後拔不掉，直到重新開啟
+                 └ 接上後拔不掉，直到重新啟動
 ```
 
 | 項目 | 做法 |
 |---|---|
 | 開關 | 設定 → 整體 → 實驗性 |
 | 預設 | 關，記在這台電腦 |
-| 生效 | 重新開啟後 |
+| 生效 | 重新啟動後 |
 | 滑桿 | 開啟時 0–200，線性 |
 | 增益 | 只用 GainNode |
 | 媒體讀取 | 開啟時用 CORS |

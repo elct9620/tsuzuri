@@ -275,6 +275,16 @@ const en = {
     debugLogOnAfterRestart: "The debug log starts after a restart",
     debugLogOffAfterRestart: "The debug log stops after a restart",
     debugLogNotChosen: "Debug log not switched",
+    experimental: "Experimental",
+    volumeBoost: "Volume up to 200%",
+    volumeBoostHelp:
+      "Lets the preview play louder than the media. Above 100% the sound goes through Web Audio and may lag behind the picture and subtitles; takes effect after a restart",
+    volumeBoostOnAfterRestart: "The volume can pass 100% after a restart",
+    volumeBoostOffAfterRestart: "The volume stops at 100% after a restart",
+    outputLatency: "Output latency",
+    outputLatencyHelp:
+      "How long the sound takes through Web Audio to the speakers, for a report",
+    latencyMs: "About {{ms}} ms",
     general: "General",
     primaryLanguageHelp:
       "The language spoken in the media. Transcription listens for it and translation starts from it; changing it pairs the subtitle files again. Applies to this project only.",

@@ -2,11 +2,12 @@ use std::path::PathBuf;
 
 use tauri::AppHandle;
 
-use super::settings::{self, load_settings, settings_dir};
+use super::settings::{self, load_settings};
 use super::{
     find_statuses_off_the_main_thread, Choices, ComponentStatus, ModelSettingsView, ModelSlot,
 };
 use crate::failure::Failure;
+use crate::json_settings::settings_dir;
 
 #[tauri::command]
 pub async fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, Failure> {

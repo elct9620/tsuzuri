@@ -4,6 +4,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use crate::json_settings;
 use crate::project::TranscriptionOverrides;
 
 const SETTINGS_FILE: &str = "transcription.json";
@@ -46,19 +47,12 @@ impl TranscriptionSettings {
 
     /// Settings never saved load as the defaults.
     pub fn load(dir: &Path) -> io::Result<TranscriptionSettings> {
-        match fs::read(dir.join(SETTINGS_FILE)) {
-            Ok(bytes) => serde_json::from_slice(&bytes).map_err(io::Error::other),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => {
-                Ok(TranscriptionSettings::default())
-            }
-            Err(error) => Err(error),
-        }
+        json_settings::read_or_default(&dir.join(SETTINGS_FILE))
     }
 
     pub fn save(self, dir: &Path) -> io::Result<()> {
         fs::create_dir_all(dir)?;
-        let json = serde_json::to_vec_pretty(&self).map_err(io::Error::other)?;
-        fs::write(dir.join(SETTINGS_FILE), json)
+        json_settings::write(&dir.join(SETTINGS_FILE), &self)
     }
 }
 

@@ -10,6 +10,7 @@ use super::{
     ProjectConfig, Resource,
 };
 use crate::failure::Failure;
+use crate::json_settings;
 use crate::language::Language;
 use crate::transcript::{Segment, SrtContent, Transcript};
 
@@ -304,16 +305,11 @@ const CONFIG_FILE: &str = "tsuzuri.config.json";
 impl ProjectConfig {
     /// A directory without the file loads as the default.
     pub fn load(directory: &Path) -> io::Result<ProjectConfig> {
-        match fs::read(directory.join(CONFIG_FILE)) {
-            Ok(bytes) => serde_json::from_slice(&bytes).map_err(io::Error::other),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(ProjectConfig::default()),
-            Err(error) => Err(error),
-        }
+        json_settings::read_or_default(&directory.join(CONFIG_FILE))
     }
 
     pub fn save(self, directory: &Path) -> io::Result<()> {
-        let json = serde_json::to_vec_pretty(&self).map_err(io::Error::other)?;
-        fs::write(directory.join(CONFIG_FILE), json)
+        json_settings::write(&directory.join(CONFIG_FILE), &self)
     }
 }
 

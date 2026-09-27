@@ -1,4 +1,5 @@
 pub mod failure;
+pub mod json_settings;
 pub mod language;
 pub mod logs;
 #[cfg(target_os = "macos")]

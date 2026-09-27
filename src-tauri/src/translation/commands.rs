@@ -6,6 +6,7 @@ use super::{
     TranslationPlan, TranslationScope, TranslationSettings,
 };
 use crate::failure::Failure;
+use crate::json_settings;
 use crate::language::Language;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::{Phase, Progress};
@@ -64,7 +65,7 @@ async fn run_translation(
     let plan = TranslationPlan {
         target,
         options,
-        settings: TranslationSettings::load(&settings::settings_dir(app)?)?,
+        settings: TranslationSettings::load(&json_settings::settings_dir(app)?)?,
         scope,
     };
     let preset_dir = app.path().app_data_dir()?;
@@ -97,7 +98,9 @@ async fn run_translation(
 
 #[tauri::command]
 pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failure> {
-    Ok(TranslationSettings::load(&settings::settings_dir(&app)?)?)
+    Ok(TranslationSettings::load(&json_settings::settings_dir(
+        &app,
+    )?)?)
 }
 
 /// Saves the settings, stopping the Resident llama-server when it is turned off and starting it when turned on.
@@ -109,7 +112,7 @@ pub async fn save_translation_settings(
     resident: State<'_, ResidentLlama>,
     settings: TranslationSettings,
 ) -> Result<TranslationSettings, Failure> {
-    let saved_settings = settings.save(&settings::settings_dir(&app)?)?;
+    let saved_settings = settings.save(&json_settings::settings_dir(&app)?)?;
     if saved_settings.has_resident_llama {
         start_resident_llama(&app);
     } else {

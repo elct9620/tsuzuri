@@ -5,7 +5,7 @@ use tauri::{AppHandle, State};
 
 use super::{LogDirInUse, LogDirectory, LogSettings};
 use crate::failure::Failure;
-use crate::toolchain::settings::settings_dir;
+use crate::json_settings::settings_dir;
 
 #[tauri::command]
 pub fn log_directory(

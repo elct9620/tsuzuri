@@ -4,6 +4,7 @@ use tauri::{AppHandle, Manager, State};
 
 use super::{run_transcribe, Tools, Transcription, TranscriptionSettings};
 use crate::failure::Failure;
+use crate::json_settings;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::{Phase, Progress};
 use crate::project::{CurrentProject, TranscriptionScope};
@@ -35,7 +36,7 @@ pub async fn transcribe(
     .await?;
     let tools = Tools { ffmpeg, whisper };
     let models = settings::load_settings(&app)?;
-    let general_settings = TranscriptionSettings::load(&settings::settings_dir(&app)?)?;
+    let general_settings = TranscriptionSettings::load(&json_settings::settings_dir(&app)?)?;
     let started_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |since| since.as_millis());
@@ -65,7 +66,9 @@ pub async fn transcribe(
 
 #[tauri::command]
 pub fn transcription_settings(app: AppHandle) -> Result<TranscriptionSettings, Failure> {
-    Ok(TranscriptionSettings::load(&settings::settings_dir(&app)?)?)
+    Ok(TranscriptionSettings::load(&json_settings::settings_dir(
+        &app,
+    )?)?)
 }
 
 #[tauri::command]
@@ -73,6 +76,6 @@ pub fn save_transcription_settings(
     app: AppHandle,
     settings: TranscriptionSettings,
 ) -> Result<TranscriptionSettings, Failure> {
-    settings.save(&settings::settings_dir(&app)?)?;
+    settings.save(&json_settings::settings_dir(&app)?)?;
     Ok(settings)
 }

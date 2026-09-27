@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::json_settings;
+
 const SETTINGS_FILE: &str = "logs.json";
 
 /// Where the log is written, saved across launches; none for the OS log directory of the app.
@@ -18,17 +20,12 @@ pub struct LogSettings {
 impl LogSettings {
     /// Settings never saved load as the defaults.
     pub fn load(dir: &Path) -> io::Result<LogSettings> {
-        match fs::read(dir.join(SETTINGS_FILE)) {
-            Ok(bytes) => serde_json::from_slice(&bytes).map_err(io::Error::other),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(LogSettings::default()),
-            Err(error) => Err(error),
-        }
+        json_settings::read_or_default(&dir.join(SETTINGS_FILE))
     }
 
     pub fn save(&self, dir: &Path) -> io::Result<()> {
         fs::create_dir_all(dir)?;
-        let json = serde_json::to_vec_pretty(self).map_err(io::Error::other)?;
-        fs::write(dir.join(SETTINGS_FILE), json)
+        json_settings::write(&dir.join(SETTINGS_FILE), self)
     }
 
     /// The directory to write the log to: the one chosen while it can be made, or `os_log_dir`,

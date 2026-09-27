@@ -4,6 +4,8 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use crate::json_settings;
+
 const SETTINGS_FILE: &str = "translation.json";
 
 /// How a translation is batched and repaired, saved across launches.
@@ -37,13 +39,7 @@ impl Default for TranslationSettings {
 impl TranslationSettings {
     /// Settings never saved load as the defaults.
     pub fn load(dir: &Path) -> io::Result<TranslationSettings> {
-        match fs::read(dir.join(SETTINGS_FILE)) {
-            Ok(bytes) => serde_json::from_slice(&bytes).map_err(io::Error::other),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => {
-                Ok(TranslationSettings::default())
-            }
-            Err(error) => Err(error),
-        }
+        json_settings::read_or_default(&dir.join(SETTINGS_FILE))
     }
 
     /// Saves the settings raised to at least one each, since none of them works at zero,
@@ -56,8 +52,7 @@ impl TranslationSettings {
             ..self
         };
         fs::create_dir_all(dir)?;
-        let json = serde_json::to_vec_pretty(&saved_settings).map_err(io::Error::other)?;
-        fs::write(dir.join(SETTINGS_FILE), json)?;
+        json_settings::write(&dir.join(SETTINGS_FILE), &saved_settings)?;
         Ok(saved_settings)
     }
 }

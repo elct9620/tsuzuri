@@ -12,7 +12,6 @@ import { isMacOS } from "../backend/system";
 import { extractWaveform, type Waveform } from "../backend/waveform";
 import {
   isTextField,
-  type ChoiceSource,
   type EditingSession,
   type SegmentChange,
 } from "../editor";
@@ -21,6 +20,7 @@ import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { notifyEdit, notifyFailure } from "../ui/notification";
 import { chords, shortcutById } from "../ui/shortcuts";
 import {
+  choiceLanding,
   formatLength,
   formatSeconds,
   landingSpan,
@@ -30,6 +30,7 @@ import {
   toMilliseconds,
   toSeconds,
   type DragReach,
+  type Landing,
   type Span,
 } from "../ui/timeline_spans";
 
@@ -90,50 +91,6 @@ interface Drag {
 export function regionColor(index: number, isCurrent = false): string {
   if (isCurrent) return "var(--segment-current)";
   return `var(${REGION_COLORS[index % REGION_COLORS.length]})`;
-}
-
-/** Where the media goes as another Segment is chosen, none to stay; and whether it pauses there. */
-interface Landing {
-  at: number | null;
-  isPausing: boolean;
-}
-
-/** What decides where the media goes as another Segment is chosen. */
-interface Choice {
-  source: ChoiceSource;
-  /** Where the Segment chosen starts. */
-  start: number;
-  /** Where its region was clicked, when chosen from it. */
-  clicked?: number;
-  isPaused: boolean;
-  isPlayingAlone: boolean;
-}
-
-/**
- * Where the media goes as another Segment is chosen: a paused media moves to it, to where its
- * region was clicked or else to its start. Playing alone keeps to the Segment chosen, so plays it
- * from its start; otherwise only a row chosen pauses at its start, a region plays on from the
- * click, and a Speaker named or Enter pressed plays on where it is.
- */
-function choiceLanding({
-  source,
-  start,
-  clicked = start,
-  isPaused,
-  isPlayingAlone,
-}: Choice): Landing {
-  if (isPaused)
-    return { at: source === "region" ? clicked : start, isPausing: false };
-  if (isPlayingAlone) return { at: start, isPausing: false };
-  switch (source) {
-    case "row":
-      return { at: start, isPausing: true };
-    case "region":
-      return { at: clicked, isPausing: false };
-    case "speaker":
-    case "next":
-      return { at: null, isPausing: false };
-  }
 }
 
 const CONTROL_SELECTOR =

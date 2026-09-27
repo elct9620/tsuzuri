@@ -1,6 +1,11 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { landingSpan, regionLanes, snapTime } from "./timeline_spans";
+import {
+  choiceLanding,
+  landingSpan,
+  regionLanes,
+  snapTime,
+} from "./timeline_spans";
 
 describe("timeline spans", () => {
   const reach = {
@@ -50,5 +55,45 @@ describe("timeline spans", () => {
       { index: 1, count: 2 },
       { index: 0, count: 1 },
     ]);
+  });
+  describe("choosing another Segment", () => {
+    const playing = { start: 1, clicked: 1.5, isPaused: false };
+
+    it("moves a paused media to where a region was clicked, else to the Segment's start", () => {
+      const paused = { ...playing, isPaused: true, isPlayingAlone: false };
+
+      expect([
+        choiceLanding({ ...paused, source: "region" }),
+        choiceLanding({ ...paused, source: "speaker" }),
+      ]).toEqual([
+        { at: 1.5, isPausing: false },
+        { at: 1, isPausing: false },
+      ]);
+    });
+
+    it("pauses only a row chosen, plays on from a click, and stays for a Speaker or Enter", () => {
+      const onward = { ...playing, isPlayingAlone: false };
+
+      expect(
+        (["row", "region", "speaker", "next"] as const).map((source) =>
+          choiceLanding({ ...onward, source }),
+        ),
+      ).toEqual([
+        { at: 1, isPausing: true },
+        { at: 1.5, isPausing: false },
+        { at: null, isPausing: false },
+        { at: null, isPausing: false },
+      ]);
+    });
+
+    it("plays the Segment chosen from its start while playing alone, however it was chosen", () => {
+      const alone = { ...playing, isPlayingAlone: true };
+
+      expect(
+        (["row", "region", "speaker", "next"] as const).map(
+          (source) => choiceLanding({ ...alone, source }).at,
+        ),
+      ).toEqual([1, 1, 1, 1]);
+    });
   });
 });

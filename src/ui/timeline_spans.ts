@@ -1,9 +1,11 @@
 import type { Segment } from "../backend/project";
+import type { ChoiceSource } from "../editor";
 import { formatTime } from "./time";
 
 /**
- * Where Segments run on the Preview's timeline, in seconds, and where a dragged one lands; kept
- * apart from the waveform that draws them so the rules hold without one.
+ * Where Segments run on the Preview's timeline, in seconds, where a dragged one lands, and where
+ * the media goes as another is chosen; kept apart from the waveform that draws them so the rules
+ * hold without one.
  */
 
 /** An edge of a Span, which a drag may move alone. */
@@ -128,6 +130,50 @@ export function landingSpan(
     Math.min(highestStart, highestEnd - length),
   );
   return { start, end: start + length };
+}
+
+/** Where the media goes as another Segment is chosen, none to stay; and whether it pauses there. */
+export interface Landing {
+  at: number | null;
+  isPausing: boolean;
+}
+
+/** What decides where the media goes as another Segment is chosen. */
+export interface Choice {
+  source: ChoiceSource;
+  /** Where the Segment chosen starts. */
+  start: number;
+  /** Where its region was clicked, when chosen from it. */
+  clicked?: number;
+  isPaused: boolean;
+  isPlayingAlone: boolean;
+}
+
+/**
+ * Where the media goes as another Segment is chosen: a paused media moves to it, to where its
+ * region was clicked or else to its start. Playing alone keeps to the Segment chosen, so plays it
+ * from its start; otherwise only a row chosen pauses at its start, a region plays on from the
+ * click, and a Speaker named or Enter pressed plays on where it is.
+ */
+export function choiceLanding({
+  source,
+  start,
+  clicked = start,
+  isPaused,
+  isPlayingAlone,
+}: Choice): Landing {
+  if (isPaused)
+    return { at: source === "region" ? clicked : start, isPausing: false };
+  if (isPlayingAlone) return { at: start, isPausing: false };
+  switch (source) {
+    case "row":
+      return { at: start, isPausing: true };
+    case "region":
+      return { at: clicked, isPausing: false };
+    case "speaker":
+    case "next":
+      return { at: null, isPausing: false };
+  }
 }
 
 /** Where `segment` runs on the timeline. */

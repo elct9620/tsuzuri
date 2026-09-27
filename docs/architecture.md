@@ -596,7 +596,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
-| `ui/timeline_spans.ts` | 時間軸的區段規則 |
+| `ui/timeline_spans.ts` | 時間軸區段與選段的落點 |
 | `ui/file_name.ts` | 路徑的最後一段 |
 | `ui/shortcuts.ts` | 各平台的快速鍵與寫法 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |

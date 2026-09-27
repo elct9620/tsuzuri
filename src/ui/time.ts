@@ -1,5 +1,9 @@
 import { interfaceLanguageCode } from "../i18n";
 
+/** The actions a time field binds; a paste or cut never reaches the text as the browser would apply it. */
+export const TIME_FIELD_ACTIONS =
+  "keydown->time-field#typeKey:!composing paste->time-field#pasteTime:prevent cut->time-field#copySelection:prevent compositionstart->time-field#keepTime compositionend->time-field#restoreTime";
+
 /** `ms` as the editor writes a time: `HH:MM:SS.mmm`. */
 export function formatTime(ms: number): string {
   const pad = (value: number, width = 2) => String(value).padStart(width, "0");

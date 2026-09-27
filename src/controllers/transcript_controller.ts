@@ -32,8 +32,7 @@ import { iconElement } from "../ui/icons";
 import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { shortcutById, shortcutText } from "../ui/shortcuts";
 import type { TaskKind } from "../ui/progress";
-import { formatTime } from "../ui/time";
-import { TIME_FIELD_ACTIONS } from "./time_field_controller";
+import { formatTime, TIME_FIELD_ACTIONS } from "../ui/time";
 
 /** Where the webview remembers whether the editor follows playback. */
 const FOLLOWING_KEY = "tsuzuri.transcript-following";

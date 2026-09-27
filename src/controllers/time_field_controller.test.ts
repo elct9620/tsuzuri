@@ -2,9 +2,8 @@
 import { Application } from "@hotwired/stimulus";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { composingOption } from "./field_controller";
-import TimeFieldController, {
-  TIME_FIELD_ACTIONS,
-} from "./time_field_controller";
+import TimeFieldController from "./time_field_controller";
+import { TIME_FIELD_ACTIONS } from "../ui/time";
 
 describe("TimeFieldController", () => {
   let application: Application;

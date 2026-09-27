@@ -10,10 +10,6 @@ import {
 /** The keys that move the caret past a separator rather than type one. */
 const SEPARATOR_KEYS = [":", ";", ".", ","];
 
-/** The actions a time field binds; a paste or cut never reaches the text as the browser would apply it. */
-export const TIME_FIELD_ACTIONS =
-  "keydown->time-field#typeKey:!composing paste->time-field#pasteTime:prevent cut->time-field#copySelection:prevent compositionstart->time-field#keepTime compositionend->time-field#restoreTime";
-
 /**
  * One time field of the editor, typed as Aegisub's time field is in its overwrite mode: a digit
  * overwrites the one at the caret, a separator typed moves past the one there, Backspace steps

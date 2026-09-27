@@ -43,6 +43,8 @@ pub struct TranslationOptions {
     has_self_review: bool,
     /// The Rolling Summary's word limit, or none to keep no summary.
     summary_word_limit: Option<usize>,
+    /// Whether a Simplified Cleanup follows a translation into `zh-TW`.
+    is_simplified_cleaned: bool,
 }
 
 /// Everything a translation is asked to do besides the Project it reads.
@@ -52,6 +54,13 @@ pub struct TranslationPlan {
     pub options: TranslationOptions,
     pub settings: TranslationSettings,
     pub scope: TranslationScope,
+}
+
+impl TranslationPlan {
+    /// Whether a Simplified Cleanup follows this translation: asked for, into `zh-TW`.
+    fn is_simplified_cleaned(&self) -> bool {
+        self.options.is_simplified_cleaned && self.target == Language::TraditionalChinese
+    }
 }
 
 /// Which Segments a translation writes.
@@ -180,8 +189,7 @@ pub async fn run_translate<'a>(
         chosen_indexes: plan.scope.indexes().unwrap_or_default(),
     };
     enter(ports, &mut phases, Phase::Loading);
-    let is_cleaned =
-        plan.settings.is_simplified_cleaned && plan.target == Language::TraditionalChinese;
+    let is_cleaned = plan.is_simplified_cleaned();
     let on_batch = batch_display(ports, project, &source, is_cleaned);
     let result = match server {
         LlamaServer::Job => {
@@ -2051,6 +2059,26 @@ mod tests {
         std::fs::read_to_string(dir.path().join("lecture.zh-TW.srt")).unwrap()
     }
 
+    #[test]
+    fn cleans_only_a_translation_into_traditional_chinese_asked_to_clean() {
+        let plan = |target, is_simplified_cleaned| TranslationPlan {
+            options: TranslationOptions {
+                is_simplified_cleaned,
+                ..TranslationOptions::default()
+            },
+            ..plan_for(target)
+        };
+
+        assert_eq!(
+            [
+                plan(Language::TraditionalChinese, true).is_simplified_cleaned(),
+                plan(Language::TraditionalChinese, false).is_simplified_cleaned(),
+                plan(Language::Japanese, true).is_simplified_cleaned(),
+            ],
+            [true, false, false]
+        );
+    }
+
     // @behavior TL-098
     #[tokio::test]
     async fn writes_a_translation_into_traditional_chinese_cleaned() {
@@ -2443,6 +2471,7 @@ mod tests {
                     has_speaker_labels: true,
                     has_self_review: true,
                     summary_word_limit: Some(50),
+                    is_simplified_cleaned: false,
                 },
                 ..plan_for(Language::English)
             },
@@ -2464,6 +2493,7 @@ mod tests {
                     has_speaker_labels: true,
                     has_self_review: true,
                     summary_word_limit: None,
+                    is_simplified_cleaned: false,
                 },
                 scope: TranslationScope::Segments(vec![1, 2]),
                 ..plan_for(Language::English)

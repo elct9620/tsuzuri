@@ -7,6 +7,8 @@ export interface TranslationOptions {
   has_speaker_labels: boolean;
   has_self_review: boolean;
   summary_word_limit: number | null;
+  /** Whether a Simplified Cleanup follows a translation into `zh-TW`. */
+  is_simplified_cleaned: boolean;
 }
 
 /** How a translation is batched and repaired, as Rust saves it. */

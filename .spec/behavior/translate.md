@@ -774,7 +774,7 @@ The lines before the chosen ones are what the user already put right, so when th
 
 | Step | Statement |
 | --- | --- |
-| Given | translation settings with the cleanup on, and a Model answering `你们好` for a translation into `zh-TW` |
+| Given | a translation into `zh-TW` asked to clean Simplified Chinese, and a Model answering `你们好` |
 | When | the Current Resource is translated |
 | Then | its Batch is shown as `你們好`, and the translation file reads `你們好` |
 
@@ -782,6 +782,24 @@ The lines before the chosen ones are what the user already put right, so when th
 
 | Step | Statement |
 | --- | --- |
-| Given | translation settings with the cleanup off, and a Model answering `你们好` for a translation into `zh-TW` |
+| Given | a translation into `zh-TW` asked not to clean, and a Model answering `你们好` |
 | When | the Current Resource is translated |
 | Then | the translation file reads `你们好` |
+
+## `TL-100` Offering the cleanup when translating into `zh-TW`
+
+The translation settings hold whether the cleanup starts checked; each translation may choose otherwise.
+
+| Step | Statement |
+| --- | --- |
+| Given | translation settings with the cleanup off |
+| When | the translate dialog is opened into `zh-TW`, then turned to `ja` |
+| Then | it first offers the cleanup unchecked, then no longer offers it |
+
+## `TL-101` Translating with the cleanup the dialog chose
+
+| Step | Statement |
+| --- | --- |
+| Given | the translate dialog into `zh-TW` with the cleanup unchecked |
+| When | translating is started |
+| Then | the Project is translated without the cleanup |

@@ -200,7 +200,7 @@ pub async fn retranslate(app: AppHandle, current: State<'_, CurrentProject>, ind
 
 ## `translate`
 
-Run the Translate Mode on the Current Resource from the Primary Language into the target Language, given by its code, with the options the Translate panel offers, the saved translation settings and the Project Model where the Project has one, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. Each Batch's translations are shown as it finishes, emitting `project-changed`; once all are done they are written to the Resource's translation file and the target is recorded as the Project's translation Language; the answer is the seconds each Phase took, and how many Segments of the original, retimed while it was translated, find no cue at their times in what was written.
+Run the Translate Mode on the Current Resource from the Primary Language into the target Language, given by its code, with the options the Translate panel offers, among them whether a Simplified Cleanup follows a translation into `zh-TW`, the saved translation settings and the Project Model where the Project has one, emitting a `pipeline-progress` event as each Phase starts and as its percentage changes. Each Batch's translations are shown as it finishes, emitting `project-changed`; once all are done they are written to the Resource's translation file and the target is recorded as the Project's translation Language; the answer is the seconds each Phase took, and how many Segments of the original, retimed while it was translated, find no cue at their times in what was written.
 
 ```rust
 pub async fn translate(app: AppHandle, target: Language, options: TranslationOptions) -> Result<Translation, Failure> {}
@@ -288,7 +288,7 @@ pub fn export_path(current: State<'_, CurrentProject>, content: SrtContent) -> R
 
 ## `translation_settings`
 
-The saved translation settings: Batch size, retries before a failing group is split, reference lines, whether translations run on the Resident llama-server and how many seconds it keeps the Model after one, and whether a Simplified Cleanup follows a translation into `zh-TW`.
+The saved translation settings: Batch size, retries before a failing group is split, reference lines, whether translations run on the Resident llama-server and how many seconds it keeps the Model after one, and whether the Translate panel offers a Simplified Cleanup checked for a translation into `zh-TW`.
 
 ```rust
 pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failure> {}

@@ -22,7 +22,7 @@ pub struct TranslationSettings {
     pub has_resident_llama: bool,
     /// Seconds the Resident llama-server keeps the Model after a translation ends.
     pub model_keep_seconds: u64,
-    /// Whether a Simplified Cleanup follows a translation into `zh-TW`.
+    /// Whether the Translate panel offers a Simplified Cleanup checked for a translation into `zh-TW`.
     pub is_simplified_cleaned: bool,
 }
 

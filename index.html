@@ -2070,7 +2070,7 @@
         <select
           class="select select-sm w-auto"
           data-translation-options-target="language"
-          data-action="translation-options#reportOverwrite"
+          data-action="translation-options#reportOverwrite translation-options#offerCleanup"
         >
           <option value="en" selected>English</option>
           <option value="ja">日本語</option>
@@ -2119,6 +2119,17 @@
           data-translation-options-target="summaryWords"
         />
         <span data-i18n="translate.words"></span>
+      </label>
+      <label
+        class="flex items-center gap-2"
+        data-translation-options-target="cleanupChoice"
+      >
+        <input
+          type="checkbox"
+          class="checkbox checkbox-sm"
+          data-translation-options-target="simplifiedCleaned"
+        />
+        <span data-i18n="cleanup.action"></span>
       </label>
     </template>
     <dialog class="modal" data-shortcuts-target="dialog">

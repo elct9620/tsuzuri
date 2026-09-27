@@ -6,7 +6,10 @@ import {
   type ProjectView,
   type TranslationGlossaryView,
 } from "../backend/project";
-import type { TranslationOptions } from "../backend/translation";
+import {
+  translationSettings,
+  type TranslationOptions,
+} from "../backend/translation";
 import { fileName } from "../ui/file_name";
 
 function glossaryLabel(glossary: TranslationGlossaryView | null): string {
@@ -28,6 +31,8 @@ export default class TranslationOptionsController extends Controller {
     "summary",
     "summaryWords",
     "summaryChoice",
+    "simplifiedCleaned",
+    "cleanupChoice",
   ];
 
   declare readonly languageTarget: HTMLSelectElement;
@@ -39,6 +44,9 @@ export default class TranslationOptionsController extends Controller {
   declare readonly summaryWordsTarget: HTMLInputElement;
   /** The Rolling Summary's row, left out where only some Segments are translated. */
   declare readonly summaryChoiceTarget: HTMLElement;
+  declare readonly simplifiedCleanedTarget: HTMLInputElement;
+  /** The cleanup's row, offered only for a translation into `zh-TW`. */
+  declare readonly cleanupChoiceTarget: HTMLElement;
 
   /** The Languages the Current Resource is already translated into. */
   private translatedLanguages: string[] = [];
@@ -68,7 +76,25 @@ export default class TranslationOptionsController extends Controller {
     if (fixedLanguage !== null) this.summaryTarget.checked = false;
     this.translatedLanguages =
       currentResource(project)?.translation_languages ?? [];
+    this.offerCleanup();
+    void this.checkCleanupAsSaved();
     this.reportOverwrite();
+  }
+
+  /** Offers the cleanup only while the Language chosen is `zh-TW`. */
+  offerCleanup(): void {
+    this.cleanupChoiceTarget.hidden = this.language !== "zh-TW";
+  }
+
+  /** Starts the cleanup checked as the translation settings say; left as it is when they cannot be read. */
+  private async checkCleanupAsSaved(): Promise<void> {
+    try {
+      this.simplifiedCleanedTarget.checked = (
+        await translationSettings()
+      ).is_simplified_cleaned;
+    } catch {
+      // The settings panel tells of settings that cannot be read.
+    }
   }
 
   /**
@@ -99,6 +125,8 @@ export default class TranslationOptionsController extends Controller {
       summary_word_limit: this.summaryTarget.checked
         ? Number(this.summaryWordsTarget.value)
         : null,
+      is_simplified_cleaned:
+        this.language === "zh-TW" && this.simplifiedCleanedTarget.checked,
     };
   }
 }

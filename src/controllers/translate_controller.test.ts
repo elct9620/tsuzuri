@@ -55,9 +55,12 @@ describe("TranslateController", () => {
     option<HTMLInputElement>(name).checked = true;
   }
 
+  let isCleanupSaved: boolean;
+
   beforeEach(async () => {
     project = null;
     translateArgs = undefined;
+    isCleanupSaved = true;
     translation = async () => ({
       phases: [
         { phase: "prepare", seconds: 0.01 },
@@ -93,6 +96,8 @@ describe("TranslateController", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
+        if (command === "translation_settings")
+          return { is_simplified_cleaned: isCleanupSaved };
         if (command === "translate") {
           translateArgs = args;
           return translation();
@@ -256,6 +261,50 @@ describe("TranslateController", () => {
     });
   });
 
+  // @behavior TL-100
+  it("offers the cleanup as saved only while translating into zh-TW", async () => {
+    isCleanupSaved = false;
+    await hold(projectOf({ translation_language: "zh-TW" }));
+    await openDialog();
+    const intoTraditionalChinese = [
+      option("cleanupChoice").hidden,
+      option<HTMLInputElement>("simplifiedCleaned").checked,
+    ];
+
+    option<HTMLSelectElement>("language").value = "ja";
+    option("language").dispatchEvent(new Event("change"));
+
+    expect([intoTraditionalChinese, option("cleanupChoice").hidden]).toEqual([
+      [false, false],
+      true,
+    ]);
+  });
+
+  // @behavior TL-100
+  it("translates into zh-TW with the cleanup the settings start checked", async () => {
+    await hold(projectOf({ translation_language: "zh-TW" }));
+
+    await start();
+
+    expect(translateArgs).toMatchObject({
+      options: { is_simplified_cleaned: true },
+    });
+  });
+
+  // @behavior TL-101
+  it("translates without the cleanup the dialog unchecked", async () => {
+    await hold(projectOf({ translation_language: "zh-TW" }));
+    await openDialog();
+    option<HTMLInputElement>("simplifiedCleaned").checked = false;
+
+    document.querySelector<HTMLButtonElement>("#start")!.click();
+    await settle();
+
+    expect(translateArgs).toMatchObject({
+      options: { is_simplified_cleaned: false },
+    });
+  });
+
   // @behavior TL-097
   it("starts no translation while the summary has no word limit", async () => {
     await hold(projectOf());
@@ -353,6 +402,7 @@ describe("TranslateController", () => {
           indexes: [1],
           options: {
             has_speaker_labels: false,
+            is_simplified_cleaned: false,
             has_self_review: false,
             summary_word_limit: null,
           },

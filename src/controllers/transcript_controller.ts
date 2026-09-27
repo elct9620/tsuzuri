@@ -241,6 +241,33 @@ function item(
   return li;
 }
 
+/**
+ * Writes `segment` into the editors of `row`, all but the one with focus unless `isFocusedIncluded`,
+ * as a value typed there is newer than a refresh.
+ */
+function refreshRow(
+  row: HTMLLIElement,
+  segment: Segment,
+  isTranslationShown: boolean,
+  isFocusedIncluded = false,
+): void {
+  const values = [
+    formatTime(segment.start_ms),
+    formatTime(segment.end_ms),
+    segment.speaker ?? "",
+    segment.text,
+    ...(isTranslationShown ? [segment.translation ?? ""] : []),
+  ];
+  row
+    .querySelectorAll<HTMLElement>("[data-edge], [data-field]")
+    .forEach((editor, at) => {
+      if (!isFocusedIncluded && editor === document.activeElement) return;
+      if (editor.dataset.field === "speaker") labelSpeaker(editor, values[at]);
+      else if (isField(editor)) setFieldValue(editor, values[at]);
+      else (editor as HTMLInputElement).value = values[at];
+    });
+}
+
 export default class TranscriptController extends Controller {
   static targets = [
     "list",
@@ -508,39 +535,37 @@ export default class TranscriptController extends Controller {
       (project?.running_mode ?? null) !== null;
   }
 
-  /** Refreshes the editors in place when the Project keeps its shape, so the one being typed in keeps its focus. */
+  /**
+   * Refreshes the rows there are in place, adding or removing only those the Segments lack or no
+   * longer need, since Chromium reports a selection change for each time field drawn; rows are
+   * drawn anew only when the translation is shown or hidden. The editor being typed in keeps its
+   * value while the Segments keep their number; a change in number was made after it was written.
+   */
   private showSegments(segments: Segment[], isTranslationShown: boolean): void {
-    const editors = [
-      ...this.listTarget.querySelectorAll<HTMLElement>(
-        "[data-edge], [data-field]",
-      ),
-    ];
-    const values = segments.flatMap((segment) => [
-      formatTime(segment.start_ms),
-      formatTime(segment.end_ms),
-      segment.speaker ?? "",
-      segment.text,
-      ...(isTranslationShown ? [segment.translation ?? ""] : []),
-    ]);
-    const rows = this.listTarget.querySelectorAll(
-      ":scope > li:not([data-ghost]):not([data-placeholder])",
-    );
-    const isSameShape =
-      rows.length === segments.length && editors.length === values.length;
-    if (!isSameShape) {
+    const rows = this.segmentRows();
+    const hasTranslationField =
+      rows[0]?.querySelector(".field.translation") != null;
+    if (rows.length > 0 && hasTranslationField !== isTranslationShown) {
       this.listTarget.replaceChildren(
         ...segments.map((segment, index) =>
           item(segment, index, isTranslationShown),
         ),
       );
     } else {
-      editors.forEach((field, index) => {
-        if (field === document.activeElement) return;
-        if (field.dataset.field === "speaker")
-          labelSpeaker(field, values[index]);
-        else if (isField(field)) setFieldValue(field, values[index]);
-        else (field as HTMLInputElement).value = values[index];
-      });
+      const isSameCount = rows.length === segments.length;
+      const keptRows = rows.slice(0, segments.length);
+      rows.slice(segments.length).forEach((row) => row.remove());
+      keptRows.forEach((row, index) =>
+        refreshRow(row, segments[index], isTranslationShown, !isSameCount),
+      );
+      const addedRows = segments
+        .slice(rows.length)
+        .map((segment, at) =>
+          item(segment, rows.length + at, isTranslationShown),
+        );
+      const lastRow = keptRows[keptRows.length - 1];
+      if (lastRow) lastRow.after(...addedRows);
+      else this.listTarget.prepend(...addedRows);
     }
     this.showPendingTranslations();
     this.showSegmentsToCome(segments.length);

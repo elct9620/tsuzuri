@@ -735,6 +735,26 @@ describe("SegmentChangesController", () => {
       ]).toEqual([1, true, "0"]);
     });
 
+    // @behavior ED-119
+    it("shows the first half's text in the text left by a split", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+      field(0).dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Enter",
+          ctrlKey: true,
+          altKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      await settle();
+
+      await hold(texts("你好", "世界", "今天", "天氣很好"));
+
+      expect(field(0).textContent).toBe("你好");
+    });
+
     // @behavior ED-054
     it("keeps the Cursor when a split is refused", async () => {
       await hold(threeSegments);

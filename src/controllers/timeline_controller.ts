@@ -348,10 +348,10 @@ export default class TimelineController extends Controller {
   private show(project: ProjectView | null): void {
     this.segments = project?.segments ?? [];
     this.isHeld = (project?.running_mode ?? null) !== null;
-    // Redrawing takes the dragged region away, so a drag cannot outlive the Segments it began on
+    // A dragged region is drawn anew, so a drag cannot outlive the Segments it began on
+    if (this.drag) this.regions?.clearRegions();
     this.drag = null;
-    this.range = null;
-    this.showTimes(null);
+    this.dropRange();
     const media = project?.media ?? null;
     if (media === this.media) {
       this.markSegments();
@@ -435,15 +435,28 @@ export default class TimelineController extends Controller {
     });
   }
 
+  /**
+   * Moves the regions there are to the Segments and adds or removes only those they lack or no
+   * longer need, since each region drawn anew costs a layout.
+   */
   private markSegments(): void {
-    if (!this.regions) return;
-    this.regions.clearRegions();
-    this.segments.forEach((segment, index) =>
-      this.regions!.addRegion({
-        ...spanOf(segment),
-        ...this.regionLook(index),
-      }),
-    );
+    const regions = this.regions;
+    if (!regions) return;
+    const drawnRegions = this.segmentRegions();
+    drawnRegions
+      .slice(this.segments.length)
+      .forEach((region) => region.remove());
+    this.segments.forEach((segment, index) => {
+      const span = spanOf(segment);
+      const region = drawnRegions[index];
+      if (!region) {
+        regions.addRegion({ ...span, ...this.regionLook(index) });
+        return;
+      }
+      if (region.start !== span.start || region.end !== span.end)
+        region.setOptions(span);
+      region.setOptions(this.regionLook(index));
+    });
     this.placeRegions();
   }
 

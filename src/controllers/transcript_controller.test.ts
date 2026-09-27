@@ -146,6 +146,40 @@ describe("TranscriptController", () => {
     clearMocks();
   });
 
+  // @behavior ED-118
+  it("keeps the rows already drawn when a Segment is split", async () => {
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "你好世界" },
+          { start_ms: 1000, end_ms: 2000, text: "今天" },
+        ],
+      }),
+    );
+    const drawnRows = [
+      ...document.querySelectorAll("[data-transcript-target=list] > li"),
+    ];
+
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 500, text: "你好" },
+          { start_ms: 500, end_ms: 1000, text: "世界" },
+          { start_ms: 1000, end_ms: 2000, text: "今天" },
+        ],
+      }),
+    );
+
+    const rows = [
+      ...document.querySelectorAll("[data-transcript-target=list] > li"),
+    ];
+    expect([
+      rows.length,
+      rows[0] === drawnRows[0],
+      rows[1] === drawnRows[1],
+    ]).toEqual([3, true, true]);
+  });
+
   // @behavior TX-006
   it("lists each segment of the Project with its start and end time", async () => {
     await hold(
@@ -362,7 +396,9 @@ describe("TranscriptController", () => {
     progress().begin("transcription");
     await settle();
 
-    const rows = [...document.querySelectorAll("ol > li")];
+    const rows = [
+      ...document.querySelectorAll("[data-transcript-target=list] > li"),
+    ];
     expect(rows.map((row) => row.hasAttribute("data-placeholder"))).toEqual([
       false,
       true,

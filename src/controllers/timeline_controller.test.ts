@@ -249,6 +249,21 @@ describe("TimelineController", () => {
     expect([regions().length, wrapper().style.width]).toEqual([3, "400px"]);
   });
 
+  // @behavior PV-144
+  it("keeps the regions already drawn when a Segment is split", async () => {
+    await show(projectWithMedia([segmentAt(0, 1), segmentAt(1, 2)]));
+    const drawnRegions = regions();
+
+    await show(
+      projectWithMedia([segmentAt(0, 0.5), segmentAt(0.5, 1), segmentAt(1, 2)]),
+    );
+
+    expect([
+      regions().length,
+      drawnRegions.every((region) => regions().includes(region)),
+    ]).toEqual([3, true]);
+  });
+
   // @behavior PV-021
   it("doubles the pixels a second when zooming in", async () => {
     await show(projectWithMedia());
@@ -480,6 +495,21 @@ describe("TimelineController", () => {
       await drag(endOf(0)!, 20);
 
       expect(changes).toEqual([times(0, 0, 700)]);
+    });
+
+    // @behavior PV-145
+    it("draws a dragged region anew when the Segments change under it", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.5, 1)]);
+      const dragged = regions()[0];
+      pressAndMove(dragged, 20);
+
+      await show(projectWithMedia([segmentAt(0, 0.5), segmentAt(0.5, 1)]));
+
+      expect([
+        regions().includes(dragged),
+        regions()[0].style.left,
+        regions()[0].style.right,
+      ]).toEqual([false, "0%", "75%"]);
     });
 
     // @behavior PV-051

@@ -315,6 +315,24 @@ Once the video has left, the Current Segment's card repeats the row being edited
 | When | a third Segment is added |
 | Then | the timeline marks three Segments at the same zoom |
 
+## `PV-144` Keeping the regions already drawn when a Segment is split
+
+Each region drawn anew costs a layout, so a change moves the regions there are and adds only those it lacks.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline marking a Current Resource's two Segments |
+| When | the first Segment is split |
+| Then | the two regions drawn before stay on the timeline, and one region is added |
+
+## `PV-145` Dropping a drag when the Segments change under it
+
+| Step | Statement |
+| --- | --- |
+| Given | the Current Segment's region being dragged |
+| When | the Project changes its Segments |
+| Then | the dragged region is drawn anew at its Segment's times |
+
 ## `PV-021` Zooming the timeline in
 
 | Step | Statement |

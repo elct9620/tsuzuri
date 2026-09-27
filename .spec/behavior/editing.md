@@ -258,6 +258,24 @@ Editing goes on from where the text was cut, which is the start of the second ha
 | When | it is split there |
 | Then | the second Segment, reading `世界`, is current, with the Cursor at the start of its text |
 
+## `ED-118` Keeping the rows already drawn when a Segment is split
+
+Chromium reports a selection change for each time field drawn, so a change keeps the rows there are and adds only those it lacks.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with two Segments |
+| When | the first Segment is split |
+| Then | the two rows drawn before stay in the list, and one row is added after them |
+
+## `ED-119` Showing the first half's text in the text left by a split
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment reading `你好世界`, its text with focus and the Cursor after `你好` |
+| When | it is split there |
+| Then | the first Segment's text reads `你好` |
+
 ## `ED-054` Keeping the Cursor when a split fails
 
 | Step | Statement |

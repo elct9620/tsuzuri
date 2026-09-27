@@ -355,3 +355,11 @@ Each edit saved is marked anew rather than stacked, so writing field after field
 | Given | the Save Mark shown after an edit was saved, most of its moment passed |
 | When | another edit is saved |
 | Then | one Save Mark is shown, for a whole moment from the latest edit |
+
+## `IF-040` Stopping the countdown of a Notification going away
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification offering something to do, counting down |
+| When | what it offers is taken, and it fades away |
+| Then | its countdown stays where it stopped |

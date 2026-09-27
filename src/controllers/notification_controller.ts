@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { leave, runAction, TICK_MS } from "../ui/notification";
+import { isLeaving, leave, runAction, TICK_MS } from "../ui/notification";
 
 /** One Notification in the corner: counts down while nothing rests on it, and takes its buttons. */
 export default class NotificationController extends Controller<HTMLElement> {
@@ -42,7 +42,7 @@ export default class NotificationController extends Controller<HTMLElement> {
   }
 
   private tick(): void {
-    if ("leaving" in this.element.dataset) return clearInterval(this.timer);
+    if (isLeaving(this.element)) return clearInterval(this.timer);
     if (this.restingInputs.size > 0) return;
     this.barTarget.value -= TICK_MS;
     if (this.barTarget.value > 0) return;

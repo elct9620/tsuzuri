@@ -101,6 +101,11 @@ export function runAction(alert: HTMLElement): void {
   actionByAlert.get(alert)?.();
 }
 
+/** Whether `alert` is fading away after `leave`. */
+export function isLeaving(alert: HTMLElement): boolean {
+  return "isLeaving" in alert.dataset;
+}
+
 /** Takes `alert` away, fading it out first. */
 export function leave(alert: HTMLElement): void {
   alert.dataset.isLeaving = "";

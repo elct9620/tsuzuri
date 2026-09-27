@@ -4,12 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import NotificationController from "../controllers/notification_controller";
 import {
   NOTIFICATION_MS,
+  TICK_MS,
   notify as show,
   notifyFailure,
   type Notification,
 } from "./notification";
 import {
   NOTIFICATION_STACK,
+  notificationAction,
   notificationAt,
   notificationClose,
   notificationCountdown,
@@ -130,6 +132,22 @@ describe("notify", () => {
     vi.advanceTimersByTime(NOTIFICATION_MS);
 
     expect(notifications()).toEqual([]);
+  });
+
+  // @behavior IF-040
+  it("stops the countdown of a Notification going away", async () => {
+    await notify({
+      title: "已存檔",
+      kind: "success",
+      action: { label: "加入詞彙表", run: () => {} },
+    });
+    const countdown = notificationCountdown(0)!;
+    notificationAction(0)!.click();
+    const stoppedAt = countdown.value;
+
+    vi.advanceTimersByTime(TICK_MS * 2);
+
+    expect(countdown.value).toBe(stoppedAt);
   });
 
   // @behavior IF-021

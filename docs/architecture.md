@@ -108,6 +108,8 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
 | `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
+| `logs.ts` | `logs/commands.rs` | log 目錄 |
+| `progress.ts` | `steps/commands.rs` | `cancel_task` |
 
 指令名稱與參數以 `.spec/contract/commands.md` 為準。
 
@@ -173,6 +175,8 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `progress.rs` 與 `Progress` 放在同一檔的 `AppHandle` 實作 | 只發兩個事件，放一起最清楚 |
 | `failure.rs` 把 `tauri::Error` 轉成 `Failure` | 統一轉換指令的錯誤 |
 | 轉錄指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（`docs/design.md` 6.4） |
+| `logs/commands.rs` 直接開啟目錄 | 系統程式，不是元件 |
+| 各情境的設定檔經 `json_settings` | 同一種讀寫 |
 
 ### 3.2 情境
 
@@ -209,6 +213,8 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `project/` | `history` | 領域 | 資源的復原紀錄 |
 | `project/` | `glossary` | 領域、轉接 | 詞彙表與 CSV |
 | `project/` | `current` | 應用 | 開啟、編輯、重新載入 |
+| `project/` | `mode_hold` | 應用 | 任務對資源的保留 |
+| `project/` | `backups` | 轉接 | 備份與備份紀錄 |
 | `project/` | `files` | 轉接 | 檔名、配對、備份 |
 | — | `translation` | 應用 | 翻譯用例 |
 | `translation/` | `batching` | 領域 | 分批 |
@@ -222,7 +228,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `transcription/` | `whisper` | 轉接 | whisper-cli 參數 |
 | `transcription/` | `settings` | 轉接 | 轉錄設定檔 |
 | — | `waveform` | 應用、領域 | 波形與峰值 |
-| — | `toolchain` | 應用 | 尋找元件 |
+| — | `toolchain` | 應用 | 尋找元件、模型設定 |
 | `toolchain/` | `detection` | 轉接 | 偵測已安裝的元件 |
 | `toolchain/` | `settings` | 轉接 | 元件設定檔 |
 | — | `progress` | 應用 | 回報進度的 Port |
@@ -230,6 +236,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `timing` | 應用 | Phase 計時 |
 | — | `failure` | 應用 | 錯誤碼 |
 | — | `processes` | 轉接 | 子行程與 `AppPorts` |
+| — | `json_settings` | 轉接 | 設定檔的讀寫 |
 
 目錄以 `src-tauri/src/` 為根，表中的「—」是根目錄，模組省略 `.rs`。各目錄的 `commands` 是介面層的指令，不另列。波形以 ffmpeg 轉成 PCM，每 10 ms 取一個峰值。
 
@@ -365,7 +372,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 
 ```
 transcribe 指令                       translate 指令
-  │ transcription_target               │ snapshot、讀取詞彙表
+  │ transcription_target               │ hold_for_translation、讀取詞彙表
   │ 釋放常駐 llama-server 的模型        │ 常駐 router 載入模型（關掉常駐時啟動單一模型的行程）
   │ Steps：ffmpeg 轉成 WAV              │ 等待載入完成
   │ Steps：whisper-cli，段落逐行出現    │ 分批翻譯 ─▶ show_translations、mark_pending_batch ＋ project-changed
@@ -382,6 +389,7 @@ ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 | 取消 | `cancel_task` 經 `ModeLock` |
 | 取消後 | 只結束它啟動的行程 |
 | 取波形 | 不是任務，不取鎖 |
+| 暫存目錄 | 隨 `ModeRun` 結束刪除 |
 
 轉錄與翻譯以 `ModeLock::begin` 開始一個 `ModeRun`，關掉常駐 llama-server 也先取得 `ModeLock`，後來的等前一個結束。取消時 `ModeRun` 丟下任務，只結束經它啟動的行程。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
 
@@ -528,7 +536,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
-| `components`、`models`、`translation-settings`、`logs` | 設定頁 |
+| `components`、`models`、`transcription-settings`、`translation-settings`、`logs` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |
 | `shortcuts` | 快速鍵一覽 |
 | `notification` | 每則通知的倒數、暫停與按鈕 |
@@ -567,6 +575,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `transcription.ts`、`translation.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄的指令與型別 |
+| `waveform.ts` | 波形的指令與型別 |
 | `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |
 | `events.ts` | 把 Rust 事件轉到 window |
 | `failure.ts` | `Failure` 型別 |
@@ -586,6 +595,8 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
+| `ui/timeline_spans.ts` | 時間軸的區段規則 |
+| `ui/file_name.ts` | 路徑的最後一段 |
 | `ui/shortcuts.ts` | 各平台的快速鍵與寫法 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 

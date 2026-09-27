@@ -154,17 +154,7 @@ fn row_positions(left: &[ComparedCue], right: &[ComparedCue]) -> Vec<RowPosition
             is_paired_by_times[right_node] = true;
         }
     }
-    for (left_index, left_cue) in left.iter().enumerate() {
-        for (right_index, right_cue) in right.iter().enumerate() {
-            let right_node = left.len() + right_index;
-            if !is_paired_by_times[left_index]
-                && !is_paired_by_times[right_node]
-                && is_overlapping(left_cue, right_cue)
-            {
-                groups.join(left_index, right_node);
-            }
-        }
-    }
+    join_overlapping_cues(left, right, &is_paired_by_times, &mut groups);
     pair_moved_cues(left, right, &mut groups);
     let mut rows: Vec<RowPositions> = groups
         .members()
@@ -207,24 +197,61 @@ fn is_overlapping(a: &ComparedCue, b: &ComparedCue) -> bool {
     overlap > 0 && overlap * 2 >= shorter
 }
 
+/// Joins each cue not paired by its times with every cue on the other side it overlaps. A cue
+/// on the right reaches a left one only when it starts within the longest right cue before it,
+/// so only the right cues starting in that window are tried, in the order they start.
+fn join_overlapping_cues(
+    left: &[ComparedCue],
+    right: &[ComparedCue],
+    is_paired_by_times: &[bool],
+    groups: &mut Groups,
+) {
+    let mut right_by_start: Vec<usize> = (0..right.len()).collect();
+    right_by_start.sort_by_key(|&at| right[at].start_ms);
+    let longest_right_ms = right
+        .iter()
+        .map(|cue| cue.end_ms - cue.start_ms)
+        .max()
+        .unwrap_or(0);
+    for (left_index, left_cue) in left.iter().enumerate() {
+        if is_paired_by_times[left_index] {
+            continue;
+        }
+        let earliest_start = left_cue.start_ms.saturating_sub(longest_right_ms);
+        let window_start =
+            right_by_start.partition_point(|&at| right[at].start_ms < earliest_start);
+        for &right_index in right_by_start[window_start..]
+            .iter()
+            .take_while(|&&at| right[at].start_ms < left_cue.end_ms)
+        {
+            let right_node = left.len() + right_index;
+            if !is_paired_by_times[right_node] && is_overlapping(left_cue, &right[right_index]) {
+                groups.join(left_index, right_node);
+            }
+        }
+    }
+}
+
 /// Pairs each cue left alone with the first cue alone on the other side reading the same, as a
 /// cue moved in time is.
 fn pair_moved_cues(left: &[ComparedCue], right: &[ComparedCue], groups: &mut Groups) {
-    let mut is_taken = vec![false; right.len()];
+    let mut alone_right_by_text: HashMap<&str, VecDeque<usize>> = HashMap::new();
+    for (right_index, right_cue) in right.iter().enumerate() {
+        if groups.is_alone(left.len() + right_index) {
+            alone_right_by_text
+                .entry(right_cue.text.as_str())
+                .or_default()
+                .push_back(right_index);
+        }
+    }
     for (left_index, left_cue) in left.iter().enumerate() {
         if !groups.is_alone(left_index) {
             continue;
         }
-        let moved_index = right
-            .iter()
-            .enumerate()
-            .position(|(right_index, right_cue)| {
-                !is_taken[right_index]
-                    && groups.is_alone(left.len() + right_index)
-                    && right_cue.text == left_cue.text
-            });
-        if let Some(right_index) = moved_index {
-            is_taken[right_index] = true;
+        if let Some(right_index) = alone_right_by_text
+            .get_mut(left_cue.text.as_str())
+            .and_then(VecDeque::pop_front)
+        {
             groups.join(left_index, left.len() + right_index);
         }
     }
@@ -391,6 +418,14 @@ mod tests {
         }
     }
 
+    /// The texts each Pair lines up, the earlier Version's first.
+    fn pair_texts(rows: &[ComparedRow]) -> Vec<(&str, &str)> {
+        rows.iter()
+            .filter(|row| row.kind == RowKind::Pair)
+            .map(|row| (row.left[0].text.as_str(), row.right[0].text.as_str()))
+            .collect()
+    }
+
     fn kinds_and_changes(rows: &[ComparedRow]) -> Vec<(RowKind, bool, bool)> {
         rows.iter()
             .map(|row| (row.kind, row.is_text_changed, row.is_time_changed))
@@ -458,6 +493,33 @@ mod tests {
         );
 
         assert_eq!(kinds_and_changes(&rows), [(RowKind::Pair, false, true)]);
+    }
+
+    // @behavior VR-056
+    #[test]
+    fn pairs_retimed_cues_written_out_of_time_order() {
+        let rows = compare(
+            &transcript(&[(0, 1_000, "你好"), (1_000, 2_000, "世界")]),
+            &transcript(&[(1_100, 2_000, "世間"), (0, 900, "您好")]),
+        );
+
+        assert_eq!(pair_texts(&rows), [("你好", "您好"), ("世界", "世間")]);
+    }
+
+    // @behavior VR-057
+    #[test]
+    fn pairs_a_moved_cue_with_the_first_cue_reading_the_same() {
+        let rows = compare(
+            &transcript(&[(0, 1_000, "你好")]),
+            &transcript(&[(5_000, 6_000, "你好"), (8_000, 9_000, "你好")]),
+        );
+
+        assert_eq!(
+            rows.iter()
+                .find(|row| row.kind == RowKind::Pair)
+                .map(|row| row.right[0].start_ms),
+            Some(5_000)
+        );
     }
 
     // @behavior VR-051

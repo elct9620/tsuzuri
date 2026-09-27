@@ -42,6 +42,24 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 | Then | the one row is a Pair with its times changed and its text not |
 
 
+## `VR-056` Pairing retimed cues written out of time order
+
+A subtitle changed elsewhere may list its cues in any order, so pairs are found by time rather than by position.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好` from 0 to 1 second and `世界` from 1 to 2 seconds, and the subtitle now listing `世間` from 1.1 to 2 seconds before `您好` from 0 to 0.9 seconds |
+| When | the two are compared |
+| Then | the rows are two Pairs, `你好` with `您好` then `世界` with `世間` |
+
+## `VR-057` Pairing a moved cue with the first cue reading the same
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好` from 0 to 1 second, and the subtitle now reading `你好` from 5 to 6 seconds and again from 8 to 9 seconds |
+| When | the two are compared |
+| Then | the Backup's `你好` is paired with the one from 5 to 6 seconds |
+
 ## `VR-051` Pairing a cue someone cuts in with its own cue
 
 A cue that cuts in overlaps the cue it cuts into, so cues with the same times are paired first, and only the cues left are paired by overlap.

@@ -2,11 +2,14 @@
 import { Application } from "@hotwired/stimulus";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { composingOption } from "./field_controller";
-import TimeFieldController from "./time_field_controller";
+import TimeFieldController, {
+  TIME_FIELD_ACTIONS,
+} from "./time_field_controller";
 
 describe("TimeFieldController", () => {
   let application: Application;
   let execCommand: typeof document.execCommand;
+  let isDefaultPrevented: boolean;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const input = () => document.querySelector<HTMLInputElement>("input")!;
@@ -34,19 +37,19 @@ describe("TimeFieldController", () => {
   function sendClipboardEvent(kind: "paste" | "cut", text = ""): string {
     const clipboardData = new DataTransfer();
     clipboardData.setData("text/plain", text);
-    input().dispatchEvent(
-      new ClipboardEvent(kind, {
-        clipboardData,
-        bubbles: true,
-        cancelable: true,
-      }),
-    );
+    const event = new ClipboardEvent(kind, {
+      clipboardData,
+      bubbles: true,
+      cancelable: true,
+    });
+    input().dispatchEvent(event);
+    isDefaultPrevented = event.defaultPrevented;
     return clipboardData.getData("text/plain");
   }
 
   beforeEach(async () => {
     document.body.innerHTML = `
-      <input value="00:00:32.360" data-controller="time-field" data-action="keydown->time-field#typeKey:!composing paste->time-field#pasteTime cut->time-field#copySelection compositionstart->time-field#keepTime compositionend->time-field#restoreTime">
+      <input value="00:00:32.360" data-controller="time-field" data-action="${TIME_FIELD_ACTIONS}">
     `;
     // happy-dom leaves the browser's editing out; this types as it does, over the selection
     execCommand = document.execCommand;
@@ -160,9 +163,10 @@ describe("TimeFieldController", () => {
     sendClipboardEvent("paste", "00:01:02,500");
     sendClipboardEvent("paste", "abc");
 
-    expect([input().value, selection()]).toEqual([
+    expect([input().value, selection(), isDefaultPrevented]).toEqual([
       "00:01:02.500",
       "00:01:02.500",
+      true,
     ]);
   });
 
@@ -170,8 +174,12 @@ describe("TimeFieldController", () => {
   it("copies what is cut without removing it", () => {
     placeCaret(0, 12);
 
-    const copied = sendClipboardEvent("cut");
+    const clipboardText = sendClipboardEvent("cut");
 
-    expect([copied, input().value]).toEqual(["00:00:32.360", "00:00:32.360"]);
+    expect([clipboardText, input().value, isDefaultPrevented]).toEqual([
+      "00:00:32.360",
+      "00:00:32.360",
+      true,
+    ]);
   });
 });

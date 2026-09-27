@@ -165,7 +165,7 @@ pub fn find_text(
     field: SegmentField,
     search: Search,
 ) -> Result<Vec<TextMatch>, Failure> {
-    current.find_text(field, &search)
+    current.text_matches(field, &search)
 }
 
 #[tauri::command]

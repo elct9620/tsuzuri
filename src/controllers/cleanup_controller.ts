@@ -37,10 +37,12 @@ function notifyCleanup(outcome: CleanupOutcome): void {
  * the Current Resource shows a text in `zh-TW`.
  */
 export default class CleanupController extends Controller {
-  static targets = ["checkedButton"];
+  static targets = ["checkedButton", "segmentChoice"];
 
   declare readonly session: EditingSession;
   declare readonly checkedButtonTarget: HTMLButtonElement;
+  /** The cleanup in each Segment's menu. */
+  declare readonly segmentChoiceTargets: HTMLElement[];
 
   /** Ctrl/⌘+Shift+T where no menu takes it first; bound with `:prevent`. */
   cleanByShortcut(): void {
@@ -71,10 +73,7 @@ export default class CleanupController extends Controller {
   follow({ detail }: CustomEvent<{ project: ProjectView | null }>): void {
     const isOffered = hasTraditionalChinese(detail.project);
     this.checkedButtonTarget.hidden = !isOffered;
-    for (const choice of this.element.querySelectorAll<HTMLElement>(
-      "li:has(> button.cleanup)",
-    ))
-      choice.hidden = !isOffered;
+    for (const choice of this.segmentChoiceTargets) choice.hidden = !isOffered;
   }
 
   /**

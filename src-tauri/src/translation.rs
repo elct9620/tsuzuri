@@ -2102,10 +2102,10 @@ mod tests {
                 indexes: None,
             },
         );
-        let mut translated = segment(0, 1_000, "こんにちは");
-        translated.translation = Some("你们好".to_string());
+        let mut translated_segment = segment(0, 1_000, "こんにちは");
+        translated_segment.translation = Some("你们好".to_string());
 
-        batch_display(app.handle(), &current, &source, true)(&[translated], None);
+        batch_display(app.handle(), &current, &source, true)(&[translated_segment], None);
 
         assert_eq!(
             current.view().unwrap().segments()[0].translation.as_deref(),

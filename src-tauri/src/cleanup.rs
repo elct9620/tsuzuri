@@ -184,9 +184,9 @@ fn form_keeping_tai(phrase: &str, form: String) -> String {
     phrase
         .chars()
         .zip(form.chars())
-        .map(|(written, traditional)| match (written, traditional) {
+        .map(|(phrase_char, form_char)| match (phrase_char, form_char) {
             ('台', '臺') => '台',
-            _ => traditional,
+            _ => form_char,
         })
         .collect()
 }
@@ -197,7 +197,7 @@ fn changed_character_count(text: &str, form: &str) -> usize {
     }
     text.chars()
         .zip(form.chars())
-        .filter(|(written, traditional)| written != traditional)
+        .filter(|(text_char, form_char)| text_char != form_char)
         .count()
 }
 

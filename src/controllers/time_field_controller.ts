@@ -10,6 +10,10 @@ import {
 /** The keys that move the caret past a separator rather than type one. */
 const SEPARATOR_KEYS = [":", ";", ".", ","];
 
+/** The actions a time field binds; a paste or cut never reaches the text as the browser would apply it. */
+export const TIME_FIELD_ACTIONS =
+  "keydown->time-field#typeKey:!composing paste->time-field#pasteTime:prevent cut->time-field#copySelection:prevent compositionstart->time-field#keepTime compositionend->time-field#restoreTime";
+
 /**
  * One time field of the editor, typed as Aegisub's time field is in its overwrite mode: a digit
  * overwrites the one at the caret, a separator typed moves past the one there, Backspace steps
@@ -42,8 +46,13 @@ export default class TimeFieldController extends Controller<HTMLInputElement> {
     const at = this.element.selectionStart ?? 0;
     if (/^\d$/.test(event.key)) {
       event.preventDefault();
-      const typed = typedTime(value, at, event.key);
-      if (typed) this.replaceTime(typed.time, typed.caret, typed.caret);
+      const typedResult = typedTime(value, at, event.key);
+      if (typedResult)
+        this.replaceTime(
+          typedResult.time,
+          typedResult.caret,
+          typedResult.caret,
+        );
     } else if (SEPARATOR_KEYS.includes(event.key)) {
       event.preventDefault();
       const caret = caretPastSeparator(value, at);
@@ -59,7 +68,6 @@ export default class TimeFieldController extends Controller<HTMLInputElement> {
 
   /** Puts a pasted time in place of the whole field, selected; text that is no time is left out. */
   pasteTime(event: ClipboardEvent): void {
-    event.preventDefault();
     const ms = parseTime(event.clipboardData?.getData("text/plain") ?? "");
     if (ms === null) return;
     const time = formatTime(ms);
@@ -68,7 +76,6 @@ export default class TimeFieldController extends Controller<HTMLInputElement> {
 
   /** Copies the selection without removing it, as a time keeps every digit. */
   copySelection(event: ClipboardEvent): void {
-    event.preventDefault();
     const { value, selectionStart, selectionEnd } = this.element;
     event.clipboardData?.setData(
       "text/plain",

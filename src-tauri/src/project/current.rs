@@ -536,7 +536,11 @@ impl Project {
     }
 
     /// Where `finder` matches `field` of each Segment of the Current Resource, in order.
-    fn find_text(&self, field: SegmentField, finder: &Finder) -> Result<Vec<TextMatch>, Failure> {
+    fn text_matches(
+        &self,
+        field: SegmentField,
+        finder: &Finder,
+    ) -> Result<Vec<TextMatch>, Failure> {
         let current = self.current()?;
         if field == SegmentField::Translation && current.translation.is_none() {
             return Err(Failure::NoTranslationShown);
@@ -1662,7 +1666,7 @@ impl CurrentProject {
 
     /// Where `search` matches `field` of each Segment of the Current Resource, in order; nothing
     /// is changed.
-    pub fn find_text(
+    pub fn text_matches(
         &self,
         field: SegmentField,
         search: &Search,
@@ -1673,7 +1677,7 @@ impl CurrentProject {
             });
         }
         let finder = Finder::try_new(search)?;
-        self.read_project(|project| project.find_text(field, &finder))
+        self.read_project(|project| project.text_matches(field, &finder))
     }
 
     /// Cleans Simplified Chinese out of the Current Resource's `zh-TW` text within `scope` as one
@@ -4166,7 +4170,7 @@ mod tests {
         let current = project_in(&dir);
 
         let matches = current
-            .find_text(
+            .text_matches(
                 SegmentField::Text,
                 &Search {
                     pattern: "，".to_string(),

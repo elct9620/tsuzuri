@@ -4,7 +4,7 @@ import { findText, type TextMatch } from "../backend/editing";
 import { isMacOS } from "../backend/system";
 import {
   markRanges,
-  textRange,
+  rangeOf,
   type CursorField,
   type EditingSession,
 } from "../editor";
@@ -46,11 +46,6 @@ function matchStep(event: KeyboardEvent): number {
     : event.key === "F3" && !event.ctrlKey && !event.altKey && !event.metaKey;
   if (!isStep) return 0;
   return event.shiftKey ? -1 : 1;
-}
-
-/** The UTF-16 position the Range API counts `at`, given in characters, as in `text`. */
-function utf16Position(text: string, at: number): number {
-  return [...text].slice(0, at).join("").length;
 }
 
 /**
@@ -174,7 +169,7 @@ export default class SearchController extends Controller {
 
   /** Marks every match and the current one, and counts them. */
   private show(): void {
-    const ranges = this.matches.map((found) => this.rangeOf(found));
+    const ranges = this.matches.map((match) => this.matchRange(match));
     markRanges(
       MATCH_HIGHLIGHT,
       ranges.filter((range): range is Range => range !== null),
@@ -193,17 +188,11 @@ export default class SearchController extends Controller {
   }
 
   /** The Range a match covers in its field, or none while its row is not drawn. */
-  private rangeOf({ index, start, end }: TextMatch): Range | null {
+  private matchRange({ index, start, end }: TextMatch): Range | null {
     const field = this.element.querySelector<HTMLElement>(
       `.field[data-index="${index}"][data-field="${this.field}"]`,
     );
-    if (!field) return null;
-    const text = field.textContent ?? "";
-    return textRange(
-      field,
-      utf16Position(text, start),
-      utf16Position(text, end),
-    );
+    return field ? rangeOf(field, { start, end }) : null;
   }
 
   private get field(): CursorField {

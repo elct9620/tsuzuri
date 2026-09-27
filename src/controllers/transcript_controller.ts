@@ -33,6 +33,7 @@ import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { shortcutById, shortcutText } from "../ui/shortcuts";
 import type { TaskKind } from "../ui/progress";
 import { formatTime } from "../ui/time";
+import { TIME_FIELD_ACTIONS } from "./time_field_controller";
 
 /** Where the webview remembers whether the editor follows playback. */
 const FOLLOWING_KEY = "tsuzuri.transcript-following";
@@ -139,8 +140,7 @@ function timeEditor(
   input.dataset.index = String(index);
   input.dataset.edge = edge;
   input.dataset.controller = "time-field";
-  input.dataset.action =
-    "change->segment-changes#changeTimes keydown->time-field#typeKey:!composing paste->time-field#pasteTime cut->time-field#copySelection compositionstart->time-field#keepTime compositionend->time-field#restoreTime";
+  input.dataset.action = `change->segment-changes#changeTimes ${TIME_FIELD_ACTIONS}`;
   input.value = formatTime(ms);
   return input;
 }
@@ -225,6 +225,7 @@ function cleanupChoice(index: number): HTMLLIElement {
   button.textContent = t("cleanup.action");
   button.append(...shortcutKeys("cleanup"));
   const choice = document.createElement("li");
+  choice.dataset.cleanupTarget = "segmentChoice";
   choice.append(button);
   return choice;
 }

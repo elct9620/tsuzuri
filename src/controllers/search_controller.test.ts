@@ -145,7 +145,7 @@ describe("SearchController", () => {
     await settle();
   }
 
-  function marked(name: string): string[] | undefined {
+  function markedTexts(name: string): string[] | undefined {
     return highlights.get(name)?.ranges.map(String);
   }
 
@@ -167,7 +167,7 @@ describe("SearchController", () => {
       target("bar").hidden,
       target<HTMLInputElement>("pattern").value,
       document.activeElement === target("pattern"),
-      marked("search-match"),
+      markedTexts("search-match"),
       target("count").textContent,
     ]).toEqual([false, "，", true, ["，", "，"], "1/2"]);
   });
@@ -223,10 +223,10 @@ describe("SearchController", () => {
 
     press({ key: "Enter" }, target("pattern"));
 
-    expect([target("count").textContent, marked("search-current")]).toEqual([
-      "1/2",
-      ["，"],
-    ]);
+    expect([
+      target("count").textContent,
+      markedTexts("search-current"),
+    ]).toEqual(["1/2", ["，"]]);
   });
 
   // @behavior ED-141
@@ -275,7 +275,7 @@ describe("SearchController", () => {
 
     press({ key: "Escape" }, target("pattern"));
 
-    expect([target("bar").hidden, marked("search-match")]).toEqual([
+    expect([target("bar").hidden, markedTexts("search-match")]).toEqual([
       true,
       undefined,
     ]);
@@ -291,7 +291,7 @@ describe("SearchController", () => {
     target("pattern").dispatchEvent(new Event("input"));
     await settle();
 
-    expect([marked("search-match"), target("count").textContent]).toEqual([
+    expect([markedTexts("search-match"), target("count").textContent]).toEqual([
       undefined,
       expect.stringContaining("unclosed group"),
     ]);

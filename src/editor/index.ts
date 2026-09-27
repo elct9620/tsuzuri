@@ -20,6 +20,7 @@ export {
   isFieldHeld,
   isTextField,
   placeSelection,
+  rangeOf,
   setFieldHeld,
   setFieldValue,
 } from "./field";

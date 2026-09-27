@@ -93,7 +93,6 @@ export type RunningMode =
   | { mode: "transcription" }
   | { mode: "translation"; language: string; indexes: number[] | null };
 
-/** The Current Resource as the Resource list shows it, or none. */
 /** Whether the Current Resource shows a text in `zh-TW` to clean: the original of a `zh-TW` Project, or the translation shown. */
 export function hasTraditionalChinese(project: ProjectView | null): boolean {
   return (
@@ -101,6 +100,7 @@ export function hasTraditionalChinese(project: ProjectView | null): boolean {
   );
 }
 
+/** The Current Resource as the Resource list shows it, or none. */
 export function currentResource(
   project: ProjectView | null,
 ): ResourceView | undefined {

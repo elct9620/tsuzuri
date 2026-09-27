@@ -75,8 +75,8 @@ impl Finder {
         };
         self.0
             .find_iter(text)
-            .filter(|found| !found.is_empty())
-            .map(|found| (character_at(found.start()), character_at(found.end())))
+            .filter(|hit| !hit.is_empty())
+            .map(|hit| (character_at(hit.start()), character_at(hit.end())))
             .collect()
     }
 }

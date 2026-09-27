@@ -130,6 +130,7 @@ pub fn run() {
             project::commands::open_project,
             project::commands::open_srt,
             project::commands::save_srt,
+            project::commands::save_text,
             project::commands::select_resource,
             project::commands::set_primary_language,
             project::commands::set_project_options,

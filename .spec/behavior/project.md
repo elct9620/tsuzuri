@@ -240,6 +240,38 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | it is saved as SRT |
 | Then | the file carries the edited text |
 
+## `PJ-150` Writing the Current Resource as Plain Text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of two Segments, the first said by `阿福` |
+| When | its original is written as Plain Text |
+| Then | the text is `阿福: 少爺` and `我等等就下去`, a blank line between, with no times |
+
+## `PJ-151` Leaving the Speakers out of Plain Text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Segment is said by `阿福` |
+| When | it is written as Plain Text without its Speakers |
+| Then | the text carries the Segment's text alone |
+
+## `PJ-152` Writing a bilingual Plain Text in the Bilingual Order
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Bilingual Order puts the translation first, with a Current Resource translated into `en` |
+| When | it is written as a bilingual Plain Text |
+| Then | each block carries the translation above the original |
+
+## `PJ-153` Naming a Plain Text export by the Resource and its Languages
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resource `ep01` in `/talks`, in `zh-TW` and translated into `en` |
+| When | the default path of each Plain Text export is asked for |
+| Then | the original is `/talks/ep01.txt`, the translation `/talks/ep01.en.txt` and the bilingual `/talks/ep01.zh-TW.en.txt` |
+
 ## `PJ-005` Refusing work without a Project
 
 | Step | Statement |

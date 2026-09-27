@@ -48,6 +48,20 @@ impl Transcript {
 }
 ```
 
+## `Transcript::to_plain_text_with`
+
+Write a Transcript as Plain Text carrying what `to_srt_with` would put in each cue, one block per Segment with a blank line between and no times.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+impl Transcript {
+    pub fn to_plain_text_with(&self, content: SrtContent, names: &SpeakerNames) -> String {}
+}
+```
+
 ## `Transcript::from_srt_as_written`
 
 Parse SRT text into a Transcript keeping every line as written, Speaker Labels included, for a translation whose labels are known from its original rather than guessed.

@@ -6,8 +6,8 @@ use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
 use super::{
-    CleanupScope, CurrentProject, Project, ProjectOptions, ProjectView, Reload, Restoration,
-    SegmentField, TextMatch,
+    CleanupScope, CurrentProject, ExportFormat, Project, ProjectOptions, ProjectView, Reload,
+    Restoration, SegmentField, TextMatch,
 };
 use crate::failure::Failure;
 use crate::language::Language;
@@ -220,8 +220,9 @@ pub fn redo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Fa
 pub fn export_path(
     current: State<'_, CurrentProject>,
     content: SrtContent,
+    format: ExportFormat,
 ) -> Result<PathBuf, Failure> {
-    current.export_path(content)
+    current.export_path(content, format)
 }
 
 #[tauri::command]
@@ -231,6 +232,16 @@ pub fn save_srt(
     content: SrtContent,
 ) -> Result<(), Failure> {
     current.save_srt(&path, content)
+}
+
+#[tauri::command]
+pub fn save_text(
+    current: State<'_, CurrentProject>,
+    path: PathBuf,
+    content: SrtContent,
+    has_speakers: bool,
+) -> Result<(), Failure> {
+    current.save_text(&path, content, has_speakers)
 }
 
 #[tauri::command]

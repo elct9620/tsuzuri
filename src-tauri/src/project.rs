@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
 
@@ -93,19 +94,34 @@ impl Project {
 
     /// `transcript` as a Bilingual SRT in the Bilingual Order, its translation into `translation`.
     fn bilingual_srt(&self, transcript: &Transcript, translation: Option<Language>) -> String {
+        let (transcript, names) =
+            self.export_source(transcript, SrtContent::Bilingual, translation);
+        transcript.to_srt_with(SrtContent::Bilingual, &names)
+    }
+
+    /// What an export carrying `content` writes of `transcript`, its translation into
+    /// `translation`, with what each text calls its Speakers: a bilingual one in the Bilingual
+    /// Order.
+    fn export_source<'a>(
+        &self,
+        transcript: &'a Transcript,
+        content: SrtContent,
+        translation: Option<Language>,
+    ) -> (Cow<'a, Transcript>, SpeakerNames) {
         let translated_names = self.speaker_names(translation);
-        match self.options.bilingual_order {
-            BilingualOrder::OriginalFirst => transcript.to_srt_with(
-                SrtContent::Bilingual,
-                &SpeakerNames {
-                    translation: translated_names,
+        match (content, self.options.bilingual_order) {
+            (SrtContent::Original, _) => (Cow::Borrowed(transcript), SpeakerNames::default()),
+            (SrtContent::Bilingual, BilingualOrder::TranslationFirst) => (
+                Cow::Owned(translation_first(transcript)),
+                SpeakerNames {
+                    text: translated_names,
                     ..SpeakerNames::default()
                 },
             ),
-            BilingualOrder::TranslationFirst => translation_first(transcript).to_srt_with(
-                SrtContent::Bilingual,
-                &SpeakerNames {
-                    text: translated_names,
+            (SrtContent::Translation | SrtContent::Bilingual, _) => (
+                Cow::Borrowed(transcript),
+                SpeakerNames {
+                    translation: translated_names,
                     ..SpeakerNames::default()
                 },
             ),
@@ -123,18 +139,27 @@ impl Project {
     /// The Current Resource as SRT, a Bilingual SRT in the Bilingual Order.
     fn to_srt(&self, content: SrtContent) -> Result<String, ProjectError> {
         let current = self.current()?;
-        let transcript = &current.transcript;
-        Ok(match content {
-            SrtContent::Bilingual => self.bilingual_srt(transcript, current.translation),
-            SrtContent::Translation => transcript.to_srt_with(
-                content,
-                &SpeakerNames {
-                    translation: self.speaker_names(current.translation),
-                    ..SpeakerNames::default()
-                },
-            ),
-            SrtContent::Original => transcript.to_srt(content),
-        })
+        let (transcript, names) =
+            self.export_source(&current.transcript, content, current.translation);
+        Ok(transcript.to_srt_with(content, &names))
+    }
+
+    /// The Current Resource as Plain Text, a bilingual one in the Bilingual Order, naming each
+    /// Speaker as its SRT would unless `has_speakers` leaves them out.
+    fn to_plain_text(
+        &self,
+        content: SrtContent,
+        has_speakers: bool,
+    ) -> Result<String, ProjectError> {
+        let current = self.current()?;
+        let (transcript, names) =
+            self.export_source(&current.transcript, content, current.translation);
+        let transcript = if has_speakers {
+            transcript
+        } else {
+            Cow::Owned(transcript_without_speakers(&transcript))
+        };
+        Ok(transcript.to_plain_text_with(content, &names))
     }
 
     fn resource(&self, name: &str) -> Result<&Resource, ProjectError> {
@@ -283,6 +308,19 @@ fn translation_with_speakers(
 }
 
 /// Each translated Segment with its translation as its text and its text as its translation.
+fn transcript_without_speakers(transcript: &Transcript) -> Transcript {
+    Transcript {
+        segments: transcript
+            .segments
+            .iter()
+            .map(|segment| Segment {
+                speaker: None,
+                ..segment.clone()
+            })
+            .collect(),
+    }
+}
+
 fn translation_first(transcript: &Transcript) -> Transcript {
     Transcript {
         segments: transcript
@@ -466,6 +504,23 @@ pub struct TranscriptionOverrides {
     pub is_non_speech_suppressed: Option<bool>,
     pub is_context_carried: Option<bool>,
     pub is_simplified_cleaned: Option<bool>,
+}
+
+/// The form an export of the Current Resource is written in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExportFormat {
+    Srt,
+    PlainText,
+}
+
+impl ExportFormat {
+    fn extension(self) -> &'static str {
+        match self {
+            ExportFormat::Srt => "srt",
+            ExportFormat::PlainText => "txt",
+        }
+    }
 }
 
 /// Which text a Bilingual SRT puts first in each cue and in its file name.

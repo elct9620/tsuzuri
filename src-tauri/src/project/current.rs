@@ -15,8 +15,8 @@ use super::mode_hold::{
 use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
     translation_only, translation_srt, translation_with_speakers, BackupKind, CleanupScope,
-    CurrentResource, KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource, Restoration,
-    SegmentField, SegmentSpan, TextMatch, TranscriptionScope, TranscriptionTarget,
+    CurrentResource, ExportFormat, KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource,
+    Restoration, SegmentField, SegmentSpan, TextMatch, TranscriptionScope, TranscriptionTarget,
     TranslationSource,
 };
 use crate::cleanup::{clean_range, clean_text};
@@ -390,10 +390,10 @@ impl Project {
         };
         let path = match path {
             Some(path) => path,
-            None => self.export_path(content)?,
+            None => self.export_path(content, ExportFormat::Srt)?,
         };
         self.back_up_first_change(&path)?;
-        files::write_srt(&path, srt)
+        files::write_text(&path, srt)
     }
 
     /// Keeps what a change made elsewhere replaced in the named Resource's subtitles while it is the
@@ -483,7 +483,7 @@ impl Project {
         }
         for (path, srt) in writes {
             self.keep_before_write(&path, policy)?;
-            files::write_srt(&path, srt)?;
+            files::write_text(&path, srt)?;
         }
         Ok(())
     }
@@ -706,7 +706,7 @@ impl Project {
         self.write_subtitle(SrtContent::Original)?;
         for (path, srt) in translations {
             self.back_up_first_change(&path)?;
-            files::write_srt(&path, srt)?;
+            files::write_text(&path, srt)?;
         }
         self.pair_again(Some(&name))?;
         self.read_again_showing(&name, translation)?;
@@ -776,7 +776,7 @@ impl Project {
         )
         .ok_or(Failure::NoRow { row })?;
         self.back_up_first_change(&subtitle)?;
-        files::write_srt(&subtitle, transcript.to_srt(SrtContent::Original))?;
+        files::write_text(&subtitle, transcript.to_srt(SrtContent::Original))?;
         let name = self.current()?.name.clone();
         self.read_current_again()?;
         self.write_bilingual_subtitles(&name, language)?;
@@ -838,7 +838,7 @@ impl Project {
             }
             let transcript =
                 resource.transcript(Some(*language), &self.speaker_names(Some(*language)))?;
-            files::write_srt(
+            files::write_text(
                 &self
                     .directory
                     .join(self.bilingual_file_name(name, *language)),
@@ -898,7 +898,7 @@ fn write_mode_result(
         .as_deref()
         .map(|project| project.subtitle_snapshot(name))
         .transpose()?;
-    files::write_srt(subtitle, srt)?;
+    files::write_text(subtitle, srt)?;
     if let Some(project) = project.as_deref_mut() {
         project.pair_again(Some(name))?;
     }
@@ -1326,7 +1326,7 @@ impl CurrentProject {
                 return Err(Failure::SubtitleExists { path: path.clone() })
             }
             Some(path) => path.clone(),
-            None => project.export_path(SrtContent::Original)?,
+            None => project.export_path(SrtContent::Original, ExportFormat::Srt)?,
         };
         Ok(TranscriptionTarget {
             directory: project.directory.clone(),
@@ -1766,8 +1766,12 @@ impl CurrentProject {
         self.change_undoably(is_always_written, |project| project.change_segments(change))
     }
 
-    pub fn export_path(&self, content: SrtContent) -> Result<PathBuf, Failure> {
-        self.read_project(|project| project.export_path(content))
+    pub fn export_path(
+        &self,
+        content: SrtContent,
+        format: ExportFormat,
+    ) -> Result<PathBuf, Failure> {
+        self.read_project(|project| project.export_path(content, format))
     }
 
     pub fn to_srt(&self, content: SrtContent) -> Result<String, Failure> {
@@ -1776,7 +1780,26 @@ impl CurrentProject {
 
     /// Writes the Current Resource to `path` as SRT carrying `content`.
     pub fn save_srt(&self, path: &Path, content: SrtContent) -> Result<(), Failure> {
-        files::write_srt(path, self.to_srt(content)?)
+        files::write_text(path, self.to_srt(content)?)
+    }
+
+    pub fn to_plain_text(
+        &self,
+        content: SrtContent,
+        has_speakers: bool,
+    ) -> Result<String, Failure> {
+        self.read_project(|project| Ok(project.to_plain_text(content, has_speakers)?))
+    }
+
+    /// Writes the Current Resource to `path` as Plain Text carrying `content`, its Speakers
+    /// named unless `has_speakers` leaves them out.
+    pub fn save_text(
+        &self,
+        path: &Path,
+        content: SrtContent,
+        has_speakers: bool,
+    ) -> Result<(), Failure> {
+        files::write_text(path, self.to_plain_text(content, has_speakers)?)
     }
 
     pub fn set_options(&self, options: ProjectOptions) -> Result<(), Failure> {
@@ -2200,7 +2223,7 @@ mod tests {
             SrtContent::Translation,
             SrtContent::Bilingual,
         ]
-        .map(|content| current.export_path(content).unwrap());
+        .map(|content| current.export_path(content, ExportFormat::Srt).unwrap());
 
         assert_eq!(
             paths,
@@ -2290,6 +2313,81 @@ mod tests {
         );
     }
 
+    /// A Project of two Segments, the first said by `阿福`.
+    fn project_with_a_speaker() -> CurrentProject {
+        let current = CurrentProject::default();
+        current.replace(project_of(vec![
+            Segment {
+                speaker: Some("阿福".to_string()),
+                ..segment("少爺", None)
+            },
+            segment("我等等就下去", None),
+        ]));
+        current
+    }
+
+    // @behavior PJ-150
+    #[test]
+    fn writes_the_current_resource_as_plain_text() {
+        let current = project_with_a_speaker();
+
+        let text = current.to_plain_text(SrtContent::Original, true).unwrap();
+
+        assert_eq!(text, "阿福: 少爺\n\n我等等就下去\n");
+    }
+
+    // @behavior PJ-151
+    #[test]
+    fn leaves_the_speakers_out_of_plain_text() {
+        let current = project_with_a_speaker();
+
+        let text = current.to_plain_text(SrtContent::Original, false).unwrap();
+
+        assert_eq!(text, "少爺\n\n我等等就下去\n");
+    }
+
+    // @behavior PJ-152
+    #[test]
+    fn writes_a_bilingual_plain_text_in_the_bilingual_order() {
+        let dir = TempDir::new("pj-plain-text-translation-first");
+        let current = translation_first_project_in(&dir);
+
+        let text = current.to_plain_text(SrtContent::Bilingual, true).unwrap();
+
+        assert_eq!(text, "Hello\n大家好\n");
+    }
+
+    // @behavior PJ-153
+    #[test]
+    fn names_a_plain_text_export_by_the_resource_and_its_languages() {
+        let mut project = project_of(vec![segment("大家好", Some("Hello"))]);
+        if let Some(current) = project.current.as_mut() {
+            current.translation = Some(Language::English);
+        }
+        let current = CurrentProject::default();
+        current.replace(project);
+
+        let paths = [
+            SrtContent::Original,
+            SrtContent::Translation,
+            SrtContent::Bilingual,
+        ]
+        .map(|content| {
+            current
+                .export_path(content, ExportFormat::PlainText)
+                .unwrap()
+        });
+
+        assert_eq!(
+            paths,
+            [
+                PathBuf::from("/talks/lecture.txt"),
+                PathBuf::from("/talks/lecture.en.txt"),
+                PathBuf::from("/talks/lecture.zh-TW.en.txt"),
+            ]
+        );
+    }
+
     /// A Project in `zh-TW` of `ep01` translated into `en`, whose Bilingual Order puts the
     /// translation first.
     fn translation_first_project_in(dir: &TempDir) -> CurrentProject {
@@ -2322,7 +2420,9 @@ mod tests {
         let dir = TempDir::new("pj-translation-first-name");
         let current = translation_first_project_in(&dir);
 
-        let path = current.export_path(SrtContent::Bilingual).unwrap();
+        let path = current
+            .export_path(SrtContent::Bilingual, ExportFormat::Srt)
+            .unwrap();
 
         assert_eq!(path, dir.path().join("ep01.en.zh-TW.srt"));
     }

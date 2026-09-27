@@ -128,6 +128,14 @@ impl Transcript {
             .collect::<Vec<_>>()
             .join("\n")
     }
+
+    pub fn to_plain_text_with(&self, content: SrtContent, names: &SpeakerNames) -> String {
+        self.segments
+            .iter()
+            .map(|segment| format!("{}\n", cue_text(segment, content, names)))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
 }
 
 fn cue_text(segment: &Segment, content: SrtContent, names: &SpeakerNames) -> String {

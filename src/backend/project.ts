@@ -219,12 +219,27 @@ export function showTranslation(language: string | null): Promise<void> {
 /** Which texts an SRT written from the Current Resource carries. */
 export type SrtContent = "original" | "translation" | "bilingual";
 
-export function exportPath(content: SrtContent): Promise<string> {
-  return invoke<string>("export_path", { content });
+/** The form an export of the Current Resource is written in. */
+export type ExportFormat = "srt" | "plain_text";
+
+export function exportPath(
+  content: SrtContent,
+  format: ExportFormat,
+): Promise<string> {
+  return invoke<string>("export_path", { content, format });
 }
 
 export function saveSrt(path: string, content: SrtContent): Promise<void> {
   return invoke("save_srt", { path, content });
+}
+
+/** Writes the Current Resource to `path` as Plain Text, its Speakers named when `hasSpeakers`. */
+export function saveText(
+  path: string,
+  content: SrtContent,
+  hasSpeakers: boolean,
+): Promise<void> {
+  return invoke("save_text", { path, content, hasSpeakers });
 }
 
 /** A Backup as Rust lists it: its file name in the history, the UTC time it was taken and its kind. */

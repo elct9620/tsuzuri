@@ -6,8 +6,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use super::history::SubtitleSnapshot;
 use super::{
-    segments_at_times, translated_dialogue, Backup, BackupKind, KnownSubtitle, Project,
-    ProjectConfig, Resource,
+    segments_at_times, translated_dialogue, Backup, BackupKind, ExportFormat, KnownSubtitle,
+    Project, ProjectConfig, Resource,
 };
 use crate::failure::Failure;
 use crate::json_settings;
@@ -36,9 +36,9 @@ pub fn content_of(path: &Path) -> Result<KnownSubtitle, Failure> {
     Ok((path.to_path_buf(), content))
 }
 
-/// Writes `srt` to the subtitle at `path`.
-pub fn write_srt(path: &Path, srt: String) -> Result<(), Failure> {
-    Ok(fs::write(path, srt)?)
+/// Writes `text` to the file at `path`: a subtitle's SRT, or an export.
+pub fn write_text(path: &Path, text: String) -> Result<(), Failure> {
+    Ok(fs::write(path, text)?)
 }
 
 /// What the original and each translation of `resource` hold now.
@@ -108,8 +108,12 @@ impl Project {
     }
 
     /// In the directory, named after the Current Resource with the Language codes `content`
-    /// carries beyond the Primary Language alone.
-    pub(super) fn export_path(&self, content: SrtContent) -> Result<PathBuf, Failure> {
+    /// carries beyond the Primary Language alone, ending as `format` does.
+    pub(super) fn export_path(
+        &self,
+        content: SrtContent,
+        format: ExportFormat,
+    ) -> Result<PathBuf, Failure> {
         let current = self.current()?;
         let languages = match content {
             SrtContent::Original => vec![],
@@ -117,7 +121,7 @@ impl Project {
             SrtContent::Bilingual => self.bilingual_languages(current.translation).to_vec(),
         };
         let name = file_name(&current.name, languages);
-        Ok(self.directory.join(name))
+        Ok(self.directory.join(name).with_extension(format.extension()))
     }
 }
 

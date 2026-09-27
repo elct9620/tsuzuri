@@ -26,6 +26,10 @@ The ordered Segments of one media file. Transcribe produces it, Translate consum
 
 An SRT whose every cue carries the original text and its translation in the Bilingual Order, so any player shows both languages without support of its own. A Segment without a translation is written with its original text alone.
 
+### Plain Text
+
+A Resource's text without its times, for reading rather than playing: one block per Segment and a blank line between blocks, each carrying the text an SRT of the same content would, its Speakers written or left out as chosen.
+
 ### Bilingual Order
 
 Which text a Bilingual SRT puts first in each cue and first in its file name: the original, unless the Project Options put the translation first.

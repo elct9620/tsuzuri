@@ -1,6 +1,6 @@
 # Editing
 
-Correcting the Project in the transcript panel, where every edit is written to Rust, and exporting it as SRT - the original text, or the translation or a Bilingual SRT when there is one.
+Correcting the Project in the transcript panel, where every edit is written to Rust, and exporting it as SRT or Plain Text - the original text, or the translation or both when there is one.
 
 ## Includes
 

@@ -214,6 +214,14 @@ Write the Current Resource to a file as SRT carrying the `original` text, the `t
 pub fn save_srt(current: State<'_, CurrentProject>, path: PathBuf, content: SrtContent) -> Result<(), Failure> {}
 ```
 
+## `save_text`
+
+Write the Current Resource to a file as Plain Text carrying the `original` text, the `translation`, or both in the Bilingual Order, naming each Speaker as its SRT would when `has_speakers` asks for them.
+
+```rust
+pub fn save_text(current: State<'_, CurrentProject>, path: PathBuf, content: SrtContent, has_speakers: bool) -> Result<(), Failure> {}
+```
+
 ## `change_segments`
 
 Make a Segment Change to the Current Resource, by position, and write its original and every translation back to the directory, together with the Bilingual SRTs the Project Options keep. A Segment that would end before it starts is refused as `invalid-times`, and one that would start before the Segment before it or after the one after it as `unordered-times`; a subtitle changed elsewhere is handled as `edit_segment` handles it, and one a running Mode writes is refused as `mode-running`.
@@ -280,10 +288,10 @@ pub fn revert_row(app: AppHandle, current: State<'_, CurrentProject>, language: 
 
 ## `export_path`
 
-Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone, a Bilingual SRT's in its Bilingual Order.
+Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone, a bilingual one's in its Bilingual Order, and ending `.srt` for the `srt` format or `.txt` for `plain_text`.
 
 ```rust
-pub fn export_path(current: State<'_, CurrentProject>, content: SrtContent) -> Result<PathBuf, Failure> {}
+pub fn export_path(current: State<'_, CurrentProject>, content: SrtContent, format: ExportFormat) -> Result<PathBuf, Failure> {}
 ```
 
 ## `translation_settings`

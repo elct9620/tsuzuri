@@ -289,7 +289,10 @@ describe("TranscriptController", () => {
     document.querySelector<HTMLButtonElement>("#save-translation")!.click();
     await settle();
 
-    expect(sent("export_path")).toEqual({ content: "translation" });
+    expect(sent("export_path")).toEqual({
+      content: "translation",
+      format: "srt",
+    });
     expect(sent("plugin:dialog|save")).toMatchObject({
       options: { defaultPath: "/talks/lecture.en.srt" },
     });

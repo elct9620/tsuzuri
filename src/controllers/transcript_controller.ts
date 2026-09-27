@@ -519,7 +519,7 @@ export default class TranscriptController extends Controller {
     closeMenu(currentTarget);
     try {
       const path = await save({
-        defaultPath: await exportPath(params.content),
+        defaultPath: await exportPath(params.content, "srt"),
         filters: SRT_FILTERS,
       });
       if (path === null) return;

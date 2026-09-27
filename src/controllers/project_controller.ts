@@ -18,6 +18,7 @@ import {
 } from "../backend/project";
 import { interfaceLanguageCode, t } from "../i18n";
 import { failureMessage } from "../ui/failure";
+import { fileName } from "../ui/file_name";
 import { closeMenu } from "../ui/menu";
 import { notify } from "../ui/notification";
 import { MODEL_EXTENSIONS } from "../ui/models";
@@ -256,8 +257,7 @@ export default class ProjectController extends Controller {
     this.showSettingsOf(project);
     this.options = project?.options ?? null;
     if (project === null) return;
-    this.nameTarget.textContent =
-      project.directory.split(/[\\/]/).pop() ?? project.directory;
+    this.nameTarget.textContent = fileName(project.directory);
     this.resourcesTarget.replaceChildren(
       ...project.resources.map((resource) =>
         resourceItem(resource, resource.name === project.current_resource),

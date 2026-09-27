@@ -28,7 +28,7 @@ import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { notifyFailure } from "../ui/notification";
 import { iconElement } from "../ui/icons";
-import { rememberChoice, rememberedChoice } from "../ui/choices";
+import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { shortcutById, shortcutText } from "../ui/shortcuts";
 import type { TaskKind } from "../ui/progress";
 import { formatTime } from "../ui/time";
@@ -276,7 +276,7 @@ export default class TranscriptController extends Controller {
   /** The position of the Segment the Preview is playing. */
   private playingIndexes: number[] = [];
   /** Whether the row being played is scrolled into view; turned off, the list stays where the user left it. */
-  private isFollowing = rememberedChoice(FOLLOWING_KEY) !== "false";
+  private isFollowing = rememberedFlag(FOLLOWING_KEY, true);
 
   connect(): void {
     this.showFollowing();
@@ -369,7 +369,7 @@ export default class TranscriptController extends Controller {
   /** Turns following playback on or off, catching up with the row being played as it comes on. */
   toggleFollowing(): void {
     this.isFollowing = !this.isFollowing;
-    rememberChoice(FOLLOWING_KEY, String(this.isFollowing));
+    rememberFlag(FOLLOWING_KEY, this.isFollowing);
     this.showFollowing();
     this.scrollToPlaying();
   }

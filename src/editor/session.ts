@@ -265,8 +265,7 @@ export class EditingSession {
   check(index: number, isChecked: boolean): void {
     if (isChecked) this.checks.add(index);
     else this.checks.delete(index);
-    this.unannouncedChanges.add("checks");
-    this.announce();
+    this.announceChecks();
   }
 
   /** Checks the Segments from `from` through `to`, either way round, and no others. */
@@ -274,16 +273,14 @@ export class EditingSession {
     this.checks.clear();
     for (let index = Math.min(from, to); index <= Math.max(from, to); index++)
       this.checks.add(index);
-    this.unannouncedChanges.add("checks");
-    this.announce();
+    this.announceChecks();
   }
 
   /** Checks every Segment and tells the listeners at once, as the user does. */
   checkAll(): void {
     const count = this.view?.segments.length ?? 0;
     for (let index = 0; index < count; index++) this.checks.add(index);
-    this.unannouncedChanges.add("checks");
-    this.announce();
+    this.announceChecks();
   }
 
   clearChecks(): void {
@@ -295,6 +292,11 @@ export class EditingSession {
   /** Clears the checks and tells the listeners at once, as the user does. */
   uncheckAll(): void {
     this.clearChecks();
+    this.announce();
+  }
+
+  private announceChecks(): void {
+    this.unannouncedChanges.add("checks");
     this.announce();
   }
 

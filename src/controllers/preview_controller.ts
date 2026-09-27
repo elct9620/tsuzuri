@@ -14,7 +14,12 @@ import {
 } from "../backend/video_window";
 import type { EditingSession } from "../editor";
 import { t } from "../i18n";
-import { rememberChoice, rememberedChoice } from "../ui/choices";
+import {
+  rememberChoice,
+  rememberedChoice,
+  rememberedFlag,
+  rememberFlag,
+} from "../ui/choices";
 import { formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
 
@@ -123,8 +128,8 @@ export default class PreviewController extends Controller {
   private captionLanguage = captionLanguageOf(rememberedChoice(CAPTION_KEY));
   private captionBackdrop = captionBackdropOf(rememberedChoice(BACKDROP_KEY));
   /** A saved cue names its Speaker, so the caption does too until turned off. */
-  private isSpeakerShown = rememberedChoice(SPEAKER_KEY) !== "false";
-  private isFolded = rememberedChoice(FOLDED_KEY) === "true";
+  private isSpeakerShown = rememberedFlag(SPEAKER_KEY, true);
+  private isFolded = rememberedFlag(FOLDED_KEY, false);
   private unfollow?: () => void;
   /** The request for the next frame the Preview follows the media on while it plays, and the window drawing it. */
   private frameRequest: { view: Window; id: number } | null = null;
@@ -177,7 +182,7 @@ export default class PreviewController extends Controller {
 
   toggleFold(): void {
     this.isFolded = !this.isFolded;
-    rememberChoice(FOLDED_KEY, String(this.isFolded));
+    rememberFlag(FOLDED_KEY, this.isFolded);
     this.showPanel();
   }
 
@@ -197,7 +202,7 @@ export default class PreviewController extends Controller {
 
   toggleCaptionSpeaker(): void {
     this.isSpeakerShown = this.captionSpeakerTarget.checked;
-    rememberChoice(SPEAKER_KEY, String(this.isSpeakerShown));
+    rememberFlag(SPEAKER_KEY, this.isSpeakerShown);
     this.showCaption(this.segmentIndexesAtTime());
   }
 

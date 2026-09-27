@@ -7,10 +7,11 @@ import {
   type TranslationGlossaryView,
 } from "../backend/project";
 import type { TranslationOptions } from "../backend/translation";
+import { fileName } from "../ui/file_name";
 
 function glossaryLabel(glossary: TranslationGlossaryView | null): string {
   if (glossary === null) return t("translate.glossaryNone");
-  const file = glossary.file.split(/[\\/]/).pop() ?? glossary.file;
+  const file = fileName(glossary.file);
   return t("translate.glossaryLoaded", { file, count: glossary.term_count });
 }
 

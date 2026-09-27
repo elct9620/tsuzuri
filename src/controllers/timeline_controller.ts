@@ -16,7 +16,7 @@ import {
   type SegmentChange,
 } from "../editor";
 import { t } from "../i18n";
-import { rememberChoice, rememberedChoice } from "../ui/choices";
+import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { notifyEdit, notifyFailure } from "../ui/notification";
 import { chords, shortcutById } from "../ui/shortcuts";
 import { formatTime } from "../ui/time";
@@ -250,9 +250,9 @@ export default class TimelineController extends Controller {
   private isHeld = false;
   private pxPerSec = INITIAL_PX_PER_SEC;
   /** Whether a dragged edge Snaps, which Shift reverses for one drag; off unless chosen, as in Aegisub. */
-  private isSnapping = rememberedChoice(SNAPPING_KEY) === "true";
+  private isSnapping = rememberedFlag(SNAPPING_KEY, false);
   /** Whether Space plays the Current Segment alone and stops at its end, rather than on from where the media is. */
-  private isPlayingAlone = rememberedChoice(ALONE_KEY) === "true";
+  private isPlayingAlone = rememberedFlag(ALONE_KEY, false);
   /** The modifier keys held as the pointer last moved, which a region's own events do not carry. */
   private modifiers = { shiftKey: false, altKey: false };
   private drag: Drag | null = null;
@@ -316,7 +316,7 @@ export default class TimelineController extends Controller {
 
   toggleSnapping(): void {
     this.isSnapping = !this.isSnapping;
-    rememberChoice(SNAPPING_KEY, String(this.isSnapping));
+    rememberFlag(SNAPPING_KEY, this.isSnapping);
     this.showSnapping();
   }
 
@@ -339,7 +339,7 @@ export default class TimelineController extends Controller {
 
   togglePlayingAlone(): void {
     this.isPlayingAlone = !this.isPlayingAlone;
-    rememberChoice(ALONE_KEY, String(this.isPlayingAlone));
+    rememberFlag(ALONE_KEY, this.isPlayingAlone);
     this.showPlayingAlone();
   }
 

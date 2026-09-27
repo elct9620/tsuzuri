@@ -19,3 +19,13 @@ export function rememberChoice(key: string, value: string): void {
     // A webview without storage forgets the choice when it closes.
   }
 }
+
+/** The yes-or-no choice kept under `key`, or `byDefault` when none was ever made here. */
+export function rememberedFlag(key: string, byDefault: boolean): boolean {
+  const choice = rememberedChoice(key);
+  return byDefault ? choice !== "false" : choice === "true";
+}
+
+export function rememberFlag(key: string, value: boolean): void {
+  rememberChoice(key, String(value));
+}

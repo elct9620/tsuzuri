@@ -10,6 +10,7 @@ import { modelSettings } from "../backend/toolchain";
 import { transcribe, type TranscriptionScope } from "../backend/transcription";
 import { retranslate, translate } from "../backend/translation";
 import { t } from "../i18n";
+import { fileName } from "../ui/file_name";
 import { notify, notifyTranslation } from "../ui/notification";
 import { factorItems, phaseItems } from "../ui/progress";
 import { formatTime } from "../ui/time";
@@ -114,9 +115,7 @@ export default class TranscribeController extends Controller {
       (await modelSettings())?.transcription.path ??
       null;
     this.modelTarget.textContent =
-      path === null
-        ? t("models.notChosen")
-        : (path.split(/[\\/]/).pop() ?? path);
+      path === null ? t("models.notChosen") : fileName(path);
   }
 
   async start(): Promise<void> {

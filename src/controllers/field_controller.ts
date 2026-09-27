@@ -99,7 +99,7 @@ export default class FieldController extends Controller<HTMLElement> {
     const next = document.querySelector<HTMLElement>(
       `.field[data-index="${this.index + 1}"][data-field="${this.field}"]`,
     );
-    if (next) next.focus();
+    if (next) this.session.chooseFrom("next", () => next.focus());
     else this.element.blur();
   }
 

@@ -51,6 +51,12 @@ export type ReplacementOutcome =
  */
 export type SessionChange = "cursor" | "choice" | "checks";
 
+/**
+ * Where the user chose another Segment from, which tells how much of the listening they mean to
+ * leave: its row, its Speaker menu, Enter moving on from the field before, or its region.
+ */
+export type ChoiceSource = "row" | "speaker" | "next" | "region";
+
 /** A Segment Change sent and not yet seen in a Transcript, with the Segments it was made to. */
 interface PendingChange {
   change: SegmentChange;
@@ -68,6 +74,7 @@ export class EditingSession {
   private pendingChange: PendingChange | null = null;
   /** The text the live caret's field held when entered, so leaving it unchanged writes nothing and Esc puts it back. */
   private entryText = "";
+  private source: ChoiceSource = "row";
   private readonly listeners = new Set<(change: SessionChange) => void>();
   private readonly unannouncedChanges = new Set<SessionChange>();
 
@@ -75,6 +82,11 @@ export class EditingSession {
 
   get cursor(): Cursor {
     return this.state;
+  }
+
+  /** Where the Segment a `choice` tells of was chosen from, read while it is being told. */
+  get choiceSource(): ChoiceSource {
+    return this.source;
   }
 
   /** The Checked Segments' positions, in order. */
@@ -198,8 +210,21 @@ export class EditingSession {
     );
   }
 
-  makeCurrent(index: number): void {
-    this.act({ kind: "current-segment", index });
+  makeCurrent(index: number, source: ChoiceSource = "row"): void {
+    this.chooseFrom(source, () => this.act({ kind: "current-segment", index }));
+  }
+
+  /**
+   * Runs `choose`, telling a Segment it makes current as chosen from `source`; Enter moves on by
+   * focusing the next field, which enters it as any focus does.
+   */
+  chooseFrom(source: ChoiceSource, choose: () => void): void {
+    this.source = source;
+    try {
+      choose();
+    } finally {
+      this.source = "row";
+    }
   }
 
   /** Writes a text, a translation or a Speaker of the Segment at `index`. */

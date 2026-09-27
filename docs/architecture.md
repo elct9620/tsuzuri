@@ -556,7 +556,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `versions` outlet | `comparison` | 開啟版本 dialog |
 | `versions:compare-with` | `versions` | `comparison` 換對照 |
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
-| `editor:choice` | session，經 `assembly.ts` | `timeline` 暫停在選的段落 |
+| `editor:choice` | session，經 `assembly.ts` | `timeline` 依來源移動媒體 |
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `progress` 顯示 Phase |
 | `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |

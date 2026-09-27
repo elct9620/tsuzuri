@@ -572,7 +572,17 @@ A button clicked keeps the focus, yet Space pressed afterward is meant for the m
 
 ### Choosing another Segment
 
-Another Segment chosen is the one to be heard next, so the media pauses there for Space: a row at its start, a region where it was clicked, as the waveform does elsewhere. Staying in the Current Segment, or a Segment Change moving it, plays on, so a text is corrected while heard.
+A paused media moves to another Segment chosen, to be heard next: to its start from its row, or to where its region was clicked. Playing media stops only where the user means to listen again, since lines are corrected while heard:
+
+```
+  chosen from            playing on               playing alone
+  its row                pauses at its start      plays from its start
+  its Speaker menu       plays on where it is     plays from its start
+  Enter in the field     plays on where it is     plays from its start
+  its region             plays on from the click  plays from its start
+```
+
+Playing alone keeps to the Segment chosen, so the media never plays past a Current Segment it has left behind. Staying in the Current Segment, or a Segment Change moving it, plays on.
 
 ## `PV-075` Pausing at the start of a Segment whose row is chosen
 
@@ -590,13 +600,53 @@ Another Segment chosen is the one to be heard next, so the media pauses there fo
 | When | the second Segment's row is clicked |
 | Then | the media stays paused at 1 s |
 
-## `PV-077` Pausing where a Segment's region is clicked
+## `PV-077` Playing on from where another Segment's region is clicked
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s |
 | When | the second Segment's region is clicked at 1.5 s |
-| Then | the media pauses at 1.5 s |
+| Then | the media plays on from 1.5 s |
+
+## `PV-147` Playing on as another Segment's Speaker menu is opened
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s |
+| When | the second Segment's Speaker menu is opened |
+| Then | the second Segment is current and the media plays on from 0.5 s |
+
+## `PV-148` Playing on as Enter moves to the next Segment's text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the first Segment's text entered |
+| When | Enter is pressed |
+| Then | the second Segment is current and the media plays on from 0.5 s |
+
+## `PV-149` Playing another Segment from its start when its Speaker menu is opened while playing alone
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on |
+| When | the second Segment's Speaker menu is opened |
+| Then | the media plays on from 1 s |
+
+## `PV-150` Playing another Segment from its start when its row is chosen while playing alone
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on |
+| When | the second Segment's row is clicked |
+| Then | the media plays on from 1 s |
+
+## `PV-151` Playing another Segment from its start when its region is clicked while playing alone
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on |
+| When | the second Segment's region is clicked at 1.5 s |
+| Then | the media plays on from 1 s |
 
 ## `PV-078` Playing on when the Current Segment's row is clicked
 

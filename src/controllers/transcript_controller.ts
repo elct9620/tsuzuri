@@ -92,7 +92,7 @@ function labelSpeaker(opener: HTMLElement, speaker: string): void {
  */
 function speakerMenu(index: number, speaker: string): HTMLElement {
   const dropdown = document.createElement("div");
-  dropdown.className = "dropdown";
+  dropdown.className = "speaker-menu dropdown";
   const opener = document.createElement("div");
   opener.tabIndex = 0;
   opener.setAttribute("role", "button");
@@ -344,7 +344,13 @@ export default class TranscriptController extends Controller {
       event.preventDefault();
       return;
     }
-    this.session.makeCurrent(event.params.index);
+    const isSpeakerMenu =
+      event.target instanceof Element &&
+      event.target.closest(".speaker-menu") !== null;
+    this.session.makeCurrent(
+      event.params.index,
+      isSpeakerMenu ? "speaker" : "row",
+    );
   }
 
   /** The Current Segment a run checked by `event` on row `index` starts from, or none unless Shift is held on another row. */

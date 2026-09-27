@@ -39,5 +39,6 @@ export {
   type EditingPort,
   type Outcome,
   type ReplacementOutcome,
+  type ChoiceSource,
   type SessionChange,
 } from "./session";

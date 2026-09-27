@@ -12,6 +12,7 @@ import { isMacOS } from "../backend/system";
 import { extractWaveform, type Waveform } from "../backend/waveform";
 import {
   isTextField,
+  type ChoiceSource,
   type EditingSession,
   type SegmentChange,
 } from "../editor";
@@ -80,6 +81,50 @@ interface Drag {
 export function regionColor(index: number, isCurrent = false): string {
   if (isCurrent) return "var(--segment-current)";
   return `var(${REGION_COLORS[index % REGION_COLORS.length]})`;
+}
+
+/** Where the media goes as another Segment is chosen, none to stay; and whether it pauses there. */
+interface Landing {
+  at: number | null;
+  isPausing: boolean;
+}
+
+/** What decides where the media goes as another Segment is chosen. */
+interface Choice {
+  source: ChoiceSource;
+  /** Where the Segment chosen starts. */
+  start: number;
+  /** Where its region was clicked, when chosen from it. */
+  clicked?: number;
+  isPaused: boolean;
+  isPlayingAlone: boolean;
+}
+
+/**
+ * Where the media goes as another Segment is chosen: a paused media moves to it, to where its
+ * region was clicked or else to its start. Playing alone keeps to the Segment chosen, so plays it
+ * from its start; otherwise only a row chosen pauses at its start, a region plays on from the
+ * click, and a Speaker named or Enter pressed plays on where it is.
+ */
+function choiceLanding({
+  source,
+  start,
+  clicked = start,
+  isPaused,
+  isPlayingAlone,
+}: Choice): Landing {
+  if (isPaused)
+    return { at: source === "region" ? clicked : start, isPausing: false };
+  if (isPlayingAlone) return { at: start, isPausing: false };
+  switch (source) {
+    case "row":
+      return { at: start, isPausing: true };
+    case "region":
+      return { at: clicked, isPausing: false };
+    case "speaker":
+    case "next":
+      return { at: null, isPausing: false };
+  }
 }
 
 const CONTROL_SELECTOR =
@@ -244,14 +289,21 @@ export default class TimelineController extends Controller {
   }
 
   /**
-   * Pauses the media at the start of the Segment the user chose, for Space to play from it. A
-   * region's click reaches the waveform afterwards, which moves the media on to where it was clicked.
+   * Moves the media to the Segment the user chose from a row, its Speaker menu or Enter, as
+   * `choiceLanding` tells; a region chosen moves it from `chooseRegion`, which knows where it was clicked.
    */
-  pauseAtCurrent(): void {
+  moveToChoice(): void {
     const segment = this.currentSegment;
-    if (!segment) return;
-    this.player.pause();
-    this.player.currentTime = toSeconds(segment.start_ms);
+    const source = this.session.choiceSource;
+    if (!segment || source === "region") return;
+    this.land(
+      choiceLanding({
+        source,
+        start: toSeconds(segment.start_ms),
+        isPaused: this.player.paused,
+        isPlayingAlone: this.isPlayingAlone,
+      }),
+    );
   }
 
   /**
@@ -404,10 +456,9 @@ export default class TimelineController extends Controller {
   private drawWaveform(waveform: Waveform): void {
     const regions = RegionsPlugin.create();
     this.regions = regions;
-    regions.on("region-clicked", (region) => {
-      if (region.id !== RANGE_ID)
-        this.makeCurrent(regions.getRegions().indexOf(region));
-    });
+    regions.on("region-clicked", (region, event) =>
+      this.chooseRegion(region, event),
+    );
     regions.on("region-update", (region, side) => this.follow(region, side));
     regions.on("region-updated", () => this.letGo());
     regions.on("region-initialized", (region) => {
@@ -520,8 +571,31 @@ export default class TimelineController extends Controller {
     return index === null ? undefined : this.segments[index];
   }
 
-  private makeCurrent(index: number): void {
-    this.session.makeCurrent(index);
+  /**
+   * Makes the Segment of a region clicked current and moves the media as `choiceLanding` tells,
+   * keeping the click from the waveform, which would move it to where it was clicked regardless.
+   * The Current Segment's region is left to the waveform.
+   */
+  private chooseRegion(region: Region, event: MouseEvent): void {
+    const index = this.segmentRegions().indexOf(region);
+    const segment = this.segments[index];
+    if (!segment || index === this.session.cursor.index) return;
+    event.stopPropagation();
+    this.dropRange();
+    const landing = choiceLanding({
+      source: "region",
+      start: toSeconds(segment.start_ms),
+      clicked: this.timeAt(event.clientX),
+      isPaused: this.player.paused,
+      isPlayingAlone: this.isPlayingAlone,
+    });
+    this.session.makeCurrent(index, "region");
+    this.land(landing);
+  }
+
+  private land({ at, isPausing }: Landing): void {
+    if (isPausing) this.player.pause();
+    if (at !== null) this.player.currentTime = at;
   }
 
   /**

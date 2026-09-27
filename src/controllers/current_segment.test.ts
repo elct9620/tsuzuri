@@ -9,6 +9,7 @@ import type { EditingSession } from "../editor";
 import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test_layout";
 import { projectOf } from "../test_project";
+import FieldController, { composingOption } from "./field_controller";
 import PreviewController from "./preview_controller";
 import TimelineController, {
   controlOption,
@@ -104,6 +105,35 @@ describe("Current Segment", () => {
     button.click();
   }
 
+  /** Opens the Speaker menu of the Segment at `index`, as focusing its button does. */
+  function openSpeakers(index: number): void {
+    rows()[index].querySelector<HTMLElement>(".speaker")!.focus();
+  }
+
+  const textField = (index: number) =>
+    document.querySelector<HTMLElement>(
+      `.field[data-index="${index}"][data-field="text"]`,
+    )!;
+
+  /** Clicks the region of the Segment at `index` at `at` seconds, on a waveform 100 pixels a second wide. */
+  function clickRegion(index: number, at: number): void {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 200, height: 100 }),
+    );
+    regions()[index].dispatchEvent(
+      new MouseEvent("click", { bubbles: true, clientX: at * 100 }),
+    );
+  }
+
+  /** Shows `twoSegments` playing the first alone at 0.5 s. */
+  async function playFirstAlone(): Promise<void> {
+    await show(twoSegments);
+    rows()[0].click();
+    aloneButton().click();
+    await media().play();
+    playTo(0.5);
+  }
+
   /** Makes the media report being at `at` seconds, as a playing player does. */
   function playTo(at: number): void {
     media().currentTime = at;
@@ -136,7 +166,9 @@ describe("Current Segment", () => {
   async function startApplication(): Promise<void> {
     application = Application.start();
     application.registerActionOption("control", controlOption);
+    application.registerActionOption("composing", composingOption);
     const assembly = assemble(application, {
+      field: FieldController,
       transcript: TranscriptController,
       preview: PreviewController,
       timeline: TimelineController,
@@ -168,7 +200,7 @@ describe("Current Segment", () => {
       <main data-controller="transcript"
         data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
         <div data-controller="preview timeline"
-          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#pauseAtCurrent keydown.space@window->timeline#playOrStop:!control:prevent">
+          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent">
           <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screen">
@@ -383,24 +415,70 @@ describe("Current Segment", () => {
   });
 
   // @behavior PV-077
-  it("pauses where a Segment's region is clicked while the media plays", async () => {
-    // The waveform takes a click's time from its width: 200 pixels over two seconds of Peaks
-    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
-      DOMRect.fromRect({ x: 0, y: 0, width: 200, height: 100 }),
-    );
+  it("plays on from where another Segment's region is clicked", async () => {
     await show(twoSegments);
-    // The waveform moves only media ready to play there, which happy-dom never is
-    Object.defineProperty(media(), "readyState", {
-      value: HTMLMediaElement.HAVE_ENOUGH_DATA,
-    });
     await media().play();
     playTo(0.5);
 
-    regions()[1].dispatchEvent(
-      new MouseEvent("click", { bubbles: true, clientX: 150 }),
+    clickRegion(1, 1.5);
+
+    expect([media().paused, media().currentTime]).toEqual([false, 1.5]);
+  });
+
+  // @behavior PV-147
+  it("plays on as another Segment's Speaker menu is opened", async () => {
+    await show(twoSegments);
+    await media().play();
+    playTo(0.5);
+
+    openSpeakers(1);
+
+    expect([session.cursor.index, media().paused, media().currentTime]).toEqual(
+      [1, false, 0.5],
+    );
+  });
+
+  // @behavior PV-148
+  it("plays on as Enter moves to the next Segment's text", async () => {
+    await show(twoSegments);
+    textField(0).focus();
+    await media().play();
+    playTo(0.5);
+
+    textField(0).dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
     );
 
-    expect([media().paused, media().currentTime]).toEqual([true, 1.5]);
+    expect([session.cursor.index, media().paused, media().currentTime]).toEqual(
+      [1, false, 0.5],
+    );
+  });
+
+  // @behavior PV-149
+  it("plays another Segment from its start when its Speaker menu is opened while playing alone", async () => {
+    await playFirstAlone();
+
+    openSpeakers(1);
+
+    expect([media().paused, media().currentTime]).toEqual([false, 1]);
+  });
+
+  // @behavior PV-150
+  it("plays another Segment from its start when its row is chosen while playing alone", async () => {
+    await playFirstAlone();
+
+    rows()[1].click();
+
+    expect([media().paused, media().currentTime]).toEqual([false, 1]);
+  });
+
+  // @behavior PV-151
+  it("plays another Segment from its start when its region is clicked while playing alone", async () => {
+    await playFirstAlone();
+
+    clickRegion(1, 1.5);
+
+    expect([media().paused, media().currentTime]).toEqual([false, 1]);
   });
 
   // @behavior PV-078

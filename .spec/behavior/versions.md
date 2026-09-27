@@ -444,3 +444,19 @@ A translation lines up with its original by time alone, so a restore that splits
 | Given | the editor comparing a Backup of the original |
 | When | a row taken back leaves 2 Segments without a translation |
 | Then | beside the Notification that it was taken back, a warning says 2 Segments no longer line up with a translation and can be translated again |
+
+## `VR-054` Marking the rows of the comparison asked for last
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor compared with the newest Output, its answer still coming |
+| When | the Segments are shown again and their comparison answers first |
+| Then | the rows keep the marks of the later comparison |
+
+## `VR-055` Showing the comparison of the Backup chosen last
+
+| Step | Statement |
+| --- | --- |
+| Given | the Versions dialog comparing one Backup, its answer still coming |
+| When | another Backup is compared and its answer comes first |
+| Then | the dialog shows the rows of the Backup chosen last |

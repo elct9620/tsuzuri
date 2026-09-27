@@ -12,6 +12,8 @@ describe("VersionsController", () => {
   let restoreArgs: unknown;
   let revertArgs: unknown;
   let rows: ComparedRow[];
+  /** How `compare_versions` answers; the rows at once unless a test holds them back. */
+  let takeRows: () => ComparedRow[] | Promise<ComparedRow[]>;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = <T extends HTMLElement>(name: string) =>
@@ -36,6 +38,7 @@ describe("VersionsController", () => {
   beforeEach(async () => {
     restoreArgs = undefined;
     revertArgs = undefined;
+    takeRows = () => rows;
     rows = [
       {
         kind: "pair",
@@ -101,7 +104,7 @@ describe("VersionsController", () => {
             ],
           },
         ];
-      if (command === "compare_versions") return rows;
+      if (command === "compare_versions") return takeRows();
       if (command === "revert_row") {
         revertArgs = args;
         return { unmatched_count: 0 };
@@ -165,6 +168,31 @@ describe("VersionsController", () => {
         tr.classList.contains("changed"),
       ),
     ]).toEqual([false, [true, false]]);
+  });
+
+  // @behavior VR-055
+  it("shows the comparison of the Backup chosen last", async () => {
+    let answerEarlier: (rows: ComparedRow[]) => void = () => {};
+    takeRows = () =>
+      new Promise((resolve) => {
+        answerEarlier = resolve;
+      });
+    await openVersions();
+    await click("button.compare");
+    takeRows = () => rows;
+    target("backups")
+      .querySelectorAll<HTMLButtonElement>("button.compare")[1]
+      .click();
+    await settle();
+
+    answerEarlier([rows[1]]);
+    await settle();
+
+    expect(
+      [...target("rows").querySelectorAll("tr")].map((tr) =>
+        tr.classList.contains("changed"),
+      ),
+    ).toEqual([true, false]);
   });
 
   // @behavior VR-009

@@ -23,6 +23,10 @@ describe("ComparisonController", () => {
   let cuesByLanguage: Record<string, ReturnType<typeof cue>[]>;
   let calls: { command: string; args: unknown }[];
   let unmatchedCount: number;
+  /** How `compare_versions` answers for the original; the rows at once unless a test holds them back. */
+  let takeRows: () => ComparedRow[] | Promise<ComparedRow[]>;
+  /** How `subtitle_versions` answers; the Backups at once unless a test holds them back. */
+  let takeVersions: () => SubtitleVersions[] | Promise<SubtitleVersions[]>;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const argsByCommand = (command: string) =>
@@ -154,14 +158,16 @@ describe("ComparisonController", () => {
       ${NOTIFICATION_STACK}
     `;
     unmatchedCount = 0;
+    takeRows = () => rows;
+    takeVersions = () => versions;
     mockIPC(
       (command, args) => {
         calls.push({ command, args });
         if (command === "current_project") return project;
-        if (command === "subtitle_versions") return versions;
+        if (command === "subtitle_versions") return takeVersions();
         if (command === "compare_versions")
           return (args as { language: string | null }).language === null
-            ? rows
+            ? takeRows()
             : translationRows;
         if (command === "translation_cues")
           return cuesByLanguage[(args as { language: string }).language] ?? [];
@@ -220,6 +226,55 @@ describe("ComparisonController", () => {
       [["文"], ["時"]],
       [[], ["新"]],
     ]);
+  });
+
+  // @behavior VR-054
+  it("marks the rows of the comparison asked for last", async () => {
+    let answerEarlier: (rows: ComparedRow[]) => void = () => {};
+    takeRows = () =>
+      new Promise((resolve) => {
+        answerEarlier = resolve;
+      });
+    await show();
+    takeRows = () => [pair(cue(0, 1000, "你好"), cue(0, 1000, "您好"))];
+    await show();
+
+    answerEarlier([pair(cue(0, 1000, "您好"), cue(0, 1500, "您好"))]);
+    await settle();
+
+    expect(marks()).toEqual([["文"], []]);
+  });
+
+  // @behavior VR-054
+  it("compares with the Backups listed for the last Segments shown", async () => {
+    let answerEarlier: (versions: SubtitleVersions[]) => void = () => {};
+    takeVersions = () =>
+      new Promise((resolve) => {
+        answerEarlier = resolve;
+      });
+    await show();
+    takeVersions = () => versions;
+    await show();
+
+    answerEarlier([
+      {
+        language: null,
+        backups: [
+          {
+            file: "ep01.20260924T000000Z.output.srt",
+            taken_at: "20260924T000000Z",
+            kind: "output",
+          },
+        ],
+      },
+    ]);
+    await settle();
+
+    expect(argsByCommand("compare_versions").pop()).toEqual({
+      language: null,
+      left: "ep01.20260925T023000Z.output.srt",
+      right: null,
+    });
   });
 
   // @behavior VR-025

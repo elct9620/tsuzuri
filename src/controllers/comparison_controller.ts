@@ -194,6 +194,9 @@ export default class ComparisonController extends Controller {
   /** The translations read beneath the cues, and those that could be. */
   private references: string[] = [];
   private offeredReferences: string[] = [];
+  /** The Backups and comparison asked for last; an answer to an earlier ask is dropped. */
+  private versionsRequest?: Promise<SubtitleVersions[]>;
+  private comparisonRequest?: object;
 
   /**
    * Compares the Segments just shown, offering the Backups there are now: the newest Output of the
@@ -207,7 +210,11 @@ export default class ComparisonController extends Controller {
     const project = detail.project;
     const resource = project?.current_resource ?? null;
     const shownLanguage = project?.shown_translation ?? null;
-    this.versions = await this.readVersions(project);
+    const request = this.readVersions(project);
+    this.versionsRequest = request;
+    const versions = await request;
+    if (request !== this.versionsRequest) return;
+    this.versions = versions;
     const output = newestOutput(this.versions, null);
     const isNewResource = resource !== this.resource;
     const isGone = (language: string | null, file: string | null) =>
@@ -404,6 +411,8 @@ export default class ComparisonController extends Controller {
   }
 
   private async compare(): Promise<void> {
+    const request = {};
+    this.comparisonRequest = request;
     const rowsBySide: Record<Side, ComparedRow[]> = {
       original: [],
       translation: [],
@@ -422,8 +431,10 @@ export default class ComparisonController extends Controller {
       for (const language of this.references)
         cuesByLanguage.push([language, await translationCues(language)]);
     } catch (error) {
-      notifyFailure(t("versions.unreadable"), error);
+      if (request === this.comparisonRequest)
+        notifyFailure(t("versions.unreadable"), error);
     }
+    if (request !== this.comparisonRequest) return;
     this.decorate(rowsBySide);
     this.showReferences(cuesByLanguage);
   }

@@ -101,6 +101,8 @@ export default class VersionsController extends Controller {
 
   /** What Rust listed when the dialog opened; shown until it closes. */
   private versions: SubtitleVersions[] = [];
+  /** The comparison asked for last; an answer to an earlier one is dropped. */
+  private comparisonRequest?: Promise<ComparedRow[]>;
 
   async open(): Promise<void> {
     try {
@@ -188,17 +190,21 @@ export default class VersionsController extends Controller {
 
   /** Asks Rust to line the two chosen Versions up by time, marking each row that differs. */
   async showComparison(): Promise<void> {
+    const request = compareVersions(
+      this.shownLanguage(),
+      this.leftVersionTarget.value || null,
+      this.rightVersionTarget.value || null,
+    );
+    this.comparisonRequest = request;
     let rows: ComparedRow[];
     try {
-      rows = await compareVersions(
-        this.shownLanguage(),
-        this.leftVersionTarget.value || null,
-        this.rightVersionTarget.value || null,
-      );
+      rows = await request;
     } catch (error) {
-      notifyFailure(t("versions.unreadable"), error);
+      if (request === this.comparisonRequest)
+        notifyFailure(t("versions.unreadable"), error);
       return;
     }
+    if (request !== this.comparisonRequest) return;
     const isRevertible =
       this.leftVersionTarget.value !== "" &&
       this.rightVersionTarget.value === "";

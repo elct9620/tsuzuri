@@ -103,5 +103,6 @@ These two tests are skipped by default and need Models and a media file.
 | [FFmpeg](https://ffmpeg.org) | LGPLv2.1 |
 | [whisper.cpp](https://github.com/ggml-org/whisper.cpp), [llama.cpp](https://github.com/ggml-org/llama.cpp) | MIT |
 | Rust dependencies | The licenses `src-tauri/deny.toml` allows |
+| [OpenCC](https://github.com/BYVoid/OpenCC) dictionaries | Apache License 2.0 |
 
-The bundled engines are built from their source by `scripts/vendor.sh` and run as separate programs, which an executable you choose can replace. CI generates the full license texts as `THIRD-PARTY-LICENSES.html` with cargo-about, and those of the packages the interface bundles as `THIRD-PARTY-LICENSES-WEBVIEW.html`, and ships both with every build.
+The bundled engines are built from their source by `scripts/vendor.sh` and run as separate programs, which an executable you choose can replace. CI generates the full license texts as `THIRD-PARTY-LICENSES.html` with cargo-about, and those of the packages the interface bundles as `THIRD-PARTY-LICENSES-WEBVIEW.html`, and ships both with every build. The OpenCC dictionaries are compiled in as released, and `src-tauri/opencc/` records which release.

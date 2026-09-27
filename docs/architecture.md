@@ -207,6 +207,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `transcript` | 領域 | 段落與 SRT |
 | — | `segment_change` | 領域 | 段落變更 |
 | — | `replacement` | 領域 | 搜尋取代 |
+| — | `cleanup` | 領域 | 簡體清理 |
 | — | `language` | 領域 | 語言代碼 |
 | — | `project` | 領域 | 專案聚合、寫回 |
 | `project/` | `versions` | 領域 | 逐 cue 比較版本 |

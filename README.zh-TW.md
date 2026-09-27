@@ -103,5 +103,6 @@ TSUZURI_E2E_LLAMA=<llama-server> TSUZURI_E2E_TRANSLATION_MODEL=<GGUF 模型> \
 | [FFmpeg](https://ffmpeg.org) | LGPLv2.1 |
 | [whisper.cpp](https://github.com/ggml-org/whisper.cpp)、[llama.cpp](https://github.com/ggml-org/llama.cpp) | MIT |
 | Rust 相依套件 | `src-tauri/deny.toml` 允許的授權 |
+| [OpenCC](https://github.com/BYVoid/OpenCC) 字典 | Apache License 2.0 |
 
-內建引擎由 `scripts/vendor.sh` 從原始程式碼編譯，以獨立程式執行，也能改用你指定的執行檔。CI 以 cargo-about 產生完整授權文字 `THIRD-PARTY-LICENSES.html`，也為介面打包的套件產生 `THIRD-PARTY-LICENSES-WEBVIEW.html`，兩者都隨每次建置一起提供。
+內建引擎由 `scripts/vendor.sh` 從原始程式碼編譯，以獨立程式執行，也能改用你指定的執行檔。CI 以 cargo-about 產生完整授權文字 `THIRD-PARTY-LICENSES.html`，也為介面打包的套件產生 `THIRD-PARTY-LICENSES-WEBVIEW.html`，兩者都隨每次建置一起提供。OpenCC 字典照原樣編譯進執行檔，版本記在 `src-tauri/opencc/`。

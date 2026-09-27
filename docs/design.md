@@ -308,6 +308,7 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 | ffmpeg | LGPL 2.1+ | 附原始程式碼、標示授權 |
 | Rust 相依套件 | 見 `deny.toml` | cargo-deny 檢查、cargo-about 產生授權聲明 |
 | Webview 打包套件 | 同 `about.toml` | 腳本檢查並產生聲明 |
+| OpenCC 字典 | Apache-2.0 | 聲明與「關於」標示 |
 
 ffmpeg 不開 GPL、nonfree，是獨立執行檔，Tsuzuri 不連結它的函式庫，使用者也能改用自己的。Webview 打包套件的授權由 `scripts/webview-licenses.ts` 檢查並列出，含只在建置時用到、CSS 卻打包進去的 daisyUI 與 Tailwind。
 

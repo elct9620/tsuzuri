@@ -238,6 +238,14 @@ A grey shape standing where content is still being made or read, such as a row b
 
 A change to the Segments themselves rather than to a text: new times for one, the edge two neighbours share moved for both, one inserted before or after another or at times of its own, any of them deleted, one split in two at a point in its text, a run of them merged, or a run of them shifted in time. It is made to the original and every translation of the Current Resource together, since a translation is matched to its original by time.
 
+### Simplified Cleanup
+
+Turning the Simplified Chinese left in a Traditional Chinese (Taiwan) text into Taiwan's Traditional forms, by the phrase, character and Taiwan variant tables of OpenCC that Tsuzuri carries. A character OpenCC also lists as a Traditional form of its own, such as 台 or 后, changes only inside a phrase that settles its reading, 台 is kept where a phrase would write it 臺, and no word is swapped for the one Taiwan uses, so the writing changes and what was said does not. Only a text in `zh-TW` is cleaned.
+
+#### Rejected
+
+- `Simplified conversion` - conversion is what ffmpeg does to media; a text is cleaned of what does not belong in it.
+
 ### Backup
 
 A copy of a subtitle kept in the Project's `.tsuzuri/history/`, of one of two kinds. An Output is what a transcription or translation has just written, always kept, so the edits after it can be compared with what the Mode made. An Overwrite is a subtitle just before Tsuzuri writes over it: kept before every transcription or translation that writes over it when the Project Options ask for it, always before a restore, and before any change the first time Tsuzuri changes the subtitle since the Project was opened, unless a Backup of it was kept since; later changes in that time are left to the Undo History. What Tsuzuri last held of a subtitle changed elsewhere is kept as an Overwrite too, before the change is read in. Each is named `[name].srt` or `[name].[lang].srt` with the UTC time it was taken before `.srt`, and an Output with `.output` after the time, such as `ep01.en.20260925T023000Z.output.srt`; the Resource list never shows one.

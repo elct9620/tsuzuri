@@ -1,3 +1,4 @@
+pub mod cleanup;
 pub mod failure;
 pub mod json_settings;
 pub mod language;

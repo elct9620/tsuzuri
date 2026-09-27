@@ -47,7 +47,7 @@ impl TranscriptionSettings {
 
     /// Settings never saved load as the defaults.
     pub fn load(dir: &Path) -> io::Result<TranscriptionSettings> {
-        json_settings::read_or_default(&dir.join(SETTINGS_FILE))
+        json_settings::settings_at(&dir.join(SETTINGS_FILE))
     }
 
     pub fn save(self, dir: &Path) -> io::Result<()> {

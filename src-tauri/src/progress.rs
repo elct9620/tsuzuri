@@ -1,34 +1,7 @@
-use std::fmt;
-
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Runtime};
 
-use crate::timing::Phases;
-
-/// One timed part of a Mode's run, named in `pipeline-progress`, in the seconds each took and in the log.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Phase {
-    Prepare,
-    Convert,
-    Load,
-    Transcribe,
-    Detect,
-    Translate,
-}
-
-impl fmt::Display for Phase {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(match self {
-            Phase::Prepare => "prepare",
-            Phase::Convert => "convert",
-            Phase::Load => "load",
-            Phase::Transcribe => "transcribe",
-            Phase::Detect => "detect",
-            Phase::Translate => "translate",
-        })
-    }
-}
+use crate::timing::{Phase, Phases};
 
 pub trait Progress {
     fn report(&self, phase: Phase, percent: Option<u8>);

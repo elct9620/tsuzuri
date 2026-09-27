@@ -14,7 +14,7 @@ pub fn settings_dir(app: &AppHandle) -> Result<PathBuf, Failure> {
 }
 
 /// The settings saved as JSON at `path`, or the defaults when they were never saved.
-pub fn read_or_default<T: DeserializeOwned + Default>(path: &Path) -> io::Result<T> {
+pub fn settings_at<T: DeserializeOwned + Default>(path: &Path) -> io::Result<T> {
     match fs::read(path) {
         Ok(bytes) => serde_json::from_slice(&bytes).map_err(io::Error::other),
         Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(T::default()),

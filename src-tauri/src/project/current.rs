@@ -408,10 +408,7 @@ impl Project {
     /// the Project Options ask for it and else once since the Project was opened.
     fn keep_before_mode_writes(&mut self, name: &str, subtitle: &Path) -> Result<(), Failure> {
         self.back_up_changed_elsewhere_of(name)?;
-        let policy = self.mode_backup_policy();
-        Ok(self
-            .backups
-            .keep_before_write(&self.directory, subtitle, policy)?)
+        self.keep_before_write(subtitle, self.mode_backup_policy())
     }
 
     /// How a Mode keeps the subtitles it writes over: every time when the Project Options ask for
@@ -426,9 +423,28 @@ impl Project {
     /// Keeps `subtitle` as an Overwrite Backup before Tsuzuri first changes it since the Project
     /// was opened.
     fn back_up_first_change(&mut self, subtitle: &Path) -> Result<(), Failure> {
-        Ok(self
-            .backups
-            .keep_before_write(&self.directory, subtitle, BackupPolicy::FirstChange)?)
+        self.keep_before_write(subtitle, BackupPolicy::FirstChange)
+    }
+
+    /// Keeps `subtitle` before it is written over, as `policy` asks.
+    fn keep_before_write(&mut self, subtitle: &Path, policy: BackupPolicy) -> Result<(), Failure> {
+        match policy {
+            BackupPolicy::EveryWrite => self.keep_backup(subtitle, BackupKind::Overwrite),
+            BackupPolicy::FirstChange if self.backups.note(subtitle) => Ok(files::back_up(
+                &self.directory,
+                subtitle,
+                SystemTime::now(),
+                BackupKind::Overwrite,
+            )?),
+            BackupPolicy::FirstChange => Ok(()),
+        }
+    }
+
+    /// Keeps `subtitle` as a Backup of `kind` taken now, and notes it as kept.
+    fn keep_backup(&mut self, subtitle: &Path, kind: BackupKind) -> Result<(), Failure> {
+        files::back_up(&self.directory, subtitle, SystemTime::now(), kind)?;
+        self.backups.note(subtitle);
+        Ok(())
     }
 
     /// Gives each cue of the named Resource's translations the Speaker of its original's Segment with
@@ -464,8 +480,7 @@ impl Project {
             }
         }
         for (path, srt) in writes {
-            self.backups
-                .keep_before_write(&self.directory, &path, policy)?;
+            self.keep_before_write(&path, policy)?;
             files::write_srt(&path, srt)?;
         }
         Ok(())
@@ -665,8 +680,7 @@ impl Project {
         let backup_path = self.backup_of(language, backup)?;
         let subtitle = self.subtitle_path(language)?;
         let name = self.current()?.name.clone();
-        self.backups
-            .keep(&self.directory, &subtitle, BackupKind::Overwrite)?;
+        self.keep_backup(&subtitle, BackupKind::Overwrite)?;
         files::copy(&backup_path, &subtitle)?;
         self.read_current_again()?;
         self.write_bilingual_subtitles(&name, language)?;
@@ -736,8 +750,6 @@ impl Project {
     }
 }
 
-/// The Version of a subtitle at `path`: an original read for its Speakers, a translation as
-/// written, so a comparison and what it takes back see each cue the same way.
 /// How a Mode's result keeps the subtitle it writes over, and whether it keeps what it wrote.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ResultBackup {
@@ -778,9 +790,7 @@ fn write_mode_result(
     }
     if backup == ResultBackup::ModeOutput {
         match project.as_deref_mut() {
-            Some(project) => project
-                .backups
-                .keep(directory, subtitle, BackupKind::Output)?,
+            Some(project) => project.keep_backup(subtitle, BackupKind::Output)?,
             None => files::back_up(directory, subtitle, SystemTime::now(), BackupKind::Output)?,
         }
     }
@@ -793,6 +803,8 @@ fn write_mode_result(
     Ok(())
 }
 
+/// The Version of a subtitle at `path`: an original read for its Speakers, a translation as
+/// written, so a comparison and what it takes back see each cue the same way.
 fn version_at(path: &Path, language: Option<Language>) -> Result<Transcript, Failure> {
     match language {
         None => files::transcript_at(path),
@@ -1376,9 +1388,10 @@ impl CurrentProject {
 
     /// Writes the translation into `target` that `translation` makes, given the Project while
     /// `source` is still from it, to the Resource `source` was taken from, with the Bilingual SRTs
-    /// it feeds, as one change, kept as `backup` says. The Current Resource, while it is that Resource, is then read
-    /// from the files in place of what the Mode showed. It answers how many Segments of the
-    /// original, given times since `source` was taken, find no cue at them in what it wrote.
+    /// it feeds, as one change, kept as `backup` says. The Current Resource, while it is that
+    /// Resource, is then read from the files in place of what the Mode showed. It answers how
+    /// many Segments of the original, given times since `source` was taken, find no cue at them
+    /// in what it wrote.
     fn write_translation_file(
         &self,
         source: &TranslationSource,

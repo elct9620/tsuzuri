@@ -15,7 +15,7 @@ const SETTINGS_FILE: &str = "models.json";
 impl Choices {
     /// Choices never saved load as none, so a first launch relies on Detection and the Bundled Variants.
     pub fn load(dir: &Path) -> io::Result<Choices> {
-        json_settings::read_or_default(&dir.join(CHOICES_FILE))
+        json_settings::settings_at(&dir.join(CHOICES_FILE))
     }
 
     pub fn save(&self, dir: &Path) -> io::Result<()> {
@@ -27,7 +27,7 @@ impl Choices {
 impl ModelSettings {
     /// Settings that were never saved load as empty, so a first launch needs no setup.
     pub fn load(dir: &Path) -> io::Result<ModelSettings> {
-        json_settings::read_or_default(&dir.join(SETTINGS_FILE))
+        json_settings::settings_at(&dir.join(SETTINGS_FILE))
     }
 
     pub fn save(&self, dir: &Path) -> io::Result<()> {

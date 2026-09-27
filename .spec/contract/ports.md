@@ -6,6 +6,7 @@ The two ways a use case reaches outside Rust's own logic, and the Mode Run that 
 
 - `src-tauri/src/progress.rs`
 - `src-tauri/src/steps.rs`
+- `src-tauri/src/timing.rs`
 
 ## `Progress`
 

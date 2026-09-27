@@ -39,7 +39,7 @@ impl Default for TranslationSettings {
 impl TranslationSettings {
     /// Settings never saved load as the defaults.
     pub fn load(dir: &Path) -> io::Result<TranslationSettings> {
-        json_settings::read_or_default(&dir.join(SETTINGS_FILE))
+        json_settings::settings_at(&dir.join(SETTINGS_FILE))
     }
 
     /// Saves the settings raised to at least one each, since none of them works at zero,

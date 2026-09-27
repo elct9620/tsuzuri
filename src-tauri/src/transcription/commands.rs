@@ -6,10 +6,10 @@ use super::{run_transcribe, Tools, Transcription, TranscriptionSettings};
 use crate::failure::Failure;
 use crate::json_settings;
 use crate::processes::{AppPorts, Processes};
-use crate::progress::{Phase, Progress};
+use crate::progress::Progress;
 use crate::project::{CurrentProject, TranscriptionScope};
 use crate::steps::ModeLock;
-use crate::timing::Phases;
+use crate::timing::{Phase, Phases};
 use crate::toolchain::{self, settings};
 use crate::translation::ResidentLlama;
 
@@ -24,8 +24,8 @@ pub async fn transcribe(
     scope: TranscriptionScope,
 ) -> Result<Transcription, Failure> {
     let job = current.transcription_target(overwrite, scope)?;
-    let phases = Phases::start("transcribe", Phase::Prepare);
-    app.report(Phase::Prepare, None);
+    let phases = Phases::start("transcribe", Phase::Preparation);
+    app.report(Phase::Preparation, None);
     let run = mode_lock.begin(AppPorts::new(&app, &processes)).await;
     // Only one Model is loaded at a time, so the translation Model makes way for whisper's.
     resident.make_room(run.ports()).await;

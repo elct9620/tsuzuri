@@ -305,7 +305,7 @@ const CONFIG_FILE: &str = "tsuzuri.config.json";
 impl ProjectConfig {
     /// A directory without the file loads as the default.
     pub fn load(directory: &Path) -> io::Result<ProjectConfig> {
-        json_settings::read_or_default(&directory.join(CONFIG_FILE))
+        json_settings::settings_at(&directory.join(CONFIG_FILE))
     }
 
     pub fn save(self, directory: &Path) -> io::Result<()> {

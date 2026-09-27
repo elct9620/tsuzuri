@@ -1,8 +1,38 @@
 use std::time::Instant;
 
+use std::fmt;
+
 use serde::Serialize;
 
-use crate::progress::Phase;
+/// One timed part of a Mode's run, named in `pipeline-progress`, in the seconds each took and in the log.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum Phase {
+    #[serde(rename = "prepare")]
+    Preparation,
+    #[serde(rename = "convert")]
+    Conversion,
+    #[serde(rename = "load")]
+    Loading,
+    #[serde(rename = "transcribe")]
+    Transcription,
+    #[serde(rename = "detect")]
+    Detection,
+    #[serde(rename = "translate")]
+    Translation,
+}
+
+impl fmt::Display for Phase {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Phase::Preparation => "prepare",
+            Phase::Conversion => "convert",
+            Phase::Loading => "load",
+            Phase::Transcription => "transcribe",
+            Phase::Detection => "detect",
+            Phase::Translation => "translate",
+        })
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PhaseTiming {
@@ -53,9 +83,9 @@ mod tests {
     // @behavior OB-001
     #[test]
     fn logs_a_phase_when_the_next_one_starts() {
-        let mut phases = Phases::start("transcribe", Phase::Prepare);
+        let mut phases = Phases::start("transcribe", Phase::Preparation);
 
-        let logs = captured_logs(|| phases.enter(Phase::Convert));
+        let logs = captured_logs(|| phases.enter(Phase::Conversion));
 
         assert_eq!(logs.len(), 1);
         assert!(logs[0].starts_with("transcribe: prepare took "));
@@ -65,13 +95,13 @@ mod tests {
     // @behavior OB-002
     #[test]
     fn answers_every_phase_in_the_order_it_ran() {
-        let mut phases = Phases::start("transcribe", Phase::Prepare);
-        phases.enter(Phase::Convert);
+        let mut phases = Phases::start("transcribe", Phase::Preparation);
+        phases.enter(Phase::Conversion);
 
         let timings = phases.finish();
 
         let names: Vec<_> = timings.iter().map(|timing| timing.phase).collect();
-        assert_eq!(names, vec![Phase::Prepare, Phase::Convert]);
+        assert_eq!(names, vec![Phase::Preparation, Phase::Conversion]);
         assert!(timings.iter().all(|timing| timing.seconds >= 0.0));
     }
 }

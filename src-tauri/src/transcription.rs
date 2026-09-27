@@ -4,9 +4,10 @@ use std::time::Instant;
 use serde::Serialize;
 
 use crate::failure::Failure;
-use crate::progress::{enter, Phase, Progress};
+use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, RunningMode, SegmentSpan, TranscriptionTarget};
 use crate::steps::{run_step, ModeRun, Steps};
+use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
 use crate::transcript::Transcript;
@@ -74,7 +75,7 @@ pub async fn run_transcribe<'a>(
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
 
-    enter(ports, &mut phases, Phase::Convert);
+    enter(ports, &mut phases, Phase::Conversion);
     run_step(
         ports,
         "convert",
@@ -86,7 +87,7 @@ pub async fn run_transcribe<'a>(
     .await?;
     let audio_bytes = std::fs::metadata(&wav)?.len();
 
-    enter(ports, &mut phases, Phase::Load);
+    enter(ports, &mut phases, Phase::Loading);
     let start = Instant::now();
     project.show_transcript(project.kept_segments(job)?);
     ports.announce_project();
@@ -97,9 +98,9 @@ pub async fn run_transcribe<'a>(
         &whisper::transcription_args(&plan, &wav, &srt_prefix),
         |line| {
             if line.starts_with(whisper::START_MARK) {
-                enter(ports, &mut phases, Phase::Transcribe);
+                enter(ports, &mut phases, Phase::Transcription);
             } else if let Some(percent) = whisper::progress(line) {
-                ports.report(Phase::Transcribe, Some(percent));
+                ports.report(Phase::Transcription, Some(percent));
             }
         },
         |line| {
@@ -249,7 +250,7 @@ mod tests {
                 self.transcription,
                 target,
                 &self.dir.path().join("work"),
-                Phases::start("transcribe", Phase::Prepare),
+                Phases::start("transcribe", Phase::Preparation),
             )
             .await
         }
@@ -820,14 +821,14 @@ mod tests {
     // @behavior TX-056
     #[tokio::test]
     async fn leaves_no_intermediate_files_once_it_ends() {
-        let finished = Fixture::new("tx-work-finished", TWO_SECOND_WAV);
-        let failed = Fixture::new("tx-work-failed", FAILING_FFMPEG);
+        let finishing_fixture = Fixture::new("tx-work-finished", TWO_SECOND_WAV);
+        let failing_fixture = Fixture::new("tx-work-failed", FAILING_FFMPEG);
 
-        finished.transcribe().await.unwrap();
-        failed.transcribe().await.unwrap_err();
+        finishing_fixture.transcribe().await.unwrap();
+        failing_fixture.transcribe().await.unwrap_err();
 
-        assert!(!finished.dir.path().join("work").exists());
-        assert!(!failed.dir.path().join("work").exists());
+        assert!(!finishing_fixture.dir.path().join("work").exists());
+        assert!(!failing_fixture.dir.path().join("work").exists());
     }
 
     // @behavior TX-004
@@ -887,10 +888,10 @@ mod tests {
         assert_eq!(
             phases,
             vec![
-                Phase::Prepare,
-                Phase::Convert,
-                Phase::Load,
-                Phase::Transcribe
+                Phase::Preparation,
+                Phase::Conversion,
+                Phase::Loading,
+                Phase::Transcription
             ]
         );
     }
@@ -946,7 +947,7 @@ mod tests {
             TranscriptionSettings::default(),
             &target,
             &dir.path().join("work"),
-            Phases::start("transcribe", Phase::Prepare),
+            Phases::start("transcribe", Phase::Preparation),
         )
         .await
         .unwrap();

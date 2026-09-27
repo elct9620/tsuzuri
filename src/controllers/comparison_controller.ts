@@ -194,8 +194,9 @@ export default class ComparisonController extends Controller {
   /** The translations read beneath the cues, and those that could be. */
   private references: string[] = [];
   private offeredReferences: string[] = [];
-  /** The Backups and comparison asked for last; an answer to an earlier ask is dropped. */
+  /** The Backups asked for last; an answer to an earlier ask is dropped. */
   private versionsRequest?: Promise<SubtitleVersions[]>;
+  /** The comparison asked for last; an answer to an earlier one is dropped. */
   private comparisonRequest?: object;
 
   /**

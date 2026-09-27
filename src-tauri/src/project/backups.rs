@@ -1,9 +1,5 @@
 use std::collections::HashSet;
-use std::io;
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
-
-use super::{files, BackupKind};
 
 /// How a write keeps the subtitle it replaces as an Overwrite Backup.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -20,30 +16,9 @@ pub enum BackupPolicy {
 pub struct Backups(HashSet<PathBuf>);
 
 impl Backups {
-    /// Keeps `subtitle` in `directory` as a Backup of `kind` taken now.
-    pub fn keep(&mut self, directory: &Path, subtitle: &Path, kind: BackupKind) -> io::Result<()> {
-        files::back_up(directory, subtitle, SystemTime::now(), kind)?;
-        self.0.insert(subtitle.to_path_buf());
-        Ok(())
-    }
-
-    /// Keeps `subtitle` in `directory` before it is written over, as `policy` asks.
-    pub fn keep_before_write(
-        &mut self,
-        directory: &Path,
-        subtitle: &Path,
-        policy: BackupPolicy,
-    ) -> io::Result<()> {
-        match policy {
-            BackupPolicy::EveryWrite => self.keep(directory, subtitle, BackupKind::Overwrite),
-            BackupPolicy::FirstChange if self.0.insert(subtitle.to_path_buf()) => files::back_up(
-                directory,
-                subtitle,
-                SystemTime::now(),
-                BackupKind::Overwrite,
-            ),
-            BackupPolicy::FirstChange => Ok(()),
-        }
+    /// Notes `subtitle` as kept, answering whether it was not kept before.
+    pub fn note(&mut self, subtitle: &Path) -> bool {
+        self.0.insert(subtitle.to_path_buf())
     }
 
     /// Takes `subtitle` as not kept, so the next change to it keeps it first.

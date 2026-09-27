@@ -214,7 +214,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `project/` | `glossary` | 領域、轉接 | 詞彙表與 CSV |
 | `project/` | `current` | 應用 | 開啟、編輯、重新載入 |
 | `project/` | `mode_hold` | 應用 | 任務對資源的保留 |
-| `project/` | `backups` | 轉接 | 備份與備份紀錄 |
+| `project/` | `backups` | 領域 | 備份紀錄與時機 |
 | `project/` | `files` | 轉接 | 檔名、配對、備份 |
 | — | `translation` | 應用 | 翻譯用例 |
 | `translation/` | `batching` | 領域 | 分批 |

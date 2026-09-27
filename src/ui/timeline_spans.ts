@@ -33,13 +33,13 @@ export function snapTime(
   times: number[],
   distance: number,
 ): number {
-  let nearest = time;
+  let nearestTime = time;
   let nearestGap = distance;
   for (const candidate of times) {
     const gap = Math.abs(candidate - time);
-    if (gap <= nearestGap) [nearest, nearestGap] = [candidate, gap];
+    if (gap <= nearestGap) [nearestTime, nearestGap] = [candidate, gap];
   }
-  return nearest;
+  return nearestTime;
 }
 
 export const toMilliseconds = (seconds: number) => Math.round(seconds * 1000);
@@ -66,8 +66,11 @@ export function regionLanes(spans: Span[]): RegionLane[] {
       for (const lane of group) lane.count = laneEnds.length;
       [group, laneEnds] = [[], []];
     }
-    const free = laneEnds.findIndex((laneEnd) => laneEnd <= start);
-    const lane = { index: free === -1 ? laneEnds.length : free, count: 1 };
+    const freeLane = laneEnds.findIndex((laneEnd) => laneEnd <= start);
+    const lane = {
+      index: freeLane === -1 ? laneEnds.length : freeLane,
+      count: 1,
+    };
     laneEnds[lane.index] = end;
     groupEnd = group.length === 0 ? end : Math.max(groupEnd, end);
     group.push(lane);

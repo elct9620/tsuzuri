@@ -20,10 +20,10 @@ export function rememberChoice(key: string, value: string): void {
   }
 }
 
-/** The yes-or-no choice kept under `key`, or `byDefault` when none was ever made here. */
-export function rememberedFlag(key: string, byDefault: boolean): boolean {
+/** The yes-or-no choice kept under `key`, or `fallback` when none was ever made here. */
+export function rememberedFlag(key: string, fallback: boolean): boolean {
   const choice = rememberedChoice(key);
-  return byDefault ? choice !== "false" : choice === "true";
+  return fallback ? choice !== "false" : choice === "true";
 }
 
 export function rememberFlag(key: string, value: boolean): void {

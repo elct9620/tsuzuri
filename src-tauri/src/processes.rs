@@ -8,8 +8,9 @@ use tauri::{AppHandle, Runtime};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
-use crate::progress::{Phase, Progress};
+use crate::progress::Progress;
 use crate::steps::{StepEvent, Steps};
+use crate::timing::Phase;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct RecordedProcess {

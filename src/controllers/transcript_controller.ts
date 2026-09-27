@@ -139,7 +139,7 @@ function timeEditor(
   input.dataset.edge = edge;
   input.dataset.controller = "time-field";
   input.dataset.action =
-    "change->segment-changes#changeTimes click->time-field#choosePart keydown->time-field#typeDigit:!composing";
+    "change->segment-changes#changeTimes keydown->time-field#typeKey:!composing paste->time-field#pasteTime cut->time-field#copySelection compositionstart->time-field#keepTime compositionend->time-field#restoreTime";
   input.value = formatTime(ms);
   return input;
 }

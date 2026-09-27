@@ -172,16 +172,6 @@ A choice limited to names like the one already set would hide the others, the ve
 | Then | a Notification says the time cannot be read, goes on its own, and nothing is changed |
 
 
-## `ED-108` Reading a time typed as digits alone
-
-Digits fill a time from its milliseconds up, as editing software takes a timecode, so the separators need not be typed.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in the panel whose first Segment runs from 0 to 1 second |
-| When | its start is changed to `500` |
-| Then | the Project is asked to change its times to 0.5 to 1 second |
-
 ## `ED-109` Carrying a time past its part's range
 
 A part past its range carries into the part above it, as Aegisub reads a time, so a digit typed over any part still gives a time.
@@ -200,23 +190,95 @@ A part past its range carries into the part above it, as Aegisub reads a time, s
 | When | its end is changed to `99:99:99.999` |
 | Then | the Project is asked to change its end to `99:59:59.999` |
 
-## `ED-110` Choosing a part of a time by clicking it
+## `ED-108` Typing a time over the digit at the caret
+
+A time field takes a time as Aegisub's does: each digit overwrites the one at the caret and the caret moves on, hopping the separators, so a time is typed without its separators and never loses its shape.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's start reading `00:00:00.000`, the caret before its minutes |
+| When | `1`, `2`, `3`, `1`, `1` and `1` are typed |
+| Then | it reads `00:12:31.110` with the caret before its last digit |
+
+## `ED-111` Typing over a selected time from where the selection starts
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's start reading `00:00:32.360`, all of it selected as Tab leaves it |
+| When | `1` is typed |
+| Then | it reads `10:00:32.360` with the caret after the `1` |
+
+## `ED-146` Carrying a digit typed past its part's range
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's start reading `00:00:00.000`, the caret before its minutes |
+| When | `7` is typed |
+| Then | it reads `01:10:00.000` with the caret after the first digit of its minutes |
+
+## `ED-147` Typing nothing past the end of a time
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's start reading `00:00:32.360`, the caret after its last digit |
+| When | `5` is typed |
+| Then | it still reads `00:00:32.360` |
+
+## `ED-148` Hopping a separator by typing it
+
+A separator typed moves the caret over the separator in front of it and writes nothing.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's start reading `00:00:32.360`, the caret before the colon after its hours |
+| When | `:` is typed |
+| Then | it still reads `00:00:32.360` with the caret before its minutes |
+
+## `ED-149` Stepping back over a time with Backspace
+
+Backspace moves the caret back one place and removes nothing, and Delete does nothing, so no key leaves a time with a digit missing.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's start reading `00:00:32.360`, the caret before its seconds |
+| When | Backspace and then Delete are pressed |
+| Then | it still reads `00:00:32.360` with the caret after its minutes |
+
+## `ED-150` Ignoring a key that is no part of a time
 
 | Step | Statement |
 | --- | --- |
 | Given | a Segment's start reading `00:00:32.360` |
-| When | its minutes are clicked |
-| Then | the minutes are selected |
+| When | `a` is typed |
+| Then | it still reads `00:00:32.360` |
 
-## `ED-111` Typing over the chosen part of a time
+## `ED-153` Leaving a time as it is after composing text in it
 
-Digits shift into the chosen part from the right, as they do into a whole time, and the next part is chosen once it is full.
+An input method hands its keys to its own composition rather than to the field, so what it composes is taken back once it ends, as Aegisub refuses any character that is no part of a time.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Segment's start reading `00:00:32.360` with its minutes chosen |
-| When | `1` and `0` are typed |
-| Then | it reads `00:10:32.360` with the seconds selected |
+| Given | a Segment's start reading `00:00:32.360`, the caret before its minutes |
+| When | an input method composes `ㄅ` in it and ends |
+| Then | it reads `00:00:32.360` with the caret before its minutes |
+
+## `ED-151` Pasting a time over a time field
+
+A time pasted takes the place of the whole field, selected, and text that is not a time leaves it as it is.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's start reading `00:00:32.360` |
+| When | `00:01:02,500` and then `abc` are pasted into it |
+| Then | it reads `00:01:02.500`, all of it selected |
+
+## `ED-152` Cutting from a time field without removing anything
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's start reading `00:00:32.360`, all of it selected |
+| When | it is cut |
+| Then | `00:00:32.360` is copied and it still reads `00:00:32.360` |
 
 ## `ED-097` Refusing a typed start before the previous Segment's start
 

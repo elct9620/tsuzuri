@@ -14,13 +14,12 @@ const LONGEST_MS = 100 * 3_600_000 - 1;
 
 /**
  * The milliseconds of a time typed as `HH:MM:SS.mmm`, `MM:SS.mmm` or `SS.mmm`, a comma standing
- * for the dot as SRT writes it, or as digits alone filling `HHMMSSmmm` from the right, or none
- * for text that is not a time. A part past its range carries into the part above, as Aegisub
- * reads a time, and the whole is held within `LONGEST_MS`.
+ * for the dot as SRT writes it, or none for text that is not a time. A part past its range carries
+ * into the part above, as Aegisub reads a time, and the whole is held within `LONGEST_MS`.
  */
 export function parseTime(text: string): number | null {
   const match = /^(?:(?:(\d+):)?(\d{1,2}):)?(\d{1,2})(?:[.,](\d{1,3}))?$/.exec(
-    formatDigits(text.trim()),
+    text.trim(),
   );
   if (!match) return null;
   const [, hours = "0", minutes = "0", seconds, fraction = "0"] = match;
@@ -33,19 +32,25 @@ export function parseTime(text: string): number | null {
   );
 }
 
-/** Digits alone written with the separators of `HH:MM:SS.mmm`, filling it from the right; any other text as it is. */
-function formatDigits(text: string): string {
-  if (!/^\d+$/.test(text)) return text;
-  const digits = text.padStart(9, "0");
-  return `${digits.slice(0, -7)}:${digits.slice(-7, -5)}:${digits.slice(-5, -3)}.${digits.slice(-3)}`;
+/**
+ * `text`, a time written as `HH:MM:SS.mmm`, with `digit` typed over the digit at `at`, and the
+ * caret after it, as Aegisub's time field overwrites: a caret on a separator types past it, a
+ * part past its range carries, and a caret past the last digit types nothing.
+ */
+export function typedTime(
+  text: string,
+  at: number,
+  digit: string,
+): { time: string; caret: number } | null {
+  const place = caretPastSeparator(text, at);
+  if (place >= text.length) return null;
+  const ms = parseTime(text.slice(0, place) + digit + text.slice(place + 1));
+  return ms === null ? null : { time: formatTime(ms), caret: place + 1 };
 }
 
-/** Where each part of a time written as `HH:MM:SS.mmm` begins and ends: its runs of digits. */
-export function timeParts(text: string): [number, number][] {
-  return [...text.matchAll(/\d+/g)].map(({ index, 0: digits }) => [
-    index,
-    index + digits.length,
-  ]);
+/** `at` moved past the separator of `text` there, or `at` itself where it stands on a digit. */
+export function caretPastSeparator(text: string, at: number): number {
+  return /[:.,]/.test(text[at] ?? "") ? at + 1 : at;
 }
 
 /** A Backup's `taken_at` in the local time of the interface language, as a person reads the time. */

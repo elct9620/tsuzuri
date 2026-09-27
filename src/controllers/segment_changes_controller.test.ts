@@ -141,23 +141,6 @@ describe("SegmentChangesController", () => {
     ]).toEqual([[], ["時間要寫成 00:00:01.000 的格式"], true]);
   });
 
-  // @behavior ED-108
-  it("reads a time typed as digits alone from its milliseconds up", async () => {
-    await hold(threeSegments);
-    const start = row(0).querySelector<HTMLInputElement>("input.start")!;
-
-    for (const digits of ["500", "000000500"]) {
-      start.value = digits;
-      start.dispatchEvent(new Event("change"));
-      await settle();
-    }
-
-    expect(changes).toEqual([
-      { kind: "times", index: 0, start_ms: 500, end_ms: 1000 },
-      { kind: "times", index: 0, start_ms: 500, end_ms: 1000 },
-    ]);
-  });
-
   // @behavior ED-109
   it("carries a part of a time past its range into the part above", async () => {
     await hold(threeSegments);

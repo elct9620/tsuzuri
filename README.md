@@ -12,7 +12,7 @@ Download the build for your platform. Until the first release is published, buil
 |---|---|---|
 | Windows x64 | NSIS installer (`*-setup.exe`) or MSI | Vulkan build |
 | macOS (Apple Silicon) | `.dmg` | Metal build |
-| Linux x64 | `.deb`, `.rpm` or `.AppImage` | Vulkan build |
+| Linux x64 | `.deb` or `.rpm` | Vulkan build |
 
 The installer includes ffmpeg as well. Without a Vulkan-capable GPU driver, or to use another build such as CUDA, choose its executable in the app. Tsuzuri is not code-signed, so the system warns the first time it opens.
 

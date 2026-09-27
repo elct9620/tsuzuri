@@ -1025,7 +1025,7 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 |---|---|
 | Windows | `tsuzuri.exe`、NSIS 安裝檔、MSI |
 | macOS | dmg、`.app` |
-| Linux | 各種安裝包 |
+| Linux | deb、rpm |
 | 全部 | `THIRD-PARTY-LICENSES.html`、`THIRD-PARTY-LICENSES-WEBVIEW.html` |
 
 兩份授權聲明分別涵蓋 Rust 相依與 webview 打包的套件（4.4）。

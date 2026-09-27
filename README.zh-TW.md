@@ -12,7 +12,7 @@
 |---|---|---|
 | Windows x64 | NSIS 安裝檔（`*-setup.exe`）或 MSI | Vulkan 版 |
 | macOS（Apple Silicon） | `.dmg` | Metal 版 |
-| Linux x64 | `.deb`、`.rpm` 或 `.AppImage` | Vulkan 版 |
+| Linux x64 | `.deb` 或 `.rpm` | Vulkan 版 |
 
 安裝檔也內建 ffmpeg。顯示卡驅動程式不支援 Vulkan，或想改用 CUDA 等版本時，請在 App 裡指定執行檔。Tsuzuri 沒有程式碼簽章，第一次開啟時會出現警告。
 

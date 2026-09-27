@@ -77,6 +77,7 @@ function snapTime(time: number, times: number[], distance: number): number {
 }
 
 const toMilliseconds = (seconds: number) => Math.round(seconds * 1000);
+const toSeconds = (ms: number) => ms / 1000;
 
 /** The Lane a region lies in, counted from the bottom, of the `count` Lanes it shares with those it overlaps. */
 interface RegionLane {
@@ -115,7 +116,7 @@ const formatSeconds = (seconds: number) => formatTime(toMilliseconds(seconds));
 
 /** How long `span` runs, in seconds to the millisecond. */
 const formatLength = ({ start, end }: Span) =>
-  `${(toMilliseconds(end - start) / 1000).toFixed(3)}s`;
+  `${toSeconds(toMilliseconds(end - start)).toFixed(3)}s`;
 
 /**
  * Where `span`, dragged by its `side` or, without one, as a whole, lands: Snapped to the nearest of
@@ -333,7 +334,7 @@ export default class TimelineController extends Controller {
       return;
     }
     const segment = this.currentSegment;
-    if (segment) void this.surfer?.play(segment.start_ms / 1000);
+    if (segment) void this.surfer?.play(toSeconds(segment.start_ms));
   }
 
   togglePlayingAlone(): void {
@@ -350,7 +351,7 @@ export default class TimelineController extends Controller {
     const segment = this.currentSegment;
     if (!segment) return;
     this.player.pause();
-    this.player.currentTime = segment.start_ms / 1000;
+    this.player.currentTime = toSeconds(segment.start_ms);
   }
 
   /** Colours the Current Segment's region, the only one that can be dragged. */
@@ -579,7 +580,7 @@ export default class TimelineController extends Controller {
     this.lastTime = time;
     const segment = this.currentSegment;
     if (!this.isPlayingAlone || !segment || from === null) return;
-    const end = segment.end_ms / 1000;
+    const end = toSeconds(segment.end_ms);
     if (this.player.paused || from >= end || time < end) return;
     this.player.pause();
     this.player.currentTime = end;
@@ -728,13 +729,13 @@ export default class TimelineController extends Controller {
     const segment = spanOf(this.segments[index]);
     const startOf = (at: number) => {
       const other = this.segments[at];
-      return other ? other.start_ms / 1000 : undefined;
+      return other ? toSeconds(other.start_ms) : undefined;
     };
     const next = this.segments[index + 1];
     const duration = this.surfer?.getDuration() ?? Infinity;
     const highestEnd =
       next && isShared && side === "end"
-        ? Math.min(next.end_ms / 1000, startOf(index + 2) ?? Infinity)
+        ? Math.min(toSeconds(next.end_ms), startOf(index + 2) ?? Infinity)
         : duration;
     return {
       lowestStart: Math.min(startOf(index - 1) ?? 0, segment.start),
@@ -751,7 +752,10 @@ export default class TimelineController extends Controller {
       this.player.currentTime,
       ...this.segments
         .filter((_, other) => other !== index)
-        .flatMap((other) => [other.start_ms / 1000, other.end_ms / 1000]),
+        .flatMap((other) => [
+          toSeconds(other.start_ms),
+          toSeconds(other.end_ms),
+        ]),
     ];
   }
 
@@ -911,5 +915,5 @@ function isDrawingKey(event: MouseEvent): boolean {
 }
 
 function spanOf(segment: Segment): Span {
-  return { start: segment.start_ms / 1000, end: segment.end_ms / 1000 };
+  return { start: toSeconds(segment.start_ms), end: toSeconds(segment.end_ms) };
 }

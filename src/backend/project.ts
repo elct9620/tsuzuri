@@ -168,9 +168,12 @@ export function refreshProject(): Promise<void> {
   return emit("project-changed");
 }
 
+/** The command that opens a directory as the Project, or the directory of an SRT file. */
+export type OpenCommand = "open_project" | "open_srt";
+
 /** Opens `path` as the Project, a directory or the directory of an SRT file, in `language` when the directory records none. */
 export function openProject(
-  command: "open_project" | "open_srt",
+  command: OpenCommand,
   path: string,
   language: string,
 ): Promise<void> {

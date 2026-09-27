@@ -1,8 +1,9 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { message, open } from "../backend/dialog";
+import { message, open, SRT_FILTERS } from "../backend/dialog";
 import {
   openProject,
+  type OpenCommand,
   refreshProject,
   reloadProject,
   selectResource,
@@ -146,7 +147,7 @@ export default class ProjectController extends Controller {
     const path = await open({
       multiple: false,
       directory: false,
-      filters: [{ name: "SRT", extensions: ["srt"] }],
+      filters: SRT_FILTERS,
     });
     if (path !== null) await this.run("open_srt", path);
   }
@@ -232,10 +233,7 @@ export default class ProjectController extends Controller {
   }
 
   /** Opens `path` with the Interface Language for a directory that records none. */
-  private async run(
-    command: "open_project" | "open_srt",
-    path: string,
-  ): Promise<void> {
+  private async run(command: OpenCommand, path: string): Promise<void> {
     await this.report(() =>
       openProject(command, path, interfaceLanguageCode()),
     );

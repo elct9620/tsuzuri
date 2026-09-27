@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { save } from "../backend/dialog";
+import { save, SRT_FILTERS } from "../backend/dialog";
 import { isMacOS } from "../backend/system";
 import {
   currentResource,
@@ -442,7 +442,7 @@ export default class TranscriptController extends Controller {
     try {
       const path = await save({
         defaultPath: await exportPath(params.content),
-        filters: [{ name: "SRT", extensions: ["srt"] }],
+        filters: SRT_FILTERS,
       });
       if (path === null) return;
       await saveSrt(path, params.content);

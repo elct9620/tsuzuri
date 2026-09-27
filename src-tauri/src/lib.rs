@@ -41,7 +41,11 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .skip_initial_state(window::VIDEO_WINDOW)
+                .build(),
+        )
         .setup(|app| {
             let log_dir = LogSettings::load(&app.path().app_config_dir()?)?
                 .log_dir(app.path().app_log_dir()?);

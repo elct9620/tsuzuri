@@ -237,6 +237,24 @@ A window closes a moment after it is asked to, and a window opened by the same n
 | When | the Video Window button is pressed twice, before the Video Window is gone |
 | Then | a new Video Window opens with the video once the last one is gone |
 
+## `PV-168` Opening the Video Window where it was last
+
+A window takes the scale of the screen it is made on, so the Video Window is made on the screen it was last on, at the size and place it had there.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Video Window last at 800×450 at (-1900, 100) on a screen from (-1920, 0) to (0, 1080) |
+| When | the Video Window opens |
+| Then | it opens at 800×450 at (-1900, 100) |
+
+## `PV-169` Opening the Video Window on the main screen when its last screen is gone
+
+| Step | Statement |
+| --- | --- |
+| Given | the Video Window last at (-1900, 100), where no screen is any more |
+| When | the Video Window opens |
+| Then | it opens where the system puts a new window |
+
 ## `PV-132` Hearing a key pressed in the Video Window
 
 | Step | Statement |

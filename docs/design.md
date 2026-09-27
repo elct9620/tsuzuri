@@ -1037,15 +1037,25 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
   push main ─▶ release-please
                  ├ 一般 commit ─▶ 更新版本 PR
                  └ 合併版本 PR ─▶ 建立 tag 與 GitHub Release
-                        ▼
-                 授權清單 ─▶ build.yml（tag 的 commit）
-                        ▼
-                 附上安裝檔、ffmpeg 原始程式碼、SHA256SUMS
+  CI 成功 ─▶ release-assets（也可指定 tag 手動觸發）
+               │ 這個 commit 是 tag 指向的嗎？不是就結束
+               ▼
+             取用該次 CI 的打包 ─▶ 附上安裝檔、ffmpeg 原始程式碼、SHA256SUMS
 ```
 
-版號與 changelog 由 release-please 管理。`GITHUB_TOKEN` 建立的 Release 不會觸發其他 workflow，所以打包在同一個 workflow 裡呼叫 CI 共用的 `build.yml`。Release 只附安裝檔，不附壓縮檔。不做程式碼簽章，放行步驟寫在 README。
+版號與 changelog 由 release-please 管理，tag 指向帶著新版號的 commit，所以直接取用 CI 為它打包的產物，不重新編譯。Release 只附安裝檔，不附壓縮檔。不做程式碼簽章，放行步驟寫在 README。
 
-### 13.4 自動更新
+### 13.4 失敗時補救
+
+| 情況 | 補救 |
+|---|---|
+| 附檔失敗 | 重跑 release-assets |
+| CI 失敗或被取消 | 重跑 CI，完成後自動附檔 |
+| CI 產物已過期 | 對 tag 手動跑 CI 再附檔 |
+
+附檔一律覆寫同名檔案，重跑就是補檔。ffmpeg 原始程式碼依 SHA256 快取，每個釘版只從官網下載一次。
+
+### 13.5 自動更新
 
 | 事項 | 設計 |
 |---|---|

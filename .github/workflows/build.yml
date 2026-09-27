@@ -1,14 +1,9 @@
 name: Build
 
-# Bundles Tsuzuri on each platform with its Bundled Variants, for CI and for a release alike.
+# Bundles Tsuzuri on each platform with its Bundled Variants; a release attaches these bundles.
 # The caller's run must hold the crate-licenses artifact the License Notice is written from.
 on:
   workflow_call:
-    inputs:
-      ref:
-        description: The commit to build; the caller's own when empty.
-        type: string
-        default: ""
 
 permissions:
   contents: read
@@ -28,7 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.ref }}
           persist-credentials: false
       - name: Install Linux dependencies
         if: runner.os == 'Linux'

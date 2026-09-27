@@ -597,6 +597,31 @@ describe("PreviewController", () => {
   });
 
   describe("the Video Window", () => {
+    /**
+     * Has `player` start over as Chromium does once it is moved to another page, which reloads it,
+     * where happy-dom keeps its time.
+     */
+    function startOverOnMove(player: HTMLMediaElement): void {
+      let time = 0;
+      let page = player.ownerDocument;
+      Object.defineProperty(player, "currentTime", {
+        configurable: true,
+        get: () => {
+          if (player.ownerDocument !== page) {
+            page = player.ownerDocument;
+            time = 0;
+          }
+          return time;
+        },
+        set: (value: number) => {
+          page = player.ownerDocument;
+          time = value;
+        },
+      });
+    }
+
+    beforeEach(() => startOverOnMove(media()));
+
     // @behavior PV-127
     it("plays the video on from where it was in a window of its own", async () => {
       await show(projectWithMedia());
@@ -651,15 +676,17 @@ describe("PreviewController", () => {
       pressPlay();
       playTo(3);
       pressVideoWindowButton();
+      const awayTime = media().currentTime;
 
       await emit("video-window-closing");
       await settle();
 
-      expect([videoWindow(), media().paused, media().currentTime]).toEqual([
-        null,
-        false,
-        3,
-      ]);
+      expect([
+        awayTime,
+        videoWindow(),
+        media().paused,
+        media().currentTime,
+      ]).toEqual([3, null, false, 3]);
     });
 
     // @behavior PV-131

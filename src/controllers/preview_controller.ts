@@ -344,14 +344,17 @@ export default class PreviewController extends Controller {
   }
 
   /**
-   * Moves the player with what is drawn over it between the Preview and the Video Window. WebKit
-   * pauses a media element moved to another page, keeping its time, so a playing one plays on, and
-   * its frames are followed in the window it is now in.
+   * Moves the player with what is drawn over it between the Preview and the Video Window. A media
+   * element moved to another page does not play on by itself: WebKit pauses it, and Chromium loads
+   * it again from the start. So it is put back at its time, a playing one plays on, and its frames
+   * are followed in the window it is now in.
    */
   private moveScreen(place: () => void): void {
-    const { paused } = this.player;
+    const { paused, currentTime } = this.player;
     this.stopFollowingFrames();
     place();
+    if (this.player.currentTime !== currentTime)
+      this.player.currentTime = currentTime;
     this.screen.toggleAttribute("data-is-away", this.videoWindow !== null);
     if (!paused && this.player.paused) void this.player.play();
     if (!this.player.paused) this.followFrames();

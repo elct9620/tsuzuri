@@ -302,15 +302,17 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 
 ### 4.4 授權
 
-| 元件 | 授權 | 我們的義務 |
+| 對象 | 授權 | 做法 |
 |---|---|---|
-| whisper.cpp、llama.cpp | MIT | 附上授權聲明 |
-| ffmpeg | LGPL 2.1+ | 附原始程式碼、標示授權 |
-| Rust 相依套件 | 見 `deny.toml` | cargo-deny 檢查、cargo-about 產生授權聲明 |
-| Webview 打包套件 | 同 `about.toml` | 腳本檢查並產生聲明 |
-| OpenCC 字典 | Apache-2.0 | 聲明與「關於」標示 |
+| whisper.cpp、llama.cpp | MIT | 收進授權頁 |
+| llama 編入的函式庫 | MIT | 收進授權頁 |
+| ffmpeg | LGPL 2.1+ | 收進授權頁、附原始程式碼 |
+| Windows 的 DLL | GCC 例外等 | 收進授權頁 |
+| Rust 相依套件 | 見 `deny.toml` | cargo-deny 檢查 |
+| Webview 打包套件 | 同 `about.toml` | 腳本檢查 |
+| OpenCC 字典 | Apache-2.0 | 收進授權頁 |
 
-ffmpeg 不開 GPL、nonfree，是獨立執行檔，Tsuzuri 不連結它的函式庫，使用者也能改用自己的。Webview 打包套件的授權由 `scripts/webview-licenses.ts` 檢查並列出，含只在建置時用到、CSS 卻打包進去的 daisyUI 與 Tailwind。
+`vendor.sh` 把每個變體帶著的授權檔放進 `licenses/`，`scripts/licenses.ts` 再把全部寫成授權頁，從設定的「關於」開啟（`docs/ui.md` 7.5）。ffmpeg 不開 GPL、nonfree，是獨立執行檔，原始程式碼附在每次釋出。
 
 ## 5 模型
 
@@ -1014,21 +1016,20 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
                    │   cache 命中就還原，否則以 vendor.sh 編譯
                    │   確認能回應版本參數
                    ▼
-              打包 ─▶ 上傳產物
+              寫入授權頁 ─▶ 打包 ─▶ 上傳產物
 ```
 
 action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版本與 lockfile 為 key，存檔前移除會重新編譯的產物。元件 cache 以平台、變體、該元件的釘版與建置腳本為 key，只重編改到的元件；cache 過期時由 GitHub 清除，下次打包重新編譯。
 
-### 13.2 產物與授權聲明
+### 13.2 產物與授權頁
 
 | 平台 | 產物 |
 |---|---|
 | Windows | `tsuzuri.exe`、NSIS 安裝檔、MSI |
 | macOS | dmg、`.app` |
 | Linux | deb、rpm |
-| 全部 | `THIRD-PARTY-LICENSES.html`、`THIRD-PARTY-LICENSES-WEBVIEW.html` |
 
-兩份授權聲明分別涵蓋 Rust 相依與 webview 打包的套件（4.4）。
+授權頁依該平台的內建變體寫成，隨介面打包，不另附檔案（4.4）。Linux 只出 deb、rpm，GTK 等函式庫取自系統，不必再附它們的授權。
 
 ### 13.3 釋出流程
 

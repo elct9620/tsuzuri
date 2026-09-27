@@ -105,4 +105,4 @@ TSUZURI_E2E_LLAMA=<llama-server> TSUZURI_E2E_TRANSLATION_MODEL=<GGUF 模型> \
 | Rust 相依套件 | `src-tauri/deny.toml` 允許的授權 |
 | [OpenCC](https://github.com/BYVoid/OpenCC) 字典 | Apache License 2.0 |
 
-內建引擎由 `scripts/vendor.sh` 從原始程式碼編譯，以獨立程式執行，也能改用你指定的執行檔。CI 以 cargo-about 產生完整授權文字 `THIRD-PARTY-LICENSES.html`，也為介面打包的套件產生 `THIRD-PARTY-LICENSES-WEBVIEW.html`，兩者都隨每次建置一起提供。OpenCC 字典照原樣編譯進執行檔，版本記在 `src-tauri/opencc/`。
+內建引擎由 `scripts/vendor.sh` 從原始程式碼編譯，以獨立程式執行，也能改用你指定的執行檔。每個版本都附上授權頁，收錄 Tsuzuri 與隨附一切的完整授權文字：引擎與它們帶著的函式庫、Rust 套件，以及介面打包的套件，可從設定的「關於」開啟。OpenCC 字典照原樣編譯進執行檔，版本記在 `src-tauri/opencc/`。

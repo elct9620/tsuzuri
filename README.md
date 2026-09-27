@@ -105,4 +105,4 @@ These two tests are skipped by default and need Models and a media file.
 | Rust dependencies | The licenses `src-tauri/deny.toml` allows |
 | [OpenCC](https://github.com/BYVoid/OpenCC) dictionaries | Apache License 2.0 |
 
-The bundled engines are built from their source by `scripts/vendor.sh` and run as separate programs, which an executable you choose can replace. CI generates the full license texts as `THIRD-PARTY-LICENSES.html` with cargo-about, and those of the packages the interface bundles as `THIRD-PARTY-LICENSES-WEBVIEW.html`, and ships both with every build. The OpenCC dictionaries are compiled in as released, and `src-tauri/opencc/` records which release.
+The bundled engines are built from their source by `scripts/vendor.sh` and run as separate programs, which an executable you choose can replace. Every released build carries one license notice with the full texts of Tsuzuri and everything it ships: the engines and the libraries they carry, the Rust crates, and the packages the interface bundles. About in the settings opens it. The OpenCC dictionaries are compiled in as released, and `src-tauri/opencc/` records which release.

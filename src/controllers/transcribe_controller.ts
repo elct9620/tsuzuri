@@ -11,7 +11,7 @@ import { transcribe, type TranscriptionScope } from "../backend/transcription";
 import { retranslate, translate } from "../backend/translation";
 import { t } from "../i18n";
 import { notify, notifyTranslation } from "../ui/notification";
-import { phaseItems } from "../ui/progress";
+import { factorItems, phaseItems } from "../ui/progress";
 import { formatTime } from "../ui/time";
 import type ProgressController from "./progress_controller";
 import type TranslationOptionsController from "./translation_options_controller";
@@ -145,12 +145,10 @@ export default class TranscribeController extends Controller {
               seconds: transcription.audio_seconds.toFixed(1),
             }),
           ],
-          [
-            t("transcribe.factor"),
-            (
-              transcription.transcribe_seconds / transcription.audio_seconds
-            ).toFixed(2),
-          ],
+          ...factorItems(
+            transcription.transcribe_seconds,
+            transcription.audio_seconds,
+          ),
           ...phaseItems(transcription.phases),
         ],
       });
@@ -235,7 +233,9 @@ export default class TranscribeController extends Controller {
         );
         return t("transcribe.scopeSpan", {
           start: formatTime(span[0]?.start_ms ?? 0),
-          end: formatTime(Math.max(...span.map((segment) => segment.end_ms))),
+          end: formatTime(
+            Math.max(0, ...span.map((segment) => segment.end_ms)),
+          ),
         });
       }
     }

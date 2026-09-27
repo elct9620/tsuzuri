@@ -247,6 +247,22 @@ describe("TranscribeController", () => {
     );
   });
 
+  // @behavior TX-055
+  it("leaves out the real-time factor of no audio", async () => {
+    await hold(media);
+    transcription = async () => ({
+      audio_seconds: 0,
+      transcribe_seconds: 1,
+      phases: [],
+    });
+
+    await start();
+
+    expect(notificationItems(0).map(([name]) => name)).not.toContain(
+      "即時倍率（RTF）",
+    );
+  });
+
   // @behavior TX-025
   it("clears the progress once the transcription ends", async () => {
     await hold(media);

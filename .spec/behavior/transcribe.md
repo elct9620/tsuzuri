@@ -444,3 +444,11 @@ A transcription from a Segment writes only part of the subtitle, so what follows
 | Given | the transcription settings on the Settings page |
 | When | saving a change is refused |
 | Then | a Notification says the settings were not saved |
+
+## `TX-055` Leaving out the real-time factor of no audio
+
+| Step | Statement |
+| --- | --- |
+| Given | an Audio Window that starts past the end of the media |
+| When | its transcription finishes with no audio |
+| Then | the Notification lists no real-time factor |

@@ -39,3 +39,14 @@ export function progressSummary({ phase, percent }: PipelineProgress): string {
     ? label
     : t("phases.percent", { phase: label, percent });
 }
+
+/** The real-time factor as a Notification row, none for no audio, which has no factor. */
+export function factorItems(
+  transcribeSeconds: number,
+  audioSeconds: number,
+): [string, string][] {
+  if (audioSeconds <= 0) return [];
+  return [
+    [t("transcribe.factor"), (transcribeSeconds / audioSeconds).toFixed(2)],
+  ];
+}

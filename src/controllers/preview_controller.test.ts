@@ -126,6 +126,7 @@ describe("PreviewController", () => {
         <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playbackIcon"></span></button>
         <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
         <span data-preview-target="time"></span>
+        <input type="range" min="0" max="100" data-preview-target="volume" data-action="input->preview#setVolume">
         <div data-preview-target="captionChoice">
           <input type="radio" name="caption" value="original" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
           <input type="radio" name="caption" value="translation" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
@@ -554,6 +555,44 @@ describe("PreviewController", () => {
     await show(projectOf({ media: "/talks/ep02.mp4" }));
 
     expect(panel().hidden).toBe(true);
+  });
+
+  const volumeSlider = () =>
+    document.querySelector<HTMLInputElement>('[data-preview-target="volume"]')!;
+
+  function moveVolumeSlider(value: number): void {
+    volumeSlider().value = String(value);
+    volumeSlider().dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  // @behavior PV-164
+  it("plays at full volume until a volume is chosen", async () => {
+    await show(projectWithMedia());
+
+    expect([volumeSlider().value, player.volume]).toEqual(["100", 1]);
+  });
+
+  // @behavior PV-165
+  it("sets the volume with its slider", async () => {
+    await show(projectWithMedia());
+
+    moveVolumeSlider(40);
+
+    expect(player.volume).toBe(0.4);
+  });
+
+  // @behavior PV-166
+  it("keeps the volume chosen for the next time the Preview opens", async () => {
+    moveVolumeSlider(40);
+    application.stop();
+    player.volume = 1;
+    application = Application.start();
+    await assemble(application, {
+      preview: PreviewController,
+    }).start();
+    await settle();
+
+    expect([volumeSlider().value, player.volume]).toEqual(["40", 0.4]);
   });
 
   describe("the Video Window", () => {

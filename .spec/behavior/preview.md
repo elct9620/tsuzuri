@@ -779,6 +779,32 @@ A caption drawn with a shadow alone is lost on a bright picture, so it sits on a
 | When | another Resource with a media file becomes current |
 | Then | what is shown over the video still has no backdrop |
 
+## `PV-164` Playing at full volume until a volume is chosen
+
+Some media is recorded quietly and some loudly, so the Preview has a volume of its own beside the system's, remembered on this machine.
+
+| Step | Statement |
+| --- | --- |
+| Given | no volume ever chosen on this machine |
+| When | the Preview opens |
+| Then | the volume slider reads 100 and the media plays at full volume |
+
+## `PV-165` Setting the volume with its slider
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview of a Current Resource with a media file |
+| When | the volume slider is moved to 40 |
+| Then | the media plays at 40% of its volume |
+
+## `PV-166` Keeping the volume chosen for the next time the Preview opens
+
+| Step | Statement |
+| --- | --- |
+| Given | the volume set to 40 |
+| When | the Preview opens again |
+| Then | the volume slider reads 40 and the media plays at 40% of its volume |
+
 ## `PV-092` Showing the Speaker over the video by default
 
 A cue is saved with its Speaker's name before the dialogue, so what is over the video names who says it too.

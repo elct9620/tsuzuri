@@ -769,6 +769,18 @@
                         class="text-lg font-medium whitespace-nowrap tabular-nums"
                         data-preview-target="time"
                       ></span>
+                      <label class="flex items-center gap-1">
+                        <i data-lucide="volume-2" class="size-4 shrink-0"></i>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          class="range range-xs w-20"
+                          data-preview-target="volume"
+                          data-action="input->preview#setVolume"
+                          data-i18n-label="preview.volume"
+                        />
+                      </label>
                       <div
                         class="ml-auto flex items-center gap-2"
                         data-preview-target="captionChoice"

@@ -213,6 +213,7 @@ describe("Current Segment", () => {
           <button data-transcript-target="followButton" data-action="transcript#toggleFollowing"></button>
           <button data-timeline-target="aloneButton" data-action="timeline#togglePlayingAlone"></button>
           <span data-preview-target="time"></span>
+          <input type="range" min="0" max="100" data-preview-target="volume">
           <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"><input type="checkbox" data-preview-target="captionSpeaker"></div>
           <div data-preview-target="currentSection">
           <p data-preview-target="currentHint"></p>

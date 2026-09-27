@@ -47,6 +47,15 @@ function captionBackdropOf(value: string | null): CaptionBackdrop {
   return value === "none" || value === "opaque" ? value : "translucent";
 }
 
+/** Where the webview remembers how loud the media plays, as a percentage. */
+const VOLUME_KEY = "tsuzuri.preview-volume";
+
+/** The volume remembered as `value`, or full volume where none was chosen. */
+function volumeOf(value: string | null): number {
+  const volume = Number(value ?? NaN);
+  return volume >= 0 && volume <= 100 ? volume : 100;
+}
+
 /** Where the webview remembers the Speaker over the video turned off. */
 const SPEAKER_KEY = "tsuzuri.preview-speaker";
 
@@ -77,6 +86,7 @@ export default class PreviewController extends Controller {
     "videoWindowButton",
     "playbackIcon",
     "time",
+    "volume",
     "currentSection",
     "currentHint",
     "currentCard",
@@ -106,6 +116,8 @@ export default class PreviewController extends Controller {
   declare readonly videoWindowButtonTarget: HTMLButtonElement;
   declare readonly playbackIconTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
+  /** How loud the media plays beside the system's volume, as a percentage. */
+  declare readonly volumeTarget: HTMLInputElement;
   /** What the card shows of the Current Segment, put away while the video is out of the Preview. */
   declare readonly currentSectionTarget: HTMLElement;
   /** Asks for a Segment to be clicked while none is current. */
@@ -130,6 +142,7 @@ export default class PreviewController extends Controller {
   /** A saved cue names its Speaker, so the caption does too until turned off. */
   private isSpeakerShown = rememberedFlag(SPEAKER_KEY, true);
   private isFolded = rememberedFlag(FOLDED_KEY, false);
+  private volume = volumeOf(rememberedChoice(VOLUME_KEY));
   private unfollow?: () => void;
   /** The request for the next frame the Preview follows the media on while it plays, and the window drawing it. */
   private frameRequest: { view: Window; id: number } | null = null;
@@ -164,6 +177,8 @@ export default class PreviewController extends Controller {
       this.player.addEventListener(name, listener);
     this.showCaptionBackdrop();
     this.captionSpeakerTarget.checked = this.isSpeakerShown;
+    this.volumeTarget.value = String(this.volume);
+    this.player.volume = this.volume / 100;
     this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
@@ -184,6 +199,12 @@ export default class PreviewController extends Controller {
     this.isFolded = !this.isFolded;
     rememberFlag(FOLDED_KEY, this.isFolded);
     this.showPanel();
+  }
+
+  setVolume(): void {
+    this.volume = volumeOf(this.volumeTarget.value);
+    rememberChoice(VOLUME_KEY, String(this.volume));
+    this.player.volume = this.volume / 100;
   }
 
   chooseCaptionLanguage({ target }: Event): void {

@@ -654,6 +654,16 @@ The document holds one selection, which a click elsewhere moves away, so the Cur
 | When | focus moves to the first Segment's menu |
 | Then | the Cursor is still after the second character of that text |
 
+## `ED-116` Telling of the Cursor only when it moves
+
+Chromium reports a selection change for each time field a row is drawn with, so one leaving the Cursor in place tells nobody.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered with the Cursor after its second character |
+| When | the document reports a selection change that leaves the Cursor there |
+| Then | no view is told the Cursor moved |
+
 ## `ED-044` Dropping a kept Cursor once its text is replaced
 
 A Cursor kept for one text means nothing in another; the same text written again, as every refresh does, keeps it.

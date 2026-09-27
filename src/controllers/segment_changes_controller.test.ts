@@ -589,6 +589,21 @@ describe("SegmentChangesController", () => {
       ]).toEqual(["2", true]);
     });
 
+    // @behavior ED-116
+    it("tells no view of the Cursor when a selection change leaves it in place", async () => {
+      await hold(threeSegments);
+      await enter(0, 2);
+      let cursorChanges = 0;
+      const countCursorChange = () => cursorChanges++;
+      window.addEventListener("editor:cursor", countCursorChange);
+
+      document.dispatchEvent(new Event("selectionchange"));
+      await settle();
+      window.removeEventListener("editor:cursor", countCursorChange);
+
+      expect(cursorChanges).toBe(0);
+    });
+
     // @behavior ED-044
     it("drops a kept Cursor once the Project replaces its text", async () => {
       await hold(threeSegments);

@@ -66,6 +66,18 @@ function caretAt(start: number, text: string): LiveCaret {
   return { kind: "live", field: "text", start, end: start, text };
 }
 
+/** Whether `selection` leaves the live caret where it stands, over the same text. */
+function isSameSelection(
+  caret: LiveCaret,
+  { range, text }: Extract<CursorEvent, { kind: "selection" }>,
+): boolean {
+  return (
+    caret.start === range.start &&
+    caret.end === range.end &&
+    caret.text === text
+  );
+}
+
 /** The Cursor after `event`. */
 export function nextCursor(cursor: Cursor, event: CursorEvent): Cursor {
   switch (event.kind) {
@@ -84,7 +96,8 @@ export function nextCursor(cursor: Cursor, event: CursorEvent): Cursor {
         },
       };
     case "selection":
-      if (cursor.caret?.kind !== "live") return cursor;
+      if (cursor.caret?.kind !== "live" || isSameSelection(cursor.caret, event))
+        return cursor;
       return {
         ...cursor,
         caret: { ...cursor.caret, ...event.range, text: event.text },

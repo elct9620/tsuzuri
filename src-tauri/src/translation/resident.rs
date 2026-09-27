@@ -7,7 +7,9 @@ use serde::Deserialize;
 use serde_json::json;
 use tokio::sync::Mutex;
 
-use super::llama::{free_port, wait_until_ready, CHAT_TEMPLATE_KWARGS, CONTEXT_SIZE, MODEL_NAME};
+use super::llama::{
+    base_url, free_port, wait_until_ready, CHAT_TEMPLATE_KWARGS, CONTEXT_SIZE, HOST, MODEL_NAME,
+};
 use crate::failure::Failure;
 use crate::steps::{StepEvent, Steps};
 
@@ -174,7 +176,7 @@ impl ResidentLlama {
                 detail,
             })?;
         let has_exited = watch_exit(events);
-        let base_url = format!("http://127.0.0.1:{port}");
+        let base_url = base_url(port);
         let has_exited_now = Arc::clone(&has_exited);
         if let Err(failure) =
             wait_until_ready(&base_url, timeout, || has_exited_now.load(Ordering::SeqCst)).await
@@ -229,7 +231,7 @@ fn router_args(preset: &Path, port: u16) -> Vec<String> {
         "1".to_string(),
         "--no-models-autoload".to_string(),
         "--host".to_string(),
-        "127.0.0.1".to_string(),
+        HOST.to_string(),
         "--port".to_string(),
         port.to_string(),
         "--no-webui".to_string(),

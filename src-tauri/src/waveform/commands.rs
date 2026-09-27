@@ -14,7 +14,8 @@ pub async fn extract_waveform(
     current: State<'_, CurrentProject>,
     processes: State<'_, Processes>,
 ) -> Result<Waveform, Failure> {
-    let [ffmpeg] = toolchain::find_ready_executables(settings::resolver(&app)?, ["ffmpeg"]).await?;
+    let [ffmpeg] =
+        toolchain::find_ready_executables(settings::resolver(&app)?, [toolchain::FFMPEG]).await?;
     let ports = AppPorts::new(&app, &processes);
     let started_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)

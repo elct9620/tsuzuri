@@ -251,7 +251,7 @@ async fn translate_on_job_server(
     });
     let result = translate_once_ready(
         ports,
-        &format!("http://127.0.0.1:{port}"),
+        &llama::base_url(port),
         ready_timeout,
         || has_exited.load(Ordering::SeqCst),
         job,

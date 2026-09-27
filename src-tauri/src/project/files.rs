@@ -20,7 +20,8 @@ pub fn file_name(name: &str, languages: impl IntoIterator<Item = Option<Language
         file_name.push('.');
         file_name.push_str(language.code());
     }
-    file_name.push_str(".srt");
+    file_name.push('.');
+    file_name.push_str(SUBTITLE_EXTENSION);
     file_name
 }
 
@@ -119,6 +120,9 @@ impl Project {
     }
 }
 
+/// The extension every subtitle file has, which Tsuzuri reads and writes as SRT.
+const SUBTITLE_EXTENSION: &str = "srt";
+
 /// The extensions of the containers the bundled ffmpeg demuxes (`scripts/vendor.sh`).
 const MEDIA_EXTENSIONS: [&str; 11] = [
     "mp4", "mov", "m4a", "mkv", "webm", "mp3", "wav", "ogg", "opus", "flac", "aac",
@@ -190,7 +194,7 @@ pub fn resources_in(directory: &Path, language: Language) -> Result<Vec<Resource
         let extension = extension.to_ascii_lowercase();
         if MEDIA_EXTENSIONS.contains(&extension.as_str()) {
             files_by_name.entry(stem.to_string()).or_default().media = Some(path);
-        } else if extension == "srt" {
+        } else if extension == SUBTITLE_EXTENSION {
             subtitles.push((stem, path));
         }
     }
@@ -353,7 +357,10 @@ pub fn keep_as_backup(
             BackupKind::Output => OUTPUT_MARK,
             BackupKind::Overwrite => "",
         };
-        let backup = history.join(format!("{stem}.{}{mark}.srt", utc_stamp(at)));
+        let backup = history.join(format!(
+            "{stem}.{}{mark}.{SUBTITLE_EXTENSION}",
+            utc_stamp(at)
+        ));
         if !backup.exists() {
             break backup;
         }
@@ -375,7 +382,7 @@ pub fn backups_of(directory: &Path, subtitle: &Path) -> io::Result<Vec<Backup>> 
     let mut backups: Vec<Backup> = entries
         .filter_map(|entry| entry.ok()?.file_name().into_string().ok())
         .filter_map(|file| {
-            let rest = file.strip_suffix(".srt")?;
+            let rest = file.strip_suffix(SUBTITLE_EXTENSION)?.strip_suffix('.')?;
             let (rest, kind) = match rest.strip_suffix(OUTPUT_MARK) {
                 Some(rest) => (rest, BackupKind::Output),
                 None => (rest, BackupKind::Overwrite),
@@ -403,7 +410,11 @@ pub fn backup_path(directory: &Path, file: &str) -> PathBuf {
 
 /// `ep01` of `ep01.srt`, `ep01.en` of `ep01.en.srt`.
 fn subtitle_stem(subtitle: &Path) -> Option<&str> {
-    subtitle.file_name()?.to_str()?.strip_suffix(".srt")
+    subtitle
+        .file_name()?
+        .to_str()?
+        .strip_suffix(SUBTITLE_EXTENSION)?
+        .strip_suffix('.')
 }
 
 fn is_utc_stamp(text: &str) -> bool {

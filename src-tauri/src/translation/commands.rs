@@ -58,7 +58,8 @@ async fn run_translation(
     let run = mode_lock.begin(AppPorts::new(app, &processes)).await;
     let phases = Phases::start("translate", "prepare");
     app.report("prepare", None);
-    let [llama] = toolchain::find_ready_executables(settings::resolver(app)?, ["llama"]).await?;
+    let [llama] =
+        toolchain::find_ready_executables(settings::resolver(app)?, [toolchain::LLAMA]).await?;
     let model_settings = settings::load_settings(app)?;
     let plan = TranslationPlan {
         target,
@@ -126,7 +127,8 @@ pub fn start_resident_llama(app: &AppHandle) {
     tauri::async_runtime::spawn(async move {
         let start = async {
             let [llama] =
-                toolchain::find_ready_executables(settings::resolver(&app)?, ["llama"]).await?;
+                toolchain::find_ready_executables(settings::resolver(&app)?, [toolchain::LLAMA])
+                    .await?;
             let model_settings = settings::load_settings(&app)?;
             let model = model_settings.ready_path(ModelSlot::Translation)?;
             let processes = app.state::<Processes>().inner().clone();

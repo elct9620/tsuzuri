@@ -4,8 +4,9 @@ use super::settings::TranscriptionSettings;
 use crate::language::Language;
 use crate::transcript::{parse_timestamp, AudioWindow, Segment};
 
-/// 16-bit mono PCM at 16 kHz, the only input whisper-cli is given.
-const WAV_BYTES_PER_SECOND: u64 = 16_000 * 2;
+/// The sample rate whisper-cli is given its 16-bit mono PCM at, the only one it takes.
+const SAMPLE_RATE: u64 = 16_000;
+const WAV_BYTES_PER_SECOND: u64 = SAMPLE_RATE * 2;
 const WAV_HEADER_BYTES: u64 = 44;
 
 /// How long the audio is, from the size of the WAV ffmpeg wrote.
@@ -24,7 +25,12 @@ pub fn conversion_args(input: &Path, wav: &Path, window: Option<AudioWindow>) ->
     }
     args.push("-i".to_string());
     args.push(input.to_string_lossy().into_owned());
-    args.extend(["-vn", "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le"].map(String::from));
+    args.extend([
+        "-vn".to_string(),
+        "-ar".to_string(),
+        SAMPLE_RATE.to_string(),
+    ]);
+    args.extend(["-ac", "1", "-c:a", "pcm_s16le"].map(String::from));
     args.push(wav.to_string_lossy().into_owned());
     args
 }

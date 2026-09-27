@@ -30,13 +30,21 @@ pub(super) const CHAT_TEMPLATE_KWARGS: &str = r#"{"enable_thinking":false}"#;
 /// The name every request asks for, which the Resident llama-server's preset gives the translation Model.
 pub(super) const MODEL_NAME: &str = "tsuzuri";
 
+/// Where every llama-server listens: this machine only, so no one else can send it requests.
+pub(super) const HOST: &str = "127.0.0.1";
+
+/// The address requests reach the llama-server on `port` at.
+pub(super) fn base_url(port: u16) -> String {
+    format!("http://{HOST}:{port}")
+}
+
 /// How llama-server is started for one translation: the Model, on a local `port`, answering no one else.
 pub fn server_args(model: &Path, port: u16) -> Vec<String> {
     vec![
         "-m".to_string(),
         model.to_string_lossy().into_owned(),
         "--host".to_string(),
-        "127.0.0.1".to_string(),
+        HOST.to_string(),
         "--port".to_string(),
         port.to_string(),
         "-c".to_string(),
@@ -49,7 +57,7 @@ pub fn server_args(model: &Path, port: u16) -> Vec<String> {
 
 /// A port the OS just handed out and released; llama-server binds it moments later.
 pub fn free_port() -> Result<u16, Failure> {
-    let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
+    let listener = std::net::TcpListener::bind((HOST, 0))?;
     Ok(listener.local_addr()?.port())
 }
 

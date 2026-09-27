@@ -876,9 +876,10 @@ mod tests {
             choices: toolchain::Choices::default(),
             search_dirs: Vec::new(),
         };
-        let [ffmpeg, whisper] = toolchain::find_ready_executables(vendor, ["ffmpeg", "whisper"])
-            .await
-            .unwrap();
+        let [ffmpeg, whisper] =
+            toolchain::find_ready_executables(vendor, [toolchain::FFMPEG, toolchain::WHISPER])
+                .await
+                .unwrap();
         let dir = TempDir::new("tx-e2e");
         let tools = Tools { ffmpeg, whisper };
         let mut settings = ModelSettings::default();

@@ -28,8 +28,11 @@ pub async fn transcribe(
     let run = mode_lock.begin(AppPorts::new(&app, &processes)).await;
     // Only one Model is loaded at a time, so the translation Model makes way for whisper's.
     resident.make_room(run.ports()).await;
-    let [ffmpeg, whisper] =
-        toolchain::find_ready_executables(settings::resolver(&app)?, ["ffmpeg", "whisper"]).await?;
+    let [ffmpeg, whisper] = toolchain::find_ready_executables(
+        settings::resolver(&app)?,
+        [toolchain::FFMPEG, toolchain::WHISPER],
+    )
+    .await?;
     let tools = Tools { ffmpeg, whisper };
     let models = settings::load_settings(&app)?;
     let general_settings = TranscriptionSettings::load(&settings::settings_dir(&app)?)?;

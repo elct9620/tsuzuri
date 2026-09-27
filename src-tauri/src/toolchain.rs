@@ -60,19 +60,24 @@ fn component(name: &str, program: &str, version_flag: &str, install: Option<&str
     }
 }
 
+/// The names each Component goes by in `components.json`, the settings and the commands.
+pub const FFMPEG: &str = "ffmpeg";
+pub const WHISPER: &str = "whisper";
+pub const LLAMA: &str = "llama";
+
 /// Every Component, in the order a Mode runs them.
 #[cfg(target_os = "macos")]
 pub fn components() -> Vec<Component> {
     vec![
-        component("ffmpeg", "ffmpeg", "-version", Some("brew install ffmpeg")),
+        component(FFMPEG, "ffmpeg", "-version", Some("brew install ffmpeg")),
         component(
-            "whisper",
+            WHISPER,
             "whisper-cli",
             "--version",
             Some("brew install whisper-cpp"),
         ),
         component(
-            "llama",
+            LLAMA,
             "llama-server",
             "--version",
             Some("brew install llama.cpp"),
@@ -84,9 +89,9 @@ pub fn components() -> Vec<Component> {
 #[cfg(not(target_os = "macos"))]
 pub fn components() -> Vec<Component> {
     vec![
-        component("ffmpeg", "ffmpeg", "-version", None),
-        component("whisper", "whisper-cli", "--version", None),
-        component("llama", "llama-server", "--version", None),
+        component(FFMPEG, "ffmpeg", "-version", None),
+        component(WHISPER, "whisper-cli", "--version", None),
+        component(LLAMA, "llama-server", "--version", None),
     ]
 }
 

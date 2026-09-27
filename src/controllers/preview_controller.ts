@@ -1,11 +1,11 @@
 import { Controller } from "@hotwired/stimulus";
-import { convertFileSrc } from "@tauri-apps/api/core";
 
-import type {
-  ProjectFeed,
-  ProjectOptions,
-  ProjectView,
-  Segment,
+import {
+  mediaUrl,
+  type ProjectFeed,
+  type ProjectOptions,
+  type ProjectView,
+  type Segment,
 } from "../backend/project";
 import {
   destroyVideoWindow,
@@ -434,6 +434,6 @@ export default class PreviewController extends Controller {
     this.captionBox.textContent = "";
     this.markPlaying([]);
     if (media === null) this.player.removeAttribute("src");
-    else this.player.src = convertFileSrc(media);
+    else this.player.src = mediaUrl(media);
   }
 }

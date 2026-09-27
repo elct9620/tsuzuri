@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type { TranscriptionSettings } from "./transcription";
@@ -92,6 +92,11 @@ export function currentResource(
   return project?.resources.find(
     (resource) => resource.name === project.current_resource,
   );
+}
+
+/** The URL a media element reads `media` from, allowed for the directories opened as a Project. */
+export function mediaUrl(media: string): string {
+  return convertFileSrc(media);
 }
 
 /** The file a Translation Glossary came from, how many terms it holds, and the Speakers it names in the Primary Language. */

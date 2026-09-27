@@ -140,7 +140,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 
 ```
 open_project／open_srt ─▶ asset_protocol_scope().allow_directory(專案目錄)
-controller ─▶ convertFileSrc(media) ─▶ <video>／<audio> 直接讀檔
+controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> 直接讀檔
 ```
 
 | 規則 | 做法 |

@@ -292,7 +292,7 @@ async fn translate_once_ready(
     let model = TranslationModel::new(base_url);
     if !job.chosen_indexes.is_empty() {
         enter(progress, phases, "translate");
-        return translate_chosen(&model, job, on_batch).await;
+        return translate_chosen_segments(&model, job, on_batch).await;
     }
     enter(progress, phases, "detect");
     let split_sentences = find_split_sentences(&model, job, |done, total| {
@@ -373,7 +373,7 @@ async fn rewrite_summary(
 /// Translates the chosen Segments again as one Batch, with the translated lines before them as
 /// reference and the source lines after them to read on into; every other Segment keeps its
 /// translation. `on_batch` is handed the Segments as they stand before and after.
-async fn translate_chosen(
+async fn translate_chosen_segments(
     model: &TranslationModel,
     job: &TranslationJob<'_>,
     on_batch: impl Fn(&[Segment], Option<SegmentSpan>),

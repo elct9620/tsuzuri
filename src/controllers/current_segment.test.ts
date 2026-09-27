@@ -253,6 +253,19 @@ describe("Current Segment", () => {
     ]);
   });
 
+  // @behavior PV-146
+  it("gives the first region back its own look once the second is current", async () => {
+    await show(twoSegments);
+    rows()[0].click();
+
+    rows()[1].click();
+
+    expect([
+      regions()[0].style.backgroundColor,
+      regions()[0].style.zIndex,
+    ]).toEqual([regionColor(0), ""]);
+  });
+
   // @behavior PV-028
   it("plays the Current Segment from its start with Space while playing alone", async () => {
     await show(twoSegments);

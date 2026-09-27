@@ -423,6 +423,15 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | Given | a Current Resource with a media file and two Segments |
 | When | the first Segment's row is clicked |
 | Then | its region is drawn above the second's |
+
+## `PV-146` Giving back a region's own look once another Segment is current
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments, the first current |
+| When | the second Segment's row is clicked |
+| Then | the first region takes its own colour again, no longer drawn above the others |
+
 ## `PV-028` Playing the Current Segment alone with Space
 
 | Step | Statement |

@@ -431,15 +431,26 @@ export default class TranscriptController extends Controller {
     );
   }
 
+  /** Marks the Current Segment's row and the rows being played, and no others. */
   private markRows(): void {
     const current = this.session.cursor.index;
-    this.segmentRows().forEach((row, index) => {
-      row.toggleAttribute("aria-current", index === current);
-      row.toggleAttribute(
-        "data-is-playing",
-        this.playingIndexes.includes(index),
-      );
-    });
+    this.moveRowMark("aria-current", current === null ? [] : [current]);
+    this.moveRowMark("data-is-playing", this.playingIndexes);
+  }
+
+  /**
+   * Gives the rows at `indexes` `attribute` and takes it from the rows holding it now, touching
+   * no other row, as the Cursor moves and playback goes on many times a second.
+   */
+  private moveRowMark(attribute: string, indexes: number[]): void {
+    const markedRows = new Set(
+      indexes.flatMap((index) => this.rowAt(index) ?? []),
+    );
+    for (const row of this.listTarget.querySelectorAll(
+      `:scope > li[${attribute}]`,
+    ))
+      if (!markedRows.has(row as HTMLLIElement)) row.removeAttribute(attribute);
+    for (const row of markedRows) row.setAttribute(attribute, "");
   }
 
   private segmentRows(): HTMLLIElement[] {
@@ -451,7 +462,11 @@ export default class TranscriptController extends Controller {
   }
 
   private rowAt(index: number): HTMLLIElement | undefined {
-    return this.segmentRows()[index];
+    return (
+      this.listTarget.querySelector<HTMLLIElement>(
+        `:scope > li[data-transcript-index-param="${index}"]`,
+      ) ?? undefined
+    );
   }
 
   private fieldAt(index: number, field: CursorField): HTMLElement | null {

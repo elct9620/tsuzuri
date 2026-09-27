@@ -166,6 +166,8 @@ export default class TimelineController extends Controller {
   /** The Waveform asked for last; one that arrives after another was asked for is not drawn. */
   private waveformRequest?: Promise<Waveform>;
   private regions?: ReturnType<typeof RegionsPlugin.create>;
+  /** The Segment whose region is drawn as the Current Segment's. */
+  private drawnCurrentIndex: number | null = null;
   private unfollow?: () => void;
   /**
    * Where the media was as it last reported its time, to see it play across the Current Segment's
@@ -252,9 +254,24 @@ export default class TimelineController extends Controller {
     this.player.currentTime = toSeconds(segment.start_ms);
   }
 
-  /** Colours the Current Segment's region, the only one that can be dragged. */
+  /**
+   * Colours the Current Segment's region, the only one that can be dragged, and draws it above the
+   * rest; only the regions of the Segment current before and now change.
+   */
   showCursor(): void {
-    this.colorRegions();
+    const current = this.session.cursor.index;
+    const regions = this.segmentRegions();
+    const changedIndexes = new Set(
+      [this.drawnCurrentIndex, current].filter((index) => index !== null),
+    );
+    for (const index of changedIndexes) {
+      const region = regions[index];
+      if (!region) continue;
+      region.setOptions(this.regionLook(index));
+      if (region.element)
+        region.element.style.zIndex = index === current ? "1" : "";
+    }
+    this.drawnCurrentIndex = current;
   }
 
   /**
@@ -457,6 +474,7 @@ export default class TimelineController extends Controller {
         region.setOptions(span);
       region.setOptions(this.regionLook(index));
     });
+    this.drawnCurrentIndex = this.session.cursor.index;
     this.placeRegions();
   }
 
@@ -504,13 +522,6 @@ export default class TimelineController extends Controller {
 
   private makeCurrent(index: number): void {
     this.session.makeCurrent(index);
-  }
-
-  private colorRegions(): void {
-    this.segmentRegions().forEach((region, index) =>
-      region.setOptions(this.regionLook(index)),
-    );
-    this.placeRegions();
   }
 
   /**

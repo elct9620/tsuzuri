@@ -1079,3 +1079,45 @@ Translating again writes into the translation shown, so without one it is not of
 | Given | the first Segment's text entered reading `大家好`, then typed to `大家好啊` |
 | When | a split is refused as its text is written, then Esc is pressed |
 | Then | the field reads `大家好` again |
+
+## `ED-123` Cleaning Simplified Chinese out of chosen Segments
+
+What a Simplified Cleanup cleans is the `zh-TW` text: the original when the Primary Language is `zh-TW`, otherwise the translation shown when it is.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose Segments read `这是测试` and `还没` |
+| When | the first Segment is cleaned of Simplified Chinese |
+| Then | the original reads `這是測試` and `还没`, and 3 characters are answered as cleaned |
+
+## `ED-124` Cleaning Simplified Chinese out of a chosen range
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose Segment reads `这是测试` |
+| When | its characters 2 to 4 are cleaned of Simplified Chinese |
+| Then | it reads `这是測試` |
+
+## `ED-125` Cleaning the translation shown when it is in `zh-TW`
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `ja` whose Segment reads `こんにちは`, showing its `zh-TW` translation `你们好` |
+| When | the Segment is cleaned of Simplified Chinese |
+| Then | the translation reads `你們好` and the original is left as it was |
+
+## `ED-126` Refusing a cleanup with no text in `zh-TW`
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `en` showing no translation |
+| When | a Segment is cleaned of Simplified Chinese |
+| Then | the cleanup is refused as there is no text in `zh-TW`, and nothing is written |
+
+## `ED-127` Undoing a cleanup at once
+
+| Step | Statement |
+| --- | --- |
+| Given | two Segments of a Project in `zh-TW` cleaned of Simplified Chinese together |
+| When | the change is undone |
+| Then | both read as they did before the cleanup |

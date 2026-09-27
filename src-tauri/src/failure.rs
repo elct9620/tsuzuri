@@ -49,6 +49,8 @@ pub enum Failure {
     ModeCancelled,
     /// Translating again needs a translation shown to write into.
     NoTranslationShown,
+    /// A Simplified Cleanup with no text in `zh-TW` where it was asked for.
+    NoTraditionalChinese,
     /// A Segment Change that would leave a Segment ending before it starts.
     InvalidTimes,
     /// A Segment Change that would start a Segment before the Segment before it or after the one

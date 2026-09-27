@@ -6,7 +6,8 @@ use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
 use super::{
-    CurrentProject, Project, ProjectOptions, ProjectView, Reload, Restoration, SegmentField,
+    CleanupScope, CurrentProject, Project, ProjectOptions, ProjectView, Reload, Restoration,
+    SegmentField,
 };
 use crate::failure::Failure;
 use crate::language::Language;
@@ -156,6 +157,15 @@ pub fn replace_text(
     replacement: Replacement,
 ) -> Result<usize, Failure> {
     announce_after(&app, current.replace_text(field, &replacement))
+}
+
+#[tauri::command]
+pub fn clean_simplified(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    scope: CleanupScope,
+) -> Result<usize, Failure> {
+    announce_after(&app, current.clean_simplified(&scope))
 }
 
 #[tauri::command]

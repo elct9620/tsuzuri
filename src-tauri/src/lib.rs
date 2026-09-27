@@ -75,6 +75,7 @@ pub fn run() {
             app.manage(CurrentProject::default());
             app.manage(ResidentLlama::default());
             app.manage(ModeLock::default());
+            std::thread::spawn(cleanup::load_tables);
             translation::commands::start_resident_llama(app.handle());
             window::build_main_window(app)?;
             window::size_first_window(app)?;
@@ -102,6 +103,7 @@ pub fn run() {
             project::commands::edit_segment,
             project::commands::set_speakers,
             project::commands::replace_text,
+            project::commands::clean_simplified,
             steps::commands::cancel_task,
             translation::commands::retranslate,
             project::commands::change_segments,

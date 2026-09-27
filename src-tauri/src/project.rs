@@ -310,6 +310,21 @@ pub enum SegmentField {
     Speaker,
 }
 
+/// Where a Simplified Cleanup cleans the Current Resource's `zh-TW` text.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(tag = "kind", rename_all = "lowercase")]
+pub enum CleanupScope {
+    /// The Segments at these positions.
+    Segments { indexes: Vec<usize> },
+    /// Characters `start` to `end` of `field` of the Segment at `index`.
+    Range {
+        index: usize,
+        field: SegmentField,
+        start: usize,
+        end: usize,
+    },
+}
+
 /// What a translation needs from the Project when it starts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TranslationSource {

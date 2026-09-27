@@ -166,6 +166,14 @@ Replace every match of a Replacement in the `text` or the `translation` of each 
 pub fn replace_text(app: AppHandle, current: State<'_, CurrentProject>, field: SegmentField, replacement: Replacement) -> Result<usize, Failure> {}
 ```
 
+## `clean_simplified`
+
+Clean Simplified Chinese out of the `zh-TW` text of the Current Resource within a CleanupScope, as one change in the Undo History written back as `edit_segment` writes the field, and answer how many characters were cleaned. The `zh-TW` text is the original when the Primary Language is `zh-TW`, otherwise the translation shown when it is in `zh-TW`; with neither the cleanup is refused as `no-traditional-chinese`. A scope is `{ "kind": "segments", "indexes": [...] }`, the Segments at those positions, or `{ "kind": "range", "index", "field", "start", "end" }`, characters `start` to `end` of one field of one Segment, refused as `no-traditional-chinese` when that field is not the `zh-TW` text. A position the Segments or the text do not have is refused as `internal`, and a subtitle changed elsewhere or written by a running Mode as `edit_segment` refuses it. With nothing cleaned nothing is written and the answer is 0.
+
+```rust
+pub fn clean_simplified(app: AppHandle, current: State<'_, CurrentProject>, scope: CleanupScope) -> Result<usize, Failure> {}
+```
+
 ## `cancel_task`
 
 Ask the running transcription or translation to stop. It stops at once, ending the Components it started, and answers the `mode-cancelled` Failure; nothing more is written, and what it showed gives way to what the files hold, emitting `project-changed`. With no task running it changes nothing.

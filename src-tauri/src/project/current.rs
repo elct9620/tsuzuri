@@ -14,10 +14,11 @@ use super::mode_hold::{
 };
 use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
-    translation_only, translation_srt, translation_with_speakers, BackupKind, CurrentResource,
-    KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource, Restoration, SegmentField,
-    SegmentSpan, TranscriptionScope, TranscriptionTarget, TranslationSource,
+    translation_only, translation_srt, translation_with_speakers, BackupKind, CleanupScope,
+    CurrentResource, KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource, Restoration,
+    SegmentField, SegmentSpan, TranscriptionScope, TranscriptionTarget, TranslationSource,
 };
+use crate::cleanup::{clean_range, clean_text};
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::replacement::{Replacement, Replacer};
@@ -517,12 +518,8 @@ impl Project {
     fn set_speakers(&mut self, indexes: &[usize], speaker: &str) -> Result<(), Failure> {
         self.read_current_transcript()?;
         let previous = self.current()?.transcript.clone();
+        self.refuse_absent_segments(indexes)?;
         let segments = &mut self.current_mut()?.transcript.segments;
-        if let Some(index) = indexes.iter().find(|index| **index >= segments.len()) {
-            return Err(Failure::Internal {
-                detail: format!("no Segment at {index}"),
-            });
-        }
         for index in indexes {
             segments[*index].speaker = speaker_from(speaker);
         }
@@ -534,11 +531,99 @@ impl Project {
     /// none nothing is written.
     fn replace_text(&mut self, field: SegmentField, replacer: &Replacer) -> Result<usize, Failure> {
         self.read_current_transcript()?;
+        self.rewrite_texts(field, |_, text| replacer.replace_matches(text))
+    }
+
+    /// Cleans Simplified Chinese out of the Current Resource's `zh-TW` text within `scope`, read
+    /// again first, as one change written back, and answers how many characters changed; with
+    /// none nothing is written.
+    fn clean_simplified(&mut self, scope: &CleanupScope) -> Result<usize, Failure> {
+        self.read_current_transcript()?;
+        let field = self.traditional_chinese_field()?;
+        match scope {
+            CleanupScope::Segments { indexes } => {
+                self.refuse_absent_segments(indexes)?;
+                self.rewrite_texts(field, |index, text| {
+                    indexes.contains(&index).then(|| clean_text(text)).flatten()
+                })
+            }
+            CleanupScope::Range {
+                index,
+                field: range_field,
+                start,
+                end,
+            } => {
+                if *range_field != field {
+                    return Err(Failure::NoTraditionalChinese);
+                }
+                let length = self.segment_text(*index, field)?.chars().count();
+                if start > end || *end > length {
+                    return Err(Failure::Internal {
+                        detail: format!("no characters {start} to {end} of {length}"),
+                    });
+                }
+                self.rewrite_texts(field, |at, text| {
+                    (at == *index)
+                        .then(|| clean_range(text, *start, *end))
+                        .flatten()
+                })
+            }
+        }
+    }
+
+    /// The field of the Current Resource's Segments in `zh-TW`: the original in a Project whose
+    /// Primary Language it is, otherwise the translation shown when it is in `zh-TW`.
+    fn traditional_chinese_field(&self) -> Result<SegmentField, Failure> {
+        if self.language == Language::TraditionalChinese {
+            return Ok(SegmentField::Text);
+        }
+        match self.current()?.translation {
+            Some(Language::TraditionalChinese) => Ok(SegmentField::Translation),
+            _ => Err(Failure::NoTraditionalChinese),
+        }
+    }
+
+    fn refuse_absent_segments(&self, indexes: &[usize]) -> Result<(), Failure> {
+        let length = self.current()?.transcript.segments.len();
+        match indexes.iter().find(|index| **index >= length) {
+            Some(index) => Err(Failure::Internal {
+                detail: format!("no Segment at {index}"),
+            }),
+            None => Ok(()),
+        }
+    }
+
+    /// The text `field` holds in the Current Resource's Segment at `index`, empty for a
+    /// translation it does not have.
+    fn segment_text(&self, index: usize, field: SegmentField) -> Result<&str, Failure> {
+        let segment = self
+            .current()?
+            .transcript
+            .segments
+            .get(index)
+            .ok_or_else(|| Failure::Internal {
+                detail: format!("no Segment at {index}"),
+            })?;
+        Ok(match field {
+            SegmentField::Translation => segment.translation.as_deref().unwrap_or_default(),
+            _ => &segment.text,
+        })
+    }
+
+    /// Puts what `rewrite` makes of `field` of each Segment of the Current Resource, given its
+    /// position, in its place as one change written back, and answers the sum of the counts
+    /// `rewrite` gives. A Segment it answers none for, or with no translation to rewrite, is
+    /// passed over; with none rewritten nothing is written.
+    fn rewrite_texts(
+        &mut self,
+        field: SegmentField,
+        rewrite: impl Fn(usize, &str) -> Option<(String, usize)>,
+    ) -> Result<usize, Failure> {
         let current = self.current()?;
         if field == SegmentField::Translation && current.translation.is_none() {
             return Err(Failure::NoTranslationShown);
         }
-        let replaced_texts: Vec<(usize, String, usize)> = current
+        let rewritten_texts: Vec<(usize, String, usize)> = current
             .transcript
             .segments
             .iter()
@@ -548,17 +633,17 @@ impl Project {
                     SegmentField::Translation => segment.translation.as_deref()?,
                     _ => &segment.text,
                 };
-                let (text, count) = replacer.replace_matches(text)?;
+                let (text, count) = rewrite(index, text)?;
                 Some((index, text, count))
             })
             .collect();
-        if replaced_texts.is_empty() {
+        if rewritten_texts.is_empty() {
             return Ok(0);
         }
         self.make_undoable_change(|project| {
             let previous = project.current()?.transcript.clone();
             let segments = &mut project.current_mut()?.transcript.segments;
-            for (index, text, _) in &replaced_texts {
+            for (index, text, _) in &rewritten_texts {
                 match field {
                     SegmentField::Translation => segments[*index].translation = Some(text.clone()),
                     _ => segments[*index].text = text.clone(),
@@ -566,7 +651,7 @@ impl Project {
             }
             project.write_back(field, &previous)
         })?;
-        Ok(replaced_texts.iter().map(|(_, _, count)| count).sum())
+        Ok(rewritten_texts.iter().map(|(_, _, count)| count).sum())
     }
 
     /// Makes `change` to the Current Resource's original and to each of its translations, since a
@@ -1547,6 +1632,26 @@ impl CurrentProject {
         self.change_unless_held(is_written, |project| {
             project.refuse_changed_elsewhere()?;
             project.replace_text(field, &replacer)
+        })
+    }
+
+    /// Cleans Simplified Chinese out of the Current Resource's `zh-TW` text within `scope` as one
+    /// change, written back as an edit of that text is, and answers how many characters changed;
+    /// with none nothing is written.
+    pub fn clean_simplified(&self, scope: &CleanupScope) -> Result<usize, Failure> {
+        let field = self.read_project(|project| project.traditional_chinese_field())?;
+        let index = match scope {
+            CleanupScope::Range { index, .. } => Some(*index),
+            CleanupScope::Segments { .. } => None,
+        };
+        let is_written = |translation_shown: Option<Language>,
+                          mode_language: Language,
+                          held_indexes: Option<&[usize]>| {
+            is_written_by_edit(field, index, translation_shown, mode_language, held_indexes)
+        };
+        self.change_unless_held(is_written, |project| {
+            project.refuse_changed_elsewhere()?;
+            project.clean_simplified(scope)
         })
     }
 
@@ -4010,6 +4115,120 @@ mod tests {
             current.replace_text(SegmentField::Translation, &replacement("你", "您", false));
 
         assert_eq!(result, Err(Failure::NoTranslationShown));
+    }
+
+    fn chosen_segments(indexes: &[usize]) -> CleanupScope {
+        CleanupScope::Segments {
+            indexes: indexes.to_vec(),
+        }
+    }
+
+    // @behavior ED-123
+    #[test]
+    fn cleans_simplified_chinese_out_of_chosen_segments() {
+        let dir = directory_of(
+            "ed-clean-segments",
+            &[("ep01.srt", &two_cues("这是测试", "还没"))],
+        );
+        let current = project_in(&dir);
+
+        let count = current.clean_simplified(&chosen_segments(&[0])).unwrap();
+
+        assert_eq!(count, 3);
+        assert_eq!(read(&dir, "ep01.srt"), two_cues("這是測試", "还没"));
+    }
+
+    // @behavior ED-124
+    #[test]
+    fn cleans_simplified_chinese_out_of_a_chosen_range() {
+        let dir = directory_of("ed-clean-range", &[("ep01.srt", &cue("这是测试"))]);
+        let current = project_in(&dir);
+
+        current
+            .clean_simplified(&CleanupScope::Range {
+                index: 0,
+                field: SegmentField::Text,
+                start: 2,
+                end: 4,
+            })
+            .unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), cue("这是測試"));
+    }
+
+    // @behavior ED-125
+    #[test]
+    fn cleans_the_translation_shown_when_it_is_in_traditional_chinese() {
+        let dir = directory_of(
+            "ed-clean-translation",
+            &[
+                ("tsuzuri.config.json", r#"{"language":"ja"}"#),
+                ("ep01.srt", &cue("こんにちは")),
+                ("ep01.zh-TW.srt", &cue("你们好")),
+            ],
+        );
+        let current = project_in(&dir);
+
+        current.clean_simplified(&chosen_segments(&[0])).unwrap();
+
+        assert_eq!(read(&dir, "ep01.zh-TW.srt"), cue("你們好"));
+        assert_eq!(read(&dir, "ep01.srt"), cue("こんにちは"));
+    }
+
+    // @behavior ED-126
+    #[test]
+    fn refuses_a_cleanup_with_no_text_in_traditional_chinese() {
+        let dir = directory_of(
+            "ed-clean-none",
+            &[
+                ("tsuzuri.config.json", r#"{"language":"en"}"#),
+                ("ep01.srt", &cue("这是")),
+            ],
+        );
+        let current = project_in(&dir);
+
+        let result = current.clean_simplified(&chosen_segments(&[0]));
+
+        assert_eq!(result, Err(Failure::NoTraditionalChinese));
+        assert_eq!(read(&dir, "ep01.srt"), cue("这是"));
+    }
+
+    #[test]
+    fn refuses_a_range_outside_the_text_in_traditional_chinese() {
+        let dir = directory_of("ed-clean-range-other", &[("ep01.srt", &cue("这是"))]);
+        let current = project_in(&dir);
+        let range = |field, end| CleanupScope::Range {
+            index: 0,
+            field,
+            start: 0,
+            end,
+        };
+
+        assert_eq!(
+            current.clean_simplified(&range(SegmentField::Translation, 1)),
+            Err(Failure::NoTraditionalChinese)
+        );
+        assert!(matches!(
+            current.clean_simplified(&range(SegmentField::Text, 3)),
+            Err(Failure::Internal { .. })
+        ));
+        assert!(matches!(
+            current.clean_simplified(&chosen_segments(&[1])),
+            Err(Failure::Internal { .. })
+        ));
+    }
+
+    // @behavior ED-127
+    #[test]
+    fn undoes_a_cleanup_at_once() {
+        let original = two_cues("这是", "测试");
+        let dir = directory_of("ed-clean-undo", &[("ep01.srt", &original)]);
+        let current = project_in(&dir);
+        current.clean_simplified(&chosen_segments(&[0, 1])).unwrap();
+
+        current.undo().unwrap();
+
+        assert_eq!(read(&dir, "ep01.srt"), original);
     }
 
     // @behavior PJ-078

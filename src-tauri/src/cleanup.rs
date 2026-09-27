@@ -7,14 +7,36 @@ const PHRASES: &str = include_str!("../opencc/STPhrases.txt");
 const CHARACTERS: &str = include_str!("../opencc/STCharacters.txt");
 const TW_VARIANTS: &str = include_str!("../opencc/TWVariants.txt");
 
-/// Built at the first cleanup, since reading the phrases takes a moment the app should not spend
-/// starting.
+/// Built once, off the thread that draws the window, since reading the phrases takes a moment.
 static CLEANUP_TABLES: LazyLock<CleanupTables> = LazyLock::new(CleanupTables::from_opencc);
+
+/// Builds the tables a cleanup reads, so the first cleanup does not wait for them.
+pub fn load_tables() {
+    LazyLock::force(&CLEANUP_TABLES);
+}
 
 /// `text` with the Simplified Chinese left in it written in Taiwan's Traditional forms, and how many
 /// characters changed; none when nothing did.
-pub fn clean_simplified(text: &str) -> Option<(String, usize)> {
-    CLEANUP_TABLES.clean_text(text)
+pub fn clean_text(text: &str) -> Option<(String, usize)> {
+    CLEANUP_TABLES.cleaned_text(text)
+}
+
+/// `text` with its characters `start` to `end` cleaned as `clean_text` cleans a text, and how many
+/// characters changed; none when nothing did or the text has no such characters.
+pub fn clean_range(text: &str, start: usize, end: usize) -> Option<(String, usize)> {
+    let byte_at = |at: usize| {
+        text.char_indices()
+            .map(|(byte, _)| byte)
+            .chain([text.len()])
+            .nth(at)
+    };
+    let (start_byte, end_byte) = (byte_at(start)?, byte_at(end)?);
+    if start_byte > end_byte {
+        return None;
+    }
+    let (cleaned_range, changed_count) = clean_text(&text[start_byte..end_byte])?;
+    let cleaned_text = [&text[..start_byte], &cleaned_range, &text[end_byte..]].concat();
+    Some((cleaned_text, changed_count))
 }
 
 /// OpenCC's tables as Simplified Cleanup reads them, see `opencc/README.md`.
@@ -56,7 +78,7 @@ impl CleanupTables {
         }
     }
 
-    fn clean_text(&self, text: &str) -> Option<(String, usize)> {
+    fn cleaned_text(&self, text: &str) -> Option<(String, usize)> {
         let mut cleaned_text = String::with_capacity(text.len());
         let mut changed_count = 0;
         let mut unmatched_start = 0;
@@ -163,15 +185,15 @@ fn changed_character_count(text: &str, form: &str) -> usize {
 mod tests {
     use super::*;
 
-    fn cleaned_text(text: &str) -> String {
-        clean_simplified(text).map_or_else(|| text.to_string(), |(cleaned_text, _)| cleaned_text)
+    fn text_after_cleanup(text: &str) -> String {
+        clean_text(text).map_or_else(|| text.to_string(), |(cleaned_text, _)| cleaned_text)
     }
 
     // @behavior SC-001
     #[test]
     fn cleans_simplified_characters() {
         assert_eq!(
-            clean_simplified("这是简单的测试"),
+            clean_text("这是简单的测试"),
             Some(("這是簡單的測試".to_string(), 5))
         );
     }
@@ -179,32 +201,46 @@ mod tests {
     // @behavior SC-002
     #[test]
     fn settles_a_reading_by_its_phrase() {
-        assert_eq!(cleaned_text("头发以后再说"), "頭髮以後再說");
+        assert_eq!(text_after_cleanup("头发以后再说"), "頭髮以後再說");
     }
 
     // @behavior SC-003
     #[test]
     fn leaves_a_character_that_is_traditional_too() {
-        assert_eq!(clean_simplified("皇后"), None);
-        assert_eq!(clean_simplified("后"), None);
+        assert_eq!(clean_text("皇后"), None);
+        assert_eq!(clean_text("后"), None);
     }
 
     // @behavior SC-004
     #[test]
     fn keeps_tai_as_taiwan_writes_it() {
-        assert_eq!(cleaned_text("台湾的台风"), "台灣的颱風");
+        assert_eq!(text_after_cleanup("台湾的台风"), "台灣的颱風");
     }
 
     // @behavior SC-005
     #[test]
     fn writes_the_taiwan_variant() {
-        assert_eq!(cleaned_text("里面"), "裡面");
+        assert_eq!(text_after_cleanup("里面"), "裡面");
     }
 
     // @behavior SC-006
     #[test]
     fn leaves_traditional_chinese_as_written() {
-        assert_eq!(clean_simplified("台北的天氣很好，我們以後再說。"), None);
+        assert_eq!(clean_text("台北的天氣很好，我們以後再說。"), None);
+    }
+
+    #[test]
+    fn cleans_only_the_range_asked_for() {
+        assert_eq!(
+            clean_range("这是测试", 2, 4),
+            Some(("这是測試".to_string(), 2))
+        );
+    }
+
+    #[test]
+    fn answers_none_for_a_range_the_text_does_not_have() {
+        assert_eq!(clean_range("这是", 1, 5), None);
+        assert_eq!(clean_range("这是", 2, 1), None);
     }
 
     #[test]

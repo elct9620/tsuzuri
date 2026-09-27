@@ -652,6 +652,61 @@ impl Project {
 
 /// The Version of a subtitle at `path`: an original read for its Speakers, a translation as
 /// written, so a comparison and what it takes back see each cue the same way.
+/// How a Mode's result keeps the subtitle it writes over, and whether it keeps what it wrote.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ResultBackup {
+    /// As a Mode keeps its output: before, as the Project Options ask, and afterwards as an Output.
+    ModeOutput,
+    /// As an edit does: once before Tsuzuri first changes it since the Project was opened.
+    FirstChange,
+}
+
+/// Writes `srt` to `subtitle` of the Resource `name` in `directory`, kept as `backup` says, and,
+/// while `project` still holds that directory, pairs its files again, writes what `feed` makes
+/// of it and records it all as one change.
+fn write_mode_result(
+    mut project: Option<&mut Project>,
+    directory: &Path,
+    name: &str,
+    subtitle: &Path,
+    srt: String,
+    backup: ResultBackup,
+    feed: impl FnOnce(&mut Project) -> Result<(), Failure>,
+) -> Result<(), Failure> {
+    if let Some(project) = project.as_deref_mut() {
+        match backup {
+            ResultBackup::ModeOutput => project.keep_before_mode_writes(name, subtitle)?,
+            ResultBackup::FirstChange => {
+                project.back_up_changed_elsewhere_of(name)?;
+                project.back_up_first_change(subtitle)?;
+            }
+        }
+    }
+    let before = project
+        .as_deref()
+        .map(|project| project.subtitle_snapshot(name))
+        .transpose()?;
+    files::write_srt(subtitle, srt)?;
+    if let Some(project) = project.as_deref_mut() {
+        project.pair_again(Some(name))?;
+    }
+    if backup == ResultBackup::ModeOutput {
+        match project.as_deref_mut() {
+            Some(project) => project
+                .backups
+                .keep(directory, subtitle, BackupKind::Output)?,
+            None => files::back_up(directory, subtitle, SystemTime::now(), BackupKind::Output)?,
+        }
+    }
+    if let Some(project) = project {
+        feed(project)?;
+        if let Some(before) = before {
+            project.record_change(name, before)?;
+        }
+    }
+    Ok(())
+}
+
 fn version_at(path: &Path, language: Option<Language>) -> Result<Transcript, Failure> {
     match language {
         None => files::transcript_at(path),
@@ -1271,37 +1326,20 @@ impl CurrentProject {
                 (merged.to_srt(SrtContent::Original), written_span)
             }
         };
+        write_mode_result(
+            project.as_deref_mut(),
+            &job.directory,
+            &job.name,
+            &job.subtitle,
+            srt,
+            ResultBackup::ModeOutput,
+            |project| {
+                let policy = project.mode_backup_policy();
+                project.write_speakers_to_translations(&job.name, &previous, policy)?;
+                project.write_bilingual_subtitles(&job.name, None)
+            },
+        )?;
         if let Some(project) = project.as_mut() {
-            project.keep_before_mode_writes(&job.name, &job.subtitle)?;
-        }
-        let before = project
-            .as_ref()
-            .map(|project| project.subtitle_snapshot(&job.name))
-            .transpose()?;
-        files::write_srt(&job.subtitle, srt)?;
-        if let Some(project) = project.as_mut() {
-            project.pair_again(Some(&job.name))?;
-        }
-        match project.as_mut() {
-            Some(project) => {
-                project
-                    .backups
-                    .keep(&job.directory, &job.subtitle, BackupKind::Output)?
-            }
-            None => files::back_up(
-                &job.directory,
-                &job.subtitle,
-                SystemTime::now(),
-                BackupKind::Output,
-            )?,
-        }
-        if let Some(project) = project.as_mut() {
-            let policy = project.mode_backup_policy();
-            project.write_speakers_to_translations(&job.name, &previous, policy)?;
-            project.write_bilingual_subtitles(&job.name, None)?;
-            if let Some(before) = before {
-                project.record_change(&job.name, before)?;
-            }
             if project.is_current(&job.name) {
                 // Only the window changed, so the translation shown stays shown.
                 let translation = job.window.and(project.current()?.translation);
@@ -1323,7 +1361,9 @@ impl CurrentProject {
         target: Language,
         segments: Vec<Segment>,
     ) -> Result<Restoration, Failure> {
-        self.write_translation_file(source, target, true, |_| Ok(Transcript { segments }))
+        self.write_translation_file(source, target, ResultBackup::ModeOutput, |_| {
+            Ok(Transcript { segments })
+        })
     }
 
     /// Writes the translations into `target` of the Segments at `indexes`, translated again, into
@@ -1336,7 +1376,7 @@ impl CurrentProject {
         indexes: &[usize],
         segments: Vec<Segment>,
     ) -> Result<Restoration, Failure> {
-        self.write_translation_file(source, target, false, |project| {
+        self.write_translation_file(source, target, ResultBackup::FirstChange, |project| {
             let speaker_names = project
                 .map(|project| project.speaker_names(Some(target)))
                 .unwrap_or_default();
@@ -1355,16 +1395,14 @@ impl CurrentProject {
 
     /// Writes the translation into `target` that `translation` makes, given the Project while
     /// `source` is still from it, to the Resource `source` was taken from, with the Bilingual SRTs
-    /// it feeds, as one change; with `is_backed_up` it keeps the file it replaces as a Mode does
-    /// and afterwards the new one as an Output, and else keeps the file as its first change since
-    /// the Project was opened does. The Current Resource, while it is that Resource, is then read
+    /// it feeds, as one change, kept as `backup` says. The Current Resource, while it is that Resource, is then read
     /// from the files in place of what the Mode showed. It answers how many Segments of the
     /// original, given times since `source` was taken, find no cue at them in what it wrote.
     fn write_translation_file(
         &self,
         source: &TranslationSource,
         target: Language,
-        is_backed_up: bool,
+        backup: ResultBackup,
         translation: impl FnOnce(Option<&Project>) -> Result<Transcript, Failure>,
     ) -> Result<Restoration, Failure> {
         let mut held_project = self.lock();
@@ -1380,43 +1418,16 @@ impl CurrentProject {
             .as_ref()
             .map(|project| project.speaker_names(Some(target)))
             .unwrap_or_default();
+        write_mode_result(
+            project.as_deref_mut(),
+            &source.directory,
+            &source.name,
+            &path,
+            translation_srt(&translation, speaker_names),
+            backup,
+            |project| project.write_bilingual_subtitles(&source.name, Some(target)),
+        )?;
         if let Some(project) = project.as_mut() {
-            match is_backed_up {
-                true => project.keep_before_mode_writes(&source.name, &path)?,
-                false => {
-                    project.back_up_changed_elsewhere_of(&source.name)?;
-                    project.back_up_first_change(&path)?;
-                }
-            }
-        }
-        let before = project
-            .as_ref()
-            .map(|project| project.subtitle_snapshot(&source.name))
-            .transpose()?;
-        files::write_srt(&path, translation_srt(&translation, speaker_names))?;
-        if let Some(project) = project.as_mut() {
-            project.pair_again(Some(&source.name))?;
-        }
-        if is_backed_up {
-            match project.as_mut() {
-                Some(project) => {
-                    project
-                        .backups
-                        .keep(&source.directory, &path, BackupKind::Output)?
-                }
-                None => files::back_up(
-                    &source.directory,
-                    &path,
-                    SystemTime::now(),
-                    BackupKind::Output,
-                )?,
-            }
-        }
-        if let Some(project) = project.as_mut() {
-            project.write_bilingual_subtitles(&source.name, Some(target))?;
-            if let Some(before) = before {
-                project.record_change(&source.name, before)?;
-            }
             if project.is_current(&source.name) {
                 project.read_again_showing(&source.name, Some(target))?;
                 project.translation_language = Some(target);

@@ -109,6 +109,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
 | `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
 | `logs.ts` | `logs/commands.rs` | log 目錄 |
+| `about.ts` | `about/commands.rs` | 釋出頁面 |
 | `progress.ts` | `steps/commands.rs` | `cancel_task` |
 
 指令名稱與參數以 `.spec/contract/commands.md` 為準。
@@ -542,7 +543,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
-| `components`、`models`、`transcription-settings`、`translation-settings`、`logs` | 設定頁 |
+| `components`、`models`、`transcription-settings`、`translation-settings`、`logs`、`about` | 設定頁 |
 | `tooltip` | 全頁共用的 tooltip |
 | `shortcuts` | 快速鍵一覽 |
 | `notification` | 每則通知的倒數、暫停與按鈕 |
@@ -582,6 +583,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `transcription.ts`、`translation.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄的指令與型別 |
+| `about.ts` | 開啟釋出頁面的指令 |
 | `waveform.ts` | 波形的指令與型別 |
 | `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |
 | `events.ts` | 把 Rust 事件轉到 window |

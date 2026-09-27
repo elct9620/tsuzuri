@@ -329,6 +329,11 @@ const zhHant: typeof en = {
     vadModelHelp:
       "whisper 的 VAD 模型檔（.bin），例如 ggml-silero-v6.2.0.bin。開啟 VAD 時才會用到。",
     license: "Tsuzuri 以 Apache-2.0 授權釋出。",
+    fullLicenses: "完整授權",
+    licenses: "授權",
+    licensesMissing: "開發版沒有附上完整授權，每個釋出的版本都會附上。",
+    sourceCode: "原始程式碼",
+    releasesNotOpened: "沒有開啟釋出頁面",
   },
   slots: {
     transcription: "轉錄",

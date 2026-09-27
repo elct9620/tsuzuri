@@ -339,6 +339,12 @@ const en = {
     vadModelHelp:
       "A whisper VAD model file (.bin), such as ggml-silero-v6.2.0.bin. Used only while VAD is on.",
     license: "Tsuzuri is released under the Apache-2.0 license.",
+    fullLicenses: "Full licenses",
+    licenses: "Licenses",
+    licensesMissing:
+      "A development build carries no license notice; every released build does.",
+    sourceCode: "Source code",
+    releasesNotOpened: "Releases page not opened",
   },
   slots: {
     transcription: "Transcription",

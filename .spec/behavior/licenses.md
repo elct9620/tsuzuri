@@ -5,6 +5,7 @@ Which licenses the packages the webview bundles may carry, and the License Notic
 ## Includes
 
 - `scripts/licenses.test.ts`
+- `src/controllers/about_controller.test.ts`
 
 ## `LC-001` Accepting a package under a license the project accepts
 
@@ -55,3 +56,29 @@ A Bundled Variant keeps, beside its programs, the license files of everything th
 | Given | cargo-about attributing `MIT` to `serde` 1.0.228 |
 | When | the License Notice is written |
 | Then | it names `MIT` with `serde` 1.0.228 beside that license's text |
+
+## `LC-007` Opening the License Notice from the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | a build whose interface carries the License Notice |
+| When | the full licenses are chosen under About in the settings |
+| Then | a dialog over the settings shows the License Notice |
+
+## `LC-008` Saying a development build carries no License Notice
+
+A development build has no License Notice, since CI writes it into each build.
+
+| Step | Statement |
+| --- | --- |
+| Given | a build whose interface does not carry the License Notice |
+| When | the full licenses are chosen under About in the settings |
+| Then | the dialog says the notice comes with each released build |
+
+## `LC-009` Opening where the source of the bundled ffmpeg is
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings open at About |
+| When | the source is chosen |
+| Then | Rust is asked to open the releases page, each release carrying the source of its ffmpeg |

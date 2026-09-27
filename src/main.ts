@@ -2,6 +2,7 @@ import { Application } from "@hotwired/stimulus";
 
 import { assemble } from "./assembly";
 import { locale } from "./backend/system";
+import AboutController from "./controllers/about_controller";
 import CleanupController from "./controllers/cleanup_controller";
 import ComparisonController from "./controllers/comparison_controller";
 import ComponentsController from "./controllers/components_controller";
@@ -50,6 +51,7 @@ async function start(): Promise<void> {
   application.registerActionOption("control", controlOption);
   application.registerActionOption("typing", typingOption);
   await assemble(application, {
+    about: AboutController,
     comparison: ComparisonController,
     components: ComponentsController,
     dialog: DialogController,

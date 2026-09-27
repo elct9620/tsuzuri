@@ -2028,7 +2028,7 @@
                   ></div>
                 </fieldset>
 
-                <fieldset class="fieldset text-sm">
+                <fieldset class="fieldset text-sm" data-controller="about">
                   <legend
                     class="fieldset-legend"
                     data-i18n="settings.about"
@@ -2049,6 +2049,50 @@
                       Tsuzuri as they are released.
                     </p>
                   </div>
+                  <div class="flex gap-2">
+                    <button
+                      type="button"
+                      class="btn btn-sm"
+                      data-action="about#showLicenses"
+                      data-i18n="settings.fullLicenses"
+                    ></button>
+                    <button
+                      type="button"
+                      class="btn btn-sm"
+                      data-action="about#openSource"
+                      data-i18n="settings.sourceCode"
+                    ></button>
+                  </div>
+                  <dialog class="modal" data-about-target="dialog">
+                    <div class="modal-box w-11/12 max-w-4xl">
+                      <h3
+                        class="text-lg font-bold"
+                        data-i18n="settings.licenses"
+                      ></h3>
+                      <iframe
+                        class="mt-4 h-[60vh] w-full rounded-box border border-base-300"
+                        title="LICENSE.html"
+                        sandbox=""
+                        data-about-target="notice"
+                        hidden
+                      ></iframe>
+                      <div
+                        role="alert"
+                        class="alert alert-info mt-4 text-sm"
+                        data-about-target="missingHint"
+                        data-i18n="settings.licensesMissing"
+                        hidden
+                      ></div>
+                      <div class="modal-action">
+                        <form method="dialog">
+                          <button class="btn" data-i18n="work.close"></button>
+                        </form>
+                      </div>
+                    </div>
+                    <form method="dialog" class="modal-backdrop">
+                      <button>close</button>
+                    </form>
+                  </dialog>
                 </fieldset>
               </div>
             </div>

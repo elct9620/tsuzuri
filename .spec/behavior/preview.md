@@ -833,6 +833,42 @@ Some media is recorded quietly and some loudly, so the Preview has a volume of i
 | When | the Preview opens again |
 | Then | the volume slider reads 40 and the media plays at 40% of its volume |
 
+## `PV-170` Holding the volume within 100 without the Volume Boost
+
+| Step | Statement |
+| --- | --- |
+| Given | a volume of 150 remembered on this machine, with the Volume Boost off |
+| When | the Preview opens |
+| Then | the volume slider goes up to 100, reads 100 and the media plays at full volume |
+
+## `PV-171` Playing above full volume with the Volume Boost
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview of a Current Resource with a media file, with the Volume Boost on |
+| When | the volume slider is moved to 150 |
+| Then | the media plays at 150% of its volume through Web Audio |
+
+## `PV-172` Leaving Web Audio out until the volume passes 100
+
+The sound may lag behind the picture once it goes through Web Audio, so the Volume Boost takes that path only when it is needed.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview with the Volume Boost on |
+| When | the volume slider is moved to 80 |
+| Then | the media plays at 80% of its volume with no Web Audio |
+
+## `PV-173` Reading the media for Web Audio with the Volume Boost
+
+Web Audio plays a media file of another origin as silence unless the file was read with CORS.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Volume Boost on |
+| When | the Preview opens |
+| Then | the media is read with anonymous CORS |
+
 ## `PV-092` Showing the Speaker over the video by default
 
 A cue is saved with its Speaker's name before the dialogue, so what is over the video names who says it too.

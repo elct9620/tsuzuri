@@ -22,6 +22,12 @@ import {
 } from "../ui/choices";
 import { formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
+import {
+  isVolumeBoostOn,
+  playAtVolume,
+  resumeVolumeBoost,
+  volumeLimit,
+} from "../ui/volume_boost";
 
 /** Where the webview remembers the Preview folded away. */
 const FOLDED_KEY = "tsuzuri.preview-folded";
@@ -50,10 +56,10 @@ function captionBackdropOf(value: string | null): CaptionBackdrop {
 /** Where the webview remembers how loud the media plays, as a percentage. */
 const VOLUME_KEY = "tsuzuri.preview-volume";
 
-/** The volume remembered as `value`, or full volume where none was chosen. */
-function volumeOf(value: string | null): number {
+/** The volume remembered as `value` up to `limit`, or full volume where none was chosen. */
+function volumeOf(value: string | null, limit: number): number {
   const volume = Number(value ?? NaN);
-  return volume >= 0 && volume <= 100 ? volume : 100;
+  return volume >= 0 && volume <= limit ? volume : 100;
 }
 
 /** Where the webview remembers the Speaker over the video turned off. */
@@ -142,7 +148,10 @@ export default class PreviewController extends Controller {
   /** A saved cue names its Speaker, so the caption does too until turned off. */
   private isSpeakerShown = rememberedFlag(SPEAKER_KEY, true);
   private isFolded = rememberedFlag(FOLDED_KEY, false);
-  private volume = volumeOf(rememberedChoice(VOLUME_KEY));
+  /** The Volume Boost as it was when the app opened; a change takes effect when it opens again. */
+  private readonly isBoostOn = isVolumeBoostOn();
+  private readonly loudestVolume = volumeLimit(this.isBoostOn);
+  private volume = volumeOf(rememberedChoice(VOLUME_KEY), this.loudestVolume);
   private unfollow?: () => void;
   /** The request for the next frame the Preview follows the media on while it plays, and the window drawing it. */
   private frameRequest: { view: Window; id: number } | null = null;
@@ -168,6 +177,7 @@ export default class PreviewController extends Controller {
     ["durationchange", () => this.showTime()],
     ["timeupdate", () => this.follow()],
     ["play", () => this.showPlaying()],
+    ["play", () => resumeVolumeBoost(this.player)],
     ["pause", () => this.showPaused()],
     ["error", () => this.showUnplayable()],
   ];
@@ -180,10 +190,12 @@ export default class PreviewController extends Controller {
     this.unplayableHint = this.hintTarget;
     for (const [name, listener] of this.playerListeners)
       this.player.addEventListener(name, listener);
+    if (this.isBoostOn) this.player.crossOrigin = "anonymous";
     this.showCaptionBackdrop();
     this.captionSpeakerTarget.checked = this.isSpeakerShown;
+    this.volumeTarget.max = String(this.loudestVolume);
     this.volumeTarget.value = String(this.volume);
-    this.player.volume = this.volume / 100;
+    playAtVolume(this.player, this.volume);
     this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
@@ -207,9 +219,9 @@ export default class PreviewController extends Controller {
   }
 
   setVolume(): void {
-    this.volume = volumeOf(this.volumeTarget.value);
+    this.volume = volumeOf(this.volumeTarget.value, this.loudestVolume);
     rememberChoice(VOLUME_KEY, String(this.volume));
-    this.player.volume = this.volume / 100;
+    playAtVolume(this.player, this.volume);
   }
 
   chooseCaptionLanguage({ target }: Event): void {

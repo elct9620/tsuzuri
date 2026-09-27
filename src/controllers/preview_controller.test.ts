@@ -596,6 +596,95 @@ describe("PreviewController", () => {
     expect([volumeSlider().value, player.volume]).toEqual(["40", 0.4]);
   });
 
+  async function reopenWith(choices: Record<string, string>): Promise<void> {
+    application.stop();
+    player.removeAttribute("crossorigin");
+    for (const [key, value] of Object.entries(choices))
+      localStorage.setItem(key, value);
+    application = Application.start();
+    await assemble(application, {
+      preview: PreviewController,
+    }).start();
+    await settle();
+  }
+
+  // @behavior PV-170
+  it("holds the volume within 100 without the Volume Boost", async () => {
+    await reopenWith({ "tsuzuri.preview-volume": "150" });
+
+    expect([volumeSlider().max, volumeSlider().value, player.volume]).toEqual([
+      "100",
+      "100",
+      1,
+    ]);
+  });
+
+  describe("the Volume Boost", () => {
+    /** The Web Audio contexts made, each with the players routed into it and its gain. */
+    let contexts: FakeAudioContext[];
+
+    class FakeAudioContext {
+      readonly baseLatency = 0.01;
+      readonly outputLatency = 0.02;
+      readonly destination = {};
+      readonly gain = { gain: { value: 1 }, connect: (node: unknown) => node };
+      readonly sources: HTMLMediaElement[] = [];
+      readonly resume = vi.fn(() => Promise.resolve());
+
+      constructor() {
+        contexts.push(this);
+      }
+
+      createGain() {
+        return this.gain;
+      }
+
+      createMediaElementSource(element: HTMLMediaElement) {
+        this.sources.push(element);
+        return { connect: (node: unknown) => node };
+      }
+    }
+
+    beforeEach(async () => {
+      contexts = [];
+      vi.stubGlobal("AudioContext", FakeAudioContext);
+      await reopenWith({ "tsuzuri.volume-boost": "true" });
+      await show(projectWithMedia());
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    // @behavior PV-171
+    it("plays above full volume through Web Audio", () => {
+      moveVolumeSlider(150);
+      player.dispatchEvent(new Event("play"));
+
+      expect([
+        volumeSlider().max,
+        player.volume,
+        contexts.map((context) => [
+          context.sources,
+          context.gain.gain.value,
+          context.resume.mock.calls.length > 0,
+        ]),
+      ]).toEqual(["200", 1, [[[player], 1.5, true]]]);
+    });
+
+    // @behavior PV-172
+    it("leaves Web Audio out until the volume passes 100", () => {
+      moveVolumeSlider(80);
+
+      expect([player.volume, contexts.length]).toEqual([0.8, 0]);
+    });
+
+    // @behavior PV-173
+    it("reads the media with anonymous CORS", () => {
+      expect(player.crossOrigin).toBe("anonymous");
+    });
+  });
+
   describe("the Video Window", () => {
     /**
      * Has `player` start over as Chromium does once it is moved to another page, which reloads it,

@@ -153,6 +153,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 範圍 | 開啟過的專案目錄 |
 | 子目錄 | 不含 |
 | 路徑來源 | `ProjectView.media` |
+| CORS | 音量增強時 anonymous |
 
 影片要能拖動與串流，經由指令傳送整個檔案不可行，所以媒體檔是 webview 唯一直接讀取的資料。路徑仍由 Rust 給出，範圍只含開啟過的專案目錄。
 
@@ -603,6 +604,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/time.ts`、`ui/menu.ts` | 時間格式與欄位綁定、關閉選單 |
 | `ui/models.ts` | 各 Model Slot 的副檔名 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
+| `ui/volume_boost.ts` | 音量增強的開關、增益與延遲 |
 | `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `ui/timeline_spans.ts` | 時間軸區段與選段的落點 |

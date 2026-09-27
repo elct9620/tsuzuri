@@ -1007,3 +1007,11 @@ Translating again writes into the translation shown, so without one it is not of
 | Given | the shift dialog open with an offset of 500 ms |
 | When | every check is cleared and the shift is started |
 | Then | nothing is shifted |
+
+## `ED-115` Putting back a text's entry with Esc after a refused split
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered reading `大家好`, then typed to `大家好啊` |
+| When | a split is refused as its text is written, then Esc is pressed |
+| Then | the field reads `大家好` again |

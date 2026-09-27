@@ -17,8 +17,12 @@ describe("FieldController", () => {
     document.querySelectorAll<HTMLElement>("[data-controller]")[index];
   const field = () => fieldAt(0);
 
+  /** Whether `edit_segment` is refused, as while a Mode writes the Current Resource. */
+  let isEditRefused: boolean;
+
   beforeEach(async () => {
     edits = [];
+    isEditRefused = false;
     const actions =
       "focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#enterNext:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent keydown.esc->field#revert:!composing:prevent";
     document.body.innerHTML = `
@@ -38,7 +42,10 @@ describe("FieldController", () => {
               { start_ms: 1000, end_ms: 2000, text: "今天天氣" },
             ],
           });
-        if (command === "edit_segment") edits.push(args);
+        if (command === "edit_segment") {
+          if (isEditRefused) return Promise.reject({ code: "mode-running" });
+          edits.push(args);
+        }
       },
       { shouldMockEvents: true },
     );
@@ -186,6 +193,21 @@ describe("FieldController", () => {
       edits,
       session.cursor,
     ]).toEqual(["大家好", false, [], { index: 0, caret: null }]);
+  });
+
+  // @behavior ED-115
+  it("puts back the text it was entered with on Esc after a refused split", async () => {
+    field().focus();
+    field().dispatchEvent(new FocusEvent("focus"));
+    field().textContent = "大家好啊";
+    session.select(0, "text", { start: 2, end: 2 }, "大家好啊");
+    isEditRefused = true;
+    await session.split();
+
+    isEscTaken();
+    await settle();
+
+    expect(field().textContent).toBe("大家好");
   });
 
   // @behavior ED-078

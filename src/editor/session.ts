@@ -304,9 +304,13 @@ export class EditingSession {
     field: CursorField,
     text: string,
   ): Promise<Outcome> {
-    if (text === this.entryText) return { kind: "unchanged" };
+    const previousEntry = this.entryText;
+    if (text === previousEntry) return { kind: "unchanged" };
     this.entryText = text;
-    return this.editText(index, field, text);
+    const outcome = await this.editText(index, field, text);
+    if (outcome.kind === "failed" && this.entryText === text)
+      this.entryText = previousEntry;
+    return outcome;
   }
 
   private async write(send: () => Promise<void>): Promise<Outcome> {

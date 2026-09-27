@@ -344,6 +344,10 @@ const en = {
     licensesMissing:
       "A development build carries no license notice; every released build does.",
     sourceCode: "Source code",
+    appBuild: "Version {{releaseNumber}} ({{commit}})",
+    copyAppBuild: "Copy",
+    appBuildCopied: "Version copied",
+    appBuildNotCopied: "Version not copied",
     releasesNotOpened: "Releases page not opened",
   },
   slots: {

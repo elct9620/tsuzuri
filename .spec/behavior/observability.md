@@ -1,6 +1,6 @@
 # Observability
 
-What a run leaves in the log, so a slow or failed run can be diagnosed afterwards - from the terminal under `cargo tauri dev`, and from the log directory of an installed app, where nothing else records it.
+What a run leaves in the log, so a slow or failed run can be diagnosed afterwards - from the terminal under `cargo tauri dev`, and from the log directory of an installed app, where nothing else records it - and the App Build a report names.
 
 ## Includes
 
@@ -8,6 +8,8 @@ What a run leaves in the log, so a slow or failed run can be diagnosed afterward
 - `src-tauri/src/processes.rs`
 - `src-tauri/src/logs.rs`
 - `src/controllers/logs_controller.test.ts`
+- `src-tauri/src/about.rs`
+- `src/controllers/about_controller.test.ts`
 
 ## `OB-001` Logging how long a Phase took
 
@@ -107,3 +109,26 @@ A directory chosen earlier in this launch takes effect only at the next, so the 
 | When | the app starts |
 | Then | the log is written to the OS log directory of the app |
 
+## `OB-013` Naming the commit a build was made from
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri built from a commit of its repository |
+| When | the App Build is asked for |
+| Then | it answers the release number Cargo.toml carries and that commit |
+
+## `OB-014` Showing the App Build under About
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings open at About |
+| When | the App Build is answered |
+| Then | About shows the release number and the commit's first seven characters |
+
+## `OB-015` Copying the App Build for a report
+
+| Step | Statement |
+| --- | --- |
+| Given | the App Build shown under About |
+| When | copying it is chosen |
+| Then | the clipboard holds Tsuzuri, the release number and the short commit, and a Notification says it was copied |

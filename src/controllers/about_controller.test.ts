@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AboutController from "./about_controller";
+import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 
 describe("AboutController", () => {
   let application: Application;
@@ -31,7 +32,10 @@ describe("AboutController", () => {
   beforeEach(async () => {
     commands = [];
     document.body.innerHTML = `
+      ${NOTIFICATION_STACK}
       <fieldset data-controller="about">
+        <span data-about-target="build"></span>
+        <button data-action="about#copyBuild">複製</button>
         <button data-action="about#showLicenses">完整授權</button>
         <button data-action="about#openSource">原始程式碼</button>
         <dialog data-about-target="dialog">
@@ -42,6 +46,11 @@ describe("AboutController", () => {
     `;
     mockIPC((command) => {
       commands.push(command);
+      if (command === "app_build")
+        return {
+          release_number: "0.1.0",
+          commit: "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+        };
     });
     application = Application.start();
     application.register("about", AboutController);
@@ -87,6 +96,24 @@ describe("AboutController", () => {
   it("opens where the source of the bundled ffmpeg is", async () => {
     await choose("openSource");
 
-    expect(commands).toEqual(["open_releases"]);
+    expect(commands).toContain("open_releases");
+  });
+
+  // @behavior OB-014
+  it("shows the release number and the short commit under About", () => {
+    expect(target("build").textContent).toBe("版本 0.1.0（a1b2c3d）");
+  });
+
+  // @behavior OB-015
+  it("copies the App Build for a report", async () => {
+    const writeText = vi.fn(async () => {});
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+
+    await choose("copyBuild");
+
+    expect([writeText.mock.calls, notifications()]).toEqual([
+      [["Tsuzuri 0.1.0 (a1b2c3d)"]],
+      ["已複製版本資訊"],
+    ]);
   });
 });

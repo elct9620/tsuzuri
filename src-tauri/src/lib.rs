@@ -114,6 +114,7 @@ pub fn run() {
             logs::commands::log_directory,
             logs::commands::choose_log_directory,
             logs::commands::open_log_directory,
+            about::commands::app_build,
             about::commands::open_releases,
             project::commands::revert_row,
             project::commands::undo,

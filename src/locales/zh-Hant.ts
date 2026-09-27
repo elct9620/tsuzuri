@@ -333,6 +333,10 @@ const zhHant: typeof en = {
     licenses: "授權",
     licensesMissing: "開發版沒有附上完整授權，每個釋出的版本都會附上。",
     sourceCode: "原始程式碼",
+    appBuild: "版本 {{releaseNumber}}（{{commit}}）",
+    copyAppBuild: "複製",
+    appBuildCopied: "已複製版本資訊",
+    appBuildNotCopied: "沒有複製版本資訊",
     releasesNotOpened: "沒有開啟釋出頁面",
   },
   slots: {

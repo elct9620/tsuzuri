@@ -38,6 +38,16 @@ fn replace_project<R: Runtime>(app: &AppHandle<R>, project: Project) -> Result<(
     Ok(())
 }
 
+/// Answers `result` once the webview is told the Project changed, which a change may have done
+/// even when refused: a subtitle found changed elsewhere is then read again.
+fn announce_after<T, R: Runtime>(
+    app: &AppHandle<R>,
+    result: Result<T, Failure>,
+) -> Result<T, Failure> {
+    app.announce_project();
+    result
+}
+
 /// Tells the webview what a reload did: that the Project changed, and that a version of a
 /// subtitle changed elsewhere was kept, so the user knows where to find it.
 fn announce_reload<R: Runtime>(app: &AppHandle<R>, reload: Reload) {
@@ -125,18 +135,17 @@ pub fn edit_segment(
     field: SegmentField,
     value: String,
 ) -> Result<(), Failure> {
-    let result = current.edit(index, field, value);
-    app.announce_project();
-    result
+    announce_after(&app, current.edit(index, field, value))
 }
 
 #[tauri::command]
-pub fn set_speakers(app: AppHandle, indexes: Vec<usize>, speaker: String) -> Result<(), Failure> {
-    let result = app
-        .state::<CurrentProject>()
-        .set_speakers(&indexes, &speaker);
-    app.announce_project();
-    result
+pub fn set_speakers(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+    indexes: Vec<usize>,
+    speaker: String,
+) -> Result<(), Failure> {
+    announce_after(&app, current.set_speakers(&indexes, &speaker))
 }
 
 #[tauri::command]
@@ -146,9 +155,7 @@ pub fn replace_text(
     field: SegmentField,
     replacement: Replacement,
 ) -> Result<usize, Failure> {
-    let result = current.replace_text(field, &replacement);
-    app.announce_project();
-    result
+    announce_after(&app, current.replace_text(field, &replacement))
 }
 
 #[tauri::command]
@@ -157,9 +164,7 @@ pub fn change_segments(
     current: State<'_, CurrentProject>,
     change: SegmentChange,
 ) -> Result<(), Failure> {
-    let result = current.change_segments(change);
-    app.announce_project();
-    result
+    announce_after(&app, current.change_segments(change))
 }
 
 #[tauri::command]
@@ -173,30 +178,23 @@ pub fn translation_cues(
 #[tauri::command]
 pub fn revert_row(
     app: AppHandle,
+    current: State<'_, CurrentProject>,
     language: Option<Language>,
     backup: String,
     row: usize,
     part: RevertPart,
 ) -> Result<Restoration, Failure> {
-    let result = app
-        .state::<CurrentProject>()
-        .revert_row(language, &backup, row, part);
-    app.announce_project();
-    result
+    announce_after(&app, current.revert_row(language, &backup, row, part))
 }
 
 #[tauri::command]
 pub fn undo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
-    let result = current.undo();
-    app.announce_project();
-    result
+    announce_after(&app, current.undo())
 }
 
 #[tauri::command]
 pub fn redo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
-    let result = current.redo();
-    app.announce_project();
-    result
+    announce_after(&app, current.redo())
 }
 
 #[tauri::command]
@@ -239,14 +237,11 @@ pub fn compare_versions(
 #[tauri::command]
 pub fn restore_version(
     app: AppHandle,
+    current: State<'_, CurrentProject>,
     language: Option<Language>,
     backup: String,
 ) -> Result<Restoration, Failure> {
-    let result = app
-        .state::<CurrentProject>()
-        .restore_version(language, &backup);
-    app.announce_project();
-    result
+    announce_after(&app, current.restore_version(language, &backup))
 }
 
 #[tauri::command]
@@ -272,6 +267,11 @@ mod tests {
     use std::fs;
 
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+
+    use tauri::Listener;
 
     use super::*;
     use crate::test_support::TempDir;
@@ -337,5 +337,21 @@ mod tests {
         assert!(app
             .asset_protocol_scope()
             .is_allowed(directory.join("ep01.mp4")));
+    }
+
+    #[test]
+    fn tells_the_webview_the_project_changed_even_when_a_change_is_refused() {
+        let app = mock_app();
+        let is_heard = Arc::new(AtomicBool::new(false));
+        let is_heard_by_listener = Arc::clone(&is_heard);
+        app.listen("project-changed", move |_| {
+            is_heard_by_listener.store(true, Ordering::SeqCst)
+        });
+
+        let result: Result<(), Failure> =
+            announce_after(app.handle(), Err(Failure::ChangedElsewhere));
+
+        assert_eq!(result, Err(Failure::ChangedElsewhere));
+        assert!(is_heard.load(Ordering::SeqCst));
     }
 }

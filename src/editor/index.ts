@@ -25,7 +25,13 @@ export {
 } from "./field";
 export { hasHighlights, markRanges, textRange } from "./highlight";
 export { CURSOR_HIGHLIGHT, drawCursor } from "./marks";
-export { isHeld, isRun, type FieldKind } from "./rules";
+export {
+  isHeld,
+  isRun,
+  orderedTimes,
+  type FieldKind,
+  type TimeEdge,
+} from "./rules";
 export type {
   CleanupScope,
   Replacement,

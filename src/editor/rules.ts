@@ -61,3 +61,20 @@ export function segmentCountAfter(
       return count;
   }
 }
+
+/** Which of a Segment's times a time field holds. */
+export type TimeEdge = "start" | "end";
+
+/**
+ * A Segment's times once `edge` is typed as `start_ms` or `end_ms`: the edge typed past the other
+ * carries it along, as Aegisub keeps a line's times in order.
+ */
+export function orderedTimes(
+  edge: TimeEdge,
+  start_ms: number,
+  end_ms: number,
+): { start_ms: number; end_ms: number } {
+  return edge === "start"
+    ? { start_ms, end_ms: Math.max(start_ms, end_ms) }
+    : { start_ms: Math.min(start_ms, end_ms), end_ms };
+}

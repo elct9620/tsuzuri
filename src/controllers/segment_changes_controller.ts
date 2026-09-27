@@ -11,6 +11,8 @@ import { isMacOS } from "../backend/system";
 import {
   isHeld,
   isRun,
+  orderedTimes,
+  type TimeEdge,
   isTextField,
   type EditingSession,
   type SegmentChange,
@@ -93,7 +95,12 @@ export default class SegmentChangesController extends Controller {
       await refreshProject();
       return;
     }
-    await this.change({ kind: "times", index, start_ms, end_ms });
+    const edge = (currentTarget as HTMLElement).dataset.edge as TimeEdge;
+    await this.change({
+      kind: "times",
+      index,
+      ...orderedTimes(edge, start_ms, end_ms),
+    });
   }
 
   async insertBefore({ currentTarget }: Event): Promise<void> {

@@ -12,7 +12,7 @@ import {
   type RevertPart,
   type SubtitleVersions,
 } from "../backend/project";
-import { fieldValue, markRanges, textRange } from "../editor";
+import { fieldValue, markRanges, textRange, type TimeEdge } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
@@ -77,7 +77,7 @@ function badge(label: string): HTMLSpanElement {
 }
 
 /** The milliseconds a row's time field holds now, as typed or as the transcript wrote it. */
-function timeOf(item: HTMLLIElement, edge: "start" | "end"): number | null {
+function timeOf(item: HTMLLIElement, edge: TimeEdge): number | null {
   const field = item.querySelector<HTMLInputElement>(`[data-edge=${edge}]`);
   return field ? parseTime(field.value) : null;
 }

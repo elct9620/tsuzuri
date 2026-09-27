@@ -170,20 +170,34 @@ describe("SegmentChangesController", () => {
   });
 
   // @behavior ED-112
-  it("says why a typed start after the Segment's end is refused, and lets it go on its own", async () => {
+  it("pushes the end past a typed start", async () => {
     await hold(
       projectOf({ segments: [{ start_ms: 1000, end_ms: 2000, text: "一" }] }),
     );
-    refusal = { code: "invalid-times" };
     const start = row(0).querySelector<HTMLInputElement>("input.start")!;
 
     start.value = "00:00:03.000";
     start.dispatchEvent(new Event("change"));
     await settle();
 
-    expect([notificationDetail(0), notificationCountdown(0) !== null]).toEqual([
-      "結束時間不能早於開始時間",
-      true,
+    expect(changes).toEqual([
+      { kind: "times", index: 0, start_ms: 3000, end_ms: 3000 },
+    ]);
+  });
+
+  // @behavior ED-154
+  it("pulls the start back before a typed end", async () => {
+    await hold(
+      projectOf({ segments: [{ start_ms: 1000, end_ms: 2000, text: "一" }] }),
+    );
+    const end = row(0).querySelector<HTMLInputElement>("input.end")!;
+
+    end.value = "00:00:00.500";
+    end.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(changes).toEqual([
+      { kind: "times", index: 0, start_ms: 500, end_ms: 500 },
     ]);
   });
 

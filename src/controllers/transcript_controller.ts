@@ -23,6 +23,7 @@ import {
   type CursorField,
   type EditingSession,
   type FieldKind,
+  type TimeEdge,
 } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
@@ -130,7 +131,7 @@ function holdMenu(opener: HTMLElement, isHeld: boolean): void {
 /** The start or the end of a Segment, typed as a time. */
 function timeEditor(
   index: number,
-  edge: "start" | "end",
+  edge: TimeEdge,
   ms: number,
 ): HTMLInputElement {
   const input = document.createElement("input");

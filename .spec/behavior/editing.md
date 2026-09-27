@@ -288,13 +288,23 @@ A time pasted takes the place of the whole field, selected, and text that is not
 | When | the second's start is changed to `00:00:00.500` |
 | Then | a Notification says a Segment cannot start before the one before it or after the one after it, and nothing is changed |
 
-## `ED-112` Refusing a typed start after the Segment's end
+## `ED-112` Pushing the end past a typed start
+
+A time typed past the other edge carries it along, as Aegisub keeps a line's times in order, so a start typed into a Segment that runs no time moves its end with it.
 
 | Step | Statement |
 | --- | --- |
 | Given | a Project in the panel whose first Segment runs from 1 to 2 seconds |
 | When | its start is changed to `00:00:03.000` |
-| Then | a Notification says a Segment cannot end before it starts, goes on its own, and nothing is changed |
+| Then | the Project is asked to change its times to 3 to 3 seconds |
+
+## `ED-154` Pulling the start back before a typed end
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment runs from 1 to 2 seconds |
+| When | its end is changed to `00:00:00.500` |
+| Then | the Project is asked to change its times to 0.5 to 0.5 seconds |
 
 ## `ED-016` Inserting a Segment from its menu
 

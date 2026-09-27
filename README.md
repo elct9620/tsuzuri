@@ -36,8 +36,8 @@ xattr -dr com.apple.quarantine /Applications/Tsuzuri.app
 The packages declare the libraries the bundled engines need, such as libgomp and libvulkan, so install them with the package manager to bring those along:
 
 ```bash
-sudo apt install ./tsuzuri_<version>_amd64.deb      # Debian, Ubuntu
-sudo dnf install ./tsuzuri-<version>-1.x86_64.rpm   # Fedora
+sudo apt install ./Tsuzuri_<version>_amd64.deb      # Debian, Ubuntu
+sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 ```
 
 ## Reporting a Problem

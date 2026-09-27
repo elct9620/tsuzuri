@@ -36,8 +36,8 @@ xattr -dr com.apple.quarantine /Applications/Tsuzuri.app
 套件已宣告內建引擎需要的 libgomp、libvulkan 等函式庫，用套件管理員安裝就會一併裝好：
 
 ```bash
-sudo apt install ./tsuzuri_<version>_amd64.deb      # Debian、Ubuntu
-sudo dnf install ./tsuzuri-<version>-1.x86_64.rpm   # Fedora
+sudo apt install ./Tsuzuri_<version>_amd64.deb      # Debian、Ubuntu
+sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 ```
 
 ## 回報問題

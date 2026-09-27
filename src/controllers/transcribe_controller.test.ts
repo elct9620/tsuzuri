@@ -207,6 +207,24 @@ describe("TranscribeController", () => {
     ]);
   });
 
+  // @behavior TL-097
+  it("starts no transcription to translate while the summary has no word limit", async () => {
+    await hold(media);
+    target<HTMLInputElement>("translationToggle").checked = true;
+    translationOption<HTMLInputElement>(
+      "#transcribe-options",
+      "summary",
+    ).checked = true;
+    translationOption<HTMLInputElement>(
+      "#transcribe-options",
+      "summaryWords",
+    ).value = "";
+
+    await start();
+
+    expect(transcribeArgs).toBeUndefined();
+  });
+
   // @behavior TX-011
   it("lists each Phase with its seconds once transcribed", async () => {
     await hold(media);

@@ -84,7 +84,8 @@ export default class TranslateController extends Controller {
 
   async start(): Promise<void> {
     const progress = this.progressOutlet;
-    if (progress.isBusy) return;
+    if (progress.isBusy || !this.translationOptionsOutlet.reportValidity())
+      return;
     this.dialogTarget.close();
     progress.begin("translation");
     try {

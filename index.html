@@ -1063,7 +1063,8 @@
                   <input
                     type="number"
                     step="100"
-                    class="input w-full"
+                    required
+                    class="input validator w-full"
                     data-segment-changes-target="offset"
                   />
                 </fieldset>
@@ -1939,8 +1940,10 @@
         <input
           type="number"
           min="1"
+          step="1"
           value="100"
-          class="input input-sm w-20"
+          required
+          class="input input-sm validator w-20"
           data-translation-options-target="summaryWords"
         />
         <span data-i18n="translate.words"></span>

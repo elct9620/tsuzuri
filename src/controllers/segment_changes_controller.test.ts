@@ -292,6 +292,43 @@ describe("SegmentChangesController", () => {
     ]);
   });
 
+  // @behavior ED-113
+  it("shifts nothing while the offset is empty", async () => {
+    await hold(threeSegments);
+    await check(1, 2);
+    document.querySelector<HTMLButtonElement>("#open-shift")!.click();
+    document.querySelector<HTMLInputElement>(
+      '[data-segment-changes-target="offset"]',
+    )!.value = "";
+
+    document.querySelector<HTMLButtonElement>("#shift")!.click();
+    await settle();
+
+    expect([
+      changes,
+      document.querySelector<HTMLDialogElement>("dialog")!.open,
+    ]).toEqual([[], true]);
+  });
+
+  // @behavior ED-114
+  it("shifts nothing once no Segment is checked", async () => {
+    await hold(threeSegments);
+    await check(1);
+    document.querySelector<HTMLButtonElement>("#open-shift")!.click();
+    document.querySelector<HTMLInputElement>(
+      '[data-segment-changes-target="offset"]',
+    )!.value = "500";
+    const checkbox = row(1).querySelector<HTMLInputElement>("input.check")!;
+    checkbox.checked = false;
+    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    await settle();
+
+    document.querySelector<HTMLButtonElement>("#shift")!.click();
+    await settle();
+
+    expect(changes).toEqual([]);
+  });
+
   // @behavior ED-020
   it("offers no merge for Segments apart from each other", async () => {
     await hold(threeSegments);

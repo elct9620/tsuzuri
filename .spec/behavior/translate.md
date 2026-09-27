@@ -761,3 +761,11 @@ The lines before the chosen ones are what the user already put right, so when th
 | Given | a Current Resource with an `en` translation |
 | When | showing it is refused |
 | Then | a Notification says the translation was not shown |
+
+## `TL-097` Starting no translation while the summary has no word limit
+
+| Step | Statement |
+| --- | --- |
+| Given | the rolling summary turned on with its word limit left empty |
+| When | the translation is started |
+| Then | nothing is translated and the word limit asks for a number |

@@ -256,6 +256,17 @@ describe("TranslateController", () => {
     });
   });
 
+  // @behavior TL-097
+  it("starts no translation while the summary has no word limit", async () => {
+    await hold(projectOf());
+    check("summary");
+    option<HTMLInputElement>("summaryWords").value = "";
+
+    await start();
+
+    expect(translateArgs).toBeUndefined();
+  });
+
   describe("translating chosen Segments again", () => {
     let retranslateArgs: unknown;
 

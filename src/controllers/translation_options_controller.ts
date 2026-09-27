@@ -84,6 +84,13 @@ export default class TranslationOptionsController extends Controller {
     return this.languageTarget.value;
   }
 
+  /** Whether every option chosen is complete, pointing at the first that is not. */
+  reportValidity(): boolean {
+    return (
+      !this.summaryTarget.checked || this.summaryWordsTarget.reportValidity()
+    );
+  }
+
   get options(): TranslationOptions {
     return {
       has_speaker_labels: this.speakerLabelsTarget.checked,

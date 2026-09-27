@@ -184,12 +184,18 @@ export default class SegmentChangesController extends Controller {
 
   async shift(): Promise<void> {
     const indexes = this.session.checkedIndexes;
+    const offset = this.offsetTarget.valueAsNumber;
+    if (Number.isNaN(offset)) {
+      this.offsetTarget.reportValidity();
+      return;
+    }
     this.shiftDialogTarget.close();
+    if (indexes.length === 0) return;
     await this.change({
       kind: "shift",
       first: indexes[0],
       last: indexes[indexes.length - 1],
-      offset_ms: Math.round(Number(this.offsetTarget.value)),
+      offset_ms: Math.round(offset),
     });
   }
 

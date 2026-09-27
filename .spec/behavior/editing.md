@@ -991,3 +991,19 @@ Translating again writes into the translation shown, so without one it is not of
 | Given | a Current Resource showing no translation, its first Segment checked |
 | When | the editor shows it |
 | Then | neither the Segment menu nor the bar for Checked Segments offers translating again |
+
+## `ED-113` Shifting nothing while the offset is empty
+
+| Step | Statement |
+| --- | --- |
+| Given | Checked Segments and the shift dialog with its offset cleared |
+| When | the shift is started |
+| Then | nothing is shifted and the dialog stays open |
+
+## `ED-114` Shifting nothing once no Segment is checked
+
+| Step | Statement |
+| --- | --- |
+| Given | the shift dialog open with an offset of 500 ms |
+| When | every check is cleared and the shift is started |
+| Then | nothing is shifted |

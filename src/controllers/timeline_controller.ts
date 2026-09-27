@@ -47,6 +47,13 @@ const REGION_COLORS = ["--segment-even", "--segment-odd"];
 const SNAP_PX = 8;
 /** The id of the range drawn on the waveform, which is no Segment's region. */
 const RANGE_ID = "range";
+/** How the drawn range shows: dragged by its edges or as a whole, to set it right before it is kept. */
+const RANGE_LOOK = {
+  id: RANGE_ID,
+  color: "var(--segment-range)",
+  drag: true,
+  resize: true,
+};
 /** Where the webview remembers whether Space plays the Current Segment alone. */
 const ALONE_KEY = "tsuzuri.timeline-playing-alone";
 /** Where the webview remembers whether a dragged edge Snaps without Shift. */
@@ -465,8 +472,12 @@ export default class TimelineController extends Controller {
     regions.on("region-clicked", (region, event) =>
       this.chooseRegion(region, event),
     );
-    regions.on("region-update", (region, side) => this.follow(region, side));
-    regions.on("region-updated", () => this.letGo());
+    regions.on("region-update", (region, side) => {
+      if (region.id !== RANGE_ID) this.follow(region, side);
+    });
+    regions.on("region-updated", (region, side) =>
+      region.id === RANGE_ID ? this.placeRange(region, side) : this.letGo(),
+    );
     regions.on("region-initialized", (region) => {
       if (region.id === RANGE_ID)
         region.on("update", () => this.showTimes(region, true));
@@ -501,12 +512,7 @@ export default class TimelineController extends Controller {
     this.surfer.on("timeupdate", (time) => this.pauseAtCurrentEnd(time));
     this.surfer.on("seeking", () => (this.lastTime = null));
     this.surfer.on("interaction", () => this.dropRange());
-    regions.enableDragSelection({
-      id: RANGE_ID,
-      color: "var(--segment-range)",
-      drag: false,
-      resize: false,
-    });
+    regions.enableDragSelection(RANGE_LOOK);
   }
 
   /**
@@ -580,9 +586,14 @@ export default class TimelineController extends Controller {
   /**
    * Makes the Segment of a region clicked current and moves the media as `choiceLanding` tells,
    * keeping the click from the waveform, which would move it to where it was clicked regardless.
-   * The Current Segment's region is left to the waveform.
+   * The Current Segment's region is left to the waveform, and a click on the drawn range is kept
+   * from it too, as the waveform's click drops the range.
    */
   private chooseRegion(region: Region, event: MouseEvent): void {
+    if (region.id === RANGE_ID) {
+      event.stopPropagation();
+      return;
+    }
     const index = this.segmentRegions().indexOf(region);
     const segment = this.segments[index];
     if (!segment || index === this.session.cursor.index) return;
@@ -775,23 +786,39 @@ export default class TimelineController extends Controller {
   private keepRange(range: Region): void {
     if (this.stroke) return;
     this.dropRange();
-    const lowest = 0;
-    const highest = this.surfer?.getDuration() ?? range.end;
-    const snapTimes = this.snapTargets(-1);
-    const snapDistance = SNAP_PX / this.wrapperPxPerSec();
-    const snap = (time: number) =>
-      this.isSnapping !== this.modifiers.shiftKey
-        ? snapTime(time, snapTimes, snapDistance)
-        : time;
-    const start = Math.max(lowest, snap(range.start));
-    const end = Math.min(highest, snap(range.end));
+    const { lowestStart, highestEnd, snapTimes, snapDistance } =
+      this.rangeReach();
+    const snap = (time: number) => snapTime(time, snapTimes, snapDistance);
+    const start = Math.max(lowestStart, snap(range.start));
+    const end = Math.min(highestEnd, snap(range.end));
     if (this.isHeld || end <= start) {
       range.remove();
       return;
     }
     range.setOptions({ start, end });
+    // Above the Current Segment's region, so its edges can be taken where it lies over one
+    if (range.element) range.element.style.zIndex = "2";
     this.range = range;
     this.showTimes(range);
+  }
+
+  /** Lands the drawn range where its `side`, or the whole of it, was let go, as a dragged Segment lands. */
+  private placeRange(range: Region, side: UpdateSide | undefined): void {
+    range.setOptions(landingSpan(range, side, this.rangeReach()));
+    this.showTimes(range);
+  }
+
+  /** What the drawn range may reach: the whole media, Snapping to every Segment's edges while snapping is on. */
+  private rangeReach(): DragReach {
+    const duration = this.surfer?.getDuration() ?? Infinity;
+    const isSnapping = this.isSnapping !== this.modifiers.shiftKey;
+    return {
+      lowestStart: 0,
+      highestStart: duration,
+      highestEnd: duration,
+      snapTimes: isSnapping ? this.snapTargets(-1) : [],
+      snapDistance: SNAP_PX / this.wrapperPxPerSec(),
+    };
   }
 
   /**
@@ -810,13 +837,7 @@ export default class TimelineController extends Controller {
     if (stroke.range) stroke.range.setOptions(span);
     else {
       this.dropRange();
-      stroke.range = this.regions.addRegion({
-        id: RANGE_ID,
-        ...span,
-        color: "var(--segment-range)",
-        drag: false,
-        resize: false,
-      });
+      stroke.range = this.regions.addRegion({ ...RANGE_LOOK, ...span });
     }
     this.showTimes(span, true);
   }

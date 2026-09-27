@@ -984,7 +984,7 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 
 ## `PV-062` Inserting a Segment drawn on the timeline
 
-Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as Subtitle Edit does. A press on a region chooses or drags its Segment, so a range over Segments is drawn with Ctrl held, or ⌘ on macOS, where Ctrl and a click open the context menu.
+Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as Subtitle Edit does. A press on a region chooses or drags its Segment, so a range over Segments is drawn with Ctrl held, or ⌘ on macOS, where Ctrl and a click open the context menu. A range drawn roughly is then set right before it is kept: its edges are dragged, or the whole of it, and land as a dragged Segment does.
 
 | Step | Statement |
 | --- | --- |
@@ -1057,6 +1057,64 @@ Esc in a text field gives up what was typed there, which asks nothing of the tim
 | Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s and a range drawn from 0.5 to 1 s on its region with Ctrl held |
 | When | Enter is pressed |
 | Then | the Project is asked to insert a Segment from 0.5 to 1 s |
+
+## `PV-153` Stretching a drawn range by its end
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
+| When | its end is dragged 20 pixels later and Enter is pressed |
+| Then | the Project is asked to insert a Segment from 1 to 1.7 s |
+
+## `PV-154` Moving a drawn range
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
+| When | the range is dragged 30 pixels later and Enter is pressed |
+| Then | the Project is asked to insert a Segment from 1.3 to 1.8 s |
+
+## `PV-155` Snapping a dragged edge of a drawn range
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with one Segment from 1.8 to 2 s and a range drawn from 1 to 1.5 s, snapping turned on |
+| When | the range's end is dragged 27 pixels later and Enter is pressed |
+| Then | the Project is asked to insert a Segment from 1 to 1.8 s |
+
+## `PV-156` Showing the times of a drawn range as its edge is dragged
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s |
+| When | its end is dragged 20 pixels later and not yet let go |
+| Then | the times read `00:00:01.000 → 00:00:01.700 (0.700s)` |
+
+## `PV-157` Keeping a drawn range when it is clicked
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
+| When | the range is clicked and Enter is pressed |
+| Then | the Project is asked to insert a Segment from 1 to 1.5 s |
+
+## `PV-158` Stretching a range drawn over the Current Segment without moving it
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 2 s, with a range drawn from 0.5 to 1 s on its region |
+| When | the range's end is dragged 20 pixels later and Enter is pressed |
+| Then | the Project is asked only to insert a Segment from 0.5 to 1.2 s |
+
+## `PV-159` Drawing a range above the Current Segment's region
+
+The Current Segment's region is drawn above the others, so a range drawn over it is drawn higher still, where its edges can be taken.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 2 s |
+| When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
+| Then | the range is drawn above the Current Segment's region |
 
 ## `PV-065` Setting the Current Segment's start where the media is with F11
 

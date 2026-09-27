@@ -867,6 +867,101 @@ describe("TimelineController", () => {
       expect([spanTimes().hidden, spanTimes().textContent]).toEqual([true, ""]);
     });
 
+    const range = () => host().querySelector<HTMLElement>('[part~="range"]')!;
+    const rangeEnd = () =>
+      range().querySelector<HTMLElement>('[part~="region-handle-right"]')!;
+    const insertion = (start_ms: number, end_ms: number) => ({
+      kind: "insertion",
+      start_ms,
+      end_ms,
+    });
+
+    // @behavior PV-153
+    it("stretches a drawn range by its end", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5)]));
+      await draw(100, 45);
+
+      await drag(rangeEnd(), 20);
+      pressKey("Enter");
+      await settle();
+
+      expect(changes).toEqual([insertion(1000, 1700)]);
+    });
+
+    // @behavior PV-154
+    it("moves a drawn range", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5)]));
+      await draw(100, 45);
+
+      await drag(range(), 30);
+      pressKey("Enter");
+      await settle();
+
+      expect(changes).toEqual([insertion(1300, 1800)]);
+    });
+
+    // @behavior PV-155
+    it("snaps a dragged edge of a drawn range", async () => {
+      await show(projectWithMedia([segmentAt(1.8, 2)]));
+      press("timeline#toggleSnapping");
+      await draw(100, 45);
+
+      await drag(rangeEnd(), 27);
+      pressKey("Enter");
+      await settle();
+
+      expect(changes).toEqual([insertion(1000, 1800)]);
+    });
+
+    // @behavior PV-156
+    it("reads the times of a drawn range as its edge is dragged", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5)]));
+      await draw(100, 45);
+
+      pressAndMove(rangeEnd(), 20);
+
+      expect(spanTimes().textContent).toBe(
+        "00:00:01.000 → 00:00:01.700 (0.700s)",
+      );
+    });
+
+    // @behavior PV-157
+    it("keeps a drawn range when it is clicked", async () => {
+      await show(projectWithMedia([segmentAt(0, 0.5)]));
+      await draw(100, 45);
+
+      range().dispatchEvent(
+        new MouseEvent("click", { bubbles: true, clientX: 120 }),
+      );
+      pressKey("Enter");
+      await settle();
+
+      expect(changes).toEqual([insertion(1000, 1500)]);
+    });
+
+    // @behavior PV-158
+    it("stretches a range drawn over the Current Segment without moving it", async () => {
+      await showCurrent([segmentAt(0, 2)]);
+      await drawOver(regions()[0], 50, 50, { ctrlKey: true });
+
+      await drag(rangeEnd(), 20);
+      pressKey("Enter");
+      await settle();
+
+      expect(changes).toEqual([insertion(500, 1200)]);
+    });
+
+    // @behavior PV-159
+    it("draws a range above the Current Segment's region", async () => {
+      await showCurrent([segmentAt(0, 2)]);
+
+      await drawOver(regions()[0], 50, 50, { ctrlKey: true });
+
+      expect(Number(range().style.zIndex)).toBeGreaterThan(
+        Number(regions()[0].style.zIndex),
+      );
+    });
+
     // @behavior PV-065
     it("sets the Current Segment's start where the media is with F11", async () => {
       await showCurrent([segmentAt(0, 0.5)]);

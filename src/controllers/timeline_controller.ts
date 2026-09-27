@@ -264,6 +264,8 @@ export default class TimelineController extends Controller {
     range: Region | null;
   } | null = null;
   private surfer?: WaveSurfer;
+  /** The Waveform asked for last; one that arrives after another was asked for is not drawn. */
+  private waveformRequest?: Promise<Waveform>;
   private regions?: ReturnType<typeof RegionsPlugin.create>;
   private unfollow?: () => void;
   /**
@@ -287,6 +289,7 @@ export default class TimelineController extends Controller {
 
   disconnect(): void {
     this.unfollow?.();
+    this.waveformRequest = undefined;
     this.surfer?.destroy();
   }
 
@@ -463,16 +466,21 @@ export default class TimelineController extends Controller {
     this.surfer?.destroy();
     this.surfer = undefined;
     this.regions = undefined;
+    this.waveformRequest = undefined;
     this.waveformTarget.hidden = media === null;
     if (media === null) return;
     this.waveformTarget.classList.add("skeleton");
+    const request = extractWaveform();
+    this.waveformRequest = request;
     try {
-      const waveform = await extractWaveform();
-      if (waveform.media === this.media) this.drawWaveform(waveform);
+      const waveform = await request;
+      if (request === this.waveformRequest && waveform.media === this.media)
+        this.drawWaveform(waveform);
     } catch (error) {
-      if (media === this.media) notifyFailure(t("preview.noWaveform"), error);
+      if (request === this.waveformRequest)
+        notifyFailure(t("preview.noWaveform"), error);
     } finally {
-      if (media === this.media)
+      if (request === this.waveformRequest)
         this.waveformTarget.classList.remove("skeleton");
     }
   }

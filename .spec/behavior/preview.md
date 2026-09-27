@@ -1177,3 +1177,19 @@ Space plays on from where the media is, so a Segment chosen is heard with the on
 | Given | the Current Segment from 1 to 2 s playing after Space, with playing alone turned on |
 | When | its end is changed to 3 s and the media reaches 2 s |
 | Then | the media plays on, and pauses as it reaches 3 s |
+
+## `PV-141` Drawing one Waveform when the media comes back before the first arrives
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.mp4` current, its Waveform still being taken |
+| When | `ep02.mp4` and then `ep01.mp4` become current before it arrives |
+| Then | the timeline draws one Waveform, from the last request |
+
+## `PV-142` Staying quiet about a Waveform no longer asked for
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.mp4` current, its Waveform still being taken |
+| When | a Resource without media becomes current and taking it fails |
+| Then | no Notification is shown |

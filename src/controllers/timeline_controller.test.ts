@@ -10,6 +10,7 @@ import type { ProjectView, Segment } from "../backend/project";
 import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test_layout";
 import { projectOf } from "../test_project";
+import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 import TimelineController, {
   controlOption,
   regionColor,
@@ -20,6 +21,8 @@ describe("TimelineController", () => {
   let session: EditingSession;
   let project: ProjectView | null;
   let waveform: Waveform;
+  /** How `extract_waveform` answers; the Waveform at once unless a test holds it back. */
+  let takeWaveform: () => Waveform | Promise<Waveform>;
   let changes: SegmentChange[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -68,6 +71,7 @@ describe("TimelineController", () => {
     );
     project = null;
     changes = [];
+    takeWaveform = () => waveform;
     waveform = {
       media: "/talks/ep01.mp4",
       peaks_per_second: 100,
@@ -76,7 +80,7 @@ describe("TimelineController", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
-        if (command === "extract_waveform") return waveform;
+        if (command === "extract_waveform") return takeWaveform();
         if (command === "change_segments")
           changes.push((args as { change: SegmentChange }).change);
         return null;
@@ -84,6 +88,7 @@ describe("TimelineController", () => {
       { shouldMockEvents: true },
     );
     document.body.innerHTML = `
+      ${NOTIFICATION_STACK}
       <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture pointermove@window->timeline#extendDrawing pointerup@window->timeline#finishDrawing">
         <video data-timeline-target="media"></video>
         <input id="typing" />
@@ -131,6 +136,40 @@ describe("TimelineController", () => {
       document.querySelector('[data-timeline-target="waveform"]')!
         .childElementCount,
     ).toBe(0);
+  });
+
+  // @behavior PV-141
+  it("draws one Waveform when the media comes back before the first arrives", async () => {
+    const heldAnswers: ((waveform: Waveform) => void)[] = [];
+    takeWaveform = () => new Promise((resolve) => heldAnswers.push(resolve));
+    await show(projectOf({ media: "/talks/ep01.mp4" }));
+    await show(projectOf({ media: "/talks/ep02.mp4" }));
+    await show(projectOf({ media: "/talks/ep01.mp4" }));
+
+    for (const [index, media] of ["ep01", "ep02", "ep01"].entries())
+      heldAnswers[index]({ ...waveform, media: `/talks/${media}.mp4` });
+    for (let turn = 0; turn < 3; turn++) await settle();
+
+    expect(
+      document.querySelector('[data-timeline-target="waveform"]')!
+        .childElementCount,
+    ).toBe(1);
+  });
+
+  // @behavior PV-142
+  it("stays quiet about a Waveform no longer asked for", async () => {
+    let failTaking: (error: unknown) => void = () => {};
+    takeWaveform = () =>
+      new Promise((_, reject) => {
+        failTaking = reject;
+      });
+    await show(projectOf({ media: "/talks/ep01.mp4" }));
+    await show(projectOf({ media: null }));
+
+    failTaking({ code: "no-media" });
+    for (let turn = 0; turn < 3; turn++) await settle();
+
+    expect(notifications()).toEqual([]);
   });
 
   // @behavior PV-019

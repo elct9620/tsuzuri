@@ -1029,7 +1029,7 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | macOS | dmg、`.app` |
 | Linux | deb、rpm |
 
-授權頁依該平台的內建變體寫成，隨介面打包，不另附檔案（4.4）。Linux 只出 deb、rpm，GTK 等函式庫取自系統，不必再附它們的授權。
+授權頁依該平台的內建變體寫成，隨介面打包，不另附檔案（4.4）。Linux 只出 deb、rpm，GTK 等函式庫取自系統，不必再附它們的授權；元件需要的 libgomp、libvulkan 也寫進套件相依。
 
 ### 13.3 釋出流程
 
@@ -1067,11 +1067,10 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 |---|---|---|
 | Windows 無自動測試 | 行程清理可能失效 | 實機已確認；補測試 |
 | 變體實際速度 | 自動選擇順序要調 | 不同硬體量 RTF |
-| Linux 系統函式庫 | 缺函式庫跑不起來 | `.deb` 宣告相依 |
-| 沒有 Vulkan 驅動 | 內建元件無法執行 | 改指定 CPU 版 |
-| macOS 簽章不完整 | 顯示「已損毀」 | 完整 ad-hoc 簽章 |
+| 沒有 Vulkan 驅動程式 | 內建元件無法執行 | 改指定 CPU 版 |
+| macOS 未經公證 | 首次開啟被擋 | 確認可強制打開 |
 
-變體指 Vulkan 與 OpenBLAS；Linux 缺的是 libgomp1、libvulkan1。沒有驅動時先顯示無法執行，自動選擇上線後改為自動退回。macOS 產物只有 linker 的 ad-hoc 簽章，沒有「強制打開」，只能用 `xattr` 移除隔離；打包時以 `signingIdentity: "-"` 簽章後確認選項出現。
+變體指 Vulkan 與 OpenBLAS。沒有驅動程式時先顯示無法執行，自動選擇上線後改為自動退回。macOS 產物以 `signingIdentity: "-"` 完整 ad-hoc 簽章，應能從隱私權設定強制打開；下載後實際確認前，README 仍保留 `xattr` 移除隔離的做法。
 
 ### 14.2 安全與行程
 

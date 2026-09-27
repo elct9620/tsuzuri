@@ -1,7 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tsuzuri",
-  "version": "0.1.0",
+  "productName": "Tsuzuri",
   "identifier": "me.aotoki.tsuzuri",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -39,6 +38,26 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "publisher": "Aotokitsuruya",
+    "copyright": "Copyright © 2026 Aotokitsuruya",
+    "category": "Video",
+    "macOS": {
+      "signingIdentity": "-"
+    },
+    "linux": {
+      "deb": {
+        "depends": [
+          "libgomp1",
+          "libvulkan1"
+        ]
+      },
+      "rpm": {
+        "depends": [
+          "libgomp.so.1()(64bit)",
+          "libvulkan.so.1()(64bit)"
+        ]
+      }
+    }
   }
 }

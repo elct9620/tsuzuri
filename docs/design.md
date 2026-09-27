@@ -1011,7 +1011,7 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
            └▶ rust × 3 平台（fmt、clippy、test）
                    │ 全部通過，且是 push main 或手動觸發
                    ▼
-              build × 3 平台
+              build × 3 平台（共用的 build.yml）
                    │ 每個元件的內建變體（build-component action）
                    │   cache 命中就還原，否則以 vendor.sh 編譯
                    │   確認能回應版本參數
@@ -1023,23 +1023,27 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 
 ### 13.2 產物與授權頁
 
-| 平台 | 產物 |
-|---|---|
-| Windows | `tsuzuri.exe`、NSIS 安裝檔、MSI |
-| macOS | dmg、`.app` |
-| Linux | deb、rpm |
+| 平台 | 打包產物 | 附到 Release |
+|---|---|---|
+| Windows | exe、NSIS、MSI | NSIS、MSI |
+| macOS | dmg、`.app` | dmg |
+| Linux | deb、rpm | deb、rpm |
 
 授權頁依該平台的內建變體寫成，隨介面打包，不另附檔案（4.4）。Linux 只出 deb、rpm，GTK 等函式庫取自系統，不必再附它們的授權；元件需要的 libgomp、libvulkan 也寫進套件相依。
 
 ### 13.3 釋出流程
 
 ```
-  合併到 main ─▶ release-please 更新版本 PR
-  合併版本 PR ─▶ 建立 tag 與 GitHub Release
-              ─▶ CI 打包並附上產物、ffmpeg 原始程式碼、更新資訊
+  push main ─▶ release-please
+                 ├ 一般 commit ─▶ 更新版本 PR
+                 └ 合併版本 PR ─▶ 建立 tag 與 GitHub Release
+                        ▼
+                 授權清單 ─▶ build.yml（tag 的 commit）
+                        ▼
+                 附上安裝檔、ffmpeg 原始程式碼、SHA256SUMS
 ```
 
-版號與 changelog 由 release-please 管理。不做作業系統的程式碼簽章；macOS 與 Windows 的放行步驟寫在 `README.md` 與 `README.zh-TW.md`。
+版號與 changelog 由 release-please 管理。`GITHUB_TOKEN` 建立的 Release 不會觸發其他 workflow，所以打包在同一個 workflow 裡呼叫 CI 共用的 `build.yml`。Release 只附安裝檔，不附壓縮檔。不做程式碼簽章，放行步驟寫在 README。
 
 ### 13.4 自動更新
 

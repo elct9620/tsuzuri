@@ -1,10 +1,12 @@
+import type { ModelSlot } from "./toolchain";
+
 /** Why a command did not finish, as the backend sends it: a code and the data it names. */
 export type Failure =
   | { code: "io"; detail: string }
   | { code: "malformed-srt"; cue: number }
   | { code: "glossary-without-header" }
   | { code: "malformed-glossary"; detail: string }
-  | { code: "model-not-chosen"; slot: "transcription" | "translation" }
+  | { code: "model-not-chosen"; slot: ModelSlot }
   | { code: "model-missing"; path: string }
   | { code: "no-project" }
   | { code: "no-resource" }

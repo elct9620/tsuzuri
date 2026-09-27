@@ -29,4 +29,4 @@ The files stay as OpenCC ships them; Tsuzuri reads them differently from OpenCC'
 
 ## Updating
 
-Copy the three dictionaries and `LICENSE` from a newer release tag, then update the release and hashes above and the notice in `about.hbs`.
+Copy the three dictionaries and `LICENSE` from a newer release tag, then update the release and hashes above; `scripts/licenses.ts` reads the release from the table for the License Notice.

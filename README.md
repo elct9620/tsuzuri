@@ -6,7 +6,7 @@ Transcribe video and audio into subtitles, translate them, and proofread the res
 
 ## Installation
 
-Download the build for your platform. Until the first release is published, builds are available as artifacts of the latest successful [CI run](https://github.com/elct9620/tsuzuri/actions/workflows/ci.yml) on `main`.
+Download the installer for your platform from [Releases](https://github.com/elct9620/tsuzuri/releases). Each release lists every file's checksum in `SHA256SUMS`; in the download folder, `shasum -a 256 -c SHA256SUMS --ignore-missing` checks what you downloaded on macOS and Linux, and on Windows `Get-FileHash <file>` in PowerShell prints the checksum to compare with the file's line.
 
 | Platform | Download | Bundled whisper.cpp and llama.cpp |
 |---|---|---|
@@ -18,10 +18,10 @@ The installer includes ffmpeg as well. Without a Vulkan-capable GPU driver, or t
 
 ### macOS
 
-macOS reports the app as damaged because it is not notarized. After moving it to Applications, remove the quarantine flag once in Terminal:
+macOS blocks the first launch because the app is not notarized. After moving it to Applications, remove the quarantine flag once in Terminal:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/tsuzuri.app
+xattr -dr com.apple.quarantine /Applications/Tsuzuri.app
 ```
 
 ### Windows
@@ -33,11 +33,22 @@ xattr -dr com.apple.quarantine /Applications/tsuzuri.app
 
 ### Linux
 
-The bundled engines need `libgomp1` and `libvulkan1` from the system:
+The packages declare the libraries the bundled engines need, such as libgomp and libvulkan, so install them with the package manager to bring those along:
 
 ```bash
-sudo apt install libgomp1 libvulkan1
+sudo apt install ./tsuzuri_<version>_amd64.deb      # Debian, Ubuntu
+sudo dnf install ./tsuzuri-<version>-1.x86_64.rpm   # Fedora
 ```
+
+## Reporting a Problem
+
+| Include | Where |
+|---|---|
+| The version | Settings → About → **Copy** |
+| The log file | Settings → **Open directory** |
+| More detail | Turn on **Debug log** in Settings, restart, and repeat what went wrong |
+
+The debug log adds how each engine was started and ended and what the translation model was asked and answered, which includes your subtitle text; it stays on your computer until you attach it.
 
 ## Models
 

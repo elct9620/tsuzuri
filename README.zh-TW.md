@@ -6,7 +6,7 @@
 
 ## 安裝
 
-下載對應平台的版本。在第一個正式版釋出前，請從 `main` 最近一次成功的 [CI 執行](https://github.com/elct9620/tsuzuri/actions/workflows/ci.yml)下載產物。
+從 [Releases](https://github.com/elct9620/tsuzuri/releases) 下載對應平台的安裝檔。每個版本都附上 `SHA256SUMS`，列出每個檔案的校驗碼；macOS 與 Linux 在下載的資料夾執行 `shasum -a 256 -c SHA256SUMS --ignore-missing` 即可確認；Windows 在 PowerShell 執行 `Get-FileHash <檔案>`，再與該檔案那一行比對。
 
 | 平台 | 下載 | 內建的 whisper.cpp、llama.cpp |
 |---|---|---|
@@ -18,10 +18,10 @@
 
 ### macOS
 
-App 沒有經過 Apple 公證，macOS 會顯示「已損毀」。把 App 移到「應用程式」後，在終端機執行一次，移除隔離標記：
+App 沒有經過 Apple 公證，macOS 會擋下第一次開啟。把 App 移到「應用程式」後，在終端機執行一次，移除隔離標記：
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/tsuzuri.app
+xattr -dr com.apple.quarantine /Applications/Tsuzuri.app
 ```
 
 ### Windows
@@ -33,11 +33,22 @@ xattr -dr com.apple.quarantine /Applications/tsuzuri.app
 
 ### Linux
 
-內建的引擎需要系統提供 `libgomp1` 與 `libvulkan1`：
+套件已宣告內建引擎需要的 libgomp、libvulkan 等函式庫，用套件管理員安裝就會一併裝好：
 
 ```bash
-sudo apt install libgomp1 libvulkan1
+sudo apt install ./tsuzuri_<version>_amd64.deb      # Debian、Ubuntu
+sudo dnf install ./tsuzuri-<version>-1.x86_64.rpm   # Fedora
 ```
+
+## 回報問題
+
+| 附上 | 位置 |
+|---|---|
+| 版本 | 設定 →「關於」→「複製」 |
+| 記錄檔 | 設定 →「開啟目錄」 |
+| 更多細節 | 在設定打開「除錯紀錄」，重新啟動後再重現一次 |
+
+除錯紀錄會另外寫入各引擎如何啟動與結束，以及翻譯模型收到的請求與回答，其中包含字幕文字；在你附上之前，它只留在你的電腦裡。
 
 ## 模型
 

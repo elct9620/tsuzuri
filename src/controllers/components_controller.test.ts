@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import ComponentsController from "./components_controller";
+import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 
 describe("ComponentsController", () => {
   let application: Application;
@@ -34,6 +35,7 @@ describe("ComponentsController", () => {
 
   beforeEach(() => {
     document.body.innerHTML = `
+      ${NOTIFICATION_STACK}
       <ul data-controller="components">
         <li>
           <span data-components-target="placeholder"></span>
@@ -231,5 +233,47 @@ describe("ComponentsController", () => {
       document.querySelector<HTMLElement>('[data-components-target="status"]')!
         .hidden,
     ]).toEqual([false, true]);
+  });
+
+  // @behavior CP-024
+  it("says the Components were not read", async () => {
+    await mountWith({
+      component_statuses: () => {
+        throw { code: "io", detail: "denied" };
+      },
+    });
+
+    expect(notifications()).toEqual(["讀不到設定"]);
+  });
+
+  // @behavior CP-025
+  it("says a Component was not chosen when recording it fails", async () => {
+    await mountWith({
+      component_statuses: () => [],
+      "plugin:dialog|open": () => "/usr/local/bin/llama-server",
+      choose_component: () => {
+        throw { code: "io", detail: "denied" };
+      },
+    });
+
+    document.querySelector<HTMLButtonElement>("button")!.click();
+    await settle();
+
+    expect(notifications()).toEqual(["設定沒有儲存"]);
+  });
+
+  // @behavior CP-026
+  it("says a Component was not restored when forgetting the choice fails", async () => {
+    await mountWith({
+      component_statuses: () => [],
+      forget_component: () => {
+        throw { code: "io", detail: "denied" };
+      },
+    });
+
+    restoreButton().click();
+    await settle();
+
+    expect(notifications()).toEqual(["設定沒有儲存"]);
   });
 });

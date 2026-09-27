@@ -25,6 +25,8 @@ describe("TranscriptController", () => {
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
   let editFailure: unknown;
+  /** The command that answers with a failure, if any. */
+  let failingCommand: string | null;
   let glossaryTable: GlossaryTable;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -85,6 +87,7 @@ describe("TranscriptController", () => {
     project = null;
     calls = [];
     editFailure = undefined;
+    failingCommand = null;
     glossaryTable = {
       languages: ["zh-TW", "en", "ja"],
       rows: [],
@@ -116,6 +119,8 @@ describe("TranscriptController", () => {
     mockIPC(
       (command, args) => {
         calls.push({ command, args });
+        if (command === failingCommand)
+          return Promise.reject({ code: "io", detail: "denied" });
         if (command === "current_project") return project;
         if (command === "export_path") return "/talks/lecture.en.srt";
         if (command === "translation_glossary_table") return glossaryTable;
@@ -268,6 +273,32 @@ describe("TranscriptController", () => {
     await settle();
 
     expect(sent("show_translation")).toEqual({ language: "ja" });
+  });
+
+  // @behavior PJ-149
+  it("says an export was not written when writing it fails", async () => {
+    await hold(translatedProject);
+    failingCommand = "save_srt";
+
+    document.querySelector<HTMLButtonElement>("#save-original")!.click();
+    await settle();
+
+    expect(notifications()).toEqual(["沒有匯出"]);
+  });
+
+  // @behavior TL-096
+  it("says a translation was not shown when showing it is refused", async () => {
+    await hold(translatedProject);
+    failingCommand = "show_translation";
+    const choice = document.querySelector<HTMLSelectElement>(
+      '[data-transcript-target="translationLanguage"]',
+    )!;
+
+    choice.value = "ja";
+    choice.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(notifications()).toEqual(["沒有顯示譯文"]);
   });
 
   // @behavior ED-005

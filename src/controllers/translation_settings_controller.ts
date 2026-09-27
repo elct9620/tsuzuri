@@ -4,6 +4,8 @@ import {
   translationSettings,
   type TranslationSettings,
 } from "../backend/translation";
+import { t } from "../i18n";
+import { notifyFailure } from "../ui/notification";
 
 export default class TranslationSettingsController extends Controller {
   static targets = [
@@ -21,7 +23,11 @@ export default class TranslationSettingsController extends Controller {
   declare readonly modelKeepSecondsTarget: HTMLInputElement;
 
   async connect(): Promise<void> {
-    this.show(await translationSettings());
+    try {
+      this.show(await translationSettings());
+    } catch (error) {
+      notifyFailure(t("settings.unreadable"), error);
+    }
   }
 
   async save(): Promise<void> {
@@ -32,7 +38,11 @@ export default class TranslationSettingsController extends Controller {
       has_resident_llama: this.residentLlamaTarget.checked,
       model_keep_seconds: Number(this.modelKeepSecondsTarget.value),
     };
-    this.show(await saveTranslationSettings(settings));
+    try {
+      this.show(await saveTranslationSettings(settings));
+    } catch (error) {
+      notifyFailure(t("settings.notSaved"), error);
+    }
   }
 
   private show(settings: TranslationSettings): void {

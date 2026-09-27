@@ -737,3 +737,27 @@ The lines before the chosen ones are what the user already put right, so when th
 | Given | a Current Resource showing its `en` translation |
 | When | the dialog to translate a Segment again opens |
 | Then | it names English as the Language, offers no Rolling Summary, and warns that the line may read as going on from the one before |
+
+## `TL-094` Saying the translation settings were not read
+
+| Step | Statement |
+| --- | --- |
+| Given | the Settings page opening |
+| When | reading the translation settings fails |
+| Then | a Notification says the settings were not read |
+
+## `TL-095` Saying the translation settings were not saved
+
+| Step | Statement |
+| --- | --- |
+| Given | the translation settings on the Settings page |
+| When | saving a change is refused |
+| Then | a Notification says the settings were not saved |
+
+## `TL-096` Saying a translation was not shown
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with an `en` translation |
+| When | showing it is refused |
+| Then | a Notification says the translation was not shown |

@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import ModelsController from "./models_controller";
+import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 
 describe("ModelsController", () => {
   let application: Application;
@@ -31,6 +32,7 @@ describe("ModelsController", () => {
 
   beforeEach(() => {
     document.body.innerHTML = `
+      ${NOTIFICATION_STACK}
       <dl data-controller="models">
         <dd data-models-target="status" data-slot="transcription"></dd>
         <dd data-models-target="status" data-slot="translation"></dd>
@@ -92,5 +94,38 @@ describe("ModelsController", () => {
       path: "/models/qwen3-4b.gguf",
     });
     expect(statusOf("translation")).toBe("/models/qwen3-4b.gguf");
+  });
+
+  // @behavior MD-011
+  it("says the Models were not read", async () => {
+    mockIPC(() => {
+      throw { code: "io", detail: "denied" };
+    });
+    application = Application.start();
+    application.register("models", ModelsController);
+    await settle();
+
+    expect(notifications()).toEqual(["讀不到設定"]);
+  });
+
+  // @behavior MD-012
+  it("says a Model was not chosen when recording it fails", async () => {
+    await mountWith(
+      {
+        transcription: { path: null, has_file: false },
+        translation: { path: null, has_file: false },
+      },
+      {
+        "plugin:dialog|open": () => "/models/qwen3-4b.gguf",
+        choose_model: () => {
+          throw { code: "io", detail: "denied" };
+        },
+      },
+    );
+
+    document.querySelector<HTMLButtonElement>("button")!.click();
+    await settle();
+
+    expect(notifications()).toEqual(["設定沒有儲存"]);
   });
 });

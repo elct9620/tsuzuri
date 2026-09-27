@@ -11,6 +11,7 @@ const en = {
     original: "Save original as",
     translation: "Save translation as",
     bilingual: "Bilingual SRT",
+    notExported: "Not exported",
   },
   start: {
     title: "Open a folder of videos or subtitles to begin",
@@ -67,6 +68,7 @@ const en = {
     cancelled: "Transcription cancelled",
   },
   translate: {
+    notShown: "Translation not shown",
     source: "From",
     speakerLabels: "Speaker labels",
     selfReview: "Self-review",
@@ -236,6 +238,8 @@ const en = {
     notRestored: "Not restored",
   },
   settings: {
+    unreadable: "Settings not read",
+    notSaved: "Settings not saved",
     project: "Project",
     logs: "Log",
     logDirectory: "Directory",

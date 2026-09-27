@@ -8,6 +8,7 @@ import {
 } from "../backend/toolchain";
 import { t } from "../i18n";
 import { MODEL_EXTENSIONS } from "../ui/models";
+import { notifyFailure } from "../ui/notification";
 
 export default class ModelsController extends Controller {
   static targets = ["status"];
@@ -15,7 +16,11 @@ export default class ModelsController extends Controller {
   declare readonly statusTargets: HTMLElement[];
 
   async connect(): Promise<void> {
-    this.show(await modelSettings());
+    try {
+      this.show(await modelSettings());
+    } catch (error) {
+      notifyFailure(t("settings.unreadable"), error);
+    }
   }
 
   async choose(event: Event): Promise<void> {
@@ -27,7 +32,11 @@ export default class ModelsController extends Controller {
     });
     if (path === null) return;
 
-    this.show(await chooseModel(slot, path));
+    try {
+      this.show(await chooseModel(slot, path));
+    } catch (error) {
+      notifyFailure(t("settings.notSaved"), error);
+    }
   }
 
   private show(settings: ModelSettingsView): void {

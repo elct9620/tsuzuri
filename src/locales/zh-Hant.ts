@@ -12,6 +12,7 @@ const zhHant: typeof en = {
     original: "另存原文",
     translation: "另存譯文",
     bilingual: "雙語 SRT",
+    notExported: "沒有匯出",
   },
   start: {
     title: "開啟放著影片或字幕的目錄開始工作",
@@ -65,6 +66,7 @@ const zhHant: typeof en = {
     cancelled: "已取消轉錄",
   },
   translate: {
+    notShown: "沒有顯示譯文",
     source: "來源",
     speakerLabels: "說話者標籤",
     selfReview: "自我檢查",
@@ -228,6 +230,8 @@ const zhHant: typeof en = {
     notRestored: "沒有還原",
   },
   settings: {
+    unreadable: "讀不到設定",
+    notSaved: "設定沒有儲存",
     project: "專案",
     logs: "日誌",
     logDirectory: "目錄",

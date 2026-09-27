@@ -26,6 +26,7 @@ import {
 } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
+import { notifyFailure } from "../ui/notification";
 import { iconElement } from "../ui/icons";
 import { rememberChoice, rememberedChoice } from "../ui/choices";
 import { shortcutById, shortcutText } from "../ui/shortcuts";
@@ -423,7 +424,11 @@ export default class TranscriptController extends Controller {
   }
 
   async showTranslation(): Promise<void> {
-    await showTranslation(this.translationLanguageTarget.value || null);
+    try {
+      await showTranslation(this.translationLanguageTarget.value || null);
+    } catch (error) {
+      notifyFailure(t("translate.notShown"), error);
+    }
   }
 
   async save({
@@ -434,12 +439,16 @@ export default class TranscriptController extends Controller {
     params: { content: SrtContent };
   }): Promise<void> {
     closeMenu(currentTarget);
-    const path = await save({
-      defaultPath: await exportPath(params.content),
-      filters: [{ name: "SRT", extensions: ["srt"] }],
-    });
-    if (path === null) return;
-    await saveSrt(path, params.content);
+    try {
+      const path = await save({
+        defaultPath: await exportPath(params.content),
+        filters: [{ name: "SRT", extensions: ["srt"] }],
+      });
+      if (path === null) return;
+      await saveSrt(path, params.content);
+    } catch (error) {
+      notifyFailure(t("toolbar.notExported"), error);
+    }
   }
 
   private show(project: ProjectView | null): void {

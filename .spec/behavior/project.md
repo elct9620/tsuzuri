@@ -1211,3 +1211,11 @@ A name changed in the Translation Glossary since a translation was written leave
 | Given | a Project with a transcription Project Model that sets VAD on for itself |
 | When | its directory is opened again |
 | Then | it has that Project Model and VAD on, and follows the general settings in the rest |
+
+## `PJ-149` Saying an export was not written
+
+| Step | Statement |
+| --- | --- |
+| Given | a path chosen to export the Current Resource to |
+| When | writing the SRT fails |
+| Then | a Notification says it was not exported |

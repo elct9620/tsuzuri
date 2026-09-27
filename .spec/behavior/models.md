@@ -90,3 +90,19 @@ A Project whose Resources need another Model keeps its own, so switching Project
 | Given | the settings of a Project with a Project Model for the transcription slot |
 | When | following the general settings is chosen for that slot |
 | Then | the Project Options are set without a transcription Project Model |
+
+## `MD-011` Saying the Models were not read
+
+| Step | Statement |
+| --- | --- |
+| Given | the Settings page opening |
+| When | reading the Model Slots fails |
+| Then | a Notification says the settings were not read |
+
+## `MD-012` Saying a Model was not chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | a Model file picked for a Model Slot |
+| When | recording the choice fails |
+| Then | a Notification says the settings were not saved |

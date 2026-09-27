@@ -4,6 +4,8 @@ import {
   transcriptionSettings,
   type TranscriptionSettings,
 } from "../backend/transcription";
+import { t } from "../i18n";
+import { notifyFailure } from "../ui/notification";
 
 /** The general Transcription Settings, the default of every Project. */
 export default class TranscriptionSettingsController extends Controller {
@@ -14,7 +16,11 @@ export default class TranscriptionSettingsController extends Controller {
   declare readonly contextCarriedTarget: HTMLInputElement;
 
   async connect(): Promise<void> {
-    this.show(await transcriptionSettings());
+    try {
+      this.show(await transcriptionSettings());
+    } catch (error) {
+      notifyFailure(t("settings.unreadable"), error);
+    }
   }
 
   async save(): Promise<void> {
@@ -23,7 +29,11 @@ export default class TranscriptionSettingsController extends Controller {
       is_non_speech_suppressed: this.nonSpeechSuppressedTarget.checked,
       is_context_carried: this.contextCarriedTarget.checked,
     };
-    this.show(await saveTranscriptionSettings(settings));
+    try {
+      this.show(await saveTranscriptionSettings(settings));
+    } catch (error) {
+      notifyFailure(t("settings.notSaved"), error);
+    }
   }
 
   private show(settings: TranscriptionSettings): void {

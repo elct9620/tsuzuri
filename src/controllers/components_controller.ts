@@ -8,6 +8,7 @@ import {
   type Origin,
 } from "../backend/toolchain";
 import { t } from "../i18n";
+import { notifyFailure } from "../ui/notification";
 
 const ORIGIN_LABELS: Record<Origin, string> = {
   choice: "components.choice",
@@ -45,7 +46,11 @@ export default class ComponentsController extends Controller {
   declare readonly placeholderTargets: HTMLElement[];
 
   async connect(): Promise<void> {
-    this.show(await componentStatuses());
+    try {
+      this.show(await componentStatuses());
+    } catch (error) {
+      notifyFailure(t("settings.unreadable"), error);
+    }
   }
 
   async choose(event: Event): Promise<void> {
@@ -53,14 +58,22 @@ export default class ComponentsController extends Controller {
     const path = await open({ multiple: false, directory: false });
     if (!name || path === null) return;
 
-    this.show(await chooseComponent(name, path));
+    try {
+      this.show(await chooseComponent(name, path));
+    } catch (error) {
+      notifyFailure(t("settings.notSaved"), error);
+    }
   }
 
   async restore(event: Event): Promise<void> {
     const name = (event.currentTarget as HTMLElement).dataset.component;
     if (!name) return;
 
-    this.show(await forgetComponent(name));
+    try {
+      this.show(await forgetComponent(name));
+    } catch (error) {
+      notifyFailure(t("settings.notSaved"), error);
+    }
   }
 
   private show(statuses: ComponentStatus[]): void {

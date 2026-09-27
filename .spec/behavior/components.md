@@ -139,3 +139,27 @@ Finding a Component runs it, which takes a moment on first use.
 | Given | a Component found by Detection |
 | When | its status is found |
 | Then | the log holds a line naming the Component, where it was found and the seconds it took |
+
+## `CP-024` Saying the Components were not read
+
+| Step | Statement |
+| --- | --- |
+| Given | the Settings page opening |
+| When | finding the Components fails |
+| Then | a Notification says the settings were not read |
+
+## `CP-025` Saying a Component was not chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | an executable picked for a Component |
+| When | recording the choice fails |
+| Then | a Notification says the settings were not saved |
+
+## `CP-026` Saying a Component was not restored
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component run from an executable the user chose |
+| When | forgetting the choice fails |
+| Then | a Notification says the settings were not saved |

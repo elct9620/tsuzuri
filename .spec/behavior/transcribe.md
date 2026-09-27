@@ -428,3 +428,19 @@ A transcription from a Segment writes only part of the subtitle, so what follows
 | Given | a Current Resource with a media file showing no translation |
 | When | the dialog to transcribe again from a Segment opens |
 | Then | translating afterwards is not offered |
+
+## `TX-053` Saying the transcription settings were not read
+
+| Step | Statement |
+| --- | --- |
+| Given | the Settings page opening |
+| When | reading the transcription settings fails |
+| Then | a Notification says the settings were not read |
+
+## `TX-054` Saying the transcription settings were not saved
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcription settings on the Settings page |
+| When | saving a change is refused |
+| Then | a Notification says the settings were not saved |

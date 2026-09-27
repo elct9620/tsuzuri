@@ -23,6 +23,20 @@ export interface Replacement {
   is_regex: boolean;
 }
 
+/**
+ * Where a Simplified Cleanup cleans the `zh-TW` text: the Segments at `indexes`, or characters
+ * `start` to `end` of one field of the Segment at `index`, counted in characters.
+ */
+export type CleanupScope =
+  | { kind: "segments"; indexes: number[] }
+  | {
+      kind: "range";
+      index: number;
+      field: "text" | "translation";
+      start: number;
+      end: number;
+    };
+
 /** A change to the Segments themselves rather than to a text. */
 export type SegmentChange =
   | { kind: "times"; index: number; start_ms: number; end_ms: number }

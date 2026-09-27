@@ -20,6 +20,7 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "mode-running": "warning",
   "mode-cancelled": "warning",
   "no-translation-shown": "warning",
+  "no-traditional-chinese": "warning",
   "invalid-times": "warning",
   "unordered-times": "warning",
   "invalid-pattern": "warning",
@@ -78,6 +79,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.cancelled");
     case "no-translation-shown":
       return t("failures.noTranslationShown");
+    case "no-traditional-chinese":
+      return t("failures.noTraditionalChinese");
     case "invalid-times":
       return t("failures.invalidTimes");
     case "unordered-times":

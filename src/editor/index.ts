@@ -27,6 +27,7 @@ export { hasHighlights, markRanges, textRange } from "./highlight";
 export { CURSOR_HIGHLIGHT, drawCursor } from "./marks";
 export { isHeld, isRun, type FieldKind } from "./rules";
 export type {
+  CleanupScope,
   Replacement,
   RunningMode,
   Segment,
@@ -37,6 +38,7 @@ export type {
 export {
   EditingSession,
   type EditingPort,
+  type CleanupOutcome,
   type Outcome,
   type ReplacementOutcome,
   type ChoiceSource,

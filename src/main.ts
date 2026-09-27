@@ -2,6 +2,7 @@ import { Application } from "@hotwired/stimulus";
 
 import { assemble } from "./assembly";
 import { locale } from "./backend/system";
+import CleanupController from "./controllers/cleanup_controller";
 import ComparisonController from "./controllers/comparison_controller";
 import ComponentsController from "./controllers/components_controller";
 import DialogController from "./controllers/dialog_controller";
@@ -60,6 +61,7 @@ async function start(): Promise<void> {
     progress: ProgressController,
     project: ProjectController,
     replacement: ReplacementController,
+    cleanup: CleanupController,
     "segment-changes": SegmentChangesController,
     shortcuts: ShortcutsController,
     speakers: SpeakersController,

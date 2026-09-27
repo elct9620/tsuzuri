@@ -173,13 +173,7 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
     button.dataset.index = String(index);
     button.dataset.action = `segment-changes#${action}`;
     button.textContent = t(label);
-    const shortcut = shortcutById(shortcutId ?? "");
-    if (shortcut) {
-      const keys = document.createElement("kbd");
-      keys.className = "kbd kbd-xs ms-auto";
-      keys.textContent = shortcutText(shortcut, isMacOS());
-      button.append(keys);
-    }
+    button.append(...shortcutKeys(shortcutId));
     const choice = document.createElement("li");
     choice.append(button);
     menu.append(choice);
@@ -205,8 +199,33 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
     choice.append(button);
     menu.append(choice);
   }
+  menu.append(cleanupChoice(index));
   dropdown.append(opener, menu);
   return dropdown;
+}
+
+/** The keys of the shortcut `id` as a menu item lists them on its right, or none without one. */
+function shortcutKeys(id: string | undefined): HTMLElement[] {
+  const shortcut = shortcutById(id ?? "");
+  if (!shortcut) return [];
+  const keys = document.createElement("kbd");
+  keys.className = "kbd kbd-xs ms-auto";
+  keys.textContent = shortcutText(shortcut, isMacOS());
+  return [keys];
+}
+
+/** The Segment menu's cleanup, which the cleanup controller shows only while a text in `zh-TW` is. */
+function cleanupChoice(index: number): HTMLLIElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "cleanup";
+  button.dataset.action = "cleanup#cleanSegment";
+  button.dataset.cleanupIndexParam = String(index);
+  button.textContent = t("cleanup.action");
+  button.append(...shortcutKeys("cleanup"));
+  const choice = document.createElement("li");
+  choice.append(button);
+  return choice;
 }
 
 /** One row: its check, its times and Speaker, the text, and the translation when one is shown, even before it is made. */

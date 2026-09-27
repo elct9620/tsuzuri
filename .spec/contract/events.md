@@ -24,7 +24,7 @@ A subtitle of the Current Resource was changed elsewhere and read again as the P
 
 ## `edit-command`
 
-Undo, Redo or Select All chosen from the Edit menu, as `"undo"`, `"redo"` or `"select-all"`: the menu takes their shortcuts before the webview sees them, so the webview applies the command to the text field holding focus, or else to the Project, where Select All checks every Segment.
+Undo, Redo, Select All or Clean Simplified Chinese chosen from the Edit menu, as `"undo"`, `"redo"`, `"select-all"` or `"clean-simplified"`: the menu takes their shortcuts before the webview sees them, so the webview applies Undo, Redo and Select All to the text field holding focus, or else to the Project, where Select All checks every Segment, and cleans what the user marked as the cleanup shortcut does.
 
 ## `video-window-closing`
 

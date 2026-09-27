@@ -23,7 +23,7 @@ export default class UndoController extends Controller {
 
   /** Undo or Redo chosen from the Edit menu; bound to `rust:edit-command`. */
   applyEditCommand({ detail: command }: CustomEvent<EditCommand>): void {
-    if (command === "select-all") return;
+    if (command !== "undo" && command !== "redo") return;
     if (isTextField(document.activeElement)) {
       document.execCommand(command);
     } else {
@@ -42,7 +42,7 @@ export default class UndoController extends Controller {
   }
 
   private async applyToProject(
-    command: Exclude<EditCommand, "select-all">,
+    command: "undo" | "redo",
   ): Promise<void> {
     const outcome = await (command === "undo"
       ? this.session.undo()

@@ -151,6 +151,12 @@ const en = {
     nothing: "Nothing matched",
     failed: "Nothing replaced",
   },
+  cleanup: {
+    action: "Clean Simplified Chinese",
+    done: "{{count}} Simplified characters cleaned",
+    nothing: "No Simplified Chinese to clean",
+    failed: "Nothing cleaned",
+  },
   preview: {
     captionLanguage: "Language over the video",
     captionOriginal: "Original",
@@ -378,6 +384,7 @@ const en = {
       "A task running on this Resource is writing this subtitle; try again once it ends",
     cancelled: "The task was cancelled",
     noTranslationShown: "Show a translation to translate into first",
+    noTraditionalChinese: "There is no Traditional Chinese text here to clean",
     changedElsewhere:
       "The subtitle was changed in another program and has been read again; this edit was not written",
     subtitleExists:
@@ -413,6 +420,7 @@ const en = {
       checkAll: "Check every Segment",
       delete: "Delete Segments",
       replace: "Replace",
+      cleanup: "Clean Simplified Chinese",
       reload: "Reload",
       following: "Follow playback",
       play: "Play or stop",
@@ -441,6 +449,8 @@ const en = {
       delete:
         "Deletes the Checked Segments, else the Current Segment; not in a text field, a menu, a list or a dialog",
       replace: "Text selected in a field is what is looked for",
+      cleanup:
+        "Cleans the Checked Segments, else the text selected, else the Current Segment",
       reload: "Reads the folder again for files changed elsewhere",
       following:
         "Scrolls the list to the Segment being played; works in a text field too",

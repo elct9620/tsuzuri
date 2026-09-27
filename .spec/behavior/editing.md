@@ -13,6 +13,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/time_field_controller.test.ts`
 - `src/controllers/timeline_controller.test.ts`
 - `src/controllers/replacement_controller.test.ts`
+- `src/controllers/cleanup_controller.test.ts`
 - `src/editor/*.test.ts`
 - `src-tauri/src/replacement.rs`
 - `src-tauri/src/project/current.rs`
@@ -1121,3 +1122,81 @@ What a Simplified Cleanup cleans is the `zh-TW` text: the original when the Prim
 | Given | two Segments of a Project in `zh-TW` cleaned of Simplified Chinese together |
 | When | the change is undone |
 | Then | both read as they did before the cleanup |
+
+## `ED-128` Cleaning the Checked Segments by shortcut
+
+The shortcut cleans what the user has marked first: the Checked Segments, then a range the Cursor selects, then the Current Segment.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` with its first and third Segments checked |
+| When | Ctrl+Shift+T, or ⌘⇧T on macOS, is pressed |
+| Then | the Project is asked to clean the first and third Segments, and a Notification says how many characters were cleaned |
+
+## `ED-129` Cleaning the range the Cursor selects by shortcut
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text `这是测试` entered, typed to `这是测试啊` with `测试` selected, and no Segment checked |
+| When | the cleanup shortcut is pressed |
+| Then | the typed text is written and the field left, and the Project is asked to clean characters 2 to 4 of that text |
+
+## `ED-130` Cleaning the Current Segment by shortcut
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment current, with no range selected and no Segment checked |
+| When | the cleanup shortcut is pressed |
+| Then | the Project is asked to clean the second Segment |
+
+## `ED-131` Cleaning a Segment from its menu
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` in the panel |
+| When | Clean Simplified Chinese is chosen from the second Segment's menu |
+| Then | the Project is asked to clean the second Segment |
+
+## `ED-132` Cleaning the Checked Segments from their bar
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` with its first two Segments checked |
+| When | Clean Simplified Chinese is chosen from the bar for Checked Segments |
+| Then | the Project is asked to clean the first two Segments |
+
+## `ED-133` Not offering a cleanup without a text in `zh-TW`
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `en` showing no translation, its first Segment checked |
+| When | the editor shows it |
+| Then | neither the Segment menu nor the bar for Checked Segments offers a cleanup |
+
+## `ED-134` Telling that nothing needed cleaning
+
+| Step | Statement |
+| --- | --- |
+| Given | the Current Segment of a Project in `zh-TW` |
+| When | it is cleaned and the Project answers that no character was cleaned |
+| Then | a Notification says there was no Simplified Chinese to clean |
+
+## `ED-135` Cleaning what is marked from the Edit menu
+
+On macOS the Edit menu takes the cleanup shortcut before the page sees it, so choosing it there cleans as the shortcut does.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` with its second Segment checked |
+| When | Clean Simplified Chinese is chosen from the Edit menu |
+| Then | the Project is asked to clean the second Segment |
+
+## `ED-136` Not cleaning by shortcut in a dialog
+
+A dialog holding focus is doing something else, as with deleting by key.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Checked Segment and a dialog's box holding focus |
+| When | the cleanup shortcut is pressed |
+| Then | nothing is cleaned and the box keeps focus |

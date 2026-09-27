@@ -36,6 +36,7 @@ export const editingPort: EditingPort = {
     invoke("change_segments", { change }),
   replaceText: (field, replacement) =>
     invoke<number>("replace_text", { field, replacement }),
+  cleanSimplified: (scope) => invoke<number>("clean_simplified", { scope }),
   undo: () => invoke("undo"),
   redo: () => invoke("redo"),
 };

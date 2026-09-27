@@ -14,6 +14,7 @@ import {
 } from "./cursor";
 import { segmentCountAfter, splitPoint } from "./rules";
 import type {
+  CleanupScope,
   Replacement,
   Segment,
   SegmentChange,
@@ -29,6 +30,8 @@ export interface EditingPort {
   changeSegments(change: SegmentChange): Promise<void>;
   /** Replaces every match in `field` of each Segment as one change, answering how many there were. */
   replaceText(field: CursorField, replacement: Replacement): Promise<number>;
+  /** Cleans Simplified Chinese out of the `zh-TW` text within `scope`, answering how many characters changed. */
+  cleanSimplified(scope: CleanupScope): Promise<number>;
   undo(): Promise<void>;
   redo(): Promise<void>;
 }
@@ -44,6 +47,12 @@ export type Outcome =
 /** How a replacement ended: how many matches were replaced, none when nothing matched. */
 export type ReplacementOutcome =
   { kind: "replaced"; count: number } | { kind: "failed"; error: unknown };
+
+/** How a Simplified Cleanup ended: how many characters changed, or refused with no Segment to clean. */
+export type CleanupOutcome =
+  | { kind: "cleaned"; count: number }
+  | { kind: "refused" }
+  | { kind: "failed"; error: unknown };
 
 /**
  * What a listener is told has changed; a `choice` is the user making another Segment current, as a
@@ -75,6 +84,10 @@ export class EditingSession {
   /** The text the live caret's field held when entered, so leaving it unchanged writes nothing and Esc puts it back. */
   private entryText = "";
   private source: ChoiceSource = "row";
+  /** The write of the field last left, which a cleanup waits for before reading the Cursor it left. */
+  private leavingWrite: Promise<Outcome> = Promise.resolve({
+    kind: "unchanged",
+  });
   private readonly listeners = new Set<(change: SessionChange) => void>();
   private readonly unannouncedChanges = new Set<SessionChange>();
 
@@ -186,7 +199,8 @@ export class EditingSession {
   ): Promise<Outcome> {
     if (!this.hasLiveCaret(index, field)) return { kind: "unchanged" };
     this.act({ kind: "exit", range, text });
-    return this.writeText(index, field, text);
+    this.leavingWrite = this.writeText(index, field, text);
+    return this.leavingWrite;
   }
 
   /**
@@ -248,6 +262,44 @@ export class EditingSession {
       return {
         kind: "replaced",
         count: await this.port.replaceText(field, replacement),
+      };
+    } catch (error) {
+      return { kind: "failed", error };
+    }
+  }
+
+  /**
+   * Cleans Simplified Chinese out of what the user marked: the Checked Segments, else the range the
+   * Cursor selects, else the Current Segment. A field just left is written first, so the range is
+   * counted in the text the Project holds.
+   */
+  async cleanSimplified(): Promise<CleanupOutcome> {
+    await this.leavingWrite;
+    const checkedIndexes = this.checkedIndexes;
+    if (checkedIndexes.length > 0) return this.cleanSegments(checkedIndexes);
+    const { index, caret } = this.state;
+    if (index === null) return { kind: "refused" };
+    if (caret && caret.start !== caret.end)
+      return this.clean({
+        kind: "range",
+        index,
+        field: caret.field,
+        start: Math.min(caret.start, caret.end),
+        end: Math.max(caret.start, caret.end),
+      });
+    return this.cleanSegments([index]);
+  }
+
+  /** Cleans Simplified Chinese out of the Segments at `indexes`. */
+  cleanSegments(indexes: number[]): Promise<CleanupOutcome> {
+    return this.clean({ kind: "segments", indexes });
+  }
+
+  private async clean(scope: CleanupScope): Promise<CleanupOutcome> {
+    try {
+      return {
+        kind: "cleaned",
+        count: await this.port.cleanSimplified(scope),
       };
     } catch (error) {
       return { kind: "failed", error };

@@ -103,7 +103,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | backend 模組 | Rust 模組 | 指令 |
 |---|---|---|
 | `project.ts` | `project/commands.rs` | 專案、版本、詞彙表 |
-| `editing.ts` | `project/commands.rs` | 編輯、取代、段落改動、復原 |
+| `editing.ts` | `project/commands.rs` | 編輯、取代、清理、段落改動、復原 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
@@ -183,7 +183,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 ```
    ┌──────── 字幕（共用核心）────────┐
    │ transcript、segment_change、    │
-   │ replacement、language           │
+   │ replacement、cleanup、language  │
    └───▲──────────▲───────────▲──────┘
        │          │           │
   ┌────┴───┐ ┌────┴─────┐ ┌───┴──────────┐
@@ -295,7 +295,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 
 ```
  使用者（指令）              任務（ModeRun）              外部程式
-  編輯、說話者、取代           轉錄 ─▶ 原文                  任何字幕
+  編輯、說話者、取代、清理     轉錄 ─▶ 原文                  任何字幕
   段落變更、復原、重做         翻譯 ─▶ 那份譯文                 │
   還原、逐句取回               重譯 ─▶ 勾選段的譯文             │
        │ 每次一個指令              │ 進度只進 mode_hold           │
@@ -307,7 +307,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 
 | 寫入者 | 時機 | 寫入 |
 |---|---|---|
-| 編輯、說話者、取代 | 使用者改動 | 那份字幕 |
+| 編輯、說話者、取代、清理 | 使用者改動 | 那份字幕 |
 | 段落變更 | 使用者改動 | 原文與每份譯文 |
 | 復原、重做 | 使用者改動 | 資源的所有字幕 |
 | 還原、逐句取回 | 使用者改動 | 那份字幕 |
@@ -531,6 +531,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `project`、`transcript`、`segment-changes`、`dialog` | 資源清單、字幕編輯、設定 |
 | `speakers` | 說話者選單與設定 modal |
 | `replacement` | 搜尋取代 modal |
+| `cleanup` | 清理簡體的選單、工具列與快速鍵 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 任務 modal，含重做 |
 | `preview` | 播放器、疊字、收起、影片視窗 |

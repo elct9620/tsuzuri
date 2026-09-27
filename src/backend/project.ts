@@ -94,6 +94,13 @@ export type RunningMode =
   | { mode: "translation"; language: string; indexes: number[] | null };
 
 /** The Current Resource as the Resource list shows it, or none. */
+/** Whether the Current Resource shows a text in `zh-TW` to clean: the original of a `zh-TW` Project, or the translation shown. */
+export function hasTraditionalChinese(project: ProjectView | null): boolean {
+  return (
+    project?.language === "zh-TW" || project?.shown_translation === "zh-TW"
+  );
+}
+
 export function currentResource(
   project: ProjectView | null,
 ): ResourceView | undefined {
@@ -168,8 +175,8 @@ export class ProjectFeed {
   }
 }
 
-/** Undo, Redo or Select All chosen from the Edit menu. */
-export type EditCommand = "undo" | "redo" | "select-all";
+/** Undo, Redo, Select All or Clean Simplified Chinese chosen from the Edit menu. */
+export type EditCommand = "undo" | "redo" | "select-all" | "clean-simplified";
 
 /** Asks every view to read the Project again, as when Rust announces nothing after a refusal. */
 export function refreshProject(): Promise<void> {

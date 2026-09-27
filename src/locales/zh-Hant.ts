@@ -148,6 +148,12 @@ const zhHant: typeof en = {
     nothing: "沒有符合的文字",
     failed: "沒有取代",
   },
+  cleanup: {
+    action: "清理簡體",
+    done: "已清理 {{count}} 個簡體字",
+    nothing: "沒有需要清理的簡體字",
+    failed: "沒有清理",
+  },
   preview: {
     captionLanguage: "疊字語言",
     captionOriginal: "原文",
@@ -365,6 +371,7 @@ const zhHant: typeof en = {
     modeRunning: "這個資源的任務正在寫入這份字幕，請等任務結束再改",
     cancelled: "任務已取消",
     noTranslationShown: "請先顯示要譯成的譯文",
+    noTraditionalChinese: "這裡沒有繁體中文的文字可以清理",
     changedElsewhere: "字幕已在其他程式修改過，已重新讀取，這次的修改沒有寫入",
     subtitleExists: "{{path}} 已存在，確認覆蓋後才能轉錄",
     componentNotReady: "{{component}} 尚未就緒，請到設定確認",
@@ -398,6 +405,7 @@ const zhHant: typeof en = {
       checkAll: "全部勾選",
       delete: "刪除段落",
       replace: "取代",
+      cleanup: "清理簡體",
       reload: "重新載入",
       following: "追蹤播放",
       play: "播放或停止",
@@ -426,6 +434,8 @@ const zhHant: typeof en = {
       delete:
         "有勾選刪除勾選的段落，否則刪除目前段落；在欄位、選單、清單或對話方塊中不作用",
       replace: "欄位中選取的文字會帶入「尋找」",
+      cleanup:
+        "有勾選清理勾選的段落，框選文字時只清理框選的部分，否則清理目前段落",
       reload: "重新讀取目錄，帶入別處改動的檔案",
       following: "清單捲到正在播放的段落；在欄位中也可以切換",
       play: "從目前位置播放；開啟單句播放時只播目前段落",

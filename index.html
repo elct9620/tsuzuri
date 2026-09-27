@@ -15,9 +15,9 @@
   >
     <main
       class="flex h-dvh flex-col"
-      data-controller="project transcript segment-changes dialog comparison speakers replacement"
+      data-controller="project transcript segment-changes dialog comparison speakers replacement cleanup"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->segment-changes#followTasks versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
+      data-action="progress:task->transcript#followTask selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->segment-changes#followTasks versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
     >
       <section class="hero flex-1" data-project-target="startScreen">
         <div class="hero-content flex-col text-center">
@@ -1047,6 +1047,14 @@
                 data-segment-changes-target="retranscribeButton"
                 data-action="segment-changes#retranscribe"
                 data-i18n="edit.retranscribe"
+              ></button>
+              <button
+                type="button"
+                class="btn btn-xs"
+                data-cleanup-target="checkedButton"
+                data-action="cleanup#cleanChecked"
+                data-i18n="cleanup.action"
+                data-shortcut="cleanup"
               ></button>
               <button
                 type="button"

@@ -468,6 +468,89 @@ impl Project {
         Ok(())
     }
 
+    /// Writes `value` into `field` of the Segment at `index` of the Current Resource, read again
+    /// first, and writes it back.
+    fn edit_segment(
+        &mut self,
+        index: usize,
+        field: SegmentField,
+        value: &str,
+    ) -> Result<(), Failure> {
+        self.read_current_transcript()?;
+        let previous = self.current()?.transcript.clone();
+        let segment = self
+            .current_mut()?
+            .transcript
+            .segments
+            .get_mut(index)
+            .ok_or_else(|| Failure::Internal {
+                detail: format!("no Segment at {index}"),
+            })?;
+        match field {
+            SegmentField::Text => segment.text = text_from(value),
+            SegmentField::Translation => segment.translation = Some(text_from(value)),
+            SegmentField::Speaker => segment.speaker = speaker_from(value),
+        }
+        self.write_back(field, &previous)
+    }
+
+    /// Gives each Segment at `indexes` of the Current Resource, read again first, the Speaker
+    /// `speaker`, or none when it is empty, and writes them back.
+    fn set_speakers(&mut self, indexes: &[usize], speaker: &str) -> Result<(), Failure> {
+        self.read_current_transcript()?;
+        let previous = self.current()?.transcript.clone();
+        let segments = &mut self.current_mut()?.transcript.segments;
+        if let Some(index) = indexes.iter().find(|index| **index >= segments.len()) {
+            return Err(Failure::Internal {
+                detail: format!("no Segment at {index}"),
+            });
+        }
+        for index in indexes {
+            segments[*index].speaker = speaker_from(speaker);
+        }
+        self.write_back(SegmentField::Speaker, &previous)
+    }
+
+    /// Replaces what `replacer` matches in `field` of each Segment of the Current Resource, read
+    /// again first, as one change written back, and answers how many matches there were; with
+    /// none nothing is written.
+    fn replace_text(&mut self, field: SegmentField, replacer: &Replacer) -> Result<usize, Failure> {
+        self.read_current_transcript()?;
+        let current = self.current()?;
+        if field == SegmentField::Translation && current.translation.is_none() {
+            return Err(Failure::NoTranslationShown);
+        }
+        let replaced_texts: Vec<(usize, String, usize)> = current
+            .transcript
+            .segments
+            .iter()
+            .enumerate()
+            .filter_map(|(index, segment)| {
+                let text = match field {
+                    SegmentField::Translation => segment.translation.as_deref()?,
+                    _ => &segment.text,
+                };
+                let (text, count) = replacer.replace_matches(text)?;
+                Some((index, text, count))
+            })
+            .collect();
+        if replaced_texts.is_empty() {
+            return Ok(0);
+        }
+        self.make_undoable_change(|project| {
+            let previous = project.current()?.transcript.clone();
+            let segments = &mut project.current_mut()?.transcript.segments;
+            for (index, text, _) in &replaced_texts {
+                match field {
+                    SegmentField::Translation => segments[*index].translation = Some(text.clone()),
+                    _ => segments[*index].text = text.clone(),
+                }
+            }
+            project.write_back(field, &previous)
+        })?;
+        Ok(replaced_texts.iter().map(|(_, _, count)| count).sum())
+    }
+
     /// Makes `change` to the Current Resource's original and to each of its translations, since a
     /// translation is matched to its original by time, and writes them all back.
     fn change_segments(&mut self, change: SegmentChange) -> Result<(), Failure> {
@@ -718,6 +801,12 @@ fn version_at(path: &Path, language: Option<Language>) -> Result<Transcript, Fai
 /// the Language the Mode writes and the Segments it holds, if only some: a text never, a Speaker
 /// always, and a translation when it is the one written, of a held Segment at `index`, or of any
 /// held Segment when `index` is none.
+/// Whether a running Mode writes what a change changes, which it does for every change that
+/// reaches the whole Current Resource.
+fn is_always_written(_: Option<Language>, _: Language, _: Option<&[usize]>) -> bool {
+    true
+}
+
 fn is_written_by_edit(
     field: SegmentField,
     index: Option<usize>,
@@ -1093,6 +1182,20 @@ impl CurrentProject {
         change(project)
     }
 
+    /// Makes `change` to the Project as one change that can be undone, unless a running Mode
+    /// writes what it changes, as `change_unless_held` says, or a subtitle was changed elsewhere
+    /// since Tsuzuri last read or wrote it.
+    fn change_undoably<T>(
+        &self,
+        is_written: impl Fn(Option<Language>, Language, Option<&[usize]>) -> bool,
+        change: impl FnOnce(&mut Project) -> Result<T, Failure>,
+    ) -> Result<T, Failure> {
+        self.change_unless_held(is_written, |project| {
+            project.refuse_changed_elsewhere()?;
+            project.make_undoable_change(change)
+        })
+    }
+
     pub fn select(&self, name: &str) -> Result<(), Failure> {
         self.update_project(|project| project.select(name))
     }
@@ -1110,7 +1213,9 @@ impl CurrentProject {
     /// Shows the Current Resource's translation into `language`, or none; refused while a Mode
     /// runs on it, since what it shows is then the Mode's.
     pub fn show_translation(&self, language: Option<Language>) -> Result<(), Failure> {
-        self.change_unless_held(|_, _, _| true, |project| project.show_translation(language))
+        self.change_unless_held(is_always_written, |project| {
+            project.show_translation(language)
+        })
     }
 
     pub fn view(&self) -> Option<ProjectView> {
@@ -1518,52 +1623,17 @@ impl CurrentProject {
                 held_indexes,
             )
         };
-        self.change_unless_held(is_written, |project| {
-            project.refuse_changed_elsewhere()?;
-            project.make_undoable_change(|project| {
-                project.read_current_transcript()?;
-                let previous = project.current()?.transcript.clone();
-                let segment = project
-                    .current_mut()?
-                    .transcript
-                    .segments
-                    .get_mut(index)
-                    .ok_or_else(|| Failure::Internal {
-                        detail: format!("no Segment at {index}"),
-                    })?;
-                match field {
-                    SegmentField::Text => segment.text = text_from(&value),
-                    SegmentField::Translation => segment.translation = Some(text_from(&value)),
-                    SegmentField::Speaker => segment.speaker = speaker_from(&value),
-                }
-                project.write_back(field, &previous)
-            })
+        self.change_undoably(is_written, |project| {
+            project.edit_segment(index, field, &value)
         })
     }
 
     /// Gives each Segment at `indexes` the Speaker `speaker`, or none when it is empty, as one
     /// change, written back as an edited Speaker is.
     pub fn set_speakers(&self, indexes: &[usize], speaker: &str) -> Result<(), Failure> {
-        self.change_unless_held(
-            |_, _, _| true,
-            |project| {
-                project.refuse_changed_elsewhere()?;
-                project.make_undoable_change(|project| {
-                    project.read_current_transcript()?;
-                    let previous = project.current()?.transcript.clone();
-                    let segments = &mut project.current_mut()?.transcript.segments;
-                    if let Some(index) = indexes.iter().find(|index| **index >= segments.len()) {
-                        return Err(Failure::Internal {
-                            detail: format!("no Segment at {index}"),
-                        });
-                    }
-                    for index in indexes {
-                        segments[*index].speaker = speaker_from(speaker);
-                    }
-                    project.write_back(SegmentField::Speaker, &previous)
-                })
-            },
-        )
+        self.change_undoably(is_always_written, |project| {
+            project.set_speakers(indexes, speaker)
+        })
     }
 
     /// Replaces every match of `replacement` in the `field` of each Segment of the Current
@@ -1587,42 +1657,7 @@ impl CurrentProject {
         };
         self.change_unless_held(is_written, |project| {
             project.refuse_changed_elsewhere()?;
-            project.read_current_transcript()?;
-            let current = project.current()?;
-            if field == SegmentField::Translation && current.translation.is_none() {
-                return Err(Failure::NoTranslationShown);
-            }
-            let replaced_texts: Vec<(usize, String, usize)> = current
-                .transcript
-                .segments
-                .iter()
-                .enumerate()
-                .filter_map(|(index, segment)| {
-                    let text = match field {
-                        SegmentField::Translation => segment.translation.as_deref()?,
-                        _ => &segment.text,
-                    };
-                    let (text, count) = replacer.replace_matches(text)?;
-                    Some((index, text, count))
-                })
-                .collect();
-            if replaced_texts.is_empty() {
-                return Ok(0);
-            }
-            project.make_undoable_change(|project| {
-                let previous = project.current()?.transcript.clone();
-                let segments = &mut project.current_mut()?.transcript.segments;
-                for (index, text, _) in &replaced_texts {
-                    match field {
-                        SegmentField::Translation => {
-                            segments[*index].translation = Some(text.clone())
-                        }
-                        _ => segments[*index].text = text.clone(),
-                    }
-                }
-                project.write_back(field, &previous)
-            })?;
-            Ok(replaced_texts.iter().map(|(_, _, count)| count).sum())
+            project.replace_text(field, &replacer)
         })
     }
 
@@ -1643,12 +1678,9 @@ impl CurrentProject {
         language: Option<Language>,
         backup: &str,
     ) -> Result<Restoration, Failure> {
-        self.change_unless_held(
+        self.change_undoably(
             |_, mode_language, _| Some(mode_language) == language,
-            |project| {
-                project.refuse_changed_elsewhere()?;
-                project.make_undoable_change(|project| project.restore_version(language, backup))
-            },
+            |project| project.restore_version(language, backup),
         )
     }
 
@@ -1671,63 +1703,36 @@ impl CurrentProject {
         row: usize,
         part: RevertPart,
     ) -> Result<Restoration, Failure> {
-        self.change_unless_held(
+        self.change_undoably(
             |_, mode_language, _| Some(mode_language) == language,
-            |project| {
-                project.refuse_changed_elsewhere()?;
-                project
-                    .make_undoable_change(|project| project.revert_row(language, backup, row, part))
-            },
+            |project| project.revert_row(language, backup, row, part),
         )
     }
 
     pub fn undo(&self) -> Result<(), Failure> {
-        self.change_unless_held(
-            |_, _, _| true,
-            |project| {
-                project.refuse_changed_elsewhere()?;
-                project.undo()
-            },
-        )
+        self.change_unless_held(is_always_written, |project| {
+            project.refuse_changed_elsewhere()?;
+            project.undo()
+        })
     }
 
     pub fn redo(&self) -> Result<(), Failure> {
-        self.change_unless_held(
-            |_, _, _| true,
-            |project| {
-                project.refuse_changed_elsewhere()?;
-                project.redo()
-            },
-        )
+        self.change_unless_held(is_always_written, |project| {
+            project.refuse_changed_elsewhere()?;
+            project.redo()
+        })
     }
 
     pub fn change_segments(&self, change: SegmentChange) -> Result<(), Failure> {
-        self.change_unless_held(
-            |_, _, _| true,
-            |project| {
-                project.refuse_changed_elsewhere()?;
-                project.make_undoable_change(|project| project.change_segments(change))
-            },
-        )
+        self.change_undoably(is_always_written, |project| project.change_segments(change))
     }
 
     pub fn export_path(&self, content: SrtContent) -> Result<PathBuf, Failure> {
-        let held_project = self.lock();
-        held_project
-            .project
-            .as_ref()
-            .ok_or(Failure::NoProject)?
-            .export_path(content)
+        self.read_project(|project| project.export_path(content))
     }
 
     pub fn to_srt(&self, content: SrtContent) -> Result<String, Failure> {
-        let held_project = self.lock();
-        held_project
-            .project
-            .as_ref()
-            .ok_or(Failure::NoProject)?
-            .to_srt(content)
-            .map_err(Failure::from)
+        self.read_project(|project| Ok(project.to_srt(content)?))
     }
 
     /// Writes the Current Resource to `path` as SRT carrying `content`.

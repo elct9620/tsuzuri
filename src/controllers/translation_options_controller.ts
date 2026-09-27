@@ -26,7 +26,6 @@ export default class TranslationOptionsController extends Controller {
   static targets = [
     "language",
     "glossary",
-    "speakerLabels",
     "selfReview",
     "summary",
     "summaryWords",
@@ -38,7 +37,6 @@ export default class TranslationOptionsController extends Controller {
   declare readonly languageTarget: HTMLSelectElement;
   /** Names the Project's `glossary.csv` and how many terms it holds. */
   declare readonly glossaryTarget: HTMLElement;
-  declare readonly speakerLabelsTarget: HTMLInputElement;
   declare readonly selfReviewTarget: HTMLInputElement;
   declare readonly summaryTarget: HTMLInputElement;
   declare readonly summaryWordsTarget: HTMLInputElement;
@@ -120,7 +118,6 @@ export default class TranslationOptionsController extends Controller {
 
   get options(): TranslationOptions {
     return {
-      has_speaker_labels: this.speakerLabelsTarget.checked,
       has_self_review: this.selfReviewTarget.checked,
       summary_word_limit: this.summaryTarget.checked
         ? Number(this.summaryWordsTarget.value)

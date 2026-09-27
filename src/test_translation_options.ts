@@ -7,7 +7,6 @@ export const translationOptionsTemplate = `
       <option value="zh-TW">繁體中文</option>
     </select>
     <span data-translation-options-target="glossary"></span>
-    <input type="checkbox" data-translation-options-target="speakerLabels">
     <input type="checkbox" data-translation-options-target="selfReview">
     <label data-translation-options-target="summaryChoice">
       <input type="checkbox" data-translation-options-target="summary">

@@ -68,7 +68,6 @@ const zhHant: typeof en = {
   translate: {
     notShown: "沒有顯示譯文",
     source: "來源",
-    speakerLabels: "說話者標籤",
     selfReview: "自我檢查",
     rollingSummary: "滾動摘要",
     words: "字",

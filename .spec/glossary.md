@@ -172,7 +172,7 @@ Consecutive Segments the Model reports as one sentence cut apart by transcriptio
 
 ### Speaker Label
 
-The `name:` or `name：` before a line of dialogue, everything up to the line's first colon not followed by a digit, as a clock time's is, unless it is digits only, such as `co:`; a name of any length reads back as it was written. The label of a cue with one becomes its Segment's Speaker; the labels of a cue whose lines name several stay in its text, and when the user turns them on, translation sends only the dialogue and puts each label back in front of its line.
+The `name:` or `name：` before a line of dialogue, everything up to the line's first colon not followed by a digit, as a clock time's is, unless it is digits only, such as `co:`; a name of any length reads back as it was written. The label of a cue with one becomes its Segment's Speaker; the labels of a cue whose lines name several stay in its text, and a translation asked to keep them sends only the dialogue and puts each label back in front of its line; the translate dialog does not ask yet, as Speakers are not detected.
 
 ### Translation Glossary
 

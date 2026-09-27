@@ -70,7 +70,6 @@ const en = {
   translate: {
     notShown: "Translation not shown",
     source: "From",
-    speakerLabels: "Speaker labels",
     selfReview: "Self-review",
     rollingSummary: "Rolling summary",
     words: "words",

@@ -245,7 +245,6 @@ describe("TranslateController", () => {
   // @behavior TL-056
   it("translates with the options the dialog offers", async () => {
     await hold(projectOf());
-    check("speakerLabels");
     check("selfReview");
     check("summary");
     option<HTMLInputElement>("summaryWords").value = "80";
@@ -254,11 +253,27 @@ describe("TranslateController", () => {
 
     expect(translateArgs).toMatchObject({
       options: {
-        has_speaker_labels: true,
         has_self_review: true,
         summary_word_limit: 80,
       },
     });
+  });
+
+  // @behavior TL-102
+  it("offers no Speaker Labels and translates without them", async () => {
+    await hold(projectOf());
+    await openDialog();
+    const speakerLabelsChoice = document.querySelector(
+      '[data-translation-options-target="speakerLabels"]',
+    );
+
+    document.querySelector<HTMLButtonElement>("#start")!.click();
+    await settle();
+
+    expect([
+      speakerLabelsChoice,
+      "has_speaker_labels" in (translateArgs as { options: object }).options,
+    ]).toEqual([null, false]);
   });
 
   // @behavior TL-100
@@ -401,7 +416,6 @@ describe("TranslateController", () => {
         {
           indexes: [1],
           options: {
-            has_speaker_labels: false,
             is_simplified_cleaned: false,
             has_self_review: false,
             summary_word_limit: null,

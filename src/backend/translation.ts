@@ -4,7 +4,6 @@ import type { PhaseTiming } from "./progress";
 
 /** The choices a translation is started with, named as Rust names them. */
 export interface TranslationOptions {
-  has_speaker_labels: boolean;
   has_self_review: boolean;
   summary_word_limit: number | null;
   /** Whether a Simplified Cleanup follows a translation into `zh-TW`. */

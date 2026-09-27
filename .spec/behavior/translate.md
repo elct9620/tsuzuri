@@ -432,7 +432,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 
 | Step | Statement |
 | --- | --- |
-| Given | the translate dialog with Speaker Labels, Self-Review and a Rolling Summary of 80 words turned on |
+| Given | the translate dialog with Self-Review and a Rolling Summary of 80 words turned on |
 | When | translating is started |
 | Then | the Project is translated with those options |
 
@@ -785,6 +785,16 @@ The lines before the chosen ones are what the user already put right, so when th
 | Given | a translation into `zh-TW` asked not to clean, and a Model answering `你们好` |
 | When | the Current Resource is translated |
 | Then | the translation file reads `你们好` |
+
+## `TL-102` Not offering Speaker Labels before Speakers are detected
+
+Keeping Speaker Labels reads as if Tsuzuri told Speakers apart, which it does not yet, so the dialog leaves the choice out and a translation keeps none.
+
+| Step | Statement |
+| --- | --- |
+| Given | the translate dialog |
+| When | translating is started |
+| Then | the dialog offers no Speaker Labels, and the Project is translated without them |
 
 ## `TL-100` Offering the cleanup when translating into `zh-TW`
 

@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import WaveSurfer from "wavesurfer.js";
 import { assemble } from "../assembly";
 import type { EditingSession } from "../editor";
 import type { SegmentChange } from "../backend/editing";
@@ -28,6 +29,8 @@ describe("TimelineController", () => {
   /** How `extract_waveform` answers; the Waveform at once unless a test holds it back. */
   let takeWaveform: () => Waveform | Promise<Waveform>;
   let changes: SegmentChange[];
+  /** Tells the page the system turned light or dark, as a colour scheme media query does. */
+  let turnColorScheme: () => void;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   /**
@@ -73,6 +76,18 @@ describe("TimelineController", () => {
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
       DOMRect.fromRect({ x: 0, y: 0, width: 200, height: 100 }),
     );
+    const schemeListeners: (() => void)[] = [];
+    vi.spyOn(window, "matchMedia").mockImplementation(
+      (query) =>
+        ({
+          media: query,
+          matches: false,
+          addEventListener: (_: string, listener: () => void) =>
+            schemeListeners.push(listener),
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList,
+    );
+    turnColorScheme = () => schemeListeners.forEach((listener) => listener());
     project = null;
     changes = [];
     takeWaveform = () => waveform;
@@ -128,6 +143,23 @@ describe("TimelineController", () => {
     await show(projectWithMedia());
 
     expect(wrapper().style.width).toBe("200px");
+  });
+
+  // @behavior PV-152
+  it("draws the Waveform in the colours of the theme turned to", async () => {
+    const timeline = document.querySelector<HTMLElement>(
+      '[data-controller="timeline"]',
+    )!;
+    timeline.style.setProperty("--color-base-content", "#111111");
+    await show(projectWithMedia());
+    const paint = vi.spyOn(WaveSurfer.prototype, "setOptions");
+
+    timeline.style.setProperty("--color-base-content", "#eeeeee");
+    turnColorScheme();
+
+    expect(paint).toHaveBeenCalledWith(
+      expect.objectContaining({ waveColor: "#eeeeee" }),
+    );
   });
 
   // @behavior PV-018

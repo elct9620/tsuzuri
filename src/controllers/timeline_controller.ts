@@ -221,6 +221,10 @@ export default class TimelineController extends Controller {
   private lastTime: number | null = null;
   /** The player, kept from `connect`, as the Video Window takes it out of the controller's element. */
   private player!: HTMLMediaElement;
+  /** The system's choice of a dark theme, which the page's colours follow. */
+  private readonly darkScheme = matchMedia("(prefers-color-scheme: dark)");
+  private readonly repaintWaveform = () =>
+    this.surfer?.setOptions(this.waveformColors());
 
   connect(): void {
     this.player = this.mediaTarget;
@@ -231,9 +235,11 @@ export default class TimelineController extends Controller {
     this.showSnapping();
     this.showPlayingAlone();
     this.unfollow = this.feed.follow((project) => this.show(project));
+    this.darkScheme.addEventListener("change", this.repaintWaveform);
   }
 
   disconnect(): void {
+    this.darkScheme.removeEventListener("change", this.repaintWaveform);
     this.unfollow?.();
     this.waveformRequest = undefined;
     this.surfer?.destroy();
@@ -477,16 +483,16 @@ export default class TimelineController extends Controller {
       normalize: true,
       hideScrollbar: true,
       minPxPerSec: this.pxPerSec,
-      waveColor: this.themeColor("--color-base-content", "#888"),
-      progressColor: this.themeColor("--color-primary", "#555"),
-      cursorColor: this.themeColor("--color-primary", "#555"),
+      ...this.waveformColors(),
+      // The cursor and the hover are elements, which follow the theme's variables themselves
+      cursorColor: "var(--color-primary)",
       plugins: [
         regions,
         TimelinePlugin.create({ height: TIMELINE_HEIGHT }),
         HoverPlugin.create({
-          lineColor: this.themeColor("--color-neutral", "#333"),
-          labelBackground: this.themeColor("--color-neutral", "#333"),
-          labelColor: this.themeColor("--color-neutral-content", "#fff"),
+          lineColor: "var(--color-base-content)",
+          labelBackground: "var(--color-neutral)",
+          labelColor: "var(--color-neutral-content)",
           formatTimeCallback: formatSeconds,
         }),
       ],
@@ -895,6 +901,14 @@ export default class TimelineController extends Controller {
     );
     this.surfer?.zoom(this.pxPerSec);
     this.showZoomLevel();
+  }
+
+  /** The colours the Waveform is painted in, from the theme shown now. */
+  private waveformColors() {
+    return {
+      waveColor: this.themeColor("--color-base-content", "#888"),
+      progressColor: this.themeColor("--color-primary", "#555"),
+    };
   }
 
   /** A theme colour resolved to a value the canvas can paint, since a canvas cannot read CSS variables. */

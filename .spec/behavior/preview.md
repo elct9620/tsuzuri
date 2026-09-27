@@ -299,6 +299,16 @@ Once the video has left, the Current Segment's card repeats the row being edited
 | When | a Waveform taken from `ep01.mp4` arrives |
 | Then | the timeline does not draw it |
 
+## `PV-152` Drawing the Waveform in the colours of the theme turned to
+
+A canvas paints colours once and cannot follow the theme by itself, so the Waveform is painted again when the system turns light or dark, as the rest of the page follows it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Waveform drawn in the light theme's colours |
+| When | the system turns dark |
+| Then | the Waveform is drawn in the dark theme's colours |
+
 ## `PV-019` Marking each Segment on the timeline
 
 | Step | Statement |

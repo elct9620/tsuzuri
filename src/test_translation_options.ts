@@ -8,8 +8,10 @@ export const translationOptionsTemplate = `
     <span data-translation-options-target="glossary"></span>
     <input type="checkbox" data-translation-options-target="speakerLabels">
     <input type="checkbox" data-translation-options-target="selfReview">
-    <input type="checkbox" data-translation-options-target="summary">
-    <input type="number" value="100" data-translation-options-target="summaryWords">
+    <label data-translation-options-target="summaryChoice">
+      <input type="checkbox" data-translation-options-target="summary">
+      <input type="number" value="100" data-translation-options-target="summaryWords">
+    </label>
   </template>
 `;
 

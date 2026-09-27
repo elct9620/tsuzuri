@@ -17,7 +17,9 @@ import {
   notificationItems,
   notifications,
 } from "../ui/test_notification";
+import SegmentChangesController from "./segment_changes_controller";
 import TranscribeController from "./transcribe_controller";
+import TranscriptController from "./transcript_controller";
 import TranslationOptionsController from "./translation_options_controller";
 
 describe("TranscribeController", () => {
@@ -83,10 +85,14 @@ describe("TranscribeController", () => {
         data-transcribe-translation-options-outlet="#transcribe-options">
         <button data-transcribe-target="openButton" data-action="transcribe#open" disabled>轉錄</button>
         <dialog data-transcribe-target="dialog">
+          <h3 data-transcribe-target="title"></h3>
+          <p data-transcribe-target="scopeField" hidden><span data-transcribe-target="scope"></span></p>
           <span data-transcribe-target="language"></span>
           <span data-transcribe-target="model"></span>
-          <input type="checkbox" data-transcribe-target="translationToggle"
-            data-action="transcribe#showTranslationOptions">
+          <label data-transcribe-target="translationChoice">
+            <input type="checkbox" data-transcribe-target="translationToggle"
+              data-action="transcribe#showTranslationOptions">
+          </label>
           <fieldset id="transcribe-options" data-controller="translation-options" hidden></fieldset>
           <div data-transcribe-target="overwriteWarning" hidden>
             <span data-transcribe-target="overwriteMessage"></span>
@@ -428,5 +434,186 @@ describe("TranscribeController", () => {
       false,
       { overwrite: true, scope: { kind: "whole" } },
     ]);
+  });
+
+  describe("transcribing again from the editor", () => {
+    let retranslateArgs: unknown;
+
+    const rows = () => [
+      ...document.querySelectorAll<HTMLLIElement>("#list > li"),
+    ];
+
+    /** Three Segments of a Resource with a media file, showing the `en` translation when `isTranslationShown`. */
+    function projectWithMedia(isTranslationShown = false): ProjectView {
+      return projectOf({
+        resources: [
+          resourceOf({
+            has_media: true,
+            translation_languages: isTranslationShown ? ["en"] : [],
+          }),
+        ],
+        shown_translation: isTranslationShown ? "en" : null,
+        segments: ["大家好", "資料不上傳", "謝謝"].map((text, at) => ({
+          start_ms: at * 5000,
+          end_ms: at * 5000 + 4000,
+          text,
+          ...(isTranslationShown ? { translation: text } : {}),
+        })),
+      });
+    }
+
+    function checkRows(...indexes: number[]): void {
+      for (const index of indexes) {
+        const checkbox =
+          rows()[index].querySelector<HTMLInputElement>("input.check")!;
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+
+    async function startFromDialog(): Promise<void> {
+      target("startButton").click();
+      await settle();
+    }
+
+    beforeEach(async () => {
+      application.stop();
+      retranslateArgs = undefined;
+      document.body.insertAdjacentHTML(
+        "afterbegin",
+        `<section data-controller="transcript segment-changes"
+          data-action="transcript:shown->segment-changes#followTasks editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
+          <h2 data-transcript-target="heading"></h2>
+          <select data-transcript-target="translationLanguage"></select>
+          <p data-transcript-target="emptyHint"></p>
+          <div data-segment-changes-target="checkedBar" hidden>
+            <span data-segment-changes-target="checkedCount"></span>
+            <button data-segment-changes-target="mergeButton"></button>
+            <button data-segment-changes-target="retranslateButton"></button>
+            <button id="retranscribe-checked" data-segment-changes-target="retranscribeButton"
+              data-action="segment-changes#retranscribe">重新轉錄</button>
+          </div>
+          <ol id="list" data-transcript-target="list"></ol>
+        </section>`,
+      );
+      document
+        .querySelector('[data-controller="transcribe"]')!
+        .setAttribute(
+          "data-action",
+          "translation-options:overwrite->transcribe#followTranslation segment-changes:retranscribe@window->transcribe#openForScope",
+        );
+      mockIPC(
+        (command, args) => {
+          if (command === "current_project") return project;
+          if (command === "model_settings")
+            return { transcription: { path: "/models/breeze.bin" } };
+          if (command === "transcribe") {
+            transcribeArgs = args;
+            return transcription();
+          }
+          if (command === "retranslate") {
+            retranslateArgs = args;
+            return translation();
+          }
+        },
+        { shouldMockEvents: true },
+      );
+      application = Application.start();
+      await assemble(application, {
+        progress: ProgressController,
+        transcript: TranscriptController,
+        "segment-changes": SegmentChangesController,
+        transcribe: TranscribeController,
+        "translation-options": TranslationOptionsController,
+      }).start();
+      await settle();
+    });
+
+    // @behavior TX-048
+    it("transcribes again from a Segment's menu", async () => {
+      await hold(projectWithMedia());
+
+      rows()[1]
+        .querySelector<HTMLButtonElement>("button.retranscribe")!
+        .click();
+      await settle();
+      await startFromDialog();
+
+      expect([
+        target("scope").textContent,
+        target("overwriteWarning").hidden,
+        transcribeArgs,
+      ]).toEqual([
+        "從 00:00:05.000 以下",
+        false,
+        { overwrite: true, scope: { kind: "rest", first: 1 } },
+      ]);
+    });
+
+    // @behavior TX-049
+    it("transcribes the Checked Segments again", async () => {
+      await hold(projectWithMedia());
+      checkRows(0, 2);
+
+      document
+        .querySelector<HTMLButtonElement>("#retranscribe-checked")!
+        .click();
+      await settle();
+      await startFromDialog();
+
+      expect(transcribeArgs).toEqual({
+        overwrite: true,
+        scope: { kind: "span", first: 0, last: 2 },
+      });
+    });
+
+    // @behavior TX-050
+    it("translates afterwards only what a transcription from a Segment wrote", async () => {
+      await hold(projectWithMedia(true));
+      transcription = async () => ({
+        audio_seconds: 10,
+        transcribe_seconds: 2,
+        phases: [],
+        written_span: { first: 1, last: 2 },
+      });
+      rows()[1]
+        .querySelector<HTMLButtonElement>("button.retranscribe")!
+        .click();
+      await settle();
+      target<HTMLInputElement>("translationToggle").click();
+
+      await startFromDialog();
+      await settle();
+
+      expect(retranslateArgs).toMatchObject({ indexes: [1, 2] });
+    });
+
+    // @behavior TX-051
+    it("offers no transcribing again without a media file", async () => {
+      await hold({
+        ...projectWithMedia(),
+        resources: [resourceOf({ has_media: false })],
+      });
+      checkRows(0);
+      await settle();
+
+      expect([
+        rows()[0].querySelector("button.retranscribe")!.closest("li")!.hidden,
+        document.querySelector<HTMLButtonElement>("#retranscribe-checked")!
+          .hidden,
+      ]).toEqual([true, true]);
+    });
+
+    // @behavior TX-052
+    it("offers translating afterwards only into the translation shown", async () => {
+      await hold(projectWithMedia());
+
+      rows()[1]
+        .querySelector<HTMLButtonElement>("button.retranscribe")!
+        .click();
+      await settle();
+
+      expect(target("translationChoice").hidden).toBe(true);
+    });
   });
 });

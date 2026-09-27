@@ -522,9 +522,8 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `project`、`transcript`、`segment-changes`、`dialog` | 資源清單、字幕編輯、設定 |
 | `speakers` | 說話者選單與設定 modal |
 | `replacement` | 搜尋取代 modal |
-| `retranslation` | 重新翻譯一段或 Checked Segments |
 | `comparison` | 對照備份、參照譯文、單句還原 |
-| `transcribe`、`translate`、`translation-options` | 轉錄與翻譯的任務 modal |
+| `transcribe`、`translate`、`translation-options` | 任務 modal，含重做 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
@@ -543,7 +542,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 |---|---|---|
 | `progress:task` | `progress` | 字幕編輯顯示 skeleton |
 | `project:select` | `project` | 字幕編輯顯示 skeleton |
-| `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
+| `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱；`segment-changes` 顯示入口 |
 | `versions` outlet | `comparison` | 開啟版本 dialog |
 | `versions:compare-with` | `versions` | `comparison` 換對照 |
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
@@ -555,7 +554,8 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
-| `segment-changes:retranslate` | `segment-changes` | `retranslation` 重新翻譯 Checked Segments |
+| `segment-changes:retranslate` | `segment-changes` | `translate` 開啟重新翻譯 |
+| `segment-changes:retranscribe` | `segment-changes` | `transcribe` 開啟重新轉錄 |
 
 ### 4.7 backend
 

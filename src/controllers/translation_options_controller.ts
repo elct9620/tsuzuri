@@ -26,6 +26,7 @@ export default class TranslationOptionsController extends Controller {
     "selfReview",
     "summary",
     "summaryWords",
+    "summaryChoice",
   ];
 
   declare readonly languageTarget: HTMLSelectElement;
@@ -35,6 +36,8 @@ export default class TranslationOptionsController extends Controller {
   declare readonly selfReviewTarget: HTMLInputElement;
   declare readonly summaryTarget: HTMLInputElement;
   declare readonly summaryWordsTarget: HTMLInputElement;
+  /** The Rolling Summary's row, left out where only some Segments are translated. */
+  declare readonly summaryChoiceTarget: HTMLElement;
 
   /** The Languages the Current Resource is already translated into. */
   private translatedLanguages: string[] = [];
@@ -48,13 +51,20 @@ export default class TranslationOptionsController extends Controller {
     translatePage(this.element);
   }
 
-  /** Shows the Project's glossary and starts from the Language it was last translated into. */
-  show(project: ProjectView): void {
+  /**
+   * Shows the Project's glossary and starts from the Language it was last translated into, or
+   * keeps to `fixedLanguage` with no Rolling Summary when only some Segments are translated into
+   * the translation shown.
+   */
+  show(project: ProjectView, fixedLanguage: string | null = null): void {
     this.glossaryTarget.textContent = glossaryLabel(
       project.translation_glossary,
     );
-    if (project.translation_language !== null)
-      this.languageTarget.value = project.translation_language;
+    const language = fixedLanguage ?? project.translation_language;
+    if (language !== null) this.languageTarget.value = language;
+    this.languageTarget.disabled = fixedLanguage !== null;
+    this.summaryChoiceTarget.hidden = fixedLanguage !== null;
+    if (fixedLanguage !== null) this.summaryTarget.checked = false;
     this.translatedLanguages =
       currentResource(project)?.translation_languages ?? [];
     this.reportOverwrite();

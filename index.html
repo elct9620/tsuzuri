@@ -15,10 +15,9 @@
   >
     <main
       class="flex h-dvh flex-col"
-      data-controller="project transcript segment-changes dialog comparison speakers replacement retranslation"
-      data-retranslation-progress-outlet="#progress"
+      data-controller="project transcript segment-changes dialog comparison speakers replacement"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->retranslation#follow segment-changes:retranslate->retranslation#translateChecked versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
+      data-action="progress:task->transcript#followTask editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->segment-changes#followTasks versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
     >
       <section class="hero flex-1" data-project-target="startScreen">
         <div class="hero-content flex-col text-center">
@@ -89,7 +88,7 @@
               <div
                 class="contents"
                 data-controller="transcribe"
-                data-action="translation-options:overwrite->transcribe#followTranslation"
+                data-action="translation-options:overwrite->transcribe#followTranslation segment-changes:retranscribe@window->transcribe#openForScope"
                 data-transcribe-progress-outlet="#progress"
                 data-transcribe-translation-options-outlet="#transcribe-options"
               >
@@ -105,9 +104,18 @@
                   <div class="modal-box">
                     <h3
                       class="text-lg font-bold"
+                      data-transcribe-target="title"
                       data-i18n="toolbar.transcribe"
                     ></h3>
                     <fieldset class="fieldset gap-3 text-sm">
+                      <p
+                        class="flex items-center gap-2"
+                        data-transcribe-target="scopeField"
+                        hidden
+                      >
+                        <span data-i18n="work.scope"></span>
+                        <span data-transcribe-target="scope"></span>
+                      </p>
                       <p class="flex items-center gap-2">
                         <span data-i18n="transcribe.language"></span>
                         <span data-transcribe-target="language"></span>
@@ -119,7 +127,10 @@
                           data-transcribe-target="model"
                         ></span>
                       </p>
-                      <label class="flex items-center gap-2">
+                      <label
+                        class="flex items-center gap-2"
+                        data-transcribe-target="translationChoice"
+                      >
                         <input
                           type="checkbox"
                           class="checkbox checkbox-sm"
@@ -170,7 +181,7 @@
               <div
                 class="contents"
                 data-controller="translate"
-                data-action="translation-options:overwrite->translate#showOverwrite"
+                data-action="translation-options:overwrite->translate#showOverwrite segment-changes:retranslate@window->translate#openForSegments"
                 data-translate-progress-outlet="#progress"
                 data-translate-translation-options-outlet="#translate-options"
               >
@@ -186,9 +197,18 @@
                   <div class="modal-box">
                     <h3
                       class="text-lg font-bold"
+                      data-translate-target="title"
                       data-i18n="toolbar.translate"
                     ></h3>
                     <fieldset class="fieldset gap-3 text-sm">
+                      <p
+                        class="flex items-center gap-2"
+                        data-translate-target="scopeField"
+                        hidden
+                      >
+                        <span data-i18n="work.scope"></span>
+                        <span data-translate-target="scope"></span>
+                      </p>
                       <p class="flex flex-wrap items-center gap-2">
                         <span data-i18n="translate.source"></span>
                         <span data-translate-target="source"></span>
@@ -206,6 +226,14 @@
                       hidden
                     >
                       <span data-i18n="translate.overwrite"></span>
+                    </div>
+                    <div
+                      role="alert"
+                      class="alert alert-info mt-2"
+                      data-translate-target="continuationHint"
+                      hidden
+                    >
+                      <span data-i18n="translate.continuation"></span>
                     </div>
                     <div class="modal-action">
                       <form method="dialog">
@@ -996,9 +1024,16 @@
               <button
                 type="button"
                 class="btn btn-xs"
-                data-retranslation-target="checkedButton"
+                data-segment-changes-target="retranslateButton"
                 data-action="segment-changes#retranslate"
                 data-i18n="edit.retranslate"
+              ></button>
+              <button
+                type="button"
+                class="btn btn-xs"
+                data-segment-changes-target="retranscribeButton"
+                data-action="segment-changes#retranscribe"
+                data-i18n="edit.retranscribe"
               ></button>
               <button
                 type="button"
@@ -1891,7 +1926,10 @@
           <span data-i18n="translate.selfReview"></span>
         </label>
       </p>
-      <label class="flex items-center gap-2">
+      <label
+        class="flex items-center gap-2"
+        data-translation-options-target="summaryChoice"
+      >
         <input
           type="checkbox"
           class="checkbox checkbox-sm"

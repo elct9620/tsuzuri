@@ -386,3 +386,45 @@ Translating afterwards covers what the transcription wrote and nothing around it
 | Given | a Current Resource of three Segments |
 | When | it is transcribed from the fifth Segment onward |
 | Then | it is refused before any Step runs |
+
+## `TX-048` Transcribing again from a Segment's menu
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and three Segments |
+| When | transcribing again from the second Segment is chosen from its menu and started from the dialog |
+| Then | the Project is asked to transcribe from Segment 1 onward, over its subtitle |
+
+## `TX-049` Transcribing the Checked Segments again
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, its first and third Segments checked |
+| When | transcribing them again is chosen and started from the dialog |
+| Then | the Project is asked to transcribe the span from Segment 0 through 2 |
+
+## `TX-050` Translating afterwards only what a transcription from a Segment wrote
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing its `en` translation, transcribed again from a Segment with translating afterwards chosen |
+| When | the transcription answers it wrote Segments 1 through 2 |
+| Then | the Project is asked to translate Segments 1 and 2 again |
+
+## `TX-051` Offering to transcribe again only with a media file
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of an SRT file alone, its first Segment checked |
+| When | the editor shows it |
+| Then | neither the Segment menu nor the bar for Checked Segments offers transcribing again |
+
+## `TX-052` Offering to translate afterwards only into the translation shown
+
+A transcription from a Segment writes only part of the subtitle, so what follows it translates only that part, into the translation already there.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file showing no translation |
+| When | the dialog to transcribe again from a Segment opens |
+| Then | translating afterwards is not offered |

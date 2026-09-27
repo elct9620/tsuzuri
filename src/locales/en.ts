@@ -44,6 +44,7 @@ const en = {
     close: "Close",
     cancelTask: "Cancel task",
     preparing: "Preparing",
+    scope: "Range",
   },
   transcribe: {
     language: "Language",
@@ -54,6 +55,11 @@ const en = {
     start: "Transcribe",
     overwriteAndStart: "Overwrite and transcribe",
     translateAfter: "Translate once transcribed",
+    again: "Transcribe again",
+    scopeRest: "From {{time}} on",
+    scopeSpan: "{{start}} to {{end}}",
+    overwriteScope:
+      "The Segments in this range will be replaced; the subtitle is backed up first",
     done: "Transcribed",
     audio: "Audio length",
     factor: "Real-time factor (RTF)",
@@ -73,6 +79,11 @@ const en = {
     overwrite:
       "A translation into this language exists; starting overwrites it",
     overwriteAndStart: "Overwrite and translate",
+    again: "Translate again",
+    scopeSegment: "Segment {{number}}",
+    scopeChecked: "{{count}} checked Segments",
+    continuation:
+      "Segments before the range are not rewritten; when the one before already carries the whole sentence, a line translated again may read as going on from it",
     done: "Translated",
     failed: "Translation failed",
     cancelled: "Translation cancelled",
@@ -106,6 +117,8 @@ const en = {
     split: "Split at the Cursor",
     delete: "Delete",
     retranslate: "Translate again",
+    retranscribe: "Transcribe again",
+    retranscribeRest: "Transcribe again from here",
     splitWhere: "Put the Cursor where the text should split first",
     unreadableTime: "Write the time as 00:00:01.000",
     checkedCount: "{{count}} checked",

@@ -8,7 +8,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/project_controller.test.ts`
 - `src/controllers/segment_changes_controller.test.ts`
 - `src/controllers/speakers_controller.test.ts`
-- `src/controllers/retranslation_controller.test.ts`
+- `src/controllers/translate_controller.test.ts`
 - `src/controllers/field_controller.test.ts`
 - `src/controllers/time_field_controller.test.ts`
 - `src/controllers/timeline_controller.test.ts`
@@ -873,7 +873,7 @@ Setting Speakers one Segment at a time is slow across a long transcript, so the 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource showing its `en` translation |
-| When | translating the second Segment again is chosen from its menu |
+| When | translating the second Segment again is chosen from its menu and started from the dialog |
 | Then | the Project is asked to translate Segment 1 again, and the progress shows a translation running |
 
 ## `ED-040` Translating the Checked Segments again
@@ -881,7 +881,7 @@ Setting Speakers one Segment at a time is slow across a long transcript, so the 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource showing its `en` translation, its first and third Segments checked |
-| When | translating them again is chosen |
+| When | translating them again is chosen and started from the dialog |
 | Then | the Project is asked to translate Segments 0 and 2 again |
 
 ## `ED-079` Replacing a text across the Current Resource

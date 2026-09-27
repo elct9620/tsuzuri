@@ -727,3 +727,13 @@ What comes before the chosen Segments is what the user already put right, so the
 | Given | five Segments translated into `en` and a Rolling Summary asked for |
 | When | the last four are translated again in Batches of two |
 | Then | no summary request is sent |
+
+## `TL-093` Warning that a line translated again may read as going on from the one before
+
+The lines before the chosen ones are what the user already put right, so when their translation already carries a whole sentence, the dialog says so rather than rewriting them.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing its `en` translation |
+| When | the dialog to translate a Segment again opens |
+| Then | it names English as the Language, offers no Rolling Summary, and warns that the line may read as going on from the one before |

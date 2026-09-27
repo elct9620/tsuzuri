@@ -1,6 +1,12 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { refreshProject, type EditCommand } from "../backend/project";
+import {
+  currentResource,
+  refreshProject,
+  type EditCommand,
+  type ProjectView,
+} from "../backend/project";
+import type { TranscriptionScope } from "../backend/transcription";
 import { isMacOS } from "../backend/system";
 import {
   isHeld,
@@ -42,6 +48,8 @@ export default class SegmentChangesController extends Controller {
     "checkedBar",
     "checkedCount",
     "mergeButton",
+    "retranslateButton",
+    "retranscribeButton",
     "shiftDialog",
     "offset",
   ];
@@ -51,6 +59,10 @@ export default class SegmentChangesController extends Controller {
   declare readonly checkedBarTarget: HTMLElement;
   declare readonly checkedCountTarget: HTMLElement;
   declare readonly mergeButtonTarget: HTMLButtonElement;
+  /** Offered only while a translation is shown, the one it writes into. */
+  declare readonly retranslateButtonTarget: HTMLButtonElement;
+  /** Offered only for a Resource with a media file to transcribe. */
+  declare readonly retranscribeButtonTarget: HTMLButtonElement;
   declare readonly shiftDialogTarget: HTMLDialogElement;
   /** Milliseconds to shift by, negative for earlier. */
   declare readonly offsetTarget: HTMLInputElement;
@@ -181,9 +193,49 @@ export default class SegmentChangesController extends Controller {
     });
   }
 
-  /** Hands the Checked Segments to be translated again. */
+  /** Offers translating and transcribing the Checked Segments again only where each can run; bound to `transcript:shown`. */
+  followTasks({ detail }: CustomEvent<{ project: ProjectView | null }>): void {
+    this.retranslateButtonTarget.hidden =
+      (detail.project?.shown_translation ?? null) === null;
+    this.retranscribeButtonTarget.hidden = !(
+      currentResource(detail.project)?.has_media ?? false
+    );
+  }
+
+  /** Hands the Checked Segments to the translate dialog to be translated again. */
   retranslate(): void {
-    this.dispatch("retranslate");
+    this.dispatch("retranslate", {
+      detail: { indexes: this.session.checkedIndexes },
+    });
+  }
+
+  /** Hands one Segment, from its menu, to the translate dialog to be translated again. */
+  retranslateSegment({ currentTarget }: Event): void {
+    closeMenu(currentTarget);
+    this.dispatch("retranslate", {
+      detail: { indexes: [indexOf(currentTarget)] },
+    });
+  }
+
+  /** Hands the span the Checked Segments run over to the transcribe dialog. */
+  retranscribe(): void {
+    const indexes = this.session.checkedIndexes;
+    const scope: TranscriptionScope = {
+      kind: "span",
+      first: Math.min(...indexes),
+      last: Math.max(...indexes),
+    };
+    this.dispatch("retranscribe", { detail: { scope } });
+  }
+
+  /** Hands one Segment, from its menu, to the transcribe dialog to transcribe from it onward. */
+  retranscribeRest({ currentTarget }: Event): void {
+    closeMenu(currentTarget);
+    const scope: TranscriptionScope = {
+      kind: "rest",
+      first: indexOf(currentTarget),
+    };
+    this.dispatch("retranscribe", { detail: { scope } });
   }
 
   /** Hands the Checked Segments to the Speaker dialog. */

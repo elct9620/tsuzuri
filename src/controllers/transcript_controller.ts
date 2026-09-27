@@ -143,7 +143,10 @@ function timeEditor(
   return input;
 }
 
-/** The Segment Changes one Segment offers, and translating it again into the translation shown, in a menu opened from its button. */
+/**
+ * The Segment Changes one Segment offers, translating it again into the translation shown, and
+ * transcribing again from it, in a menu opened from its button.
+ */
 function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
   const dropdown = document.createElement("div");
   dropdown.className = "dropdown dropdown-left";
@@ -180,15 +183,25 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
     choice.append(button);
     menu.append(choice);
   }
-  if (isTranslationShown) {
-    const again = document.createElement("button");
-    again.type = "button";
-    again.className = "retranslate";
-    again.dataset.action = "retranslation#translateSegment";
-    again.dataset.retranslationIndexParam = String(index);
-    again.textContent = t("edit.retranslate");
+  const tasks: [string, string, string, boolean][] = [
+    [
+      "retranslate",
+      "retranslateSegment",
+      "edit.retranslate",
+      isTranslationShown,
+    ],
+    ["retranscribe", "retranscribeRest", "edit.retranscribeRest", true],
+  ];
+  for (const [className, action, label, isOffered] of tasks) {
+    if (!isOffered) continue;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = className;
+    button.dataset.index = String(index);
+    button.dataset.action = `segment-changes#${action}`;
+    button.textContent = t(label);
     const choice = document.createElement("li");
-    choice.append(again);
+    choice.append(button);
     menu.append(choice);
   }
   dropdown.append(opener, menu);
@@ -436,6 +449,11 @@ export default class TranscriptController extends Controller {
     this.headingTarget.textContent = project?.current_resource ?? "";
     this.showLanguages(project);
     this.showSegments(segments, isTranslationShown);
+    const hasMedia = currentResource(project)?.has_media ?? false;
+    for (const button of this.listTarget.querySelectorAll(
+      "button.retranscribe",
+    ))
+      button.closest("li")!.hidden = !hasMedia;
     this.holdFields();
     this.showChecked();
     this.drawCursor();

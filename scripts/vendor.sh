@@ -2,6 +2,7 @@
 # Builds the Vendored Components from the source components.json pins into
 # vendor/<name>/<variant>/, the layout the installer gives its Bundled Variants:
 # the Variant named, or the first components.json lists for this platform.
+# Beside bin/ goes licenses/<project>/, the license files of everything bin/ carries.
 #
 #   scripts/vendor.sh [whisper|llama|ffmpeg|all] [variant]
 #
@@ -54,11 +55,27 @@ exe() {
   if [[ "$(platform)" == windows ]]; then echo "$1.exe"; else echo "$1"; fi
 }
 
-# Copies the MSYS2 UCRT64 DLLs an executable loads next to it, so it runs outside MSYS2.
-# Linux and macOS executables rely on the system's libraries instead.
+# Copies the MSYS2 UCRT64 DLLs an executable loads next to it, so it runs outside MSYS2,
+# with the licenses their packages install. Linux and macOS executables rely on the
+# system's libraries instead.
 bundle_runtime() {
   [[ "$(platform)" == windows ]] || return 0
-  ldd "$1" | awk '$3 ~ "^/ucrt64/" { print $3 }' | while read -r dll; do cp "$dll" "$(dirname "$1")/"; done
+  local bin licenses package
+  bin="$(dirname "$1")"
+  licenses="$bin/../licenses"
+  ldd "$1" | awk -v prefix="$MINGW_PREFIX/" 'index($3, prefix) == 1 { print $3 }' | while read -r dll; do
+    cp "$dll" "$bin/"
+    package="$(pacman -Qqo "$dll")"
+    package="${package#"$MINGW_PACKAGE_PREFIX"-}"
+    keep_license "$MINGW_PREFIX/share/licenses/$package" . "$licenses" "$package"
+  done
+}
+
+# Copies <file> of <dir> into <licenses>/<project>/, so the notice carries it.
+keep_license() {
+  local dir="$1" file="$2" licenses="$3" project="$4"
+  mkdir -p "$licenses/$project"
+  cp -R "$dir/$file" "$licenses/$project/"
 }
 
 # Compares digests itself: the check modes of sha256sum and shasum differ between GNU, BSD and MSYS2.
@@ -73,7 +90,7 @@ sha256_matches() {
 }
 
 up_to_date() {
-  [[ -f "$VENDOR/$1/VERSION" && "$(cat "$VENDOR/$1/VERSION")" == "$2" ]]
+  [[ -f "$VENDOR/$1/VERSION" && "$(cat "$VENDOR/$1/VERSION")" == "$2" && -d "$VENDOR/$1/licenses" ]]
 }
 
 fetch_source() {
@@ -97,6 +114,7 @@ build() {
   # Staged first, so a failed build leaves the previous vendor/<name>/<variant> usable.
   rm -rf "$staged" && mkdir -p "$staged/bin"
   "compile_$name" "$src" "$variant" "$staged/bin"
+  "collect_licenses_$name" "$src" "$staged/licenses"
   echo "$version" > "$staged/VERSION"
   mkdir -p "$VENDOR/$name"
   rm -rf "${VENDOR:?}/$target" && mv "$staged" "$VENDOR/$target"
@@ -130,6 +148,10 @@ compile_ggml() {
   bundle_runtime "$bin/$(exe "$target")"
 }
 
+collect_licenses_whisper() {
+  keep_license "$1" LICENSE "$2" whisper.cpp
+}
+
 compile_whisper() {
   compile_ggml "$@" whisper-cli -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_SERVER=OFF
 }
@@ -143,6 +165,17 @@ compile_llama() {
     -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
     -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DLLAMA_OPENSSL=OFF \
     -DLLAMA_BUILD_NUMBER="${version#b}" -DLLAMA_BUILD_COMMIT="$version"
+}
+
+# llama-server compiles in nlohmann/json and cpp-httplib besides llama.cpp itself.
+collect_licenses_llama() {
+  keep_license "$1" LICENSE "$2" llama.cpp
+  keep_license "$1" licenses/LICENSE-jsonhpp "$2" nlohmann-json
+  keep_license "$1" vendor/cpp-httplib/LICENSE "$2" cpp-httplib
+}
+
+collect_licenses_ffmpeg() {
+  keep_license "$1" COPYING.LGPLv2.1 "$2" FFmpeg
 }
 
 compile_ffmpeg() {

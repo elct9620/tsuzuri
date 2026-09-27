@@ -88,6 +88,7 @@ describe("TranscriptController", () => {
     calls = [];
     editFailure = undefined;
     failingCommand = null;
+    localStorage.clear();
     glossaryTable = {
       languages: ["zh-TW", "en", "ja"],
       rows: [],
@@ -109,9 +110,11 @@ describe("TranscriptController", () => {
         <p data-transcript-target="emptyHint">尚無內容</p>
         <div class="dropdown">
           <div tabindex="0" role="button">匯出</div>
-          <button id="save-original" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="original" disabled>原文</button>
-          <button id="save-translation" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="translation" disabled>譯文</button>
-          <button id="save-bilingual" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="bilingual" disabled>雙語</button>
+          <button id="save-original" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="original" data-transcript-format-param="srt" disabled>原文</button>
+          <button id="save-translation" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="translation" data-transcript-format-param="srt" disabled>譯文</button>
+          <button id="save-bilingual" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="bilingual" data-transcript-format-param="srt" disabled>雙語</button>
+          <button id="save-translation-text" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="translation" data-transcript-format-param="plain_text" disabled>譯文純文字</button>
+          <input id="text-speakers" type="checkbox" data-transcript-target="textSpeakerToggle" data-action="transcript#rememberTextSpeakers">
         </div>
         <ol data-transcript-target="list"></ol>
       </section>
@@ -122,7 +125,10 @@ describe("TranscriptController", () => {
         if (command === failingCommand)
           return Promise.reject({ code: "io", detail: "denied" });
         if (command === "current_project") return project;
-        if (command === "export_path") return "/talks/lecture.en.srt";
+        if (command === "export_path")
+          return (args as { format: string }).format === "plain_text"
+            ? "/talks/lecture.en.txt"
+            : "/talks/lecture.en.srt";
         if (command === "translation_glossary_table") return glossaryTable;
         if (command === "edit_segment" && editFailure !== undefined)
           return Promise.reject(editFailure);
@@ -296,6 +302,69 @@ describe("TranscriptController", () => {
     expect(sent("plugin:dialog|save")).toMatchObject({
       options: { defaultPath: "/talks/lecture.en.srt" },
     });
+  });
+
+  const textSpeakerToggle = () =>
+    document.querySelector<HTMLInputElement>("#text-speakers")!;
+
+  function turnOffTextSpeakers(): void {
+    textSpeakerToggle().checked = false;
+    textSpeakerToggle().dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  // @behavior ED-155
+  it("exports the translation as Plain Text with its Speakers", async () => {
+    await hold(translatedProject);
+
+    document
+      .querySelector<HTMLButtonElement>("#save-translation-text")!
+      .click();
+    await settle();
+
+    expect([sent("plugin:dialog|save"), sent("save_text")]).toMatchObject([
+      {
+        options: {
+          defaultPath: "/talks/lecture.en.txt",
+          filters: [{ extensions: ["txt"] }],
+        },
+      },
+      {
+        path: "/subtitles/out.srt",
+        content: "translation",
+        hasSpeakers: true,
+      },
+    ]);
+  });
+
+  // @behavior ED-156
+  it("exports Plain Text without its Speakers once they are turned off", async () => {
+    await hold(translatedProject);
+    turnOffTextSpeakers();
+
+    document
+      .querySelector<HTMLButtonElement>("#save-translation-text")!
+      .click();
+    await settle();
+
+    expect(sent("save_text")).toMatchObject({ hasSpeakers: false });
+  });
+
+  // @behavior ED-157
+  it("keeps the Speakers turned off for Plain Text the next time the app opens", async () => {
+    turnOffTextSpeakers();
+    application.stop();
+    textSpeakerToggle().checked = true;
+    application = Application.start();
+    await assemble(application, {
+      field: FieldController,
+      notification: NotificationController,
+      progress: ProgressController,
+      speakers: SpeakersController,
+      transcript: TranscriptController,
+    }).start();
+    await settle();
+
+    expect(textSpeakerToggle().checked).toBe(false);
   });
 
   // @behavior ED-004

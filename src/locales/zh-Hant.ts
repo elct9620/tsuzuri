@@ -12,6 +12,10 @@ const zhHant: typeof en = {
     original: "另存原文",
     translation: "另存譯文",
     bilingual: "雙語 SRT",
+    originalText: "原文純文字",
+    translationText: "譯文純文字",
+    bilingualText: "雙語純文字",
+    textSpeakers: "純文字含說話者",
     notExported: "沒有匯出",
   },
   start: {

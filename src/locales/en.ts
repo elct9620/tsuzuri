@@ -11,6 +11,10 @@ const en = {
     original: "Save original as",
     translation: "Save translation as",
     bilingual: "Bilingual SRT",
+    originalText: "Original as plain text",
+    translationText: "Translation as plain text",
+    bilingualText: "Bilingual plain text",
+    textSpeakers: "Speakers in plain text",
     notExported: "Not exported",
   },
   start: {

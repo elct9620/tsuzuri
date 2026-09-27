@@ -261,7 +261,7 @@
                 </div>
                 <ul
                   tabindex="-1"
-                  class="menu dropdown-content z-10 w-44 rounded-box bg-base-100 shadow-md"
+                  class="menu dropdown-content z-10 w-52 rounded-box bg-base-100 shadow-md"
                 >
                   <li>
                     <button
@@ -269,6 +269,7 @@
                       data-transcript-target="exportButton"
                       data-action="transcript#save"
                       data-transcript-content-param="bilingual"
+                      data-transcript-format-param="srt"
                       disabled
                       data-i18n="toolbar.bilingual"
                     ></button>
@@ -279,6 +280,7 @@
                       data-transcript-target="exportButton"
                       data-action="transcript#save"
                       data-transcript-content-param="original"
+                      data-transcript-format-param="srt"
                       disabled
                       data-i18n="toolbar.original"
                     ></button>
@@ -289,9 +291,55 @@
                       data-transcript-target="exportButton"
                       data-action="transcript#save"
                       data-transcript-content-param="translation"
+                      data-transcript-format-param="srt"
                       disabled
                       data-i18n="toolbar.translation"
                     ></button>
+                  </li>
+                  <li></li>
+                  <li>
+                    <button
+                      type="button"
+                      data-transcript-target="exportButton"
+                      data-action="transcript#save"
+                      data-transcript-content-param="bilingual"
+                      data-transcript-format-param="plain_text"
+                      disabled
+                      data-i18n="toolbar.bilingualText"
+                    ></button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      data-transcript-target="exportButton"
+                      data-action="transcript#save"
+                      data-transcript-content-param="original"
+                      data-transcript-format-param="plain_text"
+                      disabled
+                      data-i18n="toolbar.originalText"
+                    ></button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      data-transcript-target="exportButton"
+                      data-action="transcript#save"
+                      data-transcript-content-param="translation"
+                      data-transcript-format-param="plain_text"
+                      disabled
+                      data-i18n="toolbar.translationText"
+                    ></button>
+                  </li>
+                  <li>
+                    <label class="justify-between">
+                      <span data-i18n="toolbar.textSpeakers"></span>
+                      <input
+                        type="checkbox"
+                        class="toggle toggle-sm"
+                        data-transcript-target="textSpeakerToggle"
+                        data-action="transcript#rememberTextSpeakers"
+                      />
+                    </label>
                   </li>
                 </ul>
               </div>

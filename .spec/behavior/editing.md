@@ -43,6 +43,30 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | When | it is exported as a Bilingual SRT |
 | Then | the Project is saved as bilingual to the chosen file |
 
+## `ED-155` Exporting the Project as Plain Text
+
+| Step | Statement |
+| --- | --- |
+| Given | a translated Project in the panel |
+| When | its translation is exported as Plain Text |
+| Then | the save dialog opens at its Plain Text default path and the translation is saved as Plain Text with its Speakers |
+
+## `ED-156` Leaving the Speakers out of a Plain Text export
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with Speakers turned off for Plain Text |
+| When | it is exported as Plain Text |
+| Then | it is saved as Plain Text without its Speakers |
+
+## `ED-157` Keeping the Speakers choice for Plain Text on this machine
+
+| Step | Statement |
+| --- | --- |
+| Given | Speakers turned off for Plain Text |
+| When | the app opens again |
+| Then | the export menu still has Speakers turned off for Plain Text |
+
 ## `ED-004` Showing another translation in the editor
 
 | Step | Statement |

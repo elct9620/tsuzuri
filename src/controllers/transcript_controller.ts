@@ -1,12 +1,14 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { save, SRT_FILTERS } from "../backend/dialog";
+import { save, SRT_FILTERS, TEXT_FILTERS } from "../backend/dialog";
 import { isMacOS } from "../backend/system";
 import {
   currentResource,
   exportPath,
   saveSrt,
+  saveText,
   showTranslation,
+  type ExportFormat,
   type ProjectFeed,
   type ProjectView,
   type Segment,
@@ -36,6 +38,9 @@ import { formatTime, TIME_FIELD_ACTIONS } from "../ui/time";
 
 /** Where the webview remembers whether the editor follows playback. */
 const FOLLOWING_KEY = "tsuzuri.transcript-following";
+
+/** Where the webview remembers whether a Plain Text export names its Speakers. */
+const TEXT_SPEAKERS_KEY = "tsuzuri.plain-text-speakers";
 
 /** Ctrl+Alt+Enter, or ⌘+Option+Enter, splits a Segment at the Cursor in its text, as subtitle editors bind splitting to a modified line break. */
 const SPLIT_SHORTCUTS = [
@@ -293,6 +298,7 @@ export default class TranscriptController extends Controller {
     "list",
     "emptyHint",
     "exportButton",
+    "textSpeakerToggle",
     "heading",
     "translationLanguage",
     "followButton",
@@ -318,6 +324,8 @@ export default class TranscriptController extends Controller {
   private runningTask: TaskKind | null = null;
   /** The Project shown now. */
   private project: ProjectView | null = null;
+  /** Whether a Plain Text export names its Speakers, unless turned off on this machine. */
+  private hasTextSpeakers = rememberedFlag(TEXT_SPEAKERS_KEY, true);
   /** The position of the Current Segment as its row was last brought into view. */
   private shownCurrentIndex: number | null = null;
   /** The position of the Segment the Preview is playing. */
@@ -514,19 +522,31 @@ export default class TranscriptController extends Controller {
     params,
   }: {
     currentTarget: EventTarget | null;
-    params: { content: SrtContent };
+    params: { content: SrtContent; format: ExportFormat };
   }): Promise<void> {
     closeMenu(currentTarget);
+    const { content, format } = params;
+    const isPlainText = format === "plain_text";
     try {
       const path = await save({
-        defaultPath: await exportPath(params.content, "srt"),
-        filters: SRT_FILTERS,
+        defaultPath: await exportPath(content, format),
+        filters: isPlainText ? TEXT_FILTERS : SRT_FILTERS,
       });
       if (path === null) return;
-      await saveSrt(path, params.content);
+      if (isPlainText) await saveText(path, content, this.hasTextSpeakers);
+      else await saveSrt(path, content);
     } catch (error) {
       notifyFailure(t("toolbar.notExported"), error);
     }
+  }
+
+  textSpeakerToggleTargetConnected(toggle: HTMLInputElement): void {
+    toggle.checked = this.hasTextSpeakers;
+  }
+
+  rememberTextSpeakers({ currentTarget }: Event): void {
+    this.hasTextSpeakers = (currentTarget as HTMLInputElement).checked;
+    rememberFlag(TEXT_SPEAKERS_KEY, this.hasTextSpeakers);
   }
 
   private show(project: ProjectView | null): void {

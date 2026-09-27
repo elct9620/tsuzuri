@@ -146,3 +146,13 @@ A Speaker Label's colon is followed by the dialogue, while a clock time's is fol
 | Given | Segments starting at 0, 5 and 10 s, and an Audio Window from 5 to 10 s |
 | When | the window's Segments are replaced by one from 6 to 7 s |
 | Then | the Segments start at 0, 6 and 10 s, the new one at the second position |
+
+## `TR-018` Reading a cue that ends before it starts
+
+Other tools can write such a cue; reading it as ending where it starts keeps the file open and every length unsigned.
+
+| Step | Statement |
+| --- | --- |
+| Given | an SRT whose cue runs from 00:00:05,000 to 00:00:01,000 |
+| When | it is parsed into a Transcript |
+| Then | its Segment starts and ends at 5 s |

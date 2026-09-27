@@ -199,7 +199,9 @@ fn parse_cue(
         .split_once("-->")
         .ok_or_else(|| error("timing line has no -->"))?;
     let start_ms = parse_timestamp(start.trim()).ok_or_else(|| error("unreadable start time"))?;
-    let end_ms = parse_timestamp(end.trim()).ok_or_else(|| error("unreadable end time"))?;
+    let end_ms = parse_timestamp(end.trim())
+        .ok_or_else(|| error("unreadable end time"))?
+        .max(start_ms);
     let (speaker, text) = read_lines(lines.collect());
     Ok(Segment {
         start_ms,
@@ -346,6 +348,17 @@ mod tests {
         let error = Transcript::from_srt(input).unwrap_err();
 
         assert_eq!(error.cue, 2);
+    }
+
+    // @behavior TR-018
+    #[test]
+    fn reads_a_cue_ending_before_it_starts_as_ending_where_it_starts() {
+        let input = "1\n00:00:05,000 --> 00:00:01,000\nbackwards\n";
+
+        let transcript = Transcript::from_srt(input).unwrap();
+
+        assert_eq!(transcript.segments[0].start_ms, 5_000);
+        assert_eq!(transcript.segments[0].end_ms, 5_000);
     }
 
     // @behavior TR-005

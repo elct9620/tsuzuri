@@ -756,6 +756,16 @@ A menu, and later a floating one, acts on the Cursor after focus has moved to it
 | When | the editor shows it |
 | Then | the field hides the platform's caret and selection, and the drawn caret stands after the second character |
 
+## `ED-122` Keeping the drawn caret on its character as the text moves in its row
+
+The caret is drawn at a place measured once, so it is measured again whenever something drawn beside the text, such as a comparison's marks, moves it.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered with the Cursor after its second character |
+| When | marks are drawn above that text in its row |
+| Then | the drawn caret stands after the second character where the text now is |
+
 ## `ED-091` Drawing the Cursor at the start of a line typed into a text
 
 A caret between a line break and the text after it stands at the start of the next line, as in any editor, however the text was typed.

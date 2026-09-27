@@ -18,6 +18,7 @@ const CARET_CLASS =
 let drawnCursor: {
   field: HTMLElement;
   caret: LiveCaret | KeptCaret;
+  /** Watches the field and its parent, since marks drawn beside the field move it in there. */
   observer?: ResizeObserver;
 } | null = null;
 
@@ -43,7 +44,8 @@ export function drawCursor(
     drawnCursor.observer = new ResizeObserver(() =>
       placeCaretMark(field, caret),
     );
-    drawnCursor.observer.observe(field);
+    for (const target of [field, field.parentElement])
+      if (target) drawnCursor.observer.observe(target);
   }
 }
 

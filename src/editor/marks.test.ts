@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { KeptCaret, LiveCaret } from "./cursor";
 import { createField } from "./field";
 import { drawCursor } from "./marks";
@@ -30,6 +30,8 @@ describe("drawCursor", () => {
   afterEach(() => {
     drawCursor(null, null);
     document.body.innerHTML = "";
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("draws a blinking caret after the characters before it", () => {
@@ -75,5 +77,36 @@ describe("drawCursor", () => {
       caretMarks().length,
       second.dataset.cursor,
     ]).toEqual([undefined, 1, "1"]);
+  });
+
+  // @behavior ED-122
+  it("keeps the caret on its character as marks drawn above move the text", () => {
+    const observers: { targets: Element[]; notify: () => void }[] = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        private readonly watched: { targets: Element[]; notify: () => void };
+        constructor(notify: () => void) {
+          this.watched = { targets: [], notify };
+          observers.push(this.watched);
+        }
+        observe(target: Element) {
+          this.watched.targets.push(target);
+        }
+        disconnect() {}
+      },
+    );
+    let textTop = 0;
+    vi.spyOn(Range.prototype, "getBoundingClientRect").mockImplementation(() =>
+      DOMRect.fromRect({ x: 0, y: textTop, width: 0, height: 20 }),
+    );
+    const field = fieldInHost("你好世界");
+    drawCursor(field, caret("live", 2));
+
+    textTop = 24;
+    for (const { targets, notify } of observers)
+      if (targets.includes(field.parentElement!)) notify();
+
+    expect((caretMarks()[0] as HTMLElement).style.top).toBe("24px");
   });
 });

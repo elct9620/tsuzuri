@@ -41,9 +41,7 @@ export default class UndoController extends Controller {
     void this.applyToProject("redo");
   }
 
-  private async applyToProject(
-    command: "undo" | "redo",
-  ): Promise<void> {
+  private async applyToProject(command: "undo" | "redo"): Promise<void> {
     const outcome = await (command === "undo"
       ? this.session.undo()
       : this.session.redo());

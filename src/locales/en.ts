@@ -468,7 +468,8 @@ const en = {
         "Cleans the Checked Segments, else the text selected, else the Current Segment",
       search: "Text selected in a field is what is looked for",
       searchNext: "Works while the search bar is open, as Enter does in it",
-      searchPrevious: "Works while the search bar is open, as Shift+Enter does in it",
+      searchPrevious:
+        "Works while the search bar is open, as Shift+Enter does in it",
       reload: "Reads the folder again for files changed elsewhere",
       following:
         "Scrolls the list to the Segment being played; works in a text field too",

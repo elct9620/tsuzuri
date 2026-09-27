@@ -136,9 +136,9 @@ describe("SearchController", () => {
 
   /** Opens the bar by the platform's shortcut and finds `pattern`. */
   async function openFinding(pattern: string): Promise<void> {
-    const isMac = (
-      window as { __TAURI_OS_PLUGIN_INTERNALS__?: { platform: string } }
-    ).__TAURI_OS_PLUGIN_INTERNALS__?.platform === "macos";
+    const isMac =
+      (window as { __TAURI_OS_PLUGIN_INTERNALS__?: { platform: string } })
+        .__TAURI_OS_PLUGIN_INTERNALS__?.platform === "macos";
     press({ key: "f", code: "KeyF", ctrlKey: !isMac, metaKey: isMac });
     target<HTMLInputElement>("pattern").value = pattern;
     target("pattern").dispatchEvent(new Event("input"));

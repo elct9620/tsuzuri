@@ -171,13 +171,13 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | When | part of it has downloaded while installing |
 | Then | the install window shows the megabytes downloaded with a bar that keeps moving |
 
-## `UP-021` Using the Stable channel until another is chosen
+## `UP-021` Following the running build's channel until one is chosen
 
 | Step | Statement |
 | --- | --- |
 | Given | update settings never saved |
-| When | the update settings are read |
-| Then | their Update Channel is Stable |
+| When | the update settings are read by a stable build and by a Preview build |
+| Then | their Update Channel is Stable for the stable build and Preview for the Preview build |
 
 ## `UP-022` Looking in the chosen Update Channel
 
@@ -274,3 +274,11 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | Given | Tsuzuri installed from an rpm package |
 | When | the settings open |
 | Then | the Update Channel does not show |
+
+## `UP-034` Keeping a chosen channel on a Preview build
+
+| Step | Statement |
+| --- | --- |
+| Given | the Stable channel chosen, and the launch check turned off afterwards |
+| When | a Preview build reads the update settings |
+| Then | their Update Channel stays Stable |

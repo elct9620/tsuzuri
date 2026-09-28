@@ -18,17 +18,26 @@ use crate::steps::ModeLock;
 const SETTINGS_FILE: &str = "updates.json";
 
 /// Where Tsuzuri looks for an App Update.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum UpdateChannel {
     /// The latest release.
-    #[default]
     Stable,
     /// The build of each push to the trunk, which also carries each stable release.
     Preview,
 }
 
 impl UpdateChannel {
+    /// The channel a build follows until one is chosen: its own, so a tester who installed a
+    /// Preview build keeps receiving them.
+    pub fn from_build(is_preview_build: bool) -> UpdateChannel {
+        if is_preview_build {
+            UpdateChannel::Preview
+        } else {
+            UpdateChannel::Stable
+        }
+    }
+
     /// The update manifest this channel reads from `site`, which mirrors the releases' manifests
     /// under an address Tsuzuri owns, so the packages can move without every install following.
     pub fn manifest_url(self, site: &str) -> Result<Url, Failure> {
@@ -42,49 +51,66 @@ impl UpdateChannel {
     }
 }
 
-/// Whether Tsuzuri looks for an App Update at launch, and in which Update Channel; saved across
-/// launches.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+/// Whether Tsuzuri looks for an App Update at launch, and in which Update Channel.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct UpdateSettings {
     pub has_launch_check: bool,
     pub channel: UpdateChannel,
 }
 
-impl Default for UpdateSettings {
-    fn default() -> UpdateSettings {
-        UpdateSettings {
+/// What the user chose, saved across launches; a channel never chosen is left for the running
+/// build to decide.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+struct ChosenUpdateSettings {
+    has_launch_check: bool,
+    channel: Option<UpdateChannel>,
+}
+
+impl Default for ChosenUpdateSettings {
+    fn default() -> ChosenUpdateSettings {
+        ChosenUpdateSettings {
             has_launch_check: true,
-            channel: UpdateChannel::default(),
+            channel: None,
         }
     }
 }
 
-impl UpdateSettings {
-    /// Settings never saved load as the defaults.
-    pub fn load(dir: &Path) -> io::Result<UpdateSettings> {
+impl ChosenUpdateSettings {
+    fn load(dir: &Path) -> io::Result<ChosenUpdateSettings> {
         json_settings::settings_at(&dir.join(SETTINGS_FILE))
     }
 
-    pub fn save(&self, dir: &Path) -> io::Result<()> {
+    fn save(&self, dir: &Path) -> io::Result<()> {
         fs::create_dir_all(dir)?;
         json_settings::write(&dir.join(SETTINGS_FILE), self)
     }
+}
 
-    /// Saves whether Tsuzuri looks for an App Update at launch, keeping the rest.
+impl UpdateSettings {
+    /// The settings as saved, a channel never chosen being `default_channel`.
+    pub fn load(dir: &Path, default_channel: UpdateChannel) -> io::Result<UpdateSettings> {
+        let chosen = ChosenUpdateSettings::load(dir)?;
+        Ok(UpdateSettings {
+            has_launch_check: chosen.has_launch_check,
+            channel: chosen.channel.unwrap_or(default_channel),
+        })
+    }
+
+    /// Saves whether Tsuzuri looks for an App Update at launch, keeping the rest as chosen.
     pub fn record_launch_check(dir: &Path, has_launch_check: bool) -> io::Result<()> {
-        UpdateSettings {
+        ChosenUpdateSettings {
             has_launch_check,
-            ..UpdateSettings::load(dir)?
+            ..ChosenUpdateSettings::load(dir)?
         }
         .save(dir)
     }
 
-    /// Saves the Update Channel to look in, keeping the rest.
+    /// Saves the Update Channel to look in, keeping the rest as chosen.
     pub fn record_channel(dir: &Path, channel: UpdateChannel) -> io::Result<()> {
-        UpdateSettings {
-            channel,
-            ..UpdateSettings::load(dir)?
+        ChosenUpdateSettings {
+            channel: Some(channel),
+            ..ChosenUpdateSettings::load(dir)?
         }
         .save(dir)
     }
@@ -385,7 +411,7 @@ mod tests {
     fn looks_at_launch_until_turned_off() {
         let dir = TempDir::new("update-settings-default");
 
-        let settings = UpdateSettings::load(dir.path()).unwrap();
+        let settings = UpdateSettings::load(dir.path(), UpdateChannel::Stable).unwrap();
 
         assert!(settings.has_launch_check);
     }
@@ -398,7 +424,7 @@ mod tests {
         let is_asked = Mutex::new(false);
 
         let update = tauri::async_runtime::block_on(check_at_launch(
-            &UpdateSettings::load(dir.path()).unwrap(),
+            &UpdateSettings::load(dir.path(), UpdateChannel::Stable).unwrap(),
             async {
                 *is_asked.lock().unwrap() = true;
                 Ok(Some("99.0.0"))
@@ -417,7 +443,10 @@ mod tests {
 
         let logs = captured_logs(|| {
             update = Some(tauri::async_runtime::block_on(check_at_launch(
-                &UpdateSettings::default(),
+                &UpdateSettings {
+                    has_launch_check: true,
+                    channel: UpdateChannel::Stable,
+                },
                 look_for_update(app.handle(), fake_manifest(&releases)),
             )));
         });
@@ -545,12 +574,34 @@ mod tests {
 
     // @behavior UP-021
     #[test]
-    fn uses_the_stable_channel_until_another_is_chosen() {
+    fn follows_the_running_builds_channel_until_one_is_chosen() {
         let dir = TempDir::new("update-channel-default");
 
-        let settings = UpdateSettings::load(dir.path()).unwrap();
+        let channels = [false, true].map(|is_preview_build| {
+            UpdateSettings::load(dir.path(), UpdateChannel::from_build(is_preview_build))
+                .unwrap()
+                .channel
+        });
 
-        assert_eq!(settings.channel, UpdateChannel::Stable);
+        assert_eq!(channels, [UpdateChannel::Stable, UpdateChannel::Preview]);
+    }
+
+    // @behavior UP-034
+    #[test]
+    fn keeps_a_chosen_channel_on_a_preview_build() {
+        let dir = TempDir::new("update-channel-kept");
+        UpdateSettings::record_channel(dir.path(), UpdateChannel::Stable).unwrap();
+        UpdateSettings::record_launch_check(dir.path(), false).unwrap();
+
+        let settings = UpdateSettings::load(dir.path(), UpdateChannel::from_build(true)).unwrap();
+
+        assert_eq!(
+            settings,
+            UpdateSettings {
+                has_launch_check: false,
+                channel: UpdateChannel::Stable,
+            }
+        );
     }
 
     // @behavior UP-022
@@ -579,7 +630,7 @@ mod tests {
         UpdateSettings::record_channel(dir.path(), UpdateChannel::Preview).unwrap();
 
         assert_eq!(
-            UpdateSettings::load(dir.path()).unwrap(),
+            UpdateSettings::load(dir.path(), UpdateChannel::Stable).unwrap(),
             UpdateSettings {
                 has_launch_check: false,
                 channel: UpdateChannel::Preview,

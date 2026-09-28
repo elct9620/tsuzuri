@@ -7,17 +7,23 @@ use super::{
 use crate::failure::Failure;
 use crate::json_settings::settings_dir;
 use crate::processes::Processes;
+use crate::release_number::preview_release;
 use crate::steps::ModeLock;
 
 /// The update site, which publishes each Update Channel's manifest.
 const UPDATE_SITE: &str = "https://tsuzuri.aotoki.me";
+
+/// The channel this build follows until one is chosen.
+fn running_build_channel() -> UpdateChannel {
+    UpdateChannel::from_build(preview_release(env!("CARGO_PKG_VERSION")).is_some())
+}
 
 #[tauri::command]
 pub async fn check_for_update(
     app: AppHandle,
     found_update: State<'_, FoundUpdate>,
 ) -> Result<Option<AppUpdate>, Failure> {
-    let settings = UpdateSettings::load(&settings_dir(&app)?)?;
+    let settings = UpdateSettings::load(&settings_dir(&app)?, running_build_channel())?;
     let update = look_for_update(&app, settings.channel.manifest_url(UPDATE_SITE)?).await?;
     Ok(found_update.keep(update))
 }
@@ -27,7 +33,7 @@ pub async fn check_for_update_at_launch(
     app: AppHandle,
     found_update: State<'_, FoundUpdate>,
 ) -> Result<Option<AppUpdate>, Failure> {
-    let settings = UpdateSettings::load(&settings_dir(&app)?)?;
+    let settings = UpdateSettings::load(&settings_dir(&app)?, running_build_channel())?;
     let manifest = settings.channel.manifest_url(UPDATE_SITE)?;
     let update = check_at_launch(&settings, look_for_update(&app, manifest)).await;
     Ok(found_update.keep(update))
@@ -67,7 +73,10 @@ pub async fn install_update(
 
 #[tauri::command]
 pub fn update_settings(app: AppHandle) -> Result<UpdateSettings, Failure> {
-    Ok(UpdateSettings::load(&settings_dir(&app)?)?)
+    Ok(UpdateSettings::load(
+        &settings_dir(&app)?,
+        running_build_channel(),
+    )?)
 }
 
 #[tauri::command]

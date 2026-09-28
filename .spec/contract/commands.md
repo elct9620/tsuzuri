@@ -409,7 +409,7 @@ pub async fn install_update(app: AppHandle, found_update: State<'_, FoundUpdate>
 
 ## `update_settings`
 
-Whether Tsuzuri looks for an App Update at launch; it does until turned off.
+Whether Tsuzuri looks for an App Update at launch, which it does until turned off, and the Update Channel it looks in: the one chosen, or until one is, the running build's own.
 
 ```rust
 pub fn update_settings(app: AppHandle) -> Result<UpdateSettings, Failure> {}

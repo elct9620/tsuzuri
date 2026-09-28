@@ -46,20 +46,21 @@ function menuItem(project: RecentProject): HTMLLIElement {
   name.textContent = fileName(project.directory);
   button.append(name);
   const item = document.createElement("li");
+  item.dataset.recentProjectsTarget = "menuItem";
   item.append(button);
   return item;
 }
 
 /** The Recent Projects Rust keeps, read again each time the Project changes. */
 export default class RecentProjectsController extends Controller {
-  static targets = ["list", "heading", "menu", "menuItems"];
+  static targets = ["list", "heading", "menuTitle", "menuItem"];
 
   /** The start screen's list, hidden while there are none. */
   declare readonly listTarget: HTMLUListElement;
   declare readonly headingTarget: HTMLLIElement;
-  /** The Open menu's section of them, hidden while there are none. */
-  declare readonly menuTarget: HTMLLIElement;
-  declare readonly menuItemsTarget: HTMLUListElement;
+  /** The Open menu's title over them, hidden while there are none; the items follow it. */
+  declare readonly menuTitleTarget: HTMLLIElement;
+  declare readonly menuItemTargets: HTMLLIElement[];
 
   declare readonly feed: ProjectFeed;
 
@@ -81,7 +82,8 @@ export default class RecentProjectsController extends Controller {
       ...projects.map(listRow),
     );
     this.listTarget.hidden = projects.length === 0;
-    this.menuItemsTarget.replaceChildren(...projects.map(menuItem));
-    this.menuTarget.hidden = projects.length === 0;
+    for (const item of this.menuItemTargets) item.remove();
+    this.menuTitleTarget.after(...projects.map(menuItem));
+    this.menuTitleTarget.hidden = projects.length === 0;
   }
 }

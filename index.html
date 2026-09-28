@@ -78,7 +78,7 @@
                 </div>
                 <ul
                   tabindex="-1"
-                  class="menu dropdown-content z-10 w-40 rounded-box bg-base-100 shadow-md"
+                  class="menu dropdown-content z-10 w-max min-w-40 max-w-80 rounded-box bg-base-100 shadow-md"
                 >
                   <li>
                     <button
@@ -94,13 +94,12 @@
                       data-i18n="toolbar.openSrt"
                     ></button>
                   </li>
-                  <li data-recent-projects-target="menu" hidden>
-                    <h2
-                      class="menu-title"
-                      data-i18n="start.recentProjects"
-                    ></h2>
-                    <ul data-recent-projects-target="menuItems"></ul>
-                  </li>
+                  <li
+                    class="menu-title"
+                    data-recent-projects-target="menuTitle"
+                    data-i18n="start.recentProjects"
+                    hidden
+                  ></li>
                 </ul>
               </div>
 

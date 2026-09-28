@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
@@ -46,10 +47,8 @@ describe("RecentProjectsController", () => {
         <div data-project-target="workspace" hidden>
           <h1 data-project-target="name"></h1>
           <ul>
-            <li data-recent-projects-target="menu" hidden>
-              <h2>最近的專案</h2>
-              <ul data-recent-projects-target="menuItems"></ul>
-            </li>
+            <li id="open-directory">開啟目錄</li>
+            <li data-recent-projects-target="menuTitle" hidden>最近的專案</li>
           </ul>
           <ul data-project-target="resources"></ul>
           <p data-project-target="glossary"></p>
@@ -115,9 +114,12 @@ describe("RecentProjectsController", () => {
   it("lists each Recent Project in the Open menu with its path as the tooltip", async () => {
     await showStartScreen();
 
+    await emit("project-changed");
+    await settle();
+
     const items = [
       ...document.querySelectorAll<HTMLButtonElement>(
-        "[data-recent-projects-target='menuItems'] button",
+        "[data-recent-projects-target='menuItem'] button",
       ),
     ];
     expect(

@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import {
   previewReleasePage,
+  previewTag,
   previewVersion,
   withPackageVersion,
 } from "./preview_version";
@@ -45,13 +46,19 @@ describe("preview version", () => {
     );
   });
 
+  it("tags a Preview build by its release number without the count only MSI reads", () => {
+    expect(previewTag("0.2.1-preview.202609281430+12")).toBe(
+      "v0.2.1-preview.202609281430",
+    );
+  });
+
   it("names the Preview release by its base and build time, as the settings do", () => {
     expect(
       previewReleasePage("0.2.1-preview.202609281430+12", "a1b2c3d4e5f6"),
     ).toEqual({
       title: "Preview | based on 0.2.0 | built 2026-09-28 14:30 UTC",
       notes: [
-        "The latest build of the preview branch, for testing. Not a stable release.",
+        "A Preview build of main, for testing. Not a stable release.",
         "",
         "- Version: 0.2.1-preview.202609281430+12",
         "- Based on: 0.2.0",

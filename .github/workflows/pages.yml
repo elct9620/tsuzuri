@@ -35,12 +35,19 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-      # A channel with nothing released yet has no manifest; the site then leaves it out.
+      # A channel with nothing released yet has no manifest; the site then leaves it out. The Preview
+      # channel reads the newest Preview build, each published as its own Prerelease.
       - name: Fetch the manifests
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           releases="https://github.com/$GITHUB_REPOSITORY/releases"
           curl -fsSL -o stable.json "$releases/latest/download/latest.json" || rm -f stable.json
-          curl -fsSL -o preview.json "$releases/download/preview/latest.json" || rm -f preview.json
+          preview="$(gh release list -R "$GITHUB_REPOSITORY" --limit 100 --exclude-drafts --json tagName,isPrerelease,createdAt \
+            -q '[.[] | select(.isPrerelease and (.tagName | test("-preview\\.")))] | max_by(.createdAt) | .tagName // empty')"
+          if [ -z "$preview" ] || ! curl -fsSL -o preview.json "$releases/download/$preview/latest.json"; then
+            rm -f preview.json
+          fi
       - name: Lay out the site
         run: node scripts/site.ts stable.json preview.json _site
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

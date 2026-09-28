@@ -1091,12 +1091,12 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
                                      └ 合併版本 PR ─▶ 建立 tag 與草稿 Release
   CI 成功 ─▶ release-assets（也可指定 tag 或 preview 手動觸發）
                ├ stable：commit 是 tag 指向的嗎？是 ─▶ 附檔 ─▶ 公開 Release
-               └ main：固定檔名 ─▶ 移動 preview tag ─▶ 覆寫 Prerelease 附檔、標題
+               └ main：新建 v<預覽版號> tag 與 Prerelease ─▶ 附檔 ─▶ 只留最新 5 版
                附檔：安裝檔、簽章、latest.json、ffmpeg 原始程式碼、SHA256SUMS
   release-assets 完成 ─▶ pages（13.5.4）
 ```
 
-日常 commit 在 main，驗證後以 PR 合併進 stable 才發正式版；stable 只收 PR，只用 merge commit，保留每個 commit 給 changelog。版號與 changelog 由 release-please 管理，直接取用 CI 的打包，不重新編譯；Release 附完檔才公開。預覽版的 Release 標題與設定頁同樣稱呼：以哪個正式版為基礎、建置時間（UTC），說明列出完整版號與 commit，回報時對得上。不做程式碼簽章，放行步驟寫在 README。
+日常 commit 在 main，驗證後以 PR 合併進 stable 才發正式版；stable 只收 PR，只用 merge commit，保留每個 commit 給 changelog。版號與 changelog 由 release-please 管理，直接取用 CI 的打包，不重新編譯；Release 附完檔才公開。預覽版的 Release 標題與設定頁同樣稱呼：以哪個正式版為基礎、建置時間（UTC），說明列出完整版號與 commit，回報時對得上。預覽版每版一個 tag，只建立不移動：workflow 的 token 不能把 tag 移到 workflow 檔案不同的 commit；舊版連同 tag 刪除，只留最新 5 版。不做程式碼簽章，放行步驟寫在 README。
 
 ### 13.4 失敗時補救
 
@@ -1140,7 +1140,7 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | `linux-x86_64-deb` | `.deb` |
 | `linux-x86_64-rpm` | `.rpm` |
 
-簽章綁定版號（`requireSignedVersion`），清單不能把新版號配上舊套件。每種格式各有 key，不會拿到別種安裝檔。預覽版號含 `+`，檔名改成 `Tsuzuri-preview_x64-setup.exe` 這類固定名稱。開發機打包不需要金鑰。
+簽章綁定版號（`requireSignedVersion`），清單不能把新版號配上舊套件。每種格式各有 key，不會拿到別種安裝檔。預覽版號的 `+<run>` 會被 GitHub 改寫，所以 tag 與檔名去掉它，如 `v0.1.1-preview.202609281430`、`Tsuzuri_0.1.1-preview.202609281430_x64-setup.exe`；完整版號仍寫在清單與 Release 說明。開發機打包不需要金鑰。
 
 #### 13.5.2 安裝
 
@@ -1183,7 +1183,7 @@ Windows 的安裝程式啟動後直接結束 Tsuzuri，不經過結束時的 `ki
 
 ```
   release-assets 完成、site/ 改動 ─▶ pages
-    ├ 從 Release 取正式版與預覽版的 latest.json
+    ├ 取最新正式版與最新 Prerelease 的 latest.json
     ├ updates/preview.json 取兩份中版號較新者
     └ 連同 site/ 整站部署到 tsuzuri.aotoki.me
 ```

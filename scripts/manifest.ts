@@ -1,9 +1,12 @@
 // Writes the update manifest an installed Tsuzuri reads for its Update Channel: for each install
 // format, the package the updater installs and its signature. A Preview build's packages are first
-// given fixed names, since its release number carries a `+` that GitHub would rewrite in a file name.
-//   node scripts/manifest.ts <tag> <assets directory> [--preview]
+// named by its release number without the `+` count, which GitHub would rewrite in a file name, and
+// its tag is worked out from the number its packages were signed for.
+//   node scripts/manifest.ts <tag> <assets directory>
+//   node scripts/manifest.ts --preview <assets directory>
 import { readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { previewTag } from "./preview_version.ts";
 import { signedVersion } from "./signatures.ts";
 
 /**
@@ -23,15 +26,6 @@ const PREVIEW_TARGETS = Object.keys(PACKAGE_SUFFIX_BY_TARGET).filter(
   (target) => target !== "linux-x86_64-rpm",
 );
 
-/** The fixed name each Preview package takes, so every build replaces the one before it. */
-const PREVIEW_NAME_BY_SUFFIX = {
-  ".app.tar.gz": "Tsuzuri-preview_aarch64.app.tar.gz",
-  ".dmg": "Tsuzuri-preview_aarch64.dmg",
-  "-setup.exe": "Tsuzuri-preview_x64-setup.exe",
-  ".msi": "Tsuzuri-preview_x64.msi",
-  ".deb": "Tsuzuri-preview_amd64.deb",
-} as const;
-
 export type UpdateChannel = "stable" | "preview";
 
 export interface UpdateManifest {
@@ -39,14 +33,15 @@ export interface UpdateManifest {
   platforms: Record<string, { url: string; signature: string }>;
 }
 
-/** The fixed name a Preview build gives `assetName`, its signature following its package. */
-export function previewAssetName(assetName: string): string {
-  const packageName = assetName.replace(/\.sig$/, "");
-  const signatureSuffix = assetName.slice(packageName.length);
-  const fixed = Object.entries(PREVIEW_NAME_BY_SUFFIX).find(([suffix]) =>
-    packageName.endsWith(suffix),
-  )?.[1];
-  return fixed ? `${fixed}${signatureSuffix}` : assetName;
+/**
+ * The name a Preview build numbered `version` gives `assetName`: without the `+` count, and the
+ * macOS app archive, which the bundler leaves unnumbered, numbered like the others.
+ */
+export function previewAssetName(assetName: string, version: string): string {
+  const numbered = previewTag(version).slice(1);
+  return assetName
+    .replace(version, numbered)
+    .replace(/^Tsuzuri\.app\.tar\.gz/, `Tsuzuri_${numbered}_aarch64.app.tar.gz`);
 }
 
 /**
@@ -105,17 +100,25 @@ export function releasesUrl(cargoToml: string): string {
 }
 
 if (import.meta.main) {
-  const [tag, assets, flag] = process.argv.slice(2);
-  if (!tag || !assets) {
+  const [first, assets] = process.argv.slice(2);
+  if (!first || !assets) {
     console.error(
-      "usage: node scripts/manifest.ts <tag> <assets directory> [--preview]",
+      "usage: node scripts/manifest.ts <tag> <assets directory> | --preview <assets directory>",
     );
     process.exit(2);
   }
-  const channel: UpdateChannel = flag === "--preview" ? "preview" : "stable";
-  if (channel === "preview")
+  const channel: UpdateChannel = first === "--preview" ? "preview" : "stable";
+  let tag = first;
+  if (channel === "preview") {
+    const signatureName = readdirSync(assets).find((name) => name.endsWith(".sig"));
+    const version =
+      signatureName &&
+      signedVersion(readFileSync(join(assets, signatureName), "utf8"));
+    if (!version) throw new Error(`no signed release number in ${assets}`);
+    tag = previewTag(version);
     for (const name of readdirSync(assets))
-      renameSync(join(assets, name), join(assets, previewAssetName(name)));
+      renameSync(join(assets, name), join(assets, previewAssetName(name, version)));
+  }
   const manifest = updateManifest(
     tag,
     readdirSync(assets),
@@ -127,5 +130,5 @@ if (import.meta.main) {
     join(assets, "latest.json"),
     `${JSON.stringify(manifest, null, 2)}\n`,
   );
-  console.log(`${manifest.version}\n${Object.keys(manifest.platforms).join("\n")}`);
+  console.log(`${tag}\n${manifest.version}\n${Object.keys(manifest.platforms).join("\n")}`);
 }

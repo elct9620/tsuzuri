@@ -56,7 +56,7 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | Step | Statement |
 | --- | --- |
 | Given | an update manifest that cannot be reached |
-| When | About asks for an App Update |
+| When | the settings ask for an App Update |
 | Then | it fails as `update-failed` with what went wrong |
 
 ## `UP-007` Refusing to install while a Mode runs
@@ -112,23 +112,23 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | Step | Statement |
 | --- | --- |
 | Given | no App Update in the releases |
-| When | About is asked to check for updates |
-| Then | About says the running release is the latest |
+| When | the settings are asked to check for updates |
+| Then | they say the running release is the latest |
 
 ## `UP-014` Offering an App Update found when asked
 
 | Step | Statement |
 | --- | --- |
 | Given | an App Update in the releases |
-| When | About is asked to check for updates |
-| Then | About names its release number beside a button to update |
+| When | the settings are asked to check for updates |
+| Then | they name its release number beside a button to update |
 
 ## `UP-015` Telling of a failed check asked for
 
 | Step | Statement |
 | --- | --- |
 | Given | releases that cannot be reached |
-| When | About is asked to check for updates |
+| When | the settings are asked to check for updates |
 | Then | a Notification says the check failed and why |
 
 ## `UP-016` Showing the download while installing
@@ -152,7 +152,7 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | Step | Statement |
 | --- | --- |
 | Given | the launch check on |
-| When | its toggle under About is turned off |
+| When | its toggle in the settings is turned off |
 | Then | the update settings record that Tsuzuri does not look at launch |
 
 ## `UP-019` Saying nothing at launch when nothing is found
@@ -161,7 +161,7 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | --- | --- |
 | Given | no App Update found by the launch check |
 | When | Tsuzuri opens |
-| Then | no Notification is shown and About says nothing of updates until asked |
+| Then | no Notification is shown and the settings say nothing of updates until asked |
 
 ## `UP-020` Showing how much has downloaded when the size is unknown
 
@@ -224,7 +224,7 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | Step | Statement |
 | --- | --- |
 | Given | the Stable channel chosen |
-| When | Preview is chosen from the Update Channel menu under About |
+| When | Preview is chosen from the Update Channel menu in the settings |
 | Then | the update settings record Preview and the menu shows it |
 
 ## `UP-028` Offering a Rollback only where one leads back
@@ -251,13 +251,13 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | When | the App Build is asked for |
 | Then | it has no Preview channel, while every other install has one |
 
-## `UP-031` Naming a Preview build under About
+## `UP-031` Naming a Preview build in the settings
 
 | Step | Statement |
 | --- | --- |
 | Given | a Preview build based on 0.2.0, built at 2026-09-28 14:30 UTC |
 | When | the settings open |
-| Then | About says it is a preview based on 0.2.0 built at that time, local as `YYYY-MM-DD HH:mm`, and copying the version copies the release number as it is |
+| Then | the settings say it is a preview based on 0.2.0 built at that time, local as `YYYY-MM-DD HH:mm`, and copying the version copies the release number as it is |
 
 ## `UP-032` Offering a Preview build by its build time
 

@@ -360,6 +360,7 @@ const zhHant: typeof en = {
     appBuildCopied: "已複製版本資訊",
     appBuildNotCopied: "沒有複製版本資訊",
     releasesNotOpened: "沒有開啟釋出頁面",
+    versionAndUpdates: "版本與更新",
     updates: "更新",
     updatesHelp:
       "到 GitHub 檢查有沒有新版本；按下更新會下載、驗證簽章、安裝，並重新啟動 Tsuzuri。",

@@ -1633,6 +1633,113 @@
             />
             <div class="tab-content pt-4">
               <div class="flex flex-col gap-4">
+                <fieldset class="fieldset text-sm" data-controller="about">
+                  <legend
+                    class="fieldset-legend"
+                    data-i18n="settings.versionAndUpdates"
+                  ></legend>
+                  <div class="flex items-center gap-2">
+                    <span data-about-target="build"></span>
+                    <button
+                      type="button"
+                      class="btn btn-sm"
+                      data-action="about#copyBuild"
+                      data-i18n="settings.copyAppBuild"
+                    ></button>
+                  </div>
+                  <ul class="list rounded-box border border-base-300">
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.updates"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.updatesHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-updates-target="checkButton"
+                          data-action="updates#check"
+                          data-i18n="settings.checkForUpdates"
+                        ></button>
+                        <span
+                          class="loading loading-spinner loading-sm"
+                          data-updates-target="checkingSpinner"
+                          hidden
+                        ></span>
+                        <span data-updates-target="status"></span>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-primary"
+                          data-updates-target="updateButton"
+                          data-action="updates#install"
+                          data-i18n="settings.update"
+                          hidden
+                        ></button>
+                      </div>
+                    </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.launchCheck"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.launchCheckHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        class="toggle"
+                        data-updates-target="launchCheckToggle"
+                        data-action="change->updates#chooseLaunchCheck"
+                      />
+                    </li>
+                    <li
+                      class="list-row items-center"
+                      data-updates-target="channelRow"
+                    >
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.updateChannel"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.updateChannelHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <div class="flex items-center gap-2">
+                        <select
+                          class="select select-sm w-auto"
+                          data-updates-target="channelSelect"
+                          data-action="change->updates#chooseChannel"
+                        >
+                          <option
+                            value="stable"
+                            data-i18n="settings.channelStable"
+                          ></option>
+                          <option
+                            value="preview"
+                            data-i18n="settings.channelPreview"
+                          ></option>
+                        </select>
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-updates-target="rollbackButton"
+                          data-action="updates#rollBack"
+                          data-i18n="settings.rollBack"
+                          hidden
+                        ></button>
+                      </div>
+                    </li>
+                  </ul>
+                </fieldset>
+
                 <fieldset class="fieldset text-sm" data-controller="components">
                   <legend
                     class="fieldset-legend"
@@ -2154,20 +2261,11 @@
                   ></div>
                 </fieldset>
 
-                <fieldset class="fieldset text-sm" data-controller="about">
+                <fieldset class="fieldset text-sm" data-controller="licenses">
                   <legend
                     class="fieldset-legend"
                     data-i18n="settings.about"
                   ></legend>
-                  <div class="flex items-center gap-2">
-                    <span data-about-target="build"></span>
-                    <button
-                      type="button"
-                      class="btn btn-sm"
-                      data-action="about#copyBuild"
-                      data-i18n="settings.copyAppBuild"
-                    ></button>
-                  </div>
                   <div class="flex flex-col gap-1 text-base-content/70">
                     <p data-i18n="settings.license"></p>
                     <p>
@@ -2188,108 +2286,17 @@
                     <button
                       type="button"
                       class="btn btn-sm"
-                      data-action="about#showLicenses"
+                      data-action="licenses#showLicenses"
                       data-i18n="settings.fullLicenses"
                     ></button>
                     <button
                       type="button"
                       class="btn btn-sm"
-                      data-action="about#openSource"
+                      data-action="licenses#openSource"
                       data-i18n="settings.sourceCode"
                     ></button>
                   </div>
-                  <ul class="list rounded-box border border-base-300">
-                    <li class="list-row items-center">
-                      <span class="flex w-32 items-center gap-1 font-medium">
-                        <span data-i18n="settings.updates"></span>
-                        <span
-                          tabindex="0"
-                          class="cursor-help text-base-content/50"
-                          data-i18n-tooltip="settings.updatesHelp"
-                          ><i data-lucide="info" class="size-3.5"></i
-                        ></span>
-                      </span>
-                      <div class="flex items-center gap-2">
-                        <button
-                          type="button"
-                          class="btn btn-sm"
-                          data-updates-target="checkButton"
-                          data-action="updates#check"
-                          data-i18n="settings.checkForUpdates"
-                        ></button>
-                        <span
-                          class="loading loading-spinner loading-sm"
-                          data-updates-target="checkingSpinner"
-                          hidden
-                        ></span>
-                        <span data-updates-target="status"></span>
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-primary"
-                          data-updates-target="updateButton"
-                          data-action="updates#install"
-                          data-i18n="settings.update"
-                          hidden
-                        ></button>
-                      </div>
-                    </li>
-                    <li class="list-row items-center">
-                      <span class="flex w-32 items-center gap-1 font-medium">
-                        <span data-i18n="settings.launchCheck"></span>
-                        <span
-                          tabindex="0"
-                          class="cursor-help text-base-content/50"
-                          data-i18n-tooltip="settings.launchCheckHelp"
-                          ><i data-lucide="info" class="size-3.5"></i
-                        ></span>
-                      </span>
-                      <input
-                        type="checkbox"
-                        class="toggle"
-                        data-updates-target="launchCheckToggle"
-                        data-action="change->updates#chooseLaunchCheck"
-                      />
-                    </li>
-                    <li
-                      class="list-row items-center"
-                      data-updates-target="channelRow"
-                    >
-                      <span class="flex w-32 items-center gap-1 font-medium">
-                        <span data-i18n="settings.updateChannel"></span>
-                        <span
-                          tabindex="0"
-                          class="cursor-help text-base-content/50"
-                          data-i18n-tooltip="settings.updateChannelHelp"
-                          ><i data-lucide="info" class="size-3.5"></i
-                        ></span>
-                      </span>
-                      <div class="flex items-center gap-2">
-                        <select
-                          class="select select-sm w-auto"
-                          data-updates-target="channelSelect"
-                          data-action="change->updates#chooseChannel"
-                        >
-                          <option
-                            value="stable"
-                            data-i18n="settings.channelStable"
-                          ></option>
-                          <option
-                            value="preview"
-                            data-i18n="settings.channelPreview"
-                          ></option>
-                        </select>
-                        <button
-                          type="button"
-                          class="btn btn-sm"
-                          data-updates-target="rollbackButton"
-                          data-action="updates#rollBack"
-                          data-i18n="settings.rollBack"
-                          hidden
-                        ></button>
-                      </div>
-                    </li>
-                  </ul>
-                  <dialog class="modal" data-about-target="dialog">
+                  <dialog class="modal" data-licenses-target="dialog">
                     <div class="modal-box w-11/12 max-w-4xl">
                       <h3
                         class="text-lg font-bold"
@@ -2299,13 +2306,13 @@
                         class="mt-4 h-[60vh] w-full rounded-box border border-base-300"
                         title="LICENSE.html"
                         sandbox=""
-                        data-about-target="notice"
+                        data-licenses-target="notice"
                         hidden
                       ></iframe>
                       <div
                         role="alert"
                         class="alert alert-info mt-4 text-sm"
-                        data-about-target="missingHint"
+                        data-licenses-target="missingHint"
                         data-i18n="settings.licensesMissing"
                         hidden
                       ></div>

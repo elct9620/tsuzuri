@@ -118,19 +118,19 @@ A directory chosen earlier in this launch takes effect only at the next, so the 
 | When | the App Build is asked for |
 | Then | it answers the release number Cargo.toml carries and that commit |
 
-## `OB-014` Showing the App Build under About
+## `OB-014` Showing the App Build in the settings
 
 | Step | Statement |
 | --- | --- |
-| Given | the settings open at About |
+| Given | the general settings open |
 | When | the App Build is answered |
-| Then | About shows the release number and the commit's first seven characters |
+| Then | they show the release number and the commit's first seven characters first |
 
 ## `OB-015` Copying the App Build for a report
 
 | Step | Statement |
 | --- | --- |
-| Given | the App Build shown under About |
+| Given | the App Build shown in the settings |
 | When | copying it is chosen |
 | Then | the clipboard holds Tsuzuri, the release number and the short commit, and a Notification says it was copied |
 

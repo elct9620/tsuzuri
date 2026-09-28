@@ -5,7 +5,7 @@ Which licenses the packages the webview bundles may carry, and the License Notic
 ## Includes
 
 - `scripts/licenses.test.ts`
-- `src/controllers/about_controller.test.ts`
+- `src/controllers/licenses_controller.test.ts`
 
 ## `LC-001` Accepting a package under a license the project accepts
 

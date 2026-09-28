@@ -45,23 +45,23 @@ sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 | When | What happens |
 |---|---|
 | Tsuzuri opens | It checks tsuzuri.aotoki.me for a newer version on your update channel and, if there is one, offers **Update** in a notification |
-| Any time | Settings → About → **Check for updates** |
+| Any time | Settings → Version and updates → **Check for updates** |
 | You choose **Update** | It downloads the same kind of installer you installed from, checks its signature, stops the engines, installs it and restarts |
 
-Nothing is downloaded until you choose **Update**, and it is refused while a transcription or translation runs. Checking at launch can be turned off under Settings → About. On Linux, installing asks for your password as `apt` or `dnf` would.
+Nothing is downloaded until you choose **Update**, and it is refused while a transcription or translation runs. Checking at launch can be turned off under Settings → Version and updates. On Linux, installing asks for your password as `apt` or `dnf` would.
 
 | Update channel | Receives |
 |---|---|
 | Stable (default) | Released versions |
 | Preview | A build of every change in development, and each release as it comes out |
 
-Choose the channel under Settings → About. A preview is labelled with the release it builds on and when it was built. Moving from Preview back to Stable waits for the next release, or choose **Roll back to stable now** to reinstall the current release straight away. The rpm package offers only Stable.
+Choose the channel under Settings → Version and updates. A preview is labelled with the release it builds on and when it was built. Moving from Preview back to Stable waits for the next release, or choose **Roll back to stable now** to reinstall the current release straight away. The rpm package offers only Stable.
 
 ## Reporting a Problem
 
 | Include | Where |
 |---|---|
-| The version | Settings → About → **Copy** |
+| The version | Settings → Version and updates → **Copy** |
 | The log file | Settings → **Open directory** |
 | More detail | Turn on **Debug log** in Settings, restart, and repeat what went wrong |
 

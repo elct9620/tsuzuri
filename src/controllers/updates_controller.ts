@@ -18,7 +18,7 @@ import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
 import { localTime } from "../ui/time";
 
-/** App Updates: looked for at launch and under About, offered to the user, and installed behind a window that stays until Tsuzuri restarts. */
+/** App Updates: looked for at launch and from the settings, offered to the user, and installed behind a window that stays until Tsuzuri restarts. */
 export default class UpdatesController extends Controller {
   static targets = [
     "checkButton",
@@ -166,7 +166,7 @@ export default class UpdatesController extends Controller {
     );
   }
 
-  /** Offers an App Update the launch check found under About and in a Notification; finding none says nothing, since nobody asked. */
+  /** Offers an App Update the launch check found in the settings and in a Notification; finding none says nothing, since nobody asked. */
   private offer(update: AppUpdate | null): void {
     if (!update) return;
     this.show(update);

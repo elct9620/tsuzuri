@@ -371,6 +371,7 @@ const en = {
     appBuildCopied: "Version copied",
     appBuildNotCopied: "Version not copied",
     releasesNotOpened: "Releases page not opened",
+    versionAndUpdates: "Version and updates",
     updates: "Updates",
     updatesHelp:
       "Asks GitHub whether a newer version exists; updating downloads it, verifies its signature, installs it and restarts Tsuzuri.",

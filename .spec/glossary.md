@@ -164,11 +164,11 @@ The one page carrying the license texts of Tsuzuri and of everything it ships: t
 
 ### App Build
 
-The release number of the running Tsuzuri and the commit it was built from, which the settings show under About so a report names exactly what ran. Its release number is not a Version, which is a subtitle's.
+The release number of the running Tsuzuri and the commit it was built from, which the settings show first so a report names exactly what ran. Its release number is not a Version, which is a subtitle's.
 
 ### App Update
 
-A release of Tsuzuri newer than the App Build, announced by the update manifest of the chosen Update Channel and signed with Tsuzuri's updater key for its own release number. Tsuzuri looks for one at each launch unless the settings turn that off, and whenever About is asked to; installing it downloads and verifies it, stops every Component, and restarts Tsuzuri as the new release. The one exception to "newer" is a Rollback.
+A release of Tsuzuri newer than the App Build, announced by the update manifest of the chosen Update Channel and signed with Tsuzuri's updater key for its own release number. Tsuzuri looks for one at each launch unless the settings turn that off, and whenever the settings ask for one; installing it downloads and verifies it, stops every Component, and restarts Tsuzuri as the new release. The one exception to "newer" is a Rollback.
 
 ### Update Channel
 

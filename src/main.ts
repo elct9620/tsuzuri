@@ -11,6 +11,7 @@ import FieldController, {
   composingOption,
 } from "./controllers/field_controller";
 import GlossaryController from "./controllers/glossary_controller";
+import LicensesController from "./controllers/licenses_controller";
 import LogsController from "./controllers/logs_controller";
 import ModelsController from "./controllers/models_controller";
 import NotificationController from "./controllers/notification_controller";
@@ -59,6 +60,7 @@ async function start(): Promise<void> {
     dialog: DialogController,
     field: FieldController,
     glossary: GlossaryController,
+    licenses: LicensesController,
     logs: LogsController,
     models: ModelsController,
     notification: NotificationController,

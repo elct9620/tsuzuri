@@ -312,7 +312,7 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 | Webview 打包套件 | 同 `about.toml` | 腳本檢查 |
 | OpenCC 字典 | Apache-2.0 | 收進授權頁 |
 
-`vendor.sh` 把每個變體帶著的授權檔放進 `licenses/`，`scripts/licenses.ts` 再把全部寫成授權頁，從設定的「關於」開啟（`docs/ui.md` 7.6）。ffmpeg 不開 GPL、nonfree，是獨立執行檔，原始程式碼附在每次釋出。
+`vendor.sh` 把每個變體帶著的授權檔放進 `licenses/`，`scripts/licenses.ts` 再把全部寫成授權頁，從設定的「關於」開啟（`docs/ui.md` 7.7）。ffmpeg 不開 GPL、nonfree，是獨立執行檔，原始程式碼附在每次釋出。
 
 ## 5 模型
 
@@ -1168,7 +1168,7 @@ Windows 的安裝程式啟動後直接結束 Tsuzuri，不經過結束時的 `ki
 | rpm 只有穩定版 | rpm 把預覽排在後面 |
 | 未選通道跟著版本 | 測試者持續收到預覽 |
 
-預覽版號在打包前寫入 Cargo.toml，顯示時改說以哪個正式版為基礎與建置時間（`docs/ui.md` 7.6.1）。rpm 會把預覽版排在後續正式版之後，裝了就離不開，所以預覽版不出 rpm。
+預覽版號在打包前寫入 Cargo.toml，顯示時改說以哪個正式版為基礎與建置時間（`docs/ui.md` 7.1.1）。rpm 會把預覽版排在後續正式版之後，裝了就離不開，所以預覽版不出 rpm。
 
 #### 13.5.4 更新網站
 

@@ -561,7 +561,9 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
-| `components`、`models`、`transcription-settings`、`translation-settings`、`logs`、`volume-boost`、`about` | 設定頁 |
+| `components`、`models`、`transcription-settings`、`translation-settings`、`logs`、`volume-boost` | 設定頁 |
+| `about`、`updates` | 版本與更新、安裝視窗 |
+| `licenses` | 關於的授權頁 |
 | `tooltip` | 全頁共用的 tooltip |
 | `shortcuts` | 快速鍵一覽 |
 | `notification` | 每則通知的倒數、暫停與按鈕 |

@@ -1,7 +1,8 @@
 name: Release Assets
 
-# Attaches what CI built for a release's commit, so nothing is compiled twice. Rerunning this
-# replaces the assets; for a commit CI has not built, run CI on its tag first, then this.
+# Attaches what CI built for a release's commit, so nothing is compiled twice, then publishes the
+# draft release-please left, so the latest release always carries the update manifest. Rerunning
+# this replaces the assets; for a commit CI has not built, run CI on its tag first, then this.
 on:
   workflow_run:
     workflows: [CI]
@@ -59,7 +60,6 @@ jobs:
             fi
             run_id="$RUN_ID"
           fi
-          gh release view "$tag" -R "$GITHUB_REPOSITORY" --json tagName -q .tagName
           { echo "tag=$tag"; echo "run-id=$run_id"; } >> "$GITHUB_OUTPUT"
 
   attach:
@@ -70,10 +70,20 @@ jobs:
       actions: read
       contents: write
     steps:
+      # release-please leaves the release a draft, which only a token that can write sees.
+      - name: Find the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.target.outputs.tag }}
+        run: gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json tagName -q .tagName
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.target.outputs.tag }}
-          sparse-checkout: components.json
+          sparse-checkout: |
+            components.json
+            scripts/manifest.ts
+            scripts/signatures.ts
+            src-tauri/Cargo.toml
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -82,12 +92,22 @@ jobs:
           path: bundles
           run-id: ${{ needs.target.outputs.run-id }}
           github-token: ${{ github.token }}
-      # Installers only, so no executable reaches users loose or inside a zip.
+      # Installers, and the macOS app archive only the updater installs, each package with its
+      # updater signature; no executable reaches users loose.
       - name: Collect the installers
         run: |
           mkdir assets
           find bundles -type f \( -path '*/nsis/*.exe' -o -path '*/msi/*.msi' -o -path '*/dmg/*.dmg' \
-            -o -path '*/deb/*.deb' -o -path '*/rpm/*.rpm' \) -exec cp {} assets/ \;
+            -o -path '*/deb/*.deb' -o -path '*/rpm/*.rpm' -o -path '*/macos/*.app.tar.gz' \
+            -o -name '*.sig' \) -exec cp {} assets/ \;
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      # An installed Tsuzuri reads this from the latest release to find its App Update.
+      - name: Write the update manifest
+        env:
+          TAG: ${{ needs.target.outputs.tag }}
+        run: node scripts/manifest.ts "$TAG" assets
       - name: Read the ffmpeg source pin
         id: ffmpeg
         run: |
@@ -126,3 +146,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.target.outputs.tag }}
         run: gh release upload "$TAG" assets/* --clobber -R "$GITHUB_REPOSITORY"
+      # Published only now, so the latest release never lacks the manifest installed apps read.
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.target.outputs.tag }}
+        run: gh release edit "$TAG" --draft=false -R "$GITHUB_REPOSITORY"

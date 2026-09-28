@@ -18,6 +18,16 @@ function minisignLines(base64: string): string[] {
   return Buffer.from(base64.trim(), "base64").toString("utf8").split("\n");
 }
 
+/** The trusted comment of `signature`: tab-separated fields the signature covers. */
+function trustedComment(signature: string): string {
+  return minisignLines(signature)[2].replace(/^trusted comment: /, "");
+}
+
+/** The release number the Tauri CLI bound `signature` to, or none for one signed without it. */
+export function signedVersion(signature: string): string | undefined {
+  return /(?:^|\t)version:([^\t]*)/.exec(trustedComment(signature))?.[1];
+}
+
 /**
  * Checks `signature`, as Tauri writes a `.sig`, over `file` with the Tauri public key `pubkey`.
  * A minisign signature holds its algorithm (`ED` signs a BLAKE2b-512 hash of the file, `Ed` the
@@ -29,9 +39,9 @@ export function signatureCheck(
   signature: string,
 ): SignatureCheck {
   const publicKey = Buffer.from(minisignLines(pubkey)[1], "base64");
-  const [, signatureLine, commentLine, globalLine] = minisignLines(signature);
+  const [, signatureLine, , globalLine] = minisignLines(signature);
   const signed = Buffer.from(signatureLine, "base64");
-  const comment = commentLine.replace(/^trusted comment: /, "");
+  const comment = trustedComment(signature);
   const key = createPublicKey({
     key: {
       kty: "OKP",
@@ -54,7 +64,7 @@ export function signatureCheck(
       key,
       Buffer.from(globalLine, "base64"),
     ),
-    signedVersion: /(?:^|\t)version:([^\t]*)/.exec(comment)?.[1],
+    signedVersion: signedVersion(signature),
   };
 }
 

@@ -12,6 +12,7 @@ use super::history::{SubtitleSnapshot, UndoHistory};
 use super::mode_hold::{
     is_always_written, is_written_by_edit, ModeHold, ModeProgress, RunningMode,
 };
+use super::trimmed_name;
 use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{
     translation_only, translation_srt, translation_with_speakers, BackupKind, CleanupScope,
@@ -869,13 +870,6 @@ impl Project {
     fn save_config(&self) -> Result<(), Failure> {
         Ok(self.config().save(&self.directory)?)
     }
-}
-
-/// A Project Name without the spaces around it, or none when nothing else is left.
-fn trimmed_name(name: Option<&str>) -> Option<String> {
-    name.map(str::trim)
-        .filter(|name| !name.is_empty())
-        .map(str::to_string)
 }
 
 /// How a Mode's result keeps the subtitle it writes over, and whether it keeps what it wrote.

@@ -72,7 +72,7 @@ A Model Source one Project chooses for the transcription or the translation Mode
 
 ### Recent Project
 
-A directory opened as a Project before, kept in the app's settings with when it was last opened so it can be opened again from the start screen or the Open menu. One is kept per directory, ten at most, the latest first; one whose directory is gone is dropped when opening it fails.
+A directory opened as a Project before, kept in the app's settings with when it was last opened so it can be opened again from the start screen or the Open menu, where it is listed by its Project Name. One is kept per directory, ten at most, the latest first; one whose directory is gone is dropped when opening it fails.
 
 ### Preview
 

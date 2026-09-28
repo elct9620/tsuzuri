@@ -10,6 +10,7 @@ import RecentProjectsController from "./recent_projects_controller";
 
 const LECTURE: RecentProject = {
   directory: "/videos/lecture",
+  name: "lecture",
   opened_at_ms: Date.UTC(2026, 8, 24, 12),
 };
 
@@ -125,6 +126,22 @@ describe("RecentProjectsController", () => {
     expect(
       items.map((item) => [item.textContent, item.dataset.tooltip]),
     ).toEqual([["lecture", "/videos/lecture"]]);
+  });
+
+  // @behavior PJ-179
+  it("lists a Recent Project by its Project Name on the start screen and in the Open menu", async () => {
+    recent = [{ ...LECTURE, name: "週會錄影" }];
+    await showStartScreen();
+
+    await emit("project-changed");
+    await settle();
+
+    const names = [
+      ...document.querySelectorAll(
+        ".list-row .truncate:first-child, [data-recent-projects-target='menuItem'] span",
+      ),
+    ].map((name) => name.textContent);
+    expect(names).toEqual(["週會錄影", "週會錄影"]);
   });
 
   // @behavior PJ-165

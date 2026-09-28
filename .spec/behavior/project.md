@@ -369,6 +369,30 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | the Open menu is shown |
 | Then | it lists `lecture` with `/videos/lecture` as its tooltip |
 
+## `PJ-177` Listing a Recent Project by its Project Name
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` as a Recent Project, its Project Config naming it `週會錄影` |
+| When | the Recent Projects are listed |
+| Then | `lecture` is listed as `週會錄影` |
+
+## `PJ-178` Naming a Recent Project after its directory when its Project Config does not answer
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` and `interview` as Recent Projects, the Project Config of `lecture` not answering |
+| When | the Recent Projects are listed |
+| Then | the list comes in time, `lecture` named `lecture` and `interview` by its Project Name |
+
+## `PJ-179` Showing the Project Name of a Recent Project on the start screen and in the Open menu
+
+| Step | Statement |
+| --- | --- |
+| Given | `/videos/lecture` as a Recent Project named `週會錄影` |
+| When | the start screen and the Open menu are shown |
+| Then | both list it as `週會錄影` |
+
 ## `PJ-165` Listing the Recent Projects again after one could not be opened
 
 | Step | Statement |

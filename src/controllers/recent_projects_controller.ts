@@ -6,7 +6,6 @@ import {
   type RecentProject,
 } from "../backend/project";
 import { interfaceLanguageCode } from "../i18n";
-import { fileName } from "../ui/file_name";
 
 /** A row of the start screen's list, opening its Project when clicked. */
 function listRow(project: RecentProject): HTMLLIElement {
@@ -15,7 +14,7 @@ function listRow(project: RecentProject): HTMLLIElement {
   button.className = "list-col-grow min-w-0 text-left";
   const name = document.createElement("div");
   name.className = "truncate";
-  name.textContent = fileName(project.directory);
+  name.textContent = project.name;
   const path = document.createElement("div");
   path.className = "truncate text-xs opacity-60";
   path.textContent = project.directory;
@@ -43,7 +42,7 @@ function menuItem(project: RecentProject): HTMLLIElement {
   button.dataset.tooltip = project.directory;
   const name = document.createElement("span");
   name.className = "min-w-0 truncate";
-  name.textContent = fileName(project.directory);
+  name.textContent = project.name;
   button.append(name);
   const item = document.createElement("li");
   item.dataset.recentProjectsTarget = "menuItem";

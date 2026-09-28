@@ -68,10 +68,7 @@ pub enum ProjectError {
 impl Project {
     /// The Project Name: the one the Project Options give, else the directory's name.
     pub fn name(&self) -> String {
-        self.options
-            .name
-            .clone()
-            .unwrap_or_else(|| directory_name(&self.directory))
+        project_name(self.options.name.as_deref(), &self.directory)
     }
 
     /// The Languages a Translation Glossary's `source,target` header stands for: the Primary
@@ -564,6 +561,19 @@ pub struct Backup {
 pub enum BackupKind {
     Output,
     Overwrite,
+}
+
+/// The Project Name of a Project in `directory` whose Project Options give `name`: that name
+/// without the spaces around it, else the directory's name.
+fn project_name(name: Option<&str>, directory: &Path) -> String {
+    trimmed_name(name).unwrap_or_else(|| directory_name(directory))
+}
+
+/// A Project Name without the spaces around it, or none when nothing else is left.
+fn trimmed_name(name: Option<&str>) -> Option<String> {
+    name.map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map(str::to_string)
 }
 
 /// The name of `directory` as a Project is named without a Project Name of its own.

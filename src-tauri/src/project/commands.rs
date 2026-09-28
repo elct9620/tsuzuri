@@ -5,7 +5,7 @@ use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
-use super::recent::{RecentProject, RecentProjects};
+use super::recent::{project_views, RecentProjectView, RecentProjects};
 use super::requested_srt::{srt_argument, RequestedSrt};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
 use super::{
@@ -66,9 +66,11 @@ pub fn take_requested_srt(requested: State<'_, RequestedSrt>) -> Option<PathBuf>
 pub fn recent_projects(
     app: AppHandle,
     current: State<'_, CurrentProject>,
-) -> Result<Vec<RecentProject>, Failure> {
+) -> Result<Vec<RecentProjectView>, Failure> {
     let recent = RecentProjects::load(&json_settings::settings_dir(&app)?)?;
-    Ok(recent.projects_without(current.directory().as_deref()))
+    Ok(project_views(
+        recent.projects_without(current.directory().as_deref()),
+    ))
 }
 
 /// Holds the Project `open` opens as the Current Project and tells the webview, keeping the
@@ -361,6 +363,8 @@ mod tests {
     use std::time::{Duration, UNIX_EPOCH};
 
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+
+    use crate::project::recent::RecentProject;
 
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;

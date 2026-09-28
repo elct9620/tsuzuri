@@ -205,9 +205,11 @@ export function takeRequestedSrt(): Promise<string | null> {
   return invoke("take_requested_srt");
 }
 
-/** A directory opened as a Project before, and when it was last opened. */
+/** A directory opened as a Project before, by its Project Name, and when it was last opened. */
 export interface RecentProject {
   directory: string;
+  /** The Project Name, the directory's name when its Project Config gives none or does not answer. */
+  name: string;
   opened_at_ms: number;
 }
 

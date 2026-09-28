@@ -351,9 +351,9 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 | 取消或失敗 | 不改設定 |
 | 需要登入 | 提示先以 hf 登入 |
 | 任務進行中 | 照常下載 |
-| Windows | 快取改用硬連結 |
+| Windows | 沿用 hf-hub 的複製 |
 
-快取位置依 `HF_HUB_CACHE`、`HF_HOME`，否則是 `~/.cache/huggingface/hub`，與其他 HF 工具共用，下載過的不再下載。token 只取自 HF 工具的登入，App 不保存秘密。Windows 上 hf-hub 以複製代替 symlink，大模型會佔兩倍空間，所以下載後換成硬連結。
+快取位置依 `HF_HUB_CACHE`、`HF_HOME`，否則是 `~/.cache/huggingface/hub`，與其他 HF 工具共用，下載過的不再下載。token 只取自 HF 工具的登入，App 不保存秘密。Windows 上 hf-hub 以複製代替 symlink，模型會佔兩倍空間，沿用這個預設行為。
 
 ### 5.4 Repository 的檔案
 

@@ -10,6 +10,8 @@ export type Failure =
   | { code: "model-missing"; path: string }
   | { code: "model-not-downloaded"; repo: string; file: string }
   | { code: "model-download-failed"; detail: string }
+  | { code: "model-login-required"; repo: string }
+  | { code: "repository-not-found"; repo: string }
   | { code: "model-download-cancelled" }
   | { code: "model-downloading" }
   | { code: "no-project" }

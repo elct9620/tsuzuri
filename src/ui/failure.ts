@@ -15,6 +15,8 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "model-missing": "error",
   "model-not-downloaded": "warning",
   "model-download-failed": "error",
+  "model-login-required": "warning",
+  "repository-not-found": "warning",
   "model-download-cancelled": "warning",
   "model-downloading": "warning",
   "no-project": "warning",
@@ -74,6 +76,10 @@ export function failureMessage(error: unknown): string {
       return t("failures.modelMissing", { path: error.path });
     case "model-download-failed":
       return t("failures.modelDownloadFailed", { detail: error.detail });
+    case "model-login-required":
+      return t("failures.modelLoginRequired", { repo: error.repo });
+    case "repository-not-found":
+      return t("failures.repositoryNotFound", { repo: error.repo });
     case "model-download-cancelled":
       return t("failures.modelDownloadCancelled");
     case "model-downloading":

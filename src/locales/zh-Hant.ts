@@ -445,6 +445,10 @@ const zhHant: typeof en = {
     modelNotChosen: "尚未指定{{slot}}模型",
     modelMissing: "找不到模型 {{path}}，請重新指定",
     modelDownloadFailed: "模型下載失敗（{{detail}}）",
+    modelLoginRequired:
+      "{{repo}} 需要登入：先執行 hf auth login，並在 Hugging Face 網頁取得存取權",
+    repositoryNotFound:
+      "找不到 {{repo}}，請檢查名稱；別人的私人 Repository 無法下載",
     modelDownloadCancelled: "已取消下載模型",
     modelDownloading: "這個模型正在下載",
     modelNotDownloaded: "{{repo}} 的 {{file}} 還沒下載，請在設定重新下載",

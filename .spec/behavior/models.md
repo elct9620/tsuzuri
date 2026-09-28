@@ -351,3 +351,39 @@ The slot keeps its Model until the download is done, so a cancelled or failed do
 | Given | the transcription slot holding a Repository's file the Hugging Face Cache no longer holds |
 | When | the models panel loads |
 | Then | the transcription slot asks the user to download it again |
+
+## `MD-042` Reading the token Hugging Face's tools saved
+
+A Repository that needs a login is downloaded with the token `hf auth login` saved, so Tsuzuri keeps no secret of its own.
+
+| Step | Statement |
+| --- | --- |
+| Given | none of the Hugging Face token variables set, and a token saved under `.cache/huggingface` in the home directory |
+| When | the Hugging Face token is looked for |
+| Then | the saved token is taken |
+
+## `MD-043` Taking the token `HF_TOKEN` names
+
+| Step | Statement |
+| --- | --- |
+| Given | `HF_TOKEN` set, and a token saved under `.cache/huggingface` in the home directory |
+| When | the Hugging Face token is looked for |
+| Then | the token `HF_TOKEN` names is taken |
+
+## `MD-044` Asking to log in for a gated Repository
+
+| Step | Statement |
+| --- | --- |
+| Given | a Hugging Face Repository answering that it is gated |
+| When | one of its files is downloaded |
+| Then | it is refused as needing a login, naming the Repository |
+
+## `MD-045` Saying a Repository was not found
+
+The Hub answers a Repository that does not exist, or is private to someone else, as unauthorized without saying which.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Hugging Face Repository answering unauthorized without an error code |
+| When | its files are listed |
+| Then | it is refused as not found, naming the Repository |

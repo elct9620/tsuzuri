@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use futures::TryStreamExt;
 use hf_hub::progress::{DownloadEvent, Progress, ProgressEvent, ProgressHandler};
 use hf_hub::repository::RepoTreeEntry;
-use hf_hub::{split_id, HFClient};
+use hf_hub::{split_id, HFClient, HFError};
 use serde::Serialize;
 use tokio::task::AbortHandle;
 
@@ -14,34 +14,72 @@ use crate::model_source::ModelSource;
 use crate::toolchain::ModelSlot;
 use crate::transfer_report::TransferReport;
 
-/// The Hugging Face Cache, located the way Hugging Face's own tools locate it, so a Model they
-/// downloaded is found. `variable_by_name` reads an environment variable; the home directory comes
-/// from the platform, since hf-hub reads `HOME`, which Windows does not set.
-pub fn hub_cache(variable_by_name: impl Fn(&str) -> Option<String>, home: &Path) -> PathBuf {
-    let non_empty_value = |name: &str| variable_by_name(name).filter(|value| !value.is_empty());
-    if let Some(cache) =
-        non_empty_value("HF_HUB_CACHE").or_else(|| non_empty_value("HUGGINGFACE_HUB_CACHE"))
-    {
-        return PathBuf::from(cache);
-    }
-    let hf_home = non_empty_value("HF_HOME")
+/// Where Hugging Face's own tools keep their files, found the way they find it so what they
+/// downloaded and the login they saved are both found. `variable_by_name` reads an environment
+/// variable; the home directory comes from the platform, since hf-hub reads `HOME`, which Windows
+/// does not set.
+fn hf_home(variable_by_name: &impl Fn(&str) -> Option<String>, home: &Path) -> PathBuf {
+    non_empty_value(variable_by_name, "HF_HOME")
         .map(PathBuf::from)
         .or_else(|| {
-            non_empty_value("XDG_CACHE_HOME").map(|cache| PathBuf::from(cache).join("huggingface"))
+            non_empty_value(variable_by_name, "XDG_CACHE_HOME")
+                .map(|cache| PathBuf::from(cache).join("huggingface"))
         })
-        .unwrap_or_else(|| home.join(".cache").join("huggingface"));
-    hf_home.join("hub")
+        .unwrap_or_else(|| home.join(".cache").join("huggingface"))
 }
 
-/// A client of the Hugging Face Hub keeping what it downloads in `hub_cache`; `endpoint` stands in
-/// for the Hub, or `HF_ENDPOINT` does when none is given.
-pub fn hub_client(hub_cache: &Path, endpoint: Option<&str>) -> Result<HFClient, Failure> {
-    let builder = HFClient::builder().cache_dir(hub_cache);
-    let builder = match endpoint {
-        Some(endpoint) => builder.endpoint(endpoint),
-        None => builder,
-    };
-    builder.build().map_err(download_failure)
+fn non_empty_value(
+    variable_by_name: &impl Fn(&str) -> Option<String>,
+    name: &str,
+) -> Option<String> {
+    variable_by_name(name).filter(|value| !value.is_empty())
+}
+
+/// The Hugging Face Cache, where a Model another Hugging Face tool downloaded is found.
+pub fn hub_cache(variable_by_name: impl Fn(&str) -> Option<String>, home: &Path) -> PathBuf {
+    non_empty_value(&variable_by_name, "HF_HUB_CACHE")
+        .or_else(|| non_empty_value(&variable_by_name, "HUGGINGFACE_HUB_CACHE"))
+        .map(PathBuf::from)
+        .unwrap_or_else(|| hf_home(&variable_by_name, home).join("hub"))
+}
+
+/// The token Hugging Face's tools use: `HF_TOKEN`, else the file `hf auth login` saved, unless
+/// implicit tokens are turned off.
+pub fn hub_token(variable_by_name: impl Fn(&str) -> Option<String>, home: &Path) -> Option<String> {
+    if non_empty_value(&variable_by_name, "HF_HUB_DISABLE_IMPLICIT_TOKEN").is_some() {
+        return None;
+    }
+    if let Some(token) = non_empty_value(&variable_by_name, "HF_TOKEN") {
+        return Some(token);
+    }
+    let token_file = non_empty_value(&variable_by_name, "HF_TOKEN_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| hf_home(&variable_by_name, home).join("token"));
+    std::fs::read_to_string(token_file)
+        .ok()
+        .map(|token| token.trim().to_string())
+        .filter(|token| !token.is_empty())
+}
+
+/// A client of the Hugging Face Hub keeping what it downloads in `hub_cache` and signing in with
+/// `token`; `endpoint` stands in for the Hub, or `HF_ENDPOINT` does when none is given.
+pub fn hub_client(
+    hub_cache: &Path,
+    token: Option<&str>,
+    endpoint: Option<&str>,
+) -> Result<HFClient, Failure> {
+    let mut builder = HFClient::builder().cache_dir(hub_cache);
+    if let Some(token) = token {
+        builder = builder.token(token);
+    }
+    if let Some(endpoint) = endpoint {
+        builder = builder.endpoint(endpoint);
+    }
+    builder
+        .build()
+        .map_err(|error| Failure::ModelDownloadFailed {
+            detail: error.to_string(),
+        })
 }
 
 /// A file of a Hugging Face Repository, by its path in the Repository.
@@ -63,10 +101,10 @@ pub async fn list_model_files(
         .list_tree()
         .recursive(true)
         .send()
-        .map_err(download_failure)?
+        .map_err(|error| hub_failure(repo, error))?
         .try_collect()
         .await
-        .map_err(download_failure)?;
+        .map_err(|error| hub_failure(repo, error))?;
     Ok(entries
         .into_iter()
         .filter_map(|entry| match entry {
@@ -140,7 +178,7 @@ impl ModelDownloads {
         }
         drop(running);
         let path = match result {
-            Ok(downloaded) => downloaded.map_err(download_failure)?,
+            Ok(downloaded) => downloaded.map_err(|error| hub_failure(&repo, error))?,
             Err(error) if error.is_cancelled() => return Err(Failure::ModelDownloadCancelled),
             Err(error) => return Err(error.into()),
         };
@@ -169,9 +207,26 @@ fn snapshot_commit(path: &Path, file: &str) -> Option<String> {
     Some(snapshot.file_name()?.to_string_lossy().into_owned())
 }
 
-fn download_failure(error: hf_hub::HFError) -> Failure {
-    Failure::ModelDownloadFailed {
-        detail: error.to_string(),
+/// The Failure an answer of the Hub is, for `repo`: the Hub answers a gated Repository with the
+/// `GatedRepo` error code, and one that does not exist, or is someone else's private one, as
+/// unauthorized without saying which.
+fn hub_failure(repo: &str, error: HFError) -> Failure {
+    let repo = repo.to_string();
+    let (status, error_code) = match &error {
+        HFError::AuthRequired { context }
+        | HFError::Forbidden { context }
+        | HFError::Http { context } => {
+            (Some(context.status.as_u16()), context.error_code.as_deref())
+        }
+        HFError::RepoNotFound { .. } => (Some(404), None),
+        _ => (None, None),
+    };
+    match (status, error_code) {
+        (_, Some("GatedRepo")) | (Some(403), _) => Failure::ModelLoginRequired { repo },
+        (Some(401 | 404), _) => Failure::RepositoryNotFound { repo },
+        _ => Failure::ModelDownloadFailed {
+            detail: error.to_string(),
+        },
     }
 }
 
@@ -266,7 +321,7 @@ mod tests {
         cache: &Path,
         revision: Option<&str>,
     ) -> Result<ModelSource, Failure> {
-        let client = hub_client(cache, Some(&hub.base_url)).unwrap();
+        let client = hub_client(cache, None, Some(&hub.base_url)).unwrap();
         tauri::async_runtime::block_on(downloads.download(
             client,
             REPO.to_string(),
@@ -310,7 +365,7 @@ mod tests {
     fn list_tree_files(slot: ModelSlot) -> Vec<(String, u64)> {
         let dir = TempDir::new("hub-tree");
         let hub = FakeHttp::serve(repository_tree);
-        let client = hub_client(dir.path(), Some(&hub.base_url)).unwrap();
+        let client = hub_client(dir.path(), None, Some(&hub.base_url)).unwrap();
         tauri::async_runtime::block_on(list_model_files(&client, REPO, slot))
             .unwrap()
             .into_iter()
@@ -343,6 +398,81 @@ mod tests {
         let files = list_tree_files(ModelSlot::Translation);
 
         assert_eq!(files, vec![("qwen3.gguf".to_string(), 2_497_281_120)]);
+    }
+
+    /// A home directory holding the token `hf auth login` saves there.
+    fn home_with_saved_token(dir: &TempDir) -> PathBuf {
+        let hf_home = dir.path().join(".cache").join("huggingface");
+        std::fs::create_dir_all(&hf_home).unwrap();
+        std::fs::write(hf_home.join("token"), "hf_saved\n").unwrap();
+        dir.path().to_path_buf()
+    }
+
+    // @behavior MD-042
+    #[test]
+    fn reads_the_token_hugging_faces_tools_saved() {
+        let dir = TempDir::new("hub-saved-token");
+        let home = home_with_saved_token(&dir);
+
+        let token = hub_token(variables(&[]), &home);
+
+        assert_eq!(token.as_deref(), Some("hf_saved"));
+    }
+
+    // @behavior MD-043
+    #[test]
+    fn takes_the_token_hf_token_names() {
+        let dir = TempDir::new("hub-env-token");
+        let home = home_with_saved_token(&dir);
+
+        let token = hub_token(variables(&[("HF_TOKEN", "hf_from_env")]), &home);
+
+        assert_eq!(token.as_deref(), Some("hf_from_env"));
+    }
+
+    /// A Hub answering every request as unauthorized, with `error_code` when there is one.
+    fn unauthorized_hub(error_code: Option<&'static str>) -> FakeHttp {
+        FakeHttp::serve(move |_| Response {
+            status: 401,
+            headers: error_code
+                .map(|code| vec![("X-Error-Code".to_string(), code.to_string())])
+                .unwrap_or_default(),
+            ..Response::default()
+        })
+    }
+
+    // @behavior MD-044
+    #[test]
+    fn asks_to_log_in_for_a_gated_repository() {
+        let dir = TempDir::new("hub-gated");
+        let hub = unauthorized_hub(Some("GatedRepo"));
+
+        let result = download_breeze(&ModelDownloads::default(), &hub, dir.path(), None);
+
+        assert_eq!(
+            result,
+            Err(Failure::ModelLoginRequired {
+                repo: REPO.to_string()
+            })
+        );
+    }
+
+    // @behavior MD-045
+    #[test]
+    fn says_a_repository_was_not_found() {
+        let dir = TempDir::new("hub-missing");
+        let hub = unauthorized_hub(None);
+        let client = hub_client(dir.path(), None, Some(&hub.base_url)).unwrap();
+
+        let result =
+            tauri::async_runtime::block_on(list_model_files(&client, REPO, ModelSlot::Translation));
+
+        assert_eq!(
+            result,
+            Err(Failure::RepositoryNotFound {
+                repo: REPO.to_string()
+            })
+        );
     }
 
     // @behavior MD-019
@@ -393,7 +523,7 @@ mod tests {
         let recorded = Arc::clone(&reports);
 
         tauri::async_runtime::block_on(ModelDownloads::default().download(
-            hub_client(dir.path(), Some(&hub.base_url)).unwrap(),
+            hub_client(dir.path(), None, Some(&hub.base_url)).unwrap(),
             REPO.to_string(),
             FILE.to_string(),
             None,
@@ -423,7 +553,7 @@ mod tests {
         let cache = dir.path().to_path_buf();
         let base_url = hub.base_url.clone();
         let download = std::thread::spawn(move || {
-            let client = hub_client(&cache, Some(&base_url)).unwrap();
+            let client = hub_client(&cache, None, Some(&base_url)).unwrap();
             tauri::async_runtime::block_on(running.download(
                 client,
                 REPO.to_string(),
@@ -453,7 +583,7 @@ mod tests {
         let cache = dir.path().to_path_buf();
         let base_url = hub.base_url.clone();
         let first = std::thread::spawn(move || {
-            let client = hub_client(&cache, Some(&base_url)).unwrap();
+            let client = hub_client(&cache, None, Some(&base_url)).unwrap();
             tauri::async_runtime::block_on(running.download(
                 client,
                 REPO.to_string(),

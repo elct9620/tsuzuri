@@ -459,6 +459,10 @@ const en = {
     modelNotChosen: "No model is chosen for {{slot}}",
     modelMissing: "The model {{path}} is missing; choose it again",
     modelDownloadFailed: "Could not download the model ({{detail}})",
+    modelLoginRequired:
+      "{{repo}} needs a login: run hf auth login and request access on Hugging Face",
+    repositoryNotFound:
+      "{{repo}} was not found; check its name, as someone else's private Repository cannot be downloaded",
     modelDownloadCancelled: "The model download was cancelled",
     modelDownloading: "This model is already downloading",
     modelNotDownloaded:

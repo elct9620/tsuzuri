@@ -42,6 +42,14 @@ pub enum Failure {
     ModelDownloadFailed {
         detail: String,
     },
+    /// A Hugging Face Repository that needs a login, or access granted to the account logged in.
+    ModelLoginRequired {
+        repo: String,
+    },
+    /// A Hugging Face Repository that does not exist, or is private to someone else.
+    RepositoryNotFound {
+        repo: String,
+    },
     /// The Model's download was asked to stop.
     ModelDownloadCancelled,
     /// The same file of a Repository asked to download while it already is.

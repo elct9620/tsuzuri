@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
-use tauri::{AppHandle, Emitter, State};
+use hf_hub::HFClient;
+use tauri::{AppHandle, Emitter, Manager, State};
 
-use super::hub::{self, hub_client, ModelDownloads, RepositoryFile};
+use super::hub::{self, hub_client, hub_token, ModelDownloads, RepositoryFile};
 use super::presets::PresetModel;
 use super::settings::{self, load_settings};
 use super::{
@@ -70,7 +71,7 @@ pub async fn download_model(
     file: String,
     revision: Option<String>,
 ) -> Result<ModelSource, Failure> {
-    let client = hub_client(load_settings(&app)?.hub_cache(), None)?;
+    let client = app_hub_client(&app)?;
     let progress_app = app.clone();
     downloads
         .download(client, repo, file, revision, move |progress| {
@@ -91,11 +92,17 @@ pub async fn repository_files(
     repo: String,
     slot: ModelSlot,
 ) -> Result<Vec<RepositoryFile>, Failure> {
-    let client = hub_client(load_settings(&app)?.hub_cache(), None)?;
+    let client = app_hub_client(&app)?;
     hub::list_model_files(&client, &repo, slot).await
 }
 
 #[tauri::command]
 pub fn preset_models() -> Vec<PresetModel> {
     super::presets::catalog()
+}
+
+/// A client of the Hugging Face Hub using the cache and the login Hugging Face's own tools use.
+fn app_hub_client(app: &AppHandle) -> Result<HFClient, Failure> {
+    let token = hub_token(|name| std::env::var(name).ok(), &app.path().home_dir()?);
+    hub_client(load_settings(app)?.hub_cache(), token.as_deref(), None)
 }

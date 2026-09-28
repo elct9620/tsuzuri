@@ -59,7 +59,7 @@ describe("AboutController", () => {
 
   // @behavior OB-014
   it("shows the release number and the short commit in the settings", () => {
-    expect(target("build").textContent).toBe("版本 0.1.0（a1b2c3d）");
+    expect(target("build").textContent).toBe("0.1.0（a1b2c3d）");
   });
 
   // @behavior OB-015

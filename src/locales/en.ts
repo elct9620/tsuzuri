@@ -364,7 +364,7 @@ const en = {
     licensesMissing:
       "A development build carries no license notice; every released build does.",
     sourceCode: "Source code",
-    appBuild: "Version {{releaseNumber}} ({{commit}})",
+    appBuild: "{{releaseNumber}} ({{commit}})",
     previewBuild:
       "Preview | based on {{basedOn}} | built {{builtAt}} ({{commit}})",
     copyAppBuild: "Copy",
@@ -372,6 +372,8 @@ const en = {
     appBuildNotCopied: "Version not copied",
     releasesNotOpened: "Releases page not opened",
     versionAndUpdates: "Version and updates",
+    version: "Version",
+    versionHelp: "Copy this line into a report, so it names the exact build.",
     updates: "Updates",
     updatesHelp:
       "Asks GitHub whether a newer version exists; updating downloads it, verifies its signature, installs it and restarts Tsuzuri.",

@@ -16,12 +16,13 @@ import {
   type ProjectFeed,
   type TranscriptionOverrides,
 } from "../backend/project";
+import type { ModelSource } from "../backend/toolchain";
 import { interfaceLanguageCode, t } from "../i18n";
 import { failureMessage } from "../ui/failure";
 import { fileName } from "../ui/file_name";
 import { closeMenu } from "../ui/menu";
 import { notify } from "../ui/notification";
-import { MODEL_EXTENSIONS } from "../ui/models";
+import { MODEL_EXTENSIONS, sourceName } from "../ui/models";
 
 function resourceItem(
   resource: ResourceView,
@@ -188,7 +189,7 @@ export default class ProjectController extends Controller {
       directory: false,
       filters: [{ name: "Model", extensions: MODEL_EXTENSIONS[slot] }],
     });
-    if (path !== null) await this.saveModel(slot, path);
+    if (path !== null) await this.saveModel(slot, { kind: "file", path });
   }
 
   async followModel({ currentTarget }: Event): Promise<void> {
@@ -199,11 +200,11 @@ export default class ProjectController extends Controller {
 
   private async saveModel(
     slot: keyof ProjectModels,
-    path: string | null,
+    source: ModelSource | null,
   ): Promise<void> {
     if (this.options === null) return;
     await this.saveOptions({
-      models: { ...this.options.models, [slot]: path },
+      models: { ...this.options.models, [slot]: source },
     });
   }
 
@@ -287,8 +288,9 @@ export default class ProjectController extends Controller {
 
   private showProjectModels(models: ProjectModels): void {
     for (const status of this.projectModelTargets) {
-      const path = models[status.dataset.slot as keyof ProjectModels];
-      status.textContent = path ?? t("models.followsGeneral");
+      const source = models[status.dataset.slot as keyof ProjectModels];
+      status.textContent =
+        source === null ? t("models.followsGeneral") : sourceName(source);
     }
     for (const follow of this.generalModelButtonTargets)
       follow.hidden =

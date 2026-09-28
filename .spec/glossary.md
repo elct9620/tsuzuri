@@ -60,7 +60,7 @@ What the user sets for one Project in the settings, beside its Primary Language:
 
 ### Project Model
 
-A Model one Project chooses for the transcription or the translation Model Slot in place of the one the general settings hold, as for Resources spoken in a Language the general Model does not suit. A slot without one uses the general settings' Model.
+A Model Source one Project chooses for the transcription or the translation Model Slot in place of the one the general settings hold, kept in the Project's settings so another machine finds the same Model, as for Resources spoken in a Language the general Model does not suit. A slot without one uses the general settings' Model.
 
 ### Preview
 

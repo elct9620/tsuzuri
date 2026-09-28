@@ -1857,6 +1857,7 @@ pub(super) fn open_directory_of(path: &Path, language: Language) -> Result<Proje
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model_source::ModelSource;
     use crate::project::{BilingualOrder, ProjectConfig, ProjectModels, TranscriptionOverrides};
     use crate::test_support::{backups, output_backups, overwrite_backups, project_of, TempDir};
 
@@ -2447,7 +2448,9 @@ mod tests {
         let dir = TempDir::new("pj-models-kept");
         let options = ProjectOptions {
             models: ProjectModels {
-                transcription: Some(PathBuf::from("/models/kotoba.bin")),
+                transcription: Some(ModelSource::File {
+                    path: PathBuf::from("/models/kotoba.bin"),
+                }),
                 ..ProjectModels::default()
             },
             transcription: TranscriptionOverrides {

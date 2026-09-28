@@ -374,7 +374,10 @@ describe("ProjectController", () => {
     expect(sent("set_project_options")).toEqual({
       options: {
         ...projectOf().options,
-        models: { transcription: null, translation: "/models/gemma-ja.gguf" },
+        models: {
+          transcription: null,
+          translation: { kind: "file", path: "/models/gemma-ja.gguf" },
+        },
       },
     });
   });
@@ -394,7 +397,10 @@ describe("ProjectController", () => {
   // @behavior MD-010
   it("sets the Project Options without the Project Model once the slot follows the general settings", async () => {
     const withModel = projectOf();
-    withModel.options.models.transcription = "/models/kotoba.bin";
+    withModel.options.models.transcription = {
+      kind: "file",
+      path: "/models/kotoba.bin",
+    };
     await hold(withModel);
 
     await click("#follow-transcription-model");

@@ -6,6 +6,7 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 
 use crate::failure::Failure;
+use crate::model_source::{parse_saved_source, ModelSource};
 
 pub mod commands;
 pub mod detection;
@@ -292,54 +293,6 @@ pub enum ModelSlot {
     Translation,
 }
 
-/// Where a Model Slot's Model comes from.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
-pub enum ModelSource {
-    File {
-        path: PathBuf,
-    },
-    /// A Hugging Face Repository's `file` downloaded at `commit`, kept in the Hugging Face Cache.
-    Repository {
-        repo: String,
-        file: String,
-        commit: String,
-    },
-}
-
-impl ModelSource {
-    /// Where the Model is expected, whether or not it is there.
-    pub fn path(&self, hub_cache: &Path) -> PathBuf {
-        match self {
-            ModelSource::File { path } => path.clone(),
-            ModelSource::Repository { repo, file, commit } => hub_cache
-                .join(format!("models--{}", repo.replace('/', "--")))
-                .join("snapshots")
-                .join(commit)
-                .join(file),
-        }
-    }
-}
-
-/// A slot as saved, which before Model Sources were kept was a bare path.
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum SavedSource {
-    Path(PathBuf),
-    Source(ModelSource),
-}
-
-fn parse_saved_source<'de, D: serde::Deserializer<'de>>(
-    deserializer: D,
-) -> Result<Option<ModelSource>, D::Error> {
-    Ok(
-        Option::<SavedSource>::deserialize(deserializer)?.map(|saved| match saved {
-            SavedSource::Path(path) => ModelSource::File { path },
-            SavedSource::Source(source) => source,
-        }),
-    )
-}
-
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModelSettings {
     #[serde(default, deserialize_with = "parse_saved_source")]
@@ -400,9 +353,13 @@ impl ModelSettings {
     }
 
     /// These settings with a Project Model in `slot` in place of the general one, when there is one.
-    pub fn with_project_model(mut self, slot: ModelSlot, path: Option<PathBuf>) -> ModelSettings {
-        if let Some(path) = path {
-            self.choose(slot, ModelSource::File { path });
+    pub fn with_project_model(
+        mut self,
+        slot: ModelSlot,
+        source: Option<ModelSource>,
+    ) -> ModelSettings {
+        if let Some(source) = source {
+            self.choose(slot, source);
         }
         self
     }
@@ -714,7 +671,12 @@ mod tests {
             ModelSource::File { path: general },
         );
 
-        let settings = settings.with_project_model(ModelSlot::Transcription, Some(project.clone()));
+        let settings = settings.with_project_model(
+            ModelSlot::Transcription,
+            Some(ModelSource::File {
+                path: project.clone(),
+            }),
+        );
 
         assert_eq!(settings.ready_path(ModelSlot::Transcription), Ok(project));
     }

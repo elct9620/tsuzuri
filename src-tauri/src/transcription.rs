@@ -152,13 +152,13 @@ mod tests {
 
     use super::*;
     use crate::language::Language;
+    use crate::model_source::ModelSource;
     use crate::processes::{AppPorts, Processes};
     use crate::project::{
         Project, ProjectModels, ProjectOptions, TranscriptionOverrides, TranscriptionScope,
     };
     use crate::steps::ModeLock;
     use crate::test_support::{write_executable, TempDir};
-    use crate::toolchain::ModelSource;
     use crate::toolchain::{self, Resolver};
     use crate::transcript::{Segment, WrittenText};
 
@@ -509,7 +509,9 @@ mod tests {
         let project_model = fixture.dir.file("kotoba.bin");
         let target = fixture.target_with(ProjectOptions {
             models: ProjectModels {
-                transcription: Some(project_model.clone()),
+                transcription: Some(ModelSource::File {
+                    path: project_model.clone(),
+                }),
                 ..ProjectModels::default()
             },
             ..ProjectOptions::default()

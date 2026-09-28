@@ -1,6 +1,7 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 
+import type { ModelSource } from "./toolchain";
 import type { TranscriptionSettings } from "./transcription";
 
 export type { UnlistenFn };
@@ -24,8 +25,8 @@ export interface ProjectOptions {
 }
 
 export interface ProjectModels {
-  transcription: string | null;
-  translation: string | null;
+  transcription: ModelSource | null;
+  translation: ModelSource | null;
 }
 
 /** The Transcription Settings a Project sets for itself; `null` follows the general ones. */

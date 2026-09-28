@@ -612,12 +612,12 @@ mod tests {
     use tauri::Manager;
 
     use super::*;
+    use crate::model_source::ModelSource;
     use crate::processes::{AppPorts, Processes};
     use crate::project::{Project, RunningMode, SegmentField};
     use crate::steps::ModeLock;
     use crate::test_support::Response;
     use crate::test_support::{project_of, TempDir};
-    use crate::toolchain::ModelSource;
     use fake_llama::{
         completion, echo_lines, numbered_summary, review_answer, translations, FakeLlama, Lines,
         Replies,
@@ -2335,7 +2335,9 @@ mod tests {
         );
         let project_model = dir.file("gemma-ja.gguf");
         let mut project = project_of(vec![segment(0, 1_000, "大家好")]);
-        project.options.models.translation = Some(project_model.clone());
+        project.options.models.translation = Some(ModelSource::File {
+            path: project_model.clone(),
+        });
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         app.state::<CurrentProject>().replace(project);

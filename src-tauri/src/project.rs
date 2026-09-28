@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::language::{Language, LanguagePair};
+use crate::model_source::{parse_saved_source, ModelSource};
 use crate::transcript::{split_label, AudioWindow, Segment, SpeakerNames, Transcript, WrittenText};
 
 mod backups;
@@ -382,7 +383,7 @@ pub struct TranslationSource {
     /// The Primary Language it is translated from.
     pub language: Language,
     /// The Project Model to translate with in place of the general one.
-    pub model: Option<PathBuf>,
+    pub model: Option<ModelSource>,
 }
 
 /// The Segments from `first` through `last`, by position.
@@ -437,7 +438,7 @@ pub struct TranscriptionTarget {
     pub subtitle: PathBuf,
     pub language: Language,
     /// The Project Model to transcribe with in place of the general one.
-    pub model: Option<PathBuf>,
+    pub model: Option<ModelSource>,
     /// The Transcription Settings the Project sets for itself.
     pub overrides: TranscriptionOverrides,
     /// The Audio Window it covers, none for the whole media file.
@@ -493,8 +494,10 @@ pub struct ProjectOptions {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ProjectModels {
-    pub transcription: Option<PathBuf>,
-    pub translation: Option<PathBuf>,
+    #[serde(deserialize_with = "parse_saved_source")]
+    pub transcription: Option<ModelSource>,
+    #[serde(deserialize_with = "parse_saved_source")]
+    pub translation: Option<ModelSource>,
 }
 
 /// The Transcription Settings a Project sets for itself; one left `None` follows the general settings.

@@ -6,6 +6,7 @@ pub mod language;
 pub mod logs;
 #[cfg(target_os = "macos")]
 pub mod menu;
+pub mod model_source;
 pub mod processes;
 pub mod progress;
 pub mod project;

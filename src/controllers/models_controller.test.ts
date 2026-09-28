@@ -49,8 +49,12 @@ describe("ModelsController", () => {
   // @behavior MD-004
   it("shows the chosen model's path", async () => {
     await mountWith({
-      transcription: { path: "/models/breeze.bin", has_file: true },
-      translation: { path: null, has_file: false },
+      transcription: {
+        source: { kind: "file", path: "/models/breeze.bin" },
+        path: "/models/breeze.bin",
+        has_file: true,
+      },
+      translation: { source: null, path: null, has_file: false },
     });
 
     expect(statusOf("transcription")).toBe("/models/breeze.bin");
@@ -59,8 +63,12 @@ describe("ModelsController", () => {
   // @behavior MD-005
   it("asks again for a model whose file is gone", async () => {
     await mountWith({
-      transcription: { path: null, has_file: false },
-      translation: { path: "/models/qwen3-4b.gguf", has_file: false },
+      transcription: { source: null, path: null, has_file: false },
+      translation: {
+        source: { kind: "file", path: "/models/qwen3-4b.gguf" },
+        path: "/models/qwen3-4b.gguf",
+        has_file: false,
+      },
     });
 
     expect(statusOf("translation")).toContain("請重新指定");
@@ -71,16 +79,20 @@ describe("ModelsController", () => {
     let chooseModelArgs: unknown;
     await mountWith(
       {
-        transcription: { path: null, has_file: false },
-        translation: { path: null, has_file: false },
+        transcription: { source: null, path: null, has_file: false },
+        translation: { source: null, path: null, has_file: false },
       },
       {
         "plugin:dialog|open": () => "/models/qwen3-4b.gguf",
         choose_model: (args) => {
           chooseModelArgs = args;
           return {
-            transcription: { path: null, has_file: false },
-            translation: { path: "/models/qwen3-4b.gguf", has_file: true },
+            transcription: { source: null, path: null, has_file: false },
+            translation: {
+              source: { kind: "file", path: "/models/qwen3-4b.gguf" },
+              path: "/models/qwen3-4b.gguf",
+              has_file: true,
+            },
           };
         },
       },
@@ -112,8 +124,8 @@ describe("ModelsController", () => {
   it("says a Model was not chosen when recording it fails", async () => {
     await mountWith(
       {
-        transcription: { path: null, has_file: false },
-        translation: { path: null, has_file: false },
+        transcription: { source: null, path: null, has_file: false },
+        translation: { source: null, path: null, has_file: false },
       },
       {
         "plugin:dialog|open": () => "/models/qwen3-4b.gguf",

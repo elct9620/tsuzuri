@@ -196,9 +196,10 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 ### 3.2 情境
 
 ```
-   ┌──────── 字幕（共用核心）────────┐
+   ┌──────────── 共用核心 ───────────┐
    │ transcript、segment_change、    │
-   │ replacement、cleanup、language  │
+   │ replacement、cleanup、language、│
+   │ model_source                    │
    └───▲──────────▲───────────▲──────┘
        │          │           │
   ┌────┴───┐ ┌────┴─────┐ ┌───┴──────────┐
@@ -209,7 +210,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
   波形（waveform）是「工具鏈 → 預覽」的用例，只有取峰值的規則
 ```
 
-情境之間只經由字幕的型別與 `CurrentProject` 往來，翻譯與轉錄都不直接讀寫專案目錄。
+情境之間只經由共用核心的型別與 `CurrentProject` 往來，翻譯與轉錄都不直接讀寫專案目錄。
 
 ### 3.3 模組
 
@@ -228,6 +229,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `replacement` | 領域 | 搜尋取代 |
 | — | `cleanup` | 領域 | 簡體清理 |
 | — | `language` | 領域 | 語言代碼 |
+| — | `model_source` | 領域 | 模型來源 |
 | — | `project` | 領域 | 專案聚合、寫回 |
 | `project/` | `versions` | 領域 | 逐 cue 比較版本 |
 | `project/` | `history` | 領域 | 資源的復原紀錄 |

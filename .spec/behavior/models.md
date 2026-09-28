@@ -4,6 +4,7 @@ Pointing each Model Slot at a Model Source, in the general settings or as a Proj
 
 ## Includes
 
+- `src-tauri/src/project/files.rs`
 - `src-tauri/src/toolchain.rs`
 - `src-tauri/src/toolchain/*.rs`
 - `src/controllers/models_controller.test.ts`
@@ -148,3 +149,11 @@ A slot saved as a bare path keeps working after an update, so nobody chooses the
 | Given | `HF_HUB_CACHE` and `HF_HOME` both set |
 | When | the Hugging Face Cache is located |
 | Then | it is the directory `HF_HUB_CACHE` names |
+
+## `MD-018` Reading a Project Model chosen before Model Sources were kept
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project's settings saved with a bare path as its transcription Project Model |
+| When | the Project's settings are read |
+| Then | its transcription Project Model is that path as a file on disk |

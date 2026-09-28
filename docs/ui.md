@@ -17,6 +17,7 @@
 |---|---|---|
 | 工具列 | 專案名稱與專案層級的動作 | navbar |
 | 專案名稱 | 點一下就地改名 | input-ghost |
+| 改名提示 | 停留時框線、✎ 與 tooltip | input、tooltip |
 | 視窗標題 | 專案名稱與 Tsuzuri | — |
 | 開啟 ▾ | 目錄、SRT、最近的專案 | dropdown、menu |
 | 轉錄、翻譯 | 開啟第 5、6 節的任務 | btn |

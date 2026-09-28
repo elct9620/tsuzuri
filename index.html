@@ -79,13 +79,22 @@
               <i data-lucide="menu" class="size-4"></i>
             </label>
             <h1 class="navbar-start w-auto min-w-0 flex-1">
-              <input
-                type="text"
-                class="input input-ghost input-sm w-full max-w-md truncate text-base font-semibold"
-                data-project-target="name"
-                data-i18n-label="toolbar.projectName"
-                data-action="change->project#rename keydown.enter->project#leaveName:!composing keydown.esc->project#discardName:!composing"
-              />
+              <label
+                class="group input input-ghost input-sm w-full max-w-md hover:border-base-300"
+                data-i18n-tooltip="toolbar.rename"
+              >
+                <input
+                  type="text"
+                  class="truncate text-base font-semibold"
+                  data-project-target="name"
+                  data-i18n-label="toolbar.projectName"
+                  data-action="change->project#rename keydown.enter->project#leaveName:!composing keydown.esc->project#discardName:!composing"
+                />
+                <i
+                  data-lucide="pencil"
+                  class="size-4 opacity-0 group-hover:opacity-60"
+                ></i>
+              </label>
             </h1>
             <div class="navbar-end w-auto shrink-0 gap-2">
               <div class="dropdown dropdown-end">

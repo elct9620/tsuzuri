@@ -2,6 +2,7 @@
 const en = {
   toolbar: {
     projectName: "Project name",
+    rename: "Click to rename",
     open: "Open",
     openDirectory: "Open a folder",
     openSrt: "Open an SRT file",

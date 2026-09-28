@@ -3,6 +3,7 @@ import type en from "./en";
 const zhHant: typeof en = {
   toolbar: {
     projectName: "專案名稱",
+    rename: "點一下改名",
     open: "開啟",
     openDirectory: "開啟目錄",
     openSrt: "開啟 SRT",

@@ -929,6 +929,34 @@ A mute forgotten from an earlier session would pass for a media file with no sou
 | When | the Preview opens again |
 | Then | the media plays at 12.5% of its volume |
 
+## `PV-184` Drawing the Waveform as loud as the media plays
+
+The Waveform's height follows the volume, as Aegisub's does, so a quiet recording looks quiet and raising it shows how far it was raised.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview of a Current Resource with a media file, at full volume |
+| When | its Waveform is drawn |
+| Then | each Peak is drawn at its own height, with no stretching to the loudest |
+
+## `PV-185` Growing the Waveform with the volume
+
+| Step | Statement |
+| --- | --- |
+| Given | the Waveform of a Current Resource drawn |
+| When | the volume slider is moved to its end |
+| Then | each Peak is drawn eight times its own height |
+
+## `PV-186` Keeping the Waveform's height while muted
+
+A mute silences the media without changing the volume chosen, so the Waveform still shows how loud it will play.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Waveform of a Current Resource drawn with the volume set to 12.5% |
+| When | the mute button is pressed |
+| Then | each Peak is still drawn at an eighth of its own height |
+
 ## `PV-092` Showing the Speaker over the video by default
 
 A cue is saved with its Speaker's name before the dialogue, so what is over the video names who says it too.

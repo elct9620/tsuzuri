@@ -4,7 +4,7 @@
  */
 
 /** The loudest a media element plays by itself, as a percentage. */
-const FULL_VOLUME = 100;
+export const FULL_VOLUME = 100;
 
 /** The slider's length; its middle is full volume, as Aegisub's is. */
 export const SLIDER_END = 100;

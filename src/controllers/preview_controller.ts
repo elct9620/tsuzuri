@@ -23,6 +23,7 @@ import {
 import { formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
 import {
+  FULL_VOLUME,
   LOUDEST_VOLUME,
   playAtVolume,
   resumeAudioGraph,
@@ -30,6 +31,7 @@ import {
   sliderPosition,
   volumeAt,
 } from "../ui/volume";
+import type TimelineController from "./timeline_controller";
 
 /** Where the webview remembers the Preview folded away. */
 const FOLDED_KEY = "tsuzuri.preview-folded";
@@ -61,7 +63,7 @@ const VOLUME_KEY = "tsuzuri.preview-volume";
 /** The volume remembered as `value`, or full volume where none was chosen. */
 function volumeOf(value: string | null): number {
   const volume = Number(value ?? NaN);
-  return volume >= 0 && volume <= LOUDEST_VOLUME ? volume : 100;
+  return volume >= 0 && volume <= LOUDEST_VOLUME ? volume : FULL_VOLUME;
 }
 
 /** Where the webview remembers the Speaker over the video turned off. */
@@ -79,6 +81,8 @@ function showText(element: HTMLElement, text: string): void {
 
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
 export default class PreviewController extends Controller {
+  static outlets = ["timeline"];
+
   static targets = [
     "panel",
     "foldButton",
@@ -144,6 +148,8 @@ export default class PreviewController extends Controller {
   declare readonly currentSpeakerTarget: HTMLElement;
   declare readonly currentTextTarget: HTMLElement;
   declare readonly currentTranslationTarget: HTMLElement;
+  declare readonly timelineOutlet: TimelineController;
+  declare readonly hasTimelineOutlet: boolean;
 
   private media: string | null = null;
   private segments: Segment[] = [];
@@ -237,9 +243,20 @@ export default class PreviewController extends Controller {
     this.applyVolume();
   }
 
+  /** The volume chosen as a multiple of the media's own, muted or not. */
+  private get gain(): number {
+    return this.volume / FULL_VOLUME;
+  }
+
+  /** The Waveform is drawn as loud as the media plays, from the moment the timeline connects. */
+  timelineOutletConnected(timeline: TimelineController): void {
+    timeline.scaleWaveform(this.gain);
+  }
+
   /** Plays the media at the volume chosen, or silent while muted, and shows both beside the slider. */
   private applyVolume(): void {
     playAtVolume(this.player, this.isMuted ? 0 : this.volume);
+    if (this.hasTimelineOutlet) this.timelineOutlet.scaleWaveform(this.gain);
     this.volumeLevelTarget.textContent = `${Math.round(this.volume)}%`;
     this.muteButtonTarget.setAttribute("aria-pressed", `${this.isMuted}`);
     this.muteButtonTarget.classList.toggle("btn-primary", this.isMuted);

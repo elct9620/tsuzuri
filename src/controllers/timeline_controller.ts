@@ -181,6 +181,8 @@ export default class TimelineController extends Controller {
     range: Region | null;
   } | null = null;
   private surfer?: WaveSurfer;
+  /** How many times its own height each Peak is drawn; the Preview sets it to follow the volume. */
+  private waveformScale = 1;
   /** The Waveform asked for last; one that arrives after another was asked for is not drawn. */
   private waveformRequest?: Promise<Waveform>;
   private regions?: ReturnType<typeof RegionsPlugin.create>;
@@ -209,6 +211,12 @@ export default class TimelineController extends Controller {
   /** Paints the Waveform in the colours of the theme the system turned to; bound to `system:color-scheme`. */
   repaintWaveform(): void {
     this.surfer?.setOptions(this.waveformColors());
+  }
+
+  /** Draws each Peak `scale` times its own height, as the volume the media plays at. */
+  scaleWaveform(scale: number): void {
+    this.waveformScale = scale;
+    this.surfer?.setOptions({ barHeight: scale });
   }
 
   disconnect(): void {
@@ -488,7 +496,7 @@ export default class TimelineController extends Controller {
       peaks: [waveform.peaks],
       duration: waveform.peaks.length / waveform.peaks_per_second,
       height: "auto",
-      normalize: true,
+      barHeight: this.waveformScale,
       hideScrollbar: true,
       minPxPerSec: this.pxPerSec,
       ...this.waveformColors(),

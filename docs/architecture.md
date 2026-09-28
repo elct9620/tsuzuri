@@ -592,6 +592,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `transcript:shown` | 字幕編輯 | `segment-changes` 顯示入口 |
 | `transcript:selection` | 字幕編輯 | 焦點欄位跟上選取 |
 | `versions` outlet | `comparison` | 開啟版本 dialog |
+| `timeline` outlet | `preview` | 波形高度跟著音量 |
 | `versions:compare-with` | `versions` | `comparison` 換對照 |
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
 | `editor:choice` | session，經 `assembly.ts` | `timeline` 依來源移動媒體 |

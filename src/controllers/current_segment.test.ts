@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import WaveSurfer from "wavesurfer.js";
 import { assemble } from "../assembly";
 import type { ProjectView, Segment } from "../backend/project";
 import type { EditingSession } from "../editor";
@@ -204,7 +205,7 @@ describe("Current Segment", () => {
     document.body.innerHTML = `
       <main data-controller="transcript"
         data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
-        <div data-controller="preview timeline"
+        <div data-controller="preview timeline" data-preview-timeline-outlet="[data-controller~='timeline']"
           data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
           <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
@@ -218,7 +219,7 @@ describe("Current Segment", () => {
           <button data-transcript-target="followButton" data-action="transcript#toggleFollowing"></button>
           <button data-timeline-target="aloneButton" data-action="timeline#togglePlayingAlone"></button>
           <span data-preview-target="time"></span>
-          <input type="range" min="0" max="100" data-preview-target="volume"><span data-preview-target="volumeLevel"></span><button id="mute" data-preview-target="muteButton" data-action="preview#toggleMute"><span data-preview-target="muteIcon"></span></button>
+          <input type="range" min="0" max="100" data-preview-target="volume" data-action="input->preview#setVolume"><span data-preview-target="volumeLevel"></span><button id="mute" data-preview-target="muteButton" data-action="preview#toggleMute"><span data-preview-target="muteIcon"></span></button>
           <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"><input type="checkbox" data-preview-target="captionSpeaker"></div>
           <div data-preview-target="currentSection">
           <p data-preview-target="currentHint"></p>
@@ -797,5 +798,81 @@ describe("Current Segment", () => {
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
     expect(snapButton().getAttribute("aria-pressed")).toBe("true");
+  });
+  describe("the Waveform's height", () => {
+    /** Every node Web Audio would make passes the sound on; none is heard in a test. */
+    class SilentAudioContext {
+      readonly destination = {};
+      private node = () => ({
+        gain: { value: 1 },
+        threshold: { value: 0 },
+        knee: { value: 0 },
+        ratio: { value: 1 },
+        connect: (next: unknown) => next,
+      });
+      createGain = this.node;
+      createDynamicsCompressor = this.node;
+      createMediaElementSource = this.node;
+      resume = () => Promise.resolve();
+    }
+
+    let surfers: WaveSurfer[];
+
+    /** How many times its own height the last Waveform drawn draws each Peak. */
+    function peakScale(): number {
+      const { options } = surfers[surfers.length - 1];
+      return options.normalize ? Number.NaN : (options.barHeight ?? 1);
+    }
+
+    const volumeSlider = () =>
+      document.querySelector<HTMLInputElement>(
+        '[data-preview-target="volume"]',
+      )!;
+
+    function moveVolumeSlider(position: number): void {
+      volumeSlider().value = String(position);
+      volumeSlider().dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    beforeEach(() => {
+      surfers = [];
+      const create = WaveSurfer.create.bind(WaveSurfer);
+      vi.spyOn(WaveSurfer, "create").mockImplementation((options) => {
+        const surfer = create(options);
+        surfers.push(surfer);
+        return surfer;
+      });
+      vi.stubGlobal("AudioContext", SilentAudioContext);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    // @behavior PV-184
+    it("draws each Peak at its own height at full volume", async () => {
+      await show(twoSegments);
+
+      expect(peakScale()).toBe(1);
+    });
+
+    // @behavior PV-185
+    it("grows the Waveform with the volume", async () => {
+      await show(twoSegments);
+
+      moveVolumeSlider(100);
+
+      expect(peakScale()).toBe(8);
+    });
+
+    // @behavior PV-186
+    it("keeps the Waveform's height while muted", async () => {
+      moveVolumeSlider(25);
+      await show(twoSegments);
+
+      document.querySelector<HTMLElement>("#mute")!.click();
+
+      expect(peakScale()).toBe(0.125);
+    });
   });
 });

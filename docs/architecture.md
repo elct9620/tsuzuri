@@ -240,6 +240,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `project/` | `mode_hold` | 應用 | 任務對資源的保留 |
 | `project/` | `backups` | 領域 | 備份紀錄與時機 |
 | `project/` | `files` | 轉接 | 檔名、配對、備份 |
+| `project/` | `recent` | 應用、轉接 | 最近的專案與設定檔 |
 | — | `translation` | 應用 | 翻譯用例 |
 | `translation/` | `batching` | 領域 | 分批 |
 | `translation/` | `speaker_labels` | 領域 | 說話者標籤 |

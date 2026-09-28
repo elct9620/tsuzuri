@@ -15,6 +15,7 @@ mod files;
 pub mod glossary;
 mod history;
 mod mode_hold;
+mod recent;
 pub mod versions;
 
 use backups::Backups;

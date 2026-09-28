@@ -224,6 +224,62 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | an SRT file whose second cue is malformed is chosen to open |
 | Then | a message says the file could not be read at its second cue |
 
+## `PJ-154` Keeping an opened directory as a Recent Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Recent Projects |
+| When | the directory `lecture` is opened |
+| Then | the Recent Projects are `lecture` with the time it was opened |
+
+## `PJ-155` Keeping the directory of an opened SRT file as a Recent Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Recent Projects |
+| When | `lecture/ep01.srt` is opened |
+| Then | the Recent Projects are `lecture` |
+
+## `PJ-156` Keeping one Recent Project per directory
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` opened before `interview` |
+| When | `lecture` is opened again |
+| Then | the Recent Projects are `lecture` then `interview` |
+
+## `PJ-157` Keeping ten Recent Projects
+
+| Step | Statement |
+| --- | --- |
+| Given | ten directories opened one after another |
+| When | an eleventh is opened |
+| Then | the Recent Projects are the last ten opened, without the first |
+
+## `PJ-158` Dropping a Recent Project whose directory is gone
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` as a Recent Project, its directory since removed |
+| When | `lecture` is opened |
+| Then | it is refused as `directory-not-found` and the Recent Projects no longer hold it |
+
+## `PJ-159` Keeping a Recent Project that could not be read
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` as a Recent Project, its directory since made unreadable |
+| When | `lecture` is opened |
+| Then | the Recent Projects still hold it |
+
+## `PJ-160` Leaving the open Project out of the Recent Projects
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` opened before `interview` |
+| When | the Recent Projects are read |
+| Then | they are `lecture` alone |
+
 ## `PJ-003` Editing a Segment of the Current Resource
 
 | Step | Statement |

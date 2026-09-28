@@ -54,6 +54,10 @@ pub enum Failure {
     ModelDownloadCancelled,
     /// The same file of a Repository asked to download while it already is.
     ModelDownloading,
+    /// A directory asked to open as the Project that no longer exists.
+    DirectoryNotFound {
+        directory: PathBuf,
+    },
     /// Translating, editing or saving asked for before a Project was opened.
     NoProject,
     /// The Project has no Resource by the name asked for, or none is current.

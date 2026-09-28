@@ -445,6 +445,7 @@ const zhHant: typeof en = {
     modelDownloadCancelled: "已取消下載模型",
     modelDownloading: "這個模型正在下載",
     modelNotDownloaded: "{{repo}} 的 {{file}} 還沒下載，請在設定重新下載",
+    directoryNotFound: "{{directory}} 已不存在，已從最近的專案移除",
     noProject: "請先開啟目錄或 SRT 檔",
     noResource: "目錄裡沒有可處理的媒體檔或 SRT 檔",
     noMedia: "這個資源沒有可轉錄的影片或音訊",

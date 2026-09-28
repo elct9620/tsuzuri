@@ -62,6 +62,10 @@ What the user sets for one Project in the settings, beside its Primary Language:
 
 A Model Source one Project chooses for the transcription or the translation Model Slot in place of the one the general settings hold, kept in the Project's settings so another machine finds the same Model, as for Resources spoken in a Language the general Model does not suit. A slot without one uses the general settings' Model.
 
+### Recent Project
+
+A directory opened as a Project before, kept in the app's settings with when it was last opened so it can be opened again from the start screen or the Open menu. One is kept per directory, ten at most, the latest first; one whose directory is gone is dropped when opening it fails.
+
 ### Preview
 
 The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. It appears only for a Resource with a media file.

@@ -460,6 +460,8 @@ const en = {
     modelDownloading: "This model is already downloading",
     modelNotDownloaded:
       "{{file}} of {{repo}} is not downloaded; download it again in the settings",
+    directoryNotFound:
+      "{{directory}} no longer exists, so it was removed from the recent projects",
     noProject: "Open a directory or an SRT file first",
     noResource: "The directory has no media file or SRT file to work on",
     noMedia: "This resource has no video or audio file to transcribe",

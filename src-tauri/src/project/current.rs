@@ -31,6 +31,9 @@ impl Project {
     /// `language`, with the first of them current. A `glossary.csv` it cannot read is left out
     /// here and reported when a translation reads it again.
     pub fn open(directory: PathBuf, language: Language) -> Result<Project, Failure> {
+        if !directory.try_exists()? {
+            return Err(Failure::DirectoryNotFound { directory });
+        }
         let config = ProjectConfig::load(&directory)?;
         let language = config.language.unwrap_or(language);
         let mut project = Project {
@@ -1107,6 +1110,11 @@ pub struct CurrentProject(Mutex<HeldProject>);
 impl CurrentProject {
     pub fn replace(&self, project: Project) {
         self.lock().project = Some(project);
+    }
+
+    /// The directory of the open Project, none before one is opened.
+    pub fn directory(&self) -> Option<PathBuf> {
+        Some(self.lock().project.as_ref()?.directory.clone())
     }
 
     /// Keeps the subtitles `mode` writes of the named Resource in `directory` from being changed

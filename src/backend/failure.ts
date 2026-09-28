@@ -14,6 +14,7 @@ export type Failure =
   | { code: "repository-not-found"; repo: string }
   | { code: "model-download-cancelled" }
   | { code: "model-downloading" }
+  | { code: "directory-not-found"; directory: string }
   | { code: "no-project" }
   | { code: "no-resource" }
   | { code: "no-media" }

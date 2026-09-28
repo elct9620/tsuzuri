@@ -19,6 +19,7 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "repository-not-found": "warning",
   "model-download-cancelled": "warning",
   "model-downloading": "warning",
+  "directory-not-found": "warning",
   "no-project": "warning",
   "no-resource": "warning",
   "no-media": "warning",
@@ -84,6 +85,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.modelDownloadCancelled");
     case "model-downloading":
       return t("failures.modelDownloading");
+    case "directory-not-found":
+      return t("failures.directoryNotFound", { directory: error.directory });
     case "model-not-downloaded":
       return t("failures.modelNotDownloaded", {
         file: error.file,

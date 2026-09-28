@@ -149,6 +149,7 @@ pub fn run() {
             project::commands::export_path,
             project::commands::open_project,
             project::commands::open_srt,
+            project::commands::recent_projects,
             project::commands::save_srt,
             project::commands::save_text,
             project::commands::select_resource,

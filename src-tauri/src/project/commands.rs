@@ -1,15 +1,18 @@
 use std::path::PathBuf;
+use std::time::SystemTime;
 
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
+use super::recent::{RecentProject, RecentProjects};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
 use super::{
     CleanupScope, CurrentProject, ExportFormat, Project, ProjectOptions, ProjectView, Reload,
     Restoration, SegmentField, TextMatch,
 };
 use crate::failure::Failure;
+use crate::json_settings;
 use crate::language::Language;
 use crate::progress::Progress;
 use crate::replacement::{Replacement, Search};
@@ -18,14 +21,33 @@ use crate::transcript::WrittenText;
 
 #[tauri::command]
 pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
-    replace_project(&app, Project::open(path, language)?)?;
-    app.announce_project();
-    Ok(())
+    hold_opened(&app, Project::open(path, language))
 }
 
 #[tauri::command]
 pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
-    replace_project(&app, open_directory_of(&path, language)?)?;
+    hold_opened(&app, open_directory_of(&path, language))
+}
+
+#[tauri::command]
+pub fn recent_projects(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+) -> Result<Vec<RecentProject>, Failure> {
+    let recent = RecentProjects::load(&json_settings::settings_dir(&app)?)?;
+    Ok(recent.projects_without(current.directory().as_deref()))
+}
+
+/// Holds the Project `opened_project` as the Current Project and tells the webview, keeping the
+/// Recent Projects up to date whether it opened or not.
+fn hold_opened(app: &AppHandle, opened_project: Result<Project, Failure>) -> Result<(), Failure> {
+    match json_settings::settings_dir(app) {
+        Ok(settings) => {
+            RecentProjects::follow_opening(&settings, &opened_project, SystemTime::now())
+        }
+        Err(failure) => log::warn!("could not find the Recent Projects: {failure:?}"),
+    }
+    replace_project(app, opened_project?)?;
     app.announce_project();
     Ok(())
 }
@@ -295,6 +317,8 @@ pub fn save_translation_glossary(
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::path::Path;
+    use std::time::{Duration, UNIX_EPOCH};
 
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
 
@@ -320,6 +344,156 @@ mod tests {
             fs::write(directory.join(file), "").unwrap();
         }
         directory
+    }
+
+    /// Opens `directory` as `open_project` does at `seconds` past the Unix epoch, keeping the
+    /// Recent Projects in `settings`.
+    fn open_at(settings: &Path, directory: PathBuf, seconds: u64) -> Result<Project, Failure> {
+        let opened_project = Project::open(directory, Language::TraditionalChinese);
+        RecentProjects::follow_opening(
+            settings,
+            &opened_project,
+            UNIX_EPOCH + Duration::from_secs(seconds),
+        );
+        opened_project
+    }
+
+    fn recent_directories(settings: &Path) -> Vec<PathBuf> {
+        RecentProjects::load(settings)
+            .unwrap()
+            .projects_without(None)
+            .into_iter()
+            .map(|project| project.directory)
+            .collect()
+    }
+
+    // @behavior PJ-154
+    #[test]
+    fn keeps_an_opened_directory_as_a_recent_project() {
+        let dir = TempDir::new("pj-recent-opened");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &["ep01.srt"]);
+
+        open_at(&settings, lecture.clone(), 1_790_303_400).unwrap();
+
+        assert_eq!(
+            RecentProjects::load(&settings)
+                .unwrap()
+                .projects_without(None),
+            vec![RecentProject {
+                directory: lecture,
+                opened_at_ms: 1_790_303_400_000,
+            }]
+        );
+    }
+
+    // @behavior PJ-155
+    #[test]
+    fn keeps_the_directory_of_an_opened_srt_as_a_recent_project() {
+        let dir = TempDir::new("pj-recent-srt");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &["ep01.srt"]);
+
+        let opened_project =
+            open_directory_of(&lecture.join("ep01.srt"), Language::TraditionalChinese);
+        RecentProjects::follow_opening(&settings, &opened_project, SystemTime::now());
+
+        assert_eq!(recent_directories(&settings), vec![lecture]);
+    }
+
+    // @behavior PJ-156
+    #[test]
+    fn keeps_one_recent_project_per_directory() {
+        let dir = TempDir::new("pj-recent-once");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &[]);
+        let interview = create_directory(&dir, "interview", &[]);
+        open_at(&settings, lecture.clone(), 1).unwrap();
+        open_at(&settings, interview.clone(), 2).unwrap();
+
+        open_at(&settings, lecture.clone(), 3).unwrap();
+
+        assert_eq!(recent_directories(&settings), vec![lecture, interview]);
+    }
+
+    // @behavior PJ-157
+    #[test]
+    fn keeps_ten_recent_projects() {
+        let dir = TempDir::new("pj-recent-ten");
+        let settings = dir.path().join("settings");
+        let directories: Vec<PathBuf> = (1..=11)
+            .map(|number| create_directory(&dir, &format!("ep{number:02}"), &[]))
+            .collect();
+        for (seconds, directory) in directories[..10].iter().enumerate() {
+            open_at(&settings, directory.clone(), seconds as u64).unwrap();
+        }
+
+        open_at(&settings, directories[10].clone(), 10).unwrap();
+
+        let directories_latest_first: Vec<PathBuf> =
+            directories[1..].iter().rev().cloned().collect();
+        assert_eq!(recent_directories(&settings), directories_latest_first);
+    }
+
+    // @behavior PJ-158
+    #[test]
+    fn drops_a_recent_project_whose_directory_is_gone() {
+        let dir = TempDir::new("pj-recent-gone");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &[]);
+        open_at(&settings, lecture.clone(), 1).unwrap();
+        fs::remove_dir_all(&lecture).unwrap();
+
+        let opened_project = open_at(&settings, lecture.clone(), 2);
+
+        assert_eq!(
+            opened_project.err(),
+            Some(Failure::DirectoryNotFound { directory: lecture })
+        );
+        assert!(recent_directories(&settings).is_empty());
+    }
+
+    // @behavior PJ-159
+    #[cfg(unix)]
+    #[test]
+    fn keeps_a_recent_project_that_could_not_be_read() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = TempDir::new("pj-recent-unreadable");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &[]);
+        open_at(&settings, lecture.clone(), 1).unwrap();
+        fs::set_permissions(&lecture, fs::Permissions::from_mode(0o000)).unwrap();
+
+        let opened_project = open_at(&settings, lecture.clone(), 2);
+
+        fs::set_permissions(&lecture, fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(opened_project.is_err());
+        assert_eq!(recent_directories(&settings), vec![lecture]);
+    }
+
+    // @behavior PJ-160
+    #[test]
+    fn leaves_the_open_project_out_of_the_recent_projects() {
+        let dir = TempDir::new("pj-recent-open");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &[]);
+        let interview = create_directory(&dir, "interview", &[]);
+        open_at(&settings, lecture.clone(), 1).unwrap();
+        let current = CurrentProject::default();
+        current.replace(open_at(&settings, interview, 2).unwrap());
+
+        let recent = RecentProjects::load(&settings)
+            .unwrap()
+            .projects_without(current.directory().as_deref());
+
+        assert_eq!(
+            recent
+                .into_iter()
+                .map(|project| project.directory)
+                .collect::<Vec<_>>(),
+            vec![lecture]
+        );
     }
 
     // @behavior PV-001

@@ -241,6 +241,46 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | a directory is chosen to open |
 | Then | a warning asks to wait for the task to finish or cancel it first |
 
+## `PJ-168` Taking the SRT file among the launch arguments
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri launched in `/talks` with `--flag`, `notes.txt` and `ep02.srt` |
+| When | its arguments are read for a Requested SRT |
+| Then | the Requested SRT is `/talks/ep02.srt` |
+
+## `PJ-169` Taking a file URL the system hands over
+
+| Step | Statement |
+| --- | --- |
+| Given | the system asks to open `file:///talks/ep%2002.srt` |
+| When | it is read for a Requested SRT |
+| Then | the Requested SRT is `/talks/ep 02.srt` |
+
+## `PJ-170` Answering the Requested SRT once
+
+| Step | Statement |
+| --- | --- |
+| Given | `/talks/ep02.srt` requested |
+| When | the Requested SRT is taken twice |
+| Then | the first answers `/talks/ep02.srt` and the second none |
+
+## `PJ-171` Opening the Requested SRT as the webview starts
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri launched to open `/talks/ep02.srt` |
+| When | the toolbar starts |
+| Then | `/talks/ep02.srt` is opened as an SRT file in the Interface Language |
+
+## `PJ-172` Opening an SRT file requested while Tsuzuri runs
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar, with `lecture` open |
+| When | `/talks/ep02.srt` is requested |
+| Then | it is opened as an SRT file in the Interface Language |
+
 ## `PJ-154` Keeping an opened directory as a Recent Project
 
 | Step | Statement |

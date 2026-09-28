@@ -28,12 +28,14 @@ pub mod window;
 #[cfg(test)]
 mod test_support;
 
-use tauri::{Manager, RunEvent, WindowEvent};
+use std::path::Path;
+
+use tauri::{AppHandle, Manager, RunEvent, WindowEvent};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 
 use logs::{DebugLogInUse, LogDirInUse, LogSettings};
 use processes::Processes;
-use project::CurrentProject;
+use project::{CurrentProject, RequestedSrt};
 use steps::ModeLock;
 use toolchain::hub::ModelDownloads;
 use translation::ResidentLlama;
@@ -47,6 +49,7 @@ pub fn run() {
         .menu(menu::build_app_menu)
         .on_menu_event(menu::forward_edit_command);
     builder
+        .plugin(tauri_plugin_single_instance::init(follow_second_launch))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
@@ -84,6 +87,7 @@ pub fn run() {
             processes::reap_strays(&record);
             app.manage(Processes::new(record));
             app.manage(CurrentProject::default());
+            app.manage(launch_request(&std::env::current_dir()?));
             app.manage(ResidentLlama::default());
             app.manage(ModeLock::default());
             app.manage(FoundUpdate::default());
@@ -150,6 +154,7 @@ pub fn run() {
             project::commands::open_project,
             project::commands::open_srt,
             project::commands::recent_projects,
+            project::commands::take_requested_srt,
             project::commands::save_srt,
             project::commands::save_text,
             project::commands::select_resource,
@@ -165,9 +170,31 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app, event| {
-            if let RunEvent::Exit = event {
-                app.state::<Processes>().kill_all();
-            }
+        .run(|app, event| match event {
+            RunEvent::Exit => app.state::<Processes>().kill_all(),
+            #[cfg(target_os = "macos")]
+            RunEvent::Opened { urls } => project::commands::request_srt_argument(
+                app,
+                urls.iter().map(|url| url.to_string()),
+                Path::new("/"),
+            ),
+            _ => {}
         });
+}
+
+/// The Requested SRT the launch arguments carry, as Windows and Linux open a file with Tsuzuri;
+/// macOS asks by `RunEvent::Opened` instead.
+fn launch_request(directory: &Path) -> RequestedSrt {
+    let requested = RequestedSrt::default();
+    if let Some(srt) = project::srt_argument(std::env::args().skip(1), directory) {
+        requested.request(srt);
+    }
+    requested
+}
+
+/// Takes over what a second launch in `directory` was asked to open, since that launch quits, and
+/// shows the window it would have opened.
+fn follow_second_launch(app: &AppHandle, arguments: Vec<String>, directory: String) {
+    project::commands::request_srt_argument(app, arguments, Path::new(&directory));
+    window::bring_main_window_forward(app);
 }

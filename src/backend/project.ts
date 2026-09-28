@@ -196,6 +196,11 @@ export function openProject(
   return invoke(command, { path, language });
 }
 
+/** The Requested SRT, answered once, or none when the system asked for none since. */
+export function takeRequestedSrt(): Promise<string | null> {
+  return invoke("take_requested_srt");
+}
+
 /** A directory opened as a Project before, and when it was last opened. */
 export interface RecentProject {
   directory: string;

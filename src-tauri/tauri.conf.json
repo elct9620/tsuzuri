@@ -48,6 +48,15 @@
     "publisher": "Aotokitsuruya",
     "copyright": "Copyright © 2026 Aotokitsuruya",
     "category": "Video",
+    "fileAssociations": [
+      {
+        "ext": ["srt"],
+        "name": "SRT",
+        "description": "SubRip Subtitle",
+        "mimeType": "application/x-subrip",
+        "role": "Editor"
+      }
+    ],
     "macOS": {
       "signingIdentity": "-"
     },

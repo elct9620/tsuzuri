@@ -37,6 +37,7 @@ describe("ProjectController", () => {
   let selectFailure: unknown;
   let reloadProject: () => unknown;
   let chosenFile: string;
+  let requestedSrt: string | null;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = <T extends HTMLElement>(name: string) =>
@@ -64,8 +65,19 @@ describe("ProjectController", () => {
     await settle();
   }
 
+  /** Starts the toolbar as the page does, relaying Rust events and reading the Project. */
+  async function start(): Promise<void> {
+    application = Application.start();
+    await assemble(application, {
+      project: ProjectController,
+      "model-slot": ModelSlotController,
+    }).start();
+    await settle();
+  }
+
   beforeEach(async () => {
     project = null;
+    requestedSrt = null;
     calls = [];
     openSrt = () => null;
     openProject = () => null;
@@ -76,7 +88,7 @@ describe("ProjectController", () => {
       <main
         data-controller="project"
         data-project-model-slot-outlet="[data-controller='model-slot']"
-        data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
+        data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept rust:srt-requested@window->project#openRequestedSrt"
       >
         <section data-project-target="startScreen"></section>
         <div data-project-target="workspace" hidden>
@@ -150,17 +162,17 @@ describe("ProjectController", () => {
         if (command === "open_srt") return openSrt();
         if (command === "open_project") return openProject();
         if (command === "reload_project") return reloadProject();
+        if (command === "take_requested_srt") {
+          const taken = requestedSrt;
+          requestedSrt = null;
+          return taken;
+        }
         if (command === "select_resource" && selectFailure !== undefined)
           return Promise.reject(selectFailure);
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    await assemble(application, {
-      project: ProjectController,
-      "model-slot": ModelSlotController,
-    }).start();
-    await settle();
+    await start();
   });
 
   afterEach(() => {
@@ -202,6 +214,34 @@ describe("ProjectController", () => {
     expect(sent("plugin:dialog|message")).toMatchObject({
       message: "任務執行中無法開啟其他專案，請等任務結束或先取消",
       kind: "warning",
+    });
+  });
+
+  // @behavior PJ-171
+  it("opens the Requested SRT as the toolbar starts", async () => {
+    application.stop();
+    calls = [];
+    requestedSrt = "/talks/ep02.srt";
+
+    await start();
+
+    expect(sent("open_srt")).toEqual({
+      path: "/talks/ep02.srt",
+      language: "zh-TW",
+    });
+  });
+
+  // @behavior PJ-172
+  it("opens an SRT file requested while the toolbar runs", async () => {
+    await hold(projectOf({ directory: "/videos/lecture" }));
+    requestedSrt = "/talks/ep02.srt";
+
+    await emit("srt-requested");
+    await settle();
+
+    expect(sent("open_srt")).toEqual({
+      path: "/talks/ep02.srt",
+      language: "zh-TW",
     });
   });
 

@@ -134,6 +134,14 @@ The Recent Projects, the latest opened first, each as its `directory` and `opene
 pub fn recent_projects(app: AppHandle, current: State<'_, CurrentProject>) -> Result<Vec<RecentProject>, Failure> {}
 ```
 
+## `take_requested_srt`
+
+The Requested SRT, taken so it is answered once, or none when the system asked for none since.
+
+```rust
+pub fn take_requested_srt(requested: State<'_, RequestedSrt>) -> Option<PathBuf> {}
+```
+
 ## `select_resource`
 
 Make the Resource of this name the Current Resource, reading its subtitles from the directory.

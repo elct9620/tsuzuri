@@ -134,11 +134,12 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | 進度 | 用例經 `Progress` | `progress` |
 | 復原、重做、全選 | macOS 編輯選單 | `undo`、`segment-changes` |
 | 外部修改已留存 | 重新載入 | `project` |
+| 系統要開 SRT | 第二次啟動、macOS 開檔 | `project` |
 | 影片視窗要關閉 | 關閉影片視窗 | `preview` |
 | 更新下載進度 | `install_update` | `updates` |
 | 模型下載進度 | `download_model` | 設定頁 |
 
-事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`，更新下載進度是 `update-progress`，模型下載進度是 `model-download-progress`；六者由 `relayEvents` 轉成 window 的 `rust:` 事件。
+事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，系統要開 SRT 是 `srt-requested`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`，更新下載進度是 `update-progress`，模型下載進度是 `model-download-progress`；七者由 `relayEvents` 轉成 window 的 `rust:` 事件。
 
 ### 2.4 錯誤與通知
 
@@ -241,6 +242,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `project/` | `backups` | 領域 | 備份紀錄與時機 |
 | `project/` | `files` | 轉接 | 檔名、配對、備份 |
 | `project/` | `recent` | 應用、轉接 | 最近的專案與設定檔 |
+| `project/` | `requested_srt` | 介面 | 系統要開的 SRT |
 | — | `translation` | 應用 | 翻譯用例 |
 | `translation/` | `batching` | 領域 | 分批 |
 | `translation/` | `speaker_labels` | 領域 | 說話者標籤 |
@@ -281,17 +283,19 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 
 ```
 啟動
+  │ single-instance    已有 Tsuzuri 時交出參數並結束
   │ reap_strays        清掉上次留下的元件行程（processes.json）
-  │ manage             Processes、CurrentProject
+  │ manage             Processes、CurrentProject、啟動參數的 SRT
   │ build_main_window  依設定建立主視窗，只准它開影片視窗
   │ size_first_window  第一次開啟佔螢幕 80%，之後由 window-state 還原
   ▼
 視窗取得焦點 ─▶ reload_if_changed ─▶ 清單或字幕被外部修改就重新載入並送出 project-changed
+系統要開 SRT ─▶ request_srt_argument ─▶ srt-requested ─▶ webview 取走後以 open_srt 開啟
   ▼
 結束 ─▶ kill_all       結束仍在執行的元件行程
 ```
 
-`run()` 是唯一的組裝點：`manage` 的物件由指令以 `State` 參數注入，沒有全域變數。
+`run()` 是唯一的組裝點：`manage` 的物件由指令以 `State` 參數注入，沒有全域變數。系統要開的 SRT 由 webview 開啟，因為只有它知道介面語言。
 
 ### 3.6 目前專案
 

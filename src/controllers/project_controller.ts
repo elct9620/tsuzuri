@@ -9,6 +9,7 @@ import {
   selectResource,
   setPrimaryLanguage,
   setProjectOptions,
+  takeRequestedSrt,
   type ProjectModels,
   type ProjectOptions,
   type ProjectView,
@@ -137,6 +138,12 @@ export default class ProjectController extends Controller {
       detail: t("versions.changedElsewhereKeptDetail"),
       kind: "warning",
     });
+  }
+
+  /** Opens the SRT file the system asked to open, as one chosen here; bound to `rust:srt-requested`. */
+  async openRequestedSrt(): Promise<void> {
+    const path = await takeRequestedSrt();
+    if (path !== null) await this.run("open_srt", path);
   }
 
   async openDirectory({ currentTarget }: Event): Promise<void> {

@@ -49,6 +49,14 @@ pub fn size_first_window(app: &App) -> tauri::Result<()> {
     window.center()
 }
 
+/// Shows the main window in front, as when a second launch hands its request over to it.
+pub fn bring_main_window_forward<R: Runtime>(app: &AppHandle<R>) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
 /// Builds the main window from the configuration, letting its page open the Video Window and no
 /// other window.
 pub fn build_main_window(app: &App) -> tauri::Result<WebviewWindow> {

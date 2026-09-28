@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
@@ -6,6 +6,7 @@ use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
 use super::recent::{RecentProject, RecentProjects};
+use super::requested_srt::{srt_argument, RequestedSrt};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
 use super::{
     CleanupScope, CurrentProject, ExportFormat, Project, ProjectOptions, ProjectView, Reload,
@@ -38,6 +39,27 @@ pub fn open_srt(
     language: Language,
 ) -> Result<(), Failure> {
     hold_opened(&app, &mode_lock, || open_directory_of(&path, language))
+}
+
+/// Keeps the SRT file among `arguments`, given to a launch in `directory`, as the Requested SRT
+/// and tells the webview, which opens it as the toolbar would: only the webview knows the
+/// Interface Language a directory without a Project Config opens in.
+pub fn request_srt_argument<R: Runtime>(
+    app: &AppHandle<R>,
+    arguments: impl IntoIterator<Item = String>,
+    directory: &Path,
+) {
+    let Some(srt) = srt_argument(arguments, directory) else {
+        return;
+    };
+    app.state::<RequestedSrt>().request(srt);
+    // @event srt-requested
+    let _ = app.emit("srt-requested", ());
+}
+
+#[tauri::command]
+pub fn take_requested_srt(requested: State<'_, RequestedSrt>) -> Option<PathBuf> {
+    requested.take()
 }
 
 #[tauri::command]

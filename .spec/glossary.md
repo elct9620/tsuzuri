@@ -46,6 +46,10 @@ The files of a Project sharing one name: a media file, the Primary Language subt
 
 The one Resource of the Project that the editor shows and a Mode works on. Opening a Project selects its first Resource; opening an SRT file selects that file's.
 
+### Requested SRT
+
+An SRT file the system asks Tsuzuri to open, as when the user opens one with Tsuzuri from the file manager: Rust keeps the latest until the webview takes it and opens it as an SRT file chosen in the toolbar, since only the webview knows the Interface Language. A second launch hands its request to the running Tsuzuri and quits.
+
 ### Primary Language
 
 The Language a Project's Resources are spoken and transcribed in, and the one every translation starts from. The Project Config records it; without one it follows the Interface Language.

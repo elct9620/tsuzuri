@@ -151,7 +151,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
              │                        ui/notification.ts（toast）◀┘
 ```
 
-`Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤則由 `llama.rs` 轉換。通知種類也依錯誤碼決定：拒絕是自動消失的 warning，出錯是留到關閉的 error。
+`Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤由 `llama.rs`、hf-hub 的錯誤由 `hub.rs` 轉換。通知種類也依錯誤碼決定：拒絕是自動消失的 warning，出錯是留到關閉的 error。
 
 ### 2.5 媒體檔（asset protocol）
 
@@ -193,6 +193,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 轉錄指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（`docs/design.md` 6.4） |
 | `system_opener` 直接執行系統程式 | 開啟目錄與網頁，不是元件 |
 | 各情境的設定檔經 `json_settings` | 同一種讀寫 |
+| 模型下載與清單的指令直接用 `hub` | 只有傳輸，沒有規則 |
 
 ### 3.2 情境
 

@@ -101,6 +101,7 @@ describe("ProjectController", () => {
             <button id="open-srt" data-action="project#openSrt">開啟 SRT</button>
           </div>
           <button id="reload" data-action="project#reload">重新載入</button>
+          <input type="checkbox" data-project-target="resourcesToggle" />
           <ul data-project-target="resources"></ul>
           <p data-project-target="glossary"></p>
         </div>
@@ -329,6 +330,24 @@ describe("ProjectController", () => {
     await click('[data-name="ep02"]');
 
     expect(sent("select_resource")).toEqual({ name: "ep02" });
+  });
+
+  // @behavior PJ-183
+  it("puts the Resource list away once a Resource is chosen", async () => {
+    await hold(
+      projectOf({
+        resources: [resourceOf(), resourceOf({ name: "ep02" })],
+      }),
+    );
+    const toggle = target<HTMLInputElement>("resourcesToggle");
+    toggle.checked = true;
+
+    await click('[data-name="ep02"]');
+
+    expect([sent("select_resource"), toggle.checked]).toEqual([
+      { name: "ep02" },
+      false,
+    ]);
   });
 
   // @behavior ED-011

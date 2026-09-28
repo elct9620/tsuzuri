@@ -29,6 +29,8 @@ const en = {
   },
   resources: {
     title: "Resources",
+    open: "Resources",
+    close: "Put the resources away",
     reload: "Reload",
     reloadHint: "Read the folder again for files changed elsewhere",
     subtitleOnly: "Subtitle",

@@ -30,6 +30,8 @@ const zhHant: typeof en = {
   },
   resources: {
     title: "資源",
+    open: "資源清單",
+    close: "收起資源清單",
     reload: "重新載入",
     reloadHint: "重新讀取目錄，帶入別處改動的檔案",
     subtitleOnly: "字幕",

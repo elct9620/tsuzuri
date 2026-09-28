@@ -710,6 +710,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | `lecture` is typed over its name and Esc is pressed |
 | Then | the toolbar reads `週會錄影` and the Project Options are not set |
 
+## `PJ-183` Putting the Resource list away once a Resource is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the Resource list laid over the editor of a narrow window |
+| When | the Resource `ep02` is chosen |
+| Then | `ep02` is selected and the Resource list is put away |
+
 ## `PJ-056` Writing an edited Speaker back to the subtitle
 
 | Step | Statement |

@@ -59,13 +59,26 @@
       </section>
 
       <div
-        class="drawer drawer-open h-dvh"
+        class="drawer h-dvh lg:drawer-open"
         data-project-target="workspace"
         hidden
       >
-        <input id="resources-drawer" type="checkbox" class="drawer-toggle" />
+        <input
+          id="resources-drawer"
+          type="checkbox"
+          class="drawer-toggle"
+          data-project-target="resourcesToggle"
+        />
         <div class="drawer-content flex h-dvh min-w-0 flex-col">
           <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
+            <label
+              for="resources-drawer"
+              class="btn btn-square btn-sm btn-ghost drawer-button lg:hidden"
+              data-i18n-label="resources.open"
+              data-i18n-tooltip="resources.open"
+            >
+              <i data-lucide="menu" class="size-4"></i>
+            </label>
             <h1 class="navbar-start w-auto min-w-0 flex-1">
               <input
                 type="text"
@@ -1296,8 +1309,8 @@
         <div class="drawer-side">
           <label
             for="resources-drawer"
-            aria-label="close sidebar"
             class="drawer-overlay"
+            data-i18n-label="resources.close"
           ></label>
           <div class="flex min-h-full w-56 flex-col bg-base-300">
             <ul class="menu w-full pb-0">

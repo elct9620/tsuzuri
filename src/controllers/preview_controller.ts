@@ -23,11 +23,13 @@ import {
 import { formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
 import {
-  isVolumeBoostOn,
+  LOUDEST_VOLUME,
   playAtVolume,
-  resumeVolumeBoost,
-  volumeLimit,
-} from "../ui/volume_boost";
+  resumeAudioGraph,
+  SLIDER_END,
+  sliderPosition,
+  volumeAt,
+} from "../ui/volume";
 
 /** Where the webview remembers the Preview folded away. */
 const FOLDED_KEY = "tsuzuri.preview-folded";
@@ -56,10 +58,10 @@ function captionBackdropOf(value: string | null): CaptionBackdrop {
 /** Where the webview remembers how loud the media plays, as a percentage. */
 const VOLUME_KEY = "tsuzuri.preview-volume";
 
-/** The volume remembered as `value` up to `limit`, or full volume where none was chosen. */
-function volumeOf(value: string | null, limit: number): number {
+/** The volume remembered as `value`, or full volume where none was chosen. */
+function volumeOf(value: string | null): number {
   const volume = Number(value ?? NaN);
-  return volume >= 0 && volume <= limit ? volume : 100;
+  return volume >= 0 && volume <= LOUDEST_VOLUME ? volume : 100;
 }
 
 /** Where the webview remembers the Speaker over the video turned off. */
@@ -122,7 +124,7 @@ export default class PreviewController extends Controller {
   declare readonly videoWindowButtonTarget: HTMLButtonElement;
   declare readonly playbackIconTarget: HTMLElement;
   declare readonly timeTarget: HTMLElement;
-  /** How loud the media plays beside the system's volume, as a percentage. */
+  /** The slider setting how loud the media plays beside the system's volume, along a cubic curve. */
   declare readonly volumeTarget: HTMLInputElement;
   /** What the card shows of the Current Segment, put away while the video is out of the Preview. */
   declare readonly currentSectionTarget: HTMLElement;
@@ -148,10 +150,7 @@ export default class PreviewController extends Controller {
   /** A saved cue names its Speaker, so the caption does too until turned off. */
   private isSpeakerShown = rememberedFlag(SPEAKER_KEY, true);
   private isFolded = rememberedFlag(FOLDED_KEY, false);
-  /** The Volume Boost as it was when the app opened; a change takes effect when it opens again. */
-  private readonly isBoostOn = isVolumeBoostOn();
-  private readonly loudestVolume = volumeLimit(this.isBoostOn);
-  private volume = volumeOf(rememberedChoice(VOLUME_KEY), this.loudestVolume);
+  private volume = volumeOf(rememberedChoice(VOLUME_KEY));
   private unfollow?: () => void;
   /** The request for the next frame the Preview follows the media on while it plays, and the window drawing it. */
   private frameRequest: { view: Window; id: number } | null = null;
@@ -177,7 +176,7 @@ export default class PreviewController extends Controller {
     ["durationchange", () => this.showTime()],
     ["timeupdate", () => this.follow()],
     ["play", () => this.showPlaying()],
-    ["play", () => resumeVolumeBoost(this.player)],
+    ["play", () => resumeAudioGraph(this.player)],
     ["pause", () => this.showPaused()],
     ["error", () => this.showUnplayable()],
   ];
@@ -190,11 +189,11 @@ export default class PreviewController extends Controller {
     this.unplayableHint = this.hintTarget;
     for (const [name, listener] of this.playerListeners)
       this.player.addEventListener(name, listener);
-    if (this.isBoostOn) this.player.crossOrigin = "anonymous";
+    this.player.crossOrigin = "anonymous";
     this.showCaptionBackdrop();
     this.captionSpeakerTarget.checked = this.isSpeakerShown;
-    this.volumeTarget.max = String(this.loudestVolume);
-    this.volumeTarget.value = String(this.volume);
+    this.volumeTarget.max = String(SLIDER_END);
+    this.volumeTarget.value = String(sliderPosition(this.volume));
     playAtVolume(this.player, this.volume);
     this.unfollow = this.feed.follow((project) => this.show(project));
   }
@@ -219,7 +218,7 @@ export default class PreviewController extends Controller {
   }
 
   setVolume(): void {
-    this.volume = volumeOf(this.volumeTarget.value, this.loudestVolume);
+    this.volume = volumeAt(Number(this.volumeTarget.value));
     rememberChoice(VOLUME_KEY, String(this.volume));
     playAtVolume(this.player, this.volume);
   }

@@ -39,7 +39,6 @@ import TranslationSettingsController from "./controllers/translation_settings_co
 import UndoController, { typingOption } from "./controllers/undo_controller";
 import UpdatesController from "./controllers/updates_controller";
 import VersionsController from "./controllers/versions_controller";
-import VolumeBoostController from "./controllers/volume_boost_controller";
 import { setInterfaceLanguage, translatePage } from "./i18n";
 import { showIcons } from "./ui/icons";
 
@@ -89,7 +88,6 @@ async function start(): Promise<void> {
     undo: UndoController,
     updates: UpdatesController,
     versions: VersionsController,
-    "volume-boost": VolumeBoostController,
   }).start();
 }
 

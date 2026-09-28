@@ -166,7 +166,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 範圍 | 開啟過的專案目錄 |
 | 子目錄 | 不含 |
 | 路徑來源 | `ProjectView.media` |
-| CORS | 音量增強時 anonymous |
+| CORS | anonymous，供 Web Audio |
 
 影片要能拖動與串流，經由指令傳送整個檔案不可行，所以媒體檔是 webview 唯一直接讀取的資料。路徑仍由 Rust 給出，範圍只含開啟過的專案目錄。
 
@@ -571,7 +571,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
-| `components`、`models`、`transcription-settings`、`translation-settings`、`logs`、`volume-boost` | 設定頁 |
+| `components`、`models`、`transcription-settings`、`translation-settings`、`logs` | 設定頁 |
 | `model-slot`、`repository` | 模型來源的選單、下載與 Repository |
 | `about`、`updates` | 版本與更新、安裝視窗 |
 | `licenses` | 關於的授權頁 |
@@ -602,7 +602,6 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `model-slot` 顯示下載進度 |
 | `model-slot:choose` | `model-slot` | `models`、`project` 記下來源 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
-| `dialog:opened` | `dialog` | `volume-boost` 讀取輸出延遲 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
 | `segment-changes:retranslate` | `segment-changes` | `translate` 開啟重新翻譯 |
@@ -637,7 +636,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/models.ts` | Model Source 的名稱與大小 |
 | `ui/options.ts` | 選單的選項 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
-| `ui/volume_boost.ts` | 音量增強的開關、增益與延遲 |
+| `ui/volume.ts` | 音量曲線、增益與限幅 |
 | `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `ui/timeline_spans.ts` | 時間軸區段與選段的落點 |

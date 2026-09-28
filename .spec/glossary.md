@@ -66,10 +66,6 @@ A Model Source one Project chooses for the transcription or the translation Mode
 
 The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. It appears only for a Resource with a media file.
 
-### Volume Boost
-
-An experimental choice, off unless turned on in the settings on this machine, that lets the Preview play above 100% of the media's volume through Web Audio, at the cost of its sound possibly lagging behind the picture. It takes effect after a restart.
-
 ### Video Window
 
 A window of its own the Preview's video moves into, with the Segment being played over it, so it can sit on another screen and grow while the editor keeps its room. It is the same player, not a copy, so the picture, the sound and the caption never drift apart; the Preview's controls and timeline stay in the editor, and closing the window brings the video back.

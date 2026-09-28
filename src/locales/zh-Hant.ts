@@ -267,16 +267,6 @@ const zhHant: typeof en = {
     debugLogOnAfterRestart: "重新啟動後開始寫入除錯紀錄",
     debugLogOffAfterRestart: "重新啟動後停止寫入除錯紀錄",
     debugLogNotChosen: "沒有切換除錯紀錄",
-    experimental: "實驗性",
-    volumeBoost: "音量最高 200%",
-    volumeBoostHelp:
-      "預覽可以比媒體原本的音量更大聲。超過 100% 時聲音經過 Web Audio，可能比畫面與字幕晚；重新啟動後生效",
-    volumeBoostOnAfterRestart: "重新啟動後音量可以超過 100%",
-    volumeBoostOffAfterRestart: "重新啟動後音量最高 100%",
-    outputLatency: "輸出延遲",
-    outputLatencyHelp:
-      "聲音經過 Web Audio 到喇叭所花的時間，回報問題時可以附上",
-    latencyMs: "約 {{ms}} ms",
     general: "整體",
     primaryLanguageHelp:
       "影音裡說的語言。轉錄用它辨識語音，翻譯從它譯出；改了之後會依這個語言重新配對字幕檔。只影響這個專案。",

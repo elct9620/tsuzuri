@@ -2479,61 +2479,6 @@
                   ></div>
                 </fieldset>
 
-                <fieldset
-                  class="fieldset text-sm"
-                  data-controller="volume-boost"
-                  data-action="dialog:opened@window->volume-boost#showLatency"
-                >
-                  <legend
-                    class="fieldset-legend"
-                    data-i18n="settings.experimental"
-                  ></legend>
-                  <ul class="list rounded-box border border-base-300">
-                    <li class="list-row items-center">
-                      <span class="flex items-center gap-1 font-medium">
-                        <span data-i18n="settings.volumeBoost"></span>
-                        <span
-                          tabindex="0"
-                          class="cursor-help text-base-content/50"
-                          data-i18n-tooltip="settings.volumeBoostHelp"
-                          ><i data-lucide="info" class="size-3.5"></i
-                        ></span>
-                      </span>
-                      <input
-                        type="checkbox"
-                        class="toggle"
-                        data-volume-boost-target="toggle"
-                        data-action="change->volume-boost#choose"
-                      />
-                    </li>
-                    <li
-                      class="list-row items-center"
-                      data-volume-boost-target="latencyRow"
-                      hidden
-                    >
-                      <span class="flex items-center gap-1 font-medium">
-                        <span data-i18n="settings.outputLatency"></span>
-                        <span
-                          tabindex="0"
-                          class="cursor-help text-base-content/50"
-                          data-i18n-tooltip="settings.outputLatencyHelp"
-                          ><i data-lucide="info" class="size-3.5"></i
-                        ></span>
-                      </span>
-                      <span
-                        class="font-mono text-xs"
-                        data-volume-boost-target="latency"
-                      ></span>
-                    </li>
-                  </ul>
-                  <div
-                    role="alert"
-                    class="alert alert-info text-sm"
-                    data-volume-boost-target="pendingHint"
-                    hidden
-                  ></div>
-                </fieldset>
-
                 <fieldset class="fieldset text-sm" data-controller="licenses">
                   <legend
                     class="fieldset-legend"

@@ -19,6 +19,7 @@ import NotificationController from "./controllers/notification_controller";
 import PreviewController from "./controllers/preview_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
+import ProjectSettingsController from "./controllers/project_settings_controller";
 import RecentProjectsController from "./controllers/recent_projects_controller";
 import RepositoryController from "./controllers/repository_controller";
 import ReplacementController from "./controllers/replacement_controller";
@@ -71,6 +72,7 @@ async function start(): Promise<void> {
     preview: PreviewController,
     progress: ProgressController,
     project: ProjectController,
+    "project-settings": ProjectSettingsController,
     "recent-projects": RecentProjectsController,
     replacement: ReplacementController,
     repository: RepositoryController,

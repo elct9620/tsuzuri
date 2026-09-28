@@ -224,7 +224,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `menu` | 轉接 | macOS 復原與重做 |
 | — | `logs` | 轉接 | log 目錄與層級 |
 | — | `system_opener` | 轉接 | 交給系統開啟 |
-| — | `about` | 介面 | App Build、釋出頁面 |
+| — | `about` | 介面 | App Build、釋出與贊助頁面 |
 | — | `updates` | 應用、轉接 | 檢查與安裝更新 |
 | — | `release_number` | 領域 | 讀出預覽版號 |
 | — | `transcript` | 領域 | 段落與 SRT |
@@ -566,7 +566,8 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 
 | Controller | 畫面區域 |
 |---|---|
-| `project`、`transcript`、`segment-changes`、`dialog` | 資源清單、字幕編輯、設定 |
+| `project`、`transcript`、`segment-changes`、`dialog` | 工具列、資源清單、字幕編輯、設定 |
+| `project-settings` | 設定的專案頁 |
 | `recent-projects` | 起始畫面與開啟選單的最近專案 |
 | `speakers` | 說話者選單與設定 modal |
 | `replacement` | 搜尋取代 modal |

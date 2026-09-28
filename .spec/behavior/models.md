@@ -10,6 +10,7 @@ Pointing each Model Slot at a Model Source, in the general settings or as a Proj
 - `src/controllers/model_slot_controller.test.ts`
 - `src/controllers/models_controller.test.ts`
 - `src/controllers/project_controller.test.ts`
+- `src/controllers/project_settings_controller.test.ts`
 - `src/controllers/repository_controller.test.ts`
 
 ## `MD-001` Remembering a chosen Model

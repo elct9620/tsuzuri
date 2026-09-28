@@ -16,7 +16,6 @@
     <main
       class="flex h-dvh flex-col"
       data-controller="project recent-projects transcript segment-changes dialog comparison speakers replacement cleanup search"
-      data-project-model-slot-outlet="#project-models [data-controller='model-slot']"
       data-comparison-versions-outlet="[data-controller~=versions]"
       data-action="progress:task->transcript#followTask selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->segment-changes#followTasks versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut keydown@window->search#openByShortcut keydown@window->search#moveByShortcut transcript:shown->search#follow keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept rust:srt-requested@window->project#openRequestedSrt"
     >
@@ -1484,16 +1483,24 @@
       <dialog class="modal" data-dialog-target="dialog">
         <div class="modal-box max-w-3xl">
           <h3 class="mb-2 text-lg font-bold" data-i18n="toolbar.settings"></h3>
-          <div role="tablist" class="tabs tabs-border">
+          <div
+            role="tablist"
+            class="tabs tabs-border"
+            data-controller="project-settings"
+            data-project-settings-model-slot-outlet="#project-models [data-controller='model-slot']"
+          >
             <input
               type="radio"
               name="settings-tabs"
               class="tab"
               data-i18n-label="settings.project"
-              data-project-target="projectTab settings"
+              data-project-settings-target="projectTab settings"
               checked
             />
-            <div class="tab-content pt-4" data-project-target="settings">
+            <div
+              class="tab-content pt-4"
+              data-project-settings-target="settings"
+            >
               <div class="flex flex-col gap-4">
                 <fieldset class="fieldset text-sm">
                   <legend
@@ -1514,8 +1521,8 @@
                       <input
                         type="text"
                         class="input input-sm w-64"
-                        data-project-target="nameField"
-                        data-action="change->project#setOptions"
+                        data-project-settings-target="nameField"
+                        data-action="change->project-settings#setOptions"
                       />
                     </li>
                     <li class="list-row items-center">
@@ -1530,8 +1537,8 @@
                       </span>
                       <select
                         class="select select-sm w-auto"
-                        data-project-target="language"
-                        data-action="change->project#setLanguage"
+                        data-project-settings-target="language"
+                        data-action="change->project-settings#setLanguage"
                       >
                         <option value="zh-TW">繁體中文</option>
                         <option value="en">English</option>
@@ -1550,8 +1557,8 @@
                       </span>
                       <select
                         class="select select-sm w-auto"
-                        data-project-target="bilingualOrder"
-                        data-action="change->project#setOptions"
+                        data-project-settings-target="bilingualOrder"
+                        data-action="change->project-settings#setOptions"
                       >
                         <option
                           value="original-first"
@@ -1576,8 +1583,8 @@
                       <input
                         type="checkbox"
                         class="toggle"
-                        data-project-target="bilingualAutosave"
-                        data-action="change->project#setOptions"
+                        data-project-settings-target="bilingualAutosave"
+                        data-action="change->project-settings#setOptions"
                       />
                     </li>
                     <li class="list-row items-center">
@@ -1593,8 +1600,8 @@
                       <input
                         type="checkbox"
                         class="toggle"
-                        data-project-target="overwriteBackup"
-                        data-action="change->project#setOptions"
+                        data-project-settings-target="overwriteBackup"
+                        data-action="change->project-settings#setOptions"
                       />
                     </li>
                   </ul>
@@ -1617,9 +1624,9 @@
                       </span>
                       <select
                         class="select select-sm w-auto"
-                        data-project-target="transcriptionSetting"
+                        data-project-settings-target="transcriptionSetting"
                         data-setting="has_vad"
-                        data-action="change->project#setOptions"
+                        data-action="change->project-settings#setOptions"
                       >
                         <option
                           value=""
@@ -1641,9 +1648,9 @@
                       </span>
                       <select
                         class="select select-sm w-auto"
-                        data-project-target="transcriptionSetting"
+                        data-project-settings-target="transcriptionSetting"
                         data-setting="is_non_speech_suppressed"
-                        data-action="change->project#setOptions"
+                        data-action="change->project-settings#setOptions"
                       >
                         <option
                           value=""
@@ -1665,9 +1672,9 @@
                       </span>
                       <select
                         class="select select-sm w-auto"
-                        data-project-target="transcriptionSetting"
+                        data-project-settings-target="transcriptionSetting"
                         data-setting="is_context_carried"
-                        data-action="change->project#setOptions"
+                        data-action="change->project-settings#setOptions"
                       >
                         <option
                           value=""
@@ -1689,9 +1696,9 @@
                       </span>
                       <select
                         class="select select-sm w-auto"
-                        data-project-target="transcriptionSetting"
+                        data-project-settings-target="transcriptionSetting"
                         data-setting="is_simplified_cleaned"
-                        data-action="change->project#setOptions"
+                        data-action="change->project-settings#setOptions"
                       >
                         <option
                           value=""
@@ -1706,7 +1713,7 @@
                 <fieldset
                   id="project-models"
                   class="fieldset text-sm"
-                  data-action="model-slot:choose->project#chooseSource"
+                  data-action="model-slot:choose->project-settings#chooseSource"
                 >
                   <legend
                     class="fieldset-legend"
@@ -1741,7 +1748,7 @@
                           type="button"
                           class="btn btn-sm"
                           data-slot="transcription"
-                          data-action="project#chooseModel"
+                          data-action="project-settings#chooseModel"
                           data-i18n="settings.chooseFile"
                         ></button>
                         <button
@@ -1754,7 +1761,7 @@
                       <span
                         class="list-col-wrap col-[2/span_2] break-all text-xs text-base-content/70 [&.missing]:text-error"
                         data-model-slot-target="status"
-                        data-project-target="projectModel"
+                        data-project-settings-target="projectModel"
                         data-slot="transcription"
                         data-i18n="models.followsGeneral"
                       ></span>
@@ -1808,7 +1815,7 @@
                           type="button"
                           class="btn btn-sm"
                           data-slot="translation"
-                          data-action="project#chooseModel"
+                          data-action="project-settings#chooseModel"
                           data-i18n="settings.chooseFile"
                         ></button>
                         <button
@@ -1821,7 +1828,7 @@
                       <span
                         class="list-col-wrap col-[2/span_2] break-all text-xs text-base-content/70 [&.missing]:text-error"
                         data-model-slot-target="status"
-                        data-project-target="projectModel"
+                        data-project-settings-target="projectModel"
                         data-slot="translation"
                         data-i18n="models.followsGeneral"
                       ></span>
@@ -1856,7 +1863,7 @@
               name="settings-tabs"
               class="tab"
               data-i18n-label="settings.general"
-              data-project-target="generalTab"
+              data-project-settings-target="generalTab"
             />
             <div class="tab-content pt-4">
               <div class="flex flex-col gap-4">

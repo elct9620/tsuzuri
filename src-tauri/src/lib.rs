@@ -30,7 +30,7 @@ mod test_support;
 
 use std::path::Path;
 
-use tauri::{AppHandle, Manager, RunEvent, WindowEvent};
+use tauri::{AppHandle, Manager, RunEvent, Runtime, WindowEvent};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 
 use logs::{DebugLogInUse, LogDirInUse, LogSettings};
@@ -43,7 +43,7 @@ use updates::FoundUpdate;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = tauri::Builder::default();
+    let builder = with_requested_srt(tauri::Builder::default());
     #[cfg(target_os = "macos")]
     let builder = builder
         .menu(menu::build_app_menu)
@@ -87,7 +87,11 @@ pub fn run() {
             processes::reap_strays(&record);
             app.manage(Processes::new(record));
             app.manage(CurrentProject::default());
-            app.manage(launch_request(&std::env::current_dir()?));
+            project::commands::request_srt_argument(
+                app.handle(),
+                std::env::args().skip(1),
+                &std::env::current_dir()?,
+            );
             app.manage(ResidentLlama::default());
             app.manage(ModeLock::default());
             app.manage(FoundUpdate::default());
@@ -182,14 +186,11 @@ pub fn run() {
         });
 }
 
-/// The Requested SRT the launch arguments carry, as Windows and Linux open a file with Tsuzuri;
-/// macOS asks by `RunEvent::Opened` instead.
-fn launch_request(directory: &Path) -> RequestedSrt {
-    let requested = RequestedSrt::default();
-    if let Some(srt) = project::srt_argument(std::env::args().skip(1), directory) {
-        requested.request(srt);
-    }
-    requested
+/// `builder` keeping the Requested SRT from before setup: macOS asks to open a file with
+/// `RunEvent::Opened` before the app is set up, while Windows and Linux pass it as a launch
+/// argument that setup reads.
+fn with_requested_srt<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
+    builder.manage(RequestedSrt::default())
 }
 
 /// Takes over what a second launch in `directory` was asked to open, since that launch quits, and
@@ -197,4 +198,32 @@ fn launch_request(directory: &Path) -> RequestedSrt {
 fn follow_second_launch(app: &AppHandle, arguments: Vec<String>, directory: String) {
     project::commands::request_srt_argument(app, arguments, Path::new(&directory));
     window::bring_main_window_forward(app);
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use tauri::test::{mock_builder, mock_context, noop_assets};
+
+    use super::*;
+
+    // @behavior PJ-180
+    #[test]
+    fn keeps_an_srt_file_the_system_asks_for_before_setup() {
+        let app = with_requested_srt(mock_builder())
+            .build(mock_context(noop_assets()))
+            .unwrap();
+
+        project::commands::request_srt_argument(
+            app.handle(),
+            ["/talks/ep02.srt".to_string()],
+            Path::new("/"),
+        );
+
+        assert_eq!(
+            app.state::<RequestedSrt>().take(),
+            Some(PathBuf::from("/talks/ep02.srt"))
+        );
+    }
 }

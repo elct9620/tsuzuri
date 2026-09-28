@@ -284,8 +284,9 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 ```
 啟動
   │ single-instance    已有 Tsuzuri 時交出參數並結束
+  │ RequestedSrt       setup 前就 manage，macOS 可能先送開檔
   │ reap_strays        清掉上次留下的元件行程（processes.json）
-  │ manage             Processes、CurrentProject、啟動參數的 SRT
+  │ manage             Processes、CurrentProject；收下啟動參數的 SRT
   │ build_main_window  依設定建立主視窗，只准它開影片視窗
   │ size_first_window  第一次開啟佔螢幕 80%，之後由 window-state 還原
   ▼

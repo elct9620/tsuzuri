@@ -26,7 +26,7 @@ pub(crate) use files::HISTORY_DIR;
 use glossary::TranslationGlossary;
 use history::UndoHistory;
 pub use mode_hold::RunningMode;
-pub use requested_srt::{srt_argument, RequestedSrt};
+pub use requested_srt::RequestedSrt;
 
 /// The opened directory: its Primary Language, the Language of its last translation,
 /// its Resources, the Current Resource and the Translation Glossary once loaded.

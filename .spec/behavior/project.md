@@ -4,6 +4,7 @@ The directory Rust holds open as the single source of truth: which files make it
 
 ## Includes
 
+- `src-tauri/src/lib.rs`
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
 - `src-tauri/src/transcription.rs`
@@ -264,6 +265,14 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | Given | `/talks/ep02.srt` requested |
 | When | the Requested SRT is taken twice |
 | Then | the first answers `/talks/ep02.srt` and the second none |
+
+## `PJ-180` Keeping an SRT file the system asks for before Tsuzuri has started
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri launching, not yet set up |
+| When | the system asks it to open `/talks/ep02.srt` |
+| Then | the Requested SRT is `/talks/ep02.srt` |
 
 ## `PJ-171` Opening the Requested SRT as the webview starts
 

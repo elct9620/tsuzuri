@@ -1,0 +1,59 @@
+name: Pages
+
+# Publishes the update site, tsuzuri.aotoki.me: the pages under site/ and each Update Channel's
+# manifest, mirrored from the releases, which stay the source. Every deploy replaces the whole
+# site, so each one fetches both manifests again; rerunning it rebuilds the site from the releases.
+on:
+  workflow_run:
+    workflows: [Release Assets]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: [site/**]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Only the newest site matters; an older deploy still waiting gives way to it.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            site
+            scripts/site.ts
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      # A channel with nothing released yet has no manifest; the site then leaves it out.
+      - name: Fetch the manifests
+        run: |
+          releases="https://github.com/$GITHUB_REPOSITORY/releases"
+          curl -fsSL -o stable.json "$releases/latest/download/latest.json" || rm -f stable.json
+          curl -fsSL -o preview.json "$releases/download/preview/latest.json" || rm -f preview.json
+      - name: Lay out the site
+        run: node scripts/site.ts stable.json preview.json _site
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

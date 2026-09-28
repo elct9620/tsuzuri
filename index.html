@@ -66,10 +66,15 @@
         <input id="resources-drawer" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content flex h-dvh min-w-0 flex-col">
           <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
-            <h1
-              class="navbar-start w-auto min-w-0 flex-1 truncate font-semibold"
-              data-project-target="name"
-            ></h1>
+            <h1 class="navbar-start w-auto min-w-0 flex-1">
+              <input
+                type="text"
+                class="input input-ghost input-sm w-full max-w-md truncate text-base font-semibold"
+                data-project-target="name"
+                data-i18n-label="toolbar.projectName"
+                data-action="change->project#rename keydown.enter->project#leaveName:!composing keydown.esc->project#discardName:!composing"
+              />
+            </h1>
             <div class="navbar-end w-auto shrink-0 gap-2">
               <div class="dropdown dropdown-end">
                 <div tabindex="0" role="button" class="btn btn-sm">

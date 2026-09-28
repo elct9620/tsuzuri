@@ -694,6 +694,22 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | `週會錄影` is typed as its name |
 | Then | the Project Options are set with the name `週會錄影` |
 
+## `PJ-181` Naming the Project in the toolbar
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar of the Project `lecture` |
+| When | `週會錄影` is typed over its name |
+| Then | the Project Options are set with the name `週會錄影` |
+
+## `PJ-182` Leaving the Project Name in the toolbar as it was
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar of the Project named `週會錄影` |
+| When | `lecture` is typed over its name and Esc is pressed |
+| Then | the toolbar reads `週會錄影` and the Project Options are not set |
+
 ## `PJ-056` Writing an edited Speaker back to the subtitle
 
 | Step | Statement |

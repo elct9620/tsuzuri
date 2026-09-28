@@ -1,6 +1,7 @@
 /** The interface text in English, which every other language falls back to. */
 const en = {
   toolbar: {
+    projectName: "Project name",
     open: "Open",
     openDirectory: "Open a folder",
     openSrt: "Open an SRT file",

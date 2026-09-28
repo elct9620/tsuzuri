@@ -98,7 +98,8 @@ export default class ProjectController extends Controller {
   declare readonly startScreenTarget: HTMLElement;
   /** The toolbar and editor of an open Project. */
   declare readonly workspaceTarget: HTMLElement;
-  declare readonly nameTarget: HTMLElement;
+  /** The Project Name in the toolbar, typed over to rename the Project; its default value is the name shown. */
+  declare readonly nameTarget: HTMLInputElement;
   declare readonly resourcesTarget: HTMLUListElement;
   declare readonly glossaryTarget: HTMLElement;
   /** The Project's own settings and their tab, shown only while one is open. */
@@ -205,6 +206,21 @@ export default class ProjectController extends Controller {
     await this.saveOptions({});
   }
 
+  async rename(): Promise<void> {
+    await this.saveOptions({ name: this.nameTarget.value || null });
+  }
+
+  /** Leaves the toolbar's name field, which writes a name typed there. */
+  leaveName(): void {
+    this.nameTarget.blur();
+  }
+
+  /** Puts back the name shown before typing and leaves the field without writing. */
+  discardName(): void {
+    this.nameTarget.value = this.nameTarget.defaultValue;
+    this.nameTarget.blur();
+  }
+
   async chooseModel({ currentTarget }: Event): Promise<void> {
     const slot = (currentTarget as HTMLElement).dataset
       .slot as keyof ProjectModels;
@@ -291,7 +307,7 @@ export default class ProjectController extends Controller {
     this.options = project?.options ?? null;
     document.title = project === null ? "Tsuzuri" : `${project.name} - Tsuzuri`;
     if (project === null) return;
-    this.nameTarget.textContent = project.name;
+    this.nameTarget.value = this.nameTarget.defaultValue = project.name;
     this.nameFieldTarget.value = project.options.name ?? "";
     this.nameFieldTarget.placeholder = fileName(project.directory);
     this.resourcesTarget.replaceChildren(

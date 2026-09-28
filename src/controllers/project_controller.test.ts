@@ -12,6 +12,7 @@ import {
   notificationDetail,
   notifications,
 } from "../ui/test_notification";
+import { composingOption } from "./field_controller";
 import ModelSlotController from "./model_slot_controller";
 import ProjectController from "./project_controller";
 
@@ -68,6 +69,7 @@ describe("ProjectController", () => {
   /** Starts the toolbar as the page does, relaying Rust events and reading the Project. */
   async function start(): Promise<void> {
     application = Application.start();
+    application.registerActionOption("composing", composingOption);
     await assemble(application, {
       project: ProjectController,
       "model-slot": ModelSlotController,
@@ -92,7 +94,7 @@ describe("ProjectController", () => {
       >
         <section data-project-target="startScreen"></section>
         <div data-project-target="workspace" hidden>
-          <h1 data-project-target="name"></h1>
+          <input data-project-target="name" data-action="change->project#rename keydown.enter->project#leaveName:!composing keydown.esc->project#discardName:!composing" />
           <div class="dropdown">
             <div tabindex="0" role="button">開啟</div>
             <button id="open-directory" data-action="project#openDirectory">開啟目錄</button>
@@ -561,7 +563,7 @@ describe("ProjectController", () => {
   it("shows the Project Name in the toolbar and the window title", async () => {
     await hold(projectOf({ name: "週會錄影" }));
 
-    expect([target("name").textContent, document.title]).toEqual([
+    expect([target<HTMLInputElement>("name").value, document.title]).toEqual([
       "週會錄影",
       "週會錄影 - Tsuzuri",
     ]);
@@ -579,6 +581,43 @@ describe("ProjectController", () => {
     expect(sent("set_project_options")).toEqual({
       options: { ...projectOf().options, name: "週會錄影" },
     });
+  });
+
+  // @behavior PJ-181
+  it("sets the Project Name typed over the toolbar's", async () => {
+    await hold(projectOf({ name: "lecture" }));
+    const name = target<HTMLInputElement>("name");
+
+    name.value = "週會錄影";
+    name.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(sent("set_project_options")).toEqual({
+      options: { ...projectOf().options, name: "週會錄影" },
+    });
+  });
+
+  // @behavior PJ-182
+  it("puts back the toolbar's Project Name when Esc is pressed", async () => {
+    const named = projectOf({
+      name: "週會錄影",
+      options: { ...projectOf().options, name: "週會錄影" },
+    });
+    await hold(named);
+    const name = target<HTMLInputElement>("name");
+    name.focus();
+
+    name.value = "lecture";
+    name.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    await settle();
+
+    expect([
+      name.value,
+      document.activeElement === name,
+      sent("set_project_options"),
+    ]).toEqual(["週會錄影", false, undefined]);
   });
 
   // @behavior PJ-055

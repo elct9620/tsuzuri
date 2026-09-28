@@ -64,7 +64,7 @@ What a Project is called in the toolbar, the window title and the Recent Project
 
 ### Project Options
 
-What the user sets for one Project in the settings, beside its Primary Language: its Project Name, its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, its Project Models, and the Transcription Settings it sets for itself. Each has a default the Project keeps until it is changed.
+What the user sets for one Project in the settings, beside its Primary Language: its Project Name, its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, its Project Models, and the Transcription Settings it sets for itself. The Project Name can also be typed where the toolbar shows it. Each has a default the Project keeps until it is changed.
 
 ### Project Model
 

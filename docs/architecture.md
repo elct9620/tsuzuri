@@ -562,7 +562,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | Controller | 畫面區域 |
 |---|---|
 | `project`、`transcript`、`segment-changes`、`dialog` | 資源清單、字幕編輯、設定 |
-| `recent-projects` | 起始畫面的最近專案 |
+| `recent-projects` | 起始畫面與開啟選單的最近專案 |
 | `speakers` | 說話者選單與設定 modal |
 | `replacement` | 搜尋取代 modal |
 | `cleanup` | 清理簡體的選單、工具列與快速鍵 |

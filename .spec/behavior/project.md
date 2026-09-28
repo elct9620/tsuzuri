@@ -305,6 +305,14 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | the start screen is shown |
 | Then | no heading for them is shown |
 
+## `PJ-164` Listing the Recent Projects in the Open menu
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` at `/videos/lecture` as a Recent Project |
+| When | the Open menu is shown |
+| Then | it lists `lecture` with `/videos/lecture` as its tooltip |
+
 ## `PJ-165` Listing the Recent Projects again after one could not be opened
 
 | Step | Statement |

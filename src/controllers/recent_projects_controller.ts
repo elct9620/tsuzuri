@@ -34,13 +34,32 @@ function listRow(project: RecentProject): HTMLLIElement {
   return row;
 }
 
+/** An item of the Open menu, naming its Project with the path in a tooltip. */
+function menuItem(project: RecentProject): HTMLLIElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.dataset.action = "project#openRecent";
+  button.dataset.projectDirectoryParam = project.directory;
+  button.dataset.tooltip = project.directory;
+  const name = document.createElement("span");
+  name.className = "min-w-0 truncate";
+  name.textContent = fileName(project.directory);
+  button.append(name);
+  const item = document.createElement("li");
+  item.append(button);
+  return item;
+}
+
 /** The Recent Projects Rust keeps, read again each time the Project changes. */
 export default class RecentProjectsController extends Controller {
-  static targets = ["list", "heading"];
+  static targets = ["list", "heading", "menu", "menuItems"];
 
   /** The start screen's list, hidden while there are none. */
   declare readonly listTarget: HTMLUListElement;
   declare readonly headingTarget: HTMLLIElement;
+  /** The Open menu's section of them, hidden while there are none. */
+  declare readonly menuTarget: HTMLLIElement;
+  declare readonly menuItemsTarget: HTMLUListElement;
 
   declare readonly feed: ProjectFeed;
 
@@ -62,5 +81,7 @@ export default class RecentProjectsController extends Controller {
       ...projects.map(listRow),
     );
     this.listTarget.hidden = projects.length === 0;
+    this.menuItemsTarget.replaceChildren(...projects.map(menuItem));
+    this.menuTarget.hidden = projects.length === 0;
   }
 }

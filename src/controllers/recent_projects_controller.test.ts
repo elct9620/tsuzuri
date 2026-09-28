@@ -45,6 +45,12 @@ describe("RecentProjectsController", () => {
         </section>
         <div data-project-target="workspace" hidden>
           <h1 data-project-target="name"></h1>
+          <ul>
+            <li data-recent-projects-target="menu" hidden>
+              <h2>最近的專案</h2>
+              <ul data-recent-projects-target="menuItems"></ul>
+            </li>
+          </ul>
           <ul data-project-target="resources"></ul>
           <p data-project-target="glossary"></p>
         </div>
@@ -103,6 +109,20 @@ describe("RecentProjectsController", () => {
     await showStartScreen();
 
     expect(list().hidden).toBe(true);
+  });
+
+  // @behavior PJ-164
+  it("lists each Recent Project in the Open menu with its path as the tooltip", async () => {
+    await showStartScreen();
+
+    const items = [
+      ...document.querySelectorAll<HTMLButtonElement>(
+        "[data-recent-projects-target='menuItems'] button",
+      ),
+    ];
+    expect(
+      items.map((item) => [item.textContent, item.dataset.tooltip]),
+    ).toEqual([["lecture", "/videos/lecture"]]);
   });
 
   // @behavior PJ-165

@@ -382,3 +382,43 @@ Open the page listing Tsuzuri's releases, where each release carries the source 
 pub fn open_releases() -> Result<(), Failure> {}
 ```
 
+
+## `check_for_update`
+
+Look for an App Update in the update manifest of the latest release, and keep what it finds for `install_update`. It answers the App Update's release number, or none when the App Build is the latest; a manifest that cannot be reached or read fails as `update-failed`.
+
+```rust
+pub async fn check_for_update(app: AppHandle, found: State<'_, FoundUpdate>) -> Result<Option<AppUpdate>, Failure> {}
+```
+
+## `check_for_update_at_launch`
+
+Look for an App Update as `check_for_update` does, unless the update settings turn looking at launch off. A launch the user did not ask to check is not interrupted, so a manifest that cannot be reached or read is only logged and answers none; only reading the update settings can fail.
+
+```rust
+pub async fn check_for_update_at_launch(app: AppHandle, found: State<'_, FoundUpdate>) -> Result<Option<AppUpdate>, Failure> {}
+```
+
+## `install_update`
+
+Install the App Update the last check found: download it, emitting `update-progress` as it arrives, verify its signature for its release number, stop every Component, install it and restart Tsuzuri. Nothing found is refused as `no-update`, and a Mode running is refused as `update-during-mode` before anything is downloaded; the Mode's turn is held meanwhile, so a Mode asked for waits. A download or install that fails answers `update-failed` and Tsuzuri keeps running as it was.
+
+```rust
+pub async fn install_update(app: AppHandle, found: State<'_, FoundUpdate>, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>) -> Result<(), Failure> {}
+```
+
+## `update_settings`
+
+Whether Tsuzuri looks for an App Update at launch; it does until turned off.
+
+```rust
+pub fn update_settings(app: AppHandle) -> Result<UpdateSettings, Failure> {}
+```
+
+## `choose_launch_check`
+
+Record whether Tsuzuri looks for an App Update at launch, and answer the update settings as `update_settings` does.
+
+```rust
+pub fn choose_launch_check(app: AppHandle, has_launch_check: bool) -> Result<UpdateSettings, Failure> {}
+```

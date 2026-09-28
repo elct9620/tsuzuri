@@ -29,3 +29,7 @@ Undo, Redo, Select All or Clean Simplified Chinese chosen from the Edit menu, as
 ## `video-window-closing`
 
 The Video Window was asked to close and stays open meanwhile: the video it shows lives in the page of the main window, so the webview moves it back to the Preview first and then destroys the window.
+
+## `update-progress`
+
+How much of the App Update being installed has downloaded: the bytes received so far, and its size when the release names it.

@@ -166,6 +166,10 @@ The one page carrying the license texts of Tsuzuri and of everything it ships: t
 
 The release number of the running Tsuzuri and the commit it was built from, which the settings show under About so a report names exactly what ran. Its release number is not a Version, which is a subtitle's.
 
+### App Update
+
+A release of Tsuzuri newer than the App Build, announced by the latest release's update manifest and signed with Tsuzuri's updater key for its own release number. Tsuzuri looks for one at each launch unless the settings turn that off, and whenever About is asked to; installing it downloads and verifies it, stops every Component, and restarts Tsuzuri as the new release.
+
 ### Debug Log
 
 The lines Tsuzuri writes into the log beyond what it always writes: how each Component was started and how it ended, and what llama-server was asked and answered. The settings turn it on or off for the next launch, and it is off until turned on.

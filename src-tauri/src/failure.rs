@@ -80,6 +80,14 @@ pub enum Failure {
         step: String,
         detail: String,
     },
+    /// Looking for, downloading, verifying or installing an App Update went wrong.
+    UpdateFailed {
+        detail: String,
+    },
+    /// Installing an App Update asked for before a check found one.
+    NoUpdate,
+    /// Installing an App Update asked for while a Mode runs, whose Components installing stops.
+    UpdateDuringMode,
     LlamaExited,
     LlamaTimedOut,
     /// llama-server answered a request with an error, or without a translation.
@@ -162,6 +170,14 @@ impl From<tokio::task::JoinError> for Failure {
 impl From<tauri::Error> for Failure {
     fn from(error: tauri::Error) -> Self {
         Failure::Internal {
+            detail: error.to_string(),
+        }
+    }
+}
+
+impl From<tauri_plugin_updater::Error> for Failure {
+    fn from(error: tauri_plugin_updater::Error) -> Self {
+        Failure::UpdateFailed {
             detail: error.to_string(),
         }
     }

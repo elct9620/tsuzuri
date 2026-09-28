@@ -83,6 +83,16 @@ impl ModeLock {
     /// cancel asked before the turn begins is forgotten.
     pub async fn wait_turn(&self) -> Turn<'_> {
         let guard = self.turn.lock().await;
+        self.start_turn(guard)
+    }
+
+    /// The turn when no Mode runs, taken without waiting; none while one does.
+    pub fn try_turn(&self) -> Option<Turn<'_>> {
+        let guard = self.turn.try_lock().ok()?;
+        Some(self.start_turn(guard))
+    }
+
+    fn start_turn<'a>(&'a self, guard: tokio::sync::MutexGuard<'a, ()>) -> Turn<'a> {
         self.cancel.send_replace(false);
         Turn {
             _guard: guard,

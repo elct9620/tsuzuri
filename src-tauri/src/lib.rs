@@ -18,6 +18,7 @@ pub mod toolchain;
 pub mod transcript;
 pub mod transcription;
 pub mod translation;
+pub mod updates;
 pub mod waveform;
 pub mod window;
 
@@ -32,6 +33,7 @@ use processes::Processes;
 use project::CurrentProject;
 use steps::ModeLock;
 use translation::ResidentLlama;
+use updates::FoundUpdate;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -44,6 +46,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_window_state::Builder::default()
                 .skip_initial_state(window::VIDEO_WINDOW)
@@ -79,6 +82,7 @@ pub fn run() {
             app.manage(CurrentProject::default());
             app.manage(ResidentLlama::default());
             app.manage(ModeLock::default());
+            app.manage(FoundUpdate::default());
             std::thread::spawn(cleanup::load_tables);
             translation::commands::start_resident_llama(app.handle());
             window::build_main_window(app)?;
@@ -120,6 +124,11 @@ pub fn run() {
             logs::commands::open_log_directory,
             about::commands::app_build,
             about::commands::open_releases,
+            updates::commands::check_for_update,
+            updates::commands::check_for_update_at_launch,
+            updates::commands::install_update,
+            updates::commands::update_settings,
+            updates::commands::choose_launch_check,
             project::commands::revert_row,
             project::commands::undo,
             project::commands::redo,

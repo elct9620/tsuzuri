@@ -40,6 +40,16 @@ sudo apt install ./Tsuzuri_<version>_amd64.deb      # Debian、Ubuntu
 sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 ```
 
+### 更新
+
+| 時機 | 會發生什麼 |
+|---|---|
+| 開啟 Tsuzuri | 到最新的 Release 檢查有沒有新版本，有的話以通知提供「更新」 |
+| 任何時候 | 設定 →「關於」→「檢查更新」 |
+| 按下「更新」 | 下載與你安裝時同一種的安裝檔，驗證簽章、停止引擎、安裝並重新啟動 |
+
+按下「更新」之前不會下載任何東西；轉錄或翻譯進行中時無法更新。啟動時的檢查可以在設定 →「關於」關閉。Linux 安裝時會像 `apt`、`dnf` 一樣詢問密碼。
+
 ## 回報問題
 
 | 附上 | 位置 |

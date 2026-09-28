@@ -39,6 +39,9 @@
 |---|---|
 | `components.json` | 原始程式碼釘版、變體順序 |
 | `src-tauri/tauri.bundle.conf.json` | 打包時把 `vendor/` 放進資源的 `components/` |
+| `src-tauri/tauri.updater.conf.json` | CI 打包時寫出更新套件的簽章 |
+| `scripts/signatures.ts` | 以公鑰與版號檢查簽章 |
+| `scripts/manifest.ts` | 寫出 Release 的 `latest.json` |
 | CI 的 cargo-about | 列出 Rust 套件的授權 |
 | `scripts/licenses.ts` | 檢查授權並寫出授權頁 |
 | `src-tauri/build.rs` | 把建置的 commit 寫進執行檔 |
@@ -64,6 +67,8 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 ├─ vendor/                編譯好的元件，不進版控
 ├─ scripts/vendor.sh      依 components.json 編譯元件
 ├─ scripts/licenses.ts    授權檢查與授權頁
+├─ scripts/signatures.ts  檢查更新套件的簽章
+├─ scripts/manifest.ts    寫出 latest.json
 └─ .spec/                 glossary、behavior、contract
 ```
 
@@ -111,6 +116,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
 | `logs.ts` | `logs/commands.rs` | log 目錄、除錯紀錄 |
 | `about.ts` | `about/commands.rs` | App Build、釋出頁面 |
+| `updates.ts` | `updates/commands.rs` | 檢查與安裝更新、啟動時檢查 |
 | `progress.ts` | `steps/commands.rs` | `cancel_task` |
 
 指令名稱與參數以 `.spec/contract/commands.md` 為準。
@@ -124,8 +130,9 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | 復原、重做、全選 | macOS 編輯選單 | `undo`、`segment-changes` |
 | 外部修改已留存 | 重新載入 | `project` |
 | 影片視窗要關閉 | 關閉影片視窗 | `preview` |
+| 更新下載進度 | `install_update` | `updates` |
 
-事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`；四者由 `relayEvents` 轉成 window 的 `rust:` 事件。
+事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`，更新下載進度是 `update-progress`；五者由 `relayEvents` 轉成 window 的 `rust:` 事件。
 
 ### 2.4 錯誤與通知
 
@@ -209,6 +216,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `logs` | 轉接 | log 目錄與層級 |
 | — | `system_opener` | 轉接 | 交給系統開啟 |
 | — | `about` | 介面 | App Build、釋出頁面 |
+| — | `updates` | 應用、轉接 | 檢查與安裝更新 |
 | — | `transcript` | 領域 | 段落與 SRT |
 | — | `segment_change` | 領域 | 段落變更 |
 | — | `replacement` | 領域 | 搜尋取代 |
@@ -396,6 +404,7 @@ ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 | 取消後 | 只結束它啟動的行程 |
 | 取波形 | 不是任務，不取鎖 |
 | 暫存目錄 | 隨 `ModeRun` 結束刪除 |
+| 安裝更新 | `try_turn`，執行中拒絕 |
 
 轉錄與翻譯以 `ModeLock::begin` 開始一個 `ModeRun`，關掉常駐 llama-server 也先取得 `ModeLock`，後來的等前一個結束。取消時 `ModeRun` 丟下任務，只結束經它啟動的行程。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
 
@@ -408,6 +417,7 @@ ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 | 元件結束 | 從紀錄移除 |
 | 常駐 router | 背景啟動，關掉常駐時停止 |
 | App 結束 | `kill_all`，連同 router 開的模型行程 |
+| 安裝更新 | 下載後、安裝前 `kill_all` |
 | 下次啟動 | `reap_strays` 只結束 PID 與名稱都相符的行程 |
 
 元件一律經 shell plugin 啟動。介面以 `.spec/contract/processes.md` 為準。

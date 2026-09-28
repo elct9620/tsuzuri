@@ -40,6 +40,16 @@ sudo apt install ./Tsuzuri_<version>_amd64.deb      # Debian, Ubuntu
 sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 ```
 
+### Updates
+
+| When | What happens |
+|---|---|
+| Tsuzuri opens | It asks the latest release whether a newer version exists and, if so, offers **Update** in a notification |
+| Any time | Settings → About → **Check for updates** |
+| You choose **Update** | It downloads the same kind of installer you installed from, checks its signature, stops the engines, installs it and restarts |
+
+Nothing is downloaded until you choose **Update**, and it is refused while a transcription or translation runs. Checking at launch can be turned off under Settings → About. On Linux, installing asks for your password as `apt` or `dnf` would.
+
 ## Reporting a Problem
 
 | Include | Where |

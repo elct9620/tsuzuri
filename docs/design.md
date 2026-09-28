@@ -42,7 +42,7 @@ Webview 顯示的資料都向 Rust 查詢，變更也都寫進 Rust，自己只�
 | 10 字幕校對與匯出 | 🚧 | 音量增強收斂 |
 | 11 介面 | 🚧 | 最近專案、切換語言 |
 | 12 首次設定引導 | 📋 | 全部 |
-| 13 建置與釋出 | 🚧 | 自動更新、Metal shader |
+| 13 建置與釋出 | 🚧 | Metal shader |
 
 ✅ 完成、🚧 進行中、📋 未開始。已有的功能寫在各章，行為列在各章開頭指向的 `.spec/behavior/`。章節依實作的相依關係排列。
 
@@ -1059,7 +1059,7 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
                    │   cache 命中就還原，否則以 vendor.sh 編譯
                    │   確認能回應版本參數
                    ▼
-              寫入授權頁 ─▶ 打包 ─▶ 上傳產物
+              寫入授權頁 ─▶ 打包並簽章 ─▶ 檢查簽章 ─▶ 上傳產物
 ```
 
 action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版本與 lockfile 為 key，存檔前移除會重新編譯的產物。元件 cache 以平台、變體、該元件的釘版與建置腳本為 key，只重編改到的元件；cache 過期時由 GitHub 清除，下次打包重新編譯。
@@ -1069,24 +1069,27 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | 平台 | 打包產物 | 附到 Release |
 |---|---|---|
 | Windows | exe、NSIS、MSI | NSIS、MSI |
-| macOS | dmg、`.app` | dmg |
+| macOS | dmg、`.app` | dmg、`.app.tar.gz` |
 | Linux | deb、rpm | deb、rpm |
 
-授權頁依該平台的內建變體寫成，隨介面打包，不另附檔案（4.4）。Linux 只出 deb、rpm，GTK 等函式庫取自系統，不必再附它們的授權；元件需要的 libgomp、libvulkan 也寫進套件相依。
+授權頁依該平台的內建變體寫成，隨介面打包，不另附檔案（4.4）。Linux 只出 deb、rpm，GTK 等函式庫取自系統，不必再附它們的授權；元件需要的 libgomp、libvulkan 也寫進套件相依。更新用的套件各附簽章 `.sig`，見 13.5。
 
 ### 13.3 釋出流程
 
 ```
   push main ─▶ release-please
                  ├ 一般 commit ─▶ 更新版本 PR
-                 └ 合併版本 PR ─▶ 建立 tag 與 GitHub Release
+                 └ 合併版本 PR ─▶ 建立 tag 與草稿 Release
   CI 成功 ─▶ release-assets（也可指定 tag 手動觸發）
                │ 這個 commit 是 tag 指向的嗎？不是就結束
                ▼
-             取用該次 CI 的打包 ─▶ 附上安裝檔、ffmpeg 原始程式碼、SHA256SUMS
+             取用該次 CI 的打包 ─▶ 附上安裝檔、簽章、latest.json、
+                                   ffmpeg 原始程式碼、SHA256SUMS
+               ▼
+             公開 Release
 ```
 
-版號與 changelog 由 release-please 管理，tag 指向帶著新版號的 commit，所以直接取用 CI 為它打包的產物，不重新編譯。Release 只附安裝檔，不附壓縮檔。不做程式碼簽章，放行步驟寫在 README。
+版號與 changelog 由 release-please 管理，tag 指向帶著新版號的 commit，所以直接取用 CI 為它打包的產物，不重新編譯。Release 先是草稿，附完檔才公開，最新版因此一定帶著 `latest.json`。壓縮檔只附更新用的 `.app.tar.gz`。不做程式碼簽章，放行步驟寫在 README。
 
 ### 13.4 失敗時補救
 
@@ -1096,17 +1099,56 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | CI 失敗或被取消 | 重跑 CI，完成後自動附檔 |
 | CI 產物已過期 | 對 tag 手動跑 CI 再附檔 |
 
-附檔一律覆寫同名檔案，重跑就是補檔。ffmpeg 原始程式碼依 SHA256 快取，每個釘版只從官網下載一次。
+附檔一律覆寫同名檔案，重跑就是補檔；失敗時 Release 停在草稿，已安裝的 App 仍看到上一版。ffmpeg 原始程式碼依 SHA256 快取，每個釘版只從官網下載一次。
 
 ### 13.5 自動更新
 
 | 事項 | 設計 |
 |---|---|
 | 機制 | Tauri updater plugin |
-| 更新來源 | GitHub Release 附帶的更新資訊檔 |
-| 簽章 | Tauri 金鑰，必驗 |
+| 更新來源 | 最新 Release 的 `latest.json` |
+| 簽章 | Tauri 金鑰，綁定版號 |
+| 檢查 | 啟動時與手動 |
+| 安裝 | 使用者按下才開始 |
 
 私鑰放在 CI secret。updater 用自己的金鑰簽章，跟作業系統要求的程式碼簽章無關，所以不做程式碼簽章也能自動更新。
+
+#### 13.5.1 簽章與清單
+
+```
+  CI 打包（疊加 tauri.updater.conf.json）─▶ 每個更新套件的 .sig
+    └ scripts/signatures.ts：公鑰與版號都對才通過
+  release-assets ─▶ scripts/manifest.ts ─▶ latest.json
+    └ 每種安裝格式一個 key，簽章版號須等於 tag
+```
+
+| key | 套件 |
+|---|---|
+| `darwin-aarch64-app` | `.app.tar.gz` |
+| `windows-x86_64-nsis` | `-setup.exe` |
+| `windows-x86_64-msi` | `.msi` |
+| `linux-x86_64-deb` | `.deb` |
+| `linux-x86_64-rpm` | `.rpm` |
+
+簽章綁定版號（`requireSignedVersion`），清單不能把新版號配上舊套件。每種格式各有 key，MSI 與 rpm 不會拿到別種安裝檔；不寫不帶格式的 Linux key。只有 CI 疊加簽章設定，開發機打包不需要金鑰。
+
+#### 13.5.2 安裝
+
+```
+  更新 ─▶ Mode 執行中？─是─▶ 拒絕
+           │否，取得 Mode 的執行權
+           ▼
+         下載、驗簽 ─▶ 停止所有元件 ─▶ 安裝 ─▶ 重新啟動
+```
+
+| 規則 | 原因 |
+|---|---|
+| 執行中拒絕 | 安裝會停止元件 |
+| 安裝前停元件 | 安裝檔無法覆寫執行中的檔案 |
+| 持有執行權 | 安裝時不會開始新任務 |
+| 啟動檢查失敗不通知 | 使用者沒有要求 |
+
+Windows 的安裝程式啟動後直接結束 Tsuzuri，不經過結束時的 `kill_all`，所以停元件放在安裝之前。下載進度每 1% 回報一次，避免大檔案的事件塞滿介面。
 
 ## 14 風險與待驗證
 
@@ -1126,6 +1168,7 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | 變體實際速度 | 自動選擇順序要調 | 不同硬體量 RTF |
 | 沒有 Vulkan 驅動程式 | 內建元件無法執行 | 改指定 CPU 版 |
 | macOS 未經公證 | 首次開啟被擋 | 確認可強制打開 |
+| 自動更新未實測 | 某平台無法更新 | 下一版釋出時實測 |
 
 變體指 Vulkan 與 OpenBLAS。沒有驅動程式時先顯示無法執行，自動選擇上線後改為自動退回。macOS 產物以 `signingIdentity: "-"` 完整 ad-hoc 簽章，應能從隱私權設定強制打開；下載後實際確認前，README 仍保留 `xattr` 移除隔離的做法。
 

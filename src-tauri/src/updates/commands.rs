@@ -1,19 +1,24 @@
 use tauri::{AppHandle, Emitter, State};
 
 use super::{
-    check_at_launch, install_release, look_for_update, AppUpdate, FoundUpdate, UpdateSettings,
+    check_at_launch, install_release, look_for_rollback, look_for_update, AppUpdate, FoundUpdate,
+    UpdateChannel, UpdateSettings,
 };
 use crate::failure::Failure;
 use crate::json_settings::settings_dir;
 use crate::processes::Processes;
 use crate::steps::ModeLock;
 
+/// The repository whose releases Tsuzuri updates from.
+const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
+
 #[tauri::command]
 pub async fn check_for_update(
     app: AppHandle,
     found_update: State<'_, FoundUpdate>,
 ) -> Result<Option<AppUpdate>, Failure> {
-    let update = look_for_update(&app).await?;
+    let settings = UpdateSettings::load(&settings_dir(&app)?)?;
+    let update = look_for_update(&app, settings.channel.manifest_url(REPOSITORY)?).await?;
     Ok(found_update.keep(update))
 }
 
@@ -23,7 +28,18 @@ pub async fn check_for_update_at_launch(
     found_update: State<'_, FoundUpdate>,
 ) -> Result<Option<AppUpdate>, Failure> {
     let settings = UpdateSettings::load(&settings_dir(&app)?)?;
-    let update = check_at_launch(&settings, look_for_update(&app)).await;
+    let manifest = settings.channel.manifest_url(REPOSITORY)?;
+    let update = check_at_launch(&settings, look_for_update(&app, manifest)).await;
+    Ok(found_update.keep(update))
+}
+
+#[tauri::command]
+pub async fn check_for_rollback(
+    app: AppHandle,
+    found_update: State<'_, FoundUpdate>,
+) -> Result<Option<AppUpdate>, Failure> {
+    let manifest = UpdateChannel::Stable.manifest_url(REPOSITORY)?;
+    let update = look_for_rollback(&app, manifest).await?;
     Ok(found_update.keep(update))
 }
 
@@ -60,5 +76,14 @@ pub fn choose_launch_check(
     has_launch_check: bool,
 ) -> Result<UpdateSettings, Failure> {
     UpdateSettings::record_launch_check(&settings_dir(&app)?, has_launch_check)?;
+    update_settings(app)
+}
+
+#[tauri::command]
+pub fn choose_update_channel(
+    app: AppHandle,
+    channel: UpdateChannel,
+) -> Result<UpdateSettings, Failure> {
+    UpdateSettings::record_channel(&settings_dir(&app)?, channel)?;
     update_settings(app)
 }

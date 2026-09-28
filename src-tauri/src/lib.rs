@@ -129,6 +129,8 @@ pub fn run() {
             updates::commands::install_update,
             updates::commands::update_settings,
             updates::commands::choose_launch_check,
+            updates::commands::choose_update_channel,
+            updates::commands::check_for_rollback,
             project::commands::revert_row,
             project::commands::undo,
             project::commands::redo,

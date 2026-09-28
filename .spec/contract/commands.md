@@ -368,7 +368,7 @@ pub fn open_log_directory(log_dir: State<'_, LogDirInUse>) -> Result<(), Failure
 
 ## `app_build`
 
-The App Build: the release number Cargo.toml carries and the commit the binary was built from, or `unknown` for a build made outside a git checkout.
+The App Build: the release number Cargo.toml carries, whether it is a Preview build, and the commit the binary was built from, or `unknown` for a build made outside a git checkout.
 
 ```rust
 pub fn app_build() -> AppBuild {}
@@ -385,7 +385,7 @@ pub fn open_releases() -> Result<(), Failure> {}
 
 ## `check_for_update`
 
-Look for an App Update in the update manifest of the latest release, and keep what it finds for `install_update`. It answers the App Update's release number, or none when the App Build is the latest; a manifest that cannot be reached or read fails as `update-failed`.
+Look for an App Update in the update manifest of the chosen Update Channel, and keep what it finds for `install_update`. It answers the App Update's release number, or none when the App Build is the latest; a manifest that cannot be reached or read fails as `update-failed`.
 
 ```rust
 pub async fn check_for_update(app: AppHandle, found_update: State<'_, FoundUpdate>) -> Result<Option<AppUpdate>, Failure> {}
@@ -421,4 +421,20 @@ Record whether Tsuzuri looks for an App Update at launch, and answer the update 
 
 ```rust
 pub fn choose_launch_check(app: AppHandle, has_launch_check: bool) -> Result<UpdateSettings, Failure> {}
+```
+
+## `choose_update_channel`
+
+Record the Update Channel Tsuzuri looks for an App Update in, keeping whether it looks at launch, and answer the update settings as `update_settings` does.
+
+```rust
+pub fn choose_update_channel(app: AppHandle, channel: UpdateChannel) -> Result<UpdateSettings, Failure> {}
+```
+
+## `check_for_rollback`
+
+Look for a Rollback: the latest stable release, offered even when its release number is lower than the App Build's, and kept for `install_update` like a found App Update. It answers none when the stable release is the App Build's own; only this check accepts an older release.
+
+```rust
+pub async fn check_for_rollback(app: AppHandle, found_update: State<'_, FoundUpdate>) -> Result<Option<AppUpdate>, Failure> {}
 ```

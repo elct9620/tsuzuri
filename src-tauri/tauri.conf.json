@@ -32,9 +32,6 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM4MTU3MkMxNDdFOUYwOTEKUldTUjhPbEh3WElWeUtadTI3N3BBaCt5VTM5dmtKVnJqYTZWeHVHMDdwWUZOdjhwN1M3WHhoNEYK",
-      "endpoints": [
-        "https://github.com/elct9620/tsuzuri/releases/latest/download/latest.json"
-      ],
       "requireSignedVersion": true
     }
   },

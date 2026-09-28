@@ -6,6 +6,7 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 
 - `src-tauri/src/updates.rs`
 - `src-tauri/src/steps.rs`
+- `src-tauri/src/about.rs`
 - `src/controllers/updates_controller.test.ts`
 
 ## `UP-001` Finding a newer release
@@ -167,3 +168,51 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | Given | an App Update whose release does not name its size |
 | When | part of it has downloaded while installing |
 | Then | the install window shows the megabytes downloaded with a bar that keeps moving |
+
+## `UP-021` Using the Stable channel until another is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | update settings never saved |
+| When | the update settings are read |
+| Then | their Update Channel is Stable |
+
+## `UP-022` Looking in the chosen Update Channel
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview channel chosen |
+| When | Tsuzuri looks for an App Update |
+| Then | it reads the update manifest of the preview release rather than the latest release |
+
+## `UP-023` Keeping the launch check when a channel is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the launch check turned off |
+| When | the Preview channel is chosen |
+| Then | the update settings keep the launch check off and record Preview |
+
+## `UP-024` Offering a Rollback to a Preview build
+
+| Step | Statement |
+| --- | --- |
+| Given | a stable release older than the App Build in the update manifest |
+| When | a Rollback is asked for |
+| Then | that stable release is offered as the App Update to install |
+
+## `UP-025` Taking only newer releases outside a Rollback
+
+| Step | Statement |
+| --- | --- |
+| Given | a stable release older than the App Build in the update manifest |
+| When | Tsuzuri looks for an App Update |
+| Then | it answers that there is none |
+
+## `UP-026` Telling a Preview build from a stable one
+
+| Step | Statement |
+| --- | --- |
+| Given | a release number carrying `-preview.<n>` |
+| When | the App Build is asked for |
+| Then | it says the build is a Preview build |

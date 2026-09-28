@@ -168,7 +168,15 @@ The release number of the running Tsuzuri and the commit it was built from, whic
 
 ### App Update
 
-A release of Tsuzuri newer than the App Build, announced by the latest release's update manifest and signed with Tsuzuri's updater key for its own release number. Tsuzuri looks for one at each launch unless the settings turn that off, and whenever About is asked to; installing it downloads and verifies it, stops every Component, and restarts Tsuzuri as the new release.
+A release of Tsuzuri newer than the App Build, announced by the update manifest of the chosen Update Channel and signed with Tsuzuri's updater key for its own release number. Tsuzuri looks for one at each launch unless the settings turn that off, and whenever About is asked to; installing it downloads and verifies it, stops every Component, and restarts Tsuzuri as the new release. The one exception to "newer" is a Rollback.
+
+### Update Channel
+
+Where Tsuzuri looks for an App Update, chosen in the settings: Stable, the latest release; or Preview, a build of each push to the trunk, whose release number is the patch after the latest stable release with `-preview.<n>`, and which also carries each stable release once it is published. Stable is used until Preview is chosen.
+
+### Rollback
+
+Installing the latest stable release on a Preview build although its release number is lower, asked for explicitly after choosing the Stable channel. Only that one check accepts an older release; every other check takes only a newer one, and the release must still be signed for the number it announces.
 
 ### Debug Log
 

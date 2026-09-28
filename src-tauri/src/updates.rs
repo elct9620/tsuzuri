@@ -7,7 +7,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Runtime};
+use tauri::{AppHandle, Runtime, Url};
 use tauri_plugin_updater::{Update, UpdaterExt};
 
 use crate::failure::Failure;
@@ -16,17 +16,46 @@ use crate::steps::ModeLock;
 
 const SETTINGS_FILE: &str = "updates.json";
 
-/// Whether Tsuzuri looks for an App Update at launch; saved across launches.
+/// Where Tsuzuri looks for an App Update.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum UpdateChannel {
+    /// The latest release.
+    #[default]
+    Stable,
+    /// The build of each push to the trunk, which also carries each stable release.
+    Preview,
+}
+
+impl UpdateChannel {
+    /// The update manifest this channel reads from the releases of `repository`.
+    pub fn manifest_url(self, repository: &str) -> Result<Url, Failure> {
+        let release = match self {
+            UpdateChannel::Stable => "latest/download",
+            UpdateChannel::Preview => "download/preview",
+        };
+        Url::parse(&format!("{repository}/releases/{release}/latest.json")).map_err(|error| {
+            Failure::Internal {
+                detail: error.to_string(),
+            }
+        })
+    }
+}
+
+/// Whether Tsuzuri looks for an App Update at launch, and in which Update Channel; saved across
+/// launches.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct UpdateSettings {
     pub has_launch_check: bool,
+    pub channel: UpdateChannel,
 }
 
 impl Default for UpdateSettings {
     fn default() -> UpdateSettings {
         UpdateSettings {
             has_launch_check: true,
+            channel: UpdateChannel::default(),
         }
     }
 }
@@ -37,13 +66,27 @@ impl UpdateSettings {
         json_settings::settings_at(&dir.join(SETTINGS_FILE))
     }
 
-    /// Saves whether Tsuzuri looks for an App Update at launch.
-    pub fn record_launch_check(dir: &Path, has_launch_check: bool) -> io::Result<()> {
+    pub fn save(&self, dir: &Path) -> io::Result<()> {
         fs::create_dir_all(dir)?;
-        json_settings::write(
-            &dir.join(SETTINGS_FILE),
-            &UpdateSettings { has_launch_check },
-        )
+        json_settings::write(&dir.join(SETTINGS_FILE), self)
+    }
+
+    /// Saves whether Tsuzuri looks for an App Update at launch, keeping the rest.
+    pub fn record_launch_check(dir: &Path, has_launch_check: bool) -> io::Result<()> {
+        UpdateSettings {
+            has_launch_check,
+            ..UpdateSettings::load(dir)?
+        }
+        .save(dir)
+    }
+
+    /// Saves the Update Channel to look in, keeping the rest.
+    pub fn record_channel(dir: &Path, channel: UpdateChannel) -> io::Result<()> {
+        UpdateSettings {
+            channel,
+            ..UpdateSettings::load(dir)?
+        }
+        .save(dir)
     }
 }
 
@@ -80,9 +123,33 @@ impl FoundUpdate {
     }
 }
 
-/// The App Update the update manifest announces, or none when the App Build is the latest.
-pub async fn look_for_update<R: Runtime>(app: &AppHandle<R>) -> Result<Option<Update>, Failure> {
-    Ok(app.updater()?.check().await?)
+/// The App Update the update manifest at `manifest` announces, or none when the App Build is the
+/// latest.
+pub async fn look_for_update<R: Runtime>(
+    app: &AppHandle<R>,
+    manifest: Url,
+) -> Result<Option<Update>, Failure> {
+    Ok(app
+        .updater_builder()
+        .endpoints(vec![manifest])?
+        .build()?
+        .check()
+        .await?)
+}
+
+/// The release the update manifest at `manifest` announces whenever it is not the App Build's
+/// own, older ones included: a Rollback is the only check that takes an older release.
+pub async fn look_for_rollback<R: Runtime>(
+    app: &AppHandle<R>,
+    manifest: Url,
+) -> Result<Option<Update>, Failure> {
+    Ok(app
+        .updater_builder()
+        .endpoints(vec![manifest])?
+        .version_comparator(|running, release| release.version != running)
+        .build()?
+        .check()
+        .await?)
 }
 
 /// The answer of `check` when looking at launch is on; a failed check is only logged, since
@@ -184,14 +251,13 @@ mod tests {
 
     const PUBKEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM4MTU3MkMxNDdFOUYwOTEKUldTUjhPbEh3WElWeUtadTI3N3BBaCt5VTM5dmtKVnJqYTZWeHVHMDdwWUZOdjhwN1M3WHhoNEYK";
 
-    /// An app whose updater reads its update manifest from `releases`.
-    fn app_with_releases(releases: &FakeHttp) -> tauri::App<MockRuntime> {
+    /// An app with Tsuzuri's updater key, reading manifests over plain HTTP as the fakes serve them.
+    fn app_with_updater() -> tauri::App<MockRuntime> {
         let mut context = mock_context(noop_assets());
         context.config_mut().plugins.0.insert(
             "updater".into(),
             serde_json::json!({
                 "pubkey": PUBKEY,
-                "endpoints": [format!("{}/latest.json", releases.base_url)],
                 "dangerousInsecureTransportProtocol": true,
             }),
         );
@@ -199,6 +265,10 @@ mod tests {
             .plugin(tauri_plugin_updater::Builder::new().build())
             .build(context)
             .unwrap()
+    }
+
+    fn fake_manifest(releases: &FakeHttp) -> Url {
+        Url::parse(&format!("{}/latest.json", releases.base_url)).unwrap()
     }
 
     /// Releases whose update manifest announces `release_number` for this platform.
@@ -281,9 +351,12 @@ mod tests {
     // @behavior UP-001
     #[test]
     fn finds_a_release_newer_than_the_app_build() {
-        let app = app_with_releases(&releases_with_latest("99.0.0"));
+        let releases = releases_with_latest("99.0.0");
+        let app = app_with_updater();
 
-        let update = tauri::async_runtime::block_on(look_for_update(app.handle())).unwrap();
+        let update =
+            tauri::async_runtime::block_on(look_for_update(app.handle(), fake_manifest(&releases)))
+                .unwrap();
 
         assert_eq!(update.map(|update| update.version), Some("99.0.0".into()));
     }
@@ -295,9 +368,12 @@ mod tests {
             .package_info()
             .version
             .to_string();
-        let app = app_with_releases(&releases_with_latest(&app_build_release));
+        let releases = releases_with_latest(&app_build_release);
+        let app = app_with_updater();
 
-        let update = tauri::async_runtime::block_on(look_for_update(app.handle())).unwrap();
+        let update =
+            tauri::async_runtime::block_on(look_for_update(app.handle(), fake_manifest(&releases)))
+                .unwrap();
 
         assert!(update.is_none());
     }
@@ -333,13 +409,14 @@ mod tests {
     // @behavior UP-005
     #[test]
     fn stays_silent_when_the_launch_check_fails() {
-        let app = app_with_releases(&unreachable_releases());
+        let releases = unreachable_releases();
+        let app = app_with_updater();
         let mut update = None;
 
         let logs = captured_logs(|| {
             update = Some(tauri::async_runtime::block_on(check_at_launch(
                 &UpdateSettings::default(),
-                look_for_update(app.handle()),
+                look_for_update(app.handle(), fake_manifest(&releases)),
             )));
         });
 
@@ -354,9 +431,11 @@ mod tests {
     // @behavior UP-006
     #[test]
     fn fails_a_check_asked_for_when_the_releases_cannot_be_reached() {
-        let app = app_with_releases(&unreachable_releases());
+        let releases = unreachable_releases();
+        let app = app_with_updater();
 
-        let result = tauri::async_runtime::block_on(look_for_update(app.handle()));
+        let result =
+            tauri::async_runtime::block_on(look_for_update(app.handle(), fake_manifest(&releases)));
 
         assert!(
             matches!(result, Err(Failure::UpdateFailed { .. })),
@@ -457,5 +536,101 @@ mod tests {
             .collect();
 
         assert_eq!(reports, vec![512 * 1024, 1024 * 1024]);
+    }
+
+    /// A stable release older than any App Build the tests run as.
+    const OLDER_RELEASE: &str = "0.0.0-older";
+
+    // @behavior UP-021
+    #[test]
+    fn uses_the_stable_channel_until_another_is_chosen() {
+        let dir = TempDir::new("update-channel-default");
+
+        let settings = UpdateSettings::load(dir.path()).unwrap();
+
+        assert_eq!(settings.channel, UpdateChannel::Stable);
+    }
+
+    // @behavior UP-022
+    #[test]
+    fn reads_the_manifest_of_the_chosen_channel() {
+        let repository = "https://github.com/elct9620/tsuzuri";
+
+        let manifests = [UpdateChannel::Stable, UpdateChannel::Preview]
+            .map(|channel| channel.manifest_url(repository).unwrap().to_string());
+
+        assert_eq!(
+            manifests,
+            [
+                "https://github.com/elct9620/tsuzuri/releases/latest/download/latest.json",
+                "https://github.com/elct9620/tsuzuri/releases/download/preview/latest.json",
+            ]
+        );
+    }
+
+    // @behavior UP-023
+    #[test]
+    fn keeps_the_launch_check_when_a_channel_is_chosen() {
+        let dir = TempDir::new("update-channel-chosen");
+        UpdateSettings::record_launch_check(dir.path(), false).unwrap();
+
+        UpdateSettings::record_channel(dir.path(), UpdateChannel::Preview).unwrap();
+
+        assert_eq!(
+            UpdateSettings::load(dir.path()).unwrap(),
+            UpdateSettings {
+                has_launch_check: false,
+                channel: UpdateChannel::Preview,
+            }
+        );
+    }
+
+    // @behavior UP-024
+    #[test]
+    fn offers_an_older_stable_release_as_a_rollback() {
+        let releases = releases_with_latest(OLDER_RELEASE);
+        let app = app_with_updater();
+
+        let update = tauri::async_runtime::block_on(look_for_rollback(
+            app.handle(),
+            fake_manifest(&releases),
+        ))
+        .unwrap();
+
+        assert_eq!(
+            update.map(|update| update.version),
+            Some(OLDER_RELEASE.into())
+        );
+    }
+
+    // @behavior UP-025
+    #[test]
+    fn takes_no_older_release_outside_a_rollback() {
+        let releases = releases_with_latest(OLDER_RELEASE);
+        let app = app_with_updater();
+
+        let update =
+            tauri::async_runtime::block_on(look_for_update(app.handle(), fake_manifest(&releases)))
+                .unwrap();
+
+        assert!(update.is_none());
+    }
+
+    #[test]
+    fn offers_no_rollback_to_the_release_already_running() {
+        let app_build_release = mock_context::<MockRuntime, _>(noop_assets())
+            .package_info()
+            .version
+            .to_string();
+        let releases = releases_with_latest(&app_build_release);
+        let app = app_with_updater();
+
+        let update = tauri::async_runtime::block_on(look_for_rollback(
+            app.handle(),
+            fake_manifest(&releases),
+        ))
+        .unwrap();
+
+        assert!(update.is_none());
     }
 }

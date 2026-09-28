@@ -885,6 +885,50 @@ A limiter raises all it passes by a fixed makeup gain of its own, so a gain afte
 | When | the volume slider is moved back to its middle |
 | Then | the media plays at full volume, with the limiter's makeup gain taken back |
 
+## `PV-179` Reading the volume beside its slider
+
+A position on the slider says little of how loud it plays, so the volume is read out beside it, to the nearest percent.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview of a Current Resource with a media file |
+| When | the volume slider is moved to three tenths of its length |
+| Then | the volume reads 22% |
+
+## `PV-180` Muting the media
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview of a Current Resource with a media file |
+| When | the mute button is pressed |
+| Then | the media plays with no sound |
+
+## `PV-181` Unmuting back to the volume chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the media muted with the volume set to 12.5% |
+| When | the mute button is pressed again |
+| Then | the media plays at 12.5% of its volume |
+
+## `PV-182` Unmuting with the volume slider
+
+| Step | Statement |
+| --- | --- |
+| Given | the media muted |
+| When | the volume slider is moved to a quarter of its length |
+| Then | the media plays at 12.5% of its volume |
+
+## `PV-183` Playing with sound each time the Preview opens
+
+A mute forgotten from an earlier session would pass for a media file with no sound, so it is not remembered.
+
+| Step | Statement |
+| --- | --- |
+| Given | the media muted with the volume set to 12.5% |
+| When | the Preview opens again |
+| Then | the media plays at 12.5% of its volume |
+
 ## `PV-092` Showing the Speaker over the video by default
 
 A cue is saved with its Speaker's name before the dialogue, so what is over the video names who says it too.

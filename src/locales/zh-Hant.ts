@@ -198,6 +198,8 @@ const zhHant: typeof en = {
     unplayable: "這個格式無法在這裡預覽，仍可看波形。",
     videoWindow: "在影片視窗播放",
     volume: "音量",
+    mute: "靜音",
+    muteHint: "再按一次或拉動音量滑桿就恢復聲音。",
     videoWindowHint:
       "把影片移到獨立視窗，可拖到另一個螢幕放大；雙擊影片切換全螢幕。再按一次或關閉視窗就回到這裡。",
     videoWindowTitle: "Tsuzuri 影片",

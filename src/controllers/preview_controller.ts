@@ -95,6 +95,9 @@ export default class PreviewController extends Controller {
     "playbackIcon",
     "time",
     "volume",
+    "volumeLevel",
+    "muteButton",
+    "muteIcon",
     "currentSection",
     "currentHint",
     "currentCard",
@@ -126,6 +129,9 @@ export default class PreviewController extends Controller {
   declare readonly timeTarget: HTMLElement;
   /** The slider setting how loud the media plays beside the system's volume, along a cubic curve. */
   declare readonly volumeTarget: HTMLInputElement;
+  declare readonly volumeLevelTarget: HTMLElement;
+  declare readonly muteButtonTarget: HTMLElement;
+  declare readonly muteIconTarget: HTMLElement;
   /** What the card shows of the Current Segment, put away while the video is out of the Preview. */
   declare readonly currentSectionTarget: HTMLElement;
   /** Asks for a Segment to be clicked while none is current. */
@@ -151,6 +157,8 @@ export default class PreviewController extends Controller {
   private isSpeakerShown = rememberedFlag(SPEAKER_KEY, true);
   private isFolded = rememberedFlag(FOLDED_KEY, false);
   private volume = volumeOf(rememberedChoice(VOLUME_KEY));
+  /** A mute is not remembered, so a Preview opening silent never passes for media with no sound. */
+  private isMuted = false;
   private unfollow?: () => void;
   /** The request for the next frame the Preview follows the media on while it plays, and the window drawing it. */
   private frameRequest: { view: Window; id: number } | null = null;
@@ -194,7 +202,7 @@ export default class PreviewController extends Controller {
     this.captionSpeakerTarget.checked = this.isSpeakerShown;
     this.volumeTarget.max = String(SLIDER_END);
     this.volumeTarget.value = String(sliderPosition(this.volume));
-    playAtVolume(this.player, this.volume);
+    this.applyVolume();
     this.unfollow = this.feed.follow((project) => this.show(project));
   }
 
@@ -220,7 +228,22 @@ export default class PreviewController extends Controller {
   setVolume(): void {
     this.volume = volumeAt(Number(this.volumeTarget.value));
     rememberChoice(VOLUME_KEY, String(this.volume));
-    playAtVolume(this.player, this.volume);
+    this.isMuted = false;
+    this.applyVolume();
+  }
+
+  toggleMute(): void {
+    this.isMuted = !this.isMuted;
+    this.applyVolume();
+  }
+
+  /** Plays the media at the volume chosen, or silent while muted, and shows both beside the slider. */
+  private applyVolume(): void {
+    playAtVolume(this.player, this.isMuted ? 0 : this.volume);
+    this.volumeLevelTarget.textContent = `${Math.round(this.volume)}%`;
+    this.muteButtonTarget.setAttribute("aria-pressed", `${this.isMuted}`);
+    this.muteButtonTarget.classList.toggle("btn-primary", this.isMuted);
+    this.muteIconTarget.classList.toggle("swap-active", this.isMuted);
   }
 
   chooseCaptionLanguage({ target }: Event): void {

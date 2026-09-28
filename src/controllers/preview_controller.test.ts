@@ -127,6 +127,7 @@ describe("PreviewController", () => {
         <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
         <span data-preview-target="time"></span>
         <input type="range" min="0" max="100" data-preview-target="volume" data-action="input->preview#setVolume">
+        <span data-preview-target="volumeLevel"></span><button id="mute" data-preview-target="muteButton" data-action="preview#toggleMute"><span data-preview-target="muteIcon"></span></button>
         <div data-preview-target="captionChoice">
           <input type="radio" name="caption" value="original" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
           <input type="radio" name="caption" value="translation" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
@@ -604,6 +605,60 @@ describe("PreviewController", () => {
     expect([volumeSlider().value, player.volume]).toEqual(["25", 0.125]);
   });
 
+  const pressMute = () => document.querySelector<HTMLElement>("#mute")!.click();
+
+  // @behavior PV-179
+  it("reads the volume beside its slider", async () => {
+    await show(projectWithMedia());
+
+    moveVolumeSlider(30);
+
+    expect(
+      document.querySelector('[data-preview-target="volumeLevel"]')!
+        .textContent,
+    ).toBe("22%");
+  });
+
+  // @behavior PV-180
+  it("mutes the media", async () => {
+    await show(projectWithMedia());
+
+    pressMute();
+
+    expect(player.volume).toBe(0);
+  });
+
+  // @behavior PV-181
+  it("unmutes back to the volume chosen", async () => {
+    await show(projectWithMedia());
+    moveVolumeSlider(25);
+    pressMute();
+
+    pressMute();
+
+    expect(player.volume).toBe(0.125);
+  });
+
+  // @behavior PV-182
+  it("unmutes with the volume slider", async () => {
+    await show(projectWithMedia());
+    pressMute();
+
+    moveVolumeSlider(25);
+
+    expect(player.volume).toBe(0.125);
+  });
+
+  // @behavior PV-183
+  it("plays with sound each time the Preview opens", async () => {
+    moveVolumeSlider(25);
+    pressMute();
+
+    await reopenWith({});
+
+    expect(player.volume).toBe(0.125);
+  });
+
   // @behavior PV-173
   it("reads the media with anonymous CORS", async () => {
     await reopenWith({});
@@ -720,6 +775,15 @@ describe("PreviewController", () => {
       moveVolumeSlider(25);
 
       expect([player.volume, contexts.length]).toEqual([0.125, 0]);
+    });
+
+    // @behavior PV-180
+    it("mutes the media above full volume", () => {
+      moveVolumeSlider(100);
+
+      pressMute();
+
+      expect(quietPassageVolume(contexts[0])).toBe(0);
     });
 
     // @behavior PV-177

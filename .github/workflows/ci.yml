@@ -11,9 +11,10 @@ permissions:
   contents: read
 
 # A newer push to a pull request replaces its run; every push to a branch is checked to the end,
-# so each commit keeps a verdict and a release commit is always bundled.
+# so each commit keeps a verdict and a release commit is always bundled. The branch is part of the
+# group, so one commit pushed to main and stable is checked on both at once.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'pull_request' && 'latest' || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:

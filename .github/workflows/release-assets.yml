@@ -8,6 +8,8 @@ on:
   workflow_run:
     workflows: [CI]
     types: [completed]
+    # Only these branches publish, so a run elsewhere starts nothing rather than a skipped run.
+    branches: [main, preview]
   workflow_dispatch:
     inputs:
       tag:

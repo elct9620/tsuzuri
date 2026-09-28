@@ -254,6 +254,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `toolchain` | 應用 | 尋找元件、模型設定 |
 | `toolchain/` | `detection` | 轉接 | 偵測已安裝的元件 |
 | `toolchain/` | `hub` | 轉接 | Hugging Face 快取與下載 |
+| `toolchain/` | `presets` | 應用 | 預設模型清單 |
 | `toolchain/` | `settings` | 轉接 | 元件設定檔 |
 | — | `progress` | 應用 | 回報進度的 Port |
 | — | `steps` | 應用 | Step 與 `ModeRun` |

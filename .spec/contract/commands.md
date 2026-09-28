@@ -22,6 +22,14 @@ Remember a Model Source for one slot, as `{"kind":"file","path":…}` or `{"kind
 pub fn choose_model(app: AppHandle, slot: ModelSlot, source: ModelSource) -> Result<ModelSettingsView, Failure> {}
 ```
 
+## `preset_models`
+
+The Preset Models, each with its Model Slot, name, quantization, Model Source and size in bytes, in the order the settings offer them.
+
+```rust
+pub fn preset_models() -> Vec<PresetModel> {}
+```
+
 ## `download_model`
 
 Download `file` of the Hugging Face Repository `repo` (`owner/name`) at `revision`, the main branch when none, into the Hugging Face Cache, emitting `model-download-progress` as it arrives, and answer it as a Model Source at the commit it was downloaded at. A file the cache already holds at a commit `revision` names is answered without a request. No Mode waits for it and it waits for none; the same file already downloading is refused as `model-downloading`, and one cancelled answers `model-download-cancelled`.

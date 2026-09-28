@@ -226,6 +226,10 @@ Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli) 
 
 Where a Model Slot's Model comes from: a file on disk, named by its path, or a file of a Hugging Face Repository, named by the repository, the file's path in it and the commit it was downloaded at, and found in the Hugging Face Cache. A slot saved before Model Sources were kept holds a bare path, read as a file on disk.
 
+### Preset Model
+
+A Model Tsuzuri was verified with, offered for its Model Slot by name and quantization so nobody has to know where to find it: a file of a Hugging Face Repository pinned at a commit, like the Components' sources, with its size. Choosing one downloads it unless the Hugging Face Cache holds it.
+
 ### Hugging Face Cache
 
 The directory Hugging Face tools share for downloaded files, so a Model another tool already downloaded is used without downloading it again: `HF_HUB_CACHE`, else `HUGGINGFACE_HUB_CACHE`, else `hub` under `HF_HOME`, else `huggingface/hub` under `XDG_CACHE_HOME`, else `.cache/huggingface/hub` in the home directory. A repository's file downloaded at a commit sits at `models--<owner>--<name>/snapshots/<commit>/<file>` in it.

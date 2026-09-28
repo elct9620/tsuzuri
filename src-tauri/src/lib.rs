@@ -109,6 +109,7 @@ pub fn run() {
             toolchain::commands::component_statuses,
             toolchain::commands::model_settings,
             toolchain::commands::choose_model,
+            toolchain::commands::preset_models,
             toolchain::commands::download_model,
             toolchain::commands::repository_files,
             toolchain::commands::cancel_model_download,

@@ -11,6 +11,7 @@ use crate::model_source::{parse_saved_source, ModelSource};
 pub mod commands;
 pub mod detection;
 pub mod hub;
+pub mod presets;
 pub mod settings;
 
 /// The Build Manifest, read for the order Auto-Selection tries each Component's Variants in.

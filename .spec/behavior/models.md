@@ -241,3 +241,21 @@ A Repository keeps other files beside its Models, and whisper.cpp's transcriptio
 | Given | the models panel loaded |
 | When | the user picks a file for the translation slot |
 | Then | the file dialog offers the extensions Rust names for the translation slot |
+
+## `MD-029` Offering only Preset Models their slot can load
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preset Models |
+| When | each is checked against its Model Slot |
+| Then | every one is a file its Model Slot can load, and every Model Slot has one |
+
+## `MD-030` Pinning every Preset Model at a commit
+
+A Preset Model is what Tsuzuri was verified with, so a Repository changing its files later does not change what is downloaded.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preset Models |
+| When | their Model Sources are read |
+| Then | every one names a Repository's file at a full commit hash |

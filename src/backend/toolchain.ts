@@ -58,6 +58,19 @@ export function chooseModel(
   return invoke<ModelSettingsView>("choose_model", { slot, source });
 }
 
+/** A Model Tsuzuri was verified with, offered by name so nobody has to know where to find it. */
+export interface PresetModel {
+  slot: ModelSlot;
+  name: string;
+  quantization: string;
+  source: ModelSource;
+  size: number;
+}
+
+export function presetModels(): Promise<PresetModel[]> {
+  return invoke<PresetModel[]>("preset_models");
+}
+
 /** How much of a Model being downloaded has arrived, as `model-download-progress` tells it. */
 export interface DownloadProgress {
   repo: string;

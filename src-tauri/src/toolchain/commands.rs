@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use tauri::{AppHandle, Emitter, State};
 
 use super::hub::{self, hub_client, ModelDownloads, RepositoryFile};
+use super::presets::PresetModel;
 use super::settings::{self, load_settings};
 use super::{
     find_statuses_off_the_main_thread, Choices, ComponentStatus, ModelSettingsView, ModelSlot,
@@ -92,4 +93,9 @@ pub async fn repository_files(
 ) -> Result<Vec<RepositoryFile>, Failure> {
     let client = hub_client(load_settings(&app)?.hub_cache(), None)?;
     hub::list_model_files(&client, &repo, slot).await
+}
+
+#[tauri::command]
+pub fn preset_models() -> Vec<PresetModel> {
+    super::presets::catalog()
 }

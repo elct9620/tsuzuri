@@ -133,8 +133,9 @@ export function currentProject(): Promise<ProjectView | null> {
 
 /**
  * The Project Rust holds, read once for each change and handed to every follower in the order they
- * began to follow, then to each `afterEach` callback. A read answered after a later one is dropped,
- * so no follower is shown an older Project than it already has.
+ * began to follow, then to each `afterEach` callback; one that throws is reported and the rest are
+ * still called. A read answered after a later one is dropped, so no follower is shown an older
+ * Project than it already has.
  */
 export class ProjectFeed {
   /** The Project last read, or `undefined` before the first read. */
@@ -175,8 +176,17 @@ export class ProjectFeed {
     if (readNumber < this.latestShownRead) return;
     this.latestShownRead = readNumber;
     this.latest = project;
-    for (const show of this.followers) show(project);
-    for (const settle of this.settlers) settle();
+    for (const show of this.followers) callReporting(() => show(project));
+    for (const settle of this.settlers) callReporting(settle);
+  }
+}
+
+/** Calls `callback`, reporting what it throws as uncaught so the callbacks after it still run. */
+function callReporting(callback: () => void): void {
+  try {
+    callback();
+  } catch (error) {
+    reportError(error);
   }
 }
 

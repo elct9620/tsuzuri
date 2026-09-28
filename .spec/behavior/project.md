@@ -10,6 +10,7 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src-tauri/src/transcription.rs`
 - `src-tauri/src/transcription/*.rs`
 - `src-tauri/src/translation.rs`
+- `src/backend/project.test.ts`
 - `src/controllers/project_controller.test.ts`
 - `src/controllers/project_settings_controller.test.ts`
 - `src/controllers/recent_projects_controller.test.ts`
@@ -718,6 +719,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | Given | the Resource list laid over the editor of a narrow window |
 | When | the Resource `ep02` is chosen |
 | Then | `ep02` is selected and the Resource list is put away |
+
+## `PJ-184` Showing a Project to every view when one of them fails
+
+| Step | Statement |
+| --- | --- |
+| Given | two views following the Project, the first failing to show it |
+| When | the Project is read |
+| Then | the second view shows it and the first view's failure is reported |
 
 ## `PJ-056` Writing an edited Speaker back to the subtitle
 

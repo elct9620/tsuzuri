@@ -73,9 +73,9 @@ Tsuzuri does not download models; point it at files you already have. A project 
 
 | Purpose | Format | Tested with |
 |---|---|---|
-| Transcription | whisper.cpp GGML (`.bin`) | Breeze-ASR-25 (Chinese) |
+| Transcription | whisper.cpp GGML (`.bin`) | [Breeze-ASR-25](https://huggingface.co/tsuzuri-app/Breeze-ASR-25-ggml) (Chinese) |
 | VAD, when turned on | whisper.cpp GGML (`.bin`) | Silero v6.2.0 (`ggml-silero-v6.2.0.bin`) |
-| Translation | GGUF | Qwen3-4B-Instruct-2507 |
+| Translation | GGUF | [Qwen3-4B-Instruct-2507](https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF) |
 
 ## Development
 

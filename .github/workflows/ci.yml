@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # preview is the trunk: each push there publishes a Preview build.
+    branches: [main, preview]
   pull_request:
   workflow_dispatch:
 
@@ -167,10 +168,52 @@ jobs:
             src-tauri/target
           key: ${{ steps.cache.outputs.cache-primary-key }}
 
+  # A Preview build is numbered past the latest stable release by its build time; the number is
+  # written into the build only, never committed.
+  preview-version:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            scripts/preview_version.ts
+            scripts/signatures.ts
+            src-tauri/Cargo.toml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Number the Preview build
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN: ${{ github.run_number }}
+        run: |
+          # Before the first release the package version is the base; any other failure stops here,
+          # since a lower base would number the build below the stable release it follows.
+          if ! latest="$(gh release view -R "$GITHUB_REPOSITORY" --json tagName -q .tagName 2>release-error)"; then
+            grep -qx 'release not found' release-error || { cat release-error; exit 1; }
+            latest=""
+          fi
+          version="$(node scripts/preview_version.ts next "$(date -u +%Y%m%d%H%M)" "$RUN" "$latest")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "$version"
+
   build:
-    needs: [spec, licenses, frontend, rust]
-    if: github.event_name != 'pull_request'
+    needs: [spec, licenses, frontend, rust, preview-version]
+    # A skipped preview-version (any push to main) must not skip the build.
+    if: >-
+      !cancelled() && github.event_name != 'pull_request' &&
+      needs.spec.result == 'success' && needs.licenses.result == 'success' &&
+      needs.frontend.result == 'success' && needs.rust.result == 'success' &&
+      needs.preview-version.result != 'failure'
     uses: ./.github/workflows/build.yml
+    with:
+      preview-version: ${{ needs.preview-version.outputs.version }}
     secrets:
       TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}

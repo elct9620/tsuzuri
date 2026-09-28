@@ -402,6 +402,16 @@ The second half is entered as the split leaves it, whether or not its text gets 
 | When | Esc is pressed in that text |
 | Then | the text is put back as `世界` |
 
+## `ED-159` Entering the second half past the spaces a split leaves
+
+The Project starts the second half past the spaces at the split, so the text the editor enters it with starts there too.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment reading `Hello world` split after `Hello` |
+| When | the second half's text is left with nothing typed |
+| Then | the Project is asked for the split alone |
+
 ## `ED-054` Keeping the Cursor when a split fails
 
 | Step | Statement |

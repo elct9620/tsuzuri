@@ -190,6 +190,19 @@ describe("EditingSession", () => {
     expect(port.sentCalls).toEqual([{ kind: "split", index: 1, at: 1 }]);
   });
 
+  // @behavior ED-159
+  it("enters the second half past the spaces a split leaves", async () => {
+    session.follow(view("Hello world", "今天"));
+    session.enter(0, "text", { start: 5, end: 5 }, "Hello world");
+    await session.split();
+    session.follow(view("Hello", "world", "今天"));
+    port.sentCalls = [];
+
+    await session.leave(1, "text", null, "world");
+
+    expect(port.sentCalls).toEqual([]);
+  });
+
   // @behavior ED-121
   it("puts back the second half's text with Esc after a split", async () => {
     await splitFirst();

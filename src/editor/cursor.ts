@@ -142,7 +142,8 @@ function madeIndex(before: Segment[], after: Segment[], from: number): number {
 
 /**
  * Where the Cursor stands once the editor's own `change` turned `before` into `after`: it stays on
- * its Segment, moves to the second half of a split and into a Segment just inserted.
+ * its Segment, moves to the second half of a split, entered with the text the Project gave it, and
+ * into a Segment just inserted.
  */
 function cursorAfterChange(
   cursor: Cursor,
@@ -157,7 +158,7 @@ function cursorAfterChange(
       if (index === change.index)
         return {
           index: second,
-          caret: caretAt(0, [...before[index].text].slice(change.at).join("")),
+          caret: caretAt(0, after[second]?.text ?? ""),
         };
       return index !== null && index >= second
         ? { ...cursor, index: index + 1 }

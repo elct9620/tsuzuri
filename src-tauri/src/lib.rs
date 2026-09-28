@@ -141,6 +141,7 @@ pub fn run() {
             logs::commands::open_log_directory,
             about::commands::app_build,
             about::commands::open_releases,
+            about::commands::open_sponsorship,
             updates::commands::check_for_update,
             updates::commands::check_for_update_at_launch,
             updates::commands::install_update,

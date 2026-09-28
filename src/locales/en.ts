@@ -367,6 +367,8 @@ const en = {
     appBuildCopied: "Version copied",
     appBuildNotCopied: "Version not copied",
     releasesNotOpened: "Releases page not opened",
+    sponsor: "Sponsor",
+    sponsorshipNotOpened: "Sponsorship page not opened",
     versionAndUpdates: "Version and updates",
     version: "Version",
     versionHelp: "Copy this line into a report, so it names the exact build.",

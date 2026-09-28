@@ -431,6 +431,14 @@ pub fn open_releases() -> Result<(), Failure> {}
 ```
 
 
+## `open_sponsorship`
+
+Open the page where Tsuzuri can be sponsored in the system's browser. The page is fixed on the Rust side, like the releases page, so the webview cannot have any other address opened.
+
+```rust
+pub fn open_sponsorship() -> Result<(), Failure> {}
+```
+
 ## `check_for_update`
 
 Look for an App Update in the update manifest of the chosen Update Channel, and keep what it finds for `install_update`. It answers the App Update's release number, or none when the App Build is the latest; a manifest that cannot be reached or read fails as `update-failed`.

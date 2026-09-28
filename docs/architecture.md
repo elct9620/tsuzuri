@@ -582,6 +582,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `model-slot`、`repository` | 模型來源的選單、下載與 Repository |
 | `about`、`updates` | 版本與更新、安裝視窗 |
 | `licenses` | 關於的授權頁 |
+| `sponsorship` | 關於的贊助頁面 |
 | `tooltip` | 全頁共用的 tooltip |
 | `shortcuts` | 快速鍵一覽 |
 | `notification` | 每則通知的倒數、暫停與按鈕 |

@@ -22,3 +22,8 @@ export function appBuild(): Promise<AppBuild> {
 export function openReleases(): Promise<void> {
   return invoke("open_releases");
 }
+
+/** Opens the page where Tsuzuri can be sponsored in the system's browser. */
+export function openSponsorship(): Promise<void> {
+  return invoke("open_sponsorship");
+}

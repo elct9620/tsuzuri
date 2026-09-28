@@ -26,6 +26,7 @@ import SearchController from "./controllers/search_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
 import ShortcutsController from "./controllers/shortcuts_controller";
 import SpeakersController from "./controllers/speakers_controller";
+import SponsorshipController from "./controllers/sponsorship_controller";
 import TimeFieldController from "./controllers/time_field_controller";
 import TimelineController, {
   controlOption,
@@ -78,6 +79,7 @@ async function start(): Promise<void> {
     "segment-changes": SegmentChangesController,
     shortcuts: ShortcutsController,
     speakers: SpeakersController,
+    sponsorship: SponsorshipController,
     "time-field": TimeFieldController,
     timeline: TimelineController,
     tooltip: TooltipController,

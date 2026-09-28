@@ -39,6 +39,9 @@ pub fn releases_page() -> String {
     format!("{}/releases", env!("CARGO_PKG_REPOSITORY"))
 }
 
+/// The page where Tsuzuri can be sponsored.
+pub const SPONSORSHIP_PAGE: &str = "https://portaly.cc/aotoki/product/lV2gJTEFE090h6x1zXhj";
+
 #[cfg(test)]
 mod tests {
     use super::*;

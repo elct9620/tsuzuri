@@ -235,6 +235,8 @@ function item(
   isTranslationShown: boolean,
 ): HTMLLIElement {
   const li = document.createElement("li");
+  // A narrow list lays the times and Speaker in a line, the text below across the row
+  li.className = "@max-4xl:grid-cols-[auto_1fr_auto]";
   li.dataset.action =
     "mousedown->transcript#checkThrough click->transcript#makeCurrent focusin->transcript#makeCurrent";
   li.dataset.transcriptIndexParam = String(index);
@@ -244,7 +246,8 @@ function item(
   check.dataset.index = String(index);
   check.dataset.action = "change->segment-changes#check";
   const heading = document.createElement("div");
-  heading.className = "flex flex-col gap-1";
+  heading.className =
+    "flex flex-col gap-1 @max-4xl:flex-row @max-4xl:items-center";
   heading.append(
     timeEditor(index, "start", segment.start_ms),
     timeEditor(index, "end", segment.end_ms),
@@ -252,7 +255,8 @@ function item(
   );
   const editors = document.createElement("div");
   // The Cursor's caret is drawn within, beside the character it stands after
-  editors.className = "list-col-grow relative";
+  editors.className =
+    "list-col-grow relative @max-4xl:col-start-2 @max-4xl:col-end-4 @max-4xl:row-start-2";
   editors.append(editor(index, "text", segment.text));
   if (isTranslationShown)
     editors.append(editor(index, "translation", segment.translation ?? ""));

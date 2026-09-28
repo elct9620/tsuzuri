@@ -69,7 +69,7 @@
           class="drawer-toggle"
           data-project-target="resourcesToggle"
         />
-        <div class="drawer-content flex h-dvh min-w-0 flex-col">
+        <div class="drawer-content @container flex h-dvh min-w-0 flex-col">
           <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
             <label
               for="resources-drawer"
@@ -90,8 +90,18 @@
             </h1>
             <div class="navbar-end w-auto shrink-0 gap-2">
               <div class="dropdown dropdown-end">
-                <div tabindex="0" role="button" class="btn btn-sm">
-                  <span data-i18n="toolbar.open"></span>
+                <div
+                  tabindex="0"
+                  role="button"
+                  class="btn btn-sm"
+                  data-i18n-label="toolbar.open"
+                  data-i18n-tooltip="toolbar.open"
+                >
+                  <i data-lucide="folder-open" class="size-4"></i
+                  ><span
+                    class="hidden @5xl:inline"
+                    data-i18n="toolbar.open"
+                  ></span>
                   <i data-lucide="chevron-down" class="size-4"></i>
                 </div>
                 <ul
@@ -133,9 +143,16 @@
                   class="btn btn-sm"
                   data-transcribe-target="openButton"
                   data-action="transcribe#open"
-                  data-i18n="toolbar.transcribe"
+                  data-i18n-label="toolbar.transcribe"
+                  data-i18n-tooltip="toolbar.transcribe"
                   disabled
-                ></button>
+                >
+                  <i data-lucide="audio-lines" class="size-4"></i
+                  ><span
+                    class="hidden @5xl:inline"
+                    data-i18n="toolbar.transcribe"
+                  ></span>
+                </button>
                 <dialog class="modal" data-transcribe-target="dialog">
                   <div class="modal-box">
                     <h3
@@ -226,9 +243,16 @@
                   class="btn btn-sm"
                   data-translate-target="openButton"
                   data-action="translate#open"
-                  data-i18n="toolbar.translate"
+                  data-i18n-label="toolbar.translate"
+                  data-i18n-tooltip="toolbar.translate"
                   disabled
-                ></button>
+                >
+                  <i data-lucide="languages" class="size-4"></i
+                  ><span
+                    class="hidden @5xl:inline"
+                    data-i18n="toolbar.translate"
+                  ></span>
+                </button>
                 <dialog class="modal" data-translate-target="dialog">
                   <div class="modal-box">
                     <h3
@@ -291,8 +315,18 @@
               </div>
 
               <div class="dropdown dropdown-end">
-                <div tabindex="0" role="button" class="btn btn-sm">
-                  <span data-i18n="toolbar.export"></span>
+                <div
+                  tabindex="0"
+                  role="button"
+                  class="btn btn-sm"
+                  data-i18n-label="toolbar.export"
+                  data-i18n-tooltip="toolbar.export"
+                >
+                  <i data-lucide="download" class="size-4"></i
+                  ><span
+                    class="hidden @5xl:inline"
+                    data-i18n="toolbar.export"
+                  ></span>
                   <i data-lucide="chevron-down" class="size-4"></i>
                 </div>
                 <ul
@@ -384,8 +418,15 @@
                 type="button"
                 class="btn btn-sm btn-ghost"
                 data-action="dialog#open"
-                data-i18n="toolbar.settings"
-              ></button>
+                data-i18n-label="toolbar.settings"
+                data-i18n-tooltip="toolbar.settings"
+              >
+                <i data-lucide="settings" class="size-4"></i
+                ><span
+                  class="hidden @5xl:inline"
+                  data-i18n="toolbar.settings"
+                ></span>
+              </button>
               <button
                 type="button"
                 class="btn btn-square btn-sm btn-ghost"
@@ -420,16 +461,30 @@
                 ></span>
               </div>
               <label class="flex items-center gap-2 text-sm"
-                ><span data-i18n="edit.translation"></span>
+                ><span
+                  class="hidden @5xl:inline"
+                  data-i18n="edit.translation"
+                ></span>
                 <select
                   class="select select-sm w-auto"
+                  data-i18n-label="edit.translation"
                   data-transcript-target="translationLanguage"
                   data-action="change->transcript#showTranslation"
                 ></select>
               </label>
               <div class="dropdown dropdown-end">
-                <div tabindex="0" role="button" class="btn btn-sm">
-                  <span data-i18n="compare.label"></span>
+                <div
+                  tabindex="0"
+                  role="button"
+                  class="btn btn-sm"
+                  data-i18n-label="compare.label"
+                  data-i18n-tooltip="compare.label"
+                >
+                  <i data-lucide="git-compare" class="size-4"></i
+                  ><span
+                    class="hidden @5xl:inline"
+                    data-i18n="compare.label"
+                  ></span>
                   <i data-lucide="chevron-down" class="size-4"></i>
                 </div>
                 <div
@@ -443,8 +498,15 @@
                   type="button"
                   class="btn btn-sm"
                   data-action="versions#open"
-                  data-i18n="versions.open"
-                ></button>
+                  data-i18n-label="versions.open"
+                  data-i18n-tooltip="versions.open"
+                >
+                  <i data-lucide="history" class="size-4"></i
+                  ><span
+                    class="hidden @5xl:inline"
+                    data-i18n="versions.open"
+                  ></span>
+                </button>
                 <dialog class="modal" data-versions-target="dialog">
                   <div class="modal-box max-w-4xl">
                     <h3
@@ -530,8 +592,15 @@
                 type="button"
                 class="btn btn-sm"
                 data-action="speakers#open"
-                data-i18n="edit.speakers"
-              ></button>
+                data-i18n-label="edit.speakers"
+                data-i18n-tooltip="edit.speakers"
+              >
+                <i data-lucide="users" class="size-4"></i
+                ><span
+                  class="hidden @5xl:inline"
+                  data-i18n="edit.speakers"
+                ></span>
+              </button>
               <dialog class="modal" data-speakers-target="dialog">
                 <div class="modal-box max-w-md">
                   <h3
@@ -626,16 +695,30 @@
                 type="button"
                 class="btn btn-sm"
                 data-action="replacement#open"
-                data-i18n="replace.open"
+                data-i18n-label="replace.open"
+                data-i18n-tooltip="replace.open"
                 data-shortcut="replace"
-              ></button>
+              >
+                <i data-lucide="replace" class="size-4"></i
+                ><span
+                  class="hidden @5xl:inline"
+                  data-i18n="replace.open"
+                ></span>
+              </button>
               <button
                 type="button"
                 class="btn btn-sm"
                 data-action="search#open"
-                data-i18n="search.open"
+                data-i18n-label="search.open"
+                data-i18n-tooltip="search.open"
                 data-shortcut="search"
-              ></button>
+              >
+                <i data-lucide="search" class="size-4"></i
+                ><span
+                  class="hidden @5xl:inline"
+                  data-i18n="search.open"
+                ></span>
+              </button>
               <dialog class="modal" data-replacement-target="dialog">
                 <div class="modal-box max-w-md">
                   <h3
@@ -722,7 +805,7 @@
                 <div tabindex="0" role="button" class="btn btn-sm">
                   <span class="loading loading-spinner loading-xs"></span>
                   <span
-                    class="tabular-nums"
+                    class="max-w-28 truncate tabular-nums @5xl:max-w-none"
                     data-progress-target="summary"
                   ></span>
                   <i data-lucide="chevron-down" class="size-4"></i>
@@ -809,7 +892,7 @@
                 </div>
                 <div class="card card-sm card-border min-w-0 flex-3">
                   <div class="card-body">
-                    <div class="flex items-center gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
                       <button
                         type="button"
                         class="btn btn-circle"

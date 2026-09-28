@@ -376,6 +376,13 @@ const zhHant: typeof en = {
     updateNotChecked: "沒有檢查更新",
     updateNotInstalled: "沒有安裝更新",
     launchCheckNotChosen: "沒有切換啟動時檢查更新",
+    updateChannel: "更新通道",
+    updateChannelHelp:
+      "穩定版只收到正式發布的版本；預覽版會收到每次開發中的建置，也會收到正式版。從預覽版切回穩定版後，可按「立即退回穩定版」，否則等下一個正式版再更新。",
+    channelStable: "穩定版",
+    channelPreview: "預覽版",
+    rollBack: "立即退回穩定版",
+    updateChannelNotChosen: "沒有切換更新通道",
   },
   slots: {
     transcription: "轉錄",

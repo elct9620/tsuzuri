@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 
-/** The release number of the running Tsuzuri and the commit it was built from. */
+/** The release number of the running Tsuzuri, whether it is a Preview build, and the commit it was built from. */
 export interface AppBuild {
   release_number: string;
+  is_preview: boolean;
   commit: string;
 }
 

@@ -388,6 +388,13 @@ const en = {
     updateNotChecked: "Updates not checked",
     updateNotInstalled: "Update not installed",
     launchCheckNotChosen: "Checking at launch not changed",
+    updateChannel: "Update channel",
+    updateChannelHelp:
+      "Stable receives only released versions; Preview receives every development build as well as each release. After switching from Preview back to Stable, choose Roll back to stable now, or wait for the next release.",
+    channelStable: "Stable",
+    channelPreview: "Preview",
+    rollBack: "Roll back to stable now",
+    updateChannelNotChosen: "Update channel not changed",
   },
   slots: {
     transcription: "Transcription",

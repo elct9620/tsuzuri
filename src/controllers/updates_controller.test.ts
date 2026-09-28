@@ -18,6 +18,10 @@ describe("UpdatesController", () => {
   let releases: { release_number: string } | null | "unreachable";
   let updateAtLaunch: { release_number: string } | null;
   let hasLaunchCheck: boolean;
+  let channel: "stable" | "preview";
+  let isPreviewBuild: boolean;
+  /** The stable release a Rollback finds. */
+  let stableRelease: { release_number: string } | null;
   /** What installing answers: a refusal to throw, or never answering, as Tsuzuri restarts. */
   let installRefusal: { code: string } | null;
 
@@ -49,6 +53,9 @@ describe("UpdatesController", () => {
     releases = null;
     updateAtLaunch = null;
     hasLaunchCheck = true;
+    channel = "stable";
+    isPreviewBuild = false;
+    stableRelease = null;
     installRefusal = null;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
@@ -58,6 +65,11 @@ describe("UpdatesController", () => {
         <span data-updates-target="status"></span>
         <button data-updates-target="updateButton" data-action="updates#install" hidden>更新</button>
         <input type="checkbox" data-updates-target="launchCheckToggle" data-action="change->updates#chooseLaunchCheck" />
+        <select data-updates-target="channelSelect" data-action="change->updates#chooseChannel">
+          <option value="stable">穩定版</option>
+          <option value="preview">預覽版</option>
+        </select>
+        <button data-updates-target="rollbackButton" data-action="updates#rollBack" hidden>立即退回穩定版</button>
         <dialog data-updates-target="dialog" data-action="cancel->updates#refuseClose">
           <h3 data-updates-target="dialogTitle"></h3>
           <p data-updates-target="progressText"></p>
@@ -67,12 +79,23 @@ describe("UpdatesController", () => {
     `;
     mockIPC((command, args) => {
       calls.push({ command, args });
-      if (command === "update_settings")
-        return { has_launch_check: hasLaunchCheck };
+      const settings = () => ({ has_launch_check: hasLaunchCheck, channel });
+      if (command === "app_build")
+        return {
+          release_number: isPreviewBuild ? "0.2.1-preview.12" : "0.2.0",
+          is_preview: isPreviewBuild,
+          commit: "a1b2c3d",
+        };
+      if (command === "update_settings") return settings();
       if (command === "choose_launch_check") {
         hasLaunchCheck = (args as { hasLaunchCheck: boolean }).hasLaunchCheck;
-        return { has_launch_check: hasLaunchCheck };
+        return settings();
       }
+      if (command === "choose_update_channel") {
+        channel = (args as { channel: "stable" | "preview" }).channel;
+        return settings();
+      }
+      if (command === "check_for_rollback") return stableRelease;
       if (command === "check_for_update_at_launch") return updateAtLaunch;
       if (command === "check_for_update") {
         if (releases === "unreachable")
@@ -221,5 +244,53 @@ describe("UpdatesController", () => {
       [{ hasLaunchCheck: false }],
       false,
     ]);
+  });
+
+  // @behavior UP-027
+  it("chooses the Preview channel in the settings", async () => {
+    await launch();
+    const select = target<HTMLSelectElement>("channelSelect");
+
+    select.value = "preview";
+    select.dispatchEvent(new Event("change"));
+    await settle();
+    await settle();
+
+    expect([argsByCommand("choose_update_channel"), select.value]).toEqual([
+      [{ channel: "preview" }],
+      "preview",
+    ]);
+  });
+
+  // @behavior UP-028
+  it.each([
+    [true, "stable", false],
+    [true, "preview", true],
+    [false, "stable", true],
+  ] as const)(
+    "offers a Rollback only to a Preview build on Stable (preview build %s, %s channel)",
+    async (previewBuild, chosenChannel, isHidden) => {
+      isPreviewBuild = previewBuild;
+      channel = chosenChannel;
+
+      await launch();
+
+      expect(target("rollbackButton").hidden).toBe(isHidden);
+    },
+  );
+
+  // @behavior UP-029
+  it("rolls a Preview build back to the stable release", async () => {
+    isPreviewBuild = true;
+    stableRelease = { release_number: "0.2.0" };
+    await launch();
+
+    await press("rollBack");
+
+    expect([
+      argsByCommand("check_for_rollback").length,
+      argsByCommand("install_update").length,
+      target("dialogTitle").textContent,
+    ]).toEqual([1, 1, "正在更新到 0.2.0"]);
   });
 });

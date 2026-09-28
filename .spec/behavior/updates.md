@@ -216,3 +216,27 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | Given | a release number carrying `-preview.<n>` |
 | When | the App Build is asked for |
 | Then | it says the build is a Preview build |
+
+## `UP-027` Choosing the Preview channel in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the Stable channel chosen |
+| When | Preview is chosen from the Update Channel menu under About |
+| Then | the update settings record Preview and the menu shows it |
+
+## `UP-028` Offering a Rollback only where one leads back
+
+| Step | Statement |
+| --- | --- |
+| Given | a Preview build, a stable build, and each Update Channel |
+| When | the settings open |
+| Then | the Rollback button shows only on the Preview build with the Stable channel chosen |
+
+## `UP-029` Rolling back from the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | a Preview build with the Stable channel chosen |
+| When | the Rollback button is pressed |
+| Then | the latest stable release is looked for as a Rollback and its install starts |

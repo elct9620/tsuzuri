@@ -1,13 +1,18 @@
 import { Controller } from "@hotwired/stimulus";
 
+import { appBuild } from "../backend/about";
 import {
+  checkForRollback,
   checkForUpdate,
   checkForUpdateAtLaunch,
   chooseLaunchCheck,
+  chooseUpdateChannel,
   installUpdate,
   updateSettings,
   type AppUpdate,
+  type UpdateChannel,
   type UpdateProgress,
+  type UpdateSettings,
 } from "../backend/updates";
 import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
@@ -20,6 +25,8 @@ export default class UpdatesController extends Controller {
     "status",
     "updateButton",
     "launchCheckToggle",
+    "channelSelect",
+    "rollbackButton",
     "dialog",
     "dialogTitle",
     "progressBar",
@@ -32,6 +39,9 @@ export default class UpdatesController extends Controller {
   declare readonly statusTarget: HTMLElement;
   declare readonly updateButtonTarget: HTMLButtonElement;
   declare readonly launchCheckToggleTarget: HTMLInputElement;
+  declare readonly channelSelectTarget: HTMLSelectElement;
+  /** Installs the current stable release on a Preview build whose channel went back to Stable. */
+  declare readonly rollbackButtonTarget: HTMLButtonElement;
   /** The window shown while an App Update installs, which the user cannot close. */
   declare readonly dialogTarget: HTMLDialogElement;
   declare readonly dialogTitleTarget: HTMLElement;
@@ -41,11 +51,13 @@ export default class UpdatesController extends Controller {
   /** The App Update the last check found. */
   private foundUpdate: AppUpdate | null = null;
 
+  /** Whether the running Tsuzuri is a Preview build, the only one a Rollback leads back from. */
+  private isPreviewBuild = false;
+
   async connect(): Promise<void> {
     try {
-      this.launchCheckToggleTarget.checked = (
-        await updateSettings()
-      ).has_launch_check;
+      this.isPreviewBuild = (await appBuild()).is_preview;
+      this.showSettings(await updateSettings());
       this.offer(await checkForUpdateAtLaunch());
     } catch (error) {
       notifyFailure(t("settings.updateNotChecked"), error);
@@ -62,6 +74,18 @@ export default class UpdatesController extends Controller {
     } finally {
       this.checkButtonTarget.disabled = false;
       this.checkingSpinnerTarget.hidden = true;
+    }
+  }
+
+  async rollBack(): Promise<void> {
+    this.rollbackButtonTarget.disabled = true;
+    try {
+      this.show(await checkForRollback());
+      await this.install();
+    } catch (error) {
+      notifyFailure(t("settings.updateNotChecked"), error);
+    } finally {
+      this.rollbackButtonTarget.disabled = false;
     }
   }
 
@@ -103,12 +127,33 @@ export default class UpdatesController extends Controller {
 
   async chooseLaunchCheck(): Promise<void> {
     try {
-      this.launchCheckToggleTarget.checked = (
-        await chooseLaunchCheck(this.launchCheckToggleTarget.checked)
-      ).has_launch_check;
+      this.showSettings(
+        await chooseLaunchCheck(this.launchCheckToggleTarget.checked),
+      );
     } catch (error) {
       notifyFailure(t("settings.launchCheckNotChosen"), error);
     }
+  }
+
+  async chooseChannel(): Promise<void> {
+    try {
+      this.showSettings(
+        await chooseUpdateChannel(
+          this.channelSelectTarget.value as UpdateChannel,
+        ),
+      );
+    } catch (error) {
+      notifyFailure(t("settings.updateChannelNotChosen"), error);
+    }
+  }
+
+  /** Shows the update settings, offering a Rollback only where it leads back: a Preview build on the Stable channel. */
+  private showSettings(settings: UpdateSettings): void {
+    this.launchCheckToggleTarget.checked = settings.has_launch_check;
+    this.channelSelectTarget.value = settings.channel;
+    this.rollbackButtonTarget.hidden = !(
+      this.isPreviewBuild && settings.channel === "stable"
+    );
   }
 
   /** Offers an App Update the launch check found under About and in a Notification; finding none says nothing, since nobody asked. */

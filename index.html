@@ -2250,6 +2250,41 @@
                         data-action="change->updates#chooseLaunchCheck"
                       />
                     </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="settings.updateChannel"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.updateChannelHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <div class="flex items-center gap-2">
+                        <select
+                          class="select select-sm w-auto"
+                          data-updates-target="channelSelect"
+                          data-action="change->updates#chooseChannel"
+                        >
+                          <option
+                            value="stable"
+                            data-i18n="settings.channelStable"
+                          ></option>
+                          <option
+                            value="preview"
+                            data-i18n="settings.channelPreview"
+                          ></option>
+                        </select>
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-updates-target="rollbackButton"
+                          data-action="updates#rollBack"
+                          data-i18n="settings.rollBack"
+                          hidden
+                        ></button>
+                      </div>
+                    </li>
                   </ul>
                   <dialog class="modal" data-about-target="dialog">
                     <div class="modal-box w-11/12 max-w-4xl">

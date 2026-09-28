@@ -1091,12 +1091,12 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
                                      └ 合併版本 PR ─▶ 建立 tag 與草稿 Release
   CI 成功 ─▶ release-assets（也可指定 tag 或 preview 手動觸發）
                ├ main：commit 是 tag 指向的嗎？是 ─▶ 附檔 ─▶ 公開 Release
-               └ preview：固定檔名 ─▶ 移動 preview tag ─▶ 覆寫 Prerelease 附檔
+               └ preview：固定檔名 ─▶ 移動 preview tag ─▶ 覆寫 Prerelease 附檔、標題
                附檔：安裝檔、簽章、latest.json、ffmpeg 原始程式碼、SHA256SUMS
   release-assets 完成 ─▶ pages（13.5.4）
 ```
 
-日常 commit 在 preview，驗證後合併進 main 才發正式版。版號與 changelog 由 release-please 管理，直接取用 CI 的打包，不重新編譯；Release 附完檔才公開。不做程式碼簽章，放行步驟寫在 README。
+日常 commit 在 preview，驗證後合併進 main 才發正式版。版號與 changelog 由 release-please 管理，直接取用 CI 的打包，不重新編譯；Release 附完檔才公開。預覽版的 Release 標題與設定頁同樣稱呼：以哪個正式版為基礎、建置時間（UTC），說明列出完整版號與 commit，回報時對得上。不做程式碼簽章，放行步驟寫在 README。
 
 ### 13.4 失敗時補救
 

@@ -105,6 +105,7 @@ jobs:
           sparse-checkout: |
             components.json
             scripts/manifest.ts
+            scripts/preview_version.ts
             scripts/signatures.ts
             src-tauri/Cargo.toml
           sparse-checkout-cone-mode: false
@@ -183,8 +184,9 @@ jobs:
           TAG: ${{ needs.target.outputs.tag }}
         run: gh release edit "$TAG" --draft=false -R "$GITHUB_REPOSITORY"
       # One Prerelease carries the latest Preview build: its tag moves to the build's commit, its
-      # assets are replaced, and whatever this build did not bring goes. A Prerelease never becomes
-      # the latest release, so the stable channel never sees it.
+      # assets are replaced, and whatever this build did not bring goes; its title names the build
+      # as the settings do. A Prerelease never becomes the latest release, so the stable channel
+      # never sees it.
       - name: Replace the Preview build
         if: needs.target.outputs.tag == 'preview'
         env:
@@ -196,9 +198,14 @@ jobs:
           else
             gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref=refs/tags/preview -f sha="$SHA" --silent
           fi
-          if ! gh release view preview -R "$GITHUB_REPOSITORY" --json tagName --silent 2>/dev/null; then
+          page="$(node scripts/preview_version.ts release "$(jq -er .version assets/latest.json)" "$SHA")"
+          title="$(jq -r .title <<<"$page")"
+          notes="$(jq -r .notes <<<"$page")"
+          if gh release view preview -R "$GITHUB_REPOSITORY" --json tagName --silent 2>/dev/null; then
+            gh release edit preview -R "$GITHUB_REPOSITORY" --title "$title" --notes "$notes"
+          else
             gh release create preview -R "$GITHUB_REPOSITORY" --verify-tag --prerelease --latest=false \
-              --title "Preview" --notes "The latest build of the preview branch, for testing. Not a stable release."
+              --title "$title" --notes "$notes"
           fi
           gh release upload preview assets/* --clobber -R "$GITHUB_REPOSITORY"
           gh release view preview -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' |

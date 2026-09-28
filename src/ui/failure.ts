@@ -29,6 +29,9 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "subtitle-exists": "warning",
   "component-not-ready": "error",
   "step-failed": "error",
+  "update-failed": "error",
+  "no-update": "warning",
+  "update-during-mode": "warning",
   "llama-exited": "error",
   "llama-timed-out": "error",
   "llama-request": "error",
@@ -100,6 +103,12 @@ export function failureMessage(error: unknown): string {
         step: t(`phases.${error.step}`, { defaultValue: error.step }),
         detail: error.detail,
       });
+    case "update-failed":
+      return t("failures.updateFailed", { detail: error.detail });
+    case "no-update":
+      return t("failures.noUpdate");
+    case "update-during-mode":
+      return t("failures.updateDuringMode");
     case "llama-exited":
       return t("failures.llamaExited");
     case "llama-timed-out":

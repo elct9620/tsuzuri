@@ -6,6 +6,7 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 
 - `src-tauri/src/updates.rs`
 - `src-tauri/src/steps.rs`
+- `src/controllers/updates_controller.test.ts`
 
 ## `UP-001` Finding a newer release
 
@@ -94,3 +95,75 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | Given | an App Update being downloaded |
 | When | each whole percent of it arrives, or each MiB when its size is unknown |
 | Then | `update-progress` carries the bytes received so far and the size when the release names it |
+
+## `UP-012` Offering an App Update found at launch
+
+| Step | Statement |
+| --- | --- |
+| Given | an App Update found by the launch check |
+| When | Tsuzuri opens |
+| Then | a Notification names its release number and offers to update |
+
+## `UP-013` Saying the App Build is the latest when asked
+
+| Step | Statement |
+| --- | --- |
+| Given | no App Update in the releases |
+| When | About is asked to check for updates |
+| Then | About says the running release is the latest |
+
+## `UP-014` Offering an App Update found when asked
+
+| Step | Statement |
+| --- | --- |
+| Given | an App Update in the releases |
+| When | About is asked to check for updates |
+| Then | About names its release number beside a button to update |
+
+## `UP-015` Telling of a failed check asked for
+
+| Step | Statement |
+| --- | --- |
+| Given | releases that cannot be reached |
+| When | About is asked to check for updates |
+| Then | a Notification says the check failed and why |
+
+## `UP-016` Showing the download while installing
+
+| Step | Statement |
+| --- | --- |
+| Given | an App Update found |
+| When | updating is asked for and part of it has downloaded |
+| Then | a window that cannot be closed shows the percentage downloaded |
+
+## `UP-017` Closing the install window when installing is refused
+
+| Step | Statement |
+| --- | --- |
+| Given | an App Update found while a Mode runs |
+| When | updating is asked for |
+| Then | the install window closes and a warning says to wait for the task to end |
+
+## `UP-018` Turning the launch check off in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the launch check on |
+| When | its toggle under About is turned off |
+| Then | the update settings record that Tsuzuri does not look at launch |
+
+## `UP-019` Saying nothing at launch when nothing is found
+
+| Step | Statement |
+| --- | --- |
+| Given | no App Update found by the launch check |
+| When | Tsuzuri opens |
+| Then | no Notification is shown and About says nothing of updates until asked |
+
+## `UP-020` Showing how much has downloaded when the size is unknown
+
+| Step | Statement |
+| --- | --- |
+| Given | an App Update whose release does not name its size |
+| When | part of it has downloaded while installing |
+| Then | the install window shows the megabytes downloaded with a bar that keeps moving |

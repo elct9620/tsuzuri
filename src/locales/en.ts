@@ -369,6 +369,25 @@ const en = {
     appBuildCopied: "Version copied",
     appBuildNotCopied: "Version not copied",
     releasesNotOpened: "Releases page not opened",
+    updates: "Updates",
+    updatesHelp:
+      "Asks GitHub whether a newer version exists; updating downloads it, verifies its signature, installs it and restarts Tsuzuri.",
+    checkForUpdates: "Check for updates",
+    latestRelease: "Up to date",
+    updateFound: "Version {{releaseNumber}} is available",
+    update: "Update",
+    launchCheck: "Check for updates at launch",
+    launchCheckHelp:
+      "Each time Tsuzuri opens, it asks GitHub whether a newer version exists and tells you with a notification; nothing is downloaded until you choose Update.",
+    updating: "Updating to {{releaseNumber}}",
+    updateStarting: "Starting the download",
+    updateDownloading: "Downloading {{percent}}%",
+    updateDownloaded: "{{megabytes}} MB downloaded",
+    updateRestartHint:
+      "Once downloaded, the components stop and Tsuzuri installs the update and restarts.",
+    updateNotChecked: "Updates not checked",
+    updateNotInstalled: "Update not installed",
+    launchCheckNotChosen: "Checking at launch not changed",
   },
   slots: {
     transcription: "Transcription",
@@ -433,6 +452,10 @@ const en = {
       "{{path}} already exists; confirm overwriting it to transcribe",
     componentNotReady: "{{component}} is not ready; check it in Settings",
     stepFailed: "{{step}} failed: {{detail}}",
+    updateFailed: "The update failed ({{detail}})",
+    noUpdate: "Check for updates first",
+    updateDuringMode:
+      "Tsuzuri cannot update while a task runs; wait for it to end",
     llamaExited: "llama-server stopped before loading its model",
     llamaTimedOut: "llama-server did not load its model in time",
     llamaRequest: "The translation request failed ({{detail}})",

@@ -24,6 +24,9 @@ export type Failure =
   | { code: "subtitle-exists"; path: string }
   | { code: "component-not-ready"; component: string }
   | { code: "step-failed"; step: string; detail: string }
+  | { code: "update-failed"; detail: string }
+  | { code: "no-update" }
+  | { code: "update-during-mode" }
   | { code: "llama-exited" }
   | { code: "llama-timed-out" }
   | { code: "llama-request"; detail: string }

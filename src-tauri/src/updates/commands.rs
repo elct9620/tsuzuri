@@ -11,30 +11,30 @@ use crate::steps::ModeLock;
 #[tauri::command]
 pub async fn check_for_update(
     app: AppHandle,
-    found: State<'_, FoundUpdate>,
+    found_update: State<'_, FoundUpdate>,
 ) -> Result<Option<AppUpdate>, Failure> {
     let update = look_for_update(&app).await?;
-    Ok(found.keep(update))
+    Ok(found_update.keep(update))
 }
 
 #[tauri::command]
 pub async fn check_for_update_at_launch(
     app: AppHandle,
-    found: State<'_, FoundUpdate>,
+    found_update: State<'_, FoundUpdate>,
 ) -> Result<Option<AppUpdate>, Failure> {
     let settings = UpdateSettings::load(&settings_dir(&app)?)?;
     let update = check_at_launch(&settings, look_for_update(&app)).await;
-    Ok(found.keep(update))
+    Ok(found_update.keep(update))
 }
 
 #[tauri::command]
 pub async fn install_update(
     app: AppHandle,
-    found: State<'_, FoundUpdate>,
+    found_update: State<'_, FoundUpdate>,
     mode_lock: State<'_, ModeLock>,
     processes: State<'_, Processes>,
 ) -> Result<(), Failure> {
-    let update = found.update()?;
+    let update = found_update.update()?;
     install_release(
         update.as_ref(),
         &mode_lock,

@@ -34,6 +34,7 @@ import TranslateController from "./controllers/translate_controller";
 import TranslationOptionsController from "./controllers/translation_options_controller";
 import TranslationSettingsController from "./controllers/translation_settings_controller";
 import UndoController, { typingOption } from "./controllers/undo_controller";
+import UpdatesController from "./controllers/updates_controller";
 import VersionsController from "./controllers/versions_controller";
 import VolumeBoostController from "./controllers/volume_boost_controller";
 import { setInterfaceLanguage, translatePage } from "./i18n";
@@ -80,6 +81,7 @@ async function start(): Promise<void> {
     "translation-options": TranslationOptionsController,
     "translation-settings": TranslationSettingsController,
     undo: UndoController,
+    updates: UpdatesController,
     versions: VersionsController,
     "volume-boost": VolumeBoostController,
   }).start();

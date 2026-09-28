@@ -1,8 +1,9 @@
 name: Release Assets
 
-# Attaches what CI built for a release's commit, so nothing is compiled twice, then publishes the
-# draft release-please left, so the latest release always carries the update manifest. Rerunning
-# this replaces the assets; for a commit CI has not built, run CI on its tag first, then this.
+# Attaches what CI built, so nothing is compiled twice. For a release's commit on main it publishes
+# the draft release-please left, so the latest release always carries the update manifest; for a
+# push to preview it moves the fixed `preview` Prerelease to that commit and replaces its assets.
+# Rerunning this replaces the assets; for a commit CI has not built, run CI on it first, then this.
 on:
   workflow_run:
     workflows: [CI]
@@ -10,12 +11,16 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: The release to attach assets to, such as v0.1.0.
+        description: The release to attach assets to, such as v0.1.0, or preview for the latest Preview build.
         required: true
         type: string
 
 permissions:
   contents: read
+
+# Runs for the same channel queue, so an older Preview build never lands after a newer one.
+concurrency:
+  group: release-assets-${{ github.event.workflow_run.head_branch || inputs.tag }}
 
 jobs:
   target:
@@ -30,6 +35,7 @@ jobs:
     outputs:
       tag: ${{ steps.release.outputs.tag }}
       run-id: ${{ steps.release.outputs.run-id }}
+      sha: ${{ steps.release.outputs.sha }}
     steps:
       - name: Find the release and the CI run that built it
         id: release
@@ -38,8 +44,17 @@ jobs:
           INPUT_TAG: ${{ inputs.tag }}
           RUN_SHA: ${{ github.event.workflow_run.head_sha }}
           RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [ "$INPUT_TAG" = preview ]; then
+            tag=preview
+            read -r run_id sha < <(gh run list -R "$GITHUB_REPOSITORY" -w ci.yml -b preview -e push -s success \
+              --json databaseId,headSha -q 'first(.[]) | "\(.databaseId) \(.headSha)"')
+            if [ -z "$run_id" ]; then
+              echo "::error::no successful CI run built preview; push to preview first"
+              exit 1
+            fi
+          elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
             tag="$INPUT_TAG"
             sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/$tag" --jq .sha)"
             run_id="$(gh run list -R "$GITHUB_REPOSITORY" -w ci.yml --commit "$sha" -s success \
@@ -48,6 +63,10 @@ jobs:
               echo "::error::no successful CI run built $tag ($sha); run CI on $tag first"
               exit 1
             fi
+          elif [ "$RUN_BRANCH" = preview ]; then
+            tag=preview
+            sha="$RUN_SHA"
+            run_id="$RUN_ID"
           else
             # release-please tags the commit that carries the new version.
             version="$(gh api "repos/$GITHUB_REPOSITORY/contents/package.json?ref=$RUN_SHA" --jq .content |
@@ -58,9 +77,10 @@ jobs:
               echo "$RUN_SHA is not the commit $tag is tagged at; nothing to attach"
               exit 0
             fi
+            sha="$RUN_SHA"
             run_id="$RUN_ID"
           fi
-          { echo "tag=$tag"; echo "run-id=$run_id"; } >> "$GITHUB_OUTPUT"
+          { echo "tag=$tag"; echo "run-id=$run_id"; echo "sha=$sha"; } >> "$GITHUB_OUTPUT"
 
   attach:
     needs: target
@@ -72,13 +92,14 @@ jobs:
     steps:
       # release-please leaves the release a draft, which only a token that can write sees.
       - name: Find the release
+        if: needs.target.outputs.tag != 'preview'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.target.outputs.tag }}
         run: gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json tagName -q .tagName
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.target.outputs.tag }}
+          ref: ${{ needs.target.outputs.sha }}
           sparse-checkout: |
             components.json
             scripts/manifest.ts
@@ -103,11 +124,16 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-      # An installed Tsuzuri reads this from the latest release to find its App Update.
+      # The update site mirrors this for installed apps to find their App Update.
       - name: Write the update manifest
         env:
           TAG: ${{ needs.target.outputs.tag }}
-        run: node scripts/manifest.ts "$TAG" assets
+        run: |
+          if [ "$TAG" = preview ]; then
+            node scripts/manifest.ts "$TAG" assets --preview
+          else
+            node scripts/manifest.ts "$TAG" assets
+          fi
       - name: Read the ffmpeg source pin
         id: ffmpeg
         run: |
@@ -142,13 +168,38 @@ jobs:
         working-directory: assets
         run: sha256sum -- * > SHA256SUMS && cat SHA256SUMS
       - name: Attach to the release
+        if: needs.target.outputs.tag != 'preview'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.target.outputs.tag }}
         run: gh release upload "$TAG" assets/* --clobber -R "$GITHUB_REPOSITORY"
       # Published only now, so the latest release never lacks the manifest installed apps read.
       - name: Publish the release
+        if: needs.target.outputs.tag != 'preview'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.target.outputs.tag }}
         run: gh release edit "$TAG" --draft=false -R "$GITHUB_REPOSITORY"
+      # One Prerelease carries the latest Preview build: its tag moves to the build's commit, its
+      # assets are replaced, and whatever this build did not bring goes. A Prerelease never becomes
+      # the latest release, so the stable channel never sees it.
+      - name: Replace the Preview build
+        if: needs.target.outputs.tag == 'preview'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.target.outputs.sha }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/preview" --silent 2>/dev/null; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/preview" -f sha="$SHA" -F force=true --silent
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref=refs/tags/preview -f sha="$SHA" --silent
+          fi
+          if ! gh release view preview -R "$GITHUB_REPOSITORY" --json tagName --silent 2>/dev/null; then
+            gh release create preview -R "$GITHUB_REPOSITORY" --verify-tag --prerelease --latest=false \
+              --title "Preview" --notes "The latest build of the preview branch, for testing. Not a stable release."
+          fi
+          gh release upload preview assets/* --clobber -R "$GITHUB_REPOSITORY"
+          gh release view preview -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' |
+            while read -r name; do
+              [ -e "assets/$name" ] || gh release delete-asset preview "$name" -y -R "$GITHUB_REPOSITORY"
+            done

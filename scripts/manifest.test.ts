@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { releasesUrl, updateManifest } from "./manifest";
+import { previewAssetName, releasesUrl, updateManifest } from "./manifest";
 import { CLI_SIGNATURE, VERSIONED_SIGNATURE } from "./test_signatures";
 
 const RELEASES = "https://github.com/elct9620/tsuzuri/releases";
@@ -71,15 +71,92 @@ describe("update manifest", () => {
     ).toThrow("Tsuzuri_0.2.0_amd64.deb has no updater signature");
   });
 
-  it("refuses a package signed for another release", () => {
+  it("refuses a package signed for no release number", () => {
     expect(() =>
       updateManifest("v0.2.0", ASSETS, () => CLI_SIGNATURE, RELEASES),
-    ).toThrow("Tsuzuri.app.tar.gz is signed for no version, not 0.2.0");
+    ).toThrow("Tsuzuri.app.tar.gz is signed for no release number");
+  });
+
+  it("refuses a package signed for another release", () => {
+    expect(() =>
+      updateManifest("v0.3.0", ASSETS, signatureByName, RELEASES),
+    ).toThrow("Tsuzuri.app.tar.gz is signed for 0.2.0, not 0.3.0");
   });
 
   it("reads the releases page from the repository Cargo.toml names", () => {
     const cargoToml = `[package]\nname = "tsuzuri"\nrepository = "https://github.com/elct9620/tsuzuri"\n`;
 
     expect(releasesUrl(cargoToml)).toBe(RELEASES);
+  });
+
+  it("gives each Preview package a fixed name, its signature following", () => {
+    const names = [
+      "Tsuzuri_0.2.1-preview.202609281430+12_x64-setup.exe",
+      "Tsuzuri_0.2.1-preview.202609281430+12_x64-setup.exe.sig",
+      "Tsuzuri.app.tar.gz.sig",
+      "Tsuzuri_0.2.1-preview.202609281430+12_aarch64.dmg",
+      "SHA256SUMS",
+    ].map(previewAssetName);
+
+    expect(names).toEqual([
+      "Tsuzuri-preview_x64-setup.exe",
+      "Tsuzuri-preview_x64-setup.exe.sig",
+      "Tsuzuri-preview_aarch64.app.tar.gz.sig",
+      "Tsuzuri-preview_aarch64.dmg",
+      "SHA256SUMS",
+    ]);
+  });
+
+  it("announces a Preview build by the number its packages were signed for, without rpm", () => {
+    const previewPackages = [
+      "Tsuzuri-preview_aarch64.app.tar.gz",
+      "Tsuzuri-preview_x64-setup.exe",
+      "Tsuzuri-preview_x64.msi",
+      "Tsuzuri-preview_amd64.deb",
+    ];
+    const assets = [
+      ...previewPackages,
+      ...previewPackages.map((name) => `${name}.sig`),
+    ];
+
+    const manifest = updateManifest(
+      "preview",
+      assets,
+      signatureByName,
+      RELEASES,
+      "preview",
+    );
+
+    expect([
+      manifest.version,
+      Object.keys(manifest.platforms),
+      manifest.platforms["windows-x86_64-nsis"].url,
+    ]).toEqual([
+      "0.2.0",
+      [
+        "darwin-aarch64-app",
+        "windows-x86_64-nsis",
+        "windows-x86_64-msi",
+        "linux-x86_64-deb",
+      ],
+      `${RELEASES}/download/preview/Tsuzuri-preview_x64-setup.exe`,
+    ]);
+  });
+
+  it("refuses a Preview build whose packages were signed for no release number", () => {
+    const previewPackages = [
+      "Tsuzuri-preview_aarch64.app.tar.gz",
+      "Tsuzuri-preview_x64-setup.exe",
+      "Tsuzuri-preview_x64.msi",
+      "Tsuzuri-preview_amd64.deb",
+    ];
+    const assets = [
+      ...previewPackages,
+      ...previewPackages.map((name) => `${name}.sig`),
+    ];
+
+    expect(() =>
+      updateManifest("preview", assets, () => CLI_SIGNATURE, RELEASES, "preview"),
+    ).toThrow("Tsuzuri-preview_aarch64.app.tar.gz is signed for no release number");
   });
 });

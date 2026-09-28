@@ -4,12 +4,12 @@ use std::path::{Path, PathBuf};
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, Runtime};
 
 use crate::failure::Failure;
 
 /// Where settings saved across launches live.
-pub fn settings_dir(app: &AppHandle) -> Result<PathBuf, Failure> {
+pub fn settings_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Failure> {
     Ok(app.path().app_config_dir()?)
 }
 

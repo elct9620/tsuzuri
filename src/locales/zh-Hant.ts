@@ -466,6 +466,7 @@ const zhHant: typeof en = {
     updateFailed: "更新失敗（{{detail}}）",
     noUpdate: "請先檢查更新",
     updateDuringMode: "任務執行中無法更新，請等任務結束",
+    openingDuringMode: "任務執行中無法開啟其他專案，請等任務結束或先取消",
     llamaExited: "llama-server 在模型載入前結束",
     llamaTimedOut: "llama-server 未能及時載入模型",
     llamaRequest: "翻譯請求失敗（{{detail}}）",

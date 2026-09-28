@@ -17,16 +17,27 @@ use crate::language::Language;
 use crate::progress::Progress;
 use crate::replacement::{Replacement, Search};
 use crate::segment_change::SegmentChange;
+use crate::steps::ModeLock;
 use crate::transcript::WrittenText;
 
 #[tauri::command]
-pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
-    hold_opened(&app, Project::open(path, language))
+pub fn open_project(
+    app: AppHandle,
+    mode_lock: State<'_, ModeLock>,
+    path: PathBuf,
+    language: Language,
+) -> Result<(), Failure> {
+    hold_opened(&app, &mode_lock, || Project::open(path, language))
 }
 
 #[tauri::command]
-pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
-    hold_opened(&app, open_directory_of(&path, language))
+pub fn open_srt(
+    app: AppHandle,
+    mode_lock: State<'_, ModeLock>,
+    path: PathBuf,
+    language: Language,
+) -> Result<(), Failure> {
+    hold_opened(&app, &mode_lock, || open_directory_of(&path, language))
 }
 
 #[tauri::command]
@@ -38,9 +49,16 @@ pub fn recent_projects(
     Ok(recent.projects_without(current.directory().as_deref()))
 }
 
-/// Holds the Project `opened_project` as the Current Project and tells the webview, keeping the
-/// Recent Projects up to date whether it opened or not.
-fn hold_opened(app: &AppHandle, opened_project: Result<Project, Failure>) -> Result<(), Failure> {
+/// Holds the Project `open` opens as the Current Project and tells the webview, keeping the
+/// Recent Projects up to date whether it opened or not. A running Mode writes into the Project
+/// open, so none may be running, and none starts until the new Project is held.
+fn hold_opened<R: Runtime>(
+    app: &AppHandle<R>,
+    mode_lock: &ModeLock,
+    open: impl FnOnce() -> Result<Project, Failure>,
+) -> Result<(), Failure> {
+    let _turn = mode_lock.try_turn().ok_or(Failure::OpeningDuringMode)?;
+    let opened_project = open();
     match json_settings::settings_dir(app) {
         Ok(settings) => {
             RecentProjects::follow_opening(&settings, &opened_project, SystemTime::now())
@@ -365,6 +383,28 @@ mod tests {
             .into_iter()
             .map(|project| project.directory)
             .collect()
+    }
+
+    // @behavior PJ-166
+    #[test]
+    fn refuses_to_open_a_project_while_a_mode_runs() {
+        let dir = TempDir::new("pj-opening-during-mode");
+        let lecture = create_directory(&dir, "lecture", &["ep01.mp4"]);
+        let interview = create_directory(&dir, "interview", &["talk.srt"]);
+        let app = mock_app();
+        let project = Project::open(lecture.clone(), Language::TraditionalChinese).unwrap();
+        replace_project(app.handle(), project).unwrap();
+        let mode_lock = ModeLock::default();
+        let _running_mode = mode_lock.try_turn().unwrap();
+
+        let result = hold_opened(app.handle(), &mode_lock, || {
+            Project::open(interview, Language::TraditionalChinese)
+        });
+
+        assert_eq!(
+            (result, app.state::<CurrentProject>().directory()),
+            (Err(Failure::OpeningDuringMode), Some(lecture))
+        );
     }
 
     // @behavior PJ-154

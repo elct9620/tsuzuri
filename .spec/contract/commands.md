@@ -112,10 +112,10 @@ pub async fn extract_waveform(app: AppHandle, current: State<'_, CurrentProject>
 
 ## `open_project`
 
-Open a directory as a new Project in the Language given for when the directory records none, select its first Resource, and keep the directory as the latest Recent Project. The webview may read the files of that directory from then on, so the Preview can load its media. A directory that does not exist is refused as `directory-not-found` and dropped from the Recent Projects.
+Open a directory as a new Project in the Language given for when the directory records none, select its first Resource, and keep the directory as the latest Recent Project. The webview may read the files of that directory from then on, so the Preview can load its media. A directory that does not exist is refused as `directory-not-found` and dropped from the Recent Projects. While a Mode runs it is refused as `opening-during-mode` before anything is read, and the Mode's turn is held while opening, so a Mode asked for meanwhile waits.
 
 ```rust
-pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {}
+pub fn open_project(app: AppHandle, mode_lock: State<'_, ModeLock>, path: PathBuf, language: Language) -> Result<(), Failure> {}
 ```
 
 ## `open_srt`
@@ -123,7 +123,7 @@ pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result
 Open the directory an SRT file is in as a new Project, as `open_project` does, and select the file's Resource.
 
 ```rust
-pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {}
+pub fn open_srt(app: AppHandle, mode_lock: State<'_, ModeLock>, path: PathBuf, language: Language) -> Result<(), Failure> {}
 ```
 
 ## `recent_projects`

@@ -225,6 +225,22 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | an SRT file whose second cue is malformed is chosen to open |
 | Then | a message says the file could not be read at its second cue |
 
+## `PJ-166` Refusing to open a Project while a Mode runs
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` open, a Mode running on its `ep01` |
+| When | the directory `interview` is asked to open |
+| Then | it is refused as `opening-during-mode` and `lecture` is still the Project |
+
+## `PJ-167` Warning that a Project cannot open while a Mode runs
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar, a Mode running |
+| When | a directory is chosen to open |
+| Then | a warning asks to wait for the task to finish or cancel it first |
+
 ## `PJ-154` Keeping an opened directory as a Recent Project
 
 | Step | Statement |

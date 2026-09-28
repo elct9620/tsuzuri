@@ -39,6 +39,7 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "update-failed": "error",
   "no-update": "warning",
   "update-during-mode": "warning",
+  "opening-during-mode": "warning",
   "llama-exited": "error",
   "llama-timed-out": "error",
   "llama-request": "error",
@@ -133,6 +134,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.noUpdate");
     case "update-during-mode":
       return t("failures.updateDuringMode");
+    case "opening-during-mode":
+      return t("failures.openingDuringMode");
     case "llama-exited":
       return t("failures.llamaExited");
     case "llama-timed-out":

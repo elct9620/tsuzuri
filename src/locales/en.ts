@@ -487,6 +487,8 @@ const en = {
     noUpdate: "Check for updates first",
     updateDuringMode:
       "Tsuzuri cannot update while a task runs; wait for it to end",
+    openingDuringMode:
+      "Another project cannot open while a task runs; wait for it to end or cancel it first",
     llamaExited: "llama-server stopped before loading its model",
     llamaTimedOut: "llama-server did not load its model in time",
     llamaRequest: "The translation request failed ({{detail}})",

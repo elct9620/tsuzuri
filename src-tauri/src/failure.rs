@@ -113,6 +113,8 @@ pub enum Failure {
     NoUpdate,
     /// Installing an App Update asked for while a Mode runs, whose Components installing stops.
     UpdateDuringMode,
+    /// Opening a Project asked for while a Mode runs, which writes into the Project open.
+    OpeningDuringMode,
     LlamaExited,
     LlamaTimedOut,
     /// llama-server answered a request with an error, or without a translation.

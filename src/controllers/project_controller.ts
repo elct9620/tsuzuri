@@ -19,7 +19,7 @@ import {
 import { modelSettings, type ModelSource } from "../backend/toolchain";
 import { interfaceLanguageCode, t } from "../i18n";
 import type ModelSlotController from "./model_slot_controller";
-import { failureMessage } from "../ui/failure";
+import { failureKind, failureMessage } from "../ui/failure";
 import { fileName } from "../ui/file_name";
 import { closeMenu } from "../ui/menu";
 import { notify } from "../ui/notification";
@@ -267,7 +267,8 @@ export default class ProjectController extends Controller {
       await action();
       return true;
     } catch (error) {
-      await message(failureMessage(error), { kind: "error" });
+      const kind = failureKind(error) === "warning" ? "warning" : "error";
+      await message(failureMessage(error), { kind });
       return false;
     }
   }

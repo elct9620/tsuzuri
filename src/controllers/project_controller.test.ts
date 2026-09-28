@@ -33,6 +33,7 @@ describe("ProjectController", () => {
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
   let openSrt: () => unknown;
+  let openProject: () => unknown;
   let selectFailure: unknown;
   let reloadProject: () => unknown;
   let chosenFile: string;
@@ -67,6 +68,7 @@ describe("ProjectController", () => {
     project = null;
     calls = [];
     openSrt = () => null;
+    openProject = () => null;
     selectFailure = undefined;
     reloadProject = () => null;
     chosenFile = "/subtitles/lecture.srt";
@@ -146,6 +148,7 @@ describe("ProjectController", () => {
             translation: { extensions: ["gguf"] },
           };
         if (command === "open_srt") return openSrt();
+        if (command === "open_project") return openProject();
         if (command === "reload_project") return reloadProject();
         if (command === "select_resource" && selectFailure !== undefined)
           return Promise.reject(selectFailure);
@@ -186,6 +189,20 @@ describe("ProjectController", () => {
     expect(JSON.stringify(sent("plugin:dialog|message"))).toContain(
       "SRT 第 2 段無法讀取",
     );
+  });
+
+  // @behavior PJ-167
+  it("warns that another Project cannot open while a task runs", async () => {
+    openProject = () => {
+      throw { code: "opening-during-mode" };
+    };
+
+    await click("#open-directory");
+
+    expect(sent("plugin:dialog|message")).toMatchObject({
+      message: "任務執行中無法開啟其他專案，請等任務結束或先取消",
+      kind: "warning",
+    });
   });
 
   // @behavior PJ-033

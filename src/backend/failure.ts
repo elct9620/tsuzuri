@@ -34,6 +34,7 @@ export type Failure =
   | { code: "update-failed"; detail: string }
   | { code: "no-update" }
   | { code: "update-during-mode" }
+  | { code: "opening-during-mode" }
   | { code: "llama-exited" }
   | { code: "llama-timed-out" }
   | { code: "llama-request"; detail: string }

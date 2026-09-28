@@ -154,14 +154,23 @@ describe("notify", () => {
   it("shows how long a Notification that goes stays", async () => {
     await notify({ title: "轉錄完成", kind: "success" });
 
-    expect([notificationCountdown(0) !== null, notificationClose(0)]).toEqual([
-      true,
-      null,
-    ]);
+    expect([
+      notificationCountdown(0) !== null,
+      notificationClose(0) !== null,
+    ]).toEqual([true, true]);
+  });
+
+  // @behavior IF-041
+  it("closes a Notification before it goes", async () => {
+    await notify({ title: "轉錄完成", kind: "success" });
+
+    notificationClose(0)!.click();
+
+    expect(notifications()).toEqual([]);
   });
 
   // @behavior IF-022
-  it("offers a close button on a Notification that stays", async () => {
+  it("shows that a Notification stays", async () => {
     await notify({ title: "轉錄失敗", kind: "error" });
 
     expect([notificationClose(0) !== null, notificationCountdown(0)]).toEqual([

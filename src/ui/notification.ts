@@ -126,25 +126,19 @@ function button(
   return element;
 }
 
-/** The buttons after the content: its action, if it has one, then a close button on one that stays. */
-function buttons(
-  alert: HTMLElement,
-  { action }: Notification,
-  isStaying: boolean,
-): HTMLElement {
+/** The buttons after the content: its action, if it has one, then a close button. */
+function buttons(alert: HTMLElement, { action }: Notification): HTMLElement {
   const group = document.createElement("div");
   group.className = "flex items-center gap-1";
   if (action) {
     actionByAlert.set(alert, action.run);
     group.append(button(action.label, "btn btn-sm", "act"));
   }
-  if (isStaying) {
-    const close = button("", "btn btn-sm btn-circle btn-ghost", "close");
-    close.append(iconElement("X"));
-    close.dataset.closeButton = "";
-    close.setAttribute("aria-label", t("work.close"));
-    group.append(close);
-  }
+  const close = button("", "btn btn-sm btn-circle btn-ghost", "close");
+  close.append(iconElement("X"));
+  close.dataset.closeButton = "";
+  close.setAttribute("aria-label", t("work.close"));
+  group.append(close);
   return group;
 }
 
@@ -168,11 +162,11 @@ function keepMostShown(stack: HTMLElement): void {
   if (shownAlerts.length > MOST_SHOWN) leave(shownAlerts[0]);
 }
 
-/** Shows `notification` in the corner of the window, stacked under the ones already shown. An error stays until closed; anything else counts down `NOTIFICATION_MS`, its action within reach while the pointer or focus rests on it. */
+/** Shows `notification` in the corner of the window, stacked under the ones already shown, with a close button. An error stays until closed; anything else counts down `NOTIFICATION_MS`, its action within reach while the pointer or focus rests on it. */
 export function notify(notification: Notification): void {
   const stack = document.querySelector<HTMLElement>("[data-notifications]");
   if (!stack) return;
-  const { kind, action } = notification;
+  const { kind } = notification;
   const isStaying = kind === "error";
   const alert = document.createElement("div");
   alert.setAttribute("role", "alert");
@@ -181,8 +175,7 @@ export function notify(notification: Notification): void {
   const body = content(notification);
   alert.append(icon(kind), body);
   if (!isStaying) countDown(alert, body);
-  if (isStaying || action)
-    alert.append(buttons(alert, notification, isStaying));
+  alert.append(buttons(alert, notification));
   stack.append(alert);
   keepMostShown(stack);
 }

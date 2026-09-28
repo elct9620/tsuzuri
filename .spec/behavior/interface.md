@@ -162,6 +162,16 @@ A refusal is fixed by asking again, so it goes like any other rather than piling
 | When | its close button is clicked |
 | Then | it is no longer shown |
 
+## `IF-041` Closing a Notification before it goes
+
+Once it is read, waiting out its countdown only keeps it in the way.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task finished |
+| When | its close button is clicked |
+| Then | it is no longer shown |
+
 ## `IF-017` Stacking every Notification
 
 One replacing another would take away what the earlier one said, or offered, before it could be read.
@@ -204,9 +214,9 @@ Its offer stays within reach while the pointer or focus rests on it (IF-024, IF-
 | --- | --- |
 | Given | a Notification that a task finished |
 | When | it shows |
-| Then | it has a countdown bar and no close button |
+| Then | it has a countdown bar and a close button |
 
-## `IF-022` Offering a close button on a Notification that stays
+## `IF-022` Showing that a Notification stays
 
 | Step | Statement |
 | --- | --- |

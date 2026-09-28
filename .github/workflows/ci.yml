@@ -10,9 +10,11 @@ on:
 permissions:
   contents: read
 
+# A newer push to a pull request replaces its run; every push to a branch is checked to the end,
+# so each commit keeps a verdict and a release commit is always bundled.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -211,6 +213,10 @@ jobs:
       needs.spec.result == 'success' && needs.licenses.result == 'success' &&
       needs.frontend.result == 'success' && needs.rust.result == 'success' &&
       needs.preview-version.result != 'failure'
+    # Only the newest Preview build is published, so the one bundling finishes and only the newest
+    # push waits behind it; a push that keeps coming still publishes, and an older one is dropped.
+    concurrency:
+      group: bundle-${{ github.ref == 'refs/heads/preview' && 'preview' || github.sha }}
     uses: ./.github/workflows/build.yml
     with:
       preview-version: ${{ needs.preview-version.outputs.version }}

@@ -103,6 +103,7 @@ jobs:
         run: node scripts/licenses.ts crate-licenses.json
       - name: Number the Preview build
         if: inputs.preview-version != ''
+        shell: bash
         env:
           VERSION: ${{ inputs.preview-version }}
         run: node scripts/preview_version.ts write "$VERSION"

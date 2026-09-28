@@ -81,14 +81,15 @@ fn pcm_samples(wav: &[u8]) -> Vec<i16> {
     Vec::new()
 }
 
-/// The loudest sample of each slice as a fraction of full scale, to two decimals.
+/// The loudest sample of each slice as a fraction of full scale, to three decimals: fine enough
+/// for a quiet recording stretched to its loudest Peak, short enough to send an hour of them.
 fn peaks(samples: &[i16]) -> Vec<f32> {
     samples
         .chunks(SAMPLES_PER_PEAK)
         .map(|slice| {
             let loudest = slice.iter().map(|sample| sample.unsigned_abs()).max();
             let fraction = f32::from(loudest.unwrap_or(0)) / 32768.0;
-            (fraction * 100.0).round() / 100.0
+            (fraction * 1000.0).round() / 1000.0
         })
         .collect()
 }
@@ -189,6 +190,20 @@ mod tests {
         let waveform = fixture.extract(&ffmpeg).await.unwrap();
 
         assert_eq!(waveform.peaks, vec![1.0, 0.0]);
+    }
+
+    // @behavior PV-187
+    #[tokio::test]
+    async fn keeps_a_quiet_peak() {
+        let fixture = Fixture::new("pv-quiet-waveform");
+        fixture.open_with(&["ep01.mp4"]);
+        let mut samples = vec![0; SAMPLES_PER_PEAK];
+        samples[SAMPLES_PER_PEAK / 2] = 131;
+        let ffmpeg = fixture.write_ffmpeg_with_audio(&samples);
+
+        let waveform = fixture.extract(&ffmpeg).await.unwrap();
+
+        assert_eq!(waveform.peaks, vec![0.004]);
     }
 
     // @behavior PV-005

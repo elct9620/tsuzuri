@@ -44,6 +44,16 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | When | its Waveform is extracted |
 | Then | the answer holds the Peaks 1 and 0 |
 
+## `PV-187` Keeping a quiet Peak
+
+A quiet recording is stretched to its loudest Peak, so a Peak holds enough of a sample to still show a murmur once stretched.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media is loud at 0.4% of full scale in its first 10 ms |
+| When | its Waveform is extracted |
+| Then | the answer holds the Peak 0.004 |
+
 ## `PV-005` Refusing a Waveform without a media file
 
 | Step | Statement |
@@ -929,33 +939,23 @@ A mute forgotten from an earlier session would pass for a media file with no sou
 | When | the Preview opens again |
 | Then | the media plays at 12.5% of its volume |
 
-## `PV-184` Drawing the Waveform as loud as the media plays
+## `PV-184` Drawing the Waveform to its loudest Peak
 
-The Waveform's height follows the volume, as Aegisub's does, so a quiet recording looks quiet and raising it shows how far it was raised.
+Where someone speaks and where a cut belongs has to show however quietly the media was recorded, so the Waveform is stretched until its loudest Peak fills it, as Subtitle Edit draws its own.
 
 | Step | Statement |
 | --- | --- |
-| Given | the Preview of a Current Resource with a media file, at full volume |
+| Given | a Current Resource whose loudest Peak is 0.25 |
 | When | its Waveform is drawn |
-| Then | each Peak is drawn at its own height, with no stretching to the loudest |
+| Then | that Peak reaches the Waveform's full height |
 
-## `PV-185` Growing the Waveform with the volume
+## `PV-185` Keeping the Waveform's height as the volume changes
 
 | Step | Statement |
 | --- | --- |
 | Given | the Waveform of a Current Resource drawn |
 | When | the volume slider is moved to its end |
-| Then | each Peak is drawn eight times its own height |
-
-## `PV-186` Keeping the Waveform's height while muted
-
-A mute silences the media without changing the volume chosen, so the Waveform still shows how loud it will play.
-
-| Step | Statement |
-| --- | --- |
-| Given | the Waveform of a Current Resource drawn with the volume set to 12.5% |
-| When | the mute button is pressed |
-| Then | each Peak is still drawn at an eighth of its own height |
+| Then | the Waveform keeps its height |
 
 ## `PV-092` Showing the Speaker over the video by default
 

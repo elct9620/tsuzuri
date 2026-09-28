@@ -31,7 +31,6 @@ import {
   sliderPosition,
   volumeAt,
 } from "../ui/volume";
-import type TimelineController from "./timeline_controller";
 
 /** Where the webview remembers the Preview folded away. */
 const FOLDED_KEY = "tsuzuri.preview-folded";
@@ -81,8 +80,6 @@ function showText(element: HTMLElement, text: string): void {
 
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
 export default class PreviewController extends Controller {
-  static outlets = ["timeline"];
-
   static targets = [
     "panel",
     "foldButton",
@@ -148,8 +145,6 @@ export default class PreviewController extends Controller {
   declare readonly currentSpeakerTarget: HTMLElement;
   declare readonly currentTextTarget: HTMLElement;
   declare readonly currentTranslationTarget: HTMLElement;
-  declare readonly timelineOutlet: TimelineController;
-  declare readonly hasTimelineOutlet: boolean;
 
   private media: string | null = null;
   private segments: Segment[] = [];
@@ -243,20 +238,9 @@ export default class PreviewController extends Controller {
     this.applyVolume();
   }
 
-  /** The volume chosen as a multiple of the media's own, muted or not. */
-  private get gain(): number {
-    return this.volume / FULL_VOLUME;
-  }
-
-  /** The Waveform is drawn as loud as the media plays, from the moment the timeline connects. */
-  timelineOutletConnected(timeline: TimelineController): void {
-    timeline.scaleWaveform(this.gain);
-  }
-
   /** Plays the media at the volume chosen, or silent while muted, and shows both beside the slider. */
   private applyVolume(): void {
     playAtVolume(this.player, this.isMuted ? 0 : this.volume);
-    if (this.hasTimelineOutlet) this.timelineOutlet.scaleWaveform(this.gain);
     this.volumeLevelTarget.textContent = `${Math.round(this.volume)}%`;
     this.muteButtonTarget.setAttribute("aria-pressed", `${this.isMuted}`);
     this.muteButtonTarget.classList.toggle("btn-primary", this.isMuted);

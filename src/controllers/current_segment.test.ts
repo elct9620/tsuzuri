@@ -205,7 +205,7 @@ describe("Current Segment", () => {
     document.body.innerHTML = `
       <main data-controller="transcript"
         data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
-        <div data-controller="preview timeline" data-preview-timeline-outlet="[data-controller~='timeline']"
+        <div data-controller="preview timeline"
           data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
           <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
@@ -818,10 +818,10 @@ describe("Current Segment", () => {
 
     let surfers: WaveSurfer[];
 
-    /** How many times its own height the last Waveform drawn draws each Peak. */
-    function peakScale(): number {
+    /** How the last Waveform drawn is scaled: stretched to its loudest Peak, and by how much more. */
+    function waveformScaling(): [boolean, number] {
       const { options } = surfers[surfers.length - 1];
-      return options.normalize ? Number.NaN : (options.barHeight ?? 1);
+      return [options.normalize ?? false, options.barHeight ?? 1];
     }
 
     const volumeSlider = () =>
@@ -850,29 +850,19 @@ describe("Current Segment", () => {
     });
 
     // @behavior PV-184
-    it("draws each Peak at its own height at full volume", async () => {
+    it("draws the Waveform to its loudest Peak", async () => {
       await show(twoSegments);
 
-      expect(peakScale()).toBe(1);
+      expect(waveformScaling()).toEqual([true, 1]);
     });
 
     // @behavior PV-185
-    it("grows the Waveform with the volume", async () => {
+    it("keeps the Waveform's height as the volume changes", async () => {
       await show(twoSegments);
 
       moveVolumeSlider(100);
 
-      expect(peakScale()).toBe(8);
-    });
-
-    // @behavior PV-186
-    it("keeps the Waveform's height while muted", async () => {
-      moveVolumeSlider(25);
-      await show(twoSegments);
-
-      document.querySelector<HTMLElement>("#mute")!.click();
-
-      expect(peakScale()).toBe(0.125);
+      expect(waveformScaling()).toEqual([true, 1]);
     });
   });
 });

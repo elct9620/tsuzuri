@@ -69,12 +69,12 @@ The debug log adds how each engine was started and ended and what the translatio
 
 ## Models
 
-Tsuzuri does not download models; point it at files you already have. A project can choose its own transcription and translation models, such as a Japanese model for a Japanese project.
+Choose models in Settings. A preset below downloads from Hugging Face into the Hugging Face cache, shared with other Hugging Face tools, so a file already there is not downloaded again. You can also pick a file on disk, or any file a Hugging Face repository holds for the slot. A repository that needs a login uses the token `hf auth login` saved. A project can choose its own transcription and translation models, such as a Japanese model for a Japanese project.
 
-| Purpose | Format | Tested with |
+| Purpose | Format | Presets |
 |---|---|---|
-| Transcription | whisper.cpp GGML (`.bin`) | [Breeze-ASR-25](https://huggingface.co/tsuzuri-app/Breeze-ASR-25-ggml) (Chinese) |
-| VAD, when turned on | whisper.cpp GGML (`.bin`) | Silero v6.2.0 (`ggml-silero-v6.2.0.bin`) |
+| Transcription | whisper.cpp GGML (`.bin`) | [Breeze-ASR-25](https://huggingface.co/tsuzuri-app/Breeze-ASR-25-ggml) (Chinese), [Whisper large-v3-turbo and large-v3](https://huggingface.co/ggerganov/whisper.cpp) |
+| VAD, when turned on | whisper.cpp GGML (`.bin`) | [Silero v6.2.0](https://huggingface.co/ggml-org/whisper-vad) |
 | Translation | GGUF | [Qwen3-4B-Instruct-2507](https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF) |
 
 ## Development

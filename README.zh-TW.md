@@ -69,12 +69,12 @@ sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 
 ## 模型
 
-Tsuzuri 不會下載模型，請指定電腦上已有的模型檔。每個專案可以另外指定自己的轉錄與翻譯模型，例如日文專案用日文模型。
+在設定選擇模型。下表的預設模型會從 Hugging Face 下載到 Hugging Face 快取，這個快取和其他 Hugging Face 工具共用，已經在裡面的檔案不會再下載。也可以指定電腦上的檔案，或 Hugging Face repository 裡這個用途能用的任一檔案。需要登入的 repository 會使用 `hf auth login` 存下的 token。每個專案可以另外指定自己的轉錄與翻譯模型，例如日文專案用日文模型。
 
-| 用途 | 格式 | 已測試 |
+| 用途 | 格式 | 預設模型 |
 |---|---|---|
-| 轉錄 | whisper.cpp GGML（`.bin`） | [Breeze-ASR-25](https://huggingface.co/tsuzuri-app/Breeze-ASR-25-ggml)（中文） |
-| VAD（開啟時） | whisper.cpp GGML（`.bin`） | Silero v6.2.0（`ggml-silero-v6.2.0.bin`） |
+| 轉錄 | whisper.cpp GGML（`.bin`） | [Breeze-ASR-25](https://huggingface.co/tsuzuri-app/Breeze-ASR-25-ggml)（中文）、[Whisper large-v3-turbo 與 large-v3](https://huggingface.co/ggerganov/whisper.cpp) |
+| VAD（開啟時） | whisper.cpp GGML（`.bin`） | [Silero v6.2.0](https://huggingface.co/ggml-org/whisper-vad) |
 | 翻譯 | GGUF | [Qwen3-4B-Instruct-2507](https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF) |
 
 ## 開發

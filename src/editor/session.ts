@@ -67,6 +67,16 @@ export type SessionChange = "cursor" | "choice" | "checks";
 export type ChoiceSource = "row" | "speaker" | "next" | "region";
 
 /**
+ * A text or a translation as it read when entered, kept past the Cursor so typing done before a
+ * Mode took the Cursor is still written as the field is left.
+ */
+interface FieldEntry {
+  index: number;
+  field: CursorField;
+  text: string;
+}
+
+/**
  * A Segment Change that changes the Segments' number, sent and not yet seen in a Transcript, with
  * the Segments it was made to.
  */
@@ -80,8 +90,8 @@ export class EditingSession {
   private state: Cursor = NO_CURSOR;
   private checks = new Set<number>();
   private pendingChange: PendingChange | null = null;
-  /** The text the live caret's field held when entered, so leaving it unchanged writes nothing and Esc puts it back. */
-  private entryText = "";
+  /** The field last entered, so leaving it unchanged writes nothing and Esc puts its text back. */
+  private fieldEntry: FieldEntry | null = null;
   private source: ChoiceSource = "row";
   /** The write of the field last left, which a cleanup waits for before reading the Cursor it left. */
   private leavingWrite: Promise<Outcome> = Promise.resolve({
@@ -156,16 +166,23 @@ export class EditingSession {
       before !== null &&
       before.resource === view.resource &&
       before.segments.length === view.segments.length;
-    if (!isSameShape) this.clearChecks();
+    if (!isSameShape) {
+      this.fieldEntry = null;
+      this.clearChecks();
+    }
   }
 
   /**
    * Takes a live caret a Segment Change leaves as entering its text, since that text may get focus
-   * before it can say so, as a row just drawn does.
+   * before it can say so, as a row just drawn does; without one, no field stays entered, since the
+   * change may have moved it.
    */
   private enterCaretLeftByChange(): void {
-    const { caret } = this.state;
-    if (caret?.kind === "live") this.entryText = caret.text;
+    const { index, caret } = this.state;
+    this.fieldEntry =
+      index !== null && caret?.kind === "live"
+        ? { index, field: caret.field, text: caret.text }
+        : null;
   }
 
   /** Makes the Segment at `index` current as one of its fields gets focus, with a live caret in a text or a translation. */
@@ -175,7 +192,7 @@ export class EditingSession {
     range: TextRange | null,
     text: string,
   ): void {
-    if (field !== null) this.entryText = text;
+    if (field !== null) this.fieldEntry = { index, field, text };
     this.act({ kind: "entry", index, field, range, text });
   }
 
@@ -191,8 +208,9 @@ export class EditingSession {
   }
 
   /**
-   * Keeps the caret as focus leaves its field, and writes the field's text if it changed. A field
-   * that does not hold the Cursor, such as one drawn away after a split, changes nothing.
+   * Keeps the caret as focus leaves its field, and writes the field's text if it changed since it
+   * was entered, even once a Mode has taken the Cursor. A field other than the one last entered,
+   * such as one drawn away after a split, changes nothing.
    */
   async leave(
     index: number,
@@ -200,21 +218,21 @@ export class EditingSession {
     range: TextRange | null,
     text: string,
   ): Promise<Outcome> {
-    if (!this.hasLiveCaret(index, field)) return { kind: "unchanged" };
-    this.act({ kind: "exit", range, text });
+    if (this.hasLiveCaret(index, field))
+      this.act({ kind: "exit", range, text });
     this.leavingWrite = this.writeText(index, field, text);
     return this.leavingWrite;
   }
 
   /**
    * Gives up the typing in `field` of the Segment at `index`, dropping the live caret there so
-   * leaving the field keeps no Cursor and writes nothing; answers the text the field was entered
-   * with, to put back, or none unless the live caret stands there.
+   * leaving the field keeps no Cursor; answers the text the field was entered with, which put back
+   * makes leaving it write nothing, or none unless the live caret stands there.
    */
   revert(index: number, field: CursorField): string | null {
     if (!this.hasLiveCaret(index, field)) return null;
     this.act({ kind: "reversion" });
-    return this.entryText;
+    return this.fieldEntry?.text ?? null;
   }
 
   /** Whether the live caret stands in `field` of the Segment at `index`. */
@@ -394,18 +412,20 @@ export class EditingSession {
     this.announce();
   }
 
-  /** Writes `text` into `field` of the Segment at `index` unless it is the text the field was entered with. */
+  /** Writes `text` into `field` of the Segment at `index` if that is the field last entered and its text changed. */
   private async writeText(
     index: number,
     field: CursorField,
     text: string,
   ): Promise<Outcome> {
-    const previousEntry = this.entryText;
-    if (text === previousEntry) return { kind: "unchanged" };
-    this.entryText = text;
+    const entry = this.fieldEntry;
+    if (entry?.index !== index || entry.field !== field || entry.text === text)
+      return { kind: "unchanged" };
+    const previousText = entry.text;
+    entry.text = text;
     const outcome = await this.editText(index, field, text);
-    if (outcome.kind === "failed" && this.entryText === text)
-      this.entryText = previousEntry;
+    if (outcome.kind === "failed" && entry.text === text)
+      entry.text = previousText;
     return outcome;
   }
 

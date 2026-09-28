@@ -948,6 +948,26 @@ Any focus within a row makes its Segment current; only a text or a translation h
 | When | a transcription of the Current Resource starts |
 | Then | the first Segment stays current and no Cursor is kept |
 
+## `ED-160` Writing a text typed before a Mode took its Cursor
+
+What was typed is written as the field is left even once a Mode holds it, so a refusal is told rather than the typing lost unsaid.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered and typed to read `你好世界啊` |
+| When | a transcription of the Current Resource starts and the text is left |
+| Then | the Project is asked to write `你好世界啊` into the first Segment's text |
+
+## `ED-161` Writing nothing typed into a Segment another change moved
+
+A change made elsewhere to how many Segments there are may move the one typed in, so what was typed is no longer written where it was entered.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered and typed to read `你好世界啊` |
+| When | a Segment is inserted before it by another change and the text is left |
+| Then | nothing is written |
+
 ## `ED-077` Putting back a text's entry with Esc
 
 Esc gives up what was typed since the field was entered, as an inline edit in a list does, so a correction gone wrong costs no undo.

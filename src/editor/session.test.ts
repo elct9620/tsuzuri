@@ -319,6 +319,34 @@ describe("EditingSession", () => {
     ]);
   });
 
+  // @behavior ED-160
+  it("writes a text typed before a Mode took its Cursor", async () => {
+    enterFirst();
+    session.select(0, "text", { start: 5, end: 5 }, "你好世界啊");
+    session.follow({
+      ...view("你好世界", "今天", "天氣"),
+      runningMode: { mode: "transcription" },
+    });
+
+    await session.leave(0, "text", null, "你好世界啊");
+
+    expect([session.cursor.caret, port.sentCalls]).toEqual([
+      null,
+      [{ edit: [0, "text", "你好世界啊"] }],
+    ]);
+  });
+
+  // @behavior ED-161
+  it("writes nothing typed into a Segment another change moved", async () => {
+    enterFirst();
+    session.select(0, "text", { start: 5, end: 5 }, "你好世界啊");
+    session.follow(view("", "你好世界", "今天", "天氣"));
+
+    await session.leave(0, "text", null, "你好世界啊");
+
+    expect(port.sentCalls).toEqual([]);
+  });
+
   it("changes nothing as a field without the Cursor is left", async () => {
     enterFirst();
 

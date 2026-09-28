@@ -157,3 +157,53 @@ A slot saved as a bare path keeps working after an update, so nobody chooses the
 | Given | a Project's settings saved with a bare path as its transcription Project Model |
 | When | the Project's settings are read |
 | Then | its transcription Project Model is that path as a file on disk |
+
+## `MD-019` Downloading a Repository's Model into the Hugging Face Cache
+
+| Step | Statement |
+| --- | --- |
+| Given | a Hugging Face Repository serving a file at a commit |
+| When | that file is downloaded |
+| Then | the file lies in the Hugging Face Cache under that commit, answered as a Model Source at it |
+
+## `MD-020` Taking a Model the cache already holds
+
+Downloading again after an update or on a second slot costs nothing, as with any Hugging Face tool.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Repository's file at a commit already in the Hugging Face Cache |
+| When | that file is downloaded at that commit |
+| Then | no request reaches the Repository |
+
+## `MD-021` Telling how far a download has come
+
+| Step | Statement |
+| --- | --- |
+| Given | a Hugging Face Repository serving a file of known size |
+| When | that file is downloaded |
+| Then | progress is reported ending at its whole size |
+
+## `MD-022` Cancelling a download
+
+| Step | Statement |
+| --- | --- |
+| Given | a file of a Repository downloading |
+| When | its download is cancelled |
+| Then | the download answers that it was cancelled |
+
+## `MD-023` Refusing a second download of the same file
+
+| Step | Statement |
+| --- | --- |
+| Given | a file of a Repository downloading |
+| When | the same file is asked to download again |
+| Then | the second download is refused as already downloading |
+
+## `MD-024` Remembering a Repository's Model for a slot
+
+| Step | Statement |
+| --- | --- |
+| Given | a Repository's file at a commit, downloaded into the Hugging Face Cache |
+| When | it is chosen for the transcription slot |
+| Then | the transcription slot shows its path in the Hugging Face Cache |

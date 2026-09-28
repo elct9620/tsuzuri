@@ -33,7 +33,7 @@ export default class ModelsController extends Controller {
     if (path === null) return;
 
     try {
-      this.show(await chooseModel(slot, path));
+      this.show(await chooseModel(slot, { kind: "file", path }));
     } catch (error) {
       notifyFailure(t("settings.notSaved"), error);
     }

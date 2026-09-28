@@ -117,7 +117,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `editing.ts` | `project/commands.rs` | 編輯、搜尋、取代、清理、段落改動、復原 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
-| `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
+| `toolchain.ts` | `toolchain/commands.rs` | 元件、模型設定與下載 |
 | `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
 | `logs.ts` | `logs/commands.rs` | log 目錄、除錯紀錄 |
 | `about.ts` | `about/commands.rs` | App Build、釋出頁面 |
@@ -136,8 +136,9 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | 外部修改已留存 | 重新載入 | `project` |
 | 影片視窗要關閉 | 關閉影片視窗 | `preview` |
 | 更新下載進度 | `install_update` | `updates` |
+| 模型下載進度 | `download_model` | 設定頁 |
 
-事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`，更新下載進度是 `update-progress`；五者由 `relayEvents` 轉成 window 的 `rust:` 事件。
+事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`，更新下載進度是 `update-progress`，模型下載進度是 `model-download-progress`；前五者由 `relayEvents` 轉成 window 的 `rust:` 事件。
 
 ### 2.4 錯誤與通知
 
@@ -252,11 +253,12 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `waveform` | 應用、領域 | 波形與峰值 |
 | — | `toolchain` | 應用 | 尋找元件、模型設定 |
 | `toolchain/` | `detection` | 轉接 | 偵測已安裝的元件 |
-| `toolchain/` | `hub` | 轉接 | Hugging Face 快取 |
+| `toolchain/` | `hub` | 轉接 | Hugging Face 快取與下載 |
 | `toolchain/` | `settings` | 轉接 | 元件設定檔 |
 | — | `progress` | 應用 | 回報進度的 Port |
 | — | `steps` | 應用 | Step 與 `ModeRun` |
 | — | `timing` | 應用 | Phase 計時 |
+| — | `transfer_report` | 領域 | 傳輸進度的回報間隔 |
 | — | `failure` | 應用 | 錯誤碼 |
 | — | `processes` | 轉接 | 子行程與 `AppPorts` |
 | — | `json_settings` | 轉接 | 設定檔的讀寫 |
@@ -412,6 +414,7 @@ ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 | 取消 | `cancel_task` 經 `ModeLock` |
 | 取消後 | 只結束它啟動的行程 |
 | 取波形 | 不是任務，不取鎖 |
+| 下載模型 | 不是任務，不取鎖 |
 | 暫存目錄 | 隨 `ModeRun` 結束刪除 |
 | 安裝更新 | `try_turn`，執行中拒絕 |
 

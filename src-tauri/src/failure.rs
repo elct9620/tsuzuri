@@ -38,6 +38,14 @@ pub enum Failure {
         repo: String,
         file: String,
     },
+    /// Downloading a Model from Hugging Face went wrong.
+    ModelDownloadFailed {
+        detail: String,
+    },
+    /// The Model's download was asked to stop.
+    ModelDownloadCancelled,
+    /// The same file of a Repository asked to download while it already is.
+    ModelDownloading,
     /// Translating, editing or saving asked for before a Project was opened.
     NoProject,
     /// The Project has no Resource by the name asked for, or none is current.

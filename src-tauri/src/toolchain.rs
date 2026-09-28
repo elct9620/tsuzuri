@@ -348,6 +348,10 @@ impl ModelSettings {
         self
     }
 
+    pub fn hub_cache(&self) -> &Path {
+        &self.hub_cache
+    }
+
     pub fn choose(&mut self, slot: ModelSlot, source: ModelSource) {
         *self.slot_mut(slot) = Some(source);
     }
@@ -742,6 +746,26 @@ mod tests {
                 repo: "tsuzuri-app/Breeze-ASR-25-ggml".to_string(),
                 file: "ggml-breeze-asr-25-q8_0.bin".to_string(),
             })
+        );
+    }
+
+    // @behavior MD-024
+    #[test]
+    fn remembers_a_repositorys_model_for_a_slot() {
+        let dir = TempDir::new("hub-chosen");
+        let cached_model = breeze().path(dir.path());
+        std::fs::create_dir_all(cached_model.parent().unwrap()).unwrap();
+        std::fs::write(&cached_model, "weights").unwrap();
+        let mut settings = ModelSettings::default().with_hub_cache(dir.path().to_path_buf());
+
+        settings.choose(ModelSlot::Transcription, breeze());
+
+        assert_eq!(
+            (
+                settings.view().transcription.path,
+                settings.view().transcription.has_file
+            ),
+            (Some(cached_model), true)
         );
     }
 }

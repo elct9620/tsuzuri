@@ -51,7 +51,28 @@ export function modelSettings(): Promise<ModelSettingsView> {
 
 export function chooseModel(
   slot: ModelSlot,
-  path: string,
+  source: ModelSource,
 ): Promise<ModelSettingsView> {
-  return invoke<ModelSettingsView>("choose_model", { slot, path });
+  return invoke<ModelSettingsView>("choose_model", { slot, source });
+}
+
+/** How much of a Model being downloaded has arrived, as `model-download-progress` tells it. */
+export interface DownloadProgress {
+  repo: string;
+  file: string;
+  downloaded: number;
+  total: number | null;
+}
+
+/** Downloads `file` of `repo` into the Hugging Face Cache, at the main branch when no `revision` is given. */
+export function downloadModel(
+  repo: string,
+  file: string,
+  revision: string | null = null,
+): Promise<ModelSource> {
+  return invoke<ModelSource>("download_model", { repo, file, revision });
+}
+
+export function cancelModelDownload(repo: string, file: string): Promise<void> {
+  return invoke<void>("cancel_model_download", { repo, file });
 }

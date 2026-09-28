@@ -19,6 +19,7 @@ pub mod timing;
 pub mod toolchain;
 pub mod transcript;
 pub mod transcription;
+pub mod transfer_report;
 pub mod translation;
 pub mod updates;
 pub mod waveform;
@@ -34,6 +35,7 @@ use logs::{DebugLogInUse, LogDirInUse, LogSettings};
 use processes::Processes;
 use project::CurrentProject;
 use steps::ModeLock;
+use toolchain::hub::ModelDownloads;
 use translation::ResidentLlama;
 use updates::FoundUpdate;
 
@@ -85,6 +87,7 @@ pub fn run() {
             app.manage(ResidentLlama::default());
             app.manage(ModeLock::default());
             app.manage(FoundUpdate::default());
+            app.manage(ModelDownloads::default());
             std::thread::spawn(cleanup::load_tables);
             translation::commands::start_resident_llama(app.handle());
             window::build_main_window(app)?;
@@ -106,6 +109,8 @@ pub fn run() {
             toolchain::commands::component_statuses,
             toolchain::commands::model_settings,
             toolchain::commands::choose_model,
+            toolchain::commands::download_model,
+            toolchain::commands::cancel_model_download,
             transcription::commands::transcribe,
             transcription::commands::transcription_settings,
             transcription::commands::save_transcription_settings,

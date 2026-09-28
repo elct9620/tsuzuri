@@ -1164,6 +1164,7 @@ mod tests {
     #[tokio::test]
     async fn stops_when_llama_server_fails_a_request() {
         let llama = FakeLlama::with_answer_per_request(|_, _| Response {
+            headers: Vec::new(),
             status: 500,
             body: json!({"error": {"message": "boom", "type": "server_error"}})
                 .to_string()

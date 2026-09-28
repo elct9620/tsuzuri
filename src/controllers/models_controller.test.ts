@@ -103,7 +103,7 @@ describe("ModelsController", () => {
 
     expect(chooseModelArgs).toEqual({
       slot: "translation",
-      path: "/models/qwen3-4b.gguf",
+      source: { kind: "file", path: "/models/qwen3-4b.gguf" },
     });
     expect(statusOf("translation")).toBe("/models/qwen3-4b.gguf");
   });

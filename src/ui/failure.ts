@@ -14,6 +14,9 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "model-not-chosen": "warning",
   "model-missing": "error",
   "model-not-downloaded": "warning",
+  "model-download-failed": "error",
+  "model-download-cancelled": "warning",
+  "model-downloading": "warning",
   "no-project": "warning",
   "no-resource": "warning",
   "no-media": "warning",
@@ -69,6 +72,12 @@ export function failureMessage(error: unknown): string {
       return t("failures.modelNotChosen", { slot: t(`slots.${error.slot}`) });
     case "model-missing":
       return t("failures.modelMissing", { path: error.path });
+    case "model-download-failed":
+      return t("failures.modelDownloadFailed", { detail: error.detail });
+    case "model-download-cancelled":
+      return t("failures.modelDownloadCancelled");
+    case "model-downloading":
+      return t("failures.modelDownloading");
     case "model-not-downloaded":
       return t("failures.modelNotDownloaded", {
         file: error.file,

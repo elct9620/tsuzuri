@@ -16,10 +16,26 @@ pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, Failure> {}
 
 ## `choose_model`
 
-Remember a Model file on disk as one slot's Model Source and answer the slots' new state.
+Remember a Model Source for one slot, as `{"kind":"file","path":…}` or `{"kind":"repository","repo":…,"file":…,"commit":…}`, and answer the slots' new state.
 
 ```rust
-pub fn choose_model(app: AppHandle, slot: ModelSlot, path: PathBuf) -> Result<ModelSettingsView, Failure> {}
+pub fn choose_model(app: AppHandle, slot: ModelSlot, source: ModelSource) -> Result<ModelSettingsView, Failure> {}
+```
+
+## `download_model`
+
+Download `file` of the Hugging Face Repository `repo` (`owner/name`) at `revision`, the main branch when none, into the Hugging Face Cache, emitting `model-download-progress` as it arrives, and answer it as a Model Source at the commit it was downloaded at. A file the cache already holds at a commit `revision` names is answered without a request. No Mode waits for it and it waits for none; the same file already downloading is refused as `model-downloading`, and one cancelled answers `model-download-cancelled`.
+
+```rust
+pub async fn download_model(app: AppHandle, downloads: State<'_, ModelDownloads>, repo: String, file: String, revision: Option<String>) -> Result<ModelSource, Failure> {}
+```
+
+## `cancel_model_download`
+
+Stop downloading `file` of `repo`; nothing happens when it is not downloading.
+
+```rust
+pub fn cancel_model_download(downloads: State<'_, ModelDownloads>, repo: String, file: String) {}
 ```
 
 ## `component_statuses`

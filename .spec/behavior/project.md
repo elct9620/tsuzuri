@@ -10,6 +10,7 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src-tauri/src/transcription/*.rs`
 - `src-tauri/src/translation.rs`
 - `src/controllers/project_controller.test.ts`
+- `src/controllers/recent_projects_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 
 ## `PJ-001` Opening a directory as the Project
@@ -279,6 +280,38 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | Given | `lecture` opened before `interview` |
 | When | the Recent Projects are read |
 | Then | they are `lecture` alone |
+
+## `PJ-161` Listing the Recent Projects on the start screen
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` at `/videos/lecture` as a Recent Project |
+| When | the start screen is shown |
+| Then | a row shows `lecture`, `/videos/lecture` and the date it was opened |
+
+## `PJ-162` Opening a Recent Project from the start screen
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` listed on the start screen |
+| When | its row is clicked |
+| Then | the directory `/videos/lecture` is opened |
+
+## `PJ-163` Hiding the Recent Projects when there are none
+
+| Step | Statement |
+| --- | --- |
+| Given | no Recent Projects |
+| When | the start screen is shown |
+| Then | no heading for them is shown |
+
+## `PJ-165` Listing the Recent Projects again after one could not be opened
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` listed on the start screen, its directory since removed |
+| When | its row is clicked |
+| Then | the start screen no longer lists it |
 
 ## `PJ-003` Editing a Segment of the Current Resource
 

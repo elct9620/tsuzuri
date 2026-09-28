@@ -155,6 +155,19 @@ export default class ProjectController extends Controller {
     if (path !== null) await this.run("open_srt", path);
   }
 
+  /**
+   * Opens the Recent Project whose directory the row or menu item names. Rust drops one whose
+   * directory is gone and announces nothing, so the Recent Projects are told to read again.
+   */
+  async openRecent({
+    currentTarget,
+    params,
+  }: Event & { params: { directory: string } }): Promise<void> {
+    closeMenu(currentTarget);
+    const isOpened = await this.run("open_project", params.directory);
+    if (!isOpened) await refreshProject();
+  }
+
   async select({ currentTarget }: Event): Promise<void> {
     const name = (currentTarget as HTMLElement).dataset.name;
     this.dispatch("select");
@@ -241,9 +254,9 @@ export default class ProjectController extends Controller {
     return overrides;
   }
 
-  /** Opens `path` with the Interface Language for a directory that records none. */
-  private async run(command: OpenCommand, path: string): Promise<void> {
-    await this.report(() =>
+  /** Opens `path` with the Interface Language for a directory that records none, answering whether it opened. */
+  private run(command: OpenCommand, path: string): Promise<boolean> {
+    return this.report(() =>
       openProject(command, path, interfaceLanguageCode()),
     );
   }

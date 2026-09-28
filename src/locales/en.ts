@@ -19,6 +19,7 @@ const en = {
   },
   start: {
     title: "Open a folder of videos or subtitles to begin",
+    recentProjects: "Recent projects",
   },
   languages: {
     "zh-TW": "Traditional Chinese",

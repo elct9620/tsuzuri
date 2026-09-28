@@ -20,6 +20,7 @@ const zhHant: typeof en = {
   },
   start: {
     title: "開啟放著影片或字幕的目錄開始工作",
+    recentProjects: "最近的專案",
   },
   languages: {
     "zh-TW": "繁體中文",

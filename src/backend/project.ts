@@ -196,6 +196,17 @@ export function openProject(
   return invoke(command, { path, language });
 }
 
+/** A directory opened as a Project before, and when it was last opened. */
+export interface RecentProject {
+  directory: string;
+  opened_at_ms: number;
+}
+
+/** The Recent Projects, the latest opened first, without the Project already open. */
+export function recentProjects(): Promise<RecentProject[]> {
+  return invoke("recent_projects");
+}
+
 export function selectResource(name: string | undefined): Promise<void> {
   return invoke("select_resource", { name });
 }

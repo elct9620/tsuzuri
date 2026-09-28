@@ -7,7 +7,9 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 - `src-tauri/src/updates.rs`
 - `src-tauri/src/steps.rs`
 - `src-tauri/src/about.rs`
+- `src-tauri/src/release_number.rs`
 - `src/controllers/updates_controller.test.ts`
+- `src/controllers/about_controller.test.ts`
 
 ## `UP-001` Finding a newer release
 
@@ -213,9 +215,9 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 
 | Step | Statement |
 | --- | --- |
-| Given | a release number carrying `-preview.<n>` |
-| When | the App Build is asked for |
-| Then | it says the build is a Preview build |
+| Given | the release number `0.2.1-preview.202609281430+12` |
+| When | it is read as a Preview build |
+| Then | it is based on 0.2.0 and was built at 2026-09-28 14:30 UTC, while a stable release number is no Preview build |
 
 ## `UP-027` Choosing the Preview channel in the settings
 
@@ -240,3 +242,35 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | Given | a Preview build with the Stable channel chosen |
 | When | the Rollback button is pressed |
 | Then | the latest stable release is looked for as a Rollback and its install starts |
+
+## `UP-030` Offering only Stable to an rpm install
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri installed from an rpm package |
+| When | the App Build is asked for |
+| Then | it has no Preview channel, while every other install has one |
+
+## `UP-031` Naming a Preview build under About
+
+| Step | Statement |
+| --- | --- |
+| Given | a Preview build based on 0.2.0, built at 2026-09-28 14:30 UTC |
+| When | the settings open |
+| Then | About says it is a preview based on 0.2.0 built at that time, local as `YYYY-MM-DD HH:mm`, and copying the version copies the release number as it is |
+
+## `UP-032` Offering a Preview build by its build time
+
+| Step | Statement |
+| --- | --- |
+| Given | a Preview build found by the launch check |
+| When | Tsuzuri opens |
+| Then | the Notification offers a new preview by its local build time rather than its release number |
+
+## `UP-033` Hiding the Update Channel from an rpm install
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri installed from an rpm package |
+| When | the settings open |
+| Then | the Update Channel does not show |

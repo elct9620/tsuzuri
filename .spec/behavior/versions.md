@@ -167,7 +167,7 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | --- | --- |
 | Given | a Current Resource whose original has a Backup taken at `20260925T023000Z` |
 | When | Versions is opened from the editor |
-| Then | the dialog lists that Backup by its local time |
+| Then | the dialog lists that Backup by its local time as `YYYY-MM-DD HH:mm` |
 
 ## `VR-008` Showing a comparison with what changed marked
 

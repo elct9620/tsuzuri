@@ -354,6 +354,8 @@ const zhHant: typeof en = {
     licensesMissing: "開發版沒有附上完整授權，每個釋出的版本都會附上。",
     sourceCode: "原始程式碼",
     appBuild: "版本 {{releaseNumber}}（{{commit}}）",
+    previewBuild:
+      "預覽版｜以 {{basedOn}} 為基礎｜{{builtAt}} 建置（{{commit}}）",
     copyAppBuild: "複製",
     appBuildCopied: "已複製版本資訊",
     appBuildNotCopied: "沒有複製版本資訊",
@@ -364,11 +366,14 @@ const zhHant: typeof en = {
     checkForUpdates: "檢查更新",
     latestRelease: "已是最新版",
     updateFound: "有新版本 {{releaseNumber}}",
+    previewFound: "有新的預覽版（{{builtAt}}）",
+    previewOffered: "有新的預覽版（{{builtAt}} 建置）",
     update: "更新",
     launchCheck: "啟動時檢查更新",
     launchCheckHelp:
       "每次開啟 Tsuzuri 時到 GitHub 檢查有沒有新版本；有的話以通知提醒，按下更新才會下載安裝。",
     updating: "正在更新到 {{releaseNumber}}",
+    updatingToPreview: "正在更新到預覽版（{{builtAt}} 建置）",
     updateStarting: "準備下載",
     updateDownloading: "下載中 {{percent}}%",
     updateDownloaded: "已下載 {{megabytes}} MB",

@@ -368,7 +368,7 @@ pub fn open_log_directory(log_dir: State<'_, LogDirInUse>) -> Result<(), Failure
 
 ## `app_build`
 
-The App Build: the release number Cargo.toml carries, whether it is a Preview build, and the commit the binary was built from, or `unknown` for a build made outside a git checkout.
+The App Build: the release number Cargo.toml carries, for a Preview build the stable release it is based on and its UTC build time, whether its install offers the Preview channel, and the commit the binary was built from, or `unknown` for a build made outside a git checkout.
 
 ```rust
 pub fn app_build() -> AppBuild {}

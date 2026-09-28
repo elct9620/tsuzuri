@@ -172,7 +172,7 @@ A release of Tsuzuri newer than the App Build, announced by the update manifest 
 
 ### Update Channel
 
-Where Tsuzuri looks for an App Update, chosen in the settings: Stable, the latest release; or Preview, a build of each push to the trunk, whose release number is the patch after the latest stable release with `-preview.<n>`, and which also carries each stable release once it is published. Stable is used until Preview is chosen.
+Where Tsuzuri looks for an App Update, chosen in the settings: Stable, the latest release; or Preview, a build of each push to the trunk, which also carries each stable release once it is published. A Preview build's release number is the patch after the latest stable release, `-preview.` and its UTC build time, and `+` a build count only the MSI installer reads, as `0.2.1-preview.202609281430+12`; the settings show it as a preview based on the stable release, with its build time. Stable is used until Preview is chosen, and an rpm install offers only Stable, since rpm ranks a Preview build above the stable release that follows it.
 
 ### Rollback
 

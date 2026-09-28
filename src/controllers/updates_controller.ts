@@ -16,6 +16,7 @@ import {
 } from "../backend/updates";
 import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
+import { localTime } from "../ui/time";
 
 /** App Updates: looked for at launch and under About, offered to the user, and installed behind a window that stays until Tsuzuri restarts. */
 export default class UpdatesController extends Controller {
@@ -25,6 +26,7 @@ export default class UpdatesController extends Controller {
     "status",
     "updateButton",
     "launchCheckToggle",
+    "channelRow",
     "channelSelect",
     "rollbackButton",
     "dialog",
@@ -39,6 +41,8 @@ export default class UpdatesController extends Controller {
   declare readonly statusTarget: HTMLElement;
   declare readonly updateButtonTarget: HTMLButtonElement;
   declare readonly launchCheckToggleTarget: HTMLInputElement;
+  /** The Update Channel setting, which an rpm install does not have. */
+  declare readonly channelRowTarget: HTMLElement;
   declare readonly channelSelectTarget: HTMLSelectElement;
   /** Installs the current stable release on a Preview build whose channel went back to Stable. */
   declare readonly rollbackButtonTarget: HTMLButtonElement;
@@ -56,7 +60,9 @@ export default class UpdatesController extends Controller {
 
   async connect(): Promise<void> {
     try {
-      this.isPreviewBuild = (await appBuild()).is_preview;
+      const build = await appBuild();
+      this.isPreviewBuild = build.preview !== null;
+      this.channelRowTarget.hidden = !build.has_preview_channel;
       this.showSettings(await updateSettings());
       this.offer(await checkForUpdateAtLaunch());
     } catch (error) {
@@ -91,9 +97,13 @@ export default class UpdatesController extends Controller {
 
   async install(): Promise<void> {
     if (!this.foundUpdate) return;
-    this.dialogTitleTarget.textContent = t("settings.updating", {
-      releaseNumber: this.foundUpdate.release_number,
-    });
+    this.dialogTitleTarget.textContent = this.foundUpdate.preview
+      ? t("settings.updatingToPreview", {
+          builtAt: localTime(this.foundUpdate.preview.built_at),
+        })
+      : t("settings.updating", {
+          releaseNumber: this.foundUpdate.release_number,
+        });
     this.progressBarTarget.removeAttribute("value");
     this.progressTextTarget.textContent = t("settings.updateStarting");
     this.dialogTarget.showModal();
@@ -161,9 +171,11 @@ export default class UpdatesController extends Controller {
     if (!update) return;
     this.show(update);
     notify({
-      title: t("settings.updateFound", {
-        releaseNumber: update.release_number,
-      }),
+      title: update.preview
+        ? t("settings.previewOffered", {
+            builtAt: localTime(update.preview.built_at),
+          })
+        : t("settings.updateFound", { releaseNumber: update.release_number }),
       kind: "success",
       action: { label: t("settings.update"), run: () => void this.install() },
     });
@@ -171,9 +183,13 @@ export default class UpdatesController extends Controller {
 
   private show(update: AppUpdate | null): void {
     this.foundUpdate = update;
-    this.statusTarget.textContent = update
-      ? t("settings.updateFound", { releaseNumber: update.release_number })
-      : t("settings.latestRelease");
+    this.statusTarget.textContent = !update
+      ? t("settings.latestRelease")
+      : update.preview
+        ? t("settings.previewFound", {
+            builtAt: localTime(update.preview.built_at),
+          })
+        : t("settings.updateFound", { releaseNumber: update.release_number });
     this.updateButtonTarget.hidden = !update;
   }
 }

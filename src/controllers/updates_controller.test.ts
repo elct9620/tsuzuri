@@ -16,10 +16,14 @@ describe("UpdatesController", () => {
   let calls: { command: string; args: unknown }[];
   /** What the releases hold; `unreachable` when they cannot be read. */
   let releases: { release_number: string } | null | "unreachable";
-  let updateAtLaunch: { release_number: string } | null;
+  let updateAtLaunch: {
+    release_number: string;
+    preview?: { based_on: string; built_at: string };
+  } | null;
   let hasLaunchCheck: boolean;
   let channel: "stable" | "preview";
   let isPreviewBuild: boolean;
+  let hasPreviewChannel: boolean;
   /** The stable release a Rollback finds. */
   let stableRelease: { release_number: string } | null;
   /** What installing answers: a refusal to throw, or never answering, as Tsuzuri restarts. */
@@ -55,6 +59,7 @@ describe("UpdatesController", () => {
     hasLaunchCheck = true;
     channel = "stable";
     isPreviewBuild = false;
+    hasPreviewChannel = true;
     stableRelease = null;
     installRefusal = null;
     document.body.innerHTML = `
@@ -65,11 +70,13 @@ describe("UpdatesController", () => {
         <span data-updates-target="status"></span>
         <button data-updates-target="updateButton" data-action="updates#install" hidden>更新</button>
         <input type="checkbox" data-updates-target="launchCheckToggle" data-action="change->updates#chooseLaunchCheck" />
-        <select data-updates-target="channelSelect" data-action="change->updates#chooseChannel">
-          <option value="stable">穩定版</option>
-          <option value="preview">預覽版</option>
-        </select>
-        <button data-updates-target="rollbackButton" data-action="updates#rollBack" hidden>立即退回穩定版</button>
+        <div data-updates-target="channelRow">
+          <select data-updates-target="channelSelect" data-action="change->updates#chooseChannel">
+            <option value="stable">穩定版</option>
+            <option value="preview">預覽版</option>
+          </select>
+          <button data-updates-target="rollbackButton" data-action="updates#rollBack" hidden>立即退回穩定版</button>
+        </div>
         <dialog data-updates-target="dialog" data-action="cancel->updates#refuseClose">
           <h3 data-updates-target="dialogTitle"></h3>
           <p data-updates-target="progressText"></p>
@@ -82,8 +89,13 @@ describe("UpdatesController", () => {
       const settings = () => ({ has_launch_check: hasLaunchCheck, channel });
       if (command === "app_build")
         return {
-          release_number: isPreviewBuild ? "0.2.1-preview.12" : "0.2.0",
-          is_preview: isPreviewBuild,
+          release_number: isPreviewBuild
+            ? "0.2.1-preview.202609281430+12"
+            : "0.2.0",
+          preview: isPreviewBuild
+            ? { based_on: "0.2.0", built_at: "20260928T143000Z" }
+            : null,
+          has_preview_channel: hasPreviewChannel,
           commit: "a1b2c3d",
         };
       if (command === "update_settings") return settings();
@@ -292,5 +304,26 @@ describe("UpdatesController", () => {
       argsByCommand("install_update").length,
       target("dialogTitle").textContent,
     ]).toEqual([1, 1, "正在更新到 0.2.0"]);
+  });
+
+  // @behavior UP-032
+  it("offers a Preview build by its build time", async () => {
+    updateAtLaunch = {
+      release_number: "0.2.1-preview.202609281430+12",
+      preview: { based_on: "0.2.0", built_at: "20260928T143000Z" },
+    };
+
+    await launch();
+
+    expect(notifications()).toEqual([`有新的預覽版（2026-09-28 22:30 建置）`]);
+  });
+
+  // @behavior UP-033
+  it("hides the Update Channel from an rpm install", async () => {
+    hasPreviewChannel = false;
+
+    await launch();
+
+    expect(target("channelRow").hidden).toBe(true);
   });
 });

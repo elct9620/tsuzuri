@@ -3,6 +3,7 @@ import { Controller } from "@hotwired/stimulus";
 import { appBuild, openReleases } from "../backend/about";
 import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
+import { localTime } from "../ui/time";
 
 /** The App Build under About, for a report to name, and where About leads: the License Notice in full, and the releases carrying ffmpeg's source. */
 export default class AboutController extends Controller {
@@ -22,10 +23,16 @@ export default class AboutController extends Controller {
   async connect(): Promise<void> {
     const build = await appBuild();
     const commit = build.commit.slice(0, SHORT_COMMIT_LENGTH);
-    this.buildTarget.textContent = t("settings.appBuild", {
-      releaseNumber: build.release_number,
-      commit,
-    });
+    this.buildTarget.textContent = build.preview
+      ? t("settings.previewBuild", {
+          basedOn: build.preview.based_on,
+          builtAt: localTime(build.preview.built_at),
+          commit,
+        })
+      : t("settings.appBuild", {
+          releaseNumber: build.release_number,
+          commit,
+        });
     this.buildLine = `Tsuzuri ${build.release_number} (${commit})`;
   }
 

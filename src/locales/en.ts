@@ -365,6 +365,8 @@ const en = {
       "A development build carries no license notice; every released build does.",
     sourceCode: "Source code",
     appBuild: "Version {{releaseNumber}} ({{commit}})",
+    previewBuild:
+      "Preview | based on {{basedOn}} | built {{builtAt}} ({{commit}})",
     copyAppBuild: "Copy",
     appBuildCopied: "Version copied",
     appBuildNotCopied: "Version not copied",
@@ -375,11 +377,14 @@ const en = {
     checkForUpdates: "Check for updates",
     latestRelease: "Up to date",
     updateFound: "Version {{releaseNumber}} is available",
+    previewFound: "A new preview is available ({{builtAt}})",
+    previewOffered: "A new preview is available (built {{builtAt}})",
     update: "Update",
     launchCheck: "Check for updates at launch",
     launchCheckHelp:
       "Each time Tsuzuri opens, it asks GitHub whether a newer version exists and tells you with a notification; nothing is downloaded until you choose Update.",
     updating: "Updating to {{releaseNumber}}",
+    updatingToPreview: "Updating to the preview built {{builtAt}}",
     updateStarting: "Starting the download",
     updateDownloading: "Downloading {{percent}}%",
     updateDownloaded: "{{megabytes}} MB downloaded",

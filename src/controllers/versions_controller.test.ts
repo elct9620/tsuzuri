@@ -3,7 +3,6 @@ import { Application } from "@hotwired/stimulus";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
-import { localTime } from "../ui/time";
 import type { ComparedRow } from "../backend/project";
 import VersionsController from "./versions_controller";
 
@@ -153,7 +152,7 @@ describe("VersionsController", () => {
     const backupTexts = [...target("backups").querySelectorAll("li")].map(
       (li) => li.textContent,
     );
-    expect(backupTexts[1]).toContain(localTime("20260925T023000Z"));
+    expect(backupTexts[1]).toContain("2026-09-25 10:30");
   });
 
   // @behavior VR-008

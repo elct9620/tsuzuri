@@ -9,6 +9,7 @@ pub mod menu;
 pub mod processes;
 pub mod progress;
 pub mod project;
+pub mod release_number;
 pub mod replacement;
 pub mod segment_change;
 pub mod steps;

@@ -1,13 +1,19 @@
 pub mod commands;
 
 use serde::Serialize;
+use tauri::utils::config::BundleType;
+use tauri::utils::platform::bundle_type;
 
-/// The App Build: the release number of the running Tsuzuri, whether it is a Preview build, and
-/// the commit it was built from.
+use crate::release_number::{preview_release, PreviewRelease};
+
+/// The App Build: the release number of the running Tsuzuri, what a Preview build is based on and
+/// when it was built, whether its install offers the Preview channel, and the commit it was built
+/// from.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AppBuild {
     pub release_number: &'static str,
-    pub is_preview: bool,
+    pub preview: Option<PreviewRelease>,
+    pub has_preview_channel: bool,
     pub commit: &'static str,
 }
 
@@ -16,14 +22,16 @@ pub fn running_build() -> AppBuild {
     let release_number = env!("CARGO_PKG_VERSION");
     AppBuild {
         release_number,
-        is_preview: is_preview_release(release_number),
+        preview: preview_release(release_number),
+        has_preview_channel: has_preview_channel(bundle_type()),
         commit: env!("TSUZURI_COMMIT"),
     }
 }
 
-/// Whether `release_number` is a Preview build's, which CI numbers `<patch>-preview.<n>`.
-pub fn is_preview_release(release_number: &str) -> bool {
-    release_number.contains("-preview.")
+/// Whether an install from `bundle` can follow the Preview channel. rpm ranks a Preview build
+/// above the stable release that follows it, so an rpm install could never leave one.
+pub fn has_preview_channel(bundle: Option<BundleType>) -> bool {
+    !matches!(bundle, Some(BundleType::Rpm))
 }
 
 /// The page listing Tsuzuri's releases, each carrying the source of the ffmpeg it bundles.
@@ -54,12 +62,19 @@ mod tests {
         );
     }
 
-    // @behavior UP-026
+    // @behavior UP-030
     #[test]
-    fn tells_a_preview_build_from_a_stable_one() {
-        let builds = ["0.2.1-preview.12", "0.2.0", "0.3.0-beta.1"].map(is_preview_release);
+    fn offers_the_preview_channel_to_every_install_but_rpm() {
+        let installs = [
+            Some(BundleType::Rpm),
+            Some(BundleType::Deb),
+            Some(BundleType::Msi),
+            Some(BundleType::Nsis),
+            Some(BundleType::App),
+        ]
+        .map(has_preview_channel);
 
-        assert_eq!(builds, [true, false, false]);
+        assert_eq!(installs, [false, true, true, true, true]);
     }
 
     #[test]

@@ -10,6 +10,8 @@ export default defineConfig(() => ({
   plugins: [tailwindcss()],
   test: {
     setupFiles: ["src/test_setup.ts"],
+    // Times show in the local time zone, so tests pin one to read the same on every machine.
+    env: { TZ: "Asia/Taipei" },
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

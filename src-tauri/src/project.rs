@@ -307,7 +307,7 @@ fn translation_with_speakers(
     }
 }
 
-/// Each translated Segment with its translation as its text and its text as its translation.
+/// Each Segment of `transcript` with no Speaker named.
 fn transcript_without_speakers(transcript: &Transcript) -> Transcript {
     Transcript {
         segments: transcript
@@ -321,6 +321,7 @@ fn transcript_without_speakers(transcript: &Transcript) -> Transcript {
     }
 }
 
+/// Each translated Segment with its translation as its text and its text as its translation.
 fn translation_first(transcript: &Transcript) -> Transcript {
     Transcript {
         segments: transcript

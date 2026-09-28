@@ -42,6 +42,8 @@
 | `src-tauri/tauri.updater.conf.json` | CI 打包時寫出更新套件的簽章 |
 | `scripts/signatures.ts` | 以公鑰與版號檢查簽章 |
 | `scripts/manifest.ts` | 寫出 Release 的 `latest.json` |
+| `scripts/preview_version.ts` | 算出並寫入預覽版號 |
+| `scripts/site.ts` | 組出更新網站 |
 | CI 的 cargo-about | 列出 Rust 套件的授權 |
 | `scripts/licenses.ts` | 檢查授權並寫出授權頁 |
 | `src-tauri/build.rs` | 把建置的 commit 寫進執行檔 |
@@ -69,6 +71,9 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 ├─ scripts/licenses.ts    授權檢查與授權頁
 ├─ scripts/signatures.ts  檢查更新套件的簽章
 ├─ scripts/manifest.ts    寫出 latest.json
+├─ scripts/preview_version.ts  預覽版號
+├─ scripts/site.ts        更新網站的版面
+├─ site/                  更新網站的頁面
 └─ .spec/                 glossary、behavior、contract
 ```
 
@@ -116,7 +121,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
 | `logs.ts` | `logs/commands.rs` | log 目錄、除錯紀錄 |
 | `about.ts` | `about/commands.rs` | App Build、釋出頁面 |
-| `updates.ts` | `updates/commands.rs` | 檢查與安裝更新、啟動時檢查 |
+| `updates.ts` | `updates/commands.rs` | 檢查、安裝、通道、退回 |
 | `progress.ts` | `steps/commands.rs` | `cancel_task` |
 
 指令名稱與參數以 `.spec/contract/commands.md` 為準。
@@ -217,6 +222,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `system_opener` | 轉接 | 交給系統開啟 |
 | — | `about` | 介面 | App Build、釋出頁面 |
 | — | `updates` | 應用、轉接 | 檢查與安裝更新 |
+| — | `release_number` | 領域 | 讀出預覽版號 |
 | — | `transcript` | 領域 | 段落與 SRT |
 | — | `segment_change` | 領域 | 段落變更 |
 | — | `replacement` | 領域 | 搜尋取代 |

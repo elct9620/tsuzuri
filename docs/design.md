@@ -1048,12 +1048,12 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
 ### 13.1 CI
 
 ```
-  push、PR ─▶ spec（sumi）
+  push main／preview、PR ─▶ spec（sumi）
            ├▶ licenses（cargo-deny、cargo-about）
            ├▶ frontend（Vitest、型別檢查）
            └▶ rust × 3 平台（fmt、clippy、test）
-                   │ 全部通過，且是 push main 或手動觸發
-                   ▼
+                   │ 全部通過，且是 push 或手動觸發
+                   ▼            （push preview 另算預覽版號，見 13.5.3）
               build × 3 平台（共用的 build.yml）
                    │ 每個元件的內建變體（build-component action）
                    │   cache 命中就還原，否則以 vendor.sh 編譯
@@ -1070,26 +1070,24 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 |---|---|---|
 | Windows | exe、NSIS、MSI | NSIS、MSI |
 | macOS | dmg、`.app` | dmg、`.app.tar.gz` |
-| Linux | deb、rpm | deb、rpm |
+| Linux | deb、rpm | deb、rpm；預覽版只 deb |
 
 授權頁依該平台的內建變體寫成，隨介面打包，不另附檔案（4.4）。Linux 只出 deb、rpm，GTK 等函式庫取自系統，不必再附它們的授權；元件需要的 libgomp、libvulkan 也寫進套件相依。更新用的套件各附簽章 `.sig`，見 13.5。
 
 ### 13.3 釋出流程
 
 ```
-  push main ─▶ release-please
-                 ├ 一般 commit ─▶ 更新版本 PR
-                 └ 合併版本 PR ─▶ 建立 tag 與草稿 Release
-  CI 成功 ─▶ release-assets（也可指定 tag 手動觸發）
-               │ 這個 commit 是 tag 指向的嗎？不是就結束
-               ▼
-             取用該次 CI 的打包 ─▶ 附上安裝檔、簽章、latest.json、
-                                   ffmpeg 原始程式碼、SHA256SUMS
-               ▼
-             公開 Release
+  preview（trunk）─合併─▶ main ─▶ release-please
+                                     ├ 一般 commit ─▶ 更新版本 PR
+                                     └ 合併版本 PR ─▶ 建立 tag 與草稿 Release
+  CI 成功 ─▶ release-assets（也可指定 tag 或 preview 手動觸發）
+               ├ main：commit 是 tag 指向的嗎？是 ─▶ 附檔 ─▶ 公開 Release
+               └ preview：固定檔名 ─▶ 移動 preview tag ─▶ 覆寫 Prerelease 附檔
+               附檔：安裝檔、簽章、latest.json、ffmpeg 原始程式碼、SHA256SUMS
+  release-assets 完成 ─▶ pages（13.5.4）
 ```
 
-版號與 changelog 由 release-please 管理，tag 指向帶著新版號的 commit，所以直接取用 CI 為它打包的產物，不重新編譯。Release 先是草稿，附完檔才公開，最新版因此一定帶著 `latest.json`。壓縮檔只附更新用的 `.app.tar.gz`。不做程式碼簽章，放行步驟寫在 README。
+日常 commit 在 preview，驗證後合併進 main 才發正式版。版號與 changelog 由 release-please 管理，直接取用 CI 的打包，不重新編譯；Release 附完檔才公開。不做程式碼簽章，放行步驟寫在 README。
 
 ### 13.4 失敗時補救
 
@@ -1098,15 +1096,17 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | 附檔失敗 | 重跑 release-assets |
 | CI 失敗或被取消 | 重跑 CI，完成後自動附檔 |
 | CI 產物已過期 | 對 tag 手動跑 CI 再附檔 |
+| 預覽版附檔失敗 | 以 preview 手動重跑 |
+| 網站部署失敗 | 手動重跑 pages |
 
-附檔一律覆寫同名檔案，重跑就是補檔；失敗時 Release 停在草稿，已安裝的 App 仍看到上一版。ffmpeg 原始程式碼依 SHA256 快取，每個釘版只從官網下載一次。
+附檔一律覆寫同名檔案，重跑就是補檔；正式版失敗時停在草稿。release-assets 與 pages 由 `workflow_run` 觸發，GitHub 只採用 main 上的版本，改動要合併進 main 才生效。
 
 ### 13.5 自動更新
 
 | 事項 | 設計 |
 |---|---|
 | 機制 | Tauri updater plugin |
-| 更新來源 | 最新 Release 的 `latest.json` |
+| 更新來源 | 更新網站的通道清單 |
 | 簽章 | Tauri 金鑰，綁定版號 |
 | 檢查 | 啟動時與手動 |
 | 安裝 | 使用者按下才開始 |
@@ -1119,7 +1119,8 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
   CI 打包（疊加 tauri.updater.conf.json）─▶ 每個更新套件的 .sig
     └ scripts/signatures.ts：公鑰與版號都對才通過
   release-assets ─▶ scripts/manifest.ts ─▶ latest.json
-    └ 每種安裝格式一個 key，簽章版號須等於 tag
+    ├ 正式版：簽章版號須等於 tag
+    └ 預覽版：先改固定檔名，版號取自簽章，不含 rpm
 ```
 
 | key | 套件 |
@@ -1130,7 +1131,7 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | `linux-x86_64-deb` | `.deb` |
 | `linux-x86_64-rpm` | `.rpm` |
 
-簽章綁定版號（`requireSignedVersion`），清單不能把新版號配上舊套件。每種格式各有 key，MSI 與 rpm 不會拿到別種安裝檔；不寫不帶格式的 Linux key。只有 CI 疊加簽章設定，開發機打包不需要金鑰。
+簽章綁定版號（`requireSignedVersion`），清單不能把新版號配上舊套件。每種格式各有 key，不會拿到別種安裝檔。預覽版號含 `+`，檔名改成 `Tsuzuri-preview_x64-setup.exe` 這類固定名稱。開發機打包不需要金鑰。
 
 #### 13.5.2 安裝
 
@@ -1149,6 +1150,42 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | 啟動檢查失敗不通知 | 使用者沒有要求 |
 
 Windows 的安裝程式啟動後直接結束 Tsuzuri，不經過結束時的 `kill_all`，所以停元件放在安裝之前。下載進度每 1% 回報一次，避免大檔案的事件塞滿介面。
+
+#### 13.5.3 更新通道
+
+```
+  最新正式 tag v0.2.0 ─▶ 預覽版號 0.2.1-preview.<UTC 時間>+<run>
+    0.2.0  <  0.2.1-preview.…  <  0.2.1（下一個正式版）
+  選穩定版 ─▶ updates/stable.json    選預覽版 ─▶ updates/preview.json
+  預覽版切回穩定版 ─▶ 等下一個正式版，或按「立即退回」
+```
+
+| 規則 | 原因 |
+|---|---|
+| 版號不 commit | 合併進 main 不衝突 |
+| `+<run>` | MSI 只收數字 |
+| 立即退回只此一次 | 其他檢查仍防降版 |
+| rpm 只有穩定版 | rpm 把預覽排在後面 |
+
+預覽版號在打包前寫入 Cargo.toml，顯示時改說以哪個正式版為基礎與建置時間（`docs/ui.md` 7.6.1）。rpm 會把預覽版排在後續正式版之後，裝了就離不開，所以預覽版不出 rpm。
+
+#### 13.5.4 更新網站
+
+```
+  release-assets 完成、site/ 改動 ─▶ pages
+    ├ 從 Release 取正式版與預覽版的 latest.json
+    ├ updates/preview.json 取兩份中版號較新者
+    └ 連同 site/ 整站部署到 tsuzuri.aotoki.me
+```
+
+| 事項 | 做法 |
+|---|---|
+| 原始資料 | Release 的附檔 |
+| 安裝檔 | 仍放 Release |
+| 網址 | 自有網域 |
+| 需要的設定 | Pages、網域、DNS |
+
+App 內寫死的網址指向自有網域，安裝檔之後搬家也不必更新 App。網站只複製 Release 上的清單，重跑就能重建。Pages 需在設定啟用 Actions 來源與自訂網域，DNS 加上指向 GitHub 的 CNAME。
 
 ## 14 風險與待驗證
 
@@ -1169,6 +1206,7 @@ Windows 的安裝程式啟動後直接結束 Tsuzuri，不經過結束時的 `ki
 | 沒有 Vulkan 驅動程式 | 內建元件無法執行 | 改指定 CPU 版 |
 | macOS 未經公證 | 首次開啟被擋 | 確認可強制打開 |
 | 自動更新未實測 | 某平台無法更新 | 下一版釋出時實測 |
+| 預覽版升級未實測 | MSI、deb 更新失敗 | 第一次預覽版實測 |
 
 變體指 Vulkan 與 OpenBLAS。沒有驅動程式時先顯示無法執行，自動選擇上線後改為自動退回。macOS 產物以 `signingIdentity: "-"` 完整 ad-hoc 簽章，應能從隱私權設定強制打開；下載後實際確認前，README 仍保留 `xattr` 移除隔離的做法。
 

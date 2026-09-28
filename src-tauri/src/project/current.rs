@@ -853,6 +853,10 @@ impl Project {
 
     /// Replaces the Project Options and records them in the Project Config.
     pub fn set_options(&mut self, options: ProjectOptions) -> Result<(), Failure> {
+        let options = ProjectOptions {
+            name: trimmed_name(options.name.as_deref()),
+            ..options
+        };
         ProjectConfig {
             options: options.clone(),
             ..self.config()
@@ -865,6 +869,13 @@ impl Project {
     fn save_config(&self) -> Result<(), Failure> {
         Ok(self.config().save(&self.directory)?)
     }
+}
+
+/// A Project Name without the spaces around it, or none when nothing else is left.
+fn trimmed_name(name: Option<&str>) -> Option<String> {
+    name.map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map(str::to_string)
 }
 
 /// How a Mode's result keeps the subtitle it writes over, and whether it keeps what it wrote.
@@ -970,6 +981,7 @@ pub struct ResourceView {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ProjectView {
     directory: PathBuf,
+    name: String,
     language: Language,
     translation_language: Option<Language>,
     options: ProjectOptions,
@@ -1003,6 +1015,10 @@ impl ProjectView {
 
     pub fn options(&self) -> &ProjectOptions {
         &self.options
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     pub fn translation_language(&self) -> Option<Language> {
@@ -1251,6 +1267,7 @@ impl CurrentProject {
             };
             ProjectView {
                 directory: project.directory.clone(),
+                name: project.name(),
                 language: project.language,
                 translation_language: project.translation_language,
                 options: project.options.clone(),
@@ -2447,6 +2464,62 @@ mod tests {
         assert_eq!(
             reopened_project.view().unwrap().options().bilingual_order,
             BilingualOrder::TranslationFirst
+        );
+    }
+
+    /// The Project `lecture`, a directory of its own under `dir`, opened in `zh-TW`.
+    fn lecture_in(dir: &TempDir) -> CurrentProject {
+        let lecture = dir.path().join("lecture");
+        std::fs::create_dir_all(&lecture).unwrap();
+        let current = CurrentProject::default();
+        current.replace(Project::open(lecture, Language::TraditionalChinese).unwrap());
+        current
+    }
+
+    fn options_named(name: &str) -> ProjectOptions {
+        ProjectOptions {
+            name: Some(name.to_string()),
+            ..ProjectOptions::default()
+        }
+    }
+
+    // @behavior PJ-173
+    #[test]
+    fn names_a_project_in_its_project_options() {
+        let dir = TempDir::new("pj-project-name");
+        let current = lecture_in(&dir);
+
+        current.set_options(options_named(" 週會錄影 ")).unwrap();
+
+        assert_eq!(
+            (
+                current.view().unwrap().name().to_string(),
+                ProjectConfig::load(&dir.path().join("lecture"))
+                    .unwrap()
+                    .options
+                    .name
+            ),
+            ("週會錄影".to_string(), Some("週會錄影".to_string()))
+        );
+    }
+
+    // @behavior PJ-174
+    #[test]
+    fn names_a_project_after_its_directory_without_a_name_of_its_own() {
+        let dir = TempDir::new("pj-directory-name");
+        let current = lecture_in(&dir);
+
+        current.set_options(options_named("   ")).unwrap();
+
+        assert_eq!(
+            (
+                current.view().unwrap().name().to_string(),
+                ProjectConfig::load(&dir.path().join("lecture"))
+                    .unwrap()
+                    .options
+                    .name
+            ),
+            ("lecture".to_string(), None)
         );
     }
 

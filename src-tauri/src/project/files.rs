@@ -749,6 +749,7 @@ mod tests {
             language: Some(Language::Japanese),
             translation_language: Some(Language::English),
             options: ProjectOptions {
+                name: Some("週會錄影".to_string()),
                 bilingual_order: BilingualOrder::TranslationFirst,
                 is_bilingual_autosaved: true,
                 is_overwrite_backed_up: true,

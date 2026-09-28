@@ -176,7 +176,7 @@ pub fn set_primary_language(app: AppHandle, current: State<'_, CurrentProject>, 
 
 ## `set_project_options`
 
-Replace the Project Options and record them in the Project Config.
+Replace the Project Options and record them in the Project Config; a Project Name of only spaces is kept as none, and one with spaces around it without them.
 
 ```rust
 pub fn set_project_options(app: AppHandle, current: State<'_, CurrentProject>, options: ProjectOptions) -> Result<(), Failure> {}
@@ -184,7 +184,7 @@ pub fn set_project_options(app: AppHandle, current: State<'_, CurrentProject>, o
 
 ## `current_project`
 
-The Project's directory, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments and what the Translation Glossary calls each of their Speakers in the translation shown, whether it has a change to undo and to redo, the Mode running on it and the Batch it is translating, or none before one is opened.
+The Project's directory, Project Name, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments and what the Translation Glossary calls each of their Speakers in the translation shown, whether it has a change to undo and to redo, the Mode running on it and the Batch it is translating, or none before one is opened.
 
 ```rust
 pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView> {}

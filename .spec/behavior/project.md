@@ -629,6 +629,38 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | saving them is turned on |
 | Then | the Project Options are set to save Bilingual SRTs |
 
+## `PJ-173` Naming a Project in its Project Options
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project `lecture` |
+| When | its Project Options are set with the name ` 週會錄影 ` |
+| Then | the Project is named `週會錄影` and its Project Config records that name |
+
+## `PJ-174` Naming a Project after its directory without a name of its own
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project `lecture` |
+| When | its Project Options are set with a name of only spaces |
+| Then | the Project is named `lecture` and its Project Config records no name |
+
+## `PJ-175` Showing the Project Name in the toolbar and the window title
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar |
+| When | the Project named `週會錄影` is shown |
+| Then | the toolbar reads `週會錄影` and the window title `週會錄影 - Tsuzuri` |
+
+## `PJ-176` Naming the Project in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of the Project `lecture` |
+| When | `週會錄影` is typed as its name |
+| Then | the Project Options are set with the name `週會錄影` |
+
 ## `PJ-056` Writing an edited Speaker back to the subtitle
 
 | Step | Statement |

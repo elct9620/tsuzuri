@@ -66,6 +66,14 @@ pub enum ProjectError {
 }
 
 impl Project {
+    /// The Project Name: the one the Project Options give, else the directory's name.
+    pub fn name(&self) -> String {
+        self.options
+            .name
+            .clone()
+            .unwrap_or_else(|| directory_name(&self.directory))
+    }
+
     /// The Languages a Translation Glossary's `source,target` header stands for: the Primary
     /// Language and the translation Language, once the Project has one.
     fn source_target(&self) -> Option<LanguagePair> {
@@ -484,6 +492,8 @@ pub struct ProjectConfig {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ProjectOptions {
+    /// The Project Name the user gave, or none to name the Project after its directory.
+    pub name: Option<String>,
     pub bilingual_order: BilingualOrder,
     /// Whether each translation keeps a Bilingual SRT beside it, written with either of its texts.
     pub is_bilingual_autosaved: bool,
@@ -554,6 +564,14 @@ pub struct Backup {
 pub enum BackupKind {
     Output,
     Overwrite,
+}
+
+/// The name of `directory` as a Project is named without a Project Name of its own.
+fn directory_name(directory: &Path) -> String {
+    directory.file_name().map_or_else(
+        || directory.display().to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    )
 }
 
 #[cfg(test)]

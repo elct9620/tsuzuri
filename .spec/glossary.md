@@ -58,9 +58,13 @@ The Language a Project's Resources are spoken and transcribed in, and the one ev
 
 `tsuzuri.config.json` in the Project's directory: the Primary Language, the Language of the last translation and the Project Options. Written the first time any of them changes.
 
+### Project Name
+
+What a Project is called in the toolbar, the window title and the Recent Projects: the name its Project Options give, else its directory's name, so a directory named by date or episode can carry a name the user remembers. A blank name is kept as none.
+
 ### Project Options
 
-What the user sets for one Project in the settings, beside its Primary Language: its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, its Project Models, and the Transcription Settings it sets for itself. Each has a default the Project keeps until it is changed.
+What the user sets for one Project in the settings, beside its Primary Language: its Project Name, its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, its Project Models, and the Transcription Settings it sets for itself. Each has a default the Project keeps until it is changed.
 
 ### Project Model
 

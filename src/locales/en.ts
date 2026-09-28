@@ -279,6 +279,8 @@ const en = {
     debugLogOffAfterRestart: "The debug log stops after a restart",
     debugLogNotChosen: "Debug log not switched",
     general: "General",
+    projectNameHelp:
+      "Shown in the toolbar, the window title and the recent projects. Left blank, the directory's name is used. Applies to this project only.",
     primaryLanguageHelp:
       "The language spoken in the media. Transcription listens for it and translation starts from it; changing it pairs the subtitle files again. Applies to this project only.",
     bilingualOrderHelp:
@@ -309,6 +311,7 @@ const en = {
       "A whisper ggml model file (.bin), such as Breeze-ASR-25. A larger model is more accurate and slower.",
     translationModelHelp:
       "A llama.cpp GGUF model file, such as Qwen3-4B. With 4GB of video memory, a quantized model around 4B fits.",
+    projectName: "Name",
     primaryLanguage: "Primary language",
     bilingualOrder: "Bilingual order",
     originalFirst: "Original first",

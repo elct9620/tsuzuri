@@ -271,6 +271,8 @@ const zhHant: typeof en = {
     debugLogOffAfterRestart: "重新啟動後停止寫入除錯紀錄",
     debugLogNotChosen: "沒有切換除錯紀錄",
     general: "整體",
+    projectNameHelp:
+      "顯示在工具列、視窗標題與最近的專案。留白就用目錄名稱。只影響這個專案。",
     primaryLanguageHelp:
       "影音裡說的語言。轉錄用它辨識語音，翻譯從它譯出；改了之後會依這個語言重新配對字幕檔。只影響這個專案。",
     bilingualOrderHelp:
@@ -299,6 +301,7 @@ const zhHant: typeof en = {
       "whisper 的 ggml 模型檔（.bin），例如 Breeze-ASR-25。模型越大越準，也越慢。",
     translationModelHelp:
       "llama.cpp 的 GGUF 模型檔，例如 Qwen3-4B。4GB 顯示記憶體建議用 4B 左右的量化模型。",
+    projectName: "名稱",
     primaryLanguage: "主語言",
     bilingualOrder: "雙語順序",
     originalFirst: "原文在上",

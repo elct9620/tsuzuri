@@ -4,9 +4,11 @@ import type { ProjectView, ResourceView } from "./backend/project";
 export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
   return {
     directory: "/talks",
+    name: "talks",
     language: "zh-TW",
     translation_language: null,
     options: {
+      name: null,
       bilingual_order: "original-first",
       is_bilingual_autosaved: false,
       is_overwrite_backed_up: false,

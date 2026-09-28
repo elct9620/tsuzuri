@@ -110,6 +110,7 @@ describe("ProjectController", () => {
             <option value="en">English</option>
             <option value="ja">日本語</option>
           </select>
+          <input data-project-target="nameField" data-action="change->project#setOptions" />
           <select data-project-target="bilingualOrder" data-action="change->project#setOptions">
             <option value="original-first">原文在上</option>
             <option value="translation-first">譯文在上</option>
@@ -554,6 +555,30 @@ describe("ProjectController", () => {
     expect(
       document.querySelector<HTMLInputElement>("#project-tab")!.checked,
     ).toBe(true);
+  });
+
+  // @behavior PJ-175
+  it("shows the Project Name in the toolbar and the window title", async () => {
+    await hold(projectOf({ name: "週會錄影" }));
+
+    expect([target("name").textContent, document.title]).toEqual([
+      "週會錄影",
+      "週會錄影 - Tsuzuri",
+    ]);
+  });
+
+  // @behavior PJ-176
+  it("sets the Project Name typed in the settings", async () => {
+    await hold(projectOf());
+    const nameField = target<HTMLInputElement>("nameField");
+
+    nameField.value = "週會錄影";
+    nameField.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(sent("set_project_options")).toEqual({
+      options: { ...projectOf().options, name: "週會錄影" },
+    });
   });
 
   // @behavior PJ-055

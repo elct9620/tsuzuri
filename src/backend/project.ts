@@ -16,6 +16,8 @@ export interface Segment {
 
 /** What the user sets for one Project in the settings beside its Primary Language. */
 export interface ProjectOptions {
+  /** The Project Name the user gave, or none to name the Project after its directory. */
+  name: string | null;
   bilingual_order: "original-first" | "translation-first";
   is_bilingual_autosaved: boolean;
   is_overwrite_backed_up: boolean;
@@ -46,6 +48,8 @@ export interface ResourceView {
 /** The Project as Rust holds it; the webview only ever shows this, never a copy of its own. */
 export interface ProjectView {
   directory: string;
+  /** The Project Name, the directory's name when the Project Options give none. */
+  name: string;
   /** The Primary Language code. */
   language: string;
   /** The Language code of the last translation. */

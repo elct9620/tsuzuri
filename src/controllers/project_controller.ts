@@ -82,6 +82,7 @@ export default class ProjectController extends Controller {
     "resources",
     "glossary",
     "settings",
+    "nameField",
     "projectTab",
     "generalTab",
     "language",
@@ -102,6 +103,8 @@ export default class ProjectController extends Controller {
   declare readonly glossaryTarget: HTMLElement;
   /** The Project's own settings and their tab, shown only while one is open. */
   declare readonly settingsTargets: HTMLElement[];
+  /** The Project Name typed in the settings, the directory's name as its placeholder. */
+  declare readonly nameFieldTarget: HTMLInputElement;
   declare readonly projectTabTarget: HTMLInputElement;
   declare readonly generalTabTarget: HTMLInputElement;
   declare readonly languageTarget: HTMLSelectElement;
@@ -239,6 +242,7 @@ export default class ProjectController extends Controller {
   private async saveOptions(changes: Partial<ProjectOptions>): Promise<void> {
     if (this.options === null) return;
     const options: ProjectOptions = {
+      name: this.nameFieldTarget.value || null,
       bilingual_order: this.bilingualOrderTarget
         .value as ProjectOptions["bilingual_order"],
       is_bilingual_autosaved: this.bilingualAutosaveTarget.checked,
@@ -285,8 +289,11 @@ export default class ProjectController extends Controller {
     this.workspaceTarget.hidden = project === null;
     this.showSettingsOf(project);
     this.options = project?.options ?? null;
+    document.title = project === null ? "Tsuzuri" : `${project.name} - Tsuzuri`;
     if (project === null) return;
-    this.nameTarget.textContent = fileName(project.directory);
+    this.nameTarget.textContent = project.name;
+    this.nameFieldTarget.value = project.options.name ?? "";
+    this.nameFieldTarget.placeholder = fileName(project.directory);
     this.resourcesTarget.replaceChildren(
       ...project.resources.map((resource) =>
         resourceItem(resource, resource.name === project.current_resource),

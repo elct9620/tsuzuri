@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use tauri::{AppHandle, Emitter, State};
 
-use super::hub::{hub_client, ModelDownloads};
+use super::hub::{self, hub_client, ModelDownloads, RepositoryFile};
 use super::settings::{self, load_settings};
 use super::{
     find_statuses_off_the_main_thread, Choices, ComponentStatus, ModelSettingsView, ModelSlot,
@@ -82,4 +82,14 @@ pub async fn download_model(
 #[tauri::command]
 pub fn cancel_model_download(downloads: State<'_, ModelDownloads>, repo: String, file: String) {
     downloads.cancel(&repo, &file);
+}
+
+#[tauri::command]
+pub async fn repository_files(
+    app: AppHandle,
+    repo: String,
+    slot: ModelSlot,
+) -> Result<Vec<RepositoryFile>, Failure> {
+    let client = hub_client(load_settings(&app)?.hub_cache(), None)?;
+    hub::list_model_files(&client, &repo, slot).await
 }

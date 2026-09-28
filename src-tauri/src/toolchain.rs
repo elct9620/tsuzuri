@@ -293,6 +293,38 @@ pub enum ModelSlot {
     Translation,
 }
 
+/// How whisper.cpp names its VAD Models, the one thing telling them from its transcription Models.
+const VAD_MODEL_PREFIX: &str = "ggml-silero";
+
+impl ModelSlot {
+    /// The file extensions a Model for this slot has.
+    pub fn extensions(self) -> &'static [&'static str] {
+        match self {
+            ModelSlot::Transcription | ModelSlot::Vad => &["bin"],
+            ModelSlot::Translation => &["gguf"],
+        }
+    }
+
+    /// Whether the file at `path`, by its name, can be this slot's Model.
+    pub fn is_model_file(self, path: &str) -> bool {
+        let name = Path::new(path)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or(path);
+        let has_extension = Path::new(name)
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| self.extensions().contains(&extension));
+        let is_vad_model = name.starts_with(VAD_MODEL_PREFIX);
+        has_extension
+            && match self {
+                ModelSlot::Transcription => !is_vad_model,
+                ModelSlot::Vad => is_vad_model,
+                ModelSlot::Translation => true,
+            }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModelSettings {
     #[serde(default, deserialize_with = "parse_saved_source")]
@@ -333,6 +365,7 @@ pub struct SlotView {
     /// Where the Model is expected.
     path: Option<PathBuf>,
     has_file: bool,
+    extensions: &'static [&'static str],
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -389,6 +422,7 @@ impl ModelSettings {
             source: self.slot(slot).cloned(),
             path: self.slot(slot).map(|source| source.path(&self.hub_cache)),
             has_file: self.ready_path(slot).is_ok(),
+            extensions: slot.extensions(),
         };
         ModelSettingsView {
             transcription: slot_view(ModelSlot::Transcription),

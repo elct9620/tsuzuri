@@ -5485,6 +5485,7 @@ dependencies = [
  "aho-corasick",
  "async-openai",
  "csv",
+ "futures",
  "hf-hub",
  "log",
  "regex",

@@ -8,7 +8,7 @@ The Tauri commands the webview invokes. The frontend depends on these names and 
 
 ## `model_settings`
 
-The Model Source chosen for each Model Slot, the path its Model is found at, and whether that file exists.
+The Model Source chosen for each Model Slot, the path its Model is found at, whether that file exists, and the file extensions a Model for the slot has.
 
 ```rust
 pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, Failure> {}
@@ -28,6 +28,14 @@ Download `file` of the Hugging Face Repository `repo` (`owner/name`) at `revisio
 
 ```rust
 pub async fn download_model(app: AppHandle, downloads: State<'_, ModelDownloads>, repo: String, file: String, revision: Option<String>) -> Result<ModelSource, Failure> {}
+```
+
+## `repository_files`
+
+The files of the Hugging Face Repository `repo` (`owner/name`) at its main branch a Model for `slot` can be, each with its path in the Repository and its size in bytes, in the Repository's order.
+
+```rust
+pub async fn repository_files(app: AppHandle, repo: String, slot: ModelSlot) -> Result<Vec<RepositoryFile>, Failure> {}
 ```
 
 ## `cancel_model_download`

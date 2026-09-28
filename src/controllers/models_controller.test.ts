@@ -5,6 +5,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import ModelsController from "./models_controller";
 import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 
+/** A slot's extensions as Rust names them, distinct from any a file dialog would default to. */
+const EXTENSIONS = ["gguf"];
+
 describe("ModelsController", () => {
   let application: Application;
 
@@ -53,8 +56,14 @@ describe("ModelsController", () => {
         source: { kind: "file", path: "/models/breeze.bin" },
         path: "/models/breeze.bin",
         has_file: true,
+        extensions: EXTENSIONS,
       },
-      translation: { source: null, path: null, has_file: false },
+      translation: {
+        source: null,
+        path: null,
+        has_file: false,
+        extensions: EXTENSIONS,
+      },
     });
 
     expect(statusOf("transcription")).toBe("/models/breeze.bin");
@@ -63,11 +72,17 @@ describe("ModelsController", () => {
   // @behavior MD-005
   it("asks again for a model whose file is gone", async () => {
     await mountWith({
-      transcription: { source: null, path: null, has_file: false },
+      transcription: {
+        source: null,
+        path: null,
+        has_file: false,
+        extensions: EXTENSIONS,
+      },
       translation: {
         source: { kind: "file", path: "/models/qwen3-4b.gguf" },
         path: "/models/qwen3-4b.gguf",
         has_file: false,
+        extensions: EXTENSIONS,
       },
     });
 
@@ -79,19 +94,35 @@ describe("ModelsController", () => {
     let chooseModelArgs: unknown;
     await mountWith(
       {
-        transcription: { source: null, path: null, has_file: false },
-        translation: { source: null, path: null, has_file: false },
+        transcription: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: EXTENSIONS,
+        },
+        translation: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: EXTENSIONS,
+        },
       },
       {
         "plugin:dialog|open": () => "/models/qwen3-4b.gguf",
         choose_model: (args) => {
           chooseModelArgs = args;
           return {
-            transcription: { source: null, path: null, has_file: false },
+            transcription: {
+              source: null,
+              path: null,
+              has_file: false,
+              extensions: EXTENSIONS,
+            },
             translation: {
               source: { kind: "file", path: "/models/qwen3-4b.gguf" },
               path: "/models/qwen3-4b.gguf",
               has_file: true,
+              extensions: EXTENSIONS,
             },
           };
         },
@@ -106,6 +137,40 @@ describe("ModelsController", () => {
       source: { kind: "file", path: "/models/qwen3-4b.gguf" },
     });
     expect(statusOf("translation")).toBe("/models/qwen3-4b.gguf");
+  });
+
+  // @behavior MD-028
+  it("offers the extensions Rust names for the slot in the file dialog", async () => {
+    let dialogArgs: unknown;
+    await mountWith(
+      {
+        transcription: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: ["bin"],
+        },
+        translation: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: ["weights"],
+        },
+      },
+      {
+        "plugin:dialog|open": (args) => {
+          dialogArgs = args;
+          return null;
+        },
+      },
+    );
+
+    document.querySelector<HTMLButtonElement>("button")!.click();
+    await settle();
+
+    expect(dialogArgs).toMatchObject({
+      options: { filters: [{ name: "Model", extensions: ["weights"] }] },
+    });
   });
 
   // @behavior MD-011
@@ -124,8 +189,18 @@ describe("ModelsController", () => {
   it("says a Model was not chosen when recording it fails", async () => {
     await mountWith(
       {
-        transcription: { source: null, path: null, has_file: false },
-        translation: { source: null, path: null, has_file: false },
+        transcription: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: EXTENSIONS,
+        },
+        translation: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: EXTENSIONS,
+        },
       },
       {
         "plugin:dialog|open": () => "/models/qwen3-4b.gguf",

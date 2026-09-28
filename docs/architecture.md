@@ -629,7 +629,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/failure.ts` | 錯誤碼的訊息與通知種類 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式與欄位綁定、關閉選單 |
-| `ui/models.ts` | 各 Model Slot 的副檔名 |
+| `ui/models.ts` | Model Source 的名稱 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/volume_boost.ts` | 音量增強的開關、增益與延遲 |
 | `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |

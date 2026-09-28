@@ -2,13 +2,16 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
+use futures::TryStreamExt;
 use hf_hub::progress::{DownloadEvent, Progress, ProgressEvent, ProgressHandler};
+use hf_hub::repository::RepoTreeEntry;
 use hf_hub::{split_id, HFClient};
 use serde::Serialize;
 use tokio::task::AbortHandle;
 
 use crate::failure::Failure;
 use crate::model_source::ModelSource;
+use crate::toolchain::ModelSlot;
 use crate::transfer_report::TransferReport;
 
 /// The Hugging Face Cache, located the way Hugging Face's own tools locate it, so a Model they
@@ -39,6 +42,40 @@ pub fn hub_client(hub_cache: &Path, endpoint: Option<&str>) -> Result<HFClient, 
         None => builder,
     };
     builder.build().map_err(download_failure)
+}
+
+/// A file of a Hugging Face Repository, by its path in the Repository.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct RepositoryFile {
+    pub path: String,
+    pub size: u64,
+}
+
+/// Lists the files of `repo` at its main branch a Model for `slot` can be.
+pub async fn list_model_files(
+    client: &HFClient,
+    repo: &str,
+    slot: ModelSlot,
+) -> Result<Vec<RepositoryFile>, Failure> {
+    let (owner, name) = split_id(repo);
+    let repository = client.model(owner, name);
+    let entries: Vec<RepoTreeEntry> = repository
+        .list_tree()
+        .recursive(true)
+        .send()
+        .map_err(download_failure)?
+        .try_collect()
+        .await
+        .map_err(download_failure)?;
+    Ok(entries
+        .into_iter()
+        .filter_map(|entry| match entry {
+            RepoTreeEntry::File { path, size, .. } if slot.is_model_file(&path) => {
+                Some(RepositoryFile { path, size })
+            }
+            _ => None,
+        })
+        .collect())
 }
 
 /// How much of a Model being downloaded has arrived.
@@ -244,6 +281,68 @@ mod tests {
             .join("models--tsuzuri-app--Breeze-ASR-25-ggml/snapshots")
             .join(COMMIT)
             .join(FILE)
+    }
+
+    /// A Repository holding one Model for each slot and a file that is none.
+    fn repository_tree(request: &Request) -> Response {
+        if !request
+            .path
+            .starts_with(&format!("/api/models/{REPO}/tree/main"))
+        {
+            return Response {
+                status: 404,
+                ..Response::default()
+            };
+        }
+        let tree = serde_json::json!([
+            { "type": "file", "oid": "1", "size": 3_094_623_691u64, "path": "ggml-large-v3.bin" },
+            { "type": "file", "oid": "2", "size": 885_098, "path": "ggml-silero-v6.2.0.bin" },
+            { "type": "file", "oid": "3", "size": 2_497_281_120u64, "path": "qwen3.gguf" },
+            { "type": "file", "oid": "4", "size": 182, "path": "README.md" },
+        ]);
+        Response {
+            status: 200,
+            body: tree.to_string().into_bytes(),
+            ..Response::default()
+        }
+    }
+
+    fn list_tree_files(slot: ModelSlot) -> Vec<(String, u64)> {
+        let dir = TempDir::new("hub-tree");
+        let hub = FakeHttp::serve(repository_tree);
+        let client = hub_client(dir.path(), Some(&hub.base_url)).unwrap();
+        tauri::async_runtime::block_on(list_model_files(&client, REPO, slot))
+            .unwrap()
+            .into_iter()
+            .map(|file| (file.path, file.size))
+            .collect()
+    }
+
+    // @behavior MD-025
+    #[test]
+    fn lists_the_transcription_models_of_a_repository() {
+        let files = list_tree_files(ModelSlot::Transcription);
+
+        assert_eq!(
+            files,
+            vec![("ggml-large-v3.bin".to_string(), 3_094_623_691)]
+        );
+    }
+
+    // @behavior MD-026
+    #[test]
+    fn lists_the_vad_models_of_a_repository() {
+        let files = list_tree_files(ModelSlot::Vad);
+
+        assert_eq!(files, vec![("ggml-silero-v6.2.0.bin".to_string(), 885_098)]);
+    }
+
+    // @behavior MD-027
+    #[test]
+    fn lists_the_translation_models_of_a_repository() {
+        let files = list_tree_files(ModelSlot::Translation);
+
+        assert_eq!(files, vec![("qwen3.gguf".to_string(), 2_497_281_120)]);
     }
 
     // @behavior MD-019

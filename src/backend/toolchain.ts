@@ -41,6 +41,8 @@ export interface SlotView {
   /** Where the Model is expected. */
   path: string | null;
   has_file: boolean;
+  /** The file extensions a Model for the slot has. */
+  extensions: string[];
 }
 
 export type ModelSettingsView = Record<ModelSlot, SlotView>;

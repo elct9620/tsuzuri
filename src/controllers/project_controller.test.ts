@@ -99,6 +99,12 @@ describe("ProjectController", () => {
           return (args as { options: { directory: boolean } }).options.directory
             ? "/talks"
             : chosenFile;
+        if (command === "model_settings")
+          return {
+            transcription: { extensions: ["bin"] },
+            vad: { extensions: ["bin"] },
+            translation: { extensions: ["gguf"] },
+          };
         if (command === "open_srt") return openSrt();
         if (command === "reload_project") return reloadProject();
         if (command === "select_resource" && selectFailure !== undefined)

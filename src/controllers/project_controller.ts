@@ -16,13 +16,13 @@ import {
   type ProjectFeed,
   type TranscriptionOverrides,
 } from "../backend/project";
-import type { ModelSource } from "../backend/toolchain";
+import { modelSettings, type ModelSource } from "../backend/toolchain";
 import { interfaceLanguageCode, t } from "../i18n";
 import { failureMessage } from "../ui/failure";
 import { fileName } from "../ui/file_name";
 import { closeMenu } from "../ui/menu";
 import { notify } from "../ui/notification";
-import { MODEL_EXTENSIONS, sourceName } from "../ui/models";
+import { sourceName } from "../ui/models";
 
 function resourceItem(
   resource: ResourceView,
@@ -187,7 +187,9 @@ export default class ProjectController extends Controller {
     const path = await open({
       multiple: false,
       directory: false,
-      filters: [{ name: "Model", extensions: MODEL_EXTENSIONS[slot] }],
+      filters: [
+        { name: "Model", extensions: (await modelSettings())[slot].extensions },
+      ],
     });
     if (path !== null) await this.saveModel(slot, { kind: "file", path });
   }

@@ -207,3 +207,37 @@ Downloading again after an update or on a second slot costs nothing, as with any
 | Given | a Repository's file at a commit, downloaded into the Hugging Face Cache |
 | When | it is chosen for the transcription slot |
 | Then | the transcription slot shows its path in the Hugging Face Cache |
+
+## `MD-025` Listing the transcription Models of a Repository
+
+A Repository keeps other files beside its Models, and whisper.cpp's transcription and VAD Models are both `.bin`, so only a file the slot can load is offered.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf` and `README.md` |
+| When | its files are listed for the transcription slot |
+| Then | only `ggml-large-v3.bin` is listed, with its size |
+
+## `MD-026` Listing the VAD Models of a Repository
+
+| Step | Statement |
+| --- | --- |
+| Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf` and `README.md` |
+| When | its files are listed for the VAD slot |
+| Then | only `ggml-silero-v6.2.0.bin` is listed |
+
+## `MD-027` Listing the translation Models of a Repository
+
+| Step | Statement |
+| --- | --- |
+| Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf` and `README.md` |
+| When | its files are listed for the translation slot |
+| Then | only `qwen3.gguf` is listed |
+
+## `MD-028` Picking a Model file by the slot's extensions
+
+| Step | Statement |
+| --- | --- |
+| Given | the models panel loaded |
+| When | the user picks a file for the translation slot |
+| Then | the file dialog offers the extensions Rust names for the translation slot |

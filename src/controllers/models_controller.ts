@@ -7,13 +7,13 @@ import {
   type ModelSlot,
 } from "../backend/toolchain";
 import { t } from "../i18n";
-import { MODEL_EXTENSIONS } from "../ui/models";
 import { notifyFailure } from "../ui/notification";
 
 export default class ModelsController extends Controller {
   static targets = ["status"];
 
   declare readonly statusTargets: HTMLElement[];
+  private settings: ModelSettingsView | null = null;
 
   async connect(): Promise<void> {
     try {
@@ -25,10 +25,11 @@ export default class ModelsController extends Controller {
 
   async choose(event: Event): Promise<void> {
     const slot = (event.currentTarget as HTMLElement).dataset.slot as ModelSlot;
+    if (this.settings === null) return;
     const path = await open({
       multiple: false,
       directory: false,
-      filters: [{ name: "Model", extensions: MODEL_EXTENSIONS[slot] }],
+      filters: [{ name: "Model", extensions: this.settings[slot].extensions }],
     });
     if (path === null) return;
 
@@ -40,6 +41,7 @@ export default class ModelsController extends Controller {
   }
 
   private show(settings: ModelSettingsView): void {
+    this.settings = settings;
     for (const status of this.statusTargets) {
       const { path, has_file } = settings[status.dataset.slot as ModelSlot];
       status.textContent =

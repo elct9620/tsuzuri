@@ -11,7 +11,6 @@ use tokio::task::AbortHandle;
 
 use crate::failure::Failure;
 use crate::model_source::ModelSource;
-use crate::toolchain::ModelSlot;
 use crate::transfer_report::TransferReport;
 
 /// Where Hugging Face's own tools keep their files, found the way they find it so what they
@@ -89,12 +88,8 @@ pub struct RepositoryFile {
     pub size: u64,
 }
 
-/// Lists the files of `repo` at its main branch a Model for `slot` can be.
-pub async fn list_model_files(
-    client: &HFClient,
-    repo: &str,
-    slot: ModelSlot,
-) -> Result<Vec<RepositoryFile>, Failure> {
+/// Lists every file of `repo` at its main branch.
+pub async fn list_files(client: &HFClient, repo: &str) -> Result<Vec<RepositoryFile>, Failure> {
     let (owner, name) = split_id(repo);
     let repository = client.model(owner, name);
     let entries: Vec<RepoTreeEntry> = repository
@@ -108,9 +103,7 @@ pub async fn list_model_files(
     Ok(entries
         .into_iter()
         .filter_map(|entry| match entry {
-            RepoTreeEntry::File { path, size, .. } if slot.is_model_file(&path) => {
-                Some(RepositoryFile { path, size })
-            }
+            RepoTreeEntry::File { path, size, .. } => Some(RepositoryFile { path, size }),
             _ => None,
         })
         .collect())
@@ -362,42 +355,27 @@ mod tests {
         }
     }
 
-    fn list_tree_files(slot: ModelSlot) -> Vec<(String, u64)> {
+    #[test]
+    fn lists_every_file_of_a_repository_with_its_size() {
         let dir = TempDir::new("hub-tree");
         let hub = FakeHttp::serve(repository_tree);
         let client = hub_client(dir.path(), None, Some(&hub.base_url)).unwrap();
-        tauri::async_runtime::block_on(list_model_files(&client, REPO, slot))
+
+        let files: Vec<(String, u64)> = tauri::async_runtime::block_on(list_files(&client, REPO))
             .unwrap()
             .into_iter()
             .map(|file| (file.path, file.size))
-            .collect()
-    }
-
-    // @behavior MD-025
-    #[test]
-    fn lists_the_transcription_models_of_a_repository() {
-        let files = list_tree_files(ModelSlot::Transcription);
+            .collect();
 
         assert_eq!(
             files,
-            vec![("ggml-large-v3.bin".to_string(), 3_094_623_691)]
+            vec![
+                ("ggml-large-v3.bin".to_string(), 3_094_623_691),
+                ("ggml-silero-v6.2.0.bin".to_string(), 885_098),
+                ("qwen3.gguf".to_string(), 2_497_281_120),
+                ("README.md".to_string(), 182),
+            ]
         );
-    }
-
-    // @behavior MD-026
-    #[test]
-    fn lists_the_vad_models_of_a_repository() {
-        let files = list_tree_files(ModelSlot::Vad);
-
-        assert_eq!(files, vec![("ggml-silero-v6.2.0.bin".to_string(), 885_098)]);
-    }
-
-    // @behavior MD-027
-    #[test]
-    fn lists_the_translation_models_of_a_repository() {
-        let files = list_tree_files(ModelSlot::Translation);
-
-        assert_eq!(files, vec![("qwen3.gguf".to_string(), 2_497_281_120)]);
     }
 
     /// A home directory holding the token `hf auth login` saves there.
@@ -464,8 +442,7 @@ mod tests {
         let hub = unauthorized_hub(None);
         let client = hub_client(dir.path(), None, Some(&hub.base_url)).unwrap();
 
-        let result =
-            tauri::async_runtime::block_on(list_model_files(&client, REPO, ModelSlot::Translation));
+        let result = tauri::async_runtime::block_on(list_files(&client, REPO));
 
         assert_eq!(
             result,

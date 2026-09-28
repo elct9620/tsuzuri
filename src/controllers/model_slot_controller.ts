@@ -11,19 +11,15 @@ import {
 import { t } from "../i18n";
 import {
   isSameSource,
+  presetLabel,
   sizeLabel,
   sourceFileName,
+  type HubFile,
   type ModelChoice,
 } from "../ui/models";
 import { notifyFailure } from "../ui/notification";
 import { menuOption } from "../ui/options";
 import type RepositoryController from "./repository_controller";
-
-/** What a download from this slot is fetching. */
-interface DownloadingFile {
-  repo: string;
-  file: string;
-}
 
 /** Menu value of the slot's own Model, one no Preset Model is. */
 const OWN_MODEL = "own";
@@ -57,7 +53,7 @@ export default class ModelSlotController extends Controller {
 
   private presets: PresetModel[] = [];
   private source: ModelSource | null = null;
-  private pendingDownload: DownloadingFile | null = null;
+  private pendingDownload: HubFile | null = null;
 
   async connect(): Promise<void> {
     try {
@@ -89,8 +85,8 @@ export default class ModelSlotController extends Controller {
   }
 
   async pickFromRepository(): Promise<void> {
-    const picked = await this.repositoryOutlet.pick(this.slotValue);
-    if (picked !== null) await this.download(picked, null);
+    const hubFile = await this.repositoryOutlet.pick(this.slotValue);
+    if (hubFile !== null) await this.download(hubFile, null);
   }
 
   showProgress({ detail }: CustomEvent<DownloadProgress>): void {
@@ -113,7 +109,7 @@ export default class ModelSlotController extends Controller {
 
   /** Downloads `target` at `revision`, the main branch when none, and chooses it once it is there. */
   private async download(
-    target: DownloadingFile,
+    target: HubFile,
     revision: string | null,
   ): Promise<void> {
     this.pendingDownload = target;
@@ -159,12 +155,7 @@ export default class ModelSlotController extends Controller {
         });
         groups.set(preset.name, group);
       }
-      group.append(
-        menuOption(
-          String(index),
-          `${preset.name} ${preset.quantization} · ${sizeLabel(preset.size)}`,
-        ),
-      );
+      group.append(menuOption(String(index), presetLabel(preset)));
     });
     const presetIndex = this.presets.findIndex(
       (preset) =>

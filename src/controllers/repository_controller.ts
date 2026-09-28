@@ -6,13 +6,7 @@ import {
 } from "../backend/toolchain";
 import { t } from "../i18n";
 import { failureMessage } from "../ui/failure";
-import { sizeLabel } from "../ui/models";
-
-/** A file picked from a Hugging Face Repository. */
-export interface RepositoryPick {
-  repo: string;
-  file: string;
-}
+import { sizeLabel, type HubFile } from "../ui/models";
 
 /**
  * The Repository dialog: lists the files of a Hugging Face Repository a Model Slot can load and
@@ -37,11 +31,11 @@ export default class RepositoryController extends Controller {
 
   private slot: ModelSlot = "transcription";
   private listedRepo: string | null = null;
-  private answer: ((pick: RepositoryPick | null) => void) | null = null;
-  private pickedFile: RepositoryPick | null = null;
+  private answer: ((pick: HubFile | null) => void) | null = null;
+  private pickedFile: HubFile | null = null;
 
   /** Opens the dialog for `slot`, answering the file the user picks, or none. */
-  pick(slot: ModelSlot): Promise<RepositoryPick | null> {
+  pick(slot: ModelSlot): Promise<HubFile | null> {
     this.slot = slot;
     this.titleTarget.textContent = t("repository.title", {
       slot: t(`slots.${slot}`),

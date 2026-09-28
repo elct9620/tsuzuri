@@ -4,6 +4,12 @@ name: Build
 # The caller's run must hold the crate-licenses artifact the License Notice is written from.
 on:
   workflow_call:
+    secrets:
+      # The updater key signs each installer, so an installed Tsuzuri accepts it as an App Update.
+      TAURI_SIGNING_PRIVATE_KEY:
+        required: true
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD:
+        required: true
 
 permissions:
   contents: read
@@ -90,7 +96,14 @@ jobs:
       # the webview is bundled, which ships it for the settings to open.
       - name: Write the License Notice
         run: node scripts/licenses.ts crate-licenses.json
-      - run: pnpm tauri build --config src-tauri/tauri.bundle.conf.json
+      # Only a release build signs its installers as App Updates, so packaging elsewhere needs no key.
+      - run: pnpm tauri build --config src-tauri/tauri.bundle.conf.json --config src-tauri/tauri.updater.conf.json
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      # A key that does not pair with the one in tauri.conf.json still signs, and only users updating would find out.
+      - name: Check the updater signatures
+        run: node scripts/signatures.ts src-tauri/target/release/bundle
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tsuzuri-${{ runner.os }}

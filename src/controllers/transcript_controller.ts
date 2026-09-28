@@ -35,6 +35,7 @@ import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { shortcutById, shortcutText } from "../ui/shortcuts";
 import type { TaskKind } from "../ui/progress";
 import { formatTime, TIME_FIELD_ACTIONS } from "../ui/time";
+import { menuOption } from "../ui/options";
 
 /** Where the webview remembers whether the editor follows playback. */
 const FOLLOWING_KEY = "tsuzuri.transcript-following";
@@ -77,13 +78,6 @@ function placeholderRows(count = 3): HTMLLIElement[] {
     li.append(time, text);
     return li;
   });
-}
-
-function option(value: string, label: string): HTMLOptionElement {
-  const choice = document.createElement("option");
-  choice.value = value;
-  choice.textContent = label;
-  return choice;
 }
 
 /** Shows who says a Segment on its Speaker button, or that nobody is named yet. */
@@ -587,8 +581,8 @@ export default class TranscriptController extends Controller {
     if (shownLanguage !== null && !codes.includes(shownLanguage))
       codes.push(shownLanguage);
     this.translationLanguageTarget.replaceChildren(
-      option("", t("edit.noTranslation")),
-      ...codes.map((code) => option(code, t(`languages.${code}`))),
+      menuOption("", t("edit.noTranslation")),
+      ...codes.map((code) => menuOption(code, t(`languages.${code}`))),
     );
     this.translationLanguageTarget.value = shownLanguage ?? "";
     // What a running Mode shows is its own until it ends.

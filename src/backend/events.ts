@@ -12,6 +12,7 @@ const RELAYED_EVENTS = [
   "changed-elsewhere-kept",
   "video-window-closing",
   "update-progress",
+  "model-download-progress",
 ] as const;
 
 /** Relays each Rust event a controller hears to the window, until the returned function is called. */

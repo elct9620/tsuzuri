@@ -5,13 +5,28 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
+import type { PresetModel } from "../backend/toolchain";
 import { projectOf, resourceOf } from "../test_project";
 import {
   NOTIFICATION_STACK,
   notificationDetail,
   notifications,
 } from "../ui/test_notification";
+import ModelSlotController from "./model_slot_controller";
 import ProjectController from "./project_controller";
+
+const QWEN_PRESET: PresetModel = {
+  slot: "translation",
+  name: "Qwen3-4B-Instruct-2507",
+  quantization: "Q4_K_M",
+  source: {
+    kind: "repository",
+    repo: "unsloth/Qwen3-4B-Instruct-2507-GGUF",
+    file: "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+    commit: "a06e946bb6b655725eafa393f4a9745d460374c9",
+  },
+  size: 2_497_281_120,
+};
 
 describe("ProjectController", () => {
   let application: Application;
@@ -36,6 +51,13 @@ describe("ProjectController", () => {
     await settle();
   }
 
+  async function pick(selector: string, value: string): Promise<void> {
+    const menu = document.querySelector<HTMLSelectElement>(selector)!;
+    menu.value = value;
+    menu.dispatchEvent(new Event("change"));
+    await settle();
+  }
+
   async function click(selector: string): Promise<void> {
     document.querySelector<HTMLElement>(selector)!.click();
     await settle();
@@ -51,6 +73,7 @@ describe("ProjectController", () => {
     document.body.innerHTML = `
       <main
         data-controller="project"
+        data-project-model-slot-outlet="[data-controller='model-slot']"
         data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
       >
         <section data-project-target="startScreen"></section>
@@ -84,10 +107,25 @@ describe("ProjectController", () => {
             <option value="on">開啟</option>
             <option value="off">關閉</option>
           </select>
-          <span data-project-target="projectModel" data-slot="transcription"></span>
-          <button id="follow-transcription-model" data-project-target="generalModelButton" data-slot="transcription" data-action="project#followModel">改用整體設定</button>
-          <span data-project-target="projectModel" data-slot="translation"></span>
-          <button id="choose-translation-model" data-slot="translation" data-action="project#chooseModel">指定檔案</button>
+          <div data-action="model-slot:choose->project#chooseSource">
+            <div data-controller="model-slot" data-model-slot-slot-value="transcription" data-model-slot-is-project-slot-value="true">
+              <select id="transcription-menu" data-model-slot-target="menu" data-action="model-slot#chooseFromMenu"></select>
+              <span data-model-slot-target="status" data-project-target="projectModel" data-slot="transcription"></span>
+              <div data-model-slot-target="download" hidden>
+                <progress data-model-slot-target="downloadBar"></progress>
+                <span data-model-slot-target="downloadLabel"></span>
+              </div>
+            </div>
+            <div data-controller="model-slot" data-model-slot-slot-value="translation" data-model-slot-is-project-slot-value="true">
+              <select id="translation-menu" data-model-slot-target="menu" data-action="model-slot#chooseFromMenu"></select>
+              <span data-model-slot-target="status" data-project-target="projectModel" data-slot="translation"></span>
+              <button id="choose-translation-model" data-slot="translation" data-action="project#chooseModel">指定檔案</button>
+              <div data-model-slot-target="download" hidden>
+                <progress data-model-slot-target="downloadBar"></progress>
+                <span data-model-slot-target="downloadLabel"></span>
+              </div>
+            </div>
+          </div>
         </fieldset>
       </main>
     `;
@@ -99,6 +137,8 @@ describe("ProjectController", () => {
           return (args as { options: { directory: boolean } }).options.directory
             ? "/talks"
             : chosenFile;
+        if (command === "preset_models") return [QWEN_PRESET];
+        if (command === "download_model") return QWEN_PRESET.source;
         if (command === "model_settings")
           return {
             transcription: { extensions: ["bin"] },
@@ -115,6 +155,7 @@ describe("ProjectController", () => {
     application = Application.start();
     await assemble(application, {
       project: ProjectController,
+      "model-slot": ModelSlotController,
     }).start();
     await settle();
   });
@@ -395,9 +436,8 @@ describe("ProjectController", () => {
     expect([
       document.querySelector('[data-project-target="projectModel"]')!
         .textContent,
-      document.querySelector<HTMLElement>("#follow-transcription-model")!
-        .hidden,
-    ]).toEqual(["依整體設定", true]);
+      document.querySelector<HTMLSelectElement>("#transcription-menu")!.value,
+    ]).toEqual(["依整體設定", "general"]);
   });
 
   // @behavior MD-010
@@ -409,11 +449,32 @@ describe("ProjectController", () => {
     };
     await hold(withModel);
 
-    await click("#follow-transcription-model");
+    await pick("#transcription-menu", "general");
 
     expect(sent("set_project_options")).toEqual({
       options: projectOf().options,
     });
+  });
+
+  // @behavior MD-040
+  it("sets a downloaded Preset Model as the Project Model", async () => {
+    await hold(projectOf());
+
+    await pick("#translation-menu", "0");
+
+    expect([sent("download_model"), sent("set_project_options")]).toEqual([
+      {
+        repo: "unsloth/Qwen3-4B-Instruct-2507-GGUF",
+        file: "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+        revision: "a06e946bb6b655725eafa393f4a9745d460374c9",
+      },
+      {
+        options: {
+          ...projectOf().options,
+          models: { transcription: null, translation: QWEN_PRESET.source },
+        },
+      },
+    ]);
   });
 
   // @behavior PJ-048

@@ -88,6 +88,20 @@ export function downloadModel(
   return invoke<ModelSource>("download_model", { repo, file, revision });
 }
 
+/** A file of a Hugging Face Repository, by its path in the Repository. */
+export interface RepositoryFile {
+  path: string;
+  size: number;
+}
+
+/** The files of `repo` at its main branch a Model for `slot` can be. */
+export function repositoryFiles(
+  repo: string,
+  slot: ModelSlot,
+): Promise<RepositoryFile[]> {
+  return invoke<RepositoryFile[]>("repository_files", { repo, slot });
+}
+
 export function cancelModelDownload(repo: string, file: string): Promise<void> {
   return invoke<void>("cancel_model_download", { repo, file });
 }

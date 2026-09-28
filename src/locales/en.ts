@@ -351,7 +351,6 @@ const en = {
     followGeneral: "Follow general settings",
     on: "On",
     off: "Off",
-    useGeneral: "Use general settings",
     projectTranscriptionHelp:
       'This project\'s own transcription settings; "Follow general settings" uses the ones on the General tab. Affects only this project.',
     projectModelHelp:
@@ -425,6 +424,18 @@ const en = {
     notChosen: "Not chosen",
     followsGeneral: "Follows general settings",
     missing: "{{path}} is missing; choose it again",
+    downloadAgain:
+      "{{name}} is not in the cache; download it again from the menu",
+    own: "Own: {{name}}",
+    repository: "Repository",
+    cancelDownload: "Cancel",
+    notDownloaded: "The model was not downloaded",
+  },
+  repository: {
+    title: "Download from a Repository: {{slot}}",
+    list: "List files",
+    noModel: "This Repository has no file the {{slot}} slot can use",
+    download: "Download and use",
   },
   phases: {
     prepare: "Preparing components",

@@ -13,11 +13,13 @@ import FieldController, {
 import GlossaryController from "./controllers/glossary_controller";
 import LicensesController from "./controllers/licenses_controller";
 import LogsController from "./controllers/logs_controller";
+import ModelSlotController from "./controllers/model_slot_controller";
 import ModelsController from "./controllers/models_controller";
 import NotificationController from "./controllers/notification_controller";
 import PreviewController from "./controllers/preview_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
+import RepositoryController from "./controllers/repository_controller";
 import ReplacementController from "./controllers/replacement_controller";
 import SearchController from "./controllers/search_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
@@ -62,12 +64,14 @@ async function start(): Promise<void> {
     glossary: GlossaryController,
     licenses: LicensesController,
     logs: LogsController,
+    "model-slot": ModelSlotController,
     models: ModelsController,
     notification: NotificationController,
     preview: PreviewController,
     progress: ProgressController,
     project: ProjectController,
     replacement: ReplacementController,
+    repository: RepositoryController,
     cleanup: CleanupController,
     search: SearchController,
     "segment-changes": SegmentChangesController,

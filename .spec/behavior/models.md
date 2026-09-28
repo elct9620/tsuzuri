@@ -7,8 +7,10 @@ Pointing each Model Slot at a Model Source, in the general settings or as a Proj
 - `src-tauri/src/project/files.rs`
 - `src-tauri/src/toolchain.rs`
 - `src-tauri/src/toolchain/*.rs`
+- `src/controllers/model_slot_controller.test.ts`
 - `src/controllers/models_controller.test.ts`
 - `src/controllers/project_controller.test.ts`
+- `src/controllers/repository_controller.test.ts`
 
 ## `MD-001` Remembering a chosen Model
 
@@ -259,3 +261,93 @@ A Preset Model is what Tsuzuri was verified with, so a Repository changing its f
 | Given | the Preset Models |
 | When | their Model Sources are read |
 | Then | every one names a Repository's file at a full commit hash |
+
+## `MD-031` Offering a slot's Preset Models
+
+| Step | Statement |
+| --- | --- |
+| Given | Preset Models for the transcription and the translation slots |
+| When | the transcription slot's menu is shown |
+| Then | it offers only the transcription Preset Models, grouped by name |
+
+## `MD-032` Downloading a Preset Model before choosing it
+
+The slot keeps its Model until the download is done, so a cancelled or failed download leaves nothing half chosen.
+
+| Step | Statement |
+| --- | --- |
+| Given | the translation slot's menu |
+| When | the user picks a Preset Model from it |
+| Then | the Preset Model is downloaded at its commit, then chosen for the translation slot |
+
+## `MD-033` Showing how far a Model's download has come
+
+| Step | Statement |
+| --- | --- |
+| Given | a Preset Model downloading for the transcription slot |
+| When | half of its file has arrived |
+| Then | the slot shows the download at 50% |
+
+## `MD-034` Cancelling a download from its slot
+
+| Step | Statement |
+| --- | --- |
+| Given | a Preset Model downloading for the transcription slot |
+| When | the user cancels it in that slot |
+| Then | Rust is asked to stop downloading that file |
+
+## `MD-035` Keeping the Model when its download fails
+
+| Step | Statement |
+| --- | --- |
+| Given | the translation slot holding a file on disk |
+| When | the download of a Preset Model picked for it fails |
+| Then | the slot's menu shows the file on disk again |
+
+## `MD-036` Naming a Model no Preset Model is
+
+| Step | Statement |
+| --- | --- |
+| Given | the translation slot holding a file on disk |
+| When | its menu is shown |
+| Then | the menu names the file as the slot's own choice |
+
+## `MD-037` Listing a Repository's files for a slot
+
+| Step | Statement |
+| --- | --- |
+| Given | the Repository dialog open for the translation slot |
+| When | the user lists the files of a Repository |
+| Then | the Model files Rust answers for the translation slot are offered with their sizes |
+
+## `MD-038` Downloading the file picked from a Repository
+
+| Step | Statement |
+| --- | --- |
+| Given | a Repository's files listed in the Repository dialog for the translation slot |
+| When | the user picks one and downloads it |
+| Then | that file is downloaded, then chosen for the translation slot |
+
+## `MD-039` Saying why a Repository was not listed
+
+| Step | Statement |
+| --- | --- |
+| Given | the Repository dialog open |
+| When | listing a Repository's files fails |
+| Then | the dialog says why |
+
+## `MD-040` Choosing a Preset Model as a Project Model
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of a Project without Project Models |
+| When | the user picks a Preset Model for its translation slot |
+| Then | the Project Options are set with the downloaded Preset Model as the translation Project Model |
+
+## `MD-041` Asking to download a Model the cache lost
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcription slot holding a Repository's file the Hugging Face Cache no longer holds |
+| When | the models panel loads |
+| Then | the transcription slot asks the user to download it again |

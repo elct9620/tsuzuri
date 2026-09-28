@@ -341,7 +341,6 @@ const zhHant: typeof en = {
     followGeneral: "依整體設定",
     on: "開啟",
     off: "關閉",
-    useGeneral: "改用整體設定",
     projectTranscriptionHelp:
       "這個專案自己的轉錄設定；選「依整體設定」時沿用整體頁的設定。只影響這個專案。",
     projectModelHelp:
@@ -412,6 +411,17 @@ const zhHant: typeof en = {
     notChosen: "尚未指定",
     followsGeneral: "依整體設定",
     missing: "找不到 {{path}}，請重新指定",
+    downloadAgain: "{{name}} 不在快取裡，請從選單重新下載",
+    own: "自選：{{name}}",
+    repository: "Repository",
+    cancelDownload: "取消",
+    notDownloaded: "模型沒有下載",
+  },
+  repository: {
+    title: "從 Repository 下載：{{slot}}",
+    list: "列出檔案",
+    noModel: "這個 Repository 沒有{{slot}}能用的檔案",
+    download: "下載並使用",
   },
   phases: {
     prepare: "準備元件",

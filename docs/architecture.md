@@ -138,7 +138,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | 更新下載進度 | `install_update` | `updates` |
 | 模型下載進度 | `download_model` | 設定頁 |
 
-事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`，更新下載進度是 `update-progress`，模型下載進度是 `model-download-progress`；前五者由 `relayEvents` 轉成 window 的 `rust:` 事件。
+事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`，更新下載進度是 `update-progress`，模型下載進度是 `model-download-progress`；六者由 `relayEvents` 轉成 window 的 `rust:` 事件。
 
 ### 2.4 錯誤與通知
 
@@ -571,6 +571,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
 | `components`、`models`、`transcription-settings`、`translation-settings`、`logs`、`volume-boost` | 設定頁 |
+| `model-slot`、`repository` | 模型來源的選單、下載與 Repository |
 | `about`、`updates` | 版本與更新、安裝視窗 |
 | `licenses` | 關於的授權頁 |
 | `tooltip` | 全頁共用的 tooltip |
@@ -597,6 +598,8 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `progress` 顯示 Phase |
 | `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
+| `rust:model-download-progress` | Rust，經 `relayEvents` | `model-slot` 顯示下載進度 |
+| `model-slot:choose` | `model-slot` | `models`、`project` 記下來源 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
 | `dialog:opened` | `dialog` | `volume-boost` 讀取輸出延遲 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
@@ -630,7 +633,8 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/failure.ts` | 錯誤碼的訊息與通知種類 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式與欄位綁定、關閉選單 |
-| `ui/models.ts` | Model Source 的名稱 |
+| `ui/models.ts` | Model Source 的名稱與大小 |
+| `ui/options.ts` | 選單的選項 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/volume_boost.ts` | 音量增強的開關、增益與延遲 |
 | `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |

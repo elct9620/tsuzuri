@@ -18,11 +18,12 @@ import {
 } from "../backend/project";
 import { modelSettings, type ModelSource } from "../backend/toolchain";
 import { interfaceLanguageCode, t } from "../i18n";
+import type ModelSlotController from "./model_slot_controller";
 import { failureMessage } from "../ui/failure";
 import { fileName } from "../ui/file_name";
 import { closeMenu } from "../ui/menu";
 import { notify } from "../ui/notification";
-import { sourceName } from "../ui/models";
+import { sourceName, type ModelChoice } from "../ui/models";
 
 function resourceItem(
   resource: ResourceView,
@@ -88,8 +89,8 @@ export default class ProjectController extends Controller {
     "overwriteBackup",
     "transcriptionSetting",
     "projectModel",
-    "generalModelButton",
   ];
+  static outlets = ["model-slot"];
 
   /** Shown while no Project is open. */
   declare readonly startScreenTarget: HTMLElement;
@@ -110,8 +111,8 @@ export default class ProjectController extends Controller {
   declare readonly transcriptionSettingTargets: HTMLSelectElement[];
   /** Names the Project Model of the slot in `data-slot`, or that the slot follows the general settings. */
   declare readonly projectModelTargets: HTMLElement[];
-  /** Offered for the slot in `data-slot` only while it has a Project Model. */
-  declare readonly generalModelButtonTargets: HTMLElement[];
+  /** The rows choosing each slot's Project Model. */
+  declare readonly modelSlotOutlets: ModelSlotController[];
 
   declare readonly feed: ProjectFeed;
 
@@ -194,10 +195,14 @@ export default class ProjectController extends Controller {
     if (path !== null) await this.saveModel(slot, { kind: "file", path });
   }
 
-  async followModel({ currentTarget }: Event): Promise<void> {
-    const slot = (currentTarget as HTMLElement).dataset
-      .slot as keyof ProjectModels;
-    await this.saveModel(slot, null);
+  /** Records the Model Source a slot's row chose, or none to follow the general settings. */
+  async chooseSource({ detail }: CustomEvent<ModelChoice>): Promise<void> {
+    await this.saveModel(detail.slot as keyof ProjectModels, detail.source);
+  }
+
+  modelSlotOutletConnected(row: ModelSlotController): void {
+    if (this.options !== null)
+      row.showSource(this.options.models[row.slotValue as keyof ProjectModels]);
   }
 
   private async saveModel(
@@ -294,9 +299,8 @@ export default class ProjectController extends Controller {
       status.textContent =
         source === null ? t("models.followsGeneral") : sourceName(source);
     }
-    for (const follow of this.generalModelButtonTargets)
-      follow.hidden =
-        models[follow.dataset.slot as keyof ProjectModels] === null;
+    for (const row of this.modelSlotOutlets)
+      row.showSource(models[row.slotValue as keyof ProjectModels]);
   }
 
   /** The Project's own settings while one is open, opened at their tab when it has just opened. */

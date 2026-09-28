@@ -16,6 +16,7 @@
     <main
       class="flex h-dvh flex-col"
       data-controller="project transcript segment-changes dialog comparison speakers replacement cleanup search"
+      data-project-model-slot-outlet="#project-models [data-controller='model-slot']"
       data-comparison-versions-outlet="[data-controller~=versions]"
       data-action="progress:task->transcript#followTask selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->segment-changes#followTasks versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut keydown@window->search#openByShortcut keydown@window->search#moveByShortcut transcript:shown->search#follow keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
     >
@@ -1544,13 +1545,24 @@
                     </li>
                   </ul>
                 </fieldset>
-                <fieldset class="fieldset text-sm">
+                <fieldset
+                  id="project-models"
+                  class="fieldset text-sm"
+                  data-action="model-slot:choose->project#chooseSource"
+                >
                   <legend
                     class="fieldset-legend"
                     data-i18n="settings.models"
                   ></legend>
                   <ul class="list rounded-box border border-base-300">
-                    <li class="list-row items-center">
+                    <li
+                      class="list-row items-center"
+                      data-controller="model-slot"
+                      data-model-slot-slot-value="transcription"
+                      data-model-slot-is-project-slot-value="true"
+                      data-model-slot-repository-outlet="#repository-dialog"
+                      data-action="rust:model-download-progress@window->model-slot#showProgress"
+                    >
                       <span class="flex w-32 items-center gap-1 font-medium">
                         <span data-i18n="slots.transcription"></span>
                         <span
@@ -1560,12 +1572,12 @@
                           ><i data-lucide="info" class="size-3.5"></i
                         ></span>
                       </span>
-                      <span
-                        class="break-all text-base-content/70"
-                        data-project-target="projectModel"
-                        data-slot="transcription"
-                        data-i18n="models.followsGeneral"
-                      ></span>
+                      <select
+                        class="select select-sm w-full"
+                        data-model-slot-target="menu"
+                        data-action="model-slot#chooseFromMenu"
+                        data-i18n-label="slots.transcription"
+                      ></select>
                       <div class="flex gap-2">
                         <button
                           type="button"
@@ -1576,16 +1588,48 @@
                         ></button>
                         <button
                           type="button"
-                          class="btn btn-ghost btn-sm"
-                          data-project-target="generalModelButton"
-                          data-slot="transcription"
-                          data-action="project#followModel"
-                          data-i18n="settings.useGeneral"
-                          hidden
+                          class="btn btn-sm"
+                          data-action="model-slot#pickFromRepository"
+                          data-i18n="models.repository"
+                        ></button>
+                      </div>
+                      <span
+                        class="list-col-wrap break-all text-xs text-base-content/70 [&.missing]:text-error"
+                        data-model-slot-target="status"
+                        data-project-target="projectModel"
+                        data-slot="transcription"
+                        data-i18n="models.followsGeneral"
+                      ></span>
+                      <div
+                        class="list-col-wrap flex items-center gap-2"
+                        data-model-slot-target="download"
+                        hidden
+                      >
+                        <progress
+                          class="progress progress-primary w-full"
+                          max="100"
+                          data-model-slot-target="downloadBar"
+                        ></progress>
+                        <span
+                          class="text-xs whitespace-nowrap"
+                          data-model-slot-target="downloadLabel"
+                        ></span>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs"
+                          data-action="model-slot#cancelDownload"
+                          data-i18n="models.cancelDownload"
                         ></button>
                       </div>
                     </li>
-                    <li class="list-row items-center">
+                    <li
+                      class="list-row items-center"
+                      data-controller="model-slot"
+                      data-model-slot-slot-value="translation"
+                      data-model-slot-is-project-slot-value="true"
+                      data-model-slot-repository-outlet="#repository-dialog"
+                      data-action="rust:model-download-progress@window->model-slot#showProgress"
+                    >
                       <span class="flex w-32 items-center gap-1 font-medium">
                         <span data-i18n="slots.translation"></span>
                         <span
@@ -1595,12 +1639,12 @@
                           ><i data-lucide="info" class="size-3.5"></i
                         ></span>
                       </span>
-                      <span
-                        class="break-all text-base-content/70"
-                        data-project-target="projectModel"
-                        data-slot="translation"
-                        data-i18n="models.followsGeneral"
-                      ></span>
+                      <select
+                        class="select select-sm w-full"
+                        data-model-slot-target="menu"
+                        data-action="model-slot#chooseFromMenu"
+                        data-i18n-label="slots.translation"
+                      ></select>
                       <div class="flex gap-2">
                         <button
                           type="button"
@@ -1611,12 +1655,37 @@
                         ></button>
                         <button
                           type="button"
-                          class="btn btn-ghost btn-sm"
-                          data-project-target="generalModelButton"
-                          data-slot="translation"
-                          data-action="project#followModel"
-                          data-i18n="settings.useGeneral"
-                          hidden
+                          class="btn btn-sm"
+                          data-action="model-slot#pickFromRepository"
+                          data-i18n="models.repository"
+                        ></button>
+                      </div>
+                      <span
+                        class="list-col-wrap break-all text-xs text-base-content/70 [&.missing]:text-error"
+                        data-model-slot-target="status"
+                        data-project-target="projectModel"
+                        data-slot="translation"
+                        data-i18n="models.followsGeneral"
+                      ></span>
+                      <div
+                        class="list-col-wrap flex items-center gap-2"
+                        data-model-slot-target="download"
+                        hidden
+                      >
+                        <progress
+                          class="progress progress-primary w-full"
+                          max="100"
+                          data-model-slot-target="downloadBar"
+                        ></progress>
+                        <span
+                          class="text-xs whitespace-nowrap"
+                          data-model-slot-target="downloadLabel"
+                        ></span>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs"
+                          data-action="model-slot#cancelDownload"
+                          data-i18n="models.cancelDownload"
                         ></button>
                       </div>
                     </li>
@@ -2071,13 +2140,25 @@
                   </ul>
                 </fieldset>
 
-                <fieldset class="fieldset text-sm" data-controller="models">
+                <fieldset
+                  id="general-models"
+                  class="fieldset text-sm"
+                  data-controller="models"
+                  data-models-model-slot-outlet="#general-models [data-controller='model-slot']"
+                  data-action="model-slot:choose->models#chooseSource"
+                >
                   <legend
                     class="fieldset-legend"
                     data-i18n="settings.models"
                   ></legend>
                   <ul class="list rounded-box border border-base-300">
-                    <li class="list-row items-center">
+                    <li
+                      class="list-row items-center"
+                      data-controller="model-slot"
+                      data-model-slot-slot-value="transcription"
+                      data-model-slot-repository-outlet="#repository-dialog"
+                      data-action="rust:model-download-progress@window->model-slot#showProgress"
+                    >
                       <span class="flex w-32 items-center gap-1 font-medium">
                         <span data-i18n="slots.transcription"></span>
                         <span
@@ -2087,21 +2168,63 @@
                           ><i data-lucide="info" class="size-3.5"></i
                         ></span>
                       </span>
+                      <select
+                        class="select select-sm w-full"
+                        data-model-slot-target="menu"
+                        data-action="model-slot#chooseFromMenu"
+                        data-i18n-label="slots.transcription"
+                      ></select>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-slot="transcription"
+                          data-action="models#choose"
+                          data-i18n="settings.chooseFile"
+                        ></button>
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-action="model-slot#pickFromRepository"
+                          data-i18n="models.repository"
+                        ></button>
+                      </div>
                       <span
-                        class="break-all text-base-content/70 [&.missing]:text-error"
+                        class="list-col-wrap break-all text-xs text-base-content/70 [&.missing]:text-error"
+                        data-model-slot-target="status"
                         data-models-target="status"
                         data-slot="transcription"
                         data-i18n="models.notChosen"
                       ></span>
-                      <button
-                        type="button"
-                        class="btn btn-sm"
-                        data-slot="transcription"
-                        data-action="models#choose"
-                        data-i18n="settings.chooseFile"
-                      ></button>
+                      <div
+                        class="list-col-wrap flex items-center gap-2"
+                        data-model-slot-target="download"
+                        hidden
+                      >
+                        <progress
+                          class="progress progress-primary w-full"
+                          max="100"
+                          data-model-slot-target="downloadBar"
+                        ></progress>
+                        <span
+                          class="text-xs whitespace-nowrap"
+                          data-model-slot-target="downloadLabel"
+                        ></span>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs"
+                          data-action="model-slot#cancelDownload"
+                          data-i18n="models.cancelDownload"
+                        ></button>
+                      </div>
                     </li>
-                    <li class="list-row items-center">
+                    <li
+                      class="list-row items-center"
+                      data-controller="model-slot"
+                      data-model-slot-slot-value="vad"
+                      data-model-slot-repository-outlet="#repository-dialog"
+                      data-action="rust:model-download-progress@window->model-slot#showProgress"
+                    >
                       <span class="flex w-32 items-center gap-1 font-medium">
                         <span data-i18n="slots.vad"></span>
                         <span
@@ -2111,21 +2234,63 @@
                           ><i data-lucide="info" class="size-3.5"></i
                         ></span>
                       </span>
+                      <select
+                        class="select select-sm w-full"
+                        data-model-slot-target="menu"
+                        data-action="model-slot#chooseFromMenu"
+                        data-i18n-label="slots.vad"
+                      ></select>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-slot="vad"
+                          data-action="models#choose"
+                          data-i18n="settings.chooseFile"
+                        ></button>
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-action="model-slot#pickFromRepository"
+                          data-i18n="models.repository"
+                        ></button>
+                      </div>
                       <span
-                        class="break-all text-base-content/70 [&.missing]:text-error"
+                        class="list-col-wrap break-all text-xs text-base-content/70 [&.missing]:text-error"
+                        data-model-slot-target="status"
                         data-models-target="status"
                         data-slot="vad"
                         data-i18n="models.notChosen"
                       ></span>
-                      <button
-                        type="button"
-                        class="btn btn-sm"
-                        data-slot="vad"
-                        data-action="models#choose"
-                        data-i18n="settings.chooseFile"
-                      ></button>
+                      <div
+                        class="list-col-wrap flex items-center gap-2"
+                        data-model-slot-target="download"
+                        hidden
+                      >
+                        <progress
+                          class="progress progress-primary w-full"
+                          max="100"
+                          data-model-slot-target="downloadBar"
+                        ></progress>
+                        <span
+                          class="text-xs whitespace-nowrap"
+                          data-model-slot-target="downloadLabel"
+                        ></span>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs"
+                          data-action="model-slot#cancelDownload"
+                          data-i18n="models.cancelDownload"
+                        ></button>
+                      </div>
                     </li>
-                    <li class="list-row items-center">
+                    <li
+                      class="list-row items-center"
+                      data-controller="model-slot"
+                      data-model-slot-slot-value="translation"
+                      data-model-slot-repository-outlet="#repository-dialog"
+                      data-action="rust:model-download-progress@window->model-slot#showProgress"
+                    >
                       <span class="flex w-32 items-center gap-1 font-medium">
                         <span data-i18n="slots.translation"></span>
                         <span
@@ -2135,22 +2300,118 @@
                           ><i data-lucide="info" class="size-3.5"></i
                         ></span>
                       </span>
+                      <select
+                        class="select select-sm w-full"
+                        data-model-slot-target="menu"
+                        data-action="model-slot#chooseFromMenu"
+                        data-i18n-label="slots.translation"
+                      ></select>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-slot="translation"
+                          data-action="models#choose"
+                          data-i18n="settings.chooseFile"
+                        ></button>
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-action="model-slot#pickFromRepository"
+                          data-i18n="models.repository"
+                        ></button>
+                      </div>
                       <span
-                        class="break-all text-base-content/70 [&.missing]:text-error"
+                        class="list-col-wrap break-all text-xs text-base-content/70 [&.missing]:text-error"
+                        data-model-slot-target="status"
                         data-models-target="status"
                         data-slot="translation"
                         data-i18n="models.notChosen"
                       ></span>
-                      <button
-                        type="button"
-                        class="btn btn-sm"
-                        data-slot="translation"
-                        data-action="models#choose"
-                        data-i18n="settings.chooseFile"
-                      ></button>
+                      <div
+                        class="list-col-wrap flex items-center gap-2"
+                        data-model-slot-target="download"
+                        hidden
+                      >
+                        <progress
+                          class="progress progress-primary w-full"
+                          max="100"
+                          data-model-slot-target="downloadBar"
+                        ></progress>
+                        <span
+                          class="text-xs whitespace-nowrap"
+                          data-model-slot-target="downloadLabel"
+                        ></span>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs"
+                          data-action="model-slot#cancelDownload"
+                          data-i18n="models.cancelDownload"
+                        ></button>
+                      </div>
                     </li>
                   </ul>
                 </fieldset>
+                <dialog
+                  id="repository-dialog"
+                  class="modal"
+                  data-controller="repository"
+                  data-repository-target="dialog"
+                  data-action="close->repository#settle"
+                >
+                  <div class="modal-box">
+                    <h3
+                      class="text-lg font-bold"
+                      data-repository-target="title"
+                    ></h3>
+                    <fieldset class="fieldset gap-3 text-sm">
+                      <div class="join w-full">
+                        <input
+                          type="text"
+                          class="input join-item w-full"
+                          placeholder="owner/name"
+                          spellcheck="false"
+                          data-repository-target="repo"
+                          data-action="keydown.enter->repository#list:prevent"
+                        />
+                        <button
+                          type="button"
+                          class="btn join-item"
+                          data-action="repository#list"
+                          data-i18n="repository.list"
+                        ></button>
+                      </div>
+                      <div
+                        class="list max-h-72 overflow-y-auto rounded-box border border-base-300"
+                        data-repository-target="files"
+                        data-action="change->repository#chooseFile"
+                        hidden
+                      ></div>
+                      <div
+                        role="alert"
+                        class="alert alert-warning"
+                        data-repository-target="hint"
+                        hidden
+                      ></div>
+                    </fieldset>
+                    <div class="modal-action">
+                      <form method="dialog">
+                        <button class="btn" data-i18n="work.cancel"></button>
+                      </form>
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        data-repository-target="downloadButton"
+                        data-action="repository#download"
+                        data-i18n="repository.download"
+                        disabled
+                      ></button>
+                    </div>
+                  </div>
+                  <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                  </form>
+                </dialog>
 
                 <fieldset class="fieldset text-sm" data-controller="logs">
                   <legend

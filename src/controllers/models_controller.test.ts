@@ -173,6 +173,33 @@ describe("ModelsController", () => {
     });
   });
 
+  // @behavior MD-041
+  it("asks to download again a Model the cache lost", async () => {
+    await mountWith({
+      transcription: {
+        source: {
+          kind: "repository",
+          repo: "tsuzuri-app/Breeze-ASR-25-ggml",
+          file: "ggml-breeze-asr-25-q8_0.bin",
+          commit: "cf41205287fb5483317ce2d1d973ba7cac8fa750",
+        },
+        path: "/hub/ggml-breeze-asr-25-q8_0.bin",
+        has_file: false,
+        extensions: EXTENSIONS,
+      },
+      translation: {
+        source: null,
+        path: null,
+        has_file: false,
+        extensions: EXTENSIONS,
+      },
+    });
+
+    expect(statusOf("transcription")).toBe(
+      "tsuzuri-app/Breeze-ASR-25-ggml/ggml-breeze-asr-25-q8_0.bin 不在快取裡，請從選單重新下載",
+    );
+  });
+
   // @behavior MD-011
   it("says the Models were not read", async () => {
     mockIPC(() => {

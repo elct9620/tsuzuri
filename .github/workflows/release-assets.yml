@@ -1,15 +1,15 @@
 name: Release Assets
 
-# Attaches what CI built, so nothing is compiled twice. For a release's commit on main it publishes
+# Attaches what CI built, so nothing is compiled twice. For a release's commit on stable it publishes
 # the draft release-please left, so the latest release always carries the update manifest; for a
-# push to preview it moves the fixed `preview` Prerelease to that commit and replaces its assets.
+# push to main it moves the fixed `preview` Prerelease to that commit and replaces its assets.
 # Rerunning this replaces the assets; for a commit CI has not built, run CI on it first, then this.
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
     # Only these branches publish, so a run elsewhere starts nothing rather than a skipped run.
-    branches: [main, preview]
+    branches: [main, stable]
   workflow_dispatch:
     inputs:
       tag:
@@ -50,10 +50,10 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [ "$INPUT_TAG" = preview ]; then
             tag=preview
-            read -r run_id sha < <(gh run list -R "$GITHUB_REPOSITORY" -w ci.yml -b preview -e push -s success \
+            read -r run_id sha < <(gh run list -R "$GITHUB_REPOSITORY" -w ci.yml -b main -e push -s success \
               --json databaseId,headSha -q 'first(.[]) | "\(.databaseId) \(.headSha)"')
             if [ -z "$run_id" ]; then
-              echo "::error::no successful CI run built preview; push to preview first"
+              echo "::error::no successful CI run built main; push to main first"
               exit 1
             fi
           elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
@@ -65,7 +65,7 @@ jobs:
               echo "::error::no successful CI run built $tag ($sha); run CI on $tag first"
               exit 1
             fi
-          elif [ "$RUN_BRANCH" = preview ]; then
+          elif [ "$RUN_BRANCH" = main ]; then
             tag=preview
             sha="$RUN_SHA"
             run_id="$RUN_ID"

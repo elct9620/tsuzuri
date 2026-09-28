@@ -1048,12 +1048,12 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
 ### 13.1 CI
 
 ```
-  push main／preview、PR ─▶ spec（sumi）
+  push main／stable、PR ─▶ spec（sumi）
            ├▶ licenses（cargo-deny、cargo-about）
            ├▶ frontend（Vitest、型別檢查）
            └▶ rust × 3 平台（fmt、clippy、test）
                    │ 全部通過，且是 push 或手動觸發
-                   ▼            （push preview 另算預覽版號，見 13.5.3）
+                   ▼            （push main 另算預覽版號，見 13.5.3）
               build × 3 平台（共用的 build.yml）
                    │ 每個元件的內建變體（build-component action）
                    │   cache 命中就還原，否則以 vendor.sh 編譯
@@ -1065,9 +1065,9 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
 | 觸發 | 新的 push 進來時 | 原因 |
 |---|---|---|
 | PR | 取消舊的一輪 | 只有最新的有用 |
-| main | 各自跑完 | 釋出的 commit 要打包 |
-| preview 檢查 | 各自跑完 | 每個 commit 有結論 |
-| preview 打包 | 跑的做完，只留最新的排隊 | 只發布最新的預覽版 |
+| stable | 各自跑完 | 釋出的 commit 要打包 |
+| main 檢查 | 各自跑完 | 每個 commit 有結論 |
+| main 打包 | 跑的做完，只留最新的排隊 | 只發布最新的預覽版 |
 
 預覽版只保留最新一版，所以排隊中較舊的打包直接放棄；正在打包的不中斷，連續 push 時仍會產出。
 
@@ -1086,17 +1086,17 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 ### 13.3 釋出流程
 
 ```
-  preview（trunk）─合併─▶ main ─▶ release-please
+  main（trunk）─PR 合併─▶ stable ─▶ release-please
                                      ├ 一般 commit ─▶ 更新版本 PR
                                      └ 合併版本 PR ─▶ 建立 tag 與草稿 Release
   CI 成功 ─▶ release-assets（也可指定 tag 或 preview 手動觸發）
-               ├ main：commit 是 tag 指向的嗎？是 ─▶ 附檔 ─▶ 公開 Release
-               └ preview：固定檔名 ─▶ 移動 preview tag ─▶ 覆寫 Prerelease 附檔、標題
+               ├ stable：commit 是 tag 指向的嗎？是 ─▶ 附檔 ─▶ 公開 Release
+               └ main：固定檔名 ─▶ 移動 preview tag ─▶ 覆寫 Prerelease 附檔、標題
                附檔：安裝檔、簽章、latest.json、ffmpeg 原始程式碼、SHA256SUMS
   release-assets 完成 ─▶ pages（13.5.4）
 ```
 
-日常 commit 在 preview，驗證後合併進 main 才發正式版。版號與 changelog 由 release-please 管理，直接取用 CI 的打包，不重新編譯；Release 附完檔才公開。預覽版的 Release 標題與設定頁同樣稱呼：以哪個正式版為基礎、建置時間（UTC），說明列出完整版號與 commit，回報時對得上。不做程式碼簽章，放行步驟寫在 README。
+日常 commit 在 main，驗證後以 PR 合併進 stable 才發正式版；stable 只收 PR，只用 merge commit，保留每個 commit 給 changelog。版號與 changelog 由 release-please 管理，直接取用 CI 的打包，不重新編譯；Release 附完檔才公開。預覽版的 Release 標題與設定頁同樣稱呼：以哪個正式版為基礎、建置時間（UTC），說明列出完整版號與 commit，回報時對得上。不做程式碼簽章，放行步驟寫在 README。
 
 ### 13.4 失敗時補救
 
@@ -1108,7 +1108,7 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | 預覽版附檔失敗 | 以 preview 手動重跑 |
 | 網站部署失敗 | 手動重跑 pages |
 
-附檔一律覆寫同名檔案，重跑就是補檔；正式版失敗時停在草稿。release-assets 與 pages 由 `workflow_run` 觸發，GitHub 只採用 main 上的版本，改動要合併進 main 才生效。
+附檔一律覆寫同名檔案，重跑就是補檔；正式版失敗時停在草稿。release-assets 與 pages 由 `workflow_run` 觸發，GitHub 只採用預設分支 main 上的版本，所以正式版也用主線上的版本附檔。
 
 ### 13.5 自動更新
 
@@ -1171,7 +1171,7 @@ Windows 的安裝程式啟動後直接結束 Tsuzuri，不經過結束時的 `ki
 
 | 規則 | 原因 |
 |---|---|
-| 版號不 commit | 合併進 main 不衝突 |
+| 版號不 commit | 合併進 stable 不衝突 |
 | `+<run>` | MSI 只收數字 |
 | 立即退回只此一次 | 其他檢查仍防降版 |
 | rpm 只有穩定版 | rpm 把預覽排在後面 |

@@ -2,7 +2,7 @@ name: Release Please
 
 on:
   push:
-    branches: [main]
+    branches: [stable]
 
 permissions:
   contents: read
@@ -19,3 +19,6 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
+        with:
+          # The trunk is the default branch; releases come only from stable.
+          target-branch: stable

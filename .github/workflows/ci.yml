@@ -2,8 +2,8 @@ name: CI
 
 on:
   push:
-    # preview is the trunk: each push there publishes a Preview build.
-    branches: [main, preview]
+    # main is the trunk: each push there publishes a Preview build; stable carries the releases.
+    branches: [main, stable]
   pull_request:
   workflow_dispatch:
 
@@ -173,7 +173,7 @@ jobs:
   # A Preview build is numbered past the latest stable release by its build time; the number is
   # written into the build only, never committed.
   preview-version:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -207,7 +207,7 @@ jobs:
 
   build:
     needs: [spec, licenses, frontend, rust, preview-version]
-    # A skipped preview-version (any push to main) must not skip the build.
+    # A skipped preview-version (any push to stable) must not skip the build.
     if: >-
       !cancelled() && github.event_name != 'pull_request' &&
       needs.spec.result == 'success' && needs.licenses.result == 'success' &&
@@ -216,7 +216,7 @@ jobs:
     # Only the newest Preview build is published, so the one bundling finishes and only the newest
     # push waits behind it; a push that keeps coming still publishes, and an older one is dropped.
     concurrency:
-      group: bundle-${{ github.ref == 'refs/heads/preview' && 'preview' || github.sha }}
+      group: bundle-${{ github.ref == 'refs/heads/main' && 'preview' || github.sha }}
     uses: ./.github/workflows/build.yml
     with:
       preview-version: ${{ needs.preview-version.outputs.version }}

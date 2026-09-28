@@ -234,9 +234,7 @@ describe("ModelSlotController", () => {
 
     const menu = menuOf("translation");
 
-    expect(menu.selectedOptions[0].textContent).toBe(
-      "自選：/models/qwen3-4b.gguf",
-    );
+    expect(menu.selectedOptions[0].textContent).toBe("自選：qwen3-4b.gguf");
   });
 
   // @behavior MD-038

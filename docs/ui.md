@@ -748,7 +748,7 @@
   │ 自動儲存雙語 ⓘ  [○]                                   │
   │ 覆蓋前備份 ⓘ  [○]                                     │
   │ 轉錄      VAD ⓘ  [依整體設定 ▾]  …                      │
-  │ 模型      轉錄 ⓘ [依整體設定 ▾] [指定檔案] [Repository]│
+  │ 模型      轉錄 ⓘ [依整體設定 ▾] [指定檔案] [Hugging Face]│
   │ ─────────────────────────────────────────────────── │
   │ 版本與更新  版本 ⓘ 0.1.0（a1b2c3d）[複製]            │  ← 整體頁
   │           更新 ⓘ [檢查更新] 已是最新版                │
@@ -757,8 +757,8 @@
   │ 元件      ffmpeg ⓘ  內建  [指定] [還原預設值]          │
   │ 轉錄      VAD ⓘ [○]  抑制非語音 ⓘ [○]  延續上文 ⓘ [●]   │
   │           清理簡體 ⓘ [●]                               │
-  │ 模型      轉錄 ⓘ [Breeze q8_0 ▾] [指定檔案] [Repository]│
-  │           VAD ⓘ [Silero v6.2.0 ▾] [指定檔案] [Repository]│
+  │ 模型      轉錄 ⓘ [Breeze q8_0 ▾] [指定檔案] [Hugging Face]│
+  │           VAD ⓘ [Silero v6.2.0 ▾] [指定檔案] [Hugging Face]│
   │ 翻譯      每批句數 ⓘ [8]  重試 ⓘ [3]  參考前後 ⓘ [2]    │
   │           常駐 llama-server ⓘ [●]  保留模型 ⓘ [0] 秒     │
   │           清理簡體 ⓘ [●]                               │
@@ -881,26 +881,27 @@
 #### 7.3.1 模型來源
 
 ```
-  轉錄 ⓘ [Breeze-ASR-25 q8_0 ▾] [指定檔案] [Repository]
-         ~/.cache/huggingface/…/ggml-breeze-asr-25-q8_0.bin    ← 狀態列
+  轉錄 ⓘ [Breeze-ASR-25 q8_0 ▾] [指定檔案] [Hugging Face]
+         ~/.cache/huggingface/…/ggml-breeze-asr-25-q8_0.bin    ← 狀態列，跨選單與按鈕
          ▓▓▓▓▓▓░░░░ 45%  [取消]                                ← 下載中取代狀態列
 ```
 
 | 部分 | 內容 | 元件 |
 |---|---|---|
 | 選單 | 預設模型與量化 | select、optgroup |
-| 自訂來源 | 選單顯示為自訂 | option |
+| 自選的模型 | 選單只顯示檔名 | option |
 | 指定檔案 | 選本機檔案 | btn |
-| Repository | 開啟 7.3.2 | btn |
-| 狀態列 | 檔案路徑或缺檔提示 | list-col-wrap |
+| Hugging Face | 開啟 7.3.2 | btn |
+| 狀態列 | 完整路徑或缺檔提示 | list-col-wrap |
 | 下載中 | 進度與取消 | progress、btn |
 
-選了快取裡沒有的預設模型就開始下載，完成後才改用它；取消或失敗時維持原本的來源。檔案不在時狀態列提示重新下載或重新指定。下載中其他 Model Slot 仍可操作。
+選了快取裡沒有的預設模型就開始下載，完成後才改用它；取消或失敗時維持原本的來源。選單放不下完整路徑，所以只顯示檔名，路徑留給跨欄的狀態列。下載中其他 Model Slot 仍可操作。
 
-#### 7.3.2 Repository
+#### 7.3.2 Hugging Face
 
 ```
-  ┌ 從 Repository 下載：轉錄 ────────────────────┐
+  ┌ 從 Hugging Face 下載：轉錄 ──────────────────┐
+  │ 模型頁的名稱，例如 ggerganov/whisper.cpp      │
   │ [owner/name                    ] [列出檔案]  │
   │ ( ) ggml-large-v3-turbo.bin        1.62 GB   │
   │ (•) ggml-large-v3-turbo-q8_0.bin   874 MB    │
@@ -911,14 +912,15 @@
 
 | 部分 | 內容 | 元件 |
 |---|---|---|
-| Repository | `owner/name`，Enter 列出 | join、input、btn |
+| 說明 | 模型頁名稱與例子 | label |
+| 名稱 | `owner/name`，Enter 列出 | join、input、btn |
 | 檔案 | 這個 Model Slot 能用的 | list、radio |
 | 大小 | 檔案大小 | — |
 | 需要登入 | 提示 CLI 登入 | alert-warning |
 | 找不到 | 提示檢查名稱 | alert-warning |
 | 下載並使用 | 關閉並在該列下載 | btn-primary |
 
-只列出這個 Model Slot 能用的檔案，規則見 `docs/design.md` 5.4。下載進度回到設定頁那一列顯示，modal 不必開著等待。
+介面稱 Hugging Face 而不說 Repository，使用者認得的是網站與模型頁。只列出這個 Model Slot 能用的檔案，規則見 `docs/design.md` 5.4。下載進度回到設定頁那一列顯示，modal 不必開著等待。
 
 ### 7.4 翻譯
 

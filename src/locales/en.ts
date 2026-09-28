@@ -427,14 +427,15 @@ const en = {
     downloadAgain:
       "{{name}} is not in the cache; download it again from the menu",
     own: "Own: {{name}}",
-    repository: "Repository",
+    repository: "Hugging Face",
     cancelDownload: "Cancel",
     notDownloaded: "The model was not downloaded",
   },
   repository: {
-    title: "Download from a Repository: {{slot}}",
+    title: "Download from Hugging Face: {{slot}}",
+    nameHint: "The model page's name, such as ggerganov/whisper.cpp",
     list: "List files",
-    noModel: "This Repository has no file the {{slot}} slot can use",
+    noModel: "This model page has no file the {{slot}} slot can use",
     download: "Download and use",
   },
   phases: {
@@ -462,7 +463,7 @@ const en = {
     modelLoginRequired:
       "{{repo}} needs a login: run hf auth login and request access on Hugging Face",
     repositoryNotFound:
-      "{{repo}} was not found; check its name, as someone else's private Repository cannot be downloaded",
+      "{{repo}} was not found on Hugging Face; check its name, as someone else's private model cannot be downloaded",
     modelDownloadCancelled: "The model download was cancelled",
     modelDownloading: "This model is already downloading",
     modelNotDownloaded:

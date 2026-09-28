@@ -413,14 +413,15 @@ const zhHant: typeof en = {
     missing: "找不到 {{path}}，請重新指定",
     downloadAgain: "{{name}} 不在快取裡，請從選單重新下載",
     own: "自選：{{name}}",
-    repository: "Repository",
+    repository: "Hugging Face",
     cancelDownload: "取消",
     notDownloaded: "模型沒有下載",
   },
   repository: {
-    title: "從 Repository 下載：{{slot}}",
+    title: "從 Hugging Face 下載：{{slot}}",
+    nameHint: "模型頁的名稱，例如 ggerganov/whisper.cpp",
     list: "列出檔案",
-    noModel: "這個 Repository 沒有{{slot}}能用的檔案",
+    noModel: "這個模型頁沒有{{slot}}能用的檔案",
     download: "下載並使用",
   },
   phases: {
@@ -448,7 +449,7 @@ const zhHant: typeof en = {
     modelLoginRequired:
       "{{repo}} 需要登入：先執行 hf auth login，並在 Hugging Face 網頁取得存取權",
     repositoryNotFound:
-      "找不到 {{repo}}，請檢查名稱；別人的私人 Repository 無法下載",
+      "Hugging Face 上找不到 {{repo}}，請檢查名稱；別人的私人模型無法下載",
     modelDownloadCancelled: "已取消下載模型",
     modelDownloading: "這個模型正在下載",
     modelNotDownloaded: "{{repo}} 的 {{file}} 還沒下載，請在設定重新下載",

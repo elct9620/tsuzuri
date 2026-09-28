@@ -12,7 +12,7 @@ import { t } from "../i18n";
 import {
   isSameSource,
   sizeLabel,
-  sourceName,
+  sourceFileName,
   type ModelChoice,
 } from "../ui/models";
 import { notifyFailure } from "../ui/notification";
@@ -176,7 +176,7 @@ export default class ModelSlotController extends Controller {
             Object.assign(
               menuOption(
                 OWN_MODEL,
-                t("models.own", { name: sourceName(this.source) }),
+                t("models.own", { name: sourceFileName(this.source) }),
               ),
               { disabled: true },
             ),

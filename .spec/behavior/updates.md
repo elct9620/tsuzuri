@@ -185,7 +185,7 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | --- | --- |
 | Given | the Preview channel chosen |
 | When | Tsuzuri looks for an App Update |
-| Then | it reads the update manifest of the preview release rather than the latest release |
+| Then | it reads the preview manifest the update site publishes rather than the stable one |
 
 ## `UP-023` Keeping the launch check when a channel is chosen
 

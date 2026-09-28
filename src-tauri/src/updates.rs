@@ -29,16 +29,15 @@ pub enum UpdateChannel {
 }
 
 impl UpdateChannel {
-    /// The update manifest this channel reads from the releases of `repository`.
-    pub fn manifest_url(self, repository: &str) -> Result<Url, Failure> {
-        let release = match self {
-            UpdateChannel::Stable => "latest/download",
-            UpdateChannel::Preview => "download/preview",
+    /// The update manifest this channel reads from `site`, which mirrors the releases' manifests
+    /// under an address Tsuzuri owns, so the packages can move without every install following.
+    pub fn manifest_url(self, site: &str) -> Result<Url, Failure> {
+        let manifest = match self {
+            UpdateChannel::Stable => "stable",
+            UpdateChannel::Preview => "preview",
         };
-        Url::parse(&format!("{repository}/releases/{release}/latest.json")).map_err(|error| {
-            Failure::Internal {
-                detail: error.to_string(),
-            }
+        Url::parse(&format!("{site}/updates/{manifest}.json")).map_err(|error| Failure::Internal {
+            detail: error.to_string(),
         })
     }
 }
@@ -557,16 +556,16 @@ mod tests {
     // @behavior UP-022
     #[test]
     fn reads_the_manifest_of_the_chosen_channel() {
-        let repository = "https://github.com/elct9620/tsuzuri";
+        let site = "https://tsuzuri.aotoki.me";
 
         let manifests = [UpdateChannel::Stable, UpdateChannel::Preview]
-            .map(|channel| channel.manifest_url(repository).unwrap().to_string());
+            .map(|channel| channel.manifest_url(site).unwrap().to_string());
 
         assert_eq!(
             manifests,
             [
-                "https://github.com/elct9620/tsuzuri/releases/latest/download/latest.json",
-                "https://github.com/elct9620/tsuzuri/releases/download/preview/latest.json",
+                "https://tsuzuri.aotoki.me/updates/stable.json",
+                "https://tsuzuri.aotoki.me/updates/preview.json",
             ]
         );
     }

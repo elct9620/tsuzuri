@@ -9,8 +9,8 @@ use crate::json_settings::settings_dir;
 use crate::processes::Processes;
 use crate::steps::ModeLock;
 
-/// The repository whose releases Tsuzuri updates from.
-const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
+/// The update site, which publishes each Update Channel's manifest.
+const UPDATE_SITE: &str = "https://tsuzuri.aotoki.me";
 
 #[tauri::command]
 pub async fn check_for_update(
@@ -18,7 +18,7 @@ pub async fn check_for_update(
     found_update: State<'_, FoundUpdate>,
 ) -> Result<Option<AppUpdate>, Failure> {
     let settings = UpdateSettings::load(&settings_dir(&app)?)?;
-    let update = look_for_update(&app, settings.channel.manifest_url(REPOSITORY)?).await?;
+    let update = look_for_update(&app, settings.channel.manifest_url(UPDATE_SITE)?).await?;
     Ok(found_update.keep(update))
 }
 
@@ -28,7 +28,7 @@ pub async fn check_for_update_at_launch(
     found_update: State<'_, FoundUpdate>,
 ) -> Result<Option<AppUpdate>, Failure> {
     let settings = UpdateSettings::load(&settings_dir(&app)?)?;
-    let manifest = settings.channel.manifest_url(REPOSITORY)?;
+    let manifest = settings.channel.manifest_url(UPDATE_SITE)?;
     let update = check_at_launch(&settings, look_for_update(&app, manifest)).await;
     Ok(found_update.keep(update))
 }
@@ -38,7 +38,7 @@ pub async fn check_for_rollback(
     app: AppHandle,
     found_update: State<'_, FoundUpdate>,
 ) -> Result<Option<AppUpdate>, Failure> {
-    let manifest = UpdateChannel::Stable.manifest_url(REPOSITORY)?;
+    let manifest = UpdateChannel::Stable.manifest_url(UPDATE_SITE)?;
     let update = look_for_rollback(&app, manifest).await?;
     Ok(found_update.keep(update))
 }

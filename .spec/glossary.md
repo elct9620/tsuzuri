@@ -188,7 +188,7 @@ Taking the first Bundled Variant, in the Build Manifest's order for the platform
 
 ### Model
 
-A weights file an engine loads, always passed by absolute path. The user points at a file already on disk; Tsuzuri never downloads Models.
+A weights file an engine loads, always passed by absolute path, found through the Model Source its Model Slot holds.
 
 ### Resident llama-server
 
@@ -220,7 +220,15 @@ An optional second look in which the Model, two lines at a time, restates what e
 
 ### Model Slot
 
-Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli) or translation (llama-server). Each slot holds one Model path.
+Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli) or translation (llama-server). Each slot holds one Model Source.
+
+### Model Source
+
+Where a Model Slot's Model comes from: a file on disk, named by its path, or a file of a Hugging Face Repository, named by the repository, the file's path in it and the commit it was downloaded at, and found in the Hugging Face Cache. A slot saved before Model Sources were kept holds a bare path, read as a file on disk.
+
+### Hugging Face Cache
+
+The directory Hugging Face tools share for downloaded files, so a Model another tool already downloaded is used without downloading it again: `HF_HUB_CACHE`, else `HUGGINGFACE_HUB_CACHE`, else `hub` under `HF_HOME`, else `huggingface/hub` under `XDG_CACHE_HOME`, else `.cache/huggingface/hub` in the home directory. A repository's file downloaded at a commit sits at `models--<owner>--<name>/snapshots/<commit>/<file>` in it.
 
 ### Transcription Settings
 

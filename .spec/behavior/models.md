@@ -1,6 +1,6 @@
 # Models
 
-Pointing each Model Slot at a Model file, in the general settings or as a Project Model, remembering the choice, and refusing to start an engine whose Model is not there.
+Pointing each Model Slot at a Model Source, in the general settings or as a Project Model, remembering the choice, and refusing to start an engine whose Model is not there.
 
 ## Includes
 
@@ -106,3 +106,45 @@ A Project whose Resources need another Model keeps its own, so switching Project
 | Given | a Model file picked for a Model Slot |
 | When | recording the choice fails |
 | Then | a Notification says the settings were not saved |
+
+## `MD-013` Reading a Model chosen before Model Sources were kept
+
+A slot saved as a bare path keeps working after an update, so nobody chooses their Models again.
+
+| Step | Statement |
+| --- | --- |
+| Given | general settings saved with a bare path for the transcription slot |
+| When | the settings are loaded |
+| Then | the transcription slot holds that path as a file on disk |
+
+## `MD-014` Taking a Repository's Model from the Hugging Face Cache
+
+| Step | Statement |
+| --- | --- |
+| Given | a Repository's file at a commit chosen for the transcription slot, held in the Hugging Face Cache |
+| When | the transcription Model is required to start an engine |
+| Then | the file's path in the Hugging Face Cache is taken |
+
+## `MD-015` Refusing a Repository's Model the cache does not hold
+
+| Step | Statement |
+| --- | --- |
+| Given | a Repository's file at a commit chosen for the translation slot, missing from the Hugging Face Cache |
+| When | the translation Model is required to start an engine |
+| Then | it is refused as not downloaded, naming the repository and the file |
+
+## `MD-016` Finding the Hugging Face Cache in the home directory
+
+| Step | Statement |
+| --- | --- |
+| Given | none of the Hugging Face cache variables set |
+| When | the Hugging Face Cache is located |
+| Then | it is `.cache/huggingface/hub` in the home directory |
+
+## `MD-017` Taking the Hugging Face Cache a variable names
+
+| Step | Statement |
+| --- | --- |
+| Given | `HF_HUB_CACHE` and `HF_HOME` both set |
+| When | the Hugging Face Cache is located |
+| Then | it is the directory `HF_HUB_CACHE` names |

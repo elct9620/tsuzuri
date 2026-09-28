@@ -33,6 +33,11 @@ pub enum Failure {
     ModelMissing {
         path: PathBuf,
     },
+    /// A Repository's Model the Hugging Face Cache does not hold.
+    ModelNotDownloaded {
+        repo: String,
+        file: String,
+    },
     /// Translating, editing or saving asked for before a Project was opened.
     NoProject,
     /// The Project has no Resource by the name asked for, or none is current.
@@ -155,6 +160,7 @@ impl From<ModelError> for Failure {
         match error {
             ModelError::NoChoice(slot) => Failure::ModelNotChosen { slot },
             ModelError::MissingFile(path) => Failure::ModelMissing { path },
+            ModelError::NotDownloaded { repo, file } => Failure::ModelNotDownloaded { repo, file },
         }
     }
 }

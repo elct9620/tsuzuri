@@ -31,7 +31,14 @@ export function forgetComponent(name: string): Promise<ComponentStatus[]> {
 
 export type ModelSlot = "transcription" | "vad" | "translation";
 
+/** Where a Model Slot's Model comes from. */
+export type ModelSource =
+  | { kind: "file"; path: string }
+  | { kind: "repository"; repo: string; file: string; commit: string };
+
 export interface SlotView {
+  source: ModelSource | null;
+  /** Where the Model is expected. */
   path: string | null;
   has_file: boolean;
 }

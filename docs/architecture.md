@@ -250,6 +250,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `waveform` | 應用、領域 | 波形與峰值 |
 | — | `toolchain` | 應用 | 尋找元件、模型設定 |
 | `toolchain/` | `detection` | 轉接 | 偵測已安裝的元件 |
+| `toolchain/` | `hub` | 轉接 | Hugging Face 快取 |
 | `toolchain/` | `settings` | 轉接 | 元件設定檔 |
 | — | `progress` | 應用 | 回報進度的 Port |
 | — | `steps` | 應用 | Step 與 `ModeRun` |

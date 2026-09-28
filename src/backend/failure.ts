@@ -8,6 +8,7 @@ export type Failure =
   | { code: "malformed-glossary"; detail: string }
   | { code: "model-not-chosen"; slot: ModelSlot }
   | { code: "model-missing"; path: string }
+  | { code: "model-not-downloaded"; repo: string; file: string }
   | { code: "no-project" }
   | { code: "no-resource" }
   | { code: "no-media" }

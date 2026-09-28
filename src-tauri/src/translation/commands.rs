@@ -139,7 +139,7 @@ pub fn start_resident_llama(app: &AppHandle) {
                 .start(
                     &AppPorts::new(&app, &processes),
                     &llama,
-                    model,
+                    &model,
                     &app.path().app_data_dir()?,
                     READY_TIMEOUT,
                 )

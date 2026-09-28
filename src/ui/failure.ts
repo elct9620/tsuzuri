@@ -13,6 +13,7 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "malformed-glossary": "error",
   "model-not-chosen": "warning",
   "model-missing": "error",
+  "model-not-downloaded": "warning",
   "no-project": "warning",
   "no-resource": "warning",
   "no-media": "warning",
@@ -68,6 +69,11 @@ export function failureMessage(error: unknown): string {
       return t("failures.modelNotChosen", { slot: t(`slots.${error.slot}`) });
     case "model-missing":
       return t("failures.modelMissing", { path: error.path });
+    case "model-not-downloaded":
+      return t("failures.modelNotDownloaded", {
+        file: error.file,
+        repo: error.repo,
+      });
     case "no-project":
       return t("failures.noProject");
     case "no-resource":

@@ -5,6 +5,7 @@ use tauri::AppHandle;
 use super::settings::{self, load_settings};
 use super::{
     find_statuses_off_the_main_thread, Choices, ComponentStatus, ModelSettingsView, ModelSlot,
+    ModelSource,
 };
 use crate::failure::Failure;
 use crate::json_settings::settings_dir;
@@ -54,7 +55,7 @@ pub fn choose_model(
     path: PathBuf,
 ) -> Result<ModelSettingsView, Failure> {
     let mut settings = load_settings(&app)?;
-    settings.choose(slot, path);
+    settings.choose(slot, ModelSource::File { path });
     settings.save(&settings_dir(&app)?)?;
     Ok(settings.view())
 }

@@ -64,12 +64,14 @@ pub async fn run_transcribe<'a>(
         .with_project_model(ModelSlot::Transcription, job.model.clone());
     let settings = settings.with_overrides(job.overrides);
     let is_cleaned = settings.is_simplified_cleaned && job.language == Language::TraditionalChinese;
+    let model = models.ready_path(ModelSlot::Transcription)?;
+    let vad = settings
+        .has_vad
+        .then(|| models.ready_path(ModelSlot::Vad))
+        .transpose()?;
     let plan = TranscriptionPlan {
-        model: models.ready_path(ModelSlot::Transcription)?,
-        vad: settings
-            .has_vad
-            .then(|| models.ready_path(ModelSlot::Vad))
-            .transpose()?,
+        model: &model,
+        vad: vad.as_deref(),
         language: job.language,
         settings,
     };
@@ -156,6 +158,7 @@ mod tests {
     };
     use crate::steps::ModeLock;
     use crate::test_support::{write_executable, TempDir};
+    use crate::toolchain::ModelSource;
     use crate::toolchain::{self, Resolver};
     use crate::transcript::{Segment, WrittenText};
 
@@ -203,7 +206,12 @@ mod tests {
                 whisper: script(&dir, "whisper-cli", &whisper_script(&whisper_started)),
             };
             let mut settings = ModelSettings::default();
-            settings.choose(ModelSlot::Transcription, dir.file("breeze.bin"));
+            settings.choose(
+                ModelSlot::Transcription,
+                ModelSource::File {
+                    path: dir.file("breeze.bin"),
+                },
+            );
             let app = mock_builder()
                 .plugin(tauri_plugin_shell::init())
                 .manage(CurrentProject::default())
@@ -423,7 +431,9 @@ mod tests {
     async fn transcribes_with_vad() {
         let mut fixture = Fixture::new("tx-vad", TWO_SECOND_WAV);
         let vad = fixture.dir.file("ggml-silero-v6.2.0.bin");
-        fixture.settings.choose(ModelSlot::Vad, vad.clone());
+        fixture
+            .settings
+            .choose(ModelSlot::Vad, ModelSource::File { path: vad.clone() });
         fixture.transcription.has_vad = true;
 
         fixture.transcribe().await.unwrap();
@@ -472,9 +482,12 @@ mod tests {
     #[tokio::test]
     async fn takes_the_project_transcription_settings_over_the_general_ones() {
         let mut fixture = Fixture::new("tx-project-vad", TWO_SECOND_WAV);
-        fixture
-            .settings
-            .choose(ModelSlot::Vad, fixture.dir.file("ggml-silero-v6.2.0.bin"));
+        fixture.settings.choose(
+            ModelSlot::Vad,
+            ModelSource::File {
+                path: fixture.dir.file("ggml-silero-v6.2.0.bin"),
+            },
+        );
         let target = fixture.target_with(ProjectOptions {
             transcription: TranscriptionOverrides {
                 has_vad: Some(true),
@@ -996,7 +1009,7 @@ mod tests {
         let dir = TempDir::new("tx-e2e");
         let tools = Tools { ffmpeg, whisper };
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Transcription, model);
+        settings.choose(ModelSlot::Transcription, ModelSource::File { path: model });
         let app = mock_builder()
             .plugin(tauri_plugin_shell::init())
             .manage(CurrentProject::default())

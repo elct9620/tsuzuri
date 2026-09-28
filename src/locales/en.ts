@@ -447,6 +447,8 @@ const en = {
     malformedGlossary: "Could not read the glossary ({{detail}})",
     modelNotChosen: "No model is chosen for {{slot}}",
     modelMissing: "The model {{path}} is missing; choose it again",
+    modelNotDownloaded:
+      "{{file}} of {{repo}} is not downloaded; download it again in the settings",
     noProject: "Open a directory or an SRT file first",
     noResource: "The directory has no media file or SRT file to work on",
     noMedia: "This resource has no video or audio file to transcribe",

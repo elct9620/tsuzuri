@@ -196,7 +196,7 @@ pub async fn run_translate<'a>(
             translate_on_job_server(
                 ports,
                 llama,
-                model,
+                &model,
                 ready_timeout,
                 &job,
                 &mut phases,
@@ -210,7 +210,7 @@ pub async fn run_translate<'a>(
             keep,
         } => {
             let result = match resident
-                .load_model(ports, llama, model, preset_dir, ready_timeout)
+                .load_model(ports, llama, &model, preset_dir, ready_timeout)
                 .await
             {
                 Ok(base_url) => {
@@ -617,6 +617,7 @@ mod tests {
     use crate::steps::ModeLock;
     use crate::test_support::Response;
     use crate::test_support::{project_of, TempDir};
+    use crate::toolchain::ModelSource;
     use fake_llama::{
         completion, echo_lines, numbered_summary, review_answer, translations, FakeLlama, Lines,
         Replies,
@@ -2227,7 +2228,12 @@ mod tests {
         let dir = TempDir::new("tl-glossary-header");
         std::fs::write(dir.path().join("glossary.csv"), "蝙蝠俠,Batman\n").unwrap();
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        settings.choose(
+            ModelSlot::Translation,
+            ModelSource::File {
+                path: dir.file("qwen3-4b.gguf"),
+            },
+        );
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         let mut project = project_of(vec![segment(0, 1_000, "蝙蝠俠")]);
@@ -2266,7 +2272,12 @@ mod tests {
             ),
         );
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        settings.choose(
+            ModelSlot::Translation,
+            ModelSource::File {
+                path: dir.file("qwen3-4b.gguf"),
+            },
+        );
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
 
@@ -2316,7 +2327,12 @@ mod tests {
             ),
         );
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        settings.choose(
+            ModelSlot::Translation,
+            ModelSource::File {
+                path: dir.file("qwen3-4b.gguf"),
+            },
+        );
         let project_model = dir.file("gemma-ja.gguf");
         let mut project = project_of(vec![segment(0, 1_000, "大家好")]);
         project.options.models.translation = Some(project_model.clone());
@@ -2361,7 +2377,12 @@ mod tests {
             ),
         );
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        settings.choose(
+            ModelSlot::Translation,
+            ModelSource::File {
+                path: dir.file("qwen3-4b.gguf"),
+            },
+        );
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         app.state::<CurrentProject>()
@@ -2440,7 +2461,9 @@ mod tests {
         let mut settings = ModelSettings::default();
         settings.choose(
             ModelSlot::Translation,
-            PathBuf::from(std::env::var("TSUZURI_E2E_TRANSLATION_MODEL").unwrap()),
+            ModelSource::File {
+                path: PathBuf::from(std::env::var("TSUZURI_E2E_TRANSLATION_MODEL").unwrap()),
+            },
         );
         let dir = TempDir::new(name);
         let app = mock_app();

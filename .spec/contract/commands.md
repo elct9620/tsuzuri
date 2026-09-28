@@ -8,7 +8,7 @@ The Tauri commands the webview invokes. The frontend depends on these names and 
 
 ## `model_settings`
 
-The path chosen for each Model Slot and whether its file exists.
+The Model Source chosen for each Model Slot, the path its Model is found at, and whether that file exists.
 
 ```rust
 pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, Failure> {}
@@ -16,7 +16,7 @@ pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, Failure> {}
 
 ## `choose_model`
 
-Remember a Model file for one slot and answer the slot's new state.
+Remember a Model file on disk as one slot's Model Source and answer the slots' new state.
 
 ```rust
 pub fn choose_model(app: AppHandle, slot: ModelSlot, path: PathBuf) -> Result<ModelSettingsView, Failure> {}

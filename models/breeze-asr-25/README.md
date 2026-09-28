@@ -18,21 +18,23 @@ tags:
 
 # Breeze-ASR-25 ggml
 
-[Breeze-ASR-25](https://huggingface.co/MediaTek-Research/Breeze-ASR-25) by MediaTek Research, converted for [whisper.cpp](https://github.com/ggml-org/whisper.cpp). Published for [Tsuzuri](https://github.com/elct9620/tsuzuri), a subtitle editor that transcribes with whisper.cpp; the files are checked with whisper.cpp v1.9.4.
+ggml conversions of [MediaTek-Research/Breeze-ASR-25](https://huggingface.co/MediaTek-Research/Breeze-ASR-25) for [whisper.cpp](https://github.com/ggml-org/whisper.cpp), made with whisper.cpp v1.9.4.
 
-Breeze-ASR-25 is fine-tuned from Whisper-large-v2 for Taiwanese Mandarin, Mandarin-English code-switching and caption timing.
-
-以 MediaTek Research 的 Breeze-ASR-25 轉成 whisper.cpp 的 ggml 格式，強化臺灣華語與中英夾雜的辨識。
+Original model: https://huggingface.co/MediaTek-Research/Breeze-ASR-25 — its card covers the model's languages, training and evaluation.
 
 ## Files
 
-| File | Type | Size |
-|---|---|---|
-| `ggml-breeze-asr-25.bin` | f16 | 3.1 GB |
-| `ggml-breeze-asr-25-q8_0.bin` | q8_0 | 1.7 GB |
-| `ggml-breeze-asr-25-q5_0.bin` | q5_0 | 1.1 GB |
+| File | Type | Size | Description |
+|---|---|---|---|
+| `ggml-breeze-asr-25.bin` | f16 | 3.1 GB | Source precision |
+| `ggml-breeze-asr-25-q8_0.bin` | q8_0 | 1.7 GB | 8-bit |
+| `ggml-breeze-asr-25-q5_0.bin` | q5_0 | 1.1 GB | 5-bit, smallest |
 
-f16 keeps the source precision. q5_0 suits most machines; q8_0 sits between them.
+## Download
+
+```bash
+hf download tsuzuri-app/Breeze-ASR-25-ggml ggml-breeze-asr-25-q5_0.bin --local-dir .
+```
 
 ## Usage
 
@@ -40,9 +42,9 @@ f16 keeps the source precision. q5_0 suits most machines; q8_0 sits between them
 whisper-cli -m ggml-breeze-asr-25-q5_0.bin -l zh -f audio.wav
 ```
 
-In Tsuzuri, choose the file under Settings → Models → Transcription.
+[Tsuzuri](https://github.com/elct9620/tsuzuri), a subtitle editor, offers these files as the Breeze-ASR-25 preset under Settings → Models → Transcription.
 
-## How These Files Are Made
+## Reproduce
 
 | Step | Tool |
 |---|---|
@@ -51,13 +53,11 @@ In Tsuzuri, choose the file under Settings → Models → Transcription.
 | Tokenizer | openai/whisper v20250625 assets |
 | Quantize | whisper.cpp v1.9.4 `whisper-quantize` |
 
-Every input is pinned by version and SHA256 in [`scripts/breeze.sh`](https://github.com/elct9620/tsuzuri/blob/main/scripts/breeze.sh); run `scripts/breeze.sh convert` to rebuild the same files.
-
-The weights are unchanged apart from the format conversion and, for q8_0 and q5_0, quantization.
+Every input is pinned by version and SHA256 in [`scripts/breeze.sh`](https://github.com/elct9620/tsuzuri/blob/main/scripts/breeze.sh); run `scripts/breeze.sh convert` to rebuild the same files. The weights are unchanged apart from the format conversion and, for q8_0 and q5_0, quantization.
 
 ## License
 
-Apache-2.0, as the source model; see `LICENSE`. The model, its training data and its evaluation are MediaTek Research's work; see the [source model card](https://huggingface.co/MediaTek-Research/Breeze-ASR-25) for details.
+Apache-2.0, as the source model; see `LICENSE`.
 
 ## Citation
 

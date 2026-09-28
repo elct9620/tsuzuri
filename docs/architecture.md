@@ -605,6 +605,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `progress` 顯示 Phase |
 | `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
+| `rust:srt-requested` | Rust，經 `relayEvents` | `project` 開啟系統要開的 SRT |
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `model-slot` 顯示下載進度 |
 | `model-slot:choose` | `model-slot` | `models`、`project` 記下來源 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |

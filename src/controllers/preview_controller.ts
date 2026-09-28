@@ -23,10 +23,9 @@ import {
 import { formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
 import {
-  FULL_VOLUME,
-  LOUDEST_VOLUME,
   playAtVolume,
   resumeAudioGraph,
+  savedVolume,
   SLIDER_END,
   sliderPosition,
   volumeAt,
@@ -58,12 +57,6 @@ function captionBackdropOf(value: string | null): CaptionBackdrop {
 
 /** Where the webview remembers how loud the media plays, as a percentage. */
 const VOLUME_KEY = "tsuzuri.preview-volume";
-
-/** The volume remembered as `value`, or full volume where none was chosen. */
-function volumeOf(value: string | null): number {
-  const volume = Number(value ?? NaN);
-  return volume >= 0 && volume <= LOUDEST_VOLUME ? volume : FULL_VOLUME;
-}
 
 /** Where the webview remembers the Speaker over the video turned off. */
 const SPEAKER_KEY = "tsuzuri.preview-speaker";
@@ -157,7 +150,7 @@ export default class PreviewController extends Controller {
   /** A saved cue names its Speaker, so the caption does too until turned off. */
   private isSpeakerShown = rememberedFlag(SPEAKER_KEY, true);
   private isFolded = rememberedFlag(FOLDED_KEY, false);
-  private volume = volumeOf(rememberedChoice(VOLUME_KEY));
+  private volume = savedVolume(rememberedChoice(VOLUME_KEY));
   /** A mute is not remembered, so a Preview opening silent never passes for media with no sound. */
   private isMuted = false;
   private unfollow?: () => void;

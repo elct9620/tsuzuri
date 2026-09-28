@@ -34,6 +34,12 @@ export function sliderPosition(volume: number): number {
 /** The loudest volume the Preview plays, as a percentage. */
 export const LOUDEST_VOLUME = volumeAt(SLIDER_END);
 
+/** The volume saved as `value`, or full volume where none was saved or it lies outside the slider. */
+export function savedVolume(value: string | null): number {
+  const volume = Number(value ?? NaN);
+  return volume >= 0 && volume <= LOUDEST_VOLUME ? volume : FULL_VOLUME;
+}
+
 interface AudioGraph {
   context: AudioContext;
   gain: GainNode;

@@ -30,7 +30,7 @@ Write a Transcript as SRT text carrying the original, the translation, or both a
 
 ```rust
 impl Transcript {
-    pub fn to_srt(&self, content: SrtContent) -> String {}
+    pub fn to_srt(&self, content: WrittenText) -> String {}
 }
 ```
 
@@ -44,7 +44,7 @@ Write a Transcript as `to_srt` does, naming each Speaker in a cue's text and in 
 
 ```rust
 impl Transcript {
-    pub fn to_srt_with(&self, content: SrtContent, names: &SpeakerNames) -> String {}
+    pub fn to_srt_with(&self, content: WrittenText, names: &SpeakerNames) -> String {}
 }
 ```
 
@@ -58,7 +58,7 @@ Write a Transcript as Plain Text carrying what `to_srt_with` would put in each c
 
 ```rust
 impl Transcript {
-    pub fn to_plain_text_with(&self, content: SrtContent, names: &SpeakerNames) -> String {}
+    pub fn to_plain_text_with(&self, content: WrittenText, names: &SpeakerNames) -> String {}
 }
 ```
 

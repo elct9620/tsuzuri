@@ -217,26 +217,26 @@ export function showTranslation(language: string | null): Promise<void> {
 }
 
 /** Which texts an SRT written from the Current Resource carries. */
-export type SrtContent = "original" | "translation" | "bilingual";
+export type WrittenText = "original" | "translation" | "bilingual";
 
 /** The form an export of the Current Resource is written in. */
 export type ExportFormat = "srt" | "plain_text";
 
 export function exportPath(
-  content: SrtContent,
+  content: WrittenText,
   format: ExportFormat,
 ): Promise<string> {
   return invoke<string>("export_path", { content, format });
 }
 
-export function saveSrt(path: string, content: SrtContent): Promise<void> {
+export function saveSrt(path: string, content: WrittenText): Promise<void> {
   return invoke("save_srt", { path, content });
 }
 
 /** Writes the Current Resource to `path` as Plain Text, its Speakers named when `hasSpeakers`. */
 export function saveText(
   path: string,
-  content: SrtContent,
+  content: WrittenText,
   hasSpeakers: boolean,
 ): Promise<void> {
   return invoke("save_text", { path, content, hasSpeakers });

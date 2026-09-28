@@ -14,7 +14,7 @@ use crate::language::Language;
 use crate::progress::Progress;
 use crate::replacement::{Replacement, Search};
 use crate::segment_change::SegmentChange;
-use crate::transcript::SrtContent;
+use crate::transcript::WrittenText;
 
 #[tauri::command]
 pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
@@ -219,7 +219,7 @@ pub fn redo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Fa
 #[tauri::command]
 pub fn export_path(
     current: State<'_, CurrentProject>,
-    content: SrtContent,
+    content: WrittenText,
     format: ExportFormat,
 ) -> Result<PathBuf, Failure> {
     current.export_path(content, format)
@@ -229,7 +229,7 @@ pub fn export_path(
 pub fn save_srt(
     current: State<'_, CurrentProject>,
     path: PathBuf,
-    content: SrtContent,
+    content: WrittenText,
 ) -> Result<(), Failure> {
     current.save_srt(&path, content)
 }
@@ -238,7 +238,7 @@ pub fn save_srt(
 pub fn save_text(
     current: State<'_, CurrentProject>,
     path: PathBuf,
-    content: SrtContent,
+    content: WrittenText,
     has_speakers: bool,
 ) -> Result<(), Failure> {
     current.save_text(&path, content, has_speakers)

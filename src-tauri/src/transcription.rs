@@ -12,7 +12,7 @@ use crate::steps::{run_step, ModeRun, Steps};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
-use crate::transcript::{SrtContent, Transcript};
+use crate::transcript::{Transcript, WrittenText};
 
 pub mod commands;
 pub mod settings;
@@ -127,7 +127,7 @@ pub async fn run_transcribe<'a>(
     let mut transcript = Transcript::from_srt(&srt)?;
     if is_cleaned {
         clean_texts(&mut transcript.segments);
-        srt = transcript.to_srt(SrtContent::Original);
+        srt = transcript.to_srt(WrittenText::Original);
     }
     let written_span = project.write_transcription(job, srt)?;
     ports.announce_project();
@@ -157,7 +157,7 @@ mod tests {
     use crate::steps::ModeLock;
     use crate::test_support::{write_executable, TempDir};
     use crate::toolchain::{self, Resolver};
-    use crate::transcript::{Segment, SrtContent};
+    use crate::transcript::{Segment, WrittenText};
 
     const TWO_SECOND_WAV: &str =
         "#!/bin/sh\nfor last; do :; done\nhead -c 64044 /dev/zero > \"$last\"\n";
@@ -332,7 +332,7 @@ mod tests {
                 .collect();
             std::fs::write(
                 self.project_dir().join("lecture.srt"),
-                Transcript { segments: cues }.to_srt(SrtContent::Original),
+                Transcript { segments: cues }.to_srt(WrittenText::Original),
             )
             .unwrap();
             self.open_in(Language::TraditionalChinese);

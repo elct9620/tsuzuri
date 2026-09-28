@@ -211,7 +211,7 @@ pub async fn translate(app: AppHandle, target: Language, options: TranslationOpt
 Write the Current Resource to a file as SRT carrying the `original` text, the `translation`, or both as a `bilingual` SRT.
 
 ```rust
-pub fn save_srt(current: State<'_, CurrentProject>, path: PathBuf, content: SrtContent) -> Result<(), Failure> {}
+pub fn save_srt(current: State<'_, CurrentProject>, path: PathBuf, content: WrittenText) -> Result<(), Failure> {}
 ```
 
 ## `save_text`
@@ -219,7 +219,7 @@ pub fn save_srt(current: State<'_, CurrentProject>, path: PathBuf, content: SrtC
 Write the Current Resource to a file as Plain Text carrying the `original` text, the `translation`, or both in the Bilingual Order, naming each Speaker as its SRT would when `has_speakers` asks for them.
 
 ```rust
-pub fn save_text(current: State<'_, CurrentProject>, path: PathBuf, content: SrtContent, has_speakers: bool) -> Result<(), Failure> {}
+pub fn save_text(current: State<'_, CurrentProject>, path: PathBuf, content: WrittenText, has_speakers: bool) -> Result<(), Failure> {}
 ```
 
 ## `change_segments`
@@ -291,7 +291,7 @@ pub fn revert_row(app: AppHandle, current: State<'_, CurrentProject>, language: 
 Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone, a bilingual one's in its Bilingual Order, and ending `.srt` for the `srt` format or `.txt` for `plain_text`.
 
 ```rust
-pub fn export_path(current: State<'_, CurrentProject>, content: SrtContent, format: ExportFormat) -> Result<PathBuf, Failure> {}
+pub fn export_path(current: State<'_, CurrentProject>, content: WrittenText, format: ExportFormat) -> Result<PathBuf, Failure> {}
 ```
 
 ## `translation_settings`

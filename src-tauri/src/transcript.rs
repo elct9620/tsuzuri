@@ -15,10 +15,10 @@ pub struct Segment {
     pub translation: Option<String>,
 }
 
-/// Which text an SRT's cues carry.
+/// Which text each cue of an SRT, or each block of a Plain Text, carries.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum SrtContent {
+pub enum WrittenText {
     Original,
     /// A Segment not yet translated keeps its original text, so no cue is left empty.
     Translation,
@@ -91,7 +91,7 @@ impl Transcript {
         parse_srt(input, |lines| (None, lines.join("\n")))
     }
 
-    pub fn to_srt(&self, content: SrtContent) -> String {
+    pub fn to_srt(&self, content: WrittenText) -> String {
         self.to_srt_with(content, &SpeakerNames::default())
     }
 
@@ -112,7 +112,7 @@ impl Transcript {
         first..first + count
     }
 
-    pub fn to_srt_with(&self, content: SrtContent, names: &SpeakerNames) -> String {
+    pub fn to_srt_with(&self, content: WrittenText, names: &SpeakerNames) -> String {
         self.segments
             .iter()
             .enumerate()
@@ -129,7 +129,7 @@ impl Transcript {
             .join("\n")
     }
 
-    pub fn to_plain_text_with(&self, content: SrtContent, names: &SpeakerNames) -> String {
+    pub fn to_plain_text_with(&self, content: WrittenText, names: &SpeakerNames) -> String {
         self.segments
             .iter()
             .map(|segment| format!("{}\n", cue_text(segment, content, names)))
@@ -138,7 +138,7 @@ impl Transcript {
     }
 }
 
-fn cue_text(segment: &Segment, content: SrtContent, names: &SpeakerNames) -> String {
+fn cue_text(segment: &Segment, content: WrittenText, names: &SpeakerNames) -> String {
     // A translation edited down to nothing is no translation, so the cue keeps its original text.
     let translation = segment
         .translation
@@ -152,10 +152,10 @@ fn cue_text(segment: &Segment, content: SrtContent, names: &SpeakerNames) -> Str
         None => cue_lines(text),
     };
     match (content, translation) {
-        (SrtContent::Translation, Some(translation)) => {
+        (WrittenText::Translation, Some(translation)) => {
             with_speaker(&names.translation, translation)
         }
-        (SrtContent::Bilingual, Some(translation)) => {
+        (WrittenText::Bilingual, Some(translation)) => {
             format!(
                 "{}\n{}",
                 with_speaker(&names.text, &segment.text),
@@ -379,7 +379,7 @@ mod tests {
             ],
         };
 
-        assert_eq!(transcript.to_srt(SrtContent::Original), TWO_CUES);
+        assert_eq!(transcript.to_srt(WrittenText::Original), TWO_CUES);
     }
 
     // @behavior TR-006
@@ -392,7 +392,7 @@ mod tests {
             ],
         };
 
-        let reread = Transcript::from_srt(&transcript.to_srt(SrtContent::Original)).unwrap();
+        let reread = Transcript::from_srt(&transcript.to_srt(WrittenText::Original)).unwrap();
 
         assert_eq!(reread.segments.len(), 2);
     }
@@ -405,7 +405,7 @@ mod tests {
         };
 
         assert_eq!(
-            transcript.to_srt(SrtContent::Translation),
+            transcript.to_srt(WrittenText::Translation),
             "1\n00:00:01,000 --> 00:00:02,500\nHello\n"
         );
     }
@@ -421,7 +421,7 @@ mod tests {
         };
 
         assert_eq!(
-            transcript.to_srt(SrtContent::Bilingual),
+            transcript.to_srt(WrittenText::Bilingual),
             "1\n00:00:01,000 --> 00:00:02,500\n你好\nHello\n\n2\n00:01:02,003 --> 01:00:00,000\n世界\n"
         );
     }
@@ -434,8 +434,8 @@ mod tests {
         };
 
         assert_eq!(
-            transcript.to_srt(SrtContent::Bilingual),
-            transcript.to_srt(SrtContent::Original)
+            transcript.to_srt(WrittenText::Bilingual),
+            transcript.to_srt(WrittenText::Original)
         );
     }
 
@@ -478,7 +478,7 @@ mod tests {
             segments: vec![co_segment("你好", None)],
         };
 
-        assert_eq!(transcript.to_srt(SrtContent::Original), cue_of("co: 你好"));
+        assert_eq!(transcript.to_srt(WrittenText::Original), cue_of("co: 你好"));
     }
 
     // @behavior TR-012
@@ -489,7 +489,7 @@ mod tests {
         };
 
         assert_eq!(
-            transcript.to_srt(SrtContent::Bilingual),
+            transcript.to_srt(WrittenText::Bilingual),
             cue_of("co: 你好\nco: Hello")
         );
     }
@@ -515,7 +515,7 @@ mod tests {
         let (transcript, names) = xiao_ming();
 
         assert_eq!(
-            transcript.to_srt_with(SrtContent::Bilingual, &names),
+            transcript.to_srt_with(WrittenText::Bilingual, &names),
             cue_of("小明: 你好\nXiao Ming: Hello")
         );
     }
@@ -526,7 +526,7 @@ mod tests {
         let (transcript, names) = xiao_ming();
 
         assert_eq!(
-            transcript.to_srt_with(SrtContent::Translation, &names),
+            transcript.to_srt_with(WrittenText::Translation, &names),
             cue_of("Xiao Ming: Hello")
         );
     }

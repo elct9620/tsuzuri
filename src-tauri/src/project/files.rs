@@ -12,7 +12,7 @@ use super::{
 use crate::failure::Failure;
 use crate::json_settings;
 use crate::language::Language;
-use crate::transcript::{Segment, SrtContent, Transcript};
+use crate::transcript::{Segment, Transcript, WrittenText};
 
 /// `name` with the code of each Language, then `.srt`.
 pub fn file_name(name: &str, languages: impl IntoIterator<Item = Option<Language>>) -> String {
@@ -111,14 +111,14 @@ impl Project {
     /// carries beyond the Primary Language alone, ending as `format` does.
     pub(super) fn export_path(
         &self,
-        content: SrtContent,
+        content: WrittenText,
         format: ExportFormat,
     ) -> Result<PathBuf, Failure> {
         let current = self.current()?;
         let languages = match content {
-            SrtContent::Original => vec![],
-            SrtContent::Translation => vec![current.translation],
-            SrtContent::Bilingual => self.bilingual_languages(current.translation).to_vec(),
+            WrittenText::Original => vec![],
+            WrittenText::Translation => vec![current.translation],
+            WrittenText::Bilingual => self.bilingual_languages(current.translation).to_vec(),
         };
         let name = file_name(&current.name, languages);
         Ok(self.directory.join(name).with_extension(format.extension()))

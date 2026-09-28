@@ -12,7 +12,7 @@ import {
   type ProjectFeed,
   type ProjectView,
   type Segment,
-  type SrtContent,
+  type WrittenText,
 } from "../backend/project";
 import {
   createField,
@@ -522,7 +522,7 @@ export default class TranscriptController extends Controller {
     params,
   }: {
     currentTarget: EventTarget | null;
-    params: { content: SrtContent; format: ExportFormat };
+    params: { content: WrittenText; format: ExportFormat };
   }): Promise<void> {
     closeMenu(currentTarget);
     const { content, format } = params;

@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::language::{Language, LanguagePair};
-use crate::transcript::{split_label, AudioWindow, Segment, SpeakerNames, SrtContent, Transcript};
+use crate::transcript::{split_label, AudioWindow, Segment, SpeakerNames, Transcript, WrittenText};
 
 mod backups;
 pub mod commands;
@@ -95,8 +95,8 @@ impl Project {
     /// `transcript` as a Bilingual SRT in the Bilingual Order, its translation into `translation`.
     fn bilingual_srt(&self, transcript: &Transcript, translation: Option<Language>) -> String {
         let (transcript, names) =
-            self.export_source(transcript, SrtContent::Bilingual, translation);
-        transcript.to_srt_with(SrtContent::Bilingual, &names)
+            self.export_source(transcript, WrittenText::Bilingual, translation);
+        transcript.to_srt_with(WrittenText::Bilingual, &names)
     }
 
     /// What an export carrying `content` writes of `transcript`, its translation into
@@ -105,20 +105,20 @@ impl Project {
     fn export_source<'a>(
         &self,
         transcript: &'a Transcript,
-        content: SrtContent,
+        content: WrittenText,
         translation: Option<Language>,
     ) -> (Cow<'a, Transcript>, SpeakerNames) {
         let translated_names = self.speaker_names(translation);
         match (content, self.options.bilingual_order) {
-            (SrtContent::Original, _) => (Cow::Borrowed(transcript), SpeakerNames::default()),
-            (SrtContent::Bilingual, BilingualOrder::TranslationFirst) => (
+            (WrittenText::Original, _) => (Cow::Borrowed(transcript), SpeakerNames::default()),
+            (WrittenText::Bilingual, BilingualOrder::TranslationFirst) => (
                 Cow::Owned(translation_first(transcript)),
                 SpeakerNames {
                     text: translated_names,
                     ..SpeakerNames::default()
                 },
             ),
-            (SrtContent::Translation | SrtContent::Bilingual, _) => (
+            (WrittenText::Translation | WrittenText::Bilingual, _) => (
                 Cow::Borrowed(transcript),
                 SpeakerNames {
                     translation: translated_names,
@@ -137,7 +137,7 @@ impl Project {
     }
 
     /// The Current Resource as SRT, a Bilingual SRT in the Bilingual Order.
-    fn to_srt(&self, content: SrtContent) -> Result<String, ProjectError> {
+    fn to_srt(&self, content: WrittenText) -> Result<String, ProjectError> {
         let current = self.current()?;
         let (transcript, names) =
             self.export_source(&current.transcript, content, current.translation);
@@ -148,7 +148,7 @@ impl Project {
     /// Speaker as its SRT would unless `has_speakers` leaves them out.
     fn to_plain_text(
         &self,
-        content: SrtContent,
+        content: WrittenText,
         has_speakers: bool,
     ) -> Result<String, ProjectError> {
         let current = self.current()?;
@@ -200,7 +200,7 @@ fn translation_only(transcript: &Transcript) -> Transcript {
 /// as `speaker_names` gives.
 fn translation_srt(transcript: &Transcript, speaker_names: HashMap<String, String>) -> String {
     translation_only(transcript).to_srt_with(
-        SrtContent::Original,
+        WrittenText::Original,
         &SpeakerNames {
             text: speaker_names,
             ..SpeakerNames::default()

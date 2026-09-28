@@ -24,7 +24,7 @@ use crate::failure::Failure;
 use crate::language::Language;
 use crate::replacement::{Finder, Replacement, Replacer, Search};
 use crate::segment_change::SegmentChange;
-use crate::transcript::{Segment, SpeakerNames, SrtContent, Transcript};
+use crate::transcript::{Segment, SpeakerNames, Transcript, WrittenText};
 
 impl Project {
     /// The directory's Resources in the Primary Language its Project Config records, else in
@@ -354,8 +354,8 @@ impl Project {
         let current = self.current()?;
         let name = current.name.clone();
         let content = match field {
-            SegmentField::Text | SegmentField::Speaker => SrtContent::Original,
-            SegmentField::Translation => SrtContent::Translation,
+            SegmentField::Text | SegmentField::Speaker => WrittenText::Original,
+            SegmentField::Translation => WrittenText::Translation,
         };
         let written_translation = match field {
             SegmentField::Translation => current.translation,
@@ -372,18 +372,18 @@ impl Project {
 
     /// Writes the Current Resource's original, or the translation shown, which holds only the
     /// Segments translated; with no translation shown there is none to write.
-    fn write_subtitle(&mut self, content: SrtContent) -> Result<(), Failure> {
+    fn write_subtitle(&mut self, content: WrittenText) -> Result<(), Failure> {
         let current = self.current()?;
         let srt = match (content, current.translation) {
-            (SrtContent::Translation, None) => return Ok(()),
-            (SrtContent::Translation, Some(language)) => {
+            (WrittenText::Translation, None) => return Ok(()),
+            (WrittenText::Translation, Some(language)) => {
                 translation_srt(&current.transcript, self.speaker_names(Some(language)))
             }
-            _ => current.transcript.to_srt(SrtContent::Original),
+            _ => current.transcript.to_srt(WrittenText::Original),
         };
         let resource = self.resource(&current.name)?;
         let path = match (content, current.translation) {
-            (SrtContent::Translation, Some(language)) => {
+            (WrittenText::Translation, Some(language)) => {
                 resource.translation_path(language).map(Path::to_path_buf)
             }
             _ => resource.subtitle.clone(),
@@ -467,11 +467,11 @@ impl Project {
         let mut writes = Vec::new();
         for (language, path) in &resource.translations {
             let translation = files::translation_at(path)?;
-            let as_read = translation.to_srt(SrtContent::Original);
+            let as_read = translation.to_srt(WrittenText::Original);
             let speaker_names = self.speaker_names(Some(*language));
             let srt = translation_with_speakers(&translation, &original, previous, &speaker_names)
                 .to_srt_with(
-                    SrtContent::Original,
+                    WrittenText::Original,
                     &SpeakerNames {
                         text: speaker_names,
                         ..SpeakerNames::default()
@@ -703,7 +703,7 @@ impl Project {
             ));
         }
         self.current_mut()?.transcript = original;
-        self.write_subtitle(SrtContent::Original)?;
+        self.write_subtitle(WrittenText::Original)?;
         for (path, srt) in translations {
             self.back_up_first_change(&path)?;
             files::write_text(&path, srt)?;
@@ -776,7 +776,7 @@ impl Project {
         )
         .ok_or(Failure::NoRow { row })?;
         self.back_up_first_change(&subtitle)?;
-        files::write_text(&subtitle, transcript.to_srt(SrtContent::Original))?;
+        files::write_text(&subtitle, transcript.to_srt(WrittenText::Original))?;
         let name = self.current()?.name.clone();
         self.read_current_again()?;
         self.write_bilingual_subtitles(&name, language)?;
@@ -1326,7 +1326,7 @@ impl CurrentProject {
                 return Err(Failure::SubtitleExists { path: path.clone() })
             }
             Some(path) => path.clone(),
-            None => project.export_path(SrtContent::Original, ExportFormat::Srt)?,
+            None => project.export_path(WrittenText::Original, ExportFormat::Srt)?,
         };
         Ok(TranscriptionTarget {
             directory: project.directory.clone(),
@@ -1430,7 +1430,7 @@ impl CurrentProject {
                     first: positions.start,
                     last: positions.end - 1,
                 });
-                (transcript.to_srt(SrtContent::Original), written_span)
+                (transcript.to_srt(WrittenText::Original), written_span)
             }
         };
         write_mode_result(
@@ -1768,24 +1768,24 @@ impl CurrentProject {
 
     pub fn export_path(
         &self,
-        content: SrtContent,
+        content: WrittenText,
         format: ExportFormat,
     ) -> Result<PathBuf, Failure> {
         self.read_project(|project| project.export_path(content, format))
     }
 
-    pub fn to_srt(&self, content: SrtContent) -> Result<String, Failure> {
+    pub fn to_srt(&self, content: WrittenText) -> Result<String, Failure> {
         self.read_project(|project| Ok(project.to_srt(content)?))
     }
 
     /// Writes the Current Resource to `path` as SRT carrying `content`.
-    pub fn save_srt(&self, path: &Path, content: SrtContent) -> Result<(), Failure> {
+    pub fn save_srt(&self, path: &Path, content: WrittenText) -> Result<(), Failure> {
         files::write_text(path, self.to_srt(content)?)
     }
 
     pub fn to_plain_text(
         &self,
-        content: SrtContent,
+        content: WrittenText,
         has_speakers: bool,
     ) -> Result<String, Failure> {
         self.read_project(|project| Ok(project.to_plain_text(content, has_speakers)?))
@@ -1796,7 +1796,7 @@ impl CurrentProject {
     pub fn save_text(
         &self,
         path: &Path,
-        content: SrtContent,
+        content: WrittenText,
         has_speakers: bool,
     ) -> Result<(), Failure> {
         files::write_text(path, self.to_plain_text(content, has_speakers)?)
@@ -2219,9 +2219,9 @@ mod tests {
         current.replace(project);
 
         let paths = [
-            SrtContent::Original,
-            SrtContent::Translation,
-            SrtContent::Bilingual,
+            WrittenText::Original,
+            WrittenText::Translation,
+            WrittenText::Bilingual,
         ]
         .map(|content| current.export_path(content, ExportFormat::Srt).unwrap());
 
@@ -2331,7 +2331,7 @@ mod tests {
     fn writes_the_current_resource_as_plain_text() {
         let current = project_with_a_speaker();
 
-        let text = current.to_plain_text(SrtContent::Original, true).unwrap();
+        let text = current.to_plain_text(WrittenText::Original, true).unwrap();
 
         assert_eq!(text, "阿福: 少爺\n\n我等等就下去\n");
     }
@@ -2341,7 +2341,7 @@ mod tests {
     fn leaves_the_speakers_out_of_plain_text() {
         let current = project_with_a_speaker();
 
-        let text = current.to_plain_text(SrtContent::Original, false).unwrap();
+        let text = current.to_plain_text(WrittenText::Original, false).unwrap();
 
         assert_eq!(text, "少爺\n\n我等等就下去\n");
     }
@@ -2352,7 +2352,7 @@ mod tests {
         let dir = TempDir::new("pj-plain-text-translation-first");
         let current = translation_first_project_in(&dir);
 
-        let text = current.to_plain_text(SrtContent::Bilingual, true).unwrap();
+        let text = current.to_plain_text(WrittenText::Bilingual, true).unwrap();
 
         assert_eq!(text, "Hello\n大家好\n");
     }
@@ -2368,9 +2368,9 @@ mod tests {
         current.replace(project);
 
         let paths = [
-            SrtContent::Original,
-            SrtContent::Translation,
-            SrtContent::Bilingual,
+            WrittenText::Original,
+            WrittenText::Translation,
+            WrittenText::Bilingual,
         ]
         .map(|content| {
             current
@@ -2409,7 +2409,7 @@ mod tests {
         let dir = TempDir::new("pj-translation-first");
         let current = translation_first_project_in(&dir);
 
-        let srt = current.to_srt(SrtContent::Bilingual).unwrap();
+        let srt = current.to_srt(WrittenText::Bilingual).unwrap();
 
         assert_eq!(srt, cue("Hello\n大家好"));
     }
@@ -2421,7 +2421,7 @@ mod tests {
         let current = translation_first_project_in(&dir);
 
         let path = current
-            .export_path(SrtContent::Bilingual, ExportFormat::Srt)
+            .export_path(WrittenText::Bilingual, ExportFormat::Srt)
             .unwrap();
 
         assert_eq!(path, dir.path().join("ep01.en.zh-TW.srt"));
@@ -2565,7 +2565,7 @@ mod tests {
                 })
                 .collect(),
         }
-        .to_srt(SrtContent::Original)
+        .to_srt(WrittenText::Original)
     }
 
     /// A Project in `zh-TW` of `ep01` holding `original`, and `translation` as its `en` translation.
@@ -3405,7 +3405,7 @@ mod tests {
             .edit(0, SegmentField::Text, "逐字稿".to_string())
             .unwrap();
 
-        let srt = current.to_srt(SrtContent::Original).unwrap();
+        let srt = current.to_srt(WrittenText::Original).unwrap();
 
         assert_eq!(srt, cue("逐字稿"));
     }
@@ -3421,7 +3421,7 @@ mod tests {
                 .edit(0, SegmentField::Text, "x".to_string())
                 .unwrap_err(),
             current
-                .to_srt(SrtContent::Original)
+                .to_srt(WrittenText::Original)
                 .map(|_| ())
                 .unwrap_err(),
         ];
@@ -3932,7 +3932,7 @@ mod tests {
         let current = xiao_ming_project_in(&dir, &[("ep01.en.srt", &cue("Hello"))]);
         let path = dir.path().join("saved.srt");
 
-        current.save_srt(&path, SrtContent::Translation).unwrap();
+        current.save_srt(&path, WrittenText::Translation).unwrap();
 
         assert_eq!(read(&dir, "saved.srt"), cue("Xiao Ming: Hello"));
     }

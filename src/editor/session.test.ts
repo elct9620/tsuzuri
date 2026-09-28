@@ -259,6 +259,32 @@ describe("EditingSession", () => {
     expect(session.checkedIndexes).toEqual([]);
   });
 
+  it("clears the checks as soon as a change keeping the Segments' number is written", async () => {
+    session.check(1, true);
+    session.check(2, true);
+    heardChanges = [];
+
+    await session.change({ kind: "shift", first: 1, last: 2, offset_ms: 500 });
+
+    expect([session.checkedIndexes, heardChanges]).toEqual([[], ["checks"]]);
+  });
+
+  // @behavior ED-158
+  it("keeps the checks made after a change that moved nothing", async () => {
+    await session.change({
+      kind: "times",
+      index: 0,
+      start_ms: 0,
+      end_ms: 1000,
+    });
+    session.follow(view("你好世界", "今天", "天氣"));
+
+    session.check(1, true);
+    session.follow(view("你好", "今天", "天氣"));
+
+    expect(session.checkedIndexes).toEqual([1]);
+  });
+
   it("keeps the checks while a Transcript changed elsewhere keeps its Segments' number", () => {
     session.check(2, true);
     session.check(0, true);

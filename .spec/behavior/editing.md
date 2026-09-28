@@ -590,6 +590,16 @@ A change redraws the rows, so a check kept across it would name rows that moved.
 | When | the third Segment is deleted from its menu |
 | Then | no Segment is checked and the bar for Checked Segments is hidden |
 
+## `ED-158` Keeping the checks made after a change that moved nothing
+
+A change that keeps the Segments' number never moves a row, so it clears the checks as soon as it is written; one that left the Segments as they were is then done with, and a later edit is not taken for it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment's times were written as they already were |
+| When | its second Segment is checked and the first Segment's text is written |
+| Then | the second Segment stays checked |
+
 ## `ED-071` Checking the Segments through a row clicked with Shift
 
 Subtitle editors check a run of lines by Shift-clicking its other end, as a list does. The Current Segment is that run's fixed end, so it stays current and another Shift-click resizes the run up or down.

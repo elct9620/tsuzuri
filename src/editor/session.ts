@@ -66,14 +66,13 @@ export type SessionChange = "cursor" | "choice" | "checks";
  */
 export type ChoiceSource = "row" | "speaker" | "next" | "region";
 
-/** A Segment Change sent and not yet seen in a Transcript, with the Segments it was made to. */
+/**
+ * A Segment Change that changes the Segments' number, sent and not yet seen in a Transcript, with
+ * the Segments it was made to.
+ */
 interface PendingChange {
   change: SegmentChange;
   before: Segment[];
-}
-
-function isSameSegments(one: Segment[], other: Segment[]): boolean {
-  return JSON.stringify(one) === JSON.stringify(other);
 }
 
 export class EditingSession {
@@ -127,16 +126,20 @@ export class EditingSession {
   }
 
   /**
-   * Takes the Transcript as the Project holds it now. A Segment Change sent is applied on the first
-   * Transcript that shows it: one with as many Segments as it leaves, differing from those it was
-   * made to, so a text written just before it is not taken for it. Any other difference was made
-   * elsewhere. Nothing is announced, so the screen can draw the Transcript before it hears of the Cursor.
+   * Takes the Transcript as the Project holds it now. A pending Segment Change is applied on the
+   * first Transcript with as many Segments as it leaves, so a text written just before it is not
+   * taken for it. Any other difference was made elsewhere. Nothing is announced, so the screen can
+   * draw the Transcript before it hears of the Cursor.
    */
   follow(view: TranscriptView): void {
     const before = this.view;
     this.view = view;
     const pendingChange = this.pendingChange;
-    if (pendingChange && this.isShown(pendingChange, view.segments)) {
+    if (
+      pendingChange &&
+      view.segments.length ===
+        segmentCountAfter(pendingChange.change, pendingChange.before.length)
+    ) {
       this.pendingChange = null;
       this.move({
         kind: "change",
@@ -307,21 +310,25 @@ export class EditingSession {
   }
 
   /**
-   * Makes a Segment Change to `before`, the Segments as the Project holds them, noted before it is
-   * sent so the Transcript that shows it moves the Cursor.
+   * Makes a Segment Change to `before`, the Segments as the Project holds them. One that changes
+   * their number is noted before it is sent, so the Transcript that shows it moves the Cursor; one
+   * that keeps it moves no row, so it clears the checks once written and waits for nothing.
    */
   async change(
     change: SegmentChange,
     before: Segment[] = this.view?.segments ?? [],
   ): Promise<Outcome> {
-    this.pendingChange = { change, before };
+    const isReshaping =
+      segmentCountAfter(change, before.length) !== before.length;
+    if (isReshaping) this.pendingChange = { change, before };
     try {
       await this.port.changeSegments(change);
-      return { kind: "written" };
     } catch (error) {
-      this.pendingChange = null;
+      if (isReshaping) this.pendingChange = null;
       return { kind: "failed", error };
     }
+    if (!isReshaping) this.uncheckAll();
+    return { kind: "written" };
   }
 
   /** Splits the Current Segment where the Cursor in its text starts, writing a text still being typed first. */
@@ -409,16 +416,6 @@ export class EditingSession {
     } catch (error) {
       return { kind: "failed", error };
     }
-  }
-
-  private isShown(
-    { change, before }: PendingChange,
-    after: Segment[],
-  ): boolean {
-    return (
-      after.length === segmentCountAfter(change, before.length) &&
-      !isSameSegments(before, after)
-    );
   }
 
   /** Moves the Cursor as the user does, telling the listeners at once. */

@@ -1175,12 +1175,13 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
   main ─合併─▶ stable：main 沒改那幾行，留下 stable 的版號
 ```
 
-| 時機 | 動作 |
+| 設定 | 作用 |
 |---|---|
-| 首次釋出前 | `bootstrap-sha` |
-| 首次釋出後 | 移除 `release-as` |
+| `bump-minor-pre-major` | 1.0 前不升 major |
+| `release-as` | 只用於 0.1.0 |
+| `bootstrap-sha` | 只用於 0.1.0 |
 
-預覽版號取自最新正式 tag，不讀 main 的版號檔，所以 main 不必同步。`bootstrap-sha` 之前的 commit 不寫進第一版的 changelog，之後至少要有一個 feat 或 fix 才會開版本 PR；`release-as` 只為第一版固定 0.1.0。
+預覽版號取自最新正式 tag，不讀 main 的版號檔，所以 main 不必同步。1.0 之前 breaking change 只升 minor，何時進 1.0 由人決定。第一版以 `release-as` 固定版號，changelog 從 `bootstrap-sha` 之後算起，發布後兩者都已移除。
 
 ### 13.4 失敗時補救
 

@@ -61,6 +61,7 @@ Releases Preview Build 20260929+143 (173c0ed).
 | head 用 `main` | 主線開發，不開分支 |
 | 合併前不 push `main` | head 維持是該 Build |
 | 用 merge commit 合併 | `stable` 保留每個 commit |
+| merge commit 用 PR 標題 | 第一行維持 conventional 格式 |
 
 釋出 PR 把 `main` 合進 `stable`。版號要等合併後才由 release-please 算出，所以標題寫預覽版的 Build；合併前確認 PR 的 head 仍是該 Build 的 commit。
 

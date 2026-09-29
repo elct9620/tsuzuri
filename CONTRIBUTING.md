@@ -61,6 +61,7 @@ Releases Preview Build 20260929+143 (173c0ed).
 | `main` is the head | Trunk, no release branch |
 | No push to `main` until merged | The head stays the Build |
 | Merge with a merge commit | `stable` keeps every commit |
+| The merge commit takes the PR title | Its first line stays conventional |
 
 A release PR brings `main` into `stable`. release-please picks the version only after it merges, so the title names the Preview Build instead; before merging, check the PR's head is still the Build's commit.
 

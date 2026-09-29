@@ -393,11 +393,11 @@ describe("ProjectController", () => {
 
   // @behavior PJ-182
   it("puts back the toolbar's Project Name when Esc is pressed", async () => {
-    const named = projectOf({
+    const namedProject = projectOf({
       name: "週會錄影",
       options: { ...projectOf().options, name: "週會錄影" },
     });
-    await hold(named);
+    await hold(namedProject);
     const name = target<HTMLInputElement>("name");
     name.focus();
 

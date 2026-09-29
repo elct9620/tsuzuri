@@ -217,12 +217,12 @@ describe("ProjectSettingsController", () => {
 
   // @behavior MD-010
   it("sets the Project Options without the Project Model once the slot follows the general settings", async () => {
-    const withModel = projectOf();
-    withModel.options.models.transcription = {
+    const projectWithModel = projectOf();
+    projectWithModel.options.models.transcription = {
       kind: "file",
       path: "/models/kotoba.bin",
     };
-    await hold(withModel);
+    await hold(projectWithModel);
 
     await pick("#transcription-menu", "general");
 
@@ -233,12 +233,12 @@ describe("ProjectSettingsController", () => {
 
   // @behavior MD-046
   it("shows the Project Model in a slot drawn after the Project", async () => {
-    const withModel = projectOf();
-    withModel.options.models.transcription = {
+    const projectWithModel = projectOf();
+    projectWithModel.options.models.transcription = {
       kind: "file",
       path: "/models/kotoba.bin",
     };
-    await hold(withModel);
+    await hold(projectWithModel);
     const row = document
       .querySelector("#transcription-menu")!
       .closest("[data-controller='model-slot']")!;
@@ -253,10 +253,10 @@ describe("ProjectSettingsController", () => {
 
   // @behavior MD-047
   it("keeps the other slot's Project Model when a file is picked for one", async () => {
-    const withModel = projectOf();
+    const projectWithModel = projectOf();
     const kotoba = { kind: "file", path: "/models/kotoba.bin" } as const;
-    withModel.options.models.transcription = kotoba;
-    await hold(withModel);
+    projectWithModel.options.models.transcription = kotoba;
+    await hold(projectWithModel);
     chosenFile = "/models/gemma-ja.gguf";
 
     await click("#choose-translation-model");
@@ -331,9 +331,9 @@ describe("ProjectSettingsController", () => {
 
   // @behavior PJ-186
   it("hints the directory's name the Project takes once its name is emptied", async () => {
-    const named = projectOf({ name: "週會錄影" });
-    named.options.name = "週會錄影";
-    await hold(named);
+    const namedProject = projectOf({ name: "週會錄影" });
+    namedProject.options.name = "週會錄影";
+    await hold(namedProject);
 
     expect(target<HTMLInputElement>("nameField").placeholder).toBe("talks");
   });

@@ -52,16 +52,14 @@ describe("preview version", () => {
     );
   });
 
-  it("names the Preview release by its base and build time, as the settings do", () => {
+  it("names the Preview release by its Release Name, as the settings do, never its release number", () => {
     expect(
       previewReleasePage("0.2.1-preview.202609281430+12", "a1b2c3d4e5f6"),
     ).toEqual({
-      title: "Preview | based on 0.2.0 | built 2026-09-28 14:30 UTC",
+      title: "Preview Build 20260928+12",
       notes: [
         "A Preview build of main, for testing. Not a stable release.",
         "",
-        "- Version: 0.2.1-preview.202609281430+12",
-        "- Based on: 0.2.0",
         "- Built: 2026-09-28 14:30 UTC",
         "- Commit: a1b2c3d",
       ].join("\n"),

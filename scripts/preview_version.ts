@@ -39,28 +39,25 @@ export function previewTag(version: string): string {
 }
 
 /**
- * The title and notes of the Preview release for the build `version` numbers, naming it as the
- * settings do — the stable release it is based on and its build time — so a report matches the page.
+ * The title and notes of the Preview release for the build `version` numbers, naming it by its
+ * Release Name as the settings do — `Build`, its UTC build date and `+` its build count — since
+ * its release number only orders it.
  */
 export function previewReleasePage(
   version: string,
   commit: string,
 ): { title: string; notes: string } {
-  const match = /^(\d+)\.(\d+)\.(\d+)-preview\.(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})\+\d+$/.exec(
+  const match = /^\d+\.\d+\.\d+-preview\.(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})\+(\d+)$/.exec(
     version,
   );
   if (!match) throw new Error(`${version} is not a Preview build`);
-  const [, major, minor, patch, year, month, day, hour, minute] = match;
-  const basedOn = `${major}.${minor}.${Number(patch) - 1}`;
-  const builtAt = `${year}-${month}-${day} ${hour}:${minute} UTC`;
+  const [, year, month, day, hour, minute, count] = match;
   return {
-    title: `Preview | based on ${basedOn} | built ${builtAt}`,
+    title: `Preview Build ${year}${month}${day}+${count}`,
     notes: [
       "A Preview build of main, for testing. Not a stable release.",
       "",
-      `- Version: ${version}`,
-      `- Based on: ${basedOn}`,
-      `- Built: ${builtAt}`,
+      `- Built: ${year}-${month}-${day} ${hour}:${minute} UTC`,
       `- Commit: ${commit.slice(0, 7)}`,
     ].join("\n"),
   };

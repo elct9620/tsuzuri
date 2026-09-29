@@ -5,6 +5,7 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
   return {
     directory: "/talks",
     name: "talks",
+    directory_name: "talks",
     language: "zh-TW",
     translation_language: null,
     options: {

@@ -329,6 +329,15 @@ describe("ProjectSettingsController", () => {
     });
   });
 
+  // @behavior PJ-186
+  it("hints the directory's name the Project takes once its name is emptied", async () => {
+    const named = projectOf({ name: "週會錄影" });
+    named.options.name = "週會錄影";
+    await hold(named);
+
+    expect(target<HTMLInputElement>("nameField").placeholder).toBe("talks");
+  });
+
   // @behavior PJ-055
   it("sets the Project to save Bilingual SRTs when turned on in the settings", async () => {
     await hold(projectOf());

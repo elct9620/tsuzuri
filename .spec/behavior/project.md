@@ -704,6 +704,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | `週會錄影` is typed as its name |
 | Then | the Project Options are set with the name `週會錄影` |
 
+## `PJ-186` Hinting the directory's name where the Project is named
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project in `/talks` named `週會錄影` |
+| When | its settings show |
+| Then | the name field hints `talks`, the name it takes once emptied |
+
 ## `PJ-181` Naming the Project in the toolbar
 
 | Step | Statement |

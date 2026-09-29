@@ -14,7 +14,6 @@ import { modelSettings, type ModelSource } from "../backend/toolchain";
 import { t } from "../i18n";
 import type ModelSlotController from "./model_slot_controller";
 import { failureKind, failureMessage } from "../ui/failure";
-import { fileName } from "../ui/file_name";
 import { sourceName, type ModelChoice } from "../ui/models";
 
 /** The Project's own page of the settings, shown while a Project is open; what it sets lives in Rust. */
@@ -149,7 +148,7 @@ export default class ProjectSettingsController extends Controller {
     this.showSettingsOf(project);
     if (project === null) return;
     this.nameFieldTarget.value = project.options.name ?? "";
-    this.nameFieldTarget.placeholder = fileName(project.directory);
+    this.nameFieldTarget.placeholder = project.directory_name;
     this.languageTarget.value = project.language;
     this.bilingualOrderTarget.value = project.options.bilingual_order;
     this.bilingualAutosaveTarget.checked =

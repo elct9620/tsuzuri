@@ -50,6 +50,8 @@ export interface ProjectView {
   directory: string;
   /** The Project Name, the directory's name when the Project Options give none. */
   name: string;
+  /** The name the Project takes from its directory without a Project Name of its own. */
+  directory_name: string;
   /** The Primary Language code. */
   language: string;
   /** The Language code of the last translation. */

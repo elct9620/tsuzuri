@@ -12,8 +12,8 @@ use super::history::{SubtitleSnapshot, UndoHistory};
 use super::mode_hold::{
     is_always_written, is_written_by_edit, ModeHold, ModeProgress, RunningMode,
 };
-use super::trimmed_name;
 use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
+use super::{directory_name, trimmed_name};
 use super::{
     translation_only, translation_srt, translation_with_speakers, BackupKind, CleanupScope,
     CurrentResource, ExportFormat, KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource,
@@ -976,6 +976,8 @@ pub struct ResourceView {
 pub struct ProjectView {
     directory: PathBuf,
     name: String,
+    /// The name the Project takes from its directory without a Project Name of its own.
+    directory_name: String,
     language: Language,
     translation_language: Option<Language>,
     options: ProjectOptions,
@@ -1262,6 +1264,7 @@ impl CurrentProject {
             ProjectView {
                 directory: project.directory.clone(),
                 name: project.name(),
+                directory_name: directory_name(&project.directory),
                 language: project.language,
                 translation_language: project.translation_language,
                 options: project.options.clone(),
@@ -2521,6 +2524,17 @@ mod tests {
             ),
             ("週會錄影".to_string(), Some("週會錄影".to_string()))
         );
+    }
+
+    // @behavior PJ-186
+    #[test]
+    fn keeps_the_directory_name_in_the_view_of_a_named_project() {
+        let dir = TempDir::new("pj-directory-name");
+        let current = lecture_in(&dir);
+
+        current.set_options(options_named("週會錄影")).unwrap();
+
+        assert_eq!(current.view().unwrap().directory_name, "lecture");
     }
 
     // @behavior PJ-174

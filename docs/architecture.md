@@ -226,7 +226,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `system_opener` | 轉接 | 交給系統開啟 |
 | — | `about` | 介面 | App Build、釋出與贊助頁面 |
 | — | `updates` | 應用、轉接 | 檢查與安裝更新 |
-| — | `release_number` | 領域 | 讀出預覽版號 |
+| — | `release_number` | 領域 | Release Name、是否預覽版 |
 | — | `transcript` | 領域 | 段落與 SRT |
 | — | `segment_change` | 領域 | 段落變更 |
 | — | `replacement` | 領域 | 搜尋取代 |

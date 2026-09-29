@@ -17,6 +17,7 @@ const en = {
     translationText: "Translation as plain text",
     bilingualText: "Bilingual plain text",
     textSpeakers: "Speakers in plain text",
+    textBlankLines: "Blank lines between sentences",
     notExported: "Not exported",
   },
   start: {

@@ -115,6 +115,7 @@ describe("TranscriptController", () => {
           <button id="save-bilingual" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="bilingual" data-transcript-format-param="srt" disabled>雙語</button>
           <button id="save-translation-text" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="translation" data-transcript-format-param="plain_text" disabled>譯文純文字</button>
           <input id="text-speakers" type="checkbox" data-transcript-target="textSpeakerToggle" data-action="transcript#rememberTextSpeakers">
+          <input id="text-blank-lines" type="checkbox" data-transcript-target="textBlankLineToggle" data-action="transcript#rememberTextBlankLines">
         </div>
         <ol data-transcript-target="list"></ol>
       </section>
@@ -312,8 +313,16 @@ describe("TranscriptController", () => {
     textSpeakerToggle().dispatchEvent(new Event("input", { bubbles: true }));
   }
 
+  const textBlankLineToggle = () =>
+    document.querySelector<HTMLInputElement>("#text-blank-lines")!;
+
+  function turnOffTextBlankLines(): void {
+    textBlankLineToggle().checked = false;
+    textBlankLineToggle().dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
   // @behavior ED-155
-  it("exports the translation as Plain Text with its Speakers", async () => {
+  it("exports the translation as Plain Text with its Speakers and blank lines", async () => {
     await hold(translatedProject);
 
     document
@@ -332,6 +341,7 @@ describe("TranscriptController", () => {
         path: "/subtitles/out.srt",
         content: "translation",
         hasSpeakers: true,
+        hasBlankLines: true,
       },
     ]);
   });
@@ -365,6 +375,37 @@ describe("TranscriptController", () => {
     await settle();
 
     expect(textSpeakerToggle().checked).toBe(false);
+  });
+
+  // @behavior ED-162
+  it("exports Plain Text without blank lines once they are turned off", async () => {
+    await hold(translatedProject);
+    turnOffTextBlankLines();
+
+    document
+      .querySelector<HTMLButtonElement>("#save-translation-text")!
+      .click();
+    await settle();
+
+    expect(sent("save_text")).toMatchObject({ hasBlankLines: false });
+  });
+
+  // @behavior ED-163
+  it("keeps the blank lines turned off for Plain Text the next time the app opens", async () => {
+    turnOffTextBlankLines();
+    application.stop();
+    textBlankLineToggle().checked = true;
+    application = Application.start();
+    await assemble(application, {
+      field: FieldController,
+      notification: NotificationController,
+      progress: ProgressController,
+      speakers: SpeakersController,
+      transcript: TranscriptController,
+    }).start();
+    await settle();
+
+    expect(textBlankLineToggle().checked).toBe(false);
   });
 
   // @behavior ED-004

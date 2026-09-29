@@ -43,6 +43,9 @@ const FOLLOWING_KEY = "tsuzuri.transcript-following";
 /** Where the webview remembers whether a Plain Text export names its Speakers. */
 const TEXT_SPEAKERS_KEY = "tsuzuri.plain-text-speakers";
 
+/** Where the webview remembers whether a Plain Text export leaves a blank line between blocks. */
+const TEXT_BLANK_LINES_KEY = "tsuzuri.plain-text-blank-lines";
+
 /** Ctrl+Alt+Enter, or ⌘+Option+Enter, splits a Segment at the Cursor in its text, as subtitle editors bind splitting to a modified line break. */
 const SPLIT_SHORTCUTS = [
   "keydown.ctrl+alt+enter->field#split:!composing:prevent",
@@ -297,6 +300,7 @@ export default class TranscriptController extends Controller {
     "emptyHint",
     "exportButton",
     "textSpeakerToggle",
+    "textBlankLineToggle",
     "heading",
     "translationLanguage",
     "followButton",
@@ -324,6 +328,8 @@ export default class TranscriptController extends Controller {
   private project: ProjectView | null = null;
   /** Whether a Plain Text export names its Speakers, unless turned off on this machine. */
   private hasTextSpeakers = rememberedFlag(TEXT_SPEAKERS_KEY, true);
+  /** Whether a Plain Text export leaves a blank line between blocks, unless turned off on this machine. */
+  private hasTextBlankLines = rememberedFlag(TEXT_BLANK_LINES_KEY, true);
   /** The position of the Current Segment as its row was last brought into view. */
   private shownCurrentIndex: number | null = null;
   /** The position of the Segment the Preview is playing. */
@@ -531,7 +537,13 @@ export default class TranscriptController extends Controller {
         filters: isPlainText ? TEXT_FILTERS : SRT_FILTERS,
       });
       if (path === null) return;
-      if (isPlainText) await saveText(path, content, this.hasTextSpeakers);
+      if (isPlainText)
+        await saveText(
+          path,
+          content,
+          this.hasTextSpeakers,
+          this.hasTextBlankLines,
+        );
       else await saveSrt(path, content);
     } catch (error) {
       notifyFailure(t("toolbar.notExported"), error);
@@ -545,6 +557,15 @@ export default class TranscriptController extends Controller {
   rememberTextSpeakers({ currentTarget }: Event): void {
     this.hasTextSpeakers = (currentTarget as HTMLInputElement).checked;
     rememberFlag(TEXT_SPEAKERS_KEY, this.hasTextSpeakers);
+  }
+
+  textBlankLineToggleTargetConnected(toggle: HTMLInputElement): void {
+    toggle.checked = this.hasTextBlankLines;
+  }
+
+  rememberTextBlankLines({ currentTarget }: Event): void {
+    this.hasTextBlankLines = (currentTarget as HTMLInputElement).checked;
+    rememberFlag(TEXT_BLANK_LINES_KEY, this.hasTextBlankLines);
   }
 
   private show(project: ProjectView | null): void {

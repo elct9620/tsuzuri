@@ -154,11 +154,13 @@ impl Project {
     }
 
     /// The Current Resource as Plain Text, a bilingual one in the Bilingual Order, naming each
-    /// Speaker as its SRT would unless `has_speakers` leaves them out.
+    /// Speaker as its SRT would unless `has_speakers` leaves them out, and a blank line between
+    /// blocks unless `has_blank_lines` leaves it out.
     fn to_plain_text(
         &self,
         content: WrittenText,
         has_speakers: bool,
+        has_blank_lines: bool,
     ) -> Result<String, ProjectError> {
         let current = self.current()?;
         let (transcript, names) =
@@ -168,7 +170,7 @@ impl Project {
         } else {
             Cow::Owned(transcript_without_speakers(&transcript))
         };
-        Ok(transcript.to_plain_text_with(content, &names))
+        Ok(transcript.to_plain_text_with(content, &names, has_blank_lines))
     }
 
     fn resource(&self, name: &str) -> Result<&Resource, ProjectError> {

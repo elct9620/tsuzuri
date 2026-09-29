@@ -50,7 +50,7 @@ impl Transcript {
 
 ## `Transcript::to_plain_text_with`
 
-Write a Transcript as Plain Text carrying what `to_srt_with` would put in each cue, one block per Segment with a blank line between and no times.
+Write a Transcript as Plain Text carrying what `to_srt_with` would put in each cue, one block per Segment with no times, a blank line between blocks when `has_blank_lines` asks for one.
 
 | Attribute | Value |
 | --- | --- |
@@ -58,7 +58,7 @@ Write a Transcript as Plain Text carrying what `to_srt_with` would put in each c
 
 ```rust
 impl Transcript {
-    pub fn to_plain_text_with(&self, content: WrittenText, names: &SpeakerNames) -> String {}
+    pub fn to_plain_text_with(&self, content: WrittenText, names: &SpeakerNames, has_blank_lines: bool) -> String {}
 }
 ```
 

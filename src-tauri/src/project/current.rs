@@ -1806,19 +1806,27 @@ impl CurrentProject {
         &self,
         content: WrittenText,
         has_speakers: bool,
+        has_blank_lines: bool,
     ) -> Result<String, Failure> {
-        self.read_project(|project| Ok(project.to_plain_text(content, has_speakers)?))
+        self.read_project(|project| {
+            Ok(project.to_plain_text(content, has_speakers, has_blank_lines)?)
+        })
     }
 
     /// Writes the Current Resource to `path` as Plain Text carrying `content`, its Speakers
-    /// named unless `has_speakers` leaves them out.
+    /// named unless `has_speakers` leaves them out and its blocks apart unless
+    /// `has_blank_lines` leaves the blank lines out.
     pub fn save_text(
         &self,
         path: &Path,
         content: WrittenText,
         has_speakers: bool,
+        has_blank_lines: bool,
     ) -> Result<(), Failure> {
-        files::write_text(path, self.to_plain_text(content, has_speakers)?)
+        files::write_text(
+            path,
+            self.to_plain_text(content, has_speakers, has_blank_lines)?,
+        )
     }
 
     pub fn set_options(&self, options: ProjectOptions) -> Result<(), Failure> {
@@ -2351,7 +2359,9 @@ mod tests {
     fn writes_the_current_resource_as_plain_text() {
         let current = project_with_a_speaker();
 
-        let text = current.to_plain_text(WrittenText::Original, true).unwrap();
+        let text = current
+            .to_plain_text(WrittenText::Original, true, true)
+            .unwrap();
 
         assert_eq!(text, "阿福: 少爺\n\n我等等就下去\n");
     }
@@ -2361,9 +2371,23 @@ mod tests {
     fn leaves_the_speakers_out_of_plain_text() {
         let current = project_with_a_speaker();
 
-        let text = current.to_plain_text(WrittenText::Original, false).unwrap();
+        let text = current
+            .to_plain_text(WrittenText::Original, false, true)
+            .unwrap();
 
         assert_eq!(text, "少爺\n\n我等等就下去\n");
+    }
+
+    // @behavior PJ-185
+    #[test]
+    fn leaves_the_blank_lines_out_of_plain_text() {
+        let current = project_with_a_speaker();
+
+        let text = current
+            .to_plain_text(WrittenText::Original, true, false)
+            .unwrap();
+
+        assert_eq!(text, "阿福: 少爺\n我等等就下去\n");
     }
 
     // @behavior PJ-152
@@ -2372,7 +2396,9 @@ mod tests {
         let dir = TempDir::new("pj-plain-text-translation-first");
         let current = translation_first_project_in(&dir);
 
-        let text = current.to_plain_text(WrittenText::Bilingual, true).unwrap();
+        let text = current
+            .to_plain_text(WrittenText::Bilingual, true, true)
+            .unwrap();
 
         assert_eq!(text, "Hello\n大家好\n");
     }

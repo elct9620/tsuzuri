@@ -264,10 +264,10 @@ pub fn save_srt(current: State<'_, CurrentProject>, path: PathBuf, content: Writ
 
 ## `save_text`
 
-Write the Current Resource to a file as Plain Text carrying the `original` text, the `translation`, or both in the Bilingual Order, naming each Speaker as its SRT would when `has_speakers` asks for them.
+Write the Current Resource to a file as Plain Text carrying the `original` text, the `translation`, or both in the Bilingual Order, naming each Speaker as its SRT would when `has_speakers` asks for them and leaving a blank line between blocks when `has_blank_lines` asks for one.
 
 ```rust
-pub fn save_text(current: State<'_, CurrentProject>, path: PathBuf, content: WrittenText, has_speakers: bool) -> Result<(), Failure> {}
+pub fn save_text(current: State<'_, CurrentProject>, path: PathBuf, content: WrittenText, has_speakers: bool, has_blank_lines: bool) -> Result<(), Failure> {}
 ```
 
 ## `change_segments`

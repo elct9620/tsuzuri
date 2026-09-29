@@ -444,6 +444,14 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | it is written as Plain Text without its Speakers |
 | Then | the text carries the Segment's text alone |
 
+## `PJ-185` Leaving the blank lines out of Plain Text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of two Segments |
+| When | its original is written as Plain Text without blank lines |
+| Then | the text is one line per Segment with nothing between |
+
 ## `PJ-152` Writing a bilingual Plain Text in the Bilingual Order
 
 | Step | Statement |

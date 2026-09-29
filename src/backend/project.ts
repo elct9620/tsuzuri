@@ -266,13 +266,17 @@ export function saveSrt(path: string, content: WrittenText): Promise<void> {
   return invoke("save_srt", { path, content });
 }
 
-/** Writes the Current Resource to `path` as Plain Text, its Speakers named when `hasSpeakers`. */
+/**
+ * Writes the Current Resource to `path` as Plain Text, its Speakers named when `hasSpeakers` and
+ * a blank line between blocks when `hasBlankLines`.
+ */
 export function saveText(
   path: string,
   content: WrittenText,
   hasSpeakers: boolean,
+  hasBlankLines: boolean,
 ): Promise<void> {
-  return invoke("save_text", { path, content, hasSpeakers });
+  return invoke("save_text", { path, content, hasSpeakers, hasBlankLines });
 }
 
 /** A Backup as Rust lists it: its file name in the history, the UTC time it was taken and its kind. */

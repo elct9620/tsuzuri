@@ -28,7 +28,7 @@ An SRT whose every cue carries the original text and its translation in the Bili
 
 ### Plain Text
 
-A Resource's text without its times, for reading rather than playing: one block per Segment and a blank line between blocks, each carrying the text an SRT of the same content would, its Speakers written or left out as chosen.
+A Resource's text without its times, for reading rather than playing: one block per Segment, each carrying the text an SRT of the same content would, its Speakers and the blank line between blocks written or left out as chosen.
 
 ### Bilingual Order
 

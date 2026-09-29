@@ -304,8 +304,9 @@ pub fn save_text(
     path: PathBuf,
     content: WrittenText,
     has_speakers: bool,
+    has_blank_lines: bool,
 ) -> Result<(), Failure> {
-    current.save_text(&path, content, has_speakers)
+    current.save_text(&path, content, has_speakers, has_blank_lines)
 }
 
 #[tauri::command]

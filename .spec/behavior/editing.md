@@ -49,7 +49,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | --- | --- |
 | Given | a translated Project in the panel |
 | When | its translation is exported as Plain Text |
-| Then | the save dialog opens at its Plain Text default path and the translation is saved as Plain Text with its Speakers |
+| Then | the save dialog opens at its Plain Text default path and the translation is saved as Plain Text with its Speakers and blank lines |
 
 ## `ED-156` Leaving the Speakers out of a Plain Text export
 
@@ -66,6 +66,22 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | Given | Speakers turned off for Plain Text |
 | When | the app opens again |
 | Then | the export menu still has Speakers turned off for Plain Text |
+
+## `ED-162` Leaving the blank lines out of a Plain Text export
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with blank lines turned off for Plain Text |
+| When | it is exported as Plain Text |
+| Then | it is saved as Plain Text without blank lines |
+
+## `ED-163` Keeping the blank lines choice for Plain Text on this machine
+
+| Step | Statement |
+| --- | --- |
+| Given | blank lines turned off for Plain Text |
+| When | the app opens again |
+| Then | the export menu still has blank lines turned off for Plain Text |
 
 ## `ED-004` Showing another translation in the editor
 

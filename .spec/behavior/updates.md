@@ -211,13 +211,13 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | When | Tsuzuri looks for an App Update |
 | Then | it answers that there is none |
 
-## `UP-026` Telling a Preview build from a stable one
+## `UP-026` Naming a release by its Release Name
 
 | Step | Statement |
 | --- | --- |
-| Given | the release number `0.2.1-preview.202609281430+12` |
-| When | it is read as a Preview build |
-| Then | it is based on 0.2.0 and was built at 2026-09-28 14:30 UTC, while a stable release number is no Preview build |
+| Given | the release numbers `0.2.1-preview.202609281430+12` and `0.2.0` |
+| When | each is named |
+| Then | the first is a Preview build named `Build 20260928+12`, and the second a stable release named `v0.2.0` |
 
 ## `UP-027` Choosing the Preview channel in the settings
 
@@ -255,17 +255,17 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 
 | Step | Statement |
 | --- | --- |
-| Given | a Preview build based on 0.2.0, built at 2026-09-28 14:30 UTC |
+| Given | a Preview build named `Build 20260928+12` |
 | When | the settings open |
-| Then | the settings say it is a preview based on 0.2.0 built at that time, local as `YYYY-MM-DD HH:mm`, and copying the version copies the release number as it is |
+| Then | the settings show that name and never its release number, and copying the version copies `Tsuzuri Build 20260928+12` with the short commit |
 
-## `UP-032` Offering a Preview build by its build time
+## `UP-032` Offering a Preview build by its Release Name
 
 | Step | Statement |
 | --- | --- |
 | Given | a Preview build found by the launch check |
 | When | Tsuzuri opens |
-| Then | the Notification offers a new preview by its local build time rather than its release number |
+| Then | the Notification offers a new preview by its Release Name rather than its release number |
 
 ## `UP-033` Hiding the Update Channel from an rpm install
 

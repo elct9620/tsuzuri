@@ -12,7 +12,7 @@ use tauri_plugin_updater::{Update, UpdaterExt};
 
 use crate::failure::Failure;
 use crate::json_settings;
-use crate::release_number::{preview_release, PreviewRelease};
+use crate::release_number::{is_preview_build, release_name};
 use crate::steps::ModeLock;
 use crate::transfer_report::TransferReport;
 
@@ -117,11 +117,12 @@ impl UpdateSettings {
     }
 }
 
-/// The App Update a check found, as the webview shows it: a Preview build by its build time.
+/// The App Update a check found, as the webview shows it: by its Release Name.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AppUpdate {
     pub release_number: String,
-    pub preview: Option<PreviewRelease>,
+    pub release_name: String,
+    pub is_preview_build: bool,
 }
 
 /// How much of the App Update being installed has downloaded, in bytes.
@@ -140,7 +141,8 @@ impl FoundUpdate {
     pub fn keep(&self, update: Option<Update>) -> Option<AppUpdate> {
         let app_update = update.as_ref().map(|update| AppUpdate {
             release_number: update.version.clone(),
-            preview: preview_release(&update.version),
+            release_name: release_name(&update.version),
+            is_preview_build: is_preview_build(&update.version),
         });
         *self.0.lock().unwrap() = update.map(Arc::new);
         app_update

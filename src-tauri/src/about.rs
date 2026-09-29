@@ -4,15 +4,15 @@ use serde::Serialize;
 use tauri::utils::config::BundleType;
 use tauri::utils::platform::bundle_type;
 
-use crate::release_number::{preview_release, PreviewRelease};
+use crate::release_number::{is_preview_build, release_name};
 
-/// The App Build: the release number of the running Tsuzuri, what a Preview build is based on and
-/// when it was built, whether its install offers the Preview channel, and the commit it was built
-/// from.
+/// The App Build: the release number of the running Tsuzuri with its Release Name, whether it is a
+/// Preview build, whether its install offers the Preview channel, and the commit it was built from.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AppBuild {
     pub release_number: &'static str,
-    pub preview: Option<PreviewRelease>,
+    pub release_name: String,
+    pub is_preview_build: bool,
     pub has_preview_channel: bool,
     pub commit: &'static str,
 }
@@ -22,7 +22,8 @@ pub fn running_build() -> AppBuild {
     let release_number = env!("CARGO_PKG_VERSION");
     AppBuild {
         release_number,
-        preview: preview_release(release_number),
+        release_name: release_name(release_number),
+        is_preview_build: is_preview_build(release_number),
         has_preview_channel: has_preview_channel(bundle_type()),
         commit: env!("TSUZURI_COMMIT"),
     }

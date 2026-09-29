@@ -124,7 +124,7 @@ A directory chosen earlier in this launch takes effect only at the next, so the 
 | --- | --- |
 | Given | the general settings open |
 | When | the App Build is answered |
-| Then | they show the release number and the commit's first seven characters first |
+| Then | they show the Release Name and the commit's first seven characters first |
 
 ## `OB-015` Copying the App Build for a report
 
@@ -132,7 +132,7 @@ A directory chosen earlier in this launch takes effect only at the next, so the 
 | --- | --- |
 | Given | the App Build shown in the settings |
 | When | copying it is chosen |
-| Then | the clipboard holds Tsuzuri, the release number and the short commit, and a Notification says it was copied |
+| Then | the clipboard holds Tsuzuri, the Release Name and the short commit, as `Tsuzuri v0.2.0 (a1b2c3d)`, and a Notification says it was copied |
 
 ## `OB-016` Leaving the Debug Log out until it is turned on
 

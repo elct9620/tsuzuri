@@ -4,6 +4,7 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import NotificationController from "./notification_controller";
 import UpdatesController from "./updates_controller";
+import type { AppUpdate } from "../backend/updates";
 import {
   NOTIFICATION_STACK,
   notificationAction,
@@ -15,17 +16,14 @@ describe("UpdatesController", () => {
   let application: Application;
   let calls: { command: string; args: unknown }[];
   /** What the releases hold; `unreachable` when they cannot be read. */
-  let releases: { release_number: string } | null | "unreachable";
-  let updateAtLaunch: {
-    release_number: string;
-    preview?: { based_on: string; built_at: string };
-  } | null;
+  let releases: AppUpdate | null | "unreachable";
+  let updateAtLaunch: AppUpdate | null;
   let hasLaunchCheck: boolean;
   let channel: "stable" | "preview";
   let isPreviewBuild: boolean;
   let hasPreviewChannel: boolean;
   /** The stable release a Rollback finds. */
-  let stableRelease: { release_number: string } | null;
+  let stableRelease: AppUpdate | null;
   /** What installing answers: a refusal to throw, or never answering, as Tsuzuri restarts. */
   let installRefusal: { code: string } | null;
 
@@ -92,9 +90,8 @@ describe("UpdatesController", () => {
           release_number: isPreviewBuild
             ? "0.2.1-preview.202609281430+12"
             : "0.2.0",
-          preview: isPreviewBuild
-            ? { based_on: "0.2.0", built_at: "20260928T143000Z" }
-            : null,
+          release_name: isPreviewBuild ? "Build 20260928+12" : "v0.2.0",
+          is_preview_build: isPreviewBuild,
           has_preview_channel: hasPreviewChannel,
           commit: "a1b2c3d",
         };
@@ -128,12 +125,12 @@ describe("UpdatesController", () => {
 
   // @behavior UP-012
   it("offers an App Update the launch check found", async () => {
-    updateAtLaunch = { release_number: "0.2.0" };
+    updateAtLaunch = STABLE_RELEASE;
 
     await launch();
 
     expect([notifications(), notificationAction(0)?.textContent]).toEqual([
-      ["有新版本 0.2.0"],
+      ["有新版本 v0.2.0"],
       "更新",
     ]);
   });
@@ -159,7 +156,7 @@ describe("UpdatesController", () => {
 
   // @behavior UP-014
   it("offers an App Update found when asked", async () => {
-    releases = { release_number: "0.2.0" };
+    releases = STABLE_RELEASE;
     await launch();
 
     await press("check");
@@ -167,7 +164,7 @@ describe("UpdatesController", () => {
     expect([
       target("status").textContent,
       target("updateButton").hidden,
-    ]).toEqual(["有新版本 0.2.0", false]);
+    ]).toEqual(["有新版本 v0.2.0", false]);
   });
 
   // @behavior UP-015
@@ -185,7 +182,7 @@ describe("UpdatesController", () => {
 
   // @behavior UP-016
   it("shows the percentage downloaded in a window that stays open", async () => {
-    updateAtLaunch = { release_number: "0.2.0" };
+    updateAtLaunch = STABLE_RELEASE;
     await launch();
     notificationAction(0)!.click();
     await settle();
@@ -205,12 +202,12 @@ describe("UpdatesController", () => {
       target("progressText").textContent,
       target<HTMLProgressElement>("progressBar").value,
       escape.defaultPrevented,
-    ]).toEqual([1, true, "正在更新到 0.2.0", "下載中 45%", 45, true]);
+    ]).toEqual([1, true, "正在更新到 v0.2.0", "下載中 45%", 45, true]);
   });
 
   // @behavior UP-020
   it("shows how much has downloaded when the size is unknown", async () => {
-    releases = { release_number: "0.2.0" };
+    releases = STABLE_RELEASE;
     await launch();
     await press("check");
     await press("install");
@@ -229,7 +226,7 @@ describe("UpdatesController", () => {
 
   // @behavior UP-017
   it("closes the install window when installing is refused", async () => {
-    releases = { release_number: "0.2.0" };
+    releases = STABLE_RELEASE;
     installRefusal = { code: "update-during-mode" };
     await launch();
     await press("check");
@@ -294,7 +291,7 @@ describe("UpdatesController", () => {
   // @behavior UP-029
   it("rolls a Preview build back to the stable release", async () => {
     isPreviewBuild = true;
-    stableRelease = { release_number: "0.2.0" };
+    stableRelease = STABLE_RELEASE;
     await launch();
 
     await press("rollBack");
@@ -303,19 +300,16 @@ describe("UpdatesController", () => {
       argsByCommand("check_for_rollback").length,
       argsByCommand("install_update").length,
       target("dialogTitle").textContent,
-    ]).toEqual([1, 1, "正在更新到 0.2.0"]);
+    ]).toEqual([1, 1, "正在更新到 v0.2.0"]);
   });
 
   // @behavior UP-032
-  it("offers a Preview build by its build time", async () => {
-    updateAtLaunch = {
-      release_number: "0.2.1-preview.202609281430+12",
-      preview: { based_on: "0.2.0", built_at: "20260928T143000Z" },
-    };
+  it("offers a Preview build by its Release Name", async () => {
+    updateAtLaunch = PREVIEW_BUILD;
 
     await launch();
 
-    expect(notifications()).toEqual([`有新的預覽版（2026-09-28 22:30 建置）`]);
+    expect(notifications()).toEqual(["有新的預覽版（Build 20260928+12）"]);
   });
 
   // @behavior UP-033
@@ -327,3 +321,17 @@ describe("UpdatesController", () => {
     expect(target("channelRow").hidden).toBe(true);
   });
 });
+
+/** A stable release found as an App Update. */
+const STABLE_RELEASE: AppUpdate = {
+  release_number: "0.2.0",
+  release_name: "v0.2.0",
+  is_preview_build: false,
+};
+
+/** A Preview build found as an App Update. */
+const PREVIEW_BUILD: AppUpdate = {
+  release_number: "0.2.1-preview.202609281430+12",
+  release_name: "Build 20260928+12",
+  is_preview_build: true,
+};

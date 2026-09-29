@@ -33,7 +33,8 @@ describe("AboutController", () => {
     commands = [];
     build = {
       release_number: "0.1.0",
-      preview: null,
+      release_name: "v0.1.0",
+      is_preview_build: false,
       has_preview_channel: true,
       commit: "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
     };
@@ -58,8 +59,8 @@ describe("AboutController", () => {
   });
 
   // @behavior OB-014
-  it("shows the release number and the short commit in the settings", () => {
-    expect(target("build").textContent).toBe("0.1.0（a1b2c3d）");
+  it("shows the Release Name and the short commit in the settings", () => {
+    expect(target("build").textContent).toBe("v0.1.0（a1b2c3d）");
   });
 
   // @behavior OB-015
@@ -70,18 +71,19 @@ describe("AboutController", () => {
     await choose("copyBuild");
 
     expect([writeText.mock.calls, notifications()]).toEqual([
-      [["Tsuzuri 0.1.0 (a1b2c3d)"]],
+      [["Tsuzuri v0.1.0 (a1b2c3d)"]],
       ["已複製版本資訊"],
     ]);
   });
 
   // @behavior UP-031
-  it("names a Preview build by the release it is based on and its build time", async () => {
+  it("names a Preview build by its Release Name, never its release number", async () => {
     application.stop();
     build = {
       ...build,
       release_number: "0.2.1-preview.202609281430+12",
-      preview: { based_on: "0.2.0", built_at: "20260928T143000Z" },
+      release_name: "Build 20260928+12",
+      is_preview_build: true,
     };
     await openSettings();
     const writeText = vi.fn(async () => {});
@@ -90,8 +92,8 @@ describe("AboutController", () => {
     await choose("copyBuild");
 
     expect([target("build").textContent, writeText.mock.calls]).toEqual([
-      `預覽版｜以 0.2.0 為基礎｜2026-09-28 22:30 建置（a1b2c3d）`,
-      [["Tsuzuri 0.2.1-preview.202609281430+12 (a1b2c3d)"]],
+      "Build 20260928+12（a1b2c3d）",
+      [["Tsuzuri Build 20260928+12 (a1b2c3d)"]],
     ]);
   });
 });

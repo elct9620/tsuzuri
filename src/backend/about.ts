@@ -1,15 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 
-/** What a Preview build is based on and when it was built, as `YYYYMMDDTHHMMSSZ` in UTC. */
-export interface PreviewRelease {
-  based_on: string;
-  built_at: string;
-}
-
-/** The release number of the running Tsuzuri, what a Preview build is based on, whether its install offers the Preview channel, and the commit it was built from. */
+/** The release number of the running Tsuzuri with its Release Name, whether it is a Preview build, whether its install offers the Preview channel, and the commit it was built from. */
 export interface AppBuild {
   release_number: string;
-  preview: PreviewRelease | null;
+  release_name: string;
+  is_preview_build: boolean;
   has_preview_channel: boolean;
   commit: string;
 }

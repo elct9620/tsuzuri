@@ -172,7 +172,11 @@ The one page carrying the license texts of Tsuzuri and of everything it ships: t
 
 ### App Build
 
-The release number of the running Tsuzuri and the commit it was built from, which the settings show first so a report names exactly what ran. Its release number is not a Version, which is a subtitle's.
+The release number of the running Tsuzuri and the commit it was built from, which the settings show first, by its Release Name, so a report names exactly what ran. Its release number is not a Version, which is a subtitle's.
+
+### Release Name
+
+What the settings, Notifications and release pages call a release of Tsuzuri, the same in every Interface Language: `v` and the release number for a stable release, as `v0.2.0`; `Build`, the UTC date it was built and `+` its build count for a Preview build, as `Build 20260928+12`. A Preview build's release number only orders it, so it is never shown as a name.
 
 ### App Update
 
@@ -180,7 +184,7 @@ A release of Tsuzuri newer than the App Build, announced by the update manifest 
 
 ### Update Channel
 
-Where Tsuzuri looks for an App Update, chosen in the settings, each read as an update manifest from the update site `tsuzuri.aotoki.me`, which mirrors the releases: Stable, the latest release; or Preview, a build of each push to the trunk, which also carries each stable release once it is published. A Preview build's release number is the patch after the latest stable release, `-preview.` and its UTC build time, and `+` a build count only the MSI installer reads, as `0.2.1-preview.202609281430+12`; the settings show it as a preview based on the stable release, with its build time. Until a channel is chosen, a stable build uses Stable and a Preview build uses Preview, so a tester keeps receiving Preview builds; an rpm install offers only Stable, since rpm ranks a Preview build above the stable release that follows it.
+Where Tsuzuri looks for an App Update, chosen in the settings, each read as an update manifest from the update site `tsuzuri.aotoki.me`, which mirrors the releases: Stable, the latest release; or Preview, a build of each push to the trunk, which also carries each stable release once it is published. A Preview build's release number is the patch after the latest stable release, `-preview.` and its UTC build time, and `+` its build count, which the MSI installer reads as its fourth field, as `0.2.1-preview.202609281430+12`: it sorts after the stable release it follows and before any release after that, whichever part that release raises. Until a channel is chosen, a stable build uses Stable and a Preview build uses Preview, so a tester keeps receiving Preview builds; an rpm install offers only Stable, since rpm ranks a Preview build above the stable release that follows it.
 
 ### Rollback
 

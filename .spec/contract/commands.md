@@ -416,7 +416,7 @@ pub fn open_log_directory(log_dir: State<'_, LogDirInUse>) -> Result<(), Failure
 
 ## `app_build`
 
-The App Build: the release number Cargo.toml carries, for a Preview build the stable release it is based on and its UTC build time, whether its install offers the Preview channel, and the commit the binary was built from, or `unknown` for a build made outside a git checkout.
+The App Build: the release number Cargo.toml carries, its Release Name, whether it is a Preview build, whether its install offers the Preview channel, and the commit the binary was built from, or `unknown` for a build made outside a git checkout.
 
 ```rust
 pub fn app_build() -> AppBuild {}
@@ -441,7 +441,7 @@ pub fn open_sponsorship() -> Result<(), Failure> {}
 
 ## `check_for_update`
 
-Look for an App Update in the update manifest of the chosen Update Channel, and keep what it finds for `install_update`. It answers the App Update's release number, or none when the App Build is the latest; a manifest that cannot be reached or read fails as `update-failed`.
+Look for an App Update in the update manifest of the chosen Update Channel, and keep what it finds for `install_update`. It answers the App Update's release number, its Release Name and whether it is a Preview build, or none when the App Build is the latest; a manifest that cannot be reached or read fails as `update-failed`.
 
 ```rust
 pub async fn check_for_update(app: AppHandle, found_update: State<'_, FoundUpdate>) -> Result<Option<AppUpdate>, Failure> {}

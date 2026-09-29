@@ -195,6 +195,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `system_opener` 直接執行系統程式 | 開啟目錄與網頁，不是元件 |
 | 各情境的設定檔經 `json_settings` | 同一種讀寫 |
 | 模型下載與清單的指令直接用 `hub` | 只有傳輸，沒有規則 |
+| `current_project` 補上預設模型位置 | 專案不引用工具鏈 |
 
 ### 3.2 情境
 
@@ -258,7 +259,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `toolchain` | 應用 | 尋找元件、模型設定 |
 | `toolchain/` | `detection` | 轉接 | 偵測已安裝的元件 |
 | `toolchain/` | `hub` | 轉接 | Hugging Face 快取與下載 |
-| `toolchain/` | `presets` | 應用 | 預設模型清單 |
+| `toolchain/` | `presets` | 應用 | 預設模型清單與比對 |
 | `toolchain/` | `settings` | 轉接 | 元件設定檔 |
 | — | `progress` | 應用 | 回報進度的 Port |
 | — | `steps` | 應用 | Step 與 `ModeRun` |

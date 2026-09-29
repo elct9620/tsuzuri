@@ -18,6 +18,7 @@ Read the source for how things work; read these for what they are meant to be.
 | Document conventions | `docs/convention.md` § 2 |
 | Component source pins and Variants | `components.json` |
 | Build, run and test | `CONTRIBUTING.md` |
+| Release PR title and body | `CONTRIBUTING.md` § Releasing |
 | Quality gates | `.github/workflows/ci.yml`, `.claude/hooks/` |
 
 ## 2 Upkeep

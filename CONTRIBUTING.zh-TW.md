@@ -37,6 +37,33 @@ pnpm tauri build --config src-tauri/tauri.bundle.conf.json
 
 這份設定把 `vendor/` 放進安裝檔，App 依 `components.json` 列出的順序，使用第一個能執行的內建變體。CI 以同樣方式編譯各平台列出的第一個變體，並依釘版分別快取。
 
+## 釋出
+
+```
+Title: chore(stable): release Build 20260929+143
+
+Releases Preview Build 20260929+143 (173c0ed).
+
+## Verified
+- <what testers checked>
+
+## Known issues
+- <or none>
+
+## After merging
+1. Approve and run the CI of the release PR release-please opens
+2. Merge it; release-assets publishes the draft release
+```
+
+| 規則 | 原因 |
+|---|---|
+| 標題寫 Build | 測試者驗證的是它 |
+| head 用 `main` | 主線開發，不開分支 |
+| 合併前不 push `main` | head 維持是該 Build |
+| 用 merge commit 合併 | `stable` 保留每個 commit |
+
+釋出 PR 把 `main` 合進 `stable`。版號要等合併後才由 release-please 算出，所以標題寫預覽版的 Build；合併前確認 PR 的 head 仍是該 Build 的 commit。
+
 ## 實際執行引擎的測試
 
 ```bash

@@ -367,6 +367,8 @@ pub struct SlotView {
     path: Option<PathBuf>,
     has_file: bool,
     extensions: &'static [&'static str],
+    /// Which of the slot's Preset Models the Model is, as its place among them.
+    preset_index: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -424,6 +426,9 @@ impl ModelSettings {
             path: self.slot(slot).map(|source| source.path(&self.hub_cache)),
             has_file: self.ready_path(slot).is_ok(),
             extensions: slot.extensions(),
+            preset_index: self
+                .slot(slot)
+                .and_then(|source| presets::preset_index(slot, source)),
         };
         ModelSettingsView {
             transcription: slot_view(ModelSlot::Transcription),
@@ -801,6 +806,31 @@ mod tests {
                 settings.view().transcription.has_file
             ),
             (Some(cached_model), true)
+        );
+    }
+
+    // @behavior MD-049
+    #[test]
+    fn names_the_preset_model_a_slot_holds_in_the_model_settings() {
+        let second_translation_preset = presets::slot_presets(ModelSlot::Translation)[1]
+            .source
+            .clone();
+        let mut settings = ModelSettings::default();
+
+        settings.choose(ModelSlot::Translation, second_translation_preset);
+        settings.choose(
+            ModelSlot::Transcription,
+            ModelSource::File {
+                path: "/models/own.bin".into(),
+            },
+        );
+
+        assert_eq!(
+            (
+                settings.view().translation.preset_index,
+                settings.view().transcription.preset_index
+            ),
+            (Some(1), None)
         );
     }
 }

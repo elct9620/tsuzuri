@@ -16,9 +16,9 @@ use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{directory_name, trimmed_name};
 use super::{
     translation_only, translation_srt, translation_with_speakers, BackupKind, CleanupScope,
-    CurrentResource, ExportFormat, KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource,
-    Restoration, SegmentField, SegmentSpan, TextMatch, TranscriptionScope, TranscriptionTarget,
-    TranslationSource,
+    CurrentResource, ExportFormat, KnownSubtitle, Project, ProjectConfig, ProjectModelPresets,
+    ProjectOptions, Resource, Restoration, SegmentField, SegmentSpan, TextMatch,
+    TranscriptionScope, TranscriptionTarget, TranslationSource,
 };
 use crate::cleanup::{clean_range, clean_text};
 use crate::failure::Failure;
@@ -994,9 +994,18 @@ pub struct ProjectView {
     has_redo: bool,
     running_mode: Option<RunningMode>,
     pending_batch: Option<SegmentSpan>,
+    /// Which Preset Model each Project Model is; the Preset Models belong to the toolchain, so the
+    /// command answering the view fills this in.
+    project_model_presets: ProjectModelPresets,
 }
 
 impl ProjectView {
+    /// This view naming which Preset Model each Project Model is.
+    pub fn with_project_model_presets(mut self, presets: ProjectModelPresets) -> ProjectView {
+        self.project_model_presets = presets;
+        self
+    }
+
     pub fn pending_batch(&self) -> Option<SegmentSpan> {
         self.pending_batch
     }
@@ -1297,6 +1306,7 @@ impl CurrentProject {
                 has_redo: history.is_some_and(UndoHistory::has_redo),
                 running_mode: mode_hold.map(|hold| hold.mode.clone()),
                 pending_batch: mode_hold.and_then(|hold| hold.pending_batch),
+                project_model_presets: ProjectModelPresets::default(),
             }
         })
     }

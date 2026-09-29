@@ -111,7 +111,10 @@ describe("ProjectSettingsController", () => {
         calls.push({ command, args });
         if (command === "current_project") return project;
         if (command === "plugin:dialog|open") return chosenFile;
-        if (command === "preset_models") return [QWEN_PRESET];
+        if (command === "preset_models")
+          return (args as { slot: string }).slot === "translation"
+            ? [QWEN_PRESET]
+            : [];
         if (command === "download_model") return QWEN_PRESET.source;
         if (command === "model_settings")
           return {

@@ -10,7 +10,6 @@ import {
 } from "../backend/toolchain";
 import { t } from "../i18n";
 import {
-  isSameSource,
   presetLabel,
   sizeLabel,
   sourceFileName,
@@ -53,22 +52,23 @@ export default class ModelSlotController extends Controller {
 
   private presets: PresetModel[] = [];
   private source: ModelSource | null = null;
+  /** Which of the slot's Preset Models `source` is, as Rust names it. */
+  private presetIndex: number | null = null;
   private pendingDownload: HubFile | null = null;
 
   async connect(): Promise<void> {
     try {
-      this.presets = (await presetModels()).filter(
-        (preset) => preset.slot === this.slotValue,
-      );
+      this.presets = await presetModels(this.slotValue);
     } catch (error) {
       notifyFailure(t("settings.unreadable"), error);
     }
     this.showMenu();
   }
 
-  /** Shows `source` as the slot's Model, or none chosen. */
-  showSource(source: ModelSource | null): void {
+  /** Shows `source` as the slot's Model, or none chosen, choosing the Preset Model Rust names it as. */
+  showSource(source: ModelSource | null, presetIndex: number | null): void {
     this.source = source;
+    this.presetIndex = presetIndex;
     this.showMenu();
   }
 
@@ -157,12 +157,9 @@ export default class ModelSlotController extends Controller {
       }
       group.append(menuOption(String(index), presetLabel(preset)));
     });
-    const presetIndex = this.presets.findIndex(
-      (preset) =>
-        this.source !== null && isSameSource(preset.source, this.source),
-    );
+    const { presetIndex } = this;
     const ownOption =
-      this.source !== null && presetIndex === -1
+      this.source !== null && presetIndex === null
         ? [
             Object.assign(
               menuOption(
@@ -175,7 +172,7 @@ export default class ModelSlotController extends Controller {
         : [];
     menu.replaceChildren(firstOption, ...ownOption, ...groups.values());
     menu.value =
-      presetIndex !== -1
+      presetIndex !== null
         ? String(presetIndex)
         : this.source !== null
           ? OWN_MODEL

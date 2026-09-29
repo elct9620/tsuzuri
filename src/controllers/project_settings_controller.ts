@@ -5,6 +5,7 @@ import {
   setPrimaryLanguage,
   setProjectOptions,
   type ProjectFeed,
+  type ProjectModelPresets,
   type ProjectModels,
   type ProjectOptions,
   type ProjectView,
@@ -89,10 +90,13 @@ export default class ProjectSettingsController extends Controller {
 
   modelSlotOutletConnected(row: ModelSlotController): void {
     const project = this.feed.project;
-    if (project !== null)
+    if (project !== null) {
+      const slot = row.slotValue as keyof ProjectModels;
       row.showSource(
-        project.options.models[row.slotValue as keyof ProjectModels],
+        project.options.models[slot],
+        project.project_model_presets[slot],
       );
+    }
   }
 
   private async saveModel(
@@ -155,7 +159,10 @@ export default class ProjectSettingsController extends Controller {
       project.options.is_bilingual_autosaved;
     this.overwriteBackupTarget.checked = project.options.is_overwrite_backed_up;
     this.showTranscriptionOverrides(project.options.transcription);
-    this.showProjectModels(project.options.models);
+    this.showProjectModels(
+      project.options.models,
+      project.project_model_presets,
+    );
   }
 
   private showTranscriptionOverrides(overrides: TranscriptionOverrides): void {
@@ -166,14 +173,19 @@ export default class ProjectSettingsController extends Controller {
     }
   }
 
-  private showProjectModels(models: ProjectModels): void {
+  private showProjectModels(
+    models: ProjectModels,
+    presets: ProjectModelPresets,
+  ): void {
     for (const status of this.projectModelTargets) {
       const source = models[status.dataset.slot as keyof ProjectModels];
       status.textContent =
         source === null ? t("models.followsGeneral") : sourceName(source);
     }
-    for (const row of this.modelSlotOutlets)
-      row.showSource(models[row.slotValue as keyof ProjectModels]);
+    for (const row of this.modelSlotOutlets) {
+      const slot = row.slotValue as keyof ProjectModels;
+      row.showSource(models[slot], presets[slot]);
+    }
   }
 
   /** The Project's own settings while one is open, opened at their tab when it has just opened. */

@@ -43,6 +43,8 @@ export interface SlotView {
   has_file: boolean;
   /** The file extensions a Model for the slot has. */
   extensions: string[];
+  /** Which of the slot's Preset Models the Model is, as its place among them. */
+  preset_index: number | null;
 }
 
 export type ModelSettingsView = Record<ModelSlot, SlotView>;
@@ -67,8 +69,9 @@ export interface PresetModel {
   size: number;
 }
 
-export function presetModels(): Promise<PresetModel[]> {
-  return invoke<PresetModel[]>("preset_models");
+/** The Preset Models of `slot`, in the order the settings offer them. */
+export function presetModels(slot: ModelSlot): Promise<PresetModel[]> {
+  return invoke<PresetModel[]>("preset_models", { slot });
 }
 
 /** How much of a Model being downloaded has arrived, as `model-download-progress` tells it. */

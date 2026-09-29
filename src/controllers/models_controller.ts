@@ -48,7 +48,10 @@ export default class ModelsController extends Controller {
   /** A row connecting after the settings were read asks Rust for its slot's Model Source; `connect` already says when they cannot be read. */
   async modelSlotOutletConnected(row: ModelSlotController): Promise<void> {
     const settings = await modelSettings().catch(() => null);
-    if (settings !== null) row.showSource(settings[row.slotValue].source);
+    if (settings !== null) {
+      const { source, preset_index } = settings[row.slotValue];
+      row.showSource(source, preset_index);
+    }
   }
 
   private async record(slot: ModelSlot, source: ModelSource): Promise<void> {
@@ -73,7 +76,9 @@ export default class ModelsController extends Controller {
               : t("models.missing", { path });
       status.classList.toggle("missing", path !== null && !has_file);
     }
-    for (const row of this.modelSlotOutlets)
-      row.showSource(settings[row.slotValue].source);
+    for (const row of this.modelSlotOutlets) {
+      const { source, preset_index } = settings[row.slotValue];
+      row.showSource(source, preset_index);
+    }
   }
 }

@@ -512,6 +512,14 @@ pub struct ProjectModels {
     pub translation: Option<ModelSource>,
 }
 
+/// Which Preset Model each Project Model is, as its place among its slot's Preset Models; none
+/// where the slot has no Project Model or holds a Model that is none of them.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+pub struct ProjectModelPresets {
+    pub transcription: Option<usize>,
+    pub translation: Option<usize>,
+}
+
 /// The Transcription Settings a Project sets for itself; one left `None` follows the general settings.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]

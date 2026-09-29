@@ -49,17 +49,22 @@ const PRESETS: PresetModel[] = [
 ];
 const OWN_QWEN: ModelSource = { kind: "file", path: "/models/qwen3-4b.gguf" };
 
-function viewWith(translation: ModelSource | null): ModelSettingsView {
-  const slot = (source: ModelSource | null) => ({
+/** The Model Settings Rust answers with `translation` in its slot, as the Preset Model at `presetIndex` or none. */
+function viewWith(
+  translation: ModelSource | null,
+  presetIndex: number | null = null,
+): ModelSettingsView {
+  const slot = (source: ModelSource | null, preset_index: number | null) => ({
     source,
     path: source?.kind === "file" ? source.path : null,
     has_file: source !== null,
     extensions: ["gguf"],
+    preset_index,
   });
   return {
-    transcription: slot(null),
-    vad: slot(null),
-    translation: slot(translation),
+    transcription: slot(null, null),
+    vad: slot(null, null),
+    translation: slot(translation, presetIndex),
   };
 }
 
@@ -76,11 +81,18 @@ describe("ModelSlotController", () => {
     return calls.find((call) => call.command === command)?.args;
   }
 
-  async function mountWith(translation: ModelSource | null): Promise<void> {
+  async function mountWith(
+    translation: ModelSource | null,
+    presetIndex: number | null = null,
+  ): Promise<void> {
     mockIPC((command, args) => {
       calls.push({ command, args });
-      if (command === "preset_models") return PRESETS;
-      if (command === "model_settings") return viewWith(translation);
+      if (command === "preset_models")
+        return PRESETS.filter(
+          (preset) => preset.slot === (args as { slot: string }).slot,
+        );
+      if (command === "model_settings")
+        return viewWith(translation, presetIndex);
       return handlers[command]?.(args);
     });
     application = Application.start();
@@ -147,8 +159,8 @@ describe("ModelSlotController", () => {
     clearMocks();
   });
 
-  // @behavior MD-031
-  it("offers only the slot's Preset Models, grouped by name", async () => {
+  // @behavior MD-048
+  it("groups the slot's Preset Models by name, in the order Rust answers them", async () => {
     await mountWith(null);
 
     const groups = [...menuOf("transcription").querySelectorAll("optgroup")];
@@ -165,7 +177,7 @@ describe("ModelSlotController", () => {
   it("downloads a Preset Model at its commit before choosing it", async () => {
     await mountWith(null);
     handlers.download_model = () => QWEN;
-    handlers.choose_model = () => viewWith(QWEN);
+    handlers.choose_model = () => viewWith(QWEN, 0);
 
     await pick("translation", "0");
 
@@ -251,6 +263,13 @@ describe("ModelSlotController", () => {
     );
   });
 
+  // @behavior MD-050
+  it("chooses the Preset Model Rust names the slot's Model as", async () => {
+    await mountWith(QWEN, 0);
+
+    expect(menuOf("translation").value).toBe("0");
+  });
+
   // @behavior MD-038
   it("downloads the file picked from a Repository, then chooses it", async () => {
     await mountWith(null);
@@ -258,7 +277,7 @@ describe("ModelSlotController", () => {
       { path: "Qwen3-4B-Instruct-2507-Q4_K_M.gguf", size: 2_497_281_120 },
     ];
     handlers.download_model = () => QWEN;
-    handlers.choose_model = () => viewWith(QWEN);
+    handlers.choose_model = () => viewWith(QWEN, 0);
 
     document
       .querySelector<HTMLButtonElement>("#translation-row .repository")!

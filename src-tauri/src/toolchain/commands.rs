@@ -106,8 +106,8 @@ fn slot_model_files(slot: ModelSlot, mut files: Vec<RepositoryFile>) -> Vec<Repo
 }
 
 #[tauri::command]
-pub fn preset_models() -> Vec<PresetModel> {
-    super::presets::catalog()
+pub fn preset_models(slot: ModelSlot) -> Vec<PresetModel> {
+    super::presets::slot_presets(slot)
 }
 
 /// A client of the Hugging Face Hub using the cache and the login Hugging Face's own tools use.

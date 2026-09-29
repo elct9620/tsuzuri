@@ -32,6 +32,7 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
     has_redo: false,
     running_mode: null,
     pending_batch: null,
+    project_model_presets: { transcription: null, translation: null },
     ...changes,
   };
 }

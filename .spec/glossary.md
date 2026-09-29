@@ -240,7 +240,7 @@ Where a Model Slot's Model comes from: a file on disk, named by its path, or a f
 
 ### Preset Model
 
-A Model Tsuzuri was verified with, offered for its Model Slot by name and quantization so nobody has to know where to find it: a file of a Hugging Face Repository pinned at a commit, like the Components' sources, with its size. Choosing one downloads it unless the Hugging Face Cache holds it.
+A Model Tsuzuri was verified with, offered for its Model Slot by name and quantization so nobody has to know where to find it: a file of a Hugging Face Repository pinned at a commit, like the Components' sources, with its size. Choosing one downloads it unless the Hugging Face Cache holds it. Which of a slot's Preset Models a chosen Model is, if any, is answered by Rust as its place in the order the slot's Preset Models are offered, so the settings never compare Model Sources themselves.
 
 ### Hugging Face Cache
 

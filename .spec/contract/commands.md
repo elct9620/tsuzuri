@@ -8,7 +8,7 @@ The Tauri commands the webview invokes. The frontend depends on these names and 
 
 ## `model_settings`
 
-The Model Source chosen for each Model Slot, the path its Model is found at, whether that file exists, and the file extensions a Model for the slot has.
+The Model Source chosen for each Model Slot, the path its Model is found at, whether that file exists, the file extensions a Model for the slot has, and which of the slot's Preset Models it is, as its place among them, or none.
 
 ```rust
 pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, Failure> {}
@@ -24,10 +24,10 @@ pub fn choose_model(app: AppHandle, slot: ModelSlot, source: ModelSource) -> Res
 
 ## `preset_models`
 
-The Preset Models, each with its Model Slot, name, quantization, Model Source and size in bytes, in the order the settings offer them.
+The Preset Models of `slot`, each with its Model Slot, name, quantization, Model Source and size in bytes, in the order the settings offer them.
 
 ```rust
-pub fn preset_models() -> Vec<PresetModel> {}
+pub fn preset_models(slot: ModelSlot) -> Vec<PresetModel> {}
 ```
 
 ## `download_model`
@@ -184,7 +184,7 @@ pub fn set_project_options(app: AppHandle, current: State<'_, CurrentProject>, o
 
 ## `current_project`
 
-The Project's directory, Project Name, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments and what the Translation Glossary calls each of their Speakers in the translation shown, whether it has a change to undo and to redo, the Mode running on it and the Batch it is translating, or none before one is opened.
+The Project's directory, Project Name, Languages, Project Options with which Preset Model each Project Model is, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments and what the Translation Glossary calls each of their Speakers in the translation shown, whether it has a change to undo and to redo, the Mode running on it and the Batch it is translating, or none before one is opened.
 
 ```rust
 pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView> {}

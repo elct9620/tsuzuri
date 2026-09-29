@@ -76,6 +76,14 @@ export interface ProjectView {
   running_mode: RunningMode | null;
   /** The Segments the running translation works on now, by position. */
   pending_batch: SegmentSpan | null;
+  /** Which Preset Model each Project Model is, as its place among its slot's Preset Models. */
+  project_model_presets: ProjectModelPresets;
+}
+
+/** Which Preset Model each Project Model is; none without one or for a Model no Preset Model is. */
+export interface ProjectModelPresets {
+  transcription: number | null;
+  translation: number | null;
 }
 
 /** The Segments from `first` through `last`, by position. */

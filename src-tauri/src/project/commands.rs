@@ -9,8 +9,8 @@ use super::recent::{project_views, RecentProjectView, RecentProjects};
 use super::requested_srt::{srt_argument, RequestedSrt};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
 use super::{
-    CleanupScope, CurrentProject, ExportFormat, Project, ProjectOptions, ProjectView, Reload,
-    Restoration, SegmentField, TextMatch,
+    CleanupScope, CurrentProject, ExportFormat, Project, ProjectModelPresets, ProjectModels,
+    ProjectOptions, ProjectView, Reload, Restoration, SegmentField, TextMatch,
 };
 use crate::failure::Failure;
 use crate::json_settings;
@@ -19,6 +19,8 @@ use crate::progress::Progress;
 use crate::replacement::{Replacement, Search};
 use crate::segment_change::SegmentChange;
 use crate::steps::ModeLock;
+use crate::toolchain::presets::preset_index;
+use crate::toolchain::ModelSlot;
 use crate::transcript::WrittenText;
 
 #[tauri::command]
@@ -188,7 +190,24 @@ pub fn set_project_options(
 
 #[tauri::command]
 pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView> {
-    current.view()
+    current.view().map(|view| {
+        let presets = project_model_presets(&view.options().models);
+        view.with_project_model_presets(presets)
+    })
+}
+
+/// Which Preset Model each of `models` is. The Preset Models belong to the toolchain, which the
+/// Project may not reach, so the view is completed here, where commands join the two.
+fn project_model_presets(models: &ProjectModels) -> ProjectModelPresets {
+    let index_among_presets = |slot, source: &Option<_>| {
+        source
+            .as_ref()
+            .and_then(|source| preset_index(slot, source))
+    };
+    ProjectModelPresets {
+        transcription: index_among_presets(ModelSlot::Transcription, &models.transcription),
+        translation: index_among_presets(ModelSlot::Translation, &models.translation),
+    }
 }
 
 #[tauri::command]
@@ -623,5 +642,28 @@ mod tests {
 
         assert_eq!(result, Err(Failure::ChangedElsewhere));
         assert!(is_heard.load(Ordering::SeqCst));
+    }
+
+    // @behavior MD-049
+    #[test]
+    fn names_the_preset_model_each_project_model_is() {
+        let second_translation_preset =
+            crate::toolchain::presets::slot_presets(ModelSlot::Translation)[1]
+                .source
+                .clone();
+        let models = ProjectModels {
+            transcription: Some(crate::model_source::ModelSource::File {
+                path: "/models/own.bin".into(),
+            }),
+            translation: Some(second_translation_preset),
+        };
+
+        assert_eq!(
+            project_model_presets(&models),
+            ProjectModelPresets {
+                transcription: None,
+                translation: Some(1),
+            }
+        );
     }
 }

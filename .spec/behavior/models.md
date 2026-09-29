@@ -4,6 +4,7 @@ Pointing each Model Slot at a Model Source, in the general settings or as a Proj
 
 ## Includes
 
+- `src-tauri/src/project/commands.rs`
 - `src-tauri/src/project/files.rs`
 - `src-tauri/src/toolchain.rs`
 - `src-tauri/src/toolchain/*.rs`
@@ -284,8 +285,8 @@ A Preset Model is what Tsuzuri was verified with, so a Repository changing its f
 | Step | Statement |
 | --- | --- |
 | Given | Preset Models for the transcription and the translation slots |
-| When | the transcription slot's menu is shown |
-| Then | it offers only the transcription Preset Models, grouped by name |
+| When | the transcription slot's Preset Models are asked for |
+| Then | Rust answers only the transcription Preset Models, in the order the settings offer them |
 
 ## `MD-032` Downloading a Preset Model before choosing it
 
@@ -404,3 +405,27 @@ The Hub answers a Repository that does not exist, or is private to someone else,
 | Given | a Hugging Face Repository answering unauthorized without an error code |
 | When | its files are listed |
 | Then | it is refused as not found, naming the Repository |
+
+## `MD-048` Grouping a slot's Preset Models by name
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcription slot's Preset Models of two families |
+| When | its menu is shown |
+| Then | the menu groups them by name, in the order Rust answers them |
+
+## `MD-049` Naming which Preset Model a slot's Model is
+
+| Step | Statement |
+| --- | --- |
+| Given | the translation slot holding a Preset Model, in the general settings and as a Project Model |
+| When | the Model Settings and the Project are viewed |
+| Then | each names that Preset Model's place among the slot's Preset Models, while a file on disk names none |
+
+## `MD-050` Choosing the Preset Model Rust names in a slot's menu
+
+| Step | Statement |
+| --- | --- |
+| Given | the translation slot whose Model Rust names as its first Preset Model |
+| When | its menu is shown |
+| Then | the menu has that Preset Model chosen |

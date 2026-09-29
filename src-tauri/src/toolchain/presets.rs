@@ -99,9 +99,59 @@ pub fn catalog() -> Vec<PresetModel> {
         .collect()
 }
 
+/// The Preset Models of `slot`, in the order the settings offer them.
+pub fn slot_presets(slot: ModelSlot) -> Vec<PresetModel> {
+    catalog()
+        .into_iter()
+        .filter(|preset| preset.slot == slot)
+        .collect()
+}
+
+/// Where `source` stands among `slot`'s Preset Models, or none when it is none of them; the settings
+/// choose the Preset Model a Model is by this place rather than comparing Model Sources themselves.
+pub fn preset_index(slot: ModelSlot, source: &ModelSource) -> Option<usize> {
+    slot_presets(slot)
+        .iter()
+        .position(|preset| preset.source == *source)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // @behavior MD-031
+    #[test]
+    fn offers_a_slot_only_its_own_preset_models_in_the_catalog_order() {
+        let transcription_presets: Vec<_> = catalog()
+            .into_iter()
+            .filter(|preset| preset.slot == ModelSlot::Transcription)
+            .collect();
+
+        let offered = slot_presets(ModelSlot::Transcription);
+
+        assert_eq!(
+            (offered.len() < catalog().len(), offered),
+            (true, transcription_presets)
+        );
+    }
+
+    // @behavior MD-049
+    #[test]
+    fn places_a_preset_model_among_its_slot_and_a_file_nowhere() {
+        let second = slot_presets(ModelSlot::Translation)[1].source.clone();
+        let own_file = ModelSource::File {
+            path: "/models/qwen3-4b.gguf".into(),
+        };
+
+        assert_eq!(
+            (
+                preset_index(ModelSlot::Translation, &second),
+                preset_index(ModelSlot::Transcription, &second),
+                preset_index(ModelSlot::Translation, &own_file),
+            ),
+            (Some(1), None, None)
+        );
+    }
 
     // @behavior MD-029
     #[test]

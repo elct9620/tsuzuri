@@ -11,13 +11,6 @@ export function sourceFileName(source: ModelSource): string {
   return fileName(source.kind === "file" ? source.path : source.file);
 }
 
-/** Whether `a` and `b` name the same Model. */
-export function isSameSource(a: ModelSource, b: ModelSource): boolean {
-  if (a.kind === "file" || b.kind === "file")
-    return a.kind === "file" && b.kind === "file" && a.path === b.path;
-  return a.repo === b.repo && a.file === b.file && a.commit === b.commit;
-}
-
 /** A file's size as Hugging Face shows it, in decimal units. */
 export function sizeLabel(bytes: number): string {
   if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(2)} GB`;

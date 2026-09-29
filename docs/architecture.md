@@ -120,7 +120,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `toolchain.ts` | `toolchain/commands.rs` | 元件、模型設定與下載 |
 | `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
 | `logs.ts` | `logs/commands.rs` | log 目錄、除錯紀錄 |
-| `about.ts` | `about/commands.rs` | App Build、釋出頁面 |
+| `about.ts` | `about/commands.rs` | App Build、釋出與贊助頁面 |
 | `updates.ts` | `updates/commands.rs` | 檢查、安裝、通道、退回 |
 | `progress.ts` | `steps/commands.rs` | `cancel_task` |
 
@@ -610,7 +610,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
 | `rust:srt-requested` | Rust，經 `relayEvents` | `project` 開啟系統要開的 SRT |
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `model-slot` 顯示下載進度 |
-| `model-slot:choose` | `model-slot` | `models`、`project` 記下來源 |
+| `model-slot:choose` | `model-slot` | `models`、`project-settings` 記下來源 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
@@ -626,7 +626,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `transcription.ts`、`translation.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄、除錯紀錄的指令 |
-| `about.ts` | App Build、開啟釋出頁面 |
+| `about.ts` | App Build、開啟釋出與贊助頁面 |
 | `waveform.ts` | 波形的指令與型別 |
 | `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |
 | `events.ts` | 把 Rust 事件轉到 window |

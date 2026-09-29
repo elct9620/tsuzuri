@@ -63,14 +63,13 @@ pub fn take_requested_srt(requested: State<'_, RequestedSrt>) -> Option<PathBuf>
 }
 
 #[tauri::command]
-pub fn recent_projects(
+pub async fn recent_projects(
     app: AppHandle,
     current: State<'_, CurrentProject>,
 ) -> Result<Vec<RecentProjectView>, Failure> {
     let recent = RecentProjects::load(&json_settings::settings_dir(&app)?)?;
-    Ok(project_views(
-        recent.projects_without(current.directory().as_deref()),
-    ))
+    let projects = recent.projects_without(current.directory().as_deref());
+    Ok(tokio::task::spawn_blocking(move || project_views(projects)).await?)
 }
 
 /// Holds the Project `open` opens as the Current Project and tells the webview, keeping the

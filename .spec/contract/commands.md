@@ -128,10 +128,10 @@ pub fn open_srt(app: AppHandle, mode_lock: State<'_, ModeLock>, path: PathBuf, l
 
 ## `recent_projects`
 
-The Recent Projects, the latest opened first, each as its `directory`, its Project Name as `name` and `opened_at_ms`, the milliseconds since the Unix epoch it was last opened at; the open Project is left out. Each Project Config is read at once, and one not read in time, as on a disk that does not answer, leaves its Project named after its directory rather than holding the list up.
+The Recent Projects, the latest opened first, each as its `directory`, its Project Name as `name` and `opened_at_ms`, the milliseconds since the Unix epoch it was last opened at; the open Project is left out. Each Project Config is read at once, and one not read in time, as on a disk that does not answer, leaves its Project named after its directory rather than holding the list up. The reads wait off the main thread, so the window keeps drawing meanwhile.
 
 ```rust
-pub fn recent_projects(app: AppHandle, current: State<'_, CurrentProject>) -> Result<Vec<RecentProjectView>, Failure> {}
+pub async fn recent_projects(app: AppHandle, current: State<'_, CurrentProject>) -> Result<Vec<RecentProjectView>, Failure> {}
 ```
 
 ## `take_requested_srt`

@@ -95,9 +95,9 @@ describe("ProjectController", () => {
         if (command === "open_project") return openProject();
         if (command === "reload_project") return reloadProject();
         if (command === "take_requested_srt") {
-          const taken = requestedSrt;
+          const takenSrt = requestedSrt;
           requestedSrt = null;
-          return taken;
+          return takenSrt;
         }
         if (command === "select_resource" && selectFailure !== undefined)
           return Promise.reject(selectFailure);

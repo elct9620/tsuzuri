@@ -6,7 +6,7 @@ import RepositoryController from "./repository_controller";
 
 describe("RepositoryController", () => {
   let application: Application;
-  let listed: (args: unknown) => unknown;
+  let repositoryFiles: (args: unknown) => unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const dialog = () =>
@@ -33,7 +33,7 @@ describe("RepositoryController", () => {
       </dialog>
     `;
     mockIPC((command, args) =>
-      command === "repository_files" ? listed(args) : undefined,
+      command === "repository_files" ? repositoryFiles(args) : undefined,
     );
     application = Application.start();
     application.register("repository", RepositoryController);
@@ -48,7 +48,7 @@ describe("RepositoryController", () => {
   // @behavior MD-037
   it("offers the Model files Rust answers for the slot, with their sizes", async () => {
     let listedArgs: unknown;
-    listed = (args) => {
+    repositoryFiles = (args) => {
       listedArgs = args;
       return [
         { path: "Qwen3-4B-Instruct-2507-Q4_K_M.gguf", size: 2_497_281_120 },
@@ -73,7 +73,7 @@ describe("RepositoryController", () => {
 
   // @behavior MD-039
   it("says why a Repository was not listed", async () => {
-    listed = () =>
+    repositoryFiles = () =>
       Promise.reject({ code: "model-download-failed", detail: "not found" });
     void dialog().pick("translation");
 

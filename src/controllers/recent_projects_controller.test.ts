@@ -4,11 +4,11 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
-import type { RecentProject } from "../backend/project";
+import type { RecentProjectView } from "../backend/project";
 import ProjectController from "./project_controller";
 import RecentProjectsController from "./recent_projects_controller";
 
-const LECTURE: RecentProject = {
+const LECTURE: RecentProjectView = {
   directory: "/videos/lecture",
   name: "lecture",
   opened_at_ms: Date.UTC(2026, 8, 24, 12),
@@ -16,7 +16,7 @@ const LECTURE: RecentProject = {
 
 describe("RecentProjectsController", () => {
   let application: Application;
-  let recent: RecentProject[];
+  let recent: RecentProjectView[];
   let calls: { command: string; args: unknown }[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));

@@ -3,12 +3,12 @@ import { Controller } from "@hotwired/stimulus";
 import {
   recentProjects,
   type ProjectFeed,
-  type RecentProject,
+  type RecentProjectView,
 } from "../backend/project";
 import { interfaceLanguageCode } from "../i18n";
 
 /** A row of the start screen's list, opening its Project when clicked. */
-function listRow(project: RecentProject): HTMLLIElement {
+function listRow(project: RecentProjectView): HTMLLIElement {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "list-col-grow min-w-0 text-left";
@@ -34,7 +34,7 @@ function listRow(project: RecentProject): HTMLLIElement {
 }
 
 /** An item of the Open menu, naming its Project with the path in a tooltip. */
-function menuItem(project: RecentProject): HTMLLIElement {
+function menuItem(project: RecentProjectView): HTMLLIElement {
   const button = document.createElement("button");
   button.type = "button";
   button.dataset.action = "project#openRecent";

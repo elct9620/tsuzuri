@@ -103,10 +103,10 @@ mod tests {
     // @behavior PJ-170
     #[test]
     fn answers_the_requested_srt_once() {
-        let requested = RequestedSrt::default();
-        requested.request(PathBuf::from("/talks/ep02.srt"));
+        let requested_srt = RequestedSrt::default();
+        requested_srt.request(PathBuf::from("/talks/ep02.srt"));
 
-        let takes = (requested.take(), requested.take());
+        let takes = (requested_srt.take(), requested_srt.take());
 
         assert_eq!(takes, (Some(PathBuf::from("/talks/ep02.srt")), None));
     }

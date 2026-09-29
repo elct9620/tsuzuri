@@ -144,8 +144,8 @@ impl ModelDownloads {
         };
         let filename = file.clone();
         let task = {
-            let mut running = self.0.lock().unwrap();
-            if running.contains_key(&key) {
+            let mut running_downloads = self.0.lock().unwrap();
+            if running_downloads.contains_key(&key) {
                 return Err(Failure::ModelDownloading);
             }
             let task = tokio::spawn(async move {
@@ -157,19 +157,19 @@ impl ModelDownloads {
                     .send()
                     .await
             });
-            running.insert(key.clone(), task.abort_handle());
+            running_downloads.insert(key.clone(), task.abort_handle());
             task
         };
         let task_id = task.id();
         let result = task.await;
-        let mut running = self.0.lock().unwrap();
-        if running
+        let mut running_downloads = self.0.lock().unwrap();
+        if running_downloads
             .get(&key)
             .is_some_and(|handle| handle.id() == task_id)
         {
-            running.remove(&key);
+            running_downloads.remove(&key);
         }
-        drop(running);
+        drop(running_downloads);
         let path = match result {
             Ok(downloaded) => downloaded.map_err(|error| hub_failure(&repo, error))?,
             Err(error) if error.is_cancelled() => return Err(Failure::ModelDownloadCancelled),
@@ -296,11 +296,11 @@ mod tests {
         }
     }
 
-    /// A Hub whose file never finishes downloading, telling `started` once its HEAD is asked.
-    fn stalled_hub(started: mpsc::Sender<()>) -> FakeHttp {
+    /// A Hub whose file never finishes downloading, telling `start_signal` once its HEAD is asked.
+    fn stalled_hub(start_signal: mpsc::Sender<()>) -> FakeHttp {
         FakeHttp::serve(move |request| {
             if request.method == "HEAD" {
-                let _ = started.send(());
+                let _ = start_signal.send(());
             } else {
                 std::thread::sleep(Duration::from_secs(5));
             }
@@ -480,9 +480,9 @@ mod tests {
         std::fs::create_dir_all(cached_file(dir.path()).parent().unwrap()).unwrap();
         std::fs::write(cached_file(dir.path()), "weights").unwrap();
         let requests = Arc::new(AtomicUsize::new(0));
-        let counted = Arc::clone(&requests);
+        let request_count = Arc::clone(&requests);
         let hub = FakeHttp::serve(move |request| {
-            counted.fetch_add(1, Ordering::SeqCst);
+            request_count.fetch_add(1, Ordering::SeqCst);
             hub_file(request, b"weights")
         });
 
@@ -497,14 +497,14 @@ mod tests {
         let dir = TempDir::new("hub-progress");
         let hub = FakeHttp::serve(|request| hub_file(request, &[7; 300]));
         let reports = Arc::new(Mutex::new(Vec::new()));
-        let recorded = Arc::clone(&reports);
+        let progress_reports = Arc::clone(&reports);
 
         tauri::async_runtime::block_on(ModelDownloads::default().download(
             hub_client(dir.path(), None, Some(&hub.base_url)).unwrap(),
             REPO.to_string(),
             FILE.to_string(),
             None,
-            move |progress| recorded.lock().unwrap().push(progress),
+            move |progress| progress_reports.lock().unwrap().push(progress),
         ))
         .unwrap();
 
@@ -523,15 +523,15 @@ mod tests {
     #[test]
     fn cancels_a_download() {
         let dir = TempDir::new("hub-cancel");
-        let (started, has_started) = mpsc::channel();
-        let hub = stalled_hub(started);
+        let (start_signal, has_started) = mpsc::channel();
+        let hub = stalled_hub(start_signal);
         let downloads = Arc::new(ModelDownloads::default());
-        let running = Arc::clone(&downloads);
+        let shared_downloads = Arc::clone(&downloads);
         let cache = dir.path().to_path_buf();
         let base_url = hub.base_url.clone();
         let download = std::thread::spawn(move || {
             let client = hub_client(&cache, None, Some(&base_url)).unwrap();
-            tauri::async_runtime::block_on(running.download(
+            tauri::async_runtime::block_on(shared_downloads.download(
                 client,
                 REPO.to_string(),
                 FILE.to_string(),
@@ -553,15 +553,15 @@ mod tests {
     #[test]
     fn refuses_a_second_download_of_the_same_file() {
         let dir = TempDir::new("hub-twice");
-        let (started, has_started) = mpsc::channel();
-        let hub = stalled_hub(started);
+        let (start_signal, has_started) = mpsc::channel();
+        let hub = stalled_hub(start_signal);
         let downloads = Arc::new(ModelDownloads::default());
-        let running = Arc::clone(&downloads);
+        let shared_downloads = Arc::clone(&downloads);
         let cache = dir.path().to_path_buf();
         let base_url = hub.base_url.clone();
         let first = std::thread::spawn(move || {
             let client = hub_client(&cache, None, Some(&base_url)).unwrap();
-            tauri::async_runtime::block_on(running.download(
+            tauri::async_runtime::block_on(shared_downloads.download(
                 client,
                 REPO.to_string(),
                 FILE.to_string(),

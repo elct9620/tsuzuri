@@ -129,7 +129,7 @@ mod tests {
     // @behavior MD-030
     #[test]
     fn pins_every_preset_model_at_a_commit() {
-        let unpinned: Vec<_> = catalog()
+        let unpinned_presets: Vec<_> = catalog()
             .into_iter()
             .filter(|preset| {
                 !matches!(&preset.source, ModelSource::Repository { commit, .. }
@@ -137,6 +137,6 @@ mod tests {
             })
             .collect();
 
-        assert_eq!(unpinned, vec![]);
+        assert_eq!(unpinned_presets, vec![]);
     }
 }

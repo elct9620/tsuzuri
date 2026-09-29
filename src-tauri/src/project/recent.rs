@@ -191,7 +191,7 @@ mod tests {
             recent_project(PathBuf::from("/videos/lecture")),
             recent_project(PathBuf::from("/videos/interview")),
         ];
-        let started = Instant::now();
+        let start = Instant::now();
 
         let views = project_views_within(projects, Duration::from_millis(50), |directory| {
             if directory.ends_with("lecture") {
@@ -201,7 +201,7 @@ mod tests {
         });
 
         assert_eq!(
-            (names(&views), started.elapsed() < Duration::from_secs(1)),
+            (names(&views), start.elapsed() < Duration::from_secs(1)),
             (vec!["lecture", "訪談"], true)
         );
     }

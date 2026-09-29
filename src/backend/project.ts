@@ -218,7 +218,7 @@ export function takeRequestedSrt(): Promise<string | null> {
 }
 
 /** A directory opened as a Project before, by its Project Name, and when it was last opened. */
-export interface RecentProject {
+export interface RecentProjectView {
   directory: string;
   /** The Project Name, the directory's name when its Project Config gives none or does not answer. */
   name: string;
@@ -226,7 +226,7 @@ export interface RecentProject {
 }
 
 /** The Recent Projects, the latest opened first, without the Project already open. */
-export function recentProjects(): Promise<RecentProject[]> {
+export function recentProjects(): Promise<RecentProjectView[]> {
   return invoke("recent_projects");
 }
 

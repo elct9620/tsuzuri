@@ -18,8 +18,8 @@ describe("ProjectFeed", () => {
 
   // @behavior PJ-184
   it("shows the Project to every view when one of them fails", async () => {
-    const reported = vi.fn();
-    vi.stubGlobal("reportError", reported);
+    const reportErrorSpy = vi.fn();
+    vi.stubGlobal("reportError", reportErrorSpy);
     const feed = new ProjectFeed();
     const failure = new Error("the Preview could not load its media");
     const shown: (ProjectView | null)[] = [];
@@ -31,6 +31,9 @@ describe("ProjectFeed", () => {
     const unlisten = await feed.start();
     unlisten();
 
-    expect([shown, reported.mock.calls]).toEqual([[projectOf()], [[failure]]]);
+    expect([shown, reportErrorSpy.mock.calls]).toEqual([
+      [projectOf()],
+      [[failure]],
+    ]);
   });
 });

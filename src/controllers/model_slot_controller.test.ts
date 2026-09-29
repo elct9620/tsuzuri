@@ -237,6 +237,20 @@ describe("ModelSlotController", () => {
     expect(menu.selectedOptions[0].textContent).toBe("自選：qwen3-4b.gguf");
   });
 
+  // @behavior MD-036
+  it("names the slot's Model on a row that appears after the settings were read", async () => {
+    await mountWith(OWN_QWEN);
+    const row = document.querySelector("#translation-row")!;
+
+    row.replaceWith(row.cloneNode(true));
+    await settle();
+    await settle();
+
+    expect(menuOf("translation").selectedOptions[0].textContent).toBe(
+      "自選：qwen3-4b.gguf",
+    );
+  });
+
   // @behavior MD-038
   it("downloads the file picked from a Repository, then chooses it", async () => {
     await mountWith(null);

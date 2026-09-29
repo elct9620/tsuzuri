@@ -19,7 +19,6 @@ export default class ModelsController extends Controller {
   declare readonly statusTargets: HTMLElement[];
   /** The rows choosing each slot's Model. */
   declare readonly modelSlotOutlets: ModelSlotController[];
-  private settings: ModelSettingsView | null = null;
 
   async connect(): Promise<void> {
     try {
@@ -31,11 +30,12 @@ export default class ModelsController extends Controller {
 
   async choose(event: Event): Promise<void> {
     const slot = (event.currentTarget as HTMLElement).dataset.slot as ModelSlot;
-    if (this.settings === null) return;
+    const settings = await modelSettings().catch(() => null);
+    if (settings === null) return;
     const path = await open({
       multiple: false,
       directory: false,
-      filters: [{ name: "Model", extensions: this.settings[slot].extensions }],
+      filters: [{ name: "Model", extensions: settings[slot].extensions }],
     });
     if (path !== null) await this.record(slot, { kind: "file", path });
   }
@@ -45,9 +45,10 @@ export default class ModelsController extends Controller {
     if (detail.source !== null) await this.record(detail.slot, detail.source);
   }
 
-  modelSlotOutletConnected(row: ModelSlotController): void {
-    if (this.settings !== null)
-      row.showSource(this.settings[row.slotValue].source);
+  /** A row connecting after the settings were read asks Rust for its slot's Model Source; `connect` already says when they cannot be read. */
+  async modelSlotOutletConnected(row: ModelSlotController): Promise<void> {
+    const settings = await modelSettings().catch(() => null);
+    if (settings !== null) row.showSource(settings[row.slotValue].source);
   }
 
   private async record(slot: ModelSlot, source: ModelSource): Promise<void> {
@@ -59,7 +60,6 @@ export default class ModelsController extends Controller {
   }
 
   private show(settings: ModelSettingsView): void {
-    this.settings = settings;
     for (const status of this.statusTargets) {
       const { source, path, has_file } =
         settings[status.dataset.slot as ModelSlot];

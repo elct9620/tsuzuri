@@ -1180,7 +1180,7 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
 | 首次釋出前 | `bootstrap-sha` |
 | 首次釋出後 | 移除 `release-as` |
 
-預覽版號取自最新正式 tag，不讀 main 的版號檔，所以 main 不必同步。`bootstrap-sha` 之前的 commit 不寫進第一版的 changelog；`release-as` 只為第一版固定 0.1.0。
+預覽版號取自最新正式 tag，不讀 main 的版號檔，所以 main 不必同步。`bootstrap-sha` 之前的 commit 不寫進第一版的 changelog，之後至少要有一個 feat 或 fix 才會開版本 PR；`release-as` 只為第一版固定 0.1.0。
 
 ### 13.4 失敗時補救
 

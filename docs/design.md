@@ -1154,7 +1154,33 @@ action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版�
   release-assets 完成 ─▶ pages（13.5.4）
 ```
 
-日常 commit 在 main，驗證後以 PR 合併進 stable 才發正式版；stable 只收 PR，只用 merge commit，保留每個 commit 給 changelog。版號與 changelog 由 release-please 管理，直接取用 CI 的打包，不重新編譯；Release 附完檔才公開。預覽版的 Release 標題與設定頁同樣稱呼：以哪個正式版為基礎、建置時間（UTC），說明列出完整版號與 commit，回報時對得上。預覽版每版一個 tag，只建立不移動：workflow 的 token 不能把 tag 移到 workflow 檔案不同的 commit；舊版連同 tag 刪除，只留最新 5 版。不做程式碼簽章，放行步驟寫在 README。
+日常 commit 在 main，驗證後以 PR 合併進 stable 才發正式版；stable 只收 PR，只用 merge commit，保留每個 commit 給 changelog。版號與 changelog 由 release-please 管理，直接取用 CI 的打包；Release 附完檔才公開。不做程式碼簽章，放行步驟寫在 README。
+
+#### 13.3.1 預覽版的 Release
+
+| 項目 | 內容 |
+|---|---|
+| 標題 | `Preview Build <日期>+<編號>` |
+| 說明 | 建置時間、commit |
+| tag | `v<預覽版號>`，只建立 |
+| 保留 | 最新 5 版 |
+
+標題用 Release Name，與設定頁同名，回報時對得上；版號只用來排序，不列在說明。workflow 的 token 不能把 tag 移到 workflow 檔案不同的 commit，所以每版一個 tag，舊版連同 tag 刪除。
+
+#### 13.3.2 版號只在 stable
+
+```
+  stable  release-please 改版號與 CHANGELOG ─▶ tag v0.2.0
+  main    版號檔停在舊版，不回併
+  main ─合併─▶ stable：main 沒改那幾行，留下 stable 的版號
+```
+
+| 時機 | 動作 |
+|---|---|
+| 首次釋出前 | `bootstrap-sha` |
+| 首次釋出後 | 移除 `release-as` |
+
+預覽版號取自最新正式 tag，不讀 main 的版號檔，所以 main 不必同步。`bootstrap-sha` 之前的 commit 不寫進第一版的 changelog；`release-as` 只為第一版固定 0.1.0。
 
 ### 13.4 失敗時補救
 
@@ -1222,20 +1248,23 @@ Windows 的安裝程式啟動後直接結束 Tsuzuri，不經過結束時的 `ki
 
 ```
   最新正式 tag v0.2.0 ─▶ 預覽版號 0.2.1-preview.<UTC 時間>+<run>
-    0.2.0  <  0.2.1-preview.…  <  0.2.1（下一個正式版）
+    0.2.0  <  0.2.1-preview.…  <  任何下一個正式版（0.2.1 起）
   選穩定版 ─▶ updates/stable.json    選預覽版 ─▶ updates/preview.json
   預覽版切回穩定版 ─▶ 等下一個正式版，或按「立即退回」
 ```
 
 | 規則 | 原因 |
 |---|---|
+| 下一個 patch 加預覽 | 不必猜下一版 |
+| 不用 `0.2.0+<run>` | SemVer 忽略 build |
+| 不用 `0.2.0-preview` | 排在 0.2.0 之前 |
 | 版號不 commit | 合併進 stable 不衝突 |
 | `+<run>` | MSI 只收數字 |
 | 立即退回只此一次 | 其他檢查仍防降版 |
 | rpm 只有穩定版 | rpm 把預覽排在後面 |
 | 未選通道跟著版本 | 測試者持續收到預覽 |
 
-預覽版號在打包前寫入 Cargo.toml，顯示時改說以哪個正式版為基礎與建置時間（`docs/ui.md` 7.1.1）。rpm 會把預覽版排在後續正式版之後，裝了就離不開，所以預覽版不出 rpm。
+SemVer 沒有「某版之後」的寫法，預覽版號因此只用來排序，顯示一律用 Release Name（`docs/ui.md` 7.1.1）。rpm 會把預覽版排在後續正式版之後，裝了就離不開，所以預覽版不出 rpm。
 
 #### 13.5.4 更新網站
 

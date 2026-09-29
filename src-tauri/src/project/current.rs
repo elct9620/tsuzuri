@@ -13,11 +13,12 @@ use super::mode_hold::{
     is_always_written, is_written_by_edit, ModeHold, ModeProgress, RunningMode,
 };
 use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
+use super::{directory_name, trimmed_name};
 use super::{
     translation_only, translation_srt, translation_with_speakers, BackupKind, CleanupScope,
-    CurrentResource, ExportFormat, KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource,
-    Restoration, SegmentField, SegmentSpan, TextMatch, TranscriptionScope, TranscriptionTarget,
-    TranslationSource,
+    CurrentResource, ExportFormat, KnownSubtitle, Project, ProjectConfig, ProjectModelPresets,
+    ProjectOptions, Resource, Restoration, SegmentField, SegmentSpan, TextMatch,
+    TranscriptionScope, TranscriptionTarget, TranslationSource,
 };
 use crate::cleanup::{clean_range, clean_text};
 use crate::failure::Failure;
@@ -31,6 +32,9 @@ impl Project {
     /// `language`, with the first of them current. A `glossary.csv` it cannot read is left out
     /// here and reported when a translation reads it again.
     pub fn open(directory: PathBuf, language: Language) -> Result<Project, Failure> {
+        if !directory.try_exists()? {
+            return Err(Failure::DirectoryNotFound { directory });
+        }
         let config = ProjectConfig::load(&directory)?;
         let language = config.language.unwrap_or(language);
         let mut project = Project {
@@ -850,6 +854,10 @@ impl Project {
 
     /// Replaces the Project Options and records them in the Project Config.
     pub fn set_options(&mut self, options: ProjectOptions) -> Result<(), Failure> {
+        let options = ProjectOptions {
+            name: trimmed_name(options.name.as_deref()),
+            ..options
+        };
         ProjectConfig {
             options: options.clone(),
             ..self.config()
@@ -967,6 +975,9 @@ pub struct ResourceView {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ProjectView {
     directory: PathBuf,
+    name: String,
+    /// The name the Project takes from its directory without a Project Name of its own.
+    directory_name: String,
     language: Language,
     translation_language: Option<Language>,
     options: ProjectOptions,
@@ -983,9 +994,18 @@ pub struct ProjectView {
     has_redo: bool,
     running_mode: Option<RunningMode>,
     pending_batch: Option<SegmentSpan>,
+    /// Which Preset Model each Project Model is; the Preset Models belong to the toolchain, so the
+    /// command answering the view fills this in.
+    project_model_presets: ProjectModelPresets,
 }
 
 impl ProjectView {
+    /// This view naming which Preset Model each Project Model is.
+    pub fn with_project_model_presets(mut self, presets: ProjectModelPresets) -> ProjectView {
+        self.project_model_presets = presets;
+        self
+    }
+
     pub fn pending_batch(&self) -> Option<SegmentSpan> {
         self.pending_batch
     }
@@ -1000,6 +1020,10 @@ impl ProjectView {
 
     pub fn options(&self) -> &ProjectOptions {
         &self.options
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     pub fn translation_language(&self) -> Option<Language> {
@@ -1107,6 +1131,11 @@ pub struct CurrentProject(Mutex<HeldProject>);
 impl CurrentProject {
     pub fn replace(&self, project: Project) {
         self.lock().project = Some(project);
+    }
+
+    /// The directory of the open Project, none before one is opened.
+    pub fn directory(&self) -> Option<PathBuf> {
+        Some(self.lock().project.as_ref()?.directory.clone())
     }
 
     /// Keeps the subtitles `mode` writes of the named Resource in `directory` from being changed
@@ -1243,6 +1272,8 @@ impl CurrentProject {
             };
             ProjectView {
                 directory: project.directory.clone(),
+                name: project.name(),
+                directory_name: directory_name(&project.directory),
                 language: project.language,
                 translation_language: project.translation_language,
                 options: project.options.clone(),
@@ -1275,6 +1306,7 @@ impl CurrentProject {
                 has_redo: history.is_some_and(UndoHistory::has_redo),
                 running_mode: mode_hold.map(|hold| hold.mode.clone()),
                 pending_batch: mode_hold.and_then(|hold| hold.pending_batch),
+                project_model_presets: ProjectModelPresets::default(),
             }
         })
     }
@@ -1787,19 +1819,27 @@ impl CurrentProject {
         &self,
         content: WrittenText,
         has_speakers: bool,
+        has_blank_lines: bool,
     ) -> Result<String, Failure> {
-        self.read_project(|project| Ok(project.to_plain_text(content, has_speakers)?))
+        self.read_project(|project| {
+            Ok(project.to_plain_text(content, has_speakers, has_blank_lines)?)
+        })
     }
 
     /// Writes the Current Resource to `path` as Plain Text carrying `content`, its Speakers
-    /// named unless `has_speakers` leaves them out.
+    /// named unless `has_speakers` leaves them out and its blocks apart unless
+    /// `has_blank_lines` leaves the blank lines out.
     pub fn save_text(
         &self,
         path: &Path,
         content: WrittenText,
         has_speakers: bool,
+        has_blank_lines: bool,
     ) -> Result<(), Failure> {
-        files::write_text(path, self.to_plain_text(content, has_speakers)?)
+        files::write_text(
+            path,
+            self.to_plain_text(content, has_speakers, has_blank_lines)?,
+        )
     }
 
     pub fn set_options(&self, options: ProjectOptions) -> Result<(), Failure> {
@@ -1857,6 +1897,7 @@ pub(super) fn open_directory_of(path: &Path, language: Language) -> Result<Proje
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model_source::ModelSource;
     use crate::project::{BilingualOrder, ProjectConfig, ProjectModels, TranscriptionOverrides};
     use crate::test_support::{backups, output_backups, overwrite_backups, project_of, TempDir};
 
@@ -2331,7 +2372,9 @@ mod tests {
     fn writes_the_current_resource_as_plain_text() {
         let current = project_with_a_speaker();
 
-        let text = current.to_plain_text(WrittenText::Original, true).unwrap();
+        let text = current
+            .to_plain_text(WrittenText::Original, true, true)
+            .unwrap();
 
         assert_eq!(text, "阿福: 少爺\n\n我等等就下去\n");
     }
@@ -2341,9 +2384,23 @@ mod tests {
     fn leaves_the_speakers_out_of_plain_text() {
         let current = project_with_a_speaker();
 
-        let text = current.to_plain_text(WrittenText::Original, false).unwrap();
+        let text = current
+            .to_plain_text(WrittenText::Original, false, true)
+            .unwrap();
 
         assert_eq!(text, "少爺\n\n我等等就下去\n");
+    }
+
+    // @behavior PJ-185
+    #[test]
+    fn leaves_the_blank_lines_out_of_plain_text() {
+        let current = project_with_a_speaker();
+
+        let text = current
+            .to_plain_text(WrittenText::Original, true, false)
+            .unwrap();
+
+        assert_eq!(text, "阿福: 少爺\n我等等就下去\n");
     }
 
     // @behavior PJ-152
@@ -2352,7 +2409,9 @@ mod tests {
         let dir = TempDir::new("pj-plain-text-translation-first");
         let current = translation_first_project_in(&dir);
 
-        let text = current.to_plain_text(WrittenText::Bilingual, true).unwrap();
+        let text = current
+            .to_plain_text(WrittenText::Bilingual, true, true)
+            .unwrap();
 
         assert_eq!(text, "Hello\n大家好\n");
     }
@@ -2441,13 +2500,82 @@ mod tests {
         );
     }
 
+    /// The Project `lecture`, a directory of its own under `dir`, opened in `zh-TW`.
+    fn lecture_in(dir: &TempDir) -> CurrentProject {
+        let lecture = dir.path().join("lecture");
+        std::fs::create_dir_all(&lecture).unwrap();
+        let current = CurrentProject::default();
+        current.replace(Project::open(lecture, Language::TraditionalChinese).unwrap());
+        current
+    }
+
+    fn options_named(name: &str) -> ProjectOptions {
+        ProjectOptions {
+            name: Some(name.to_string()),
+            ..ProjectOptions::default()
+        }
+    }
+
+    // @behavior PJ-173
+    #[test]
+    fn names_a_project_in_its_project_options() {
+        let dir = TempDir::new("pj-project-name");
+        let current = lecture_in(&dir);
+
+        current.set_options(options_named(" 週會錄影 ")).unwrap();
+
+        assert_eq!(
+            (
+                current.view().unwrap().name().to_string(),
+                ProjectConfig::load(&dir.path().join("lecture"))
+                    .unwrap()
+                    .options
+                    .name
+            ),
+            ("週會錄影".to_string(), Some("週會錄影".to_string()))
+        );
+    }
+
+    // @behavior PJ-186
+    #[test]
+    fn keeps_the_directory_name_in_the_view_of_a_named_project() {
+        let dir = TempDir::new("pj-directory-name");
+        let current = lecture_in(&dir);
+
+        current.set_options(options_named("週會錄影")).unwrap();
+
+        assert_eq!(current.view().unwrap().directory_name, "lecture");
+    }
+
+    // @behavior PJ-174
+    #[test]
+    fn names_a_project_after_its_directory_without_a_name_of_its_own() {
+        let dir = TempDir::new("pj-directory-name");
+        let current = lecture_in(&dir);
+
+        current.set_options(options_named("   ")).unwrap();
+
+        assert_eq!(
+            (
+                current.view().unwrap().name().to_string(),
+                ProjectConfig::load(&dir.path().join("lecture"))
+                    .unwrap()
+                    .options
+                    .name
+            ),
+            ("lecture".to_string(), None)
+        );
+    }
+
     // @behavior PJ-104
     #[test]
     fn keeps_the_project_models_and_transcription_settings_in_the_project_config() {
         let dir = TempDir::new("pj-models-kept");
         let options = ProjectOptions {
             models: ProjectModels {
-                transcription: Some(PathBuf::from("/models/kotoba.bin")),
+                transcription: Some(ModelSource::File {
+                    path: PathBuf::from("/models/kotoba.bin"),
+                }),
                 ..ProjectModels::default()
             },
             transcription: TranscriptionOverrides {

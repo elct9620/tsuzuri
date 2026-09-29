@@ -7,7 +7,7 @@ use super::{
 use crate::failure::Failure;
 use crate::json_settings::settings_dir;
 use crate::processes::Processes;
-use crate::release_number::preview_release;
+use crate::release_number::is_preview_build;
 use crate::steps::ModeLock;
 
 /// The update site, which publishes each Update Channel's manifest.
@@ -15,7 +15,7 @@ const UPDATE_SITE: &str = "https://tsuzuri.aotoki.me";
 
 /// The channel this build follows until one is chosen.
 fn running_build_channel() -> UpdateChannel {
-    UpdateChannel::from_build(preview_release(env!("CARGO_PKG_VERSION")).is_some())
+    UpdateChannel::from_build(is_preview_build(env!("CARGO_PKG_VERSION")))
 }
 
 #[tauri::command]

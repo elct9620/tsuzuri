@@ -81,6 +81,7 @@ impl FakeLlama {
                     if ready { "ready" } else { "loading" }
                 ));
                 return Response {
+                    headers: Vec::new(),
                     status: if ready { 200 } else { 503 },
                     body: Vec::new(),
                 };
@@ -100,6 +101,7 @@ impl FakeLlama {
                         log_sink.lock().unwrap().push("unload".to_string());
                         if replies.has_unload_failure {
                             return Response {
+                                headers: Vec::new(),
                                 status: 500,
                                 body: Vec::new(),
                             };
@@ -282,6 +284,7 @@ pub fn translations(lines: Lines) -> Response {
 /// A chat completion whose message is `content`.
 pub fn completion(content: &str) -> Response {
     Response {
+        headers: Vec::new(),
         status: 200,
         body: json!({
             "id": "chatcmpl-fake",
@@ -317,6 +320,7 @@ pub fn batch_lines(body: &serde_json::Value) -> Lines {
 /// A 200 response carrying `value` as JSON.
 fn json_response(value: &serde_json::Value) -> Response {
     Response {
+        headers: Vec::new(),
         status: 200,
         body: value.to_string().into_bytes(),
     }

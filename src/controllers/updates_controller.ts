@@ -16,7 +16,6 @@ import {
 } from "../backend/updates";
 import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
-import { localTime } from "../ui/time";
 
 /** App Updates: looked for at launch and from the settings, offered to the user, and installed behind a window that stays until Tsuzuri restarts. */
 export default class UpdatesController extends Controller {
@@ -61,7 +60,7 @@ export default class UpdatesController extends Controller {
   async connect(): Promise<void> {
     try {
       const build = await appBuild();
-      this.isPreviewBuild = build.preview !== null;
+      this.isPreviewBuild = build.is_preview_build;
       this.channelRowTarget.hidden = !build.has_preview_channel;
       this.showSettings(await updateSettings());
       this.offer(await checkForUpdateAtLaunch());
@@ -97,13 +96,12 @@ export default class UpdatesController extends Controller {
 
   async install(): Promise<void> {
     if (!this.foundUpdate) return;
-    this.dialogTitleTarget.textContent = this.foundUpdate.preview
-      ? t("settings.updatingToPreview", {
-          builtAt: localTime(this.foundUpdate.preview.built_at),
-        })
-      : t("settings.updating", {
-          releaseNumber: this.foundUpdate.release_number,
-        });
+    this.dialogTitleTarget.textContent = t(
+      this.foundUpdate.is_preview_build
+        ? "settings.updatingToPreview"
+        : "settings.updating",
+      { releaseName: this.foundUpdate.release_name },
+    );
     this.progressBarTarget.removeAttribute("value");
     this.progressTextTarget.textContent = t("settings.updateStarting");
     this.dialogTarget.showModal();
@@ -171,11 +169,7 @@ export default class UpdatesController extends Controller {
     if (!update) return;
     this.show(update);
     notify({
-      title: update.preview
-        ? t("settings.previewOffered", {
-            builtAt: localTime(update.preview.built_at),
-          })
-        : t("settings.updateFound", { releaseNumber: update.release_number }),
+      title: updateFoundMessage(update),
       kind: "success",
       action: { label: t("settings.update"), run: () => void this.install() },
     });
@@ -183,15 +177,19 @@ export default class UpdatesController extends Controller {
 
   private show(update: AppUpdate | null): void {
     this.foundUpdate = update;
-    this.statusTarget.textContent = !update
-      ? t("settings.latestRelease")
-      : update.preview
-        ? t("settings.previewFound", {
-            builtAt: localTime(update.preview.built_at),
-          })
-        : t("settings.updateFound", { releaseNumber: update.release_number });
+    this.statusTarget.textContent = update
+      ? updateFoundMessage(update)
+      : t("settings.latestRelease");
     this.updateButtonTarget.hidden = !update;
   }
 }
 
 const BYTES_PER_MEGABYTE = 1024 * 1024;
+
+/** What the settings and the launch Notification say of a found App Update, by its Release Name. */
+function updateFoundMessage(update: AppUpdate): string {
+  return t(
+    update.is_preview_build ? "settings.previewFound" : "settings.updateFound",
+    { releaseName: update.release_name },
+  );
+}

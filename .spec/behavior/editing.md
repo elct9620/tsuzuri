@@ -49,7 +49,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | --- | --- |
 | Given | a translated Project in the panel |
 | When | its translation is exported as Plain Text |
-| Then | the save dialog opens at its Plain Text default path and the translation is saved as Plain Text with its Speakers |
+| Then | the save dialog opens at its Plain Text default path and the translation is saved as Plain Text with its Speakers and blank lines |
 
 ## `ED-156` Leaving the Speakers out of a Plain Text export
 
@@ -66,6 +66,22 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | Given | Speakers turned off for Plain Text |
 | When | the app opens again |
 | Then | the export menu still has Speakers turned off for Plain Text |
+
+## `ED-162` Leaving the blank lines out of a Plain Text export
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with blank lines turned off for Plain Text |
+| When | it is exported as Plain Text |
+| Then | it is saved as Plain Text without blank lines |
+
+## `ED-163` Keeping the blank lines choice for Plain Text on this machine
+
+| Step | Statement |
+| --- | --- |
+| Given | blank lines turned off for Plain Text |
+| When | the app opens again |
+| Then | the export menu still has blank lines turned off for Plain Text |
 
 ## `ED-004` Showing another translation in the editor
 
@@ -402,6 +418,16 @@ The second half is entered as the split leaves it, whether or not its text gets 
 | When | Esc is pressed in that text |
 | Then | the text is put back as `世界` |
 
+## `ED-159` Entering the second half past the spaces a split leaves
+
+The Project starts the second half past the spaces at the split, so the text the editor enters it with starts there too.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment reading `Hello world` split after `Hello` |
+| When | the second half's text is left with nothing typed |
+| Then | the Project is asked for the split alone |
+
 ## `ED-054` Keeping the Cursor when a split fails
 
 | Step | Statement |
@@ -589,6 +615,16 @@ A change redraws the rows, so a check kept across it would name rows that moved.
 | Given | a Project in the panel with its first two Segments checked |
 | When | the third Segment is deleted from its menu |
 | Then | no Segment is checked and the bar for Checked Segments is hidden |
+
+## `ED-158` Keeping the checks made after a change that moved nothing
+
+A change that keeps the Segments' number never moves a row, so it clears the checks as soon as it is written; one that left the Segments as they were is then done with, and a later edit is not taken for it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment's times were written as they already were |
+| When | its second Segment is checked and the first Segment's text is written |
+| Then | the second Segment stays checked |
 
 ## `ED-071` Checking the Segments through a row clicked with Shift
 
@@ -927,6 +963,26 @@ Any focus within a row makes its Segment current; only a text or a translation h
 | Given | the first Segment's text left with the Cursor after its second character |
 | When | a transcription of the Current Resource starts |
 | Then | the first Segment stays current and no Cursor is kept |
+
+## `ED-160` Writing a text typed before a Mode took its Cursor
+
+What was typed is written as the field is left even once a Mode holds it, so a refusal is told rather than the typing lost unsaid.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered and typed to read `你好世界啊` |
+| When | a transcription of the Current Resource starts and the text is left |
+| Then | the Project is asked to write `你好世界啊` into the first Segment's text |
+
+## `ED-161` Writing nothing typed into a Segment another change moved
+
+A change made elsewhere to how many Segments there are may move the one typed in, so what was typed is no longer written where it was entered.
+
+| Step | Statement |
+| --- | --- |
+| Given | the first Segment's text entered and typed to read `你好世界啊` |
+| When | a Segment is inserted before it by another change and the text is left |
+| Then | nothing is written |
 
 ## `ED-077` Putting back a text's entry with Esc
 

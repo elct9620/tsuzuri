@@ -12,8 +12,9 @@ use tauri_plugin_updater::{Update, UpdaterExt};
 
 use crate::failure::Failure;
 use crate::json_settings;
-use crate::release_number::{preview_release, PreviewRelease};
+use crate::release_number::{is_preview_build, release_name};
 use crate::steps::ModeLock;
+use crate::transfer_report::TransferReport;
 
 const SETTINGS_FILE: &str = "updates.json";
 
@@ -116,11 +117,12 @@ impl UpdateSettings {
     }
 }
 
-/// The App Update a check found, as the webview shows it: a Preview build by its build time.
+/// The App Update a check found, as the webview shows it: by its Release Name.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AppUpdate {
     pub release_number: String,
-    pub preview: Option<PreviewRelease>,
+    pub release_name: String,
+    pub is_preview_build: bool,
 }
 
 /// How much of the App Update being installed has downloaded, in bytes.
@@ -139,7 +141,8 @@ impl FoundUpdate {
     pub fn keep(&self, update: Option<Update>) -> Option<AppUpdate> {
         let app_update = update.as_ref().map(|update| AppUpdate {
             release_number: update.version.clone(),
-            preview: preview_release(&update.version),
+            release_name: release_name(&update.version),
+            is_preview_build: is_preview_build(&update.version),
         });
         *self.0.lock().unwrap() = update.map(Arc::new);
         app_update
@@ -240,31 +243,22 @@ pub async fn install_release(
     update.install(&package)
 }
 
-/// The download's progress, reported once per whole percent, or per MiB when the size is unknown,
-/// so a large package does not flood the webview with events.
+/// The download's progress so far, reported at the pace `TransferReport` sets.
 #[derive(Default)]
 struct ProgressReport {
     downloaded: u64,
-    last_step: Option<u64>,
+    steps: TransferReport,
 }
 
 impl ProgressReport {
-    const UNSIZED_STEP: u64 = 1024 * 1024;
-
     fn add(&mut self, length: usize, total: Option<u64>) -> Option<UpdateProgress> {
         self.downloaded += length as u64;
-        let step = match total {
-            Some(total) if total > 0 => self.downloaded * 100 / total,
-            _ => self.downloaded / Self::UNSIZED_STEP,
-        };
-        if self.last_step == Some(step) {
-            return None;
-        }
-        self.last_step = Some(step);
-        Some(UpdateProgress {
-            downloaded: self.downloaded,
-            total,
-        })
+        self.steps
+            .advance(self.downloaded, total)
+            .then_some(UpdateProgress {
+                downloaded: self.downloaded,
+                total,
+            })
     }
 }
 
@@ -311,6 +305,7 @@ mod tests {
             },
         });
         FakeHttp::serve(move |_| Response {
+            headers: Vec::new(),
             status: 200,
             body: manifest.to_string().into_bytes(),
         })
@@ -318,6 +313,7 @@ mod tests {
 
     fn unreachable_releases() -> FakeHttp {
         FakeHttp::serve(|_| Response {
+            headers: Vec::new(),
             status: 500,
             body: Vec::new(),
         })

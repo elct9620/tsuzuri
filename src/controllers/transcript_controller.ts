@@ -35,12 +35,16 @@ import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { shortcutById, shortcutText } from "../ui/shortcuts";
 import type { TaskKind } from "../ui/progress";
 import { formatTime, TIME_FIELD_ACTIONS } from "../ui/time";
+import { menuOption } from "../ui/options";
 
 /** Where the webview remembers whether the editor follows playback. */
 const FOLLOWING_KEY = "tsuzuri.transcript-following";
 
 /** Where the webview remembers whether a Plain Text export names its Speakers. */
 const TEXT_SPEAKERS_KEY = "tsuzuri.plain-text-speakers";
+
+/** Where the webview remembers whether a Plain Text export leaves a blank line between blocks. */
+const TEXT_BLANK_LINES_KEY = "tsuzuri.plain-text-blank-lines";
 
 /** Ctrl+Alt+Enter, or ⌘+Option+Enter, splits a Segment at the Cursor in its text, as subtitle editors bind splitting to a modified line break. */
 const SPLIT_SHORTCUTS = [
@@ -77,13 +81,6 @@ function placeholderRows(count = 3): HTMLLIElement[] {
     li.append(time, text);
     return li;
   });
-}
-
-function option(value: string, label: string): HTMLOptionElement {
-  const choice = document.createElement("option");
-  choice.value = value;
-  choice.textContent = label;
-  return choice;
 }
 
 /** Shows who says a Segment on its Speaker button, or that nobody is named yet. */
@@ -241,6 +238,8 @@ function item(
   isTranslationShown: boolean,
 ): HTMLLIElement {
   const li = document.createElement("li");
+  // A narrow list lays the times and Speaker in a line, the text below across the row
+  li.className = "@max-4xl:grid-cols-[auto_1fr_auto]";
   li.dataset.action =
     "mousedown->transcript#checkThrough click->transcript#makeCurrent focusin->transcript#makeCurrent";
   li.dataset.transcriptIndexParam = String(index);
@@ -250,7 +249,8 @@ function item(
   check.dataset.index = String(index);
   check.dataset.action = "change->segment-changes#check";
   const heading = document.createElement("div");
-  heading.className = "flex flex-col gap-1";
+  heading.className =
+    "flex flex-col gap-1 @max-4xl:flex-row @max-4xl:items-center";
   heading.append(
     timeEditor(index, "start", segment.start_ms),
     timeEditor(index, "end", segment.end_ms),
@@ -258,7 +258,8 @@ function item(
   );
   const editors = document.createElement("div");
   // The Cursor's caret is drawn within, beside the character it stands after
-  editors.className = "list-col-grow relative";
+  editors.className =
+    "list-col-grow relative @max-4xl:col-start-2 @max-4xl:col-end-4 @max-4xl:row-start-2";
   editors.append(editor(index, "text", segment.text));
   if (isTranslationShown)
     editors.append(editor(index, "translation", segment.translation ?? ""));
@@ -299,6 +300,7 @@ export default class TranscriptController extends Controller {
     "emptyHint",
     "exportButton",
     "textSpeakerToggle",
+    "textBlankLineToggle",
     "heading",
     "translationLanguage",
     "followButton",
@@ -326,6 +328,8 @@ export default class TranscriptController extends Controller {
   private project: ProjectView | null = null;
   /** Whether a Plain Text export names its Speakers, unless turned off on this machine. */
   private hasTextSpeakers = rememberedFlag(TEXT_SPEAKERS_KEY, true);
+  /** Whether a Plain Text export leaves a blank line between blocks, unless turned off on this machine. */
+  private hasTextBlankLines = rememberedFlag(TEXT_BLANK_LINES_KEY, true);
   /** The position of the Current Segment as its row was last brought into view. */
   private shownCurrentIndex: number | null = null;
   /** The position of the Segment the Preview is playing. */
@@ -533,7 +537,13 @@ export default class TranscriptController extends Controller {
         filters: isPlainText ? TEXT_FILTERS : SRT_FILTERS,
       });
       if (path === null) return;
-      if (isPlainText) await saveText(path, content, this.hasTextSpeakers);
+      if (isPlainText)
+        await saveText(
+          path,
+          content,
+          this.hasTextSpeakers,
+          this.hasTextBlankLines,
+        );
       else await saveSrt(path, content);
     } catch (error) {
       notifyFailure(t("toolbar.notExported"), error);
@@ -547,6 +557,15 @@ export default class TranscriptController extends Controller {
   rememberTextSpeakers({ currentTarget }: Event): void {
     this.hasTextSpeakers = (currentTarget as HTMLInputElement).checked;
     rememberFlag(TEXT_SPEAKERS_KEY, this.hasTextSpeakers);
+  }
+
+  textBlankLineToggleTargetConnected(toggle: HTMLInputElement): void {
+    toggle.checked = this.hasTextBlankLines;
+  }
+
+  rememberTextBlankLines({ currentTarget }: Event): void {
+    this.hasTextBlankLines = (currentTarget as HTMLInputElement).checked;
+    rememberFlag(TEXT_BLANK_LINES_KEY, this.hasTextBlankLines);
   }
 
   private show(project: ProjectView | null): void {
@@ -587,8 +606,8 @@ export default class TranscriptController extends Controller {
     if (shownLanguage !== null && !codes.includes(shownLanguage))
       codes.push(shownLanguage);
     this.translationLanguageTarget.replaceChildren(
-      option("", t("edit.noTranslation")),
-      ...codes.map((code) => option(code, t(`languages.${code}`))),
+      menuOption("", t("edit.noTranslation")),
+      ...codes.map((code) => menuOption(code, t(`languages.${code}`))),
     );
     this.translationLanguageTarget.value = shownLanguage ?? "";
     // What a running Mode shows is its own until it ends.

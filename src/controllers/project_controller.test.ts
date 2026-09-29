@@ -11,6 +11,7 @@ import {
   notificationDetail,
   notifications,
 } from "../ui/test_notification";
+import { composingOption } from "./field_controller";
 import ProjectController from "./project_controller";
 
 describe("ProjectController", () => {
@@ -18,9 +19,11 @@ describe("ProjectController", () => {
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
   let openSrt: () => unknown;
+  let openProject: () => unknown;
   let selectFailure: unknown;
   let reloadProject: () => unknown;
   let chosenFile: string;
+  let requestedSrt: string | null;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = <T extends HTMLElement>(name: string) =>
@@ -41,54 +44,43 @@ describe("ProjectController", () => {
     await settle();
   }
 
+  /** Starts the toolbar as the page does, relaying Rust events and reading the Project. */
+  async function start(): Promise<void> {
+    application = Application.start();
+    application.registerActionOption("composing", composingOption);
+    await assemble(application, {
+      project: ProjectController,
+    }).start();
+    await settle();
+  }
+
   beforeEach(async () => {
     project = null;
+    requestedSrt = null;
     calls = [];
     openSrt = () => null;
+    openProject = () => null;
     selectFailure = undefined;
     reloadProject = () => null;
     chosenFile = "/subtitles/lecture.srt";
     document.body.innerHTML = `
       <main
         data-controller="project"
-        data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept"
+        data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept rust:srt-requested@window->project#openRequestedSrt"
       >
         <section data-project-target="startScreen"></section>
         <div data-project-target="workspace" hidden>
-          <h1 data-project-target="name"></h1>
+          <input data-project-target="name" data-action="change->project#rename keydown.enter->project#leaveName:!composing keydown.esc->project#discardName:!composing" />
           <div class="dropdown">
             <div tabindex="0" role="button">開啟</div>
             <button id="open-directory" data-action="project#openDirectory">開啟目錄</button>
             <button id="open-srt" data-action="project#openSrt">開啟 SRT</button>
           </div>
           <button id="reload" data-action="project#reload">重新載入</button>
+          <input type="checkbox" data-project-target="resourcesToggle" />
           <ul data-project-target="resources"></ul>
           <p data-project-target="glossary"></p>
         </div>
-        <input type="radio" name="tabs" id="project-tab" data-project-target="projectTab settings" checked />
-        <input type="radio" name="tabs" id="general-tab" data-project-target="generalTab" />
-        <fieldset data-project-target="settings">
-          <select data-project-target="language" data-action="change->project#setLanguage">
-            <option value="zh-TW">繁體中文</option>
-            <option value="en">English</option>
-            <option value="ja">日本語</option>
-          </select>
-          <select data-project-target="bilingualOrder" data-action="change->project#setOptions">
-            <option value="original-first">原文在上</option>
-            <option value="translation-first">譯文在上</option>
-          </select>
-          <input type="checkbox" data-project-target="bilingualAutosave" data-action="change->project#setOptions" />
-          <input type="checkbox" data-project-target="overwriteBackup" data-action="change->project#setOptions" />
-          <select data-project-target="transcriptionSetting" data-setting="has_vad" data-action="change->project#setOptions">
-            <option value="">依整體設定</option>
-            <option value="on">開啟</option>
-            <option value="off">關閉</option>
-          </select>
-          <span data-project-target="projectModel" data-slot="transcription"></span>
-          <button id="follow-transcription-model" data-project-target="generalModelButton" data-slot="transcription" data-action="project#followModel">改用整體設定</button>
-          <span data-project-target="projectModel" data-slot="translation"></span>
-          <button id="choose-translation-model" data-slot="translation" data-action="project#chooseModel">指定檔案</button>
-        </fieldset>
       </main>
     `;
     mockIPC(
@@ -100,17 +92,19 @@ describe("ProjectController", () => {
             ? "/talks"
             : chosenFile;
         if (command === "open_srt") return openSrt();
+        if (command === "open_project") return openProject();
         if (command === "reload_project") return reloadProject();
+        if (command === "take_requested_srt") {
+          const takenSrt = requestedSrt;
+          requestedSrt = null;
+          return takenSrt;
+        }
         if (command === "select_resource" && selectFailure !== undefined)
           return Promise.reject(selectFailure);
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    await assemble(application, {
-      project: ProjectController,
-    }).start();
-    await settle();
+    await start();
   });
 
   afterEach(() => {
@@ -139,6 +133,48 @@ describe("ProjectController", () => {
     expect(JSON.stringify(sent("plugin:dialog|message"))).toContain(
       "SRT 第 2 段無法讀取",
     );
+  });
+
+  // @behavior PJ-167
+  it("warns that another Project cannot open while a task runs", async () => {
+    openProject = () => {
+      throw { code: "opening-during-mode" };
+    };
+
+    await click("#open-directory");
+
+    expect(sent("plugin:dialog|message")).toMatchObject({
+      message: "任務執行中無法開啟其他專案，請等任務結束或先取消",
+      kind: "warning",
+    });
+  });
+
+  // @behavior PJ-171
+  it("opens the Requested SRT as the toolbar starts", async () => {
+    application.stop();
+    calls = [];
+    requestedSrt = "/talks/ep02.srt";
+
+    await start();
+
+    expect(sent("open_srt")).toEqual({
+      path: "/talks/ep02.srt",
+      language: "zh-TW",
+    });
+  });
+
+  // @behavior PJ-172
+  it("opens an SRT file requested while the toolbar runs", async () => {
+    await hold(projectOf({ directory: "/videos/lecture" }));
+    requestedSrt = "/talks/ep02.srt";
+
+    await emit("srt-requested");
+    await settle();
+
+    expect(sent("open_srt")).toEqual({
+      path: "/talks/ep02.srt",
+      language: "zh-TW",
+    });
   });
 
   // @behavior PJ-033
@@ -222,6 +258,24 @@ describe("ProjectController", () => {
     await click('[data-name="ep02"]');
 
     expect(sent("select_resource")).toEqual({ name: "ep02" });
+  });
+
+  // @behavior PJ-183
+  it("puts the Resource list away once a Resource is chosen", async () => {
+    await hold(
+      projectOf({
+        resources: [resourceOf(), resourceOf({ name: "ep02" })],
+      }),
+    );
+    const toggle = target<HTMLInputElement>("resourcesToggle");
+    toggle.checked = true;
+
+    await click('[data-name="ep02"]');
+
+    expect([sent("select_resource"), toggle.checked]).toEqual([
+      { name: "ep02" },
+      false,
+    ]);
   });
 
   // @behavior ED-011
@@ -313,145 +367,51 @@ describe("ProjectController", () => {
     ]).toEqual([false, true, true]);
   });
 
-  // @behavior PJ-037
-  it("sets the Primary Language chosen in the settings", async () => {
-    await hold(projectOf());
-    const language = target<HTMLSelectElement>("language");
+  // @behavior PJ-175
+  it("shows the Project Name in the toolbar and the window title", async () => {
+    await hold(projectOf({ name: "週會錄影" }));
 
-    language.value = "ja";
-    language.dispatchEvent(new Event("change"));
-    await settle();
-
-    expect(sent("set_primary_language")).toEqual({ language: "ja" });
+    expect([target<HTMLInputElement>("name").value, document.title]).toEqual([
+      "週會錄影",
+      "週會錄影 - Tsuzuri",
+    ]);
   });
 
-  // @behavior PJ-047
-  it("sets the Bilingual Order chosen in the settings", async () => {
-    await hold(projectOf());
-    const order = target<HTMLSelectElement>("bilingualOrder");
+  // @behavior PJ-181
+  it("sets the Project Name typed over the toolbar's", async () => {
+    await hold(projectOf({ name: "lecture" }));
+    const name = target<HTMLInputElement>("name");
 
-    order.value = "translation-first";
-    order.dispatchEvent(new Event("change"));
-    await settle();
-
-    expect(sent("set_project_options")).toEqual({
-      options: {
-        ...projectOf().options,
-        bilingual_order: "translation-first",
-      },
-    });
-  });
-
-  // @behavior TX-040
-  it("sets VAD on for the Project with the rest following the general settings", async () => {
-    await hold(projectOf());
-    const vad = target<HTMLSelectElement>("transcriptionSetting");
-
-    vad.value = "on";
-    vad.dispatchEvent(new Event("change"));
+    name.value = "週會錄影";
+    name.dispatchEvent(new Event("change"));
     await settle();
 
     expect(sent("set_project_options")).toEqual({
-      options: {
-        ...projectOf().options,
-        transcription: {
-          has_vad: true,
-          is_non_speech_suppressed: null,
-          is_context_carried: null,
-          is_simplified_cleaned: null,
-        },
-      },
+      options: { ...projectOf().options, name: "週會錄影" },
     });
   });
 
-  // @behavior MD-008
-  it("sets the file picked for the translation slot as the Project Model", async () => {
-    await hold(projectOf());
-    chosenFile = "/models/gemma-ja.gguf";
-
-    await click("#choose-translation-model");
-
-    expect(sent("set_project_options")).toEqual({
-      options: {
-        ...projectOf().options,
-        models: { transcription: null, translation: "/models/gemma-ja.gguf" },
-      },
+  // @behavior PJ-182
+  it("puts back the toolbar's Project Name when Esc is pressed", async () => {
+    const namedProject = projectOf({
+      name: "週會錄影",
+      options: { ...projectOf().options, name: "週會錄影" },
     });
-  });
+    await hold(namedProject);
+    const name = target<HTMLInputElement>("name");
+    name.focus();
 
-  // @behavior MD-009
-  it("says a slot without a Project Model follows the general settings", async () => {
-    await hold(projectOf());
+    name.value = "lecture";
+    name.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    await settle();
 
     expect([
-      document.querySelector('[data-project-target="projectModel"]')!
-        .textContent,
-      document.querySelector<HTMLElement>("#follow-transcription-model")!
-        .hidden,
-    ]).toEqual(["依整體設定", true]);
-  });
-
-  // @behavior MD-010
-  it("sets the Project Options without the Project Model once the slot follows the general settings", async () => {
-    const withModel = projectOf();
-    withModel.options.models.transcription = "/models/kotoba.bin";
-    await hold(withModel);
-
-    await click("#follow-transcription-model");
-
-    expect(sent("set_project_options")).toEqual({
-      options: projectOf().options,
-    });
-  });
-
-  // @behavior PJ-048
-  it("offers only the general settings without a Project", async () => {
-    await hold(null);
-
-    expect([
-      document.querySelector<HTMLInputElement>("#project-tab")!.hidden,
-      document.querySelector<HTMLElement>("fieldset")!.hidden,
-      document.querySelector<HTMLInputElement>("#general-tab")!.checked,
-    ]).toEqual([true, true, true]);
-  });
-
-  // @behavior PJ-049
-  it("opens the settings at the Project's own once a Project is open", async () => {
-    await hold(null);
-
-    await hold(projectOf());
-
-    expect(
-      document.querySelector<HTMLInputElement>("#project-tab")!.checked,
-    ).toBe(true);
-  });
-
-  // @behavior PJ-055
-  it("sets the Project to save Bilingual SRTs when turned on in the settings", async () => {
-    await hold(projectOf());
-    const autosave = target<HTMLInputElement>("bilingualAutosave");
-
-    autosave.checked = true;
-    autosave.dispatchEvent(new Event("change"));
-    await settle();
-
-    expect(sent("set_project_options")).toEqual({
-      options: { ...projectOf().options, is_bilingual_autosaved: true },
-    });
-  });
-
-  // @behavior PJ-070
-  it("sets the Project to keep Backups when turned on in the settings", async () => {
-    await hold(projectOf());
-    const backup = target<HTMLInputElement>("overwriteBackup");
-
-    backup.checked = true;
-    backup.dispatchEvent(new Event("change"));
-    await settle();
-
-    expect(sent("set_project_options")).toEqual({
-      options: { ...projectOf().options, is_overwrite_backed_up: true },
-    });
+      name.value,
+      document.activeElement === name,
+      sent("set_project_options"),
+    ]).toEqual(["週會錄影", false, undefined]);
   });
 
   // @behavior PJ-134

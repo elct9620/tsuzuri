@@ -465,6 +465,7 @@ fn civil_date(days: i64) -> (i64, u32, u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model_source::ModelSource;
     use crate::project::{BilingualOrder, ProjectModels, ProjectOptions, TranscriptionOverrides};
     use crate::test_support::TempDir;
 
@@ -748,11 +749,14 @@ mod tests {
             language: Some(Language::Japanese),
             translation_language: Some(Language::English),
             options: ProjectOptions {
+                name: Some("週會錄影".to_string()),
                 bilingual_order: BilingualOrder::TranslationFirst,
                 is_bilingual_autosaved: true,
                 is_overwrite_backed_up: true,
                 models: ProjectModels {
-                    transcription: Some(PathBuf::from("/models/kotoba.bin")),
+                    transcription: Some(ModelSource::File {
+                        path: PathBuf::from("/models/kotoba.bin"),
+                    }),
                     translation: None,
                 },
                 transcription: TranscriptionOverrides {
@@ -765,6 +769,26 @@ mod tests {
         config.clone().save(dir.path()).unwrap();
 
         assert_eq!(ProjectConfig::load(dir.path()).unwrap(), config);
+    }
+
+    // @behavior MD-018
+    #[test]
+    fn reads_a_project_model_chosen_before_model_sources_were_kept() {
+        let dir = TempDir::new("config-bare-model");
+        fs::write(
+            dir.path().join(CONFIG_FILE),
+            r#"{"models":{"transcription":"/models/kotoba.bin"}}"#,
+        )
+        .unwrap();
+
+        let config = ProjectConfig::load(dir.path()).unwrap();
+
+        assert_eq!(
+            config.options.models.transcription,
+            Some(ModelSource::File {
+                path: PathBuf::from("/models/kotoba.bin")
+            })
+        );
     }
 
     #[test]

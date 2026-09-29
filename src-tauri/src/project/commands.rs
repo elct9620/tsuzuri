@@ -1,31 +1,96 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
+use super::recent::{project_views, RecentProjectView, RecentProjects};
+use super::requested_srt::{srt_argument, RequestedSrt};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
 use super::{
-    CleanupScope, CurrentProject, ExportFormat, Project, ProjectOptions, ProjectView, Reload,
-    Restoration, SegmentField, TextMatch,
+    CleanupScope, CurrentProject, ExportFormat, Project, ProjectModelPresets, ProjectModels,
+    ProjectOptions, ProjectView, Reload, Restoration, SegmentField, TextMatch,
 };
 use crate::failure::Failure;
+use crate::json_settings;
 use crate::language::Language;
 use crate::progress::Progress;
 use crate::replacement::{Replacement, Search};
 use crate::segment_change::SegmentChange;
+use crate::steps::ModeLock;
+use crate::toolchain::presets::preset_index;
+use crate::toolchain::ModelSlot;
 use crate::transcript::WrittenText;
 
 #[tauri::command]
-pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
-    replace_project(&app, Project::open(path, language)?)?;
-    app.announce_project();
-    Ok(())
+pub fn open_project(
+    app: AppHandle,
+    mode_lock: State<'_, ModeLock>,
+    path: PathBuf,
+    language: Language,
+) -> Result<(), Failure> {
+    hold_opened(&app, &mode_lock, || Project::open(path, language))
 }
 
 #[tauri::command]
-pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {
-    replace_project(&app, open_directory_of(&path, language)?)?;
+pub fn open_srt(
+    app: AppHandle,
+    mode_lock: State<'_, ModeLock>,
+    path: PathBuf,
+    language: Language,
+) -> Result<(), Failure> {
+    hold_opened(&app, &mode_lock, || open_directory_of(&path, language))
+}
+
+/// Keeps the SRT file among `arguments`, given to a launch in `directory`, as the Requested SRT
+/// and tells the webview, which opens it as the toolbar would: only the webview knows the
+/// Interface Language a directory without a Project Config opens in.
+pub fn request_srt_argument<R: Runtime>(
+    app: &AppHandle<R>,
+    arguments: impl IntoIterator<Item = String>,
+    directory: &Path,
+) {
+    let Some(srt) = srt_argument(arguments, directory) else {
+        return;
+    };
+    app.state::<RequestedSrt>().request(srt);
+    // @event srt-requested
+    let _ = app.emit("srt-requested", ());
+}
+
+#[tauri::command]
+pub fn take_requested_srt(requested: State<'_, RequestedSrt>) -> Option<PathBuf> {
+    requested.take()
+}
+
+#[tauri::command]
+pub async fn recent_projects(
+    app: AppHandle,
+    current: State<'_, CurrentProject>,
+) -> Result<Vec<RecentProjectView>, Failure> {
+    let recent = RecentProjects::load(&json_settings::settings_dir(&app)?)?;
+    let projects = recent.projects_without(current.directory().as_deref());
+    Ok(tokio::task::spawn_blocking(move || project_views(projects)).await?)
+}
+
+/// Holds the Project `open` opens as the Current Project and tells the webview, keeping the
+/// Recent Projects up to date whether it opened or not. A running Mode writes into the Project
+/// open, so none may be running, and none starts until the new Project is held.
+fn hold_opened<R: Runtime>(
+    app: &AppHandle<R>,
+    mode_lock: &ModeLock,
+    open: impl FnOnce() -> Result<Project, Failure>,
+) -> Result<(), Failure> {
+    let _turn = mode_lock.try_turn().ok_or(Failure::OpeningDuringMode)?;
+    let opened_project = open();
+    match json_settings::settings_dir(app) {
+        Ok(settings) => {
+            RecentProjects::follow_opening(&settings, &opened_project, SystemTime::now())
+        }
+        Err(failure) => log::warn!("could not find the Recent Projects: {failure:?}"),
+    }
+    replace_project(app, opened_project?)?;
     app.announce_project();
     Ok(())
 }
@@ -125,7 +190,24 @@ pub fn set_project_options(
 
 #[tauri::command]
 pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView> {
-    current.view()
+    current.view().map(|view| {
+        let presets = project_model_presets(&view.options().models);
+        view.with_project_model_presets(presets)
+    })
+}
+
+/// Which Preset Model each of `models` is. The Preset Models belong to the toolchain, which the
+/// Project may not reach, so the view is completed here, where commands join the two.
+fn project_model_presets(models: &ProjectModels) -> ProjectModelPresets {
+    let index_among_presets = |slot, source: &Option<_>| {
+        source
+            .as_ref()
+            .and_then(|source| preset_index(slot, source))
+    };
+    ProjectModelPresets {
+        transcription: index_among_presets(ModelSlot::Transcription, &models.transcription),
+        translation: index_among_presets(ModelSlot::Translation, &models.translation),
+    }
 }
 
 #[tauri::command]
@@ -240,8 +322,9 @@ pub fn save_text(
     path: PathBuf,
     content: WrittenText,
     has_speakers: bool,
+    has_blank_lines: bool,
 ) -> Result<(), Failure> {
-    current.save_text(&path, content, has_speakers)
+    current.save_text(&path, content, has_speakers, has_blank_lines)
 }
 
 #[tauri::command]
@@ -295,8 +378,12 @@ pub fn save_translation_glossary(
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::path::Path;
+    use std::time::{Duration, UNIX_EPOCH};
 
     use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+
+    use crate::project::recent::RecentProject;
 
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
@@ -320,6 +407,178 @@ mod tests {
             fs::write(directory.join(file), "").unwrap();
         }
         directory
+    }
+
+    /// Opens `directory` as `open_project` does at `seconds` past the Unix epoch, keeping the
+    /// Recent Projects in `settings`.
+    fn open_at(settings: &Path, directory: PathBuf, seconds: u64) -> Result<Project, Failure> {
+        let opened_project = Project::open(directory, Language::TraditionalChinese);
+        RecentProjects::follow_opening(
+            settings,
+            &opened_project,
+            UNIX_EPOCH + Duration::from_secs(seconds),
+        );
+        opened_project
+    }
+
+    fn recent_directories(settings: &Path) -> Vec<PathBuf> {
+        RecentProjects::load(settings)
+            .unwrap()
+            .projects_without(None)
+            .into_iter()
+            .map(|project| project.directory)
+            .collect()
+    }
+
+    // @behavior PJ-166
+    #[test]
+    fn refuses_to_open_a_project_while_a_mode_runs() {
+        let dir = TempDir::new("pj-opening-during-mode");
+        let lecture = create_directory(&dir, "lecture", &["ep01.mp4"]);
+        let interview = create_directory(&dir, "interview", &["talk.srt"]);
+        let app = mock_app();
+        let project = Project::open(lecture.clone(), Language::TraditionalChinese).unwrap();
+        replace_project(app.handle(), project).unwrap();
+        let mode_lock = ModeLock::default();
+        let _running_mode = mode_lock.try_turn().unwrap();
+
+        let result = hold_opened(app.handle(), &mode_lock, || {
+            Project::open(interview, Language::TraditionalChinese)
+        });
+
+        assert_eq!(
+            (result, app.state::<CurrentProject>().directory()),
+            (Err(Failure::OpeningDuringMode), Some(lecture))
+        );
+    }
+
+    // @behavior PJ-154
+    #[test]
+    fn keeps_an_opened_directory_as_a_recent_project() {
+        let dir = TempDir::new("pj-recent-opened");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &["ep01.srt"]);
+
+        open_at(&settings, lecture.clone(), 1_790_303_400).unwrap();
+
+        assert_eq!(
+            RecentProjects::load(&settings)
+                .unwrap()
+                .projects_without(None),
+            vec![RecentProject {
+                directory: lecture,
+                opened_at_ms: 1_790_303_400_000,
+            }]
+        );
+    }
+
+    // @behavior PJ-155
+    #[test]
+    fn keeps_the_directory_of_an_opened_srt_as_a_recent_project() {
+        let dir = TempDir::new("pj-recent-srt");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &["ep01.srt"]);
+
+        let opened_project =
+            open_directory_of(&lecture.join("ep01.srt"), Language::TraditionalChinese);
+        RecentProjects::follow_opening(&settings, &opened_project, SystemTime::now());
+
+        assert_eq!(recent_directories(&settings), vec![lecture]);
+    }
+
+    // @behavior PJ-156
+    #[test]
+    fn keeps_one_recent_project_per_directory() {
+        let dir = TempDir::new("pj-recent-once");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &[]);
+        let interview = create_directory(&dir, "interview", &[]);
+        open_at(&settings, lecture.clone(), 1).unwrap();
+        open_at(&settings, interview.clone(), 2).unwrap();
+
+        open_at(&settings, lecture.clone(), 3).unwrap();
+
+        assert_eq!(recent_directories(&settings), vec![lecture, interview]);
+    }
+
+    // @behavior PJ-157
+    #[test]
+    fn keeps_ten_recent_projects() {
+        let dir = TempDir::new("pj-recent-ten");
+        let settings = dir.path().join("settings");
+        let directories: Vec<PathBuf> = (1..=11)
+            .map(|number| create_directory(&dir, &format!("ep{number:02}"), &[]))
+            .collect();
+        for (seconds, directory) in directories[..10].iter().enumerate() {
+            open_at(&settings, directory.clone(), seconds as u64).unwrap();
+        }
+
+        open_at(&settings, directories[10].clone(), 10).unwrap();
+
+        let directories_latest_first: Vec<PathBuf> =
+            directories[1..].iter().rev().cloned().collect();
+        assert_eq!(recent_directories(&settings), directories_latest_first);
+    }
+
+    // @behavior PJ-158
+    #[test]
+    fn drops_a_recent_project_whose_directory_is_gone() {
+        let dir = TempDir::new("pj-recent-gone");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &[]);
+        open_at(&settings, lecture.clone(), 1).unwrap();
+        fs::remove_dir_all(&lecture).unwrap();
+
+        let opened_project = open_at(&settings, lecture.clone(), 2);
+
+        assert_eq!(
+            opened_project.err(),
+            Some(Failure::DirectoryNotFound { directory: lecture })
+        );
+        assert!(recent_directories(&settings).is_empty());
+    }
+
+    // @behavior PJ-159
+    #[cfg(unix)]
+    #[test]
+    fn keeps_a_recent_project_that_could_not_be_read() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = TempDir::new("pj-recent-unreadable");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &[]);
+        open_at(&settings, lecture.clone(), 1).unwrap();
+        fs::set_permissions(&lecture, fs::Permissions::from_mode(0o000)).unwrap();
+
+        let opened_project = open_at(&settings, lecture.clone(), 2);
+
+        fs::set_permissions(&lecture, fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(opened_project.is_err());
+        assert_eq!(recent_directories(&settings), vec![lecture]);
+    }
+
+    // @behavior PJ-160
+    #[test]
+    fn leaves_the_open_project_out_of_the_recent_projects() {
+        let dir = TempDir::new("pj-recent-open");
+        let settings = dir.path().join("settings");
+        let lecture = create_directory(&dir, "lecture", &[]);
+        let interview = create_directory(&dir, "interview", &[]);
+        open_at(&settings, lecture.clone(), 1).unwrap();
+        let current = CurrentProject::default();
+        current.replace(open_at(&settings, interview, 2).unwrap());
+
+        let recent = RecentProjects::load(&settings)
+            .unwrap()
+            .projects_without(current.directory().as_deref());
+
+        assert_eq!(
+            recent
+                .into_iter()
+                .map(|project| project.directory)
+                .collect::<Vec<_>>(),
+            vec![lecture]
+        );
     }
 
     // @behavior PV-001
@@ -383,5 +642,28 @@ mod tests {
 
         assert_eq!(result, Err(Failure::ChangedElsewhere));
         assert!(is_heard.load(Ordering::SeqCst));
+    }
+
+    // @behavior MD-049
+    #[test]
+    fn names_the_preset_model_each_project_model_is() {
+        let second_translation_preset =
+            crate::toolchain::presets::slot_presets(ModelSlot::Translation)[1]
+                .source
+                .clone();
+        let models = ProjectModels {
+            transcription: Some(crate::model_source::ModelSource::File {
+                path: "/models/own.bin".into(),
+            }),
+            translation: Some(second_translation_preset),
+        };
+
+        assert_eq!(
+            project_model_presets(&models),
+            ProjectModelPresets {
+                transcription: None,
+                translation: Some(1),
+            }
+        );
     }
 }

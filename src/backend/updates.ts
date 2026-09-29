@@ -1,11 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import type { PreviewRelease } from "./about";
-
-/** A release of Tsuzuri newer than the running one; a Preview build carries what it is based on. */
+/** A release of Tsuzuri newer than the running one, with its Release Name. */
 export interface AppUpdate {
   release_number: string;
-  preview: PreviewRelease | null;
+  release_name: string;
+  is_preview_build: boolean;
 }
 
 /** Where Tsuzuri looks for an App Update. */

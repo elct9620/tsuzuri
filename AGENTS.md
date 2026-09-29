@@ -17,7 +17,7 @@ Read the source for how things work; read these for what they are meant to be.
 | Code conventions, naming first | `docs/convention.md` |
 | Document conventions | `docs/convention.md` § 2 |
 | Component source pins and Variants | `components.json` |
-| Build, run and test | `README.md` § Development |
+| Build, run and test | `CONTRIBUTING.md` |
 | Quality gates | `.github/workflows/ci.yml`, `.claude/hooks/` |
 
 ## 2 Upkeep
@@ -31,4 +31,5 @@ A change is finished when the places it touches agree.
 | A screen's layout | `docs/ui.md` first |
 | A module, layer or dependency between them | `docs/architecture.md` |
 | `README.md` | `README.zh-TW.md`, and the other way round |
+| `CONTRIBUTING.md` | `CONTRIBUTING.zh-TW.md`, and the other way round |
 | The first Variant `components.json` lists for a platform | `README.md` § Installation, in both languages |

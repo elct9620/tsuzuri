@@ -13,16 +13,21 @@ import FieldController, {
 import GlossaryController from "./controllers/glossary_controller";
 import LicensesController from "./controllers/licenses_controller";
 import LogsController from "./controllers/logs_controller";
+import ModelSlotController from "./controllers/model_slot_controller";
 import ModelsController from "./controllers/models_controller";
 import NotificationController from "./controllers/notification_controller";
 import PreviewController from "./controllers/preview_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
+import ProjectSettingsController from "./controllers/project_settings_controller";
+import RecentProjectsController from "./controllers/recent_projects_controller";
+import RepositoryController from "./controllers/repository_controller";
 import ReplacementController from "./controllers/replacement_controller";
 import SearchController from "./controllers/search_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
 import ShortcutsController from "./controllers/shortcuts_controller";
 import SpeakersController from "./controllers/speakers_controller";
+import SponsorshipController from "./controllers/sponsorship_controller";
 import TimeFieldController from "./controllers/time_field_controller";
 import TimelineController, {
   controlOption,
@@ -37,7 +42,6 @@ import TranslationSettingsController from "./controllers/translation_settings_co
 import UndoController, { typingOption } from "./controllers/undo_controller";
 import UpdatesController from "./controllers/updates_controller";
 import VersionsController from "./controllers/versions_controller";
-import VolumeBoostController from "./controllers/volume_boost_controller";
 import { setInterfaceLanguage, translatePage } from "./i18n";
 import { showIcons } from "./ui/icons";
 
@@ -62,17 +66,22 @@ async function start(): Promise<void> {
     glossary: GlossaryController,
     licenses: LicensesController,
     logs: LogsController,
+    "model-slot": ModelSlotController,
     models: ModelsController,
     notification: NotificationController,
     preview: PreviewController,
     progress: ProgressController,
     project: ProjectController,
+    "project-settings": ProjectSettingsController,
+    "recent-projects": RecentProjectsController,
     replacement: ReplacementController,
+    repository: RepositoryController,
     cleanup: CleanupController,
     search: SearchController,
     "segment-changes": SegmentChangesController,
     shortcuts: ShortcutsController,
     speakers: SpeakersController,
+    sponsorship: SponsorshipController,
     "time-field": TimeFieldController,
     timeline: TimelineController,
     tooltip: TooltipController,
@@ -85,7 +94,6 @@ async function start(): Promise<void> {
     undo: UndoController,
     updates: UpdatesController,
     versions: VersionsController,
-    "volume-boost": VolumeBoostController,
   }).start();
 }
 

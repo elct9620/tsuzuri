@@ -8,6 +8,13 @@ export type Failure =
   | { code: "malformed-glossary"; detail: string }
   | { code: "model-not-chosen"; slot: ModelSlot }
   | { code: "model-missing"; path: string }
+  | { code: "model-not-downloaded"; repo: string; file: string }
+  | { code: "model-download-failed"; detail: string }
+  | { code: "model-login-required"; repo: string }
+  | { code: "repository-not-found"; repo: string }
+  | { code: "model-download-cancelled" }
+  | { code: "model-downloading" }
+  | { code: "directory-not-found"; directory: string }
   | { code: "no-project" }
   | { code: "no-resource" }
   | { code: "no-media" }
@@ -27,6 +34,7 @@ export type Failure =
   | { code: "update-failed"; detail: string }
   | { code: "no-update" }
   | { code: "update-during-mode" }
+  | { code: "opening-during-mode" }
   | { code: "llama-exited" }
   | { code: "llama-timed-out" }
   | { code: "llama-request"; detail: string }

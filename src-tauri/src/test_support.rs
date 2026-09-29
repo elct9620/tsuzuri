@@ -84,16 +84,20 @@ pub fn write_executable(path: &Path, body: &str) {
 }
 
 pub struct Request {
+    pub method: String,
     pub path: String,
     pub body: Vec<u8>,
 }
 
+#[derive(Default)]
 pub struct Response {
     pub status: u16,
+    pub headers: Vec<(String, String)>,
     pub body: Vec<u8>,
 }
 
-/// An HTTP/1.1 server on a random local port answering each request with `handler`, one connection at a time.
+/// An HTTP/1.1 server on a random local port answering each request with `handler`, one connection at a time;
+/// a HEAD request gets the headers the body would carry, without the body.
 pub struct FakeHttp {
     pub base_url: String,
 }
@@ -111,11 +115,9 @@ impl FakeHttp {
                 if reader.read_line(&mut request_line).is_err() {
                     continue;
                 }
-                let path = request_line
-                    .split_whitespace()
-                    .nth(1)
-                    .unwrap_or_default()
-                    .to_string();
+                let mut request_parts = request_line.split_whitespace();
+                let method = request_parts.next().unwrap_or_default().to_string();
+                let path = request_parts.next().unwrap_or_default().to_string();
                 let mut headers = Vec::new();
                 loop {
                     let mut line = String::new();
@@ -133,15 +135,23 @@ impl FakeHttp {
                     .unwrap_or(0usize);
                 let mut body = vec![0; length];
                 let _ = reader.read_exact(&mut body);
-                let response = handler(&Request { path, body });
+                let is_head = method == "HEAD";
+                let response = handler(&Request { method, path, body });
+                let extra_headers: String = response
+                    .headers
+                    .iter()
+                    .map(|(key, value)| format!("{key}: {value}\r\n"))
+                    .collect();
                 let head = format!(
-                    "HTTP/1.1 {} X\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    "HTTP/1.1 {} X\r\nContent-Length: {}\r\n{extra_headers}Connection: close\r\n\r\n",
                     response.status,
                     response.body.len()
                 );
                 let mut stream = &stream;
                 let _ = stream.write_all(head.as_bytes());
-                let _ = stream.write_all(&response.body);
+                if !is_head {
+                    let _ = stream.write_all(&response.body);
+                }
             }
         });
         FakeHttp { base_url }

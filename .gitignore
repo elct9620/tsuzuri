@@ -31,3 +31,8 @@ vendor/
 # The crates' licenses cargo-about lists, and the License Notice scripts/licenses.ts writes from them
 crate-licenses.json
 public/LICENSE.html
+
+# Model files scripts/breeze.sh builds; only the model cards are source
+models/.build/
+models/*/*.bin
+models/*/LICENSE

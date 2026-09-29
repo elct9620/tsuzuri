@@ -33,6 +33,31 @@ pub enum Failure {
     ModelMissing {
         path: PathBuf,
     },
+    /// A Repository's Model the Hugging Face Cache does not hold.
+    ModelNotDownloaded {
+        repo: String,
+        file: String,
+    },
+    /// Downloading a Model from Hugging Face went wrong.
+    ModelDownloadFailed {
+        detail: String,
+    },
+    /// A Hugging Face Repository that needs a login, or access granted to the account logged in.
+    ModelLoginRequired {
+        repo: String,
+    },
+    /// A Hugging Face Repository that does not exist, or is private to someone else.
+    RepositoryNotFound {
+        repo: String,
+    },
+    /// The Model's download was asked to stop.
+    ModelDownloadCancelled,
+    /// The same file of a Repository asked to download while it already is.
+    ModelDownloading,
+    /// A directory asked to open as the Project that no longer exists.
+    DirectoryNotFound {
+        directory: PathBuf,
+    },
     /// Translating, editing or saving asked for before a Project was opened.
     NoProject,
     /// The Project has no Resource by the name asked for, or none is current.
@@ -88,6 +113,8 @@ pub enum Failure {
     NoUpdate,
     /// Installing an App Update asked for while a Mode runs, whose Components installing stops.
     UpdateDuringMode,
+    /// Opening a Project asked for while a Mode runs, which writes into the Project open.
+    OpeningDuringMode,
     LlamaExited,
     LlamaTimedOut,
     /// llama-server answered a request with an error, or without a translation.
@@ -155,6 +182,7 @@ impl From<ModelError> for Failure {
         match error {
             ModelError::NoChoice(slot) => Failure::ModelNotChosen { slot },
             ModelError::MissingFile(path) => Failure::ModelMissing { path },
+            ModelError::NotDownloaded { repo, file } => Failure::ModelNotDownloaded { repo, file },
         }
     }
 }

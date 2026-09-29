@@ -4,12 +4,16 @@ The directory Rust holds open as the single source of truth: which files make it
 
 ## Includes
 
+- `src-tauri/src/lib.rs`
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
 - `src-tauri/src/transcription.rs`
 - `src-tauri/src/transcription/*.rs`
 - `src-tauri/src/translation.rs`
+- `src/backend/project.test.ts`
 - `src/controllers/project_controller.test.ts`
+- `src/controllers/project_settings_controller.test.ts`
+- `src/controllers/recent_projects_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 
 ## `PJ-001` Opening a directory as the Project
@@ -224,6 +228,190 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | an SRT file whose second cue is malformed is chosen to open |
 | Then | a message says the file could not be read at its second cue |
 
+## `PJ-166` Refusing to open a Project while a Mode runs
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` open, a Mode running on its `ep01` |
+| When | the directory `interview` is asked to open |
+| Then | it is refused as `opening-during-mode` and `lecture` is still the Project |
+
+## `PJ-167` Warning that a Project cannot open while a Mode runs
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar, a Mode running |
+| When | a directory is chosen to open |
+| Then | a warning asks to wait for the task to finish or cancel it first |
+
+## `PJ-168` Taking the SRT file among the launch arguments
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri launched in `/talks` with `--flag`, `notes.txt` and `ep02.srt` |
+| When | its arguments are read for a Requested SRT |
+| Then | the Requested SRT is `/talks/ep02.srt` |
+
+## `PJ-169` Taking a file URL the system hands over
+
+| Step | Statement |
+| --- | --- |
+| Given | the system asks to open `file:///talks/ep%2002.srt` |
+| When | it is read for a Requested SRT |
+| Then | the Requested SRT is `/talks/ep 02.srt` |
+
+## `PJ-170` Answering the Requested SRT once
+
+| Step | Statement |
+| --- | --- |
+| Given | `/talks/ep02.srt` requested |
+| When | the Requested SRT is taken twice |
+| Then | the first answers `/talks/ep02.srt` and the second none |
+
+## `PJ-180` Keeping an SRT file the system asks for before Tsuzuri has started
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri launching, not yet set up |
+| When | the system asks it to open `/talks/ep02.srt` |
+| Then | the Requested SRT is `/talks/ep02.srt` |
+
+## `PJ-171` Opening the Requested SRT as the webview starts
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri launched to open `/talks/ep02.srt` |
+| When | the toolbar starts |
+| Then | `/talks/ep02.srt` is opened as an SRT file in the Interface Language |
+
+## `PJ-172` Opening an SRT file requested while Tsuzuri runs
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar, with `lecture` open |
+| When | `/talks/ep02.srt` is requested |
+| Then | it is opened as an SRT file in the Interface Language |
+
+## `PJ-154` Keeping an opened directory as a Recent Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Recent Projects |
+| When | the directory `lecture` is opened |
+| Then | the Recent Projects are `lecture` with the time it was opened |
+
+## `PJ-155` Keeping the directory of an opened SRT file as a Recent Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Recent Projects |
+| When | `lecture/ep01.srt` is opened |
+| Then | the Recent Projects are `lecture` |
+
+## `PJ-156` Keeping one Recent Project per directory
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` opened before `interview` |
+| When | `lecture` is opened again |
+| Then | the Recent Projects are `lecture` then `interview` |
+
+## `PJ-157` Keeping ten Recent Projects
+
+| Step | Statement |
+| --- | --- |
+| Given | ten directories opened one after another |
+| When | an eleventh is opened |
+| Then | the Recent Projects are the last ten opened, without the first |
+
+## `PJ-158` Dropping a Recent Project whose directory is gone
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` as a Recent Project, its directory since removed |
+| When | `lecture` is opened |
+| Then | it is refused as `directory-not-found` and the Recent Projects no longer hold it |
+
+## `PJ-159` Keeping a Recent Project that could not be read
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` as a Recent Project, its directory since made unreadable |
+| When | `lecture` is opened |
+| Then | the Recent Projects still hold it |
+
+## `PJ-160` Leaving the open Project out of the Recent Projects
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` opened before `interview` |
+| When | the Recent Projects are read |
+| Then | they are `lecture` alone |
+
+## `PJ-161` Listing the Recent Projects on the start screen
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` at `/videos/lecture` as a Recent Project |
+| When | the start screen is shown |
+| Then | a row shows `lecture`, `/videos/lecture` and the date it was opened |
+
+## `PJ-162` Opening a Recent Project from the start screen
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` listed on the start screen |
+| When | its row is clicked |
+| Then | the directory `/videos/lecture` is opened |
+
+## `PJ-163` Hiding the Recent Projects when there are none
+
+| Step | Statement |
+| --- | --- |
+| Given | no Recent Projects |
+| When | the start screen is shown |
+| Then | no heading for them is shown |
+
+## `PJ-164` Listing the Recent Projects in the Open menu
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` at `/videos/lecture` as a Recent Project |
+| When | the Open menu is shown |
+| Then | it lists `lecture` with `/videos/lecture` as its tooltip |
+
+## `PJ-177` Listing a Recent Project by its Project Name
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` as a Recent Project, its Project Config naming it `週會錄影` |
+| When | the Recent Projects are listed |
+| Then | `lecture` is listed as `週會錄影` |
+
+## `PJ-178` Naming a Recent Project after its directory when its Project Config does not answer
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` and `interview` as Recent Projects, the Project Config of `lecture` not answering |
+| When | the Recent Projects are listed |
+| Then | the list comes in time, `lecture` named `lecture` and `interview` by its Project Name |
+
+## `PJ-179` Showing the Project Name of a Recent Project on the start screen and in the Open menu
+
+| Step | Statement |
+| --- | --- |
+| Given | `/videos/lecture` as a Recent Project named `週會錄影` |
+| When | the start screen and the Open menu are shown |
+| Then | both list it as `週會錄影` |
+
+## `PJ-165` Listing the Recent Projects again after one could not be opened
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` listed on the start screen, its directory since removed |
+| When | its row is clicked |
+| Then | the start screen no longer lists it |
+
 ## `PJ-003` Editing a Segment of the Current Resource
 
 | Step | Statement |
@@ -255,6 +443,14 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | Given | a Current Resource whose Segment is said by `阿福` |
 | When | it is written as Plain Text without its Speakers |
 | Then | the text carries the Segment's text alone |
+
+## `PJ-185` Leaving the blank lines out of Plain Text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of two Segments |
+| When | its original is written as Plain Text without blank lines |
+| Then | the text is one line per Segment with nothing between |
 
 ## `PJ-152` Writing a bilingual Plain Text in the Bilingual Order
 
@@ -475,6 +671,78 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | Given | the settings of a Project not saving Bilingual SRTs |
 | When | saving them is turned on |
 | Then | the Project Options are set to save Bilingual SRTs |
+
+## `PJ-173` Naming a Project in its Project Options
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project `lecture` |
+| When | its Project Options are set with the name ` 週會錄影 ` |
+| Then | the Project is named `週會錄影` and its Project Config records that name |
+
+## `PJ-174` Naming a Project after its directory without a name of its own
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project `lecture` |
+| When | its Project Options are set with a name of only spaces |
+| Then | the Project is named `lecture` and its Project Config records no name |
+
+## `PJ-175` Showing the Project Name in the toolbar and the window title
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar |
+| When | the Project named `週會錄影` is shown |
+| Then | the toolbar reads `週會錄影` and the window title `週會錄影 - Tsuzuri` |
+
+## `PJ-176` Naming the Project in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of the Project `lecture` |
+| When | `週會錄影` is typed as its name |
+| Then | the Project Options are set with the name `週會錄影` |
+
+## `PJ-186` Hinting the directory's name where the Project is named
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project in `/talks` named `週會錄影` |
+| When | its settings show |
+| Then | the name field hints `talks`, the name it takes once emptied |
+
+## `PJ-181` Naming the Project in the toolbar
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar of the Project `lecture` |
+| When | `週會錄影` is typed over its name |
+| Then | the Project Options are set with the name `週會錄影` |
+
+## `PJ-182` Leaving the Project Name in the toolbar as it was
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar of the Project named `週會錄影` |
+| When | `lecture` is typed over its name and Esc is pressed |
+| Then | the toolbar reads `週會錄影` and the Project Options are not set |
+
+## `PJ-183` Putting the Resource list away once a Resource is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the Resource list laid over the editor of a narrow window |
+| When | the Resource `ep02` is chosen |
+| Then | `ep02` is selected and the Resource list is put away |
+
+## `PJ-184` Showing a Project to every view when one of them fails
+
+| Step | Statement |
+| --- | --- |
+| Given | two views following the Project, the first failing to show it |
+| When | the Project is read |
+| Then | the second view shows it and the first view's failure is reported |
 
 ## `PJ-056` Writing an edited Speaker back to the subtitle
 

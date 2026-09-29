@@ -11,7 +11,7 @@ import { modelSettings } from "../backend/toolchain";
 import { transcribe, type TranscriptionScope } from "../backend/transcription";
 import { translateSegments } from "../backend/translation";
 import { t } from "../i18n";
-import { fileName } from "../ui/file_name";
+import { sourceFileName } from "../ui/models";
 import { notify, notifyTranslation } from "../ui/notification";
 import { factorItems, phaseItems } from "../ui/progress";
 import { formatTime } from "../ui/time";
@@ -111,12 +111,12 @@ export default class TranscribeController extends Controller {
     }
     this.showTranslationOptions();
     this.dialogTarget.showModal();
-    const path =
+    const source =
       this.project?.options.models.transcription ??
-      (await modelSettings())?.transcription.path ??
+      (await modelSettings())?.transcription.source ??
       null;
     this.modelTarget.textContent =
-      path === null ? t("models.notChosen") : fileName(path);
+      source === null ? t("models.notChosen") : sourceFileName(source);
   }
 
   async start(): Promise<void> {

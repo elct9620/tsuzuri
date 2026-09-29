@@ -4,7 +4,7 @@ use std::path::Path;
 
 use tauri::{AppHandle, Manager};
 
-use super::{detection, Choices, ModelSettings, Resolver};
+use super::{detection, hub, Choices, ModelSettings, Resolver};
 use crate::failure::Failure;
 use crate::json_settings::{self, settings_dir};
 
@@ -47,6 +47,8 @@ pub fn resolver(app: &AppHandle) -> Result<Resolver, Failure> {
     })
 }
 
+/// The general Model settings, with the Hugging Face Cache their Repositories' Models are found in.
 pub fn load_settings(app: &AppHandle) -> Result<ModelSettings, Failure> {
-    Ok(ModelSettings::load(&settings_dir(app)?)?)
+    let hub_cache = hub::hub_cache(|name| std::env::var(name).ok(), &app.path().home_dir()?);
+    Ok(ModelSettings::load(&settings_dir(app)?)?.with_hub_cache(hub_cache))
 }

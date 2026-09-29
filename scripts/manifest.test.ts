@@ -89,30 +89,30 @@ describe("update manifest", () => {
     expect(releasesUrl(cargoToml)).toBe(RELEASES);
   });
 
-  it("gives each Preview package a fixed name, its signature following", () => {
+  it("names each Preview package by its release number, its signature following", () => {
     const names = [
       "Tsuzuri_0.2.1-preview.202609281430+12_x64-setup.exe",
       "Tsuzuri_0.2.1-preview.202609281430+12_x64-setup.exe.sig",
       "Tsuzuri.app.tar.gz.sig",
       "Tsuzuri_0.2.1-preview.202609281430+12_aarch64.dmg",
       "SHA256SUMS",
-    ].map(previewAssetName);
+    ].map((name) => previewAssetName(name, "0.2.1-preview.202609281430+12"));
 
     expect(names).toEqual([
-      "Tsuzuri-preview_x64-setup.exe",
-      "Tsuzuri-preview_x64-setup.exe.sig",
-      "Tsuzuri-preview_aarch64.app.tar.gz.sig",
-      "Tsuzuri-preview_aarch64.dmg",
+      "Tsuzuri_0.2.1-preview.202609281430_x64-setup.exe",
+      "Tsuzuri_0.2.1-preview.202609281430_x64-setup.exe.sig",
+      "Tsuzuri_0.2.1-preview.202609281430_aarch64.app.tar.gz.sig",
+      "Tsuzuri_0.2.1-preview.202609281430_aarch64.dmg",
       "SHA256SUMS",
     ]);
   });
 
   it("announces a Preview build by the number its packages were signed for, without rpm", () => {
     const previewPackages = [
-      "Tsuzuri-preview_aarch64.app.tar.gz",
-      "Tsuzuri-preview_x64-setup.exe",
-      "Tsuzuri-preview_x64.msi",
-      "Tsuzuri-preview_amd64.deb",
+      "Tsuzuri_0.2.0_aarch64.app.tar.gz",
+      "Tsuzuri_0.2.0_x64-setup.exe",
+      "Tsuzuri_0.2.0_x64_en-US.msi",
+      "Tsuzuri_0.2.0_amd64.deb",
     ];
     const assets = [
       ...previewPackages,
@@ -120,7 +120,7 @@ describe("update manifest", () => {
     ];
 
     const manifest = updateManifest(
-      "preview",
+      "v0.2.0",
       assets,
       signatureByName,
       RELEASES,
@@ -139,16 +139,16 @@ describe("update manifest", () => {
         "windows-x86_64-msi",
         "linux-x86_64-deb",
       ],
-      `${RELEASES}/download/preview/Tsuzuri-preview_x64-setup.exe`,
+      `${RELEASES}/download/v0.2.0/Tsuzuri_0.2.0_x64-setup.exe`,
     ]);
   });
 
   it("refuses a Preview build whose packages were signed for no release number", () => {
     const previewPackages = [
-      "Tsuzuri-preview_aarch64.app.tar.gz",
-      "Tsuzuri-preview_x64-setup.exe",
-      "Tsuzuri-preview_x64.msi",
-      "Tsuzuri-preview_amd64.deb",
+      "Tsuzuri_0.2.0_aarch64.app.tar.gz",
+      "Tsuzuri_0.2.0_x64-setup.exe",
+      "Tsuzuri_0.2.0_x64_en-US.msi",
+      "Tsuzuri_0.2.0_amd64.deb",
     ];
     const assets = [
       ...previewPackages,
@@ -156,7 +156,7 @@ describe("update manifest", () => {
     ];
 
     expect(() =>
-      updateManifest("preview", assets, () => CLI_SIGNATURE, RELEASES, "preview"),
-    ).toThrow("Tsuzuri-preview_aarch64.app.tar.gz is signed for no release number");
+      updateManifest("v0.2.0", assets, () => CLI_SIGNATURE, RELEASES, "preview"),
+    ).toThrow("Tsuzuri_0.2.0_aarch64.app.tar.gz is signed for no release number");
   });
 });

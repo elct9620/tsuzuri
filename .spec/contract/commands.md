@@ -8,7 +8,7 @@ The Tauri commands the webview invokes. The frontend depends on these names and 
 
 ## `model_settings`
 
-The path chosen for each Model Slot and whether its file exists.
+The Model Source chosen for each Model Slot, the path its Model is found at, whether that file exists, the file extensions a Model for the slot has, and which of the slot's Preset Models it is, as its place among them, or none.
 
 ```rust
 pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, Failure> {}
@@ -16,10 +16,42 @@ pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, Failure> {}
 
 ## `choose_model`
 
-Remember a Model file for one slot and answer the slot's new state.
+Remember a Model Source for one slot, as `{"kind":"file","path":…}` or `{"kind":"repository","repo":…,"file":…,"commit":…}`, and answer the slots' new state.
 
 ```rust
-pub fn choose_model(app: AppHandle, slot: ModelSlot, path: PathBuf) -> Result<ModelSettingsView, Failure> {}
+pub fn choose_model(app: AppHandle, slot: ModelSlot, source: ModelSource) -> Result<ModelSettingsView, Failure> {}
+```
+
+## `preset_models`
+
+The Preset Models of `slot`, each with its Model Slot, name, quantization, Model Source and size in bytes, in the order the settings offer them.
+
+```rust
+pub fn preset_models(slot: ModelSlot) -> Vec<PresetModel> {}
+```
+
+## `download_model`
+
+Download `file` of the Hugging Face Repository `repo` (`owner/name`) at `revision`, the main branch when none, into the Hugging Face Cache, emitting `model-download-progress` as it arrives, and answer it as a Model Source at the commit it was downloaded at. A file the cache already holds at a commit `revision` names is answered without a request. No Mode waits for it and it waits for none; the same file already downloading is refused as `model-downloading`, and one cancelled answers `model-download-cancelled`.
+
+```rust
+pub async fn download_model(app: AppHandle, downloads: State<'_, ModelDownloads>, repo: String, file: String, revision: Option<String>) -> Result<ModelSource, Failure> {}
+```
+
+## `repository_files`
+
+The files of the Hugging Face Repository `repo` (`owner/name`) at its main branch a Model for `slot` can be, each with its path in the Repository and its size in bytes, in the Repository's order.
+
+```rust
+pub async fn repository_files(app: AppHandle, repo: String, slot: ModelSlot) -> Result<Vec<RepositoryFile>, Failure> {}
+```
+
+## `cancel_model_download`
+
+Stop downloading `file` of `repo`; nothing happens when it is not downloading.
+
+```rust
+pub fn cancel_model_download(downloads: State<'_, ModelDownloads>, repo: String, file: String) {}
 ```
 
 ## `component_statuses`
@@ -80,10 +112,10 @@ pub async fn extract_waveform(app: AppHandle, current: State<'_, CurrentProject>
 
 ## `open_project`
 
-Open a directory as a new Project in the Language given for when the directory records none, and select its first Resource. The webview may read the files of that directory from then on, so the Preview can load its media.
+Open a directory as a new Project in the Language given for when the directory records none, select its first Resource, and keep the directory as the latest Recent Project. The webview may read the files of that directory from then on, so the Preview can load its media. A directory that does not exist is refused as `directory-not-found` and dropped from the Recent Projects. While a Mode runs it is refused as `opening-during-mode` before anything is read, and the Mode's turn is held while opening, so a Mode asked for meanwhile waits.
 
 ```rust
-pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {}
+pub fn open_project(app: AppHandle, mode_lock: State<'_, ModeLock>, path: PathBuf, language: Language) -> Result<(), Failure> {}
 ```
 
 ## `open_srt`
@@ -91,7 +123,23 @@ pub fn open_project(app: AppHandle, path: PathBuf, language: Language) -> Result
 Open the directory an SRT file is in as a new Project, as `open_project` does, and select the file's Resource.
 
 ```rust
-pub fn open_srt(app: AppHandle, path: PathBuf, language: Language) -> Result<(), Failure> {}
+pub fn open_srt(app: AppHandle, mode_lock: State<'_, ModeLock>, path: PathBuf, language: Language) -> Result<(), Failure> {}
+```
+
+## `recent_projects`
+
+The Recent Projects, the latest opened first, each as its `directory`, its Project Name as `name` and `opened_at_ms`, the milliseconds since the Unix epoch it was last opened at; the open Project is left out. Each Project Config is read at once, and one not read in time, as on a disk that does not answer, leaves its Project named after its directory rather than holding the list up. The reads wait off the main thread, so the window keeps drawing meanwhile.
+
+```rust
+pub async fn recent_projects(app: AppHandle, current: State<'_, CurrentProject>) -> Result<Vec<RecentProjectView>, Failure> {}
+```
+
+## `take_requested_srt`
+
+The Requested SRT, taken so it is answered once, or none when the system asked for none since.
+
+```rust
+pub fn take_requested_srt(requested: State<'_, RequestedSrt>) -> Option<PathBuf> {}
 ```
 
 ## `select_resource`
@@ -128,7 +176,7 @@ pub fn set_primary_language(app: AppHandle, current: State<'_, CurrentProject>, 
 
 ## `set_project_options`
 
-Replace the Project Options and record them in the Project Config.
+Replace the Project Options and record them in the Project Config; a Project Name of only spaces is kept as none, and one with spaces around it without them.
 
 ```rust
 pub fn set_project_options(app: AppHandle, current: State<'_, CurrentProject>, options: ProjectOptions) -> Result<(), Failure> {}
@@ -136,7 +184,7 @@ pub fn set_project_options(app: AppHandle, current: State<'_, CurrentProject>, o
 
 ## `current_project`
 
-The Project's directory, Languages, Project Options, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments and what the Translation Glossary calls each of their Speakers in the translation shown, whether it has a change to undo and to redo, the Mode running on it and the Batch it is translating, or none before one is opened.
+The Project's directory, Project Name, Languages, Project Options with which Preset Model each Project Model is, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments and what the Translation Glossary calls each of their Speakers in the translation shown, whether it has a change to undo and to redo, the Mode running on it and the Batch it is translating, or none before one is opened.
 
 ```rust
 pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView> {}
@@ -216,10 +264,10 @@ pub fn save_srt(current: State<'_, CurrentProject>, path: PathBuf, content: Writ
 
 ## `save_text`
 
-Write the Current Resource to a file as Plain Text carrying the `original` text, the `translation`, or both in the Bilingual Order, naming each Speaker as its SRT would when `has_speakers` asks for them.
+Write the Current Resource to a file as Plain Text carrying the `original` text, the `translation`, or both in the Bilingual Order, naming each Speaker as its SRT would when `has_speakers` asks for them and leaving a blank line between blocks when `has_blank_lines` asks for one.
 
 ```rust
-pub fn save_text(current: State<'_, CurrentProject>, path: PathBuf, content: WrittenText, has_speakers: bool) -> Result<(), Failure> {}
+pub fn save_text(current: State<'_, CurrentProject>, path: PathBuf, content: WrittenText, has_speakers: bool, has_blank_lines: bool) -> Result<(), Failure> {}
 ```
 
 ## `change_segments`
@@ -368,7 +416,7 @@ pub fn open_log_directory(log_dir: State<'_, LogDirInUse>) -> Result<(), Failure
 
 ## `app_build`
 
-The App Build: the release number Cargo.toml carries, for a Preview build the stable release it is based on and its UTC build time, whether its install offers the Preview channel, and the commit the binary was built from, or `unknown` for a build made outside a git checkout.
+The App Build: the release number Cargo.toml carries, its Release Name, whether it is a Preview build, whether its install offers the Preview channel, and the commit the binary was built from, or `unknown` for a build made outside a git checkout.
 
 ```rust
 pub fn app_build() -> AppBuild {}
@@ -383,9 +431,17 @@ pub fn open_releases() -> Result<(), Failure> {}
 ```
 
 
+## `open_sponsorship`
+
+Open the page where Tsuzuri can be sponsored in the system's browser. The page is fixed on the Rust side, like the releases page, so the webview cannot have any other address opened.
+
+```rust
+pub fn open_sponsorship() -> Result<(), Failure> {}
+```
+
 ## `check_for_update`
 
-Look for an App Update in the update manifest of the chosen Update Channel, and keep what it finds for `install_update`. It answers the App Update's release number, or none when the App Build is the latest; a manifest that cannot be reached or read fails as `update-failed`.
+Look for an App Update in the update manifest of the chosen Update Channel, and keep what it finds for `install_update`. It answers the App Update's release number, its Release Name and whether it is a Preview build, or none when the App Build is the latest; a manifest that cannot be reached or read fails as `update-failed`.
 
 ```rust
 pub async fn check_for_update(app: AppHandle, found_update: State<'_, FoundUpdate>) -> Result<Option<AppUpdate>, Failure> {}

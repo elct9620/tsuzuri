@@ -11,7 +11,6 @@ Hearing and watching the Current Resource's media above the editor while its sub
 - `src/controllers/preview_controller.test.ts`
 - `src/controllers/timeline_controller.test.ts`
 - `src/controllers/current_segment.test.ts`
-- `src/controllers/volume_boost_controller.test.ts`
 
 ## `PV-001` Letting the webview read a media file of the Project
 
@@ -44,6 +43,16 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | Given | a Current Resource whose media converts to 20 ms of audio, loud in its first 10 ms and silent after |
 | When | its Waveform is extracted |
 | Then | the answer holds the Peaks 1 and 0 |
+
+## `PV-187` Keeping a quiet Peak
+
+A quiet recording is stretched to its loudest Peak, so a Peak holds enough of a sample to still show a murmur once stretched.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media is loud at 0.4% of full scale in its first 10 ms |
+| When | its Waveform is extracted |
+| Then | the answer holds the Peak 0.004 |
 
 ## `PV-005` Refusing a Waveform without a media file
 
@@ -816,83 +825,137 @@ Some media is recorded quietly and some loudly, so the Preview has a volume of i
 | --- | --- |
 | Given | no volume ever chosen on this machine |
 | When | the Preview opens |
-| Then | the volume slider reads 100 and the media plays at full volume |
+| Then | the volume slider sits at its middle and the media plays at full volume |
 
 ## `PV-165` Setting the volume with its slider
+
+The slider follows Aegisub's curve, the cube of its position against its middle, so each stretch of it changes the loudness heard alike.
 
 | Step | Statement |
 | --- | --- |
 | Given | the Preview of a Current Resource with a media file |
-| When | the volume slider is moved to 40 |
-| Then | the media plays at 40% of its volume |
+| When | the volume slider is moved to a quarter of its length |
+| Then | the media plays at 12.5% of its volume |
 
 ## `PV-166` Keeping the volume chosen for the next time the Preview opens
 
 | Step | Statement |
 | --- | --- |
-| Given | the volume set to 40 |
+| Given | the volume set to 12.5% |
 | When | the Preview opens again |
-| Then | the volume slider reads 40 and the media plays at 40% of its volume |
+| Then | the volume slider sits at a quarter of its length and the media plays at 12.5% of its volume |
 
-## `PV-170` Holding the volume within 100 without the Volume Boost
+## `PV-171` Playing up to eight times the media's volume
 
-| Step | Statement |
-| --- | --- |
-| Given | a volume of 150 remembered on this machine, with the Volume Boost off |
-| When | the Preview opens |
-| Then | the volume slider goes up to 100, reads 100 and the media plays at full volume |
-
-## `PV-171` Playing above full volume with the Volume Boost
+A recording made from across a table can be too quiet at full volume, so the Preview plays up to eight times louder, as Aegisub does, through Web Audio.
 
 | Step | Statement |
 | --- | --- |
-| Given | the Preview of a Current Resource with a media file, with the Volume Boost on |
-| When | the volume slider is moved to 150 |
-| Then | the media plays at 150% of its volume through Web Audio |
+| Given | the Preview of a Current Resource with a media file |
+| When | the volume slider is moved to its end |
+| Then | the media plays at 800% of its volume through Web Audio |
 
 ## `PV-172` Leaving Web Audio out until the volume passes 100
 
-The sound may lag behind the picture once it goes through Web Audio, so the Volume Boost takes that path only when it is needed.
+The sound may lag behind the picture once it goes through Web Audio, so the Preview takes that path only when it is needed.
 
 | Step | Statement |
 | --- | --- |
-| Given | the Preview with the Volume Boost on |
-| When | the volume slider is moved to 80 |
-| Then | the media plays at 80% of its volume with no Web Audio |
+| Given | the Preview of a Current Resource with a media file |
+| When | the volume slider is moved to a quarter of its length |
+| Then | the media plays at 12.5% of its volume with no Web Audio |
 
-## `PV-173` Reading the media for Web Audio with the Volume Boost
+## `PV-173` Reading the media for Web Audio
 
 Web Audio plays a media file of another origin as silence unless the file was read with CORS.
 
 | Step | Statement |
 | --- | --- |
-| Given | the Volume Boost on |
+| Given | a Current Resource with a media file |
 | When | the Preview opens |
 | Then | the media is read with anonymous CORS |
 
-## `PV-174` Turning the Volume Boost on from the settings
+## `PV-177` Holding loud passages below full scale above full volume
+
+Aegisub cuts off each sample that passes full scale, which distorts; a limiter turns the loudest passages down instead, so raising a quiet recording leaves its loud moments clean.
 
 | Step | Statement |
 | --- | --- |
-| Given | the Volume Boost off since the app opened |
-| When | it is turned on in the settings |
-| Then | it is remembered on this machine and a hint says it takes effect after a restart |
+| Given | the Preview of a Current Resource with a media file |
+| When | the volume slider is moved to its end |
+| Then | the sound above full volume passes a limiter holding it at -1 dBFS |
 
-## `PV-175` Showing how late the boosted sound reaches the speakers
+## `PV-178` Adding nothing of the limiter's own below its threshold
 
-| Step | Statement |
-| --- | --- |
-| Given | the Preview having played above 100 through Web Audio 30 ms ahead of the speakers |
-| When | the settings open |
-| Then | the output latency reads about 30 ms |
-
-## `PV-176` Leaving the output latency out before the boost plays
+A limiter raises all it passes by a fixed makeup gain of its own, so a gain after it takes that back and a quiet passage plays at the volume chosen.
 
 | Step | Statement |
 | --- | --- |
-| Given | the Preview not yet played above 100 |
-| When | the settings open |
-| Then | no output latency is shown |
+| Given | the media played above full volume through Web Audio |
+| When | the volume slider is moved back to its middle |
+| Then | the media plays at full volume, with the limiter's makeup gain taken back |
+
+## `PV-179` Reading the volume beside its slider
+
+A position on the slider says little of how loud it plays, so the volume is read out beside it, to the nearest percent.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview of a Current Resource with a media file |
+| When | the volume slider is moved to three tenths of its length |
+| Then | the volume reads 22% |
+
+## `PV-180` Muting the media
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preview of a Current Resource with a media file |
+| When | the mute button is pressed |
+| Then | the media plays with no sound |
+
+## `PV-181` Unmuting back to the volume chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the media muted with the volume set to 12.5% |
+| When | the mute button is pressed again |
+| Then | the media plays at 12.5% of its volume |
+
+## `PV-182` Unmuting with the volume slider
+
+| Step | Statement |
+| --- | --- |
+| Given | the media muted |
+| When | the volume slider is moved to a quarter of its length |
+| Then | the media plays at 12.5% of its volume |
+
+## `PV-183` Playing with sound each time the Preview opens
+
+A mute forgotten from an earlier session would pass for a media file with no sound, so it is not remembered.
+
+| Step | Statement |
+| --- | --- |
+| Given | the media muted with the volume set to 12.5% |
+| When | the Preview opens again |
+| Then | the media plays at 12.5% of its volume |
+
+## `PV-184` Drawing the Waveform to its loudest Peak
+
+Where someone speaks and where a cut belongs has to show however quietly the media was recorded, so the Waveform is stretched until its loudest Peak fills it, as Subtitle Edit draws its own.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose loudest Peak is 0.25 |
+| When | its Waveform is drawn |
+| Then | that Peak reaches the Waveform's full height |
+
+## `PV-185` Keeping the Waveform's height as the volume changes
+
+| Step | Statement |
+| --- | --- |
+| Given | the Waveform of a Current Resource drawn |
+| When | the volume slider is moved to its end |
+| Then | the Waveform keeps its height |
 
 ## `PV-092` Showing the Speaker over the video by default
 

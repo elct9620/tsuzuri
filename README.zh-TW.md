@@ -1,8 +1,38 @@
-# Tsuzuri
+<p align="center">
+  <img src="src-tauri/icons/icon.png" alt="Tsuzuri" width="128" height="128" />
+</p>
 
-[English](README.md)
+<h1 align="center">Tsuzuri</h1>
 
-在自己的電腦上把影片與音訊轉成字幕，並翻譯、校對。音訊與文字不會離開電腦，轉錄與翻譯引擎也隨 App 內建。
+<p align="center">
+  在自己的電腦上把影片與音訊轉成字幕，並翻譯、校對。
+</p>
+
+<p align="center">
+  <a href="https://github.com/elct9620/tsuzuri/releases/latest"><img src="https://img.shields.io/github/v/release/elct9620/tsuzuri" alt="Release" /></a>
+  <a href="https://github.com/elct9620/tsuzuri/actions/workflows/ci.yml"><img src="https://github.com/elct9620/tsuzuri/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/elct9620/tsuzuri" alt="License" /></a>
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="https://github.com/elct9620/tsuzuri/releases/latest">下載</a> ·
+  <a href="https://portaly.cc/aotoki/product/lV2gJTEFE090h6x1zXhj">贊助</a>
+</p>
+
+![Tsuzuri 在影片與波形旁編輯雙語字幕](docs/images/screenshot.png)
+
+## 功能
+
+音訊與文字不會離開電腦，轉錄與翻譯引擎也隨 App 內建。
+
+| 功能 | 內容 |
+|---|---|
+| 轉錄 | whisper.cpp，可開 VAD |
+| 翻譯 | llama.cpp，依詞彙表翻譯 |
+| 校對 | 波形、對照、版本 |
+| 說話者 | 命名後一併匯出 |
+| 匯出 | SRT 或純文字，可雙語 |
 
 ## 安裝
 
@@ -57,71 +87,45 @@ sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 
 在設定 →「版本與更新」切換通道。預覽版會標示以哪個正式版為基礎與建置時間。從預覽版切回穩定版後，會等下一個正式版再更新；也可以按「立即退回穩定版」馬上裝回目前的正式版。rpm 套件只有穩定版。
 
-## 回報問題
+## 開始使用
 
-| 附上 | 位置 |
+```
+  開啟 ▾ → 目錄 ─▶ 選資源 ─▶ 轉錄 ─▶ 翻譯 ─▶ 校對 ─▶ 匯出 ▾
+```
+
+| 步驟 | 位置 |
 |---|---|
-| 版本 | 設定 →「版本與更新」→「複製」 |
-| 記錄檔 | 設定 →「開啟目錄」 |
-| 更多細節 | 在設定打開「除錯紀錄」，重新啟動後再重現一次 |
+| 開啟目錄 | 「開啟」→「開啟目錄」 |
+| 選影片 | 左側資源清單 |
+| 轉錄 | 「轉錄」後「開始轉錄」 |
+| 翻譯 | 「翻譯」後選語言 |
+| 校對 | 點一段字幕就從那裡播 |
+| 匯出 | 「匯出」→ 選格式 |
 
-除錯紀錄會另外寫入各引擎如何啟動與結束，以及翻譯模型收到的請求與回答，其中包含字幕文字；在你附上之前，它只留在你的電腦裡。
+開啟的目錄即為專案，檔名相同的影片、音訊與字幕歸成同一份資源。模型在第一次使用時下載，見[模型](#模型)。
 
 ## 模型
 
-Tsuzuri 不會下載模型，請指定電腦上已有的模型檔。每個專案可以另外指定自己的轉錄與翻譯模型，例如日文專案用日文模型。
+在設定選擇模型。下表的預設模型會從 Hugging Face 下載到 Hugging Face 快取，這個快取和其他 Hugging Face 工具共用，已經在裡面的檔案不會再下載。也可以指定電腦上的檔案，或 Hugging Face repository 裡這個用途能用的任一檔案。需要登入的 repository 會使用 `hf auth login` 存下的 token。每個專案可以另外指定自己的轉錄與翻譯模型，例如日文專案用日文模型。
 
-| 用途 | 格式 | 已測試 |
+| 用途 | 格式 | 預設模型 |
 |---|---|---|
-| 轉錄 | whisper.cpp GGML（`.bin`） | Breeze-ASR-25（中文） |
-| VAD（開啟時） | whisper.cpp GGML（`.bin`） | Silero v6.2.0（`ggml-silero-v6.2.0.bin`） |
-| 翻譯 | GGUF | Qwen3-4B-Instruct-2507 |
+| 轉錄 | whisper.cpp GGML（`.bin`） | [Breeze-ASR-25](https://huggingface.co/tsuzuri-app/Breeze-ASR-25-ggml)（中文）、[Whisper large-v3-turbo 與 large-v3](https://huggingface.co/ggerganov/whisper.cpp) |
+| VAD（開啟時） | whisper.cpp GGML（`.bin`） | [Silero v6.2.0](https://huggingface.co/ggml-org/whisper-vad) |
+| 翻譯 | GGUF | [Qwen3-4B-Instruct-2507](https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF) |
 
-## 開發
+## 參與開發
 
-需要 Rust、Node.js 與 pnpm。架構見 [docs/architecture.md](docs/architecture.md)，設計見 [docs/design.md](docs/design.md)。
+建置、執行與測試的方式見 [CONTRIBUTING.zh-TW.md](CONTRIBUTING.zh-TW.md)。
 
-```bash
-pnpm install
-pnpm tauri dev      # 啟動 App
-pnpm test           # 前端測試（Vitest）
-cargo test --manifest-path src-tauri/Cargo.toml
-sumi verify         # 對照 .spec/ 檢查程式碼
-```
+## 贊助
 
-### 元件
-
-```bash
-scripts/vendor.sh               # 全部元件
-scripts/vendor.sh whisper cpu   # 單一元件、單一變體
-```
-
-| 編譯環境 | 需要 |
+| 位置 | 連結 |
 |---|---|
-| 全部 | cmake、make、jq |
-| Linux 的 OpenBLAS、Vulkan 版 | pkg-config、libopenblas-dev、libvulkan-dev、glslc、spirv-headers |
-| Windows | 在 MSYS2 UCRT64 裡編譯 |
+| Portaly | [贊助 Tsuzuri](https://portaly.cc/aotoki/product/lV2gJTEFE090h6x1zXhj) |
+| App 裡 | 設定 →「關於」→「贊助」 |
 
-App 依序使用：指定的執行檔、偵測到的已安裝版本（Homebrew、Nix、`PATH`）、內建版本。開發時的建置不內建元件，`scripts/vendor.sh` 依 [`components.json`](components.json) 釘住的原始程式碼編譯到 `vendor/<元件>/<變體>/`，debug build 會優先使用；沒有指定變體時用該平台列出的第一個。
-
-### 打包
-
-```bash
-pnpm tauri build --config src-tauri/tauri.bundle.conf.json
-```
-
-這份設定把 `vendor/` 放進安裝檔，App 依 `components.json` 列出的順序，使用第一個能執行的內建變體。CI 以同樣方式編譯各平台列出的第一個變體，並依釘版分別快取。
-
-### 實際執行引擎的測試
-
-```bash
-cd src-tauri
-TSUZURI_E2E_MODEL=<whisper 的 GGML 模型> TSUZURI_E2E_MEDIA=<影片或音訊> \
-TSUZURI_E2E_LLAMA=<llama-server> TSUZURI_E2E_TRANSLATION_MODEL=<GGUF 模型> \
-  cargo test -- --ignored --nocapture
-```
-
-這兩個測試預設略過，需要模型與媒體檔。
+Tsuzuri 免費且開放原始碼，贊助讓開發能持續下去。
 
 ## 授權
 

@@ -196,7 +196,7 @@ pub async fn run_translate<'a>(
             translate_on_job_server(
                 ports,
                 llama,
-                model,
+                &model,
                 ready_timeout,
                 &job,
                 &mut phases,
@@ -210,7 +210,7 @@ pub async fn run_translate<'a>(
             keep,
         } => {
             let result = match resident
-                .load_model(ports, llama, model, preset_dir, ready_timeout)
+                .load_model(ports, llama, &model, preset_dir, ready_timeout)
                 .await
             {
                 Ok(base_url) => {
@@ -612,6 +612,7 @@ mod tests {
     use tauri::Manager;
 
     use super::*;
+    use crate::model_source::ModelSource;
     use crate::processes::{AppPorts, Processes};
     use crate::project::{Project, RunningMode, SegmentField};
     use crate::steps::ModeLock;
@@ -1163,6 +1164,7 @@ mod tests {
     #[tokio::test]
     async fn stops_when_llama_server_fails_a_request() {
         let llama = FakeLlama::with_answer_per_request(|_, _| Response {
+            headers: Vec::new(),
             status: 500,
             body: json!({"error": {"message": "boom", "type": "server_error"}})
                 .to_string()
@@ -2227,7 +2229,12 @@ mod tests {
         let dir = TempDir::new("tl-glossary-header");
         std::fs::write(dir.path().join("glossary.csv"), "蝙蝠俠,Batman\n").unwrap();
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        settings.choose(
+            ModelSlot::Translation,
+            ModelSource::File {
+                path: dir.file("qwen3-4b.gguf"),
+            },
+        );
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         let mut project = project_of(vec![segment(0, 1_000, "蝙蝠俠")]);
@@ -2266,7 +2273,12 @@ mod tests {
             ),
         );
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        settings.choose(
+            ModelSlot::Translation,
+            ModelSource::File {
+                path: dir.file("qwen3-4b.gguf"),
+            },
+        );
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
 
@@ -2316,10 +2328,17 @@ mod tests {
             ),
         );
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        settings.choose(
+            ModelSlot::Translation,
+            ModelSource::File {
+                path: dir.file("qwen3-4b.gguf"),
+            },
+        );
         let project_model = dir.file("gemma-ja.gguf");
         let mut project = project_of(vec![segment(0, 1_000, "大家好")]);
-        project.options.models.translation = Some(project_model.clone());
+        project.options.models.translation = Some(ModelSource::File {
+            path: project_model.clone(),
+        });
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         app.state::<CurrentProject>().replace(project);
@@ -2361,7 +2380,12 @@ mod tests {
             ),
         );
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Translation, dir.file("qwen3-4b.gguf"));
+        settings.choose(
+            ModelSlot::Translation,
+            ModelSource::File {
+                path: dir.file("qwen3-4b.gguf"),
+            },
+        );
         let app = mock_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         app.state::<CurrentProject>()
@@ -2440,7 +2464,9 @@ mod tests {
         let mut settings = ModelSettings::default();
         settings.choose(
             ModelSlot::Translation,
-            PathBuf::from(std::env::var("TSUZURI_E2E_TRANSLATION_MODEL").unwrap()),
+            ModelSource::File {
+                path: PathBuf::from(std::env::var("TSUZURI_E2E_TRANSLATION_MODEL").unwrap()),
+            },
         );
         let dir = TempDir::new(name);
         let app = mock_app();

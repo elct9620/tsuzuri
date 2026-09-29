@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::language::{Language, LanguagePair};
+use crate::model_source::{parse_saved_source, ModelSource};
 use crate::transcript::{split_label, AudioWindow, Segment, SpeakerNames, Transcript, WrittenText};
 
 mod backups;
@@ -14,6 +15,8 @@ mod files;
 pub mod glossary;
 mod history;
 mod mode_hold;
+mod recent;
+mod requested_srt;
 pub mod versions;
 
 use backups::Backups;
@@ -23,6 +26,7 @@ pub(crate) use files::HISTORY_DIR;
 use glossary::TranslationGlossary;
 use history::UndoHistory;
 pub use mode_hold::RunningMode;
+pub use requested_srt::RequestedSrt;
 
 /// The opened directory: its Primary Language, the Language of its last translation,
 /// its Resources, the Current Resource and the Translation Glossary once loaded.
@@ -62,6 +66,11 @@ pub enum ProjectError {
 }
 
 impl Project {
+    /// The Project Name: the one the Project Options give, else the directory's name.
+    pub fn name(&self) -> String {
+        project_name(self.options.name.as_deref(), &self.directory)
+    }
+
     /// The Languages a Translation Glossary's `source,target` header stands for: the Primary
     /// Language and the translation Language, once the Project has one.
     fn source_target(&self) -> Option<LanguagePair> {
@@ -145,11 +154,13 @@ impl Project {
     }
 
     /// The Current Resource as Plain Text, a bilingual one in the Bilingual Order, naming each
-    /// Speaker as its SRT would unless `has_speakers` leaves them out.
+    /// Speaker as its SRT would unless `has_speakers` leaves them out, and a blank line between
+    /// blocks unless `has_blank_lines` leaves it out.
     fn to_plain_text(
         &self,
         content: WrittenText,
         has_speakers: bool,
+        has_blank_lines: bool,
     ) -> Result<String, ProjectError> {
         let current = self.current()?;
         let (transcript, names) =
@@ -159,7 +170,7 @@ impl Project {
         } else {
             Cow::Owned(transcript_without_speakers(&transcript))
         };
-        Ok(transcript.to_plain_text_with(content, &names))
+        Ok(transcript.to_plain_text_with(content, &names, has_blank_lines))
     }
 
     fn resource(&self, name: &str) -> Result<&Resource, ProjectError> {
@@ -382,7 +393,7 @@ pub struct TranslationSource {
     /// The Primary Language it is translated from.
     pub language: Language,
     /// The Project Model to translate with in place of the general one.
-    pub model: Option<PathBuf>,
+    pub model: Option<ModelSource>,
 }
 
 /// The Segments from `first` through `last`, by position.
@@ -437,7 +448,7 @@ pub struct TranscriptionTarget {
     pub subtitle: PathBuf,
     pub language: Language,
     /// The Project Model to transcribe with in place of the general one.
-    pub model: Option<PathBuf>,
+    pub model: Option<ModelSource>,
     /// The Transcription Settings the Project sets for itself.
     pub overrides: TranscriptionOverrides,
     /// The Audio Window it covers, none for the whole media file.
@@ -480,6 +491,8 @@ pub struct ProjectConfig {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ProjectOptions {
+    /// The Project Name the user gave, or none to name the Project after its directory.
+    pub name: Option<String>,
     pub bilingual_order: BilingualOrder,
     /// Whether each translation keeps a Bilingual SRT beside it, written with either of its texts.
     pub is_bilingual_autosaved: bool,
@@ -493,8 +506,18 @@ pub struct ProjectOptions {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ProjectModels {
-    pub transcription: Option<PathBuf>,
-    pub translation: Option<PathBuf>,
+    #[serde(deserialize_with = "parse_saved_source")]
+    pub transcription: Option<ModelSource>,
+    #[serde(deserialize_with = "parse_saved_source")]
+    pub translation: Option<ModelSource>,
+}
+
+/// Which Preset Model each Project Model is, as its place among its slot's Preset Models; none
+/// where the slot has no Project Model or holds a Model that is none of them.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+pub struct ProjectModelPresets {
+    pub transcription: Option<usize>,
+    pub translation: Option<usize>,
 }
 
 /// The Transcription Settings a Project sets for itself; one left `None` follows the general settings.
@@ -548,6 +571,27 @@ pub struct Backup {
 pub enum BackupKind {
     Output,
     Overwrite,
+}
+
+/// The Project Name of a Project in `directory` whose Project Options give `name`: that name
+/// without the spaces around it, else the directory's name.
+fn project_name(name: Option<&str>, directory: &Path) -> String {
+    trimmed_name(name).unwrap_or_else(|| directory_name(directory))
+}
+
+/// A Project Name without the spaces around it, or none when nothing else is left.
+fn trimmed_name(name: Option<&str>) -> Option<String> {
+    name.map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map(str::to_string)
+}
+
+/// The name of `directory` as a Project is named without a Project Name of its own.
+fn directory_name(directory: &Path) -> String {
+    directory.file_name().map_or_else(
+        || directory.display().to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    )
 }
 
 #[cfg(test)]

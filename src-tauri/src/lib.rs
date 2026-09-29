@@ -6,6 +6,7 @@ pub mod language;
 pub mod logs;
 #[cfg(target_os = "macos")]
 pub mod menu;
+pub mod model_source;
 pub mod processes;
 pub mod progress;
 pub mod project;
@@ -18,6 +19,7 @@ pub mod timing;
 pub mod toolchain;
 pub mod transcript;
 pub mod transcription;
+pub mod transfer_report;
 pub mod translation;
 pub mod updates;
 pub mod waveform;
@@ -26,24 +28,28 @@ pub mod window;
 #[cfg(test)]
 mod test_support;
 
-use tauri::{Manager, RunEvent, WindowEvent};
+use std::path::Path;
+
+use tauri::{AppHandle, Manager, RunEvent, Runtime, WindowEvent};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 
 use logs::{DebugLogInUse, LogDirInUse, LogSettings};
 use processes::Processes;
-use project::CurrentProject;
+use project::{CurrentProject, RequestedSrt};
 use steps::ModeLock;
+use toolchain::hub::ModelDownloads;
 use translation::ResidentLlama;
 use updates::FoundUpdate;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = tauri::Builder::default();
+    let builder = with_requested_srt(tauri::Builder::default());
     #[cfg(target_os = "macos")]
     let builder = builder
         .menu(menu::build_app_menu)
         .on_menu_event(menu::forward_edit_command);
     builder
+        .plugin(tauri_plugin_single_instance::init(follow_second_launch))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
@@ -81,9 +87,15 @@ pub fn run() {
             processes::reap_strays(&record);
             app.manage(Processes::new(record));
             app.manage(CurrentProject::default());
+            project::commands::request_srt_argument(
+                app.handle(),
+                std::env::args().skip(1),
+                &std::env::current_dir()?,
+            );
             app.manage(ResidentLlama::default());
             app.manage(ModeLock::default());
             app.manage(FoundUpdate::default());
+            app.manage(ModelDownloads::default());
             std::thread::spawn(cleanup::load_tables);
             translation::commands::start_resident_llama(app.handle());
             window::build_main_window(app)?;
@@ -105,6 +117,10 @@ pub fn run() {
             toolchain::commands::component_statuses,
             toolchain::commands::model_settings,
             toolchain::commands::choose_model,
+            toolchain::commands::preset_models,
+            toolchain::commands::download_model,
+            toolchain::commands::repository_files,
+            toolchain::commands::cancel_model_download,
             transcription::commands::transcribe,
             transcription::commands::transcription_settings,
             transcription::commands::save_transcription_settings,
@@ -125,6 +141,7 @@ pub fn run() {
             logs::commands::open_log_directory,
             about::commands::app_build,
             about::commands::open_releases,
+            about::commands::open_sponsorship,
             updates::commands::check_for_update,
             updates::commands::check_for_update_at_launch,
             updates::commands::install_update,
@@ -141,6 +158,8 @@ pub fn run() {
             project::commands::export_path,
             project::commands::open_project,
             project::commands::open_srt,
+            project::commands::recent_projects,
+            project::commands::take_requested_srt,
             project::commands::save_srt,
             project::commands::save_text,
             project::commands::select_resource,
@@ -156,9 +175,56 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app, event| {
-            if let RunEvent::Exit = event {
-                app.state::<Processes>().kill_all();
-            }
+        .run(|app, event| match event {
+            RunEvent::Exit => app.state::<Processes>().kill_all(),
+            #[cfg(target_os = "macos")]
+            RunEvent::Opened { urls } => project::commands::request_srt_argument(
+                app,
+                urls.iter().map(|url| url.to_string()),
+                Path::new("/"),
+            ),
+            _ => {}
         });
+}
+
+/// `builder` keeping the Requested SRT from before setup: macOS asks to open a file with
+/// `RunEvent::Opened` before the app is set up, while Windows and Linux pass it as a launch
+/// argument that setup reads.
+fn with_requested_srt<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
+    builder.manage(RequestedSrt::default())
+}
+
+/// Takes over what a second launch in `directory` was asked to open, since that launch quits, and
+/// shows the window it would have opened.
+fn follow_second_launch(app: &AppHandle, arguments: Vec<String>, directory: String) {
+    project::commands::request_srt_argument(app, arguments, Path::new(&directory));
+    window::bring_main_window_forward(app);
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use tauri::test::{mock_builder, mock_context, noop_assets};
+
+    use super::*;
+
+    // @behavior PJ-180
+    #[test]
+    fn keeps_an_srt_file_the_system_asks_for_before_setup() {
+        let app = with_requested_srt(mock_builder())
+            .build(mock_context(noop_assets()))
+            .unwrap();
+
+        project::commands::request_srt_argument(
+            app.handle(),
+            ["/talks/ep02.srt".to_string()],
+            Path::new("/"),
+        );
+
+        assert_eq!(
+            app.state::<RequestedSrt>().take(),
+            Some(PathBuf::from("/talks/ep02.srt"))
+        );
+    }
 }

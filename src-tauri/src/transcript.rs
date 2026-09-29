@@ -129,12 +129,18 @@ impl Transcript {
             .join("\n")
     }
 
-    pub fn to_plain_text_with(&self, content: WrittenText, names: &SpeakerNames) -> String {
+    pub fn to_plain_text_with(
+        &self,
+        content: WrittenText,
+        names: &SpeakerNames,
+        has_blank_lines: bool,
+    ) -> String {
+        let separator = if has_blank_lines { "\n" } else { "" };
         self.segments
             .iter()
             .map(|segment| format!("{}\n", cue_text(segment, content, names)))
             .collect::<Vec<_>>()
-            .join("\n")
+            .join(separator)
     }
 }
 

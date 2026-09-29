@@ -190,6 +190,19 @@ describe("EditingSession", () => {
     expect(port.sentCalls).toEqual([{ kind: "split", index: 1, at: 1 }]);
   });
 
+  // @behavior ED-159
+  it("enters the second half past the spaces a split leaves", async () => {
+    session.follow(view("Hello world", "今天"));
+    session.enter(0, "text", { start: 5, end: 5 }, "Hello world");
+    await session.split();
+    session.follow(view("Hello", "world", "今天"));
+    port.sentCalls = [];
+
+    await session.leave(1, "text", null, "world");
+
+    expect(port.sentCalls).toEqual([]);
+  });
+
   // @behavior ED-121
   it("puts back the second half's text with Esc after a split", async () => {
     await splitFirst();
@@ -259,6 +272,32 @@ describe("EditingSession", () => {
     expect(session.checkedIndexes).toEqual([]);
   });
 
+  it("clears the checks as soon as a change keeping the Segments' number is written", async () => {
+    session.check(1, true);
+    session.check(2, true);
+    heardChanges = [];
+
+    await session.change({ kind: "shift", first: 1, last: 2, offset_ms: 500 });
+
+    expect([session.checkedIndexes, heardChanges]).toEqual([[], ["checks"]]);
+  });
+
+  // @behavior ED-158
+  it("keeps the checks made after a change that moved nothing", async () => {
+    await session.change({
+      kind: "times",
+      index: 0,
+      start_ms: 0,
+      end_ms: 1000,
+    });
+    session.follow(view("你好世界", "今天", "天氣"));
+
+    session.check(1, true);
+    session.follow(view("你好", "今天", "天氣"));
+
+    expect(session.checkedIndexes).toEqual([1]);
+  });
+
   it("keeps the checks while a Transcript changed elsewhere keeps its Segments' number", () => {
     session.check(2, true);
     session.check(0, true);
@@ -278,6 +317,34 @@ describe("EditingSession", () => {
       [1, 2],
       ["checks"],
     ]);
+  });
+
+  // @behavior ED-160
+  it("writes a text typed before a Mode took its Cursor", async () => {
+    enterFirst();
+    session.select(0, "text", { start: 5, end: 5 }, "你好世界啊");
+    session.follow({
+      ...view("你好世界", "今天", "天氣"),
+      runningMode: { mode: "transcription" },
+    });
+
+    await session.leave(0, "text", null, "你好世界啊");
+
+    expect([session.cursor.caret, port.sentCalls]).toEqual([
+      null,
+      [{ edit: [0, "text", "你好世界啊"] }],
+    ]);
+  });
+
+  // @behavior ED-161
+  it("writes nothing typed into a Segment another change moved", async () => {
+    enterFirst();
+    session.select(0, "text", { start: 5, end: 5 }, "你好世界啊");
+    session.follow(view("", "你好世界", "今天", "天氣"));
+
+    await session.leave(0, "text", null, "你好世界啊");
+
+    expect(port.sentCalls).toEqual([]);
   });
 
   it("changes nothing as a field without the Cursor is left", async () => {

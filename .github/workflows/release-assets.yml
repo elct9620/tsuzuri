@@ -2,7 +2,7 @@ name: Release Assets
 
 # Attaches what CI built, so nothing is compiled twice. For a release's commit on stable it publishes
 # the draft release-please left, so the latest release always carries the update manifest; for a
-# push to main it moves the fixed `preview` Prerelease to that commit and replaces its assets.
+# push to main it publishes that Preview build as its own Prerelease.
 # Rerunning this replaces the assets; for a commit CI has not built, run CI on it first, then this.
 on:
   workflow_run:
@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: The release to attach assets to, such as v0.1.0, or preview for the latest Preview build.
+        description: The release to attach assets to, such as v0.1.0, or preview for the Preview build of main's latest checked commit.
         required: true
         type: string
 
@@ -35,6 +35,9 @@ jobs:
       actions: read
       contents: read
     outputs:
+      # stable or preview; empty when there is nothing to attach.
+      channel: ${{ steps.release.outputs.channel }}
+      # The release a stable build attaches to; a Preview build's tag is worked out from its packages.
       tag: ${{ steps.release.outputs.tag }}
       run-id: ${{ steps.release.outputs.run-id }}
       sha: ${{ steps.release.outputs.sha }}
@@ -49,7 +52,8 @@ jobs:
           RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [ "$INPUT_TAG" = preview ]; then
-            tag=preview
+            channel=preview
+            tag=""
             read -r run_id sha < <(gh run list -R "$GITHUB_REPOSITORY" -w ci.yml -b main -e push -s success \
               --json databaseId,headSha -q 'first(.[]) | "\(.databaseId) \(.headSha)"')
             if [ -z "$run_id" ]; then
@@ -57,6 +61,7 @@ jobs:
               exit 1
             fi
           elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            channel=stable
             tag="$INPUT_TAG"
             sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/$tag" --jq .sha)"
             run_id="$(gh run list -R "$GITHUB_REPOSITORY" -w ci.yml --commit "$sha" -s success \
@@ -66,13 +71,15 @@ jobs:
               exit 1
             fi
           elif [ "$RUN_BRANCH" = main ]; then
-            tag=preview
+            channel=preview
+            tag=""
             sha="$RUN_SHA"
             run_id="$RUN_ID"
           else
             # release-please tags the commit that carries the new version.
             version="$(gh api "repos/$GITHUB_REPOSITORY/contents/package.json?ref=$RUN_SHA" --jq .content |
               base64 -d | jq -er .version)"
+            channel=stable
             tag="v$version"
             tagged="$(gh api "repos/$GITHUB_REPOSITORY/commits/$tag" --jq .sha 2>/dev/null)" || tagged=""
             if [ "$tagged" != "$RUN_SHA" ]; then
@@ -82,11 +89,11 @@ jobs:
             sha="$RUN_SHA"
             run_id="$RUN_ID"
           fi
-          { echo "tag=$tag"; echo "run-id=$run_id"; echo "sha=$sha"; } >> "$GITHUB_OUTPUT"
+          { echo "channel=$channel"; echo "tag=$tag"; echo "run-id=$run_id"; echo "sha=$sha"; } >> "$GITHUB_OUTPUT"
 
   attach:
     needs: target
-    if: needs.target.outputs.tag != ''
+    if: needs.target.outputs.channel != ''
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -94,7 +101,7 @@ jobs:
     steps:
       # release-please leaves the release a draft, which only a token that can write sees.
       - name: Find the release
-        if: needs.target.outputs.tag != 'preview'
+        if: needs.target.outputs.channel == 'stable'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.target.outputs.tag }}
@@ -130,10 +137,11 @@ jobs:
       # The update site mirrors this for installed apps to find their App Update.
       - name: Write the update manifest
         env:
+          CHANNEL: ${{ needs.target.outputs.channel }}
           TAG: ${{ needs.target.outputs.tag }}
         run: |
-          if [ "$TAG" = preview ]; then
-            node scripts/manifest.ts "$TAG" assets --preview
+          if [ "$CHANNEL" = preview ]; then
+            node scripts/manifest.ts --preview assets
           else
             node scripts/manifest.ts "$TAG" assets
           fi
@@ -171,44 +179,44 @@ jobs:
         working-directory: assets
         run: sha256sum -- * > SHA256SUMS && cat SHA256SUMS
       - name: Attach to the release
-        if: needs.target.outputs.tag != 'preview'
+        if: needs.target.outputs.channel == 'stable'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.target.outputs.tag }}
         run: gh release upload "$TAG" assets/* --clobber -R "$GITHUB_REPOSITORY"
       # Published only now, so the latest release never lacks the manifest installed apps read.
       - name: Publish the release
-        if: needs.target.outputs.tag != 'preview'
+        if: needs.target.outputs.channel == 'stable'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.target.outputs.tag }}
         run: gh release edit "$TAG" --draft=false -R "$GITHUB_REPOSITORY"
-      # One Prerelease carries the latest Preview build: its tag moves to the build's commit, its
-      # assets are replaced, and whatever this build did not bring goes; its title names the build
-      # as the settings do. A Prerelease never becomes the latest release, so the stable channel
-      # never sees it.
-      - name: Replace the Preview build
-        if: needs.target.outputs.tag == 'preview'
+      # Each Preview build gets its own tag and Prerelease, created and never moved: the job's token
+      # may not move a tag onto a commit whose workflows differ. It stays a draft until its assets are
+      # attached, and a Prerelease never becomes the latest release, so the stable channel never
+      # sees it; only the newest few are kept.
+      - name: Publish the Preview build
+        if: needs.target.outputs.channel == 'preview'
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ needs.target.outputs.sha }}
+          KEPT: 5
         run: |
-          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/preview" --silent 2>/dev/null; then
-            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/preview" -f sha="$SHA" -F force=true --silent
-          else
-            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref=refs/tags/preview -f sha="$SHA" --silent
-          fi
-          page="$(node scripts/preview_version.ts release "$(jq -er .version assets/latest.json)" "$SHA")"
+          version="$(jq -er .version assets/latest.json)"
+          tag="$(node scripts/preview_version.ts tag "$version")"
+          page="$(node scripts/preview_version.ts release "$version" "$SHA")"
           title="$(jq -r .title <<<"$page")"
           notes="$(jq -r .notes <<<"$page")"
-          if gh release view preview -R "$GITHUB_REPOSITORY" --json tagName --silent 2>/dev/null; then
-            gh release edit preview -R "$GITHUB_REPOSITORY" --title "$title" --notes "$notes"
+          if gh release view "$tag" -R "$GITHUB_REPOSITORY" --json tagName --silent 2>/dev/null; then
+            gh release upload "$tag" assets/* --clobber -R "$GITHUB_REPOSITORY"
+            gh release edit "$tag" -R "$GITHUB_REPOSITORY" --title "$title" --notes "$notes"
           else
-            gh release create preview -R "$GITHUB_REPOSITORY" --verify-tag --prerelease --latest=false \
-              --title "$title" --notes "$notes"
+            gh release create "$tag" assets/* -R "$GITHUB_REPOSITORY" --target "$SHA" --draft \
+              --prerelease --latest=false --title "$title" --notes "$notes"
           fi
-          gh release upload preview assets/* --clobber -R "$GITHUB_REPOSITORY"
-          gh release view preview -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' |
-            while read -r name; do
-              [ -e "assets/$name" ] || gh release delete-asset preview "$name" -y -R "$GITHUB_REPOSITORY"
+          gh release edit "$tag" -R "$GITHUB_REPOSITORY" --draft=false
+          gh release list -R "$GITHUB_REPOSITORY" --limit 100 --json tagName,isPrerelease,createdAt \
+            -q '(env.KEPT | tonumber) as $kept | [.[] | select(.isPrerelease and (.tagName | test("-preview\\.")))] | sort_by(.createdAt) | reverse | .[$kept:][] | .tagName' |
+            while read -r old; do
+              gh release delete "$old" --cleanup-tag -y -R "$GITHUB_REPOSITORY"
             done

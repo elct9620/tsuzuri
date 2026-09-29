@@ -13,6 +13,13 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "malformed-glossary": "error",
   "model-not-chosen": "warning",
   "model-missing": "error",
+  "model-not-downloaded": "warning",
+  "model-download-failed": "error",
+  "model-login-required": "warning",
+  "repository-not-found": "warning",
+  "model-download-cancelled": "warning",
+  "model-downloading": "warning",
+  "directory-not-found": "warning",
   "no-project": "warning",
   "no-resource": "warning",
   "no-media": "warning",
@@ -32,6 +39,7 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "update-failed": "error",
   "no-update": "warning",
   "update-during-mode": "warning",
+  "opening-during-mode": "warning",
   "llama-exited": "error",
   "llama-timed-out": "error",
   "llama-request": "error",
@@ -68,6 +76,23 @@ export function failureMessage(error: unknown): string {
       return t("failures.modelNotChosen", { slot: t(`slots.${error.slot}`) });
     case "model-missing":
       return t("failures.modelMissing", { path: error.path });
+    case "model-download-failed":
+      return t("failures.modelDownloadFailed", { detail: error.detail });
+    case "model-login-required":
+      return t("failures.modelLoginRequired", { repo: error.repo });
+    case "repository-not-found":
+      return t("failures.repositoryNotFound", { repo: error.repo });
+    case "model-download-cancelled":
+      return t("failures.modelDownloadCancelled");
+    case "model-downloading":
+      return t("failures.modelDownloading");
+    case "directory-not-found":
+      return t("failures.directoryNotFound", { directory: error.directory });
+    case "model-not-downloaded":
+      return t("failures.modelNotDownloaded", {
+        file: error.file,
+        repo: error.repo,
+      });
     case "no-project":
       return t("failures.noProject");
     case "no-resource":
@@ -109,6 +134,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.noUpdate");
     case "update-during-mode":
       return t("failures.updateDuringMode");
+    case "opening-during-mode":
+      return t("failures.openingDuringMode");
     case "llama-exited":
       return t("failures.llamaExited");
     case "llama-timed-out":

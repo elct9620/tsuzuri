@@ -1,6 +1,6 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, telling what just happened in Notifications and that an edit was saved in the Save Mark, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
+Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, telling what just happened in Notifications and that an edit was saved in the Save Mark, opening where Tsuzuri can be sponsored, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
@@ -13,6 +13,7 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/ui/shortcuts.test.ts`
 - `src/controllers/shortcuts_controller.test.ts`
 - `src-tauri/src/window.rs`
+- `src/controllers/sponsorship_controller.test.ts`
 
 ## `IF-001` Following the system language
 
@@ -373,3 +374,11 @@ Each edit saved is marked anew rather than stacked, so writing field after field
 | Given | a Notification offering something to do, counting down |
 | When | what it offers is taken, and it fades away |
 | Then | its countdown stays where it stopped |
+
+## `IF-042` Opening where Tsuzuri can be sponsored
+
+| Step | Statement |
+| --- | --- |
+| Given | the About section of the settings |
+| When | sponsoring is chosen |
+| Then | Rust is asked to open the sponsorship page |

@@ -3,7 +3,6 @@ import { Controller } from "@hotwired/stimulus";
 import { appBuild } from "../backend/about";
 import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
-import { localTime } from "../ui/time";
 
 /** The App Build atop the general settings, for a report to name and copy. */
 export default class AboutController extends Controller {
@@ -17,17 +16,11 @@ export default class AboutController extends Controller {
   async connect(): Promise<void> {
     const build = await appBuild();
     const commit = build.commit.slice(0, SHORT_COMMIT_LENGTH);
-    this.buildTarget.textContent = build.preview
-      ? t("settings.previewBuild", {
-          basedOn: build.preview.based_on,
-          builtAt: localTime(build.preview.built_at),
-          commit,
-        })
-      : t("settings.appBuild", {
-          releaseNumber: build.release_number,
-          commit,
-        });
-    this.buildLine = `Tsuzuri ${build.release_number} (${commit})`;
+    this.buildTarget.textContent = t("settings.appBuild", {
+      releaseName: build.release_name,
+      commit,
+    });
+    this.buildLine = `Tsuzuri ${build.release_name} (${commit})`;
   }
 
   async copyBuild(): Promise<void> {

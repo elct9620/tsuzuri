@@ -57,6 +57,8 @@ export function assemble(
     );
   const start = async () => {
     const unrelay = await relayEvents();
+    // The system may ask to open an SRT file before the relay listens, as a launch to open one does.
+    window.dispatchEvent(new CustomEvent("rust:srt-requested"));
     const unrelayScheme = relayColorScheme();
     const unfollow = await feed.start();
     return () => {

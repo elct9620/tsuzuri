@@ -1,6 +1,7 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 
+import type { ModelSource } from "./toolchain";
 import type { TranscriptionSettings } from "./transcription";
 
 export type { UnlistenFn };
@@ -15,6 +16,8 @@ export interface Segment {
 
 /** What the user sets for one Project in the settings beside its Primary Language. */
 export interface ProjectOptions {
+  /** The Project Name the user gave, or none to name the Project after its directory. */
+  name: string | null;
   bilingual_order: "original-first" | "translation-first";
   is_bilingual_autosaved: boolean;
   is_overwrite_backed_up: boolean;
@@ -24,8 +27,8 @@ export interface ProjectOptions {
 }
 
 export interface ProjectModels {
-  transcription: string | null;
-  translation: string | null;
+  transcription: ModelSource | null;
+  translation: ModelSource | null;
 }
 
 /** The Transcription Settings a Project sets for itself; `null` follows the general ones. */
@@ -45,6 +48,10 @@ export interface ResourceView {
 /** The Project as Rust holds it; the webview only ever shows this, never a copy of its own. */
 export interface ProjectView {
   directory: string;
+  /** The Project Name, the directory's name when the Project Options give none. */
+  name: string;
+  /** The name the Project takes from its directory without a Project Name of its own. */
+  directory_name: string;
   /** The Primary Language code. */
   language: string;
   /** The Language code of the last translation. */
@@ -69,6 +76,14 @@ export interface ProjectView {
   running_mode: RunningMode | null;
   /** The Segments the running translation works on now, by position. */
   pending_batch: SegmentSpan | null;
+  /** Which Preset Model each Project Model is, as its place among its slot's Preset Models. */
+  project_model_presets: ProjectModelPresets;
+}
+
+/** Which Preset Model each Project Model is; none without one or for a Model no Preset Model is. */
+export interface ProjectModelPresets {
+  transcription: number | null;
+  translation: number | null;
 }
 
 /** The Segments from `first` through `last`, by position. */
@@ -128,8 +143,9 @@ export function currentProject(): Promise<ProjectView | null> {
 
 /**
  * The Project Rust holds, read once for each change and handed to every follower in the order they
- * began to follow, then to each `afterEach` callback. A read answered after a later one is dropped,
- * so no follower is shown an older Project than it already has.
+ * began to follow, then to each `afterEach` callback; one that throws is reported and the rest are
+ * still called. A read answered after a later one is dropped, so no follower is shown an older
+ * Project than it already has.
  */
 export class ProjectFeed {
   /** The Project last read, or `undefined` before the first read. */
@@ -170,8 +186,17 @@ export class ProjectFeed {
     if (readNumber < this.latestShownRead) return;
     this.latestShownRead = readNumber;
     this.latest = project;
-    for (const show of this.followers) show(project);
-    for (const settle of this.settlers) settle();
+    for (const show of this.followers) callReporting(() => show(project));
+    for (const settle of this.settlers) callReporting(settle);
+  }
+}
+
+/** Calls `callback`, reporting what it throws as uncaught so the callbacks after it still run. */
+function callReporting(callback: () => void): void {
+  try {
+    callback();
+  } catch (error) {
+    reportError(error);
   }
 }
 
@@ -193,6 +218,24 @@ export function openProject(
   language: string,
 ): Promise<void> {
   return invoke(command, { path, language });
+}
+
+/** The Requested SRT, answered once, or none when the system asked for none since. */
+export function takeRequestedSrt(): Promise<string | null> {
+  return invoke("take_requested_srt");
+}
+
+/** A directory opened as a Project before, by its Project Name, and when it was last opened. */
+export interface RecentProjectView {
+  directory: string;
+  /** The Project Name, the directory's name when its Project Config gives none or does not answer. */
+  name: string;
+  opened_at_ms: number;
+}
+
+/** The Recent Projects, the latest opened first, without the Project already open. */
+export function recentProjects(): Promise<RecentProjectView[]> {
+  return invoke("recent_projects");
 }
 
 export function selectResource(name: string | undefined): Promise<void> {
@@ -233,13 +276,17 @@ export function saveSrt(path: string, content: WrittenText): Promise<void> {
   return invoke("save_srt", { path, content });
 }
 
-/** Writes the Current Resource to `path` as Plain Text, its Speakers named when `hasSpeakers`. */
+/**
+ * Writes the Current Resource to `path` as Plain Text, its Speakers named when `hasSpeakers` and
+ * a blank line between blocks when `hasBlankLines`.
+ */
 export function saveText(
   path: string,
   content: WrittenText,
   hasSpeakers: boolean,
+  hasBlankLines: boolean,
 ): Promise<void> {
-  return invoke("save_text", { path, content, hasSpeakers });
+  return invoke("save_text", { path, content, hasSpeakers, hasBlankLines });
 }
 
 /** A Backup as Rust lists it: its file name in the history, the UTC time it was taken and its kind. */

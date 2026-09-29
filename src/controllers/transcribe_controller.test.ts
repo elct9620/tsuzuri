@@ -335,7 +335,10 @@ describe("TranscribeController", () => {
       ...media,
       options: {
         ...media.options,
-        models: { transcription: "/models/kotoba.bin", translation: null },
+        models: {
+          transcription: { kind: "file", path: "/models/kotoba.bin" },
+          translation: null,
+        },
       },
     });
 

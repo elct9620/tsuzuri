@@ -2,6 +2,7 @@
 // signatures read; the number is never committed, so merging the trunk into main stays clean.
 //   node scripts/preview_version.ts next <UTC YYYYMMDDHHmm> <run number> [latest stable tag]
 //   node scripts/preview_version.ts write <version>
+//   node scripts/preview_version.ts tag <version>
 //   node scripts/preview_version.ts release <version> <commit>   (the Preview release's title and notes)
 import { readFileSync, writeFileSync } from "node:fs";
 import { packageVersion } from "./signatures.ts";
@@ -30,28 +31,33 @@ export function previewVersion(
 }
 
 /**
- * The title and notes of the Preview release for the build `version` numbers, naming it as the
- * settings do — the stable release it is based on and its build time — so a report matches the page.
+ * The tag of the Preview build `version` numbers: its release number without the `+` count only
+ * the MSI installer reads, which GitHub would rewrite in a download address.
+ */
+export function previewTag(version: string): string {
+  return `v${version.split("+")[0]}`;
+}
+
+/**
+ * The title and notes of the Preview release for the build `version` numbers, naming it by its
+ * Release Name as the settings do — `Build`, its UTC build date and `+` its build count — since
+ * its release number only orders it.
  */
 export function previewReleasePage(
   version: string,
   commit: string,
 ): { title: string; notes: string } {
-  const match = /^(\d+)\.(\d+)\.(\d+)-preview\.(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})\+\d+$/.exec(
+  const match = /^\d+\.\d+\.\d+-preview\.(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})\+(\d+)$/.exec(
     version,
   );
   if (!match) throw new Error(`${version} is not a Preview build`);
-  const [, major, minor, patch, year, month, day, hour, minute] = match;
-  const basedOn = `${major}.${minor}.${Number(patch) - 1}`;
-  const builtAt = `${year}-${month}-${day} ${hour}:${minute} UTC`;
+  const [, year, month, day, hour, minute, count] = match;
   return {
-    title: `Preview | based on ${basedOn} | built ${builtAt}`,
+    title: `Preview Build ${year}${month}${day}+${count}`,
     notes: [
-      "The latest build of the preview branch, for testing. Not a stable release.",
+      "A Preview build of main, for testing. Not a stable release.",
       "",
-      `- Version: ${version}`,
-      `- Based on: ${basedOn}`,
-      `- Built: ${builtAt}`,
+      `- Built: ${year}-${month}-${day} ${hour}:${minute} UTC`,
       `- Commit: ${commit.slice(0, 7)}`,
     ].join("\n"),
   };
@@ -81,11 +87,13 @@ if (import.meta.main) {
     );
   } else if (command === "write") {
     writeFileSync(cargoPath, withPackageVersion(cargoToml, args[0]));
+  } else if (command === "tag") {
+    console.log(previewTag(args[0]));
   } else if (command === "release") {
     console.log(JSON.stringify(previewReleasePage(args[0], args[1])));
   } else {
     console.error(
-      "usage: node scripts/preview_version.ts next <YYYYMMDDHHmm> <run> [latest tag] | write <version> | release <version> <commit>",
+      "usage: node scripts/preview_version.ts next <YYYYMMDDHHmm> <run> [latest tag] | write <version> | tag <version> | release <version> <commit>",
     );
     process.exit(2);
   }

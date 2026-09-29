@@ -16,13 +16,7 @@ import { t } from "../i18n";
 import { notifyFailure, notifyRestoration } from "../ui/notification";
 import { iconElement } from "../ui/icons";
 import { formatTime, localTime } from "../ui/time";
-
-function option(value: string, label: string): HTMLOptionElement {
-  const choice = document.createElement("option");
-  choice.value = value;
-  choice.textContent = label;
-  return choice;
-}
+import { menuOption } from "../ui/options";
 
 function button(
   label: string,
@@ -113,7 +107,7 @@ export default class VersionsController extends Controller {
     }
     this.subtitleTarget.replaceChildren(
       ...this.versions.map(({ language }) =>
-        option(
+        menuOption(
           language ?? "",
           language ? t(`languages.${language}`) : t("versions.original"),
         ),
@@ -174,8 +168,10 @@ export default class VersionsController extends Controller {
       }),
     );
     const choices = () => [
-      option("", t("versions.now")),
-      ...backups.map(({ file, taken_at }) => option(file, localTime(taken_at))),
+      menuOption("", t("versions.now")),
+      ...backups.map(({ file, taken_at }) =>
+        menuOption(file, localTime(taken_at)),
+      ),
     ];
     this.leftVersionTarget.replaceChildren(...choices());
     this.rightVersionTarget.replaceChildren(...choices());

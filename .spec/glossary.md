@@ -28,7 +28,7 @@ An SRT whose every cue carries the original text and its translation in the Bili
 
 ### Plain Text
 
-A Resource's text without its times, for reading rather than playing: one block per Segment and a blank line between blocks, each carrying the text an SRT of the same content would, its Speakers written or left out as chosen.
+A Resource's text without its times, for reading rather than playing: one block per Segment, each carrying the text an SRT of the same content would, its Speakers and the blank line between blocks written or left out as chosen.
 
 ### Bilingual Order
 
@@ -46,6 +46,10 @@ The files of a Project sharing one name: a media file, the Primary Language subt
 
 The one Resource of the Project that the editor shows and a Mode works on. Opening a Project selects its first Resource; opening an SRT file selects that file's.
 
+### Requested SRT
+
+An SRT file the system asks Tsuzuri to open, as when the user opens one with Tsuzuri from the file manager: Rust keeps the latest until the webview takes it and opens it as an SRT file chosen in the toolbar, since only the webview knows the Interface Language. A second launch hands its request to the running Tsuzuri and quits.
+
 ### Primary Language
 
 The Language a Project's Resources are spoken and transcribed in, and the one every translation starts from. The Project Config records it; without one it follows the Interface Language.
@@ -54,21 +58,25 @@ The Language a Project's Resources are spoken and transcribed in, and the one ev
 
 `tsuzuri.config.json` in the Project's directory: the Primary Language, the Language of the last translation and the Project Options. Written the first time any of them changes.
 
+### Project Name
+
+What a Project is called in the toolbar, the window title and the Recent Projects: the name its Project Options give, else its directory's name, so a directory named by date or episode can carry a name the user remembers. A blank name is kept as none.
+
 ### Project Options
 
-What the user sets for one Project in the settings, beside its Primary Language: its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, its Project Models, and the Transcription Settings it sets for itself. Each has a default the Project keeps until it is changed.
+What the user sets for one Project in the settings, beside its Primary Language: its Project Name, its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, its Project Models, and the Transcription Settings it sets for itself. The Project Name can also be typed where the toolbar shows it. Each has a default the Project keeps until it is changed.
 
 ### Project Model
 
-A Model one Project chooses for the transcription or the translation Model Slot in place of the one the general settings hold, as for Resources spoken in a Language the general Model does not suit. A slot without one uses the general settings' Model.
+A Model Source one Project chooses for the transcription or the translation Model Slot in place of the one the general settings hold, kept in the Project's settings so another machine finds the same Model, as for Resources spoken in a Language the general Model does not suit. A slot without one uses the general settings' Model.
+
+### Recent Project
+
+A directory opened as a Project before, kept in the app's settings with when it was last opened so it can be opened again from the start screen or the Open menu, where it is listed by its Project Name. One is kept per directory, ten at most, the latest first; one whose directory is gone is dropped when opening it fails.
 
 ### Preview
 
 The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. It appears only for a Resource with a media file.
-
-### Volume Boost
-
-An experimental choice, off unless turned on in the settings on this machine, that lets the Preview play above 100% of the media's volume through Web Audio, at the cost of its sound possibly lagging behind the picture. It takes effect after a restart.
 
 ### Video Window
 
@@ -164,7 +172,11 @@ The one page carrying the license texts of Tsuzuri and of everything it ships: t
 
 ### App Build
 
-The release number of the running Tsuzuri and the commit it was built from, which the settings show first so a report names exactly what ran. Its release number is not a Version, which is a subtitle's.
+The release number of the running Tsuzuri and the commit it was built from, which the settings show first, by its Release Name, so a report names exactly what ran. Its release number is not a Version, which is a subtitle's.
+
+### Release Name
+
+What the settings, Notifications and release pages call a release of Tsuzuri, the same in every Interface Language: `v` and the release number for a stable release, as `v0.2.0`; `Build`, the UTC date it was built and `+` its build count for a Preview build, as `Build 20260928+12`. A Preview build's release number only orders it, so it is never shown as a name.
 
 ### App Update
 
@@ -172,7 +184,7 @@ A release of Tsuzuri newer than the App Build, announced by the update manifest 
 
 ### Update Channel
 
-Where Tsuzuri looks for an App Update, chosen in the settings, each read as an update manifest from the update site `tsuzuri.aotoki.me`, which mirrors the releases: Stable, the latest release; or Preview, a build of each push to the trunk, which also carries each stable release once it is published. A Preview build's release number is the patch after the latest stable release, `-preview.` and its UTC build time, and `+` a build count only the MSI installer reads, as `0.2.1-preview.202609281430+12`; the settings show it as a preview based on the stable release, with its build time. Until a channel is chosen, a stable build uses Stable and a Preview build uses Preview, so a tester keeps receiving Preview builds; an rpm install offers only Stable, since rpm ranks a Preview build above the stable release that follows it.
+Where Tsuzuri looks for an App Update, chosen in the settings, each read as an update manifest from the update site `tsuzuri.aotoki.me`, which mirrors the releases: Stable, the latest release; or Preview, a build of each push to the trunk, which also carries each stable release once it is published. A Preview build's release number is the patch after the latest stable release, `-preview.` and its UTC build time, and `+` its build count, which the MSI installer reads as its fourth field, as `0.2.1-preview.202609281430+12`: it sorts after the stable release it follows and before any release after that, whichever part that release raises. Until a channel is chosen, a stable build uses Stable and a Preview build uses Preview, so a tester keeps receiving Preview builds; an rpm install offers only Stable, since rpm ranks a Preview build above the stable release that follows it.
 
 ### Rollback
 
@@ -188,7 +200,7 @@ Taking the first Bundled Variant, in the Build Manifest's order for the platform
 
 ### Model
 
-A weights file an engine loads, always passed by absolute path. The user points at a file already on disk; Tsuzuri never downloads Models.
+A weights file an engine loads, always passed by absolute path, found through the Model Source its Model Slot holds.
 
 ### Resident llama-server
 
@@ -220,7 +232,19 @@ An optional second look in which the Model, two lines at a time, restates what e
 
 ### Model Slot
 
-Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli) or translation (llama-server). Each slot holds one Model path.
+Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli) or translation (llama-server). Each slot holds one Model Source.
+
+### Model Source
+
+Where a Model Slot's Model comes from: a file on disk, named by its path, or a file of a Hugging Face Repository, named by the repository, the file's path in it and the commit it was downloaded at, and found in the Hugging Face Cache. A slot saved before Model Sources were kept holds a bare path, read as a file on disk.
+
+### Preset Model
+
+A Model Tsuzuri was verified with, offered for its Model Slot by name and quantization so nobody has to know where to find it: a file of a Hugging Face Repository pinned at a commit, like the Components' sources, with its size. Choosing one downloads it unless the Hugging Face Cache holds it. Which of a slot's Preset Models a chosen Model is, if any, is answered by Rust as its place in the order the slot's Preset Models are offered, so the settings never compare Model Sources themselves.
+
+### Hugging Face Cache
+
+The directory Hugging Face tools share for downloaded files, so a Model another tool already downloaded is used without downloading it again: `HF_HUB_CACHE`, else `HUGGINGFACE_HUB_CACHE`, else `hub` under `HF_HOME`, else `huggingface/hub` under `XDG_CACHE_HOME`, else `.cache/huggingface/hub` in the home directory. A repository's file downloaded at a commit sits at `models--<owner>--<name>/snapshots/<commit>/<file>` in it.
 
 ### Transcription Settings
 

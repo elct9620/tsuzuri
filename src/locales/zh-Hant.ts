@@ -2,6 +2,8 @@ import type en from "./en";
 
 const zhHant: typeof en = {
   toolbar: {
+    projectName: "專案名稱",
+    rename: "點一下改名",
     open: "開啟",
     openDirectory: "開啟目錄",
     openSrt: "開啟 SRT",
@@ -16,10 +18,12 @@ const zhHant: typeof en = {
     translationText: "譯文純文字",
     bilingualText: "雙語純文字",
     textSpeakers: "純文字含說話者",
+    textBlankLines: "段落之間加入空行",
     notExported: "沒有匯出",
   },
   start: {
     title: "開啟放著影片或字幕的目錄開始工作",
+    recentProjects: "最近的專案",
   },
   languages: {
     "zh-TW": "繁體中文",
@@ -28,6 +32,8 @@ const zhHant: typeof en = {
   },
   resources: {
     title: "資源",
+    open: "資源清單",
+    close: "收起資源清單",
     reload: "重新載入",
     reloadHint: "重新讀取目錄，帶入別處改動的檔案",
     subtitleOnly: "字幕",
@@ -198,6 +204,8 @@ const zhHant: typeof en = {
     unplayable: "這個格式無法在這裡預覽，仍可看波形。",
     videoWindow: "在影片視窗播放",
     volume: "音量",
+    mute: "靜音",
+    muteHint: "再按一次或拉動音量滑桿就恢復聲音。",
     videoWindowHint:
       "把影片移到獨立視窗，可拖到另一個螢幕放大；雙擊影片切換全螢幕。再按一次或關閉視窗就回到這裡。",
     videoWindowTitle: "Tsuzuri 影片",
@@ -267,17 +275,9 @@ const zhHant: typeof en = {
     debugLogOnAfterRestart: "重新啟動後開始寫入除錯紀錄",
     debugLogOffAfterRestart: "重新啟動後停止寫入除錯紀錄",
     debugLogNotChosen: "沒有切換除錯紀錄",
-    experimental: "實驗性",
-    volumeBoost: "音量最高 200%",
-    volumeBoostHelp:
-      "預覽可以比媒體原本的音量更大聲。超過 100% 時聲音經過 Web Audio，可能比畫面與字幕晚；重新啟動後生效",
-    volumeBoostOnAfterRestart: "重新啟動後音量可以超過 100%",
-    volumeBoostOffAfterRestart: "重新啟動後音量最高 100%",
-    outputLatency: "輸出延遲",
-    outputLatencyHelp:
-      "聲音經過 Web Audio 到喇叭所花的時間，回報問題時可以附上",
-    latencyMs: "約 {{ms}} ms",
     general: "整體",
+    projectNameHelp:
+      "顯示在工具列、視窗標題與最近的專案。留白就用目錄名稱。只影響這個專案。",
     primaryLanguageHelp:
       "影音裡說的語言。轉錄用它辨識語音，翻譯從它譯出；改了之後會依這個語言重新配對字幕檔。只影響這個專案。",
     bilingualOrderHelp:
@@ -306,6 +306,7 @@ const zhHant: typeof en = {
       "whisper 的 ggml 模型檔（.bin），例如 Breeze-ASR-25。模型越大越準，也越慢。",
     translationModelHelp:
       "llama.cpp 的 GGUF 模型檔，例如 Qwen3-4B。4GB 顯示記憶體建議用 4B 左右的量化模型。",
+    projectName: "名稱",
     primaryLanguage: "主語言",
     bilingualOrder: "雙語順序",
     originalFirst: "原文在上",
@@ -341,7 +342,6 @@ const zhHant: typeof en = {
     followGeneral: "依整體設定",
     on: "開啟",
     off: "關閉",
-    useGeneral: "改用整體設定",
     projectTranscriptionHelp:
       "這個專案自己的轉錄設定；選「依整體設定」時沿用整體頁的設定。只影響這個專案。",
     projectModelHelp:
@@ -353,13 +353,13 @@ const zhHant: typeof en = {
     licenses: "授權",
     licensesMissing: "開發版沒有附上完整授權，每個釋出的版本都會附上。",
     sourceCode: "原始程式碼",
-    appBuild: "{{releaseNumber}}（{{commit}}）",
-    previewBuild:
-      "預覽版｜以 {{basedOn}} 為基礎｜{{builtAt}} 建置（{{commit}}）",
+    appBuild: "{{releaseName}}（{{commit}}）",
     copyAppBuild: "複製",
     appBuildCopied: "已複製版本資訊",
     appBuildNotCopied: "沒有複製版本資訊",
     releasesNotOpened: "沒有開啟釋出頁面",
+    sponsor: "贊助",
+    sponsorshipNotOpened: "沒有開啟贊助頁面",
     versionAndUpdates: "版本與更新",
     version: "版本",
     versionHelp: "回報問題時複製這行，對得上是哪個版本。",
@@ -368,15 +368,14 @@ const zhHant: typeof en = {
       "到 GitHub 檢查有沒有新版本；按下更新會下載、驗證簽章、安裝，並重新啟動 Tsuzuri。",
     checkForUpdates: "檢查更新",
     latestRelease: "已是最新版",
-    updateFound: "有新版本 {{releaseNumber}}",
-    previewFound: "有新的預覽版（{{builtAt}}）",
-    previewOffered: "有新的預覽版（{{builtAt}} 建置）",
+    updateFound: "有新版本 {{releaseName}}",
+    previewFound: "有新的預覽版（{{releaseName}}）",
     update: "更新",
     launchCheck: "啟動時檢查更新",
     launchCheckHelp:
       "每次開啟 Tsuzuri 時到 GitHub 檢查有沒有新版本；有的話以通知提醒，按下更新才會下載安裝。",
-    updating: "正在更新到 {{releaseNumber}}",
-    updatingToPreview: "正在更新到預覽版（{{builtAt}} 建置）",
+    updating: "正在更新到 {{releaseName}}",
+    updatingToPreview: "正在更新到預覽版（{{releaseName}}）",
     updateStarting: "準備下載",
     updateDownloading: "下載中 {{percent}}%",
     updateDownloaded: "已下載 {{megabytes}} MB",
@@ -412,6 +411,18 @@ const zhHant: typeof en = {
     notChosen: "尚未指定",
     followsGeneral: "依整體設定",
     missing: "找不到 {{path}}，請重新指定",
+    downloadAgain: "{{name}} 不在快取裡，請從選單重新下載",
+    own: "自選：{{name}}",
+    repository: "Hugging Face",
+    cancelDownload: "取消",
+    notDownloaded: "模型沒有下載",
+  },
+  repository: {
+    title: "從 Hugging Face 下載：{{slot}}",
+    nameHint: "模型頁的名稱，例如 ggerganov/whisper.cpp",
+    list: "列出檔案",
+    noModel: "這個模型頁沒有{{slot}}能用的檔案",
+    download: "下載並使用",
   },
   phases: {
     prepare: "準備元件",
@@ -434,6 +445,15 @@ const zhHant: typeof en = {
     malformedGlossary: "詞彙表無法讀取（{{detail}}）",
     modelNotChosen: "尚未指定{{slot}}模型",
     modelMissing: "找不到模型 {{path}}，請重新指定",
+    modelDownloadFailed: "模型下載失敗（{{detail}}）",
+    modelLoginRequired:
+      "{{repo}} 需要登入：先執行 hf auth login，並在 Hugging Face 網頁取得存取權",
+    repositoryNotFound:
+      "Hugging Face 上找不到 {{repo}}，請檢查名稱；別人的私人模型無法下載",
+    modelDownloadCancelled: "已取消下載模型",
+    modelDownloading: "這個模型正在下載",
+    modelNotDownloaded: "{{repo}} 的 {{file}} 還沒下載，請在設定重新下載",
+    directoryNotFound: "{{directory}} 已不存在，已從最近的專案移除",
     noProject: "請先開啟目錄或 SRT 檔",
     noResource: "目錄裡沒有可處理的媒體檔或 SRT 檔",
     noMedia: "這個資源沒有可轉錄的影片或音訊",
@@ -453,6 +473,7 @@ const zhHant: typeof en = {
     updateFailed: "更新失敗（{{detail}}）",
     noUpdate: "請先檢查更新",
     updateDuringMode: "任務執行中無法更新，請等任務結束",
+    openingDuringMode: "任務執行中無法開啟其他專案，請等任務結束或先取消",
     llamaExited: "llama-server 在模型載入前結束",
     llamaTimedOut: "llama-server 未能及時載入模型",
     llamaRequest: "翻譯請求失敗（{{detail}}）",

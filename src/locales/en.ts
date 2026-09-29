@@ -1,6 +1,8 @@
 /** The interface text in English, which every other language falls back to. */
 const en = {
   toolbar: {
+    projectName: "Project name",
+    rename: "Click to rename",
     open: "Open",
     openDirectory: "Open a folder",
     openSrt: "Open an SRT file",
@@ -15,10 +17,12 @@ const en = {
     translationText: "Translation as plain text",
     bilingualText: "Bilingual plain text",
     textSpeakers: "Speakers in plain text",
+    textBlankLines: "Blank lines between segments",
     notExported: "Not exported",
   },
   start: {
     title: "Open a folder of videos or subtitles to begin",
+    recentProjects: "Recent projects",
   },
   languages: {
     "zh-TW": "Traditional Chinese",
@@ -27,6 +31,8 @@ const en = {
   },
   resources: {
     title: "Resources",
+    open: "Resources",
+    close: "Put the resources away",
     reload: "Reload",
     reloadHint: "Read the folder again for files changed elsewhere",
     subtitleOnly: "Subtitle",
@@ -204,6 +210,8 @@ const en = {
       "This format cannot be previewed here; its waveform still shows.",
     videoWindow: "Play in the Video Window",
     volume: "Volume",
+    mute: "Mute",
+    muteHint: "Press again or move the volume slider to bring the sound back.",
     videoWindowHint:
       "Moves the video into a window of its own, to drag to another screen and enlarge; double-click the video to fill the screen. Press again or close the window to bring it back.",
     videoWindowTitle: "Tsuzuri Video",
@@ -275,17 +283,9 @@ const en = {
     debugLogOnAfterRestart: "The debug log starts after a restart",
     debugLogOffAfterRestart: "The debug log stops after a restart",
     debugLogNotChosen: "Debug log not switched",
-    experimental: "Experimental",
-    volumeBoost: "Volume up to 200%",
-    volumeBoostHelp:
-      "Lets the preview play louder than the media. Above 100% the sound goes through Web Audio and may lag behind the picture and subtitles; takes effect after a restart",
-    volumeBoostOnAfterRestart: "The volume can pass 100% after a restart",
-    volumeBoostOffAfterRestart: "The volume stops at 100% after a restart",
-    outputLatency: "Output latency",
-    outputLatencyHelp:
-      "How long the sound takes through Web Audio to the speakers, for a report",
-    latencyMs: "About {{ms}} ms",
     general: "General",
+    projectNameHelp:
+      "Shown in the toolbar, the window title and the recent projects. Left blank, the directory's name is used. Applies to this project only.",
     primaryLanguageHelp:
       "The language spoken in the media. Transcription listens for it and translation starts from it; changing it pairs the subtitle files again. Applies to this project only.",
     bilingualOrderHelp:
@@ -316,6 +316,7 @@ const en = {
       "A whisper ggml model file (.bin), such as Breeze-ASR-25. A larger model is more accurate and slower.",
     translationModelHelp:
       "A llama.cpp GGUF model file, such as Qwen3-4B. With 4GB of video memory, a quantized model around 4B fits.",
+    projectName: "Name",
     primaryLanguage: "Primary language",
     bilingualOrder: "Bilingual order",
     originalFirst: "Original first",
@@ -351,7 +352,6 @@ const en = {
     followGeneral: "Follow general settings",
     on: "On",
     off: "Off",
-    useGeneral: "Use general settings",
     projectTranscriptionHelp:
       'This project\'s own transcription settings; "Follow general settings" uses the ones on the General tab. Affects only this project.',
     projectModelHelp:
@@ -364,13 +364,13 @@ const en = {
     licensesMissing:
       "A development build carries no license notice; every released build does.",
     sourceCode: "Source code",
-    appBuild: "{{releaseNumber}} ({{commit}})",
-    previewBuild:
-      "Preview | based on {{basedOn}} | built {{builtAt}} ({{commit}})",
+    appBuild: "{{releaseName}} ({{commit}})",
     copyAppBuild: "Copy",
     appBuildCopied: "Version copied",
     appBuildNotCopied: "Version not copied",
     releasesNotOpened: "Releases page not opened",
+    sponsor: "Sponsor",
+    sponsorshipNotOpened: "Sponsorship page not opened",
     versionAndUpdates: "Version and updates",
     version: "Version",
     versionHelp: "Copy this line into a report, so it names the exact build.",
@@ -379,15 +379,14 @@ const en = {
       "Asks GitHub whether a newer version exists; updating downloads it, verifies its signature, installs it and restarts Tsuzuri.",
     checkForUpdates: "Check for updates",
     latestRelease: "Up to date",
-    updateFound: "Version {{releaseNumber}} is available",
-    previewFound: "A new preview is available ({{builtAt}})",
-    previewOffered: "A new preview is available (built {{builtAt}})",
+    updateFound: "{{releaseName}} is available",
+    previewFound: "A new preview is available ({{releaseName}})",
     update: "Update",
     launchCheck: "Check for updates at launch",
     launchCheckHelp:
       "Each time Tsuzuri opens, it asks GitHub whether a newer version exists and tells you with a notification; nothing is downloaded until you choose Update.",
-    updating: "Updating to {{releaseNumber}}",
-    updatingToPreview: "Updating to the preview built {{builtAt}}",
+    updating: "Updating to {{releaseName}}",
+    updatingToPreview: "Updating to the preview ({{releaseName}})",
     updateStarting: "Starting the download",
     updateDownloading: "Downloading {{percent}}%",
     updateDownloaded: "{{megabytes}} MB downloaded",
@@ -425,6 +424,19 @@ const en = {
     notChosen: "Not chosen",
     followsGeneral: "Follows general settings",
     missing: "{{path}} is missing; choose it again",
+    downloadAgain:
+      "{{name}} is not in the cache; download it again from the menu",
+    own: "Own: {{name}}",
+    repository: "Hugging Face",
+    cancelDownload: "Cancel",
+    notDownloaded: "The model was not downloaded",
+  },
+  repository: {
+    title: "Download from Hugging Face: {{slot}}",
+    nameHint: "The model page's name, such as ggerganov/whisper.cpp",
+    list: "List files",
+    noModel: "This model page has no file the {{slot}} slot can use",
+    download: "Download and use",
   },
   phases: {
     prepare: "Preparing components",
@@ -447,6 +459,17 @@ const en = {
     malformedGlossary: "Could not read the glossary ({{detail}})",
     modelNotChosen: "No model is chosen for {{slot}}",
     modelMissing: "The model {{path}} is missing; choose it again",
+    modelDownloadFailed: "Could not download the model ({{detail}})",
+    modelLoginRequired:
+      "{{repo}} needs a login: run hf auth login and request access on Hugging Face",
+    repositoryNotFound:
+      "{{repo}} was not found on Hugging Face; check its name, as someone else's private model cannot be downloaded",
+    modelDownloadCancelled: "The model download was cancelled",
+    modelDownloading: "This model is already downloading",
+    modelNotDownloaded:
+      "{{file}} of {{repo}} is not downloaded; download it again in the settings",
+    directoryNotFound:
+      "{{directory}} no longer exists, so it was removed from the recent projects",
     noProject: "Open a directory or an SRT file first",
     noResource: "The directory has no media file or SRT file to work on",
     noMedia: "This resource has no video or audio file to transcribe",
@@ -471,6 +494,8 @@ const en = {
     noUpdate: "Check for updates first",
     updateDuringMode:
       "Tsuzuri cannot update while a task runs; wait for it to end",
+    openingDuringMode:
+      "Another project cannot open while a task runs; wait for it to end or cancel it first",
     llamaExited: "llama-server stopped before loading its model",
     llamaTimedOut: "llama-server did not load its model in time",
     llamaRequest: "The translation request failed ({{detail}})",

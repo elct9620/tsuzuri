@@ -5,6 +5,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import ModelsController from "./models_controller";
 import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 
+/** A slot's extensions as Rust names them, distinct from any a file dialog would default to. */
+const EXTENSIONS = ["gguf"];
+
 describe("ModelsController", () => {
   let application: Application;
 
@@ -49,8 +52,18 @@ describe("ModelsController", () => {
   // @behavior MD-004
   it("shows the chosen model's path", async () => {
     await mountWith({
-      transcription: { path: "/models/breeze.bin", has_file: true },
-      translation: { path: null, has_file: false },
+      transcription: {
+        source: { kind: "file", path: "/models/breeze.bin" },
+        path: "/models/breeze.bin",
+        has_file: true,
+        extensions: EXTENSIONS,
+      },
+      translation: {
+        source: null,
+        path: null,
+        has_file: false,
+        extensions: EXTENSIONS,
+      },
     });
 
     expect(statusOf("transcription")).toBe("/models/breeze.bin");
@@ -59,8 +72,18 @@ describe("ModelsController", () => {
   // @behavior MD-005
   it("asks again for a model whose file is gone", async () => {
     await mountWith({
-      transcription: { path: null, has_file: false },
-      translation: { path: "/models/qwen3-4b.gguf", has_file: false },
+      transcription: {
+        source: null,
+        path: null,
+        has_file: false,
+        extensions: EXTENSIONS,
+      },
+      translation: {
+        source: { kind: "file", path: "/models/qwen3-4b.gguf" },
+        path: "/models/qwen3-4b.gguf",
+        has_file: false,
+        extensions: EXTENSIONS,
+      },
     });
 
     expect(statusOf("translation")).toContain("請重新指定");
@@ -71,16 +94,36 @@ describe("ModelsController", () => {
     let chooseModelArgs: unknown;
     await mountWith(
       {
-        transcription: { path: null, has_file: false },
-        translation: { path: null, has_file: false },
+        transcription: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: EXTENSIONS,
+        },
+        translation: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: EXTENSIONS,
+        },
       },
       {
         "plugin:dialog|open": () => "/models/qwen3-4b.gguf",
         choose_model: (args) => {
           chooseModelArgs = args;
           return {
-            transcription: { path: null, has_file: false },
-            translation: { path: "/models/qwen3-4b.gguf", has_file: true },
+            transcription: {
+              source: null,
+              path: null,
+              has_file: false,
+              extensions: EXTENSIONS,
+            },
+            translation: {
+              source: { kind: "file", path: "/models/qwen3-4b.gguf" },
+              path: "/models/qwen3-4b.gguf",
+              has_file: true,
+              extensions: EXTENSIONS,
+            },
           };
         },
       },
@@ -91,9 +134,70 @@ describe("ModelsController", () => {
 
     expect(chooseModelArgs).toEqual({
       slot: "translation",
-      path: "/models/qwen3-4b.gguf",
+      source: { kind: "file", path: "/models/qwen3-4b.gguf" },
     });
     expect(statusOf("translation")).toBe("/models/qwen3-4b.gguf");
+  });
+
+  // @behavior MD-028
+  it("offers the extensions Rust names for the slot in the file dialog", async () => {
+    let dialogArgs: unknown;
+    await mountWith(
+      {
+        transcription: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: ["bin"],
+        },
+        translation: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: ["weights"],
+        },
+      },
+      {
+        "plugin:dialog|open": (args) => {
+          dialogArgs = args;
+          return null;
+        },
+      },
+    );
+
+    document.querySelector<HTMLButtonElement>("button")!.click();
+    await settle();
+
+    expect(dialogArgs).toMatchObject({
+      options: { filters: [{ name: "Model", extensions: ["weights"] }] },
+    });
+  });
+
+  // @behavior MD-041
+  it("asks to download again a Model the cache lost", async () => {
+    await mountWith({
+      transcription: {
+        source: {
+          kind: "repository",
+          repo: "tsuzuri-app/Breeze-ASR-25-ggml",
+          file: "ggml-breeze-asr-25-q8_0.bin",
+          commit: "cf41205287fb5483317ce2d1d973ba7cac8fa750",
+        },
+        path: "/hub/ggml-breeze-asr-25-q8_0.bin",
+        has_file: false,
+        extensions: EXTENSIONS,
+      },
+      translation: {
+        source: null,
+        path: null,
+        has_file: false,
+        extensions: EXTENSIONS,
+      },
+    });
+
+    expect(statusOf("transcription")).toBe(
+      "tsuzuri-app/Breeze-ASR-25-ggml/ggml-breeze-asr-25-q8_0.bin 不在快取裡，請從選單重新下載",
+    );
   });
 
   // @behavior MD-011
@@ -112,8 +216,18 @@ describe("ModelsController", () => {
   it("says a Model was not chosen when recording it fails", async () => {
     await mountWith(
       {
-        transcription: { path: null, has_file: false },
-        translation: { path: null, has_file: false },
+        transcription: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: EXTENSIONS,
+        },
+        translation: {
+          source: null,
+          path: null,
+          has_file: false,
+          extensions: EXTENSIONS,
+        },
       },
       {
         "plugin:dialog|open": () => "/models/qwen3-4b.gguf",

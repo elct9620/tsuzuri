@@ -127,6 +127,7 @@ describe("PreviewController", () => {
         <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
         <span data-preview-target="time"></span>
         <input type="range" min="0" max="100" data-preview-target="volume" data-action="input->preview#setVolume">
+        <span data-preview-target="volumeLevel"></span><button id="mute" data-preview-target="muteButton" data-action="preview#toggleMute"><span data-preview-target="muteIcon"></span></button>
         <div data-preview-target="captionChoice">
           <input type="radio" name="caption" value="original" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
           <input type="radio" name="caption" value="translation" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
@@ -570,35 +571,22 @@ describe("PreviewController", () => {
   it("plays at full volume until a volume is chosen", async () => {
     await show(projectWithMedia());
 
-    expect([volumeSlider().value, player.volume]).toEqual(["100", 1]);
+    expect([volumeSlider().value, player.volume]).toEqual(["50", 1]);
   });
 
   // @behavior PV-165
   it("sets the volume with its slider", async () => {
     await show(projectWithMedia());
 
-    moveVolumeSlider(40);
+    moveVolumeSlider(25);
 
-    expect(player.volume).toBe(0.4);
-  });
-
-  // @behavior PV-166
-  it("keeps the volume chosen for the next time the Preview opens", async () => {
-    moveVolumeSlider(40);
-    application.stop();
-    player.volume = 1;
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
-
-    expect([volumeSlider().value, player.volume]).toEqual(["40", 0.4]);
+    expect(player.volume).toBe(0.125);
   });
 
   async function reopenWith(choices: Record<string, string>): Promise<void> {
     application.stop();
     player.removeAttribute("crossorigin");
+    player.volume = 1;
     for (const [key, value] of Object.entries(choices))
       localStorage.setItem(key, value);
     application = Application.start();
@@ -608,27 +596,103 @@ describe("PreviewController", () => {
     await settle();
   }
 
-  // @behavior PV-170
-  it("holds the volume within 100 without the Volume Boost", async () => {
-    await reopenWith({ "tsuzuri.preview-volume": "150" });
+  // @behavior PV-166
+  it("keeps the volume chosen for the next time the Preview opens", async () => {
+    moveVolumeSlider(25);
 
-    expect([volumeSlider().max, volumeSlider().value, player.volume]).toEqual([
-      "100",
-      "100",
-      1,
-    ]);
+    await reopenWith({});
+
+    expect([volumeSlider().value, player.volume]).toEqual(["25", 0.125]);
   });
 
-  describe("the Volume Boost", () => {
-    /** The Web Audio contexts made, each with the players routed into it and its gain. */
+  const pressMute = () => document.querySelector<HTMLElement>("#mute")!.click();
+
+  // @behavior PV-179
+  it("reads the volume beside its slider", async () => {
+    await show(projectWithMedia());
+
+    moveVolumeSlider(30);
+
+    expect(
+      document.querySelector('[data-preview-target="volumeLevel"]')!
+        .textContent,
+    ).toBe("22%");
+  });
+
+  // @behavior PV-180
+  it("mutes the media", async () => {
+    await show(projectWithMedia());
+
+    pressMute();
+
+    expect(player.volume).toBe(0);
+  });
+
+  // @behavior PV-181
+  it("unmutes back to the volume chosen", async () => {
+    await show(projectWithMedia());
+    moveVolumeSlider(25);
+    pressMute();
+
+    pressMute();
+
+    expect(player.volume).toBe(0.125);
+  });
+
+  // @behavior PV-182
+  it("unmutes with the volume slider", async () => {
+    await show(projectWithMedia());
+    pressMute();
+
+    moveVolumeSlider(25);
+
+    expect(player.volume).toBe(0.125);
+  });
+
+  // @behavior PV-183
+  it("plays with sound each time the Preview opens", async () => {
+    moveVolumeSlider(25);
+    pressMute();
+
+    await reopenWith({});
+
+    expect(player.volume).toBe(0.125);
+  });
+
+  // @behavior PV-173
+  it("reads the media with anonymous CORS", async () => {
+    await reopenWith({});
+
+    expect(player.crossOrigin).toBe("anonymous");
+  });
+
+  describe("above full volume", () => {
+    /** The Web Audio contexts made, each with the nodes the player is routed through. */
     let contexts: FakeAudioContext[];
 
+    type FakeNode = {
+      kind: string;
+      next?: FakeNode;
+      connect(node: FakeNode): FakeNode;
+    } & Record<string, unknown>;
+
+    function fakeNode(kind: string, params: Record<string, number> = {}) {
+      const node: FakeNode = {
+        kind,
+        connect(next) {
+          node.next = next;
+          return next;
+        },
+      };
+      for (const [name, value] of Object.entries(params))
+        node[name] = { value };
+      return node;
+    }
+
     class FakeAudioContext {
-      readonly baseLatency = 0.01;
-      readonly outputLatency = 0.02;
-      readonly destination = {};
-      readonly gain = { gain: { value: 1 }, connect: (node: unknown) => node };
+      readonly destination = fakeNode("destination");
       readonly sources: HTMLMediaElement[] = [];
+      source?: FakeNode;
       readonly resume = vi.fn(() => Promise.resolve());
 
       constructor() {
@@ -636,19 +700,54 @@ describe("PreviewController", () => {
       }
 
       createGain() {
-        return this.gain;
+        return fakeNode("gain", { gain: 1 });
+      }
+
+      // The defaults Web Audio gives a new compressor
+      createDynamicsCompressor() {
+        return fakeNode("limiter", {
+          threshold: -24,
+          knee: 30,
+          ratio: 12,
+          attack: 0.003,
+          release: 0.25,
+        });
       }
 
       createMediaElementSource(element: HTMLMediaElement) {
         this.sources.push(element);
-        return { connect: (node: unknown) => node };
+        this.source = fakeNode("source");
+        return this.source;
       }
+    }
+
+    /** The nodes from the player's source to the speakers. */
+    function nodesToSpeakers(context: FakeAudioContext): FakeNode[] {
+      const nodes: FakeNode[] = [];
+      for (let node = context.source; node; node = node.next) nodes.push(node);
+      return nodes;
+    }
+
+    const paramValue = (node: FakeNode, name: string) =>
+      (node[name] as { value: number }).value;
+
+    /**
+     * How loud a quiet passage plays through `context`: every gain on the way times the makeup gain
+     * each compressor adds, per Web Audio 1.1 "Computing the makeup gain" for a hard knee.
+     */
+    function quietPassageVolume(context: FakeAudioContext): number {
+      return nodesToSpeakers(context).reduce((volume, node) => {
+        if (node.kind === "gain") return volume * paramValue(node, "gain");
+        if (node.kind !== "limiter") return volume;
+        const threshold = paramValue(node, "threshold");
+        const fullRangeDb = threshold - threshold / paramValue(node, "ratio");
+        return volume * (10 ** (-fullRangeDb / 20)) ** 0.6;
+      }, 1);
     }
 
     beforeEach(async () => {
       contexts = [];
       vi.stubGlobal("AudioContext", FakeAudioContext);
-      await reopenWith({ "tsuzuri.volume-boost": "true" });
       await show(projectWithMedia());
     });
 
@@ -657,31 +756,61 @@ describe("PreviewController", () => {
     });
 
     // @behavior PV-171
-    it("plays above full volume through Web Audio", () => {
-      moveVolumeSlider(150);
+    it("plays up to eight times the media's volume through Web Audio", () => {
+      moveVolumeSlider(100);
       player.dispatchEvent(new Event("play"));
 
       expect([
-        volumeSlider().max,
         player.volume,
         contexts.map((context) => [
           context.sources,
-          context.gain.gain.value,
           context.resume.mock.calls.length > 0,
+          quietPassageVolume(context).toFixed(6),
         ]),
-      ]).toEqual(["200", 1, [[[player], 1.5, true]]]);
+      ]).toEqual([1, [[[player], true, (8).toFixed(6)]]]);
     });
 
     // @behavior PV-172
     it("leaves Web Audio out until the volume passes 100", () => {
-      moveVolumeSlider(80);
+      moveVolumeSlider(25);
 
-      expect([player.volume, contexts.length]).toEqual([0.8, 0]);
+      expect([player.volume, contexts.length]).toEqual([0.125, 0]);
     });
 
-    // @behavior PV-173
-    it("reads the media with anonymous CORS", () => {
-      expect(player.crossOrigin).toBe("anonymous");
+    // @behavior PV-180
+    it("mutes the media above full volume", () => {
+      moveVolumeSlider(100);
+
+      pressMute();
+
+      expect(quietPassageVolume(contexts[0])).toBe(0);
+    });
+
+    // @behavior PV-177
+    it("holds loud passages at -1 dBFS through a limiter", () => {
+      moveVolumeSlider(100);
+
+      const limiters = nodesToSpeakers(contexts[0])
+        .filter((node) => node.kind === "limiter")
+        .map((node) => [
+          paramValue(node, "threshold"),
+          paramValue(node, "knee"),
+          paramValue(node, "ratio"),
+          node.next?.kind,
+        ]);
+      expect(limiters).toEqual([[-1, 0, 20, "gain"]]);
+    });
+
+    // @behavior PV-178
+    it("takes the limiter's makeup gain back below its threshold", () => {
+      moveVolumeSlider(100);
+
+      moveVolumeSlider(50);
+
+      expect([
+        player.volume,
+        quietPassageVolume(contexts[0]).toFixed(6),
+      ]).toEqual([1, (1).toFixed(6)]);
     });
   });
 

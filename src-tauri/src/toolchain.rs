@@ -6,9 +6,12 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 
 use crate::failure::Failure;
+use crate::model_source::{parse_saved_source, ModelSource};
 
 pub mod commands;
 pub mod detection;
+pub mod hub;
+pub mod presets;
 pub mod settings;
 
 /// The Build Manifest, read for the order Auto-Selection tries each Component's Variants in.
@@ -291,17 +294,56 @@ pub enum ModelSlot {
     Translation,
 }
 
+/// How whisper.cpp names its VAD Models, the one thing telling them from its transcription Models.
+const VAD_MODEL_PREFIX: &str = "ggml-silero";
+
+impl ModelSlot {
+    /// The file extensions a Model for this slot has.
+    pub fn extensions(self) -> &'static [&'static str] {
+        match self {
+            ModelSlot::Transcription | ModelSlot::Vad => &["bin"],
+            ModelSlot::Translation => &["gguf"],
+        }
+    }
+
+    /// Whether the file at `path`, by its name, can be this slot's Model.
+    pub fn is_model_file(self, path: &str) -> bool {
+        let name = Path::new(path)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or(path);
+        let has_extension = Path::new(name)
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| self.extensions().contains(&extension));
+        let is_vad_model = name.starts_with(VAD_MODEL_PREFIX);
+        has_extension
+            && match self {
+                ModelSlot::Transcription => !is_vad_model,
+                ModelSlot::Vad => is_vad_model,
+                ModelSlot::Translation => true,
+            }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModelSettings {
-    transcription: Option<PathBuf>,
-    vad: Option<PathBuf>,
-    translation: Option<PathBuf>,
+    #[serde(default, deserialize_with = "parse_saved_source")]
+    transcription: Option<ModelSource>,
+    #[serde(default, deserialize_with = "parse_saved_source")]
+    vad: Option<ModelSource>,
+    #[serde(default, deserialize_with = "parse_saved_source")]
+    translation: Option<ModelSource>,
+    /// The Hugging Face Cache a Repository's Model is found in; located, never saved.
+    #[serde(skip)]
+    hub_cache: PathBuf,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ModelError {
     NoChoice(ModelSlot),
     MissingFile(PathBuf),
+    NotDownloaded { repo: String, file: String },
 }
 
 impl fmt::Display for ModelError {
@@ -309,6 +351,9 @@ impl fmt::Display for ModelError {
         match self {
             ModelError::NoChoice(slot) => write!(f, "no {slot:?} model chosen"),
             ModelError::MissingFile(path) => write!(f, "model file not found: {}", path.display()),
+            ModelError::NotDownloaded { repo, file } => {
+                write!(f, "model not downloaded: {file} of {repo}")
+            }
         }
     }
 }
@@ -317,8 +362,13 @@ impl std::error::Error for ModelError {}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct SlotView {
+    source: Option<ModelSource>,
+    /// Where the Model is expected.
     path: Option<PathBuf>,
     has_file: bool,
+    extensions: &'static [&'static str],
+    /// Which of the slot's Preset Models the Model is, as its place among them.
+    preset_index: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -329,32 +379,56 @@ pub struct ModelSettingsView {
 }
 
 impl ModelSettings {
-    pub fn choose(&mut self, slot: ModelSlot, path: PathBuf) {
-        *self.slot_mut(slot) = Some(path);
+    pub fn with_hub_cache(mut self, hub_cache: PathBuf) -> ModelSettings {
+        self.hub_cache = hub_cache;
+        self
+    }
+
+    pub fn hub_cache(&self) -> &Path {
+        &self.hub_cache
+    }
+
+    pub fn choose(&mut self, slot: ModelSlot, source: ModelSource) {
+        *self.slot_mut(slot) = Some(source);
     }
 
     /// These settings with a Project Model in `slot` in place of the general one, when there is one.
-    pub fn with_project_model(mut self, slot: ModelSlot, path: Option<PathBuf>) -> ModelSettings {
-        if let Some(path) = path {
-            self.choose(slot, path);
+    pub fn with_project_model(
+        mut self,
+        slot: ModelSlot,
+        source: Option<ModelSource>,
+    ) -> ModelSettings {
+        if let Some(source) = source {
+            self.choose(slot, source);
         }
         self
     }
 
     /// The Model an engine is started with; checked right before the start so a file moved since it was chosen is caught.
-    pub fn ready_path(&self, slot: ModelSlot) -> Result<&Path, ModelError> {
-        let path = self.slot(slot).ok_or(ModelError::NoChoice(slot))?;
+    pub fn ready_path(&self, slot: ModelSlot) -> Result<PathBuf, ModelError> {
+        let source = self.slot(slot).ok_or(ModelError::NoChoice(slot))?;
+        let path = source.path(&self.hub_cache);
         if path.is_file() {
-            Ok(path)
-        } else {
-            Err(ModelError::MissingFile(path.to_path_buf()))
+            return Ok(path);
         }
+        Err(match source {
+            ModelSource::File { path } => ModelError::MissingFile(path.clone()),
+            ModelSource::Repository { repo, file, .. } => ModelError::NotDownloaded {
+                repo: repo.clone(),
+                file: file.clone(),
+            },
+        })
     }
 
     pub fn view(&self) -> ModelSettingsView {
         let slot_view = |slot| SlotView {
-            path: self.slot(slot).map(Path::to_path_buf),
+            source: self.slot(slot).cloned(),
+            path: self.slot(slot).map(|source| source.path(&self.hub_cache)),
             has_file: self.ready_path(slot).is_ok(),
+            extensions: slot.extensions(),
+            preset_index: self
+                .slot(slot)
+                .and_then(|source| presets::preset_index(slot, source)),
         };
         ModelSettingsView {
             transcription: slot_view(ModelSlot::Transcription),
@@ -363,15 +437,15 @@ impl ModelSettings {
         }
     }
 
-    fn slot(&self, slot: ModelSlot) -> Option<&Path> {
+    fn slot(&self, slot: ModelSlot) -> Option<&ModelSource> {
         match slot {
-            ModelSlot::Transcription => self.transcription.as_deref(),
-            ModelSlot::Vad => self.vad.as_deref(),
-            ModelSlot::Translation => self.translation.as_deref(),
+            ModelSlot::Transcription => self.transcription.as_ref(),
+            ModelSlot::Vad => self.vad.as_ref(),
+            ModelSlot::Translation => self.translation.as_ref(),
         }
     }
 
-    fn slot_mut(&mut self, slot: ModelSlot) -> &mut Option<PathBuf> {
+    fn slot_mut(&mut self, slot: ModelSlot) -> &mut Option<ModelSource> {
         match slot {
             ModelSlot::Transcription => &mut self.transcription,
             ModelSlot::Vad => &mut self.vad,
@@ -584,14 +658,19 @@ mod tests {
         let dir = TempDir::new("remember");
         let model = dir.file("breeze.bin");
         let mut settings = ModelSettings::load(dir.path()).unwrap();
-        settings.choose(ModelSlot::Transcription, model.clone());
+        settings.choose(
+            ModelSlot::Transcription,
+            ModelSource::File {
+                path: model.clone(),
+            },
+        );
         settings.save(dir.path()).unwrap();
 
         let reloaded_settings = ModelSettings::load(dir.path()).unwrap();
 
         assert_eq!(
             reloaded_settings.ready_path(ModelSlot::Transcription),
-            Ok(model.as_path())
+            Ok(model)
         );
     }
 
@@ -611,7 +690,12 @@ mod tests {
         let dir = TempDir::new("gone");
         let model = dir.file("breeze.bin");
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Transcription, model.clone());
+        settings.choose(
+            ModelSlot::Transcription,
+            ModelSource::File {
+                path: model.clone(),
+            },
+        );
         std::fs::remove_file(&model).unwrap();
 
         let result = settings.ready_path(ModelSlot::Transcription);
@@ -626,13 +710,127 @@ mod tests {
         let general = dir.file("breeze.bin");
         let project = dir.file("kotoba.bin");
         let mut settings = ModelSettings::default();
-        settings.choose(ModelSlot::Transcription, general);
+        settings.choose(
+            ModelSlot::Transcription,
+            ModelSource::File { path: general },
+        );
 
-        let settings = settings.with_project_model(ModelSlot::Transcription, Some(project.clone()));
+        let settings = settings.with_project_model(
+            ModelSlot::Transcription,
+            Some(ModelSource::File {
+                path: project.clone(),
+            }),
+        );
+
+        assert_eq!(settings.ready_path(ModelSlot::Transcription), Ok(project));
+    }
+
+    // @behavior MD-013
+    #[test]
+    fn reads_a_model_chosen_before_model_sources_were_kept() {
+        let dir = TempDir::new("bare-path");
+        let model = dir.file("breeze.bin");
+        std::fs::write(
+            dir.path().join("models.json"),
+            serde_json::json!({ "transcription": model }).to_string(),
+        )
+        .unwrap();
+
+        let settings = ModelSettings::load(dir.path()).unwrap();
 
         assert_eq!(
-            settings.ready_path(ModelSlot::Transcription),
-            Ok(project.as_path())
+            settings.slot(ModelSlot::Transcription),
+            Some(&ModelSource::File { path: model })
+        );
+    }
+
+    fn breeze() -> ModelSource {
+        ModelSource::Repository {
+            repo: "tsuzuri-app/Breeze-ASR-25-ggml".to_string(),
+            file: "ggml-breeze-asr-25-q8_0.bin".to_string(),
+            commit: "cf41205287fb5483317ce2d1d973ba7cac8fa750".to_string(),
+        }
+    }
+
+    // @behavior MD-014
+    #[test]
+    fn takes_a_repositorys_model_from_the_hugging_face_cache() {
+        let dir = TempDir::new("hub-cached");
+        let snapshot = dir
+            .path()
+            .join("models--tsuzuri-app--Breeze-ASR-25-ggml/snapshots")
+            .join("cf41205287fb5483317ce2d1d973ba7cac8fa750");
+        std::fs::create_dir_all(&snapshot).unwrap();
+        let cached_model = snapshot.join("ggml-breeze-asr-25-q8_0.bin");
+        std::fs::write(&cached_model, "weights").unwrap();
+        let mut settings = ModelSettings::default().with_hub_cache(dir.path().to_path_buf());
+        settings.choose(ModelSlot::Transcription, breeze());
+
+        let result = settings.ready_path(ModelSlot::Transcription);
+
+        assert_eq!(result, Ok(cached_model));
+    }
+
+    // @behavior MD-015
+    #[test]
+    fn refuses_a_repositorys_model_the_cache_does_not_hold() {
+        let dir = TempDir::new("hub-empty");
+        let mut settings = ModelSettings::default().with_hub_cache(dir.path().to_path_buf());
+        settings.choose(ModelSlot::Translation, breeze());
+
+        let result = settings.ready_path(ModelSlot::Translation);
+
+        assert_eq!(
+            result,
+            Err(ModelError::NotDownloaded {
+                repo: "tsuzuri-app/Breeze-ASR-25-ggml".to_string(),
+                file: "ggml-breeze-asr-25-q8_0.bin".to_string(),
+            })
+        );
+    }
+
+    // @behavior MD-024
+    #[test]
+    fn remembers_a_repositorys_model_for_a_slot() {
+        let dir = TempDir::new("hub-chosen");
+        let cached_model = breeze().path(dir.path());
+        std::fs::create_dir_all(cached_model.parent().unwrap()).unwrap();
+        std::fs::write(&cached_model, "weights").unwrap();
+        let mut settings = ModelSettings::default().with_hub_cache(dir.path().to_path_buf());
+
+        settings.choose(ModelSlot::Transcription, breeze());
+
+        assert_eq!(
+            (
+                settings.view().transcription.path,
+                settings.view().transcription.has_file
+            ),
+            (Some(cached_model), true)
+        );
+    }
+
+    // @behavior MD-049
+    #[test]
+    fn names_the_preset_model_a_slot_holds_in_the_model_settings() {
+        let second_translation_preset = presets::slot_presets(ModelSlot::Translation)[1]
+            .source
+            .clone();
+        let mut settings = ModelSettings::default();
+
+        settings.choose(ModelSlot::Translation, second_translation_preset);
+        settings.choose(
+            ModelSlot::Transcription,
+            ModelSource::File {
+                path: "/models/own.bin".into(),
+            },
+        );
+
+        assert_eq!(
+            (
+                settings.view().translation.preset_index,
+                settings.view().transcription.preset_index
+            ),
+            (Some(1), None)
         );
     }
 }

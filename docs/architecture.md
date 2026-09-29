@@ -117,10 +117,10 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `editing.ts` | `project/commands.rs` | 編輯、搜尋、取代、清理、段落改動、復原 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
-| `toolchain.ts` | `toolchain/commands.rs` | 元件狀態與指定、模型設定 |
+| `toolchain.ts` | `toolchain/commands.rs` | 元件、模型設定與下載 |
 | `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
 | `logs.ts` | `logs/commands.rs` | log 目錄、除錯紀錄 |
-| `about.ts` | `about/commands.rs` | App Build、釋出頁面 |
+| `about.ts` | `about/commands.rs` | App Build、釋出與贊助頁面 |
 | `updates.ts` | `updates/commands.rs` | 檢查、安裝、通道、退回 |
 | `progress.ts` | `steps/commands.rs` | `cancel_task` |
 
@@ -134,10 +134,12 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | 進度 | 用例經 `Progress` | `progress` |
 | 復原、重做、全選 | macOS 編輯選單 | `undo`、`segment-changes` |
 | 外部修改已留存 | 重新載入 | `project` |
+| 系統要開 SRT | 第二次啟動、macOS 開檔 | `project` |
 | 影片視窗要關閉 | 關閉影片視窗 | `preview` |
 | 更新下載進度 | `install_update` | `updates` |
+| 模型下載進度 | `download_model` | 設定頁 |
 
-事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`，更新下載進度是 `update-progress`；五者由 `relayEvents` 轉成 window 的 `rust:` 事件。
+事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，系統要開 SRT 是 `srt-requested`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`，更新下載進度是 `update-progress`，模型下載進度是 `model-download-progress`；七者由 `relayEvents` 轉成 window 的 `rust:` 事件。
 
 ### 2.4 錯誤與通知
 
@@ -150,7 +152,7 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
              │                        ui/notification.ts（toast）◀┘
 ```
 
-`Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤則由 `llama.rs` 轉換。通知種類也依錯誤碼決定：拒絕是自動消失的 warning，出錯是留到關閉的 error。
+`Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤由 `llama.rs`、hf-hub 的錯誤由 `hub.rs` 轉換。通知種類也依錯誤碼決定：拒絕是自動消失的 warning，出錯是留到關閉的 error。
 
 ### 2.5 媒體檔（asset protocol）
 
@@ -165,7 +167,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 範圍 | 開啟過的專案目錄 |
 | 子目錄 | 不含 |
 | 路徑來源 | `ProjectView.media` |
-| CORS | 音量增強時 anonymous |
+| CORS | anonymous，供 Web Audio |
 
 影片要能拖動與串流，經由指令傳送整個檔案不可行，所以媒體檔是 webview 唯一直接讀取的資料。路徑仍由 Rust 給出，範圍只含開啟過的專案目錄。
 
@@ -192,13 +194,16 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 轉錄指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（`docs/design.md` 6.4） |
 | `system_opener` 直接執行系統程式 | 開啟目錄與網頁，不是元件 |
 | 各情境的設定檔經 `json_settings` | 同一種讀寫 |
+| 模型下載與清單的指令直接用 `hub` | 只有傳輸，沒有規則 |
+| `current_project` 補上預設模型位置 | 專案不引用工具鏈 |
 
 ### 3.2 情境
 
 ```
-   ┌──────── 字幕（共用核心）────────┐
+   ┌──────────── 共用核心 ───────────┐
    │ transcript、segment_change、    │
-   │ replacement、cleanup、language  │
+   │ replacement、cleanup、language、│
+   │ model_source                    │
    └───▲──────────▲───────────▲──────┘
        │          │           │
   ┌────┴───┐ ┌────┴─────┐ ┌───┴──────────┐
@@ -209,7 +214,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
   波形（waveform）是「工具鏈 → 預覽」的用例，只有取峰值的規則
 ```
 
-情境之間只經由字幕的型別與 `CurrentProject` 往來，翻譯與轉錄都不直接讀寫專案目錄。
+情境之間只經由共用核心的型別與 `CurrentProject` 往來，翻譯與轉錄都不直接讀寫專案目錄。
 
 ### 3.3 模組
 
@@ -220,14 +225,15 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `menu` | 轉接 | macOS 復原與重做 |
 | — | `logs` | 轉接 | log 目錄與層級 |
 | — | `system_opener` | 轉接 | 交給系統開啟 |
-| — | `about` | 介面 | App Build、釋出頁面 |
+| — | `about` | 介面 | App Build、釋出與贊助頁面 |
 | — | `updates` | 應用、轉接 | 檢查與安裝更新 |
-| — | `release_number` | 領域 | 讀出預覽版號 |
+| — | `release_number` | 領域 | Release Name、是否預覽版 |
 | — | `transcript` | 領域 | 段落與 SRT |
 | — | `segment_change` | 領域 | 段落變更 |
 | — | `replacement` | 領域 | 搜尋取代 |
 | — | `cleanup` | 領域 | 簡體清理 |
 | — | `language` | 領域 | 語言代碼 |
+| — | `model_source` | 領域 | 模型來源 |
 | — | `project` | 領域 | 專案聚合、寫回 |
 | `project/` | `versions` | 領域 | 逐 cue 比較版本 |
 | `project/` | `history` | 領域 | 資源的復原紀錄 |
@@ -236,6 +242,8 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `project/` | `mode_hold` | 應用 | 任務對資源的保留 |
 | `project/` | `backups` | 領域 | 備份紀錄與時機 |
 | `project/` | `files` | 轉接 | 檔名、配對、備份 |
+| `project/` | `recent` | 應用、轉接 | 最近的專案與設定檔 |
+| `project/` | `requested_srt` | 介面 | 系統要開的 SRT |
 | — | `translation` | 應用 | 翻譯用例 |
 | `translation/` | `batching` | 領域 | 分批 |
 | `translation/` | `speaker_labels` | 領域 | 說話者標籤 |
@@ -250,10 +258,13 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `waveform` | 應用、領域 | 波形與峰值 |
 | — | `toolchain` | 應用 | 尋找元件、模型設定 |
 | `toolchain/` | `detection` | 轉接 | 偵測已安裝的元件 |
+| `toolchain/` | `hub` | 轉接 | Hugging Face 快取與下載 |
+| `toolchain/` | `presets` | 應用 | 預設模型清單與比對 |
 | `toolchain/` | `settings` | 轉接 | 元件設定檔 |
 | — | `progress` | 應用 | 回報進度的 Port |
 | — | `steps` | 應用 | Step 與 `ModeRun` |
 | — | `timing` | 應用 | Phase 計時 |
+| — | `transfer_report` | 領域 | 傳輸進度的回報間隔 |
 | — | `failure` | 應用 | 錯誤碼 |
 | — | `processes` | 轉接 | 子行程與 `AppPorts` |
 | — | `json_settings` | 轉接 | 設定檔的讀寫 |
@@ -273,17 +284,20 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 
 ```
 啟動
+  │ single-instance    已有 Tsuzuri 時交出參數並結束
+  │ RequestedSrt       setup 前就 manage，macOS 可能先送開檔
   │ reap_strays        清掉上次留下的元件行程（processes.json）
-  │ manage             Processes、CurrentProject
+  │ manage             Processes、CurrentProject；收下啟動參數的 SRT
   │ build_main_window  依設定建立主視窗，只准它開影片視窗
   │ size_first_window  第一次開啟佔螢幕 80%，之後由 window-state 還原
   ▼
 視窗取得焦點 ─▶ reload_if_changed ─▶ 清單或字幕被外部修改就重新載入並送出 project-changed
+系統要開 SRT ─▶ request_srt_argument ─▶ srt-requested ─▶ webview 取走後以 open_srt 開啟
   ▼
 結束 ─▶ kill_all       結束仍在執行的元件行程
 ```
 
-`run()` 是唯一的組裝點：`manage` 的物件由指令以 `State` 參數注入，沒有全域變數。
+`run()` 是唯一的組裝點：`manage` 的物件由指令以 `State` 參數注入，沒有全域變數。系統要開的 SRT 由 webview 開啟，因為只有它知道介面語言。
 
 ### 3.6 目前專案
 
@@ -409,6 +423,7 @@ ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 | 取消 | `cancel_task` 經 `ModeLock` |
 | 取消後 | 只結束它啟動的行程 |
 | 取波形 | 不是任務，不取鎖 |
+| 下載模型 | 不是任務，不取鎖 |
 | 暫存目錄 | 隨 `ModeRun` 結束刪除 |
 | 安裝更新 | `try_turn`，執行中拒絕 |
 
@@ -523,13 +538,15 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 
 | 步驟 | 內容 |
 |---|---|
-| 1 | 送出改動前先記下待套用 |
+| 1 | 改段數的改動先記下待套用 |
 | 2 | 讀到的專案比上一份舊就丟掉 |
 | 3 | session 換算並套用待套用 |
-| 4 | 各 controller 依專案重畫 |
+| 4 | 各 controller 依專案重畫，出錯的不擋後面 |
 | 5 | 送出 `editor:cursor`，移動焦點 |
 
-`project-changed` 可能比指令的回答先到，所以待套用在送出前就記下，被拒絕時清掉。焦點與 Cursor 等列畫完才動，才不會落在即將被取代的舊列上。
+`project-changed` 可能比指令的回答先到，所以待套用在送出前就記下，被拒絕時清掉。焦點與 Cursor 等列畫完才動，才不會落在即將被取代的舊列上。某個 controller 重畫時出錯，以 `reportError` 回報，其餘照常重畫。
+
+只有改變段數的改動會移動 Cursor，才記成待套用；段數不變的改動寫入後就清掉勾選。
 
 ### 4.5 editor
 
@@ -550,7 +567,9 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 
 | Controller | 畫面區域 |
 |---|---|
-| `project`、`transcript`、`segment-changes`、`dialog` | 資源清單、字幕編輯、設定 |
+| `project`、`transcript`、`segment-changes`、`dialog` | 工具列、資源清單、字幕編輯、設定 |
+| `project-settings` | 設定的專案頁 |
+| `recent-projects` | 起始畫面與開啟選單的最近專案 |
 | `speakers` | 說話者選單與設定 modal |
 | `replacement` | 搜尋取代 modal |
 | `cleanup` | 清理簡體的選單、工具列與快速鍵 |
@@ -561,9 +580,11 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
-| `components`、`models`、`transcription-settings`、`translation-settings`、`logs`、`volume-boost` | 設定頁 |
+| `components`、`models`、`transcription-settings`、`translation-settings`、`logs` | 設定頁 |
+| `model-slot`、`repository` | 模型來源的選單、下載與 Repository |
 | `about`、`updates` | 版本與更新、安裝視窗 |
 | `licenses` | 關於的授權頁 |
+| `sponsorship` | 關於的贊助頁面 |
 | `tooltip` | 全頁共用的 tooltip |
 | `shortcuts` | 快速鍵一覽 |
 | `notification` | 每則通知的倒數、暫停與按鈕 |
@@ -588,8 +609,10 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `progress` 顯示 Phase |
 | `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
+| `rust:srt-requested` | Rust，經 `relayEvents` | `project` 開啟系統要開的 SRT |
+| `rust:model-download-progress` | Rust，經 `relayEvents` | `model-slot` 顯示下載進度 |
+| `model-slot:choose` | `model-slot` | `models`、`project-settings` 記下來源 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
-| `dialog:opened` | `dialog` | `volume-boost` 讀取輸出延遲 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
 | `segment-changes:retranslate` | `segment-changes` | `translate` 開啟重新翻譯 |
@@ -604,7 +627,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `transcription.ts`、`translation.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄、除錯紀錄的指令 |
-| `about.ts` | App Build、開啟釋出頁面 |
+| `about.ts` | App Build、開啟釋出與贊助頁面 |
 | `waveform.ts` | 波形的指令與型別 |
 | `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |
 | `events.ts` | 把 Rust 事件轉到 window |
@@ -621,9 +644,10 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/failure.ts` | 錯誤碼的訊息與通知種類 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式與欄位綁定、關閉選單 |
-| `ui/models.ts` | 各 Model Slot 的副檔名 |
+| `ui/models.ts` | Model Source 的名稱與大小 |
+| `ui/options.ts` | 選單的選項 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
-| `ui/volume_boost.ts` | 音量增強的開關、增益與延遲 |
+| `ui/volume.ts` | 音量曲線、增益與限幅 |
 | `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `ui/timeline_spans.ts` | 時間軸區段與選段的落點 |

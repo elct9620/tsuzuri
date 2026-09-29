@@ -53,7 +53,6 @@ export default class ProjectSettingsController extends Controller {
   declare readonly feed: ProjectFeed;
 
   private unfollow?: () => void;
-  private options: ProjectOptions | null = null;
 
   connect(): void {
     this.unfollow = this.feed.follow((project) => this.show(project));
@@ -90,31 +89,36 @@ export default class ProjectSettingsController extends Controller {
   }
 
   modelSlotOutletConnected(row: ModelSlotController): void {
-    if (this.options !== null)
-      row.showSource(this.options.models[row.slotValue as keyof ProjectModels]);
+    const project = this.feed.project;
+    if (project !== null)
+      row.showSource(
+        project.options.models[row.slotValue as keyof ProjectModels],
+      );
   }
 
   private async saveModel(
     slot: keyof ProjectModels,
     source: ModelSource | null,
   ): Promise<void> {
-    if (this.options === null) return;
+    const project = this.feed.project;
+    if (project === null) return;
     await this.saveOptions({
-      models: { ...this.options.models, [slot]: source },
+      models: { ...project.options.models, [slot]: source },
     });
   }
 
   /** Sets the Project Options as the settings show them, with `changes` in their place. */
   private async saveOptions(changes: Partial<ProjectOptions>): Promise<void> {
-    if (this.options === null) return;
+    const project = this.feed.project;
+    if (project === null) return;
     const options: ProjectOptions = {
       name: this.nameFieldTarget.value || null,
       bilingual_order: this.bilingualOrderTarget
         .value as ProjectOptions["bilingual_order"],
       is_bilingual_autosaved: this.bilingualAutosaveTarget.checked,
       is_overwrite_backed_up: this.overwriteBackupTarget.checked,
-      models: this.options.models,
-      transcription: this.transcriptionOverrides(this.options.transcription),
+      models: project.options.models,
+      transcription: this.transcriptionOverrides(project.options.transcription),
       ...changes,
     };
     await this.report(() => setProjectOptions(options));
@@ -143,7 +147,6 @@ export default class ProjectSettingsController extends Controller {
 
   private show(project: ProjectView | null): void {
     this.showSettingsOf(project);
-    this.options = project?.options ?? null;
     if (project === null) return;
     this.nameFieldTarget.value = project.options.name ?? "";
     this.nameFieldTarget.placeholder = fileName(project.directory);

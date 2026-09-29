@@ -95,6 +95,22 @@ A Project whose Resources need another Model keeps its own, so switching Project
 | When | following the general settings is chosen for that slot |
 | Then | the Project Options are set without a transcription Project Model |
 
+## `MD-046` Showing the Project Model in a slot drawn after the Project
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of a Project with a file as its transcription Project Model |
+| When | the transcription slot is drawn again |
+| Then | the slot shows that file as the Project's own Model |
+
+## `MD-047` Keeping the other slot's Project Model when choosing one
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of a Project with a Project Model for the transcription slot |
+| When | a file is picked for the translation slot |
+| Then | the Project Options are set with both Project Models |
+
 ## `MD-011` Saying the Models were not read
 
 | Step | Statement |

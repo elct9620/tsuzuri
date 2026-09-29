@@ -231,6 +231,47 @@ describe("ProjectSettingsController", () => {
     });
   });
 
+  // @behavior MD-046
+  it("shows the Project Model in a slot drawn after the Project", async () => {
+    const withModel = projectOf();
+    withModel.options.models.transcription = {
+      kind: "file",
+      path: "/models/kotoba.bin",
+    };
+    await hold(withModel);
+    const row = document
+      .querySelector("#transcription-menu")!
+      .closest("[data-controller='model-slot']")!;
+
+    row.replaceWith(row.cloneNode(true));
+    await settle();
+
+    expect(
+      document.querySelector<HTMLSelectElement>("#transcription-menu")!.value,
+    ).toBe("own");
+  });
+
+  // @behavior MD-047
+  it("keeps the other slot's Project Model when a file is picked for one", async () => {
+    const withModel = projectOf();
+    const kotoba = { kind: "file", path: "/models/kotoba.bin" } as const;
+    withModel.options.models.transcription = kotoba;
+    await hold(withModel);
+    chosenFile = "/models/gemma-ja.gguf";
+
+    await click("#choose-translation-model");
+
+    expect(sent("set_project_options")).toEqual({
+      options: {
+        ...projectOf().options,
+        models: {
+          transcription: kotoba,
+          translation: { kind: "file", path: "/models/gemma-ja.gguf" },
+        },
+      },
+    });
+  });
+
   // @behavior MD-040
   it("sets a downloaded Preset Model as the Project Model", async () => {
     await hold(projectOf());

@@ -6,6 +6,7 @@ use super::{extract, Waveform};
 use crate::failure::Failure;
 use crate::processes::{AppPorts, Processes};
 use crate::project::CurrentProject;
+use crate::steps::WORK_DIR;
 use crate::toolchain::{self, settings};
 
 #[tauri::command]
@@ -24,7 +25,7 @@ pub async fn extract_waveform(
     let work = app
         .path()
         .app_cache_dir()?
-        .join("work")
+        .join(WORK_DIR)
         .join(format!("waveform-{started_at}"));
     extract(&ports, &current, &ffmpeg, &work).await
 }

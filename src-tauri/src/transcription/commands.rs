@@ -8,7 +8,7 @@ use crate::json_settings;
 use crate::processes::{AppPorts, Processes};
 use crate::progress::Progress;
 use crate::project::{CurrentProject, TranscriptionScope};
-use crate::steps::ModeLock;
+use crate::steps::{ModeLock, WORK_DIR};
 use crate::timing::{Phase, Phases};
 use crate::toolchain::{self, settings};
 use crate::translation::ResidentLlama;
@@ -44,7 +44,7 @@ pub async fn transcribe(
     let work = app
         .path()
         .app_cache_dir()?
-        .join("work")
+        .join(WORK_DIR)
         .join(started_at.to_string());
     let result = run
         .run_until_cancelled(run_transcribe(

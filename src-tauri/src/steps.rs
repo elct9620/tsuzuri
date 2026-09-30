@@ -11,6 +11,9 @@ pub mod commands;
 
 const STDERR_TAIL_LINES: usize = 5;
 
+/// The directory in the app's cache that holds what Steps write along the way, one directory a run.
+pub const WORK_DIR: &str = "work";
+
 // What each Step is called when it fails, which is how the webview names it to the user
 pub const CONVERSION_STEP: &str = "convert";
 pub const TRANSCRIPTION_STEP: &str = "transcribe";

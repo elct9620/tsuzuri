@@ -151,8 +151,8 @@ export const SHORTCUTS = [
   {
     id: "videoWindowFullscreen",
     group: "mouse",
-    mac: ["dblclick"],
-    other: ["dblclick"],
+    mac: ["dblclick", "esc"],
+    other: ["dblclick", "esc"],
   },
 ] as const satisfies readonly Shortcut[];
 

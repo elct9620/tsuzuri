@@ -589,7 +589,7 @@ const en = {
         "Draws a range for a Segment said over others, as when someone cuts in",
       zoom: "Pinching on a trackpad zooms too",
       videoWindowFullscreen:
-        "Double-click the video in the Video Window to fill the screen or leave it",
+        "Double-click the video in the Video Window to fill the screen or leave it; Esc leaves it too",
     },
   },
 };

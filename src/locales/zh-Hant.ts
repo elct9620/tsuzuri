@@ -559,7 +559,8 @@ const zhHant: typeof en = {
       shareBoundary: "相鄰段落的共用邊界一起移動",
       drawOver: "有人插話時，在其他段落上拉出新段落的範圍",
       zoom: "也可以在觸控板上捏合",
-      videoWindowFullscreen: "在影片視窗的影片上點兩下，切換全螢幕",
+      videoWindowFullscreen:
+        "在影片視窗的影片上點兩下，切換全螢幕；按 Esc 離開全螢幕",
     },
   },
 };

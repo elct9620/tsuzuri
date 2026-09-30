@@ -369,6 +369,16 @@ The app menu takes its keys before the webview sees them, so the keys it is give
 | When | the keys of its items are read |
 | Then | the shortcut list has each of them among the keys of macOS |
 
+## `IF-045` Listing the key that leaves the Video Window's full screen
+
+The Video Window is another window, so its key is bound there rather than by an action; it is still a key the interface answers to, and the list shows it beside the double click.
+
+| Step | Statement |
+| --- | --- |
+| Given | the shortcut list |
+| When | its row for the Video Window's full screen is read |
+| Then | its keys read a double click or `Esc` |
+
 ## `IF-037` Letting the Save Mark go on its own
 
 | Step | Statement |

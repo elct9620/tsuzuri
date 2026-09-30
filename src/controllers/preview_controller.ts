@@ -7,6 +7,7 @@ import {
   type ProjectView,
   type Segment,
 } from "../backend/project";
+import { isMacOS } from "../backend/system";
 import {
   VIDEO_WINDOW,
   destroyVideoWindow,
@@ -21,6 +22,7 @@ import {
   rememberedFlag,
   rememberFlag,
 } from "../ui/choices";
+import { isShortcut } from "../ui/shortcuts";
 import { MS_PER_SECOND, formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
 import {
@@ -358,8 +360,9 @@ export default class PreviewController extends Controller {
     );
     if (!videoWindow) return;
     forwardKeys(videoWindow);
-    videoWindow.addEventListener("keydown", ({ key }) => {
-      if (key === "Escape") void leaveVideoWindowFullscreen();
+    videoWindow.addEventListener("keydown", (event) => {
+      if (isShortcut(event, "videoWindowFullscreen", isMacOS()))
+        void leaveVideoWindowFullscreen();
     });
     videoWindow.addEventListener(
       "dblclick",

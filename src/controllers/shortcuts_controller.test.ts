@@ -136,6 +136,15 @@ describe("ShortcutsController", () => {
     ]);
   });
 
+  // @behavior IF-045
+  it("lists Esc beside the double click for the Video Window's full screen", () => {
+    press("#elsewhere", { key: "?", code: "Slash", shiftKey: true });
+
+    expect(
+      rows().find((row) => row.id === "videoWindowFullscreen")?.keys,
+    ).toEqual(["點兩下", "Esc"]);
+  });
+
   // @behavior IF-034
   it.each(["en", "zh-Hant-TW"])(
     "explains every shortcut in its tooltip in %s",

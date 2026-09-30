@@ -1,5 +1,6 @@
 import i18next, { type i18n, type TOptions } from "i18next";
 
+import type { Language } from "./backend/project";
 import en from "./locales/en";
 import zhHant from "./locales/zh-Hant";
 
@@ -32,7 +33,7 @@ export async function setInterfaceLanguage(
 }
 
 /** The Language code the interface stands for, which a new Project takes as its Primary Language. */
-export function interfaceLanguageCode(): string {
+export function interfaceLanguageCode(): Language {
   return instance.resolvedLanguage === "zh-Hant" ? "zh-TW" : "en";
 }
 

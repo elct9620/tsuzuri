@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 
 import { t, translatePage } from "../i18n";
 import {
+  TRADITIONAL_CHINESE,
   currentResource,
   type ProjectView,
   type TranslationGlossaryView,
@@ -81,7 +82,7 @@ export default class TranslationOptionsController extends Controller {
 
   /** Offers the cleanup only while the Language chosen is `zh-TW`. */
   offerCleanup(): void {
-    this.cleanupChoiceTarget.hidden = this.language !== "zh-TW";
+    this.cleanupChoiceTarget.hidden = this.language !== TRADITIONAL_CHINESE;
   }
 
   /** Starts the cleanup checked as the translation settings say; left as it is when they cannot be read. */
@@ -123,7 +124,8 @@ export default class TranslationOptionsController extends Controller {
         ? Number(this.summaryWordsTarget.value)
         : null,
       is_simplified_cleaned:
-        this.language === "zh-TW" && this.simplifiedCleanedTarget.checked,
+        this.language === TRADITIONAL_CHINESE &&
+        this.simplifiedCleanedTarget.checked,
     };
   }
 }

@@ -32,10 +32,14 @@ export function spanIndexes(span: SegmentSpan): number[] {
 
 export type RunningMode = bindings.RunningMode;
 
+/** The Language a Simplified Cleanup applies to. */
+export const TRADITIONAL_CHINESE: Language = "zh-TW";
+
 /** Whether the Current Resource shows a text in `zh-TW` to clean: the original of a `zh-TW` Project, or the translation shown. */
 export function hasTraditionalChinese(project: ProjectView | null): boolean {
   return (
-    project?.language === "zh-TW" || project?.shown_translation === "zh-TW"
+    project?.language === TRADITIONAL_CHINESE ||
+    project?.shown_translation === TRADITIONAL_CHINESE
   );
 }
 

@@ -113,13 +113,13 @@ export default class ProjectController extends Controller {
   /** Opens the SRT file the system asked to open, as one chosen here; bound to `rust:srt-requested`. */
   async openRequestedSrt(): Promise<void> {
     const path = await takeRequestedSrt();
-    if (path !== null) await this.run("open_srt", path);
+    if (path !== null) await this.run("openSrt", path);
   }
 
   async openDirectory({ currentTarget }: Event): Promise<void> {
     closeMenu(currentTarget);
     const path = await open({ multiple: false, directory: true });
-    if (path !== null) await this.run("open_project", path);
+    if (path !== null) await this.run("openProject", path);
   }
 
   async openSrt({ currentTarget }: Event): Promise<void> {
@@ -129,7 +129,7 @@ export default class ProjectController extends Controller {
       directory: false,
       filters: SRT_FILTERS,
     });
-    if (path !== null) await this.run("open_srt", path);
+    if (path !== null) await this.run("openSrt", path);
   }
 
   /**
@@ -141,12 +141,12 @@ export default class ProjectController extends Controller {
     params,
   }: Event & { params: { directory: string } }): Promise<void> {
     closeMenu(currentTarget);
-    const isOpened = await this.run("open_project", params.directory);
+    const isOpened = await this.run("openProject", params.directory);
     if (!isOpened) await this.feed.refresh();
   }
 
   async select({ currentTarget }: Event): Promise<void> {
-    const name = (currentTarget as HTMLElement).dataset.name;
+    const name = (currentTarget as HTMLElement).dataset.name!;
     this.resourcesToggleTarget.checked = false;
     this.dispatch("select");
     const isSelected = await this.report(() => selectResource(name));

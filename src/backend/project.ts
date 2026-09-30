@@ -1,7 +1,8 @@
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import type { UnlistenFn } from "@tauri-apps/api/event";
 
 import type * as bindings from "./bindings";
+import { commands, events } from "./bindings";
 
 export type { UnlistenFn };
 
@@ -56,7 +57,7 @@ export type TranslationGlossaryView = bindings.TranslationGlossaryView;
 
 /** The Project Rust holds now, or none before one is made. */
 export function currentProject(): Promise<ProjectView | null> {
-  return invoke<ProjectView | null>("current_project");
+  return commands.currentProject();
 }
 
 /**
@@ -93,7 +94,9 @@ export class ProjectFeed {
 
   /** Reads the Project now and each time Rust announces a change. */
   async start(): Promise<UnlistenFn> {
-    const unlisten = await listen("project-changed", () => void this.refresh());
+    const unlisten = await events.projectChanged.listen(
+      () => void this.refresh(),
+    );
     await this.refresh();
     return unlisten;
   }
@@ -121,49 +124,56 @@ function callReporting(callback: () => void): void {
 
 export type EditCommand = bindings.EditCommand;
 
+export type Language = bindings.Language;
+
 /** The command that opens a directory as the Project, or the directory of an SRT file. */
-export type OpenCommand = "open_project" | "open_srt";
+export type OpenCommand = Extract<
+  keyof typeof commands,
+  "openProject" | "openSrt"
+>;
 
 /** Opens `path` as the Project, a directory or the directory of an SRT file, in `language` when the directory records none. */
-export function openProject(
+export async function openProject(
   command: OpenCommand,
   path: string,
   language: string,
 ): Promise<void> {
-  return invoke(command, { path, language });
+  await commands[command](path, language as Language);
 }
 
 /** The Requested SRT, answered once, or none when the system asked for none since. */
 export function takeRequestedSrt(): Promise<string | null> {
-  return invoke("take_requested_srt");
+  return commands.takeRequestedSrt();
 }
 
 export type RecentProjectView = bindings.RecentProjectView;
 
 /** The Recent Projects, the latest opened first, without the Project already open. */
 export function recentProjects(): Promise<RecentProjectView[]> {
-  return invoke("recent_projects");
+  return commands.recentProjects();
 }
 
-export function selectResource(name: string | undefined): Promise<void> {
-  return invoke("select_resource", { name });
+export async function selectResource(name: string): Promise<void> {
+  await commands.selectResource(name);
 }
 
-export function setPrimaryLanguage(language: string): Promise<void> {
-  return invoke("set_primary_language", { language });
+export async function setPrimaryLanguage(language: string): Promise<void> {
+  await commands.setPrimaryLanguage(language as Language);
 }
 
-export function setProjectOptions(options: ProjectOptions): Promise<void> {
-  return invoke("set_project_options", { options });
+export async function setProjectOptions(
+  options: ProjectOptions,
+): Promise<void> {
+  await commands.setProjectOptions(options);
 }
 
 /** Pairs the Project's files again and reads the Current Resource again from them. */
-export function reloadProject(): Promise<void> {
-  return invoke("reload_project");
+export async function reloadProject(): Promise<void> {
+  await commands.reloadProject();
 }
 
-export function showTranslation(language: string | null): Promise<void> {
-  return invoke("show_translation", { language });
+export async function showTranslation(language: string | null): Promise<void> {
+  await commands.showTranslation(language as Language | null);
 }
 
 export type WrittenText = bindings.WrittenText;
@@ -174,24 +184,27 @@ export function exportPath(
   content: WrittenText,
   format: ExportFormat,
 ): Promise<string> {
-  return invoke<string>("export_path", { content, format });
+  return commands.exportPath(content, format);
 }
 
-export function saveSrt(path: string, content: WrittenText): Promise<void> {
-  return invoke("save_srt", { path, content });
+export async function saveSrt(
+  path: string,
+  content: WrittenText,
+): Promise<void> {
+  await commands.saveSrt(path, content);
 }
 
 /**
  * Writes the Current Resource to `path` as Plain Text, its Speakers named when `hasSpeakers` and
  * a blank line between blocks when `hasBlankLines`.
  */
-export function saveText(
+export async function saveText(
   path: string,
   content: WrittenText,
   hasSpeakers: boolean,
   hasBlankLines: boolean,
 ): Promise<void> {
-  return invoke("save_text", { path, content, hasSpeakers, hasBlankLines });
+  await commands.saveText(path, content, hasSpeakers, hasBlankLines);
 }
 
 export type Backup = bindings.Backup;
@@ -209,7 +222,7 @@ export type ComparedRow = bindings.ComparedRow;
 export type TextSpan = bindings.TextSpan;
 
 export function subtitleVersions(): Promise<SubtitleVersions[]> {
-  return invoke<SubtitleVersions[]>("subtitle_versions");
+  return commands.subtitleVersions();
 }
 
 /** The cues of two Versions of one subtitle side by side, where none names the subtitle as it is now. */
@@ -218,21 +231,21 @@ export function compareVersions(
   left: string | null,
   right: string | null,
 ): Promise<ComparedRow[]> {
-  return invoke<ComparedRow[]>("compare_versions", { language, left, right });
+  return commands.compareVersions(language as Language | null, left, right);
 }
 
 export type Restoration = bindings.Restoration;
 
 export function restoreVersion(
   language: string | null,
-  backup: string | undefined,
+  backup: string,
 ): Promise<Restoration> {
-  return invoke<Restoration>("restore_version", { language, backup });
+  return commands.restoreVersion(language as Language | null, backup);
 }
 
 /** The cues of the Current Resource's translation into `language`, as its file is written. */
 export function translationCues(language: string): Promise<ComparedCue[]> {
-  return invoke<ComparedCue[]>("translation_cues", { language });
+  return commands.translationCues(language as Language);
 }
 
 export type RevertPart = bindings.RevertPart;
@@ -244,7 +257,7 @@ export function revertRow(
   row: number,
   part: RevertPart,
 ): Promise<Restoration> {
-  return invoke<Restoration>("revert_row", { language, backup, row, part });
+  return commands.revertRow(language as Language | null, backup, row, part);
 }
 
 export type GlossaryRow = bindings.GlossaryRow;
@@ -252,9 +265,11 @@ export type GlossaryRow = bindings.GlossaryRow;
 export type GlossaryTable = bindings.GlossaryTable;
 
 export function translationGlossaryTable(): Promise<GlossaryTable> {
-  return invoke<GlossaryTable>("translation_glossary_table");
+  return commands.translationGlossaryTable();
 }
 
-export function saveTranslationGlossary(rows: GlossaryRow[]): Promise<void> {
-  return invoke("save_translation_glossary", { rows });
+export async function saveTranslationGlossary(
+  rows: GlossaryRow[],
+): Promise<void> {
+  await commands.saveTranslationGlossary(rows);
 }

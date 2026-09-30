@@ -306,7 +306,7 @@ export default class VersionsController extends Controller {
     try {
       restoration = await restoreVersion(
         this.shownLanguage(),
-        (currentTarget as HTMLElement).dataset.file,
+        (currentTarget as HTMLElement).dataset.file!,
       );
     } catch (error) {
       notifyFailure(t("versions.notRestored"), error);

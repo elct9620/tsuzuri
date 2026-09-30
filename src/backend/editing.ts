@@ -3,8 +3,6 @@
  * editing session writes through, and the Project turned into the Transcript the editor edits.
  */
 
-import { invoke } from "@tauri-apps/api/core";
-
 import type {
   EditingPort,
   Segment as EditorSegment,
@@ -12,6 +10,7 @@ import type {
 } from "../editor";
 import type { ProjectView, Segment } from "./project";
 import type * as bindings from "./bindings";
+import { commands } from "./bindings";
 
 export type SegmentField = bindings.SegmentField;
 
@@ -26,21 +25,27 @@ export function findText(
   field: "text" | "translation",
   search: Search,
 ): Promise<TextMatch[]> {
-  return invoke<TextMatch[]>("find_text", { field, search });
+  return commands.findText(field, search);
 }
 
 export const editingPort: EditingPort = {
-  editSegment: (index, field: SegmentField, value) =>
-    invoke("edit_segment", { index, field, value }),
-  setSpeakers: (indexes, speaker) =>
-    invoke("set_speakers", { indexes, speaker }),
-  changeSegments: (change: SegmentChange) =>
-    invoke("change_segments", { change }),
-  replaceText: (field, replacement) =>
-    invoke<number>("replace_text", { field, replacement }),
-  cleanSimplified: (scope) => invoke<number>("clean_simplified", { scope }),
-  undo: () => invoke("undo"),
-  redo: () => invoke("redo"),
+  editSegment: async (index, field: SegmentField, value) => {
+    await commands.editSegment(index, field, value);
+  },
+  setSpeakers: async (indexes, speaker) => {
+    await commands.setSpeakers(indexes, speaker);
+  },
+  changeSegments: async (change: SegmentChange) => {
+    await commands.changeSegments(change);
+  },
+  replaceText: (field, replacement) => commands.replaceText(field, replacement),
+  cleanSimplified: (scope) => commands.cleanSimplified(scope),
+  undo: async () => {
+    await commands.undo();
+  },
+  redo: async () => {
+    await commands.redo();
+  },
 };
 
 function editorSegment({

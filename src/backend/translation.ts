@@ -1,6 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
-
 import type * as bindings from "./bindings";
+import type { Language } from "./project";
+import { commands } from "./bindings";
 
 export type TranslationOptions = bindings.TranslationOptions;
 
@@ -14,7 +14,7 @@ export function translate(
   target: string,
   options: TranslationOptions,
 ): Promise<Translation> {
-  return invoke<Translation>("translate", { target, options });
+  return commands.translate(target as Language, options);
 }
 
 /** Translates the Segments at `indexes` again into the translation shown with `options`, save the Rolling Summary, as one change. */
@@ -22,7 +22,7 @@ export function retranslate(
   indexes: number[],
   options: TranslationOptions,
 ): Promise<Translation> {
-  return invoke<Translation>("retranslate", { indexes, options });
+  return commands.retranslate(indexes, options);
 }
 
 /** Translates the whole Current Resource into `target`, or with `indexes` the Segments at them again into the translation shown. */
@@ -37,11 +37,13 @@ export function translateSegments(
 }
 
 export function translationSettings(): Promise<TranslationSettings> {
-  return invoke<TranslationSettings>("translation_settings");
+  return commands.translationSettings() as Promise<TranslationSettings>;
 }
 
 export function saveTranslationSettings(
   settings: TranslationSettings,
 ): Promise<TranslationSettings> {
-  return invoke<TranslationSettings>("save_translation_settings", { settings });
+  return commands.saveTranslationSettings(
+    settings,
+  ) as Promise<TranslationSettings>;
 }

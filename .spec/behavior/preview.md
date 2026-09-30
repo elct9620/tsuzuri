@@ -720,6 +720,16 @@ Playing alone keeps to the Segment chosen, so the media never plays past a Curre
 | When | the wheel turns up with Alt held, as far as zooming by two takes |
 | Then | the timeline shows 200 pixels a second |
 
+## `PV-188` Zooming the timeline with ⌘ and the wheel
+
+The shortcut list names ⌘ on macOS where it names Ctrl elsewhere; the wheel itself zooms under Ctrl, Alt or ⌘ on every platform, since a trackpad pinch reports itself as Ctrl wherever it is made.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second |
+| When | the wheel turns up with ⌘ held, as far as zooming by two takes |
+| Then | the timeline shows 200 pixels a second |
+
 ## `PV-041` Showing how far the timeline is zoomed
 
 | Step | Statement |

@@ -142,6 +142,8 @@ export const SHORTCUTS = [
     mac: ["meta+drag"],
     other: ["ctrl+drag"],
   },
+  // The wheel zooms under Ctrl, Alt or ⌘ on every platform, a trackpad pinch reporting itself as
+  // Ctrl; each platform is shown its own command key, and Alt as Subtitle Edit zooms
   {
     id: "zoom",
     group: "mouse",

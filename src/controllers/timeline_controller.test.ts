@@ -354,6 +354,20 @@ describe("TimelineController", () => {
     expect(wrapper().style.width).toBe("400px");
   });
 
+  // @behavior PV-188
+  it("zooms in as the wheel turns up with ⌘ held", async () => {
+    await show(projectWithMedia());
+    const turn = new WheelEvent("wheel", { deltaY: -200 * Math.log(2) });
+    // happy-dom's WheelEvent is not a MouseEvent, so it keeps no modifier keys.
+    Object.defineProperty(turn, "metaKey", { value: true });
+
+    document
+      .querySelector('[data-timeline-target="waveform"]')!
+      .dispatchEvent(turn);
+
+    expect(wrapper().style.width).toBe("400px");
+  });
+
   // @behavior PV-041
   it("reads the zoom level as a percentage of where it starts", async () => {
     await show(projectWithMedia());

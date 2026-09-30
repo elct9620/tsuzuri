@@ -71,6 +71,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | serde 序列化的欄位 | TypeScript 介面照 Rust 欄位名，例如 `start_ms` |
 | 外部程式的 JSON | 照原樣，例如 llama-server 的 `failed` |
 | 對應的 Rust 型別 | `ComponentStatus`、`ProjectView`、`SegmentField` |
+| Tauri Specta 的 bindings | `commands.componentStatuses`、`ProjectView_Serialize` |
 | 測試 | 描述行為的句子，Rust 與 `it()` 皆同 |
 
 ### 1.5 加入名稱之前

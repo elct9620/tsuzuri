@@ -5,3 +5,5 @@
 !/index.html
 !/vite.config.ts
 !/tsconfig.json
+# Generated from the Rust commands and events; see src-tauri/src/bindings.rs.
+/src/backend/bindings.ts

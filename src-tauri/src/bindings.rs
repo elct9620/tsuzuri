@@ -97,21 +97,40 @@ pub fn events() -> Events {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::path::Path;
+
     use specta_typescript::Typescript;
 
     fn exported_bindings(name: &str) -> String {
         let path = std::env::temp_dir().join(format!("tsuzuri-{name}.ts"));
         super::builder()
-            .export(Typescript::default(), &path)
+            .export(
+                Typescript::default().header(
+                    "// Generated from the Rust commands and events by `cargo test bindings`; change those instead.",
+                ),
+                &path,
+            )
             .expect("the bindings export");
-        std::fs::read_to_string(path).unwrap()
+        fs::read_to_string(path).unwrap()
     }
 
+    // The webview is type-checked against the committed file, so a change to a command or an event
+    // rewrites it here and fails once, leaving the new file to commit.
     #[test]
-    fn exports_the_typescript_bindings() {
-        let bindings = exported_bindings("exports");
+    fn keeps_the_webview_bindings_current() {
+        let bindings = exported_bindings("current");
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/backend/bindings.ts");
+        let committed = fs::read_to_string(&path).unwrap_or_default();
 
-        assert!(bindings.contains("export const commands"));
+        if committed != bindings {
+            fs::write(&path, &bindings).unwrap();
+        }
+
+        assert!(
+            committed == bindings,
+            "src/backend/bindings.ts was out of date and is now rewritten; commit it"
+        );
     }
 
     #[test]

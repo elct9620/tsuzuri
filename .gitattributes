@@ -1,2 +1,4 @@
 # Shell scripts run under bash on every platform, including MSYS2 on Windows.
 *.sh text eol=lf
+# The bindings test compares the generated file byte for byte on every platform.
+src/backend/bindings.ts text eol=lf

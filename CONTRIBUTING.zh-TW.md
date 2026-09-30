@@ -14,6 +14,8 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # 對照 .spec/ 檢查程式碼
 ```
 
+webview 的 `src/backend/bindings.ts` 由 Rust 的指令與事件生成：改動其中之一時，`cargo test` 會改寫它並失敗一次，改寫後的檔案和改動一起 commit。
+
 ## 元件
 
 ```bash

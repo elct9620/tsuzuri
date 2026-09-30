@@ -98,7 +98,7 @@ pub fn components() -> Vec<Component> {
     ]
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "kebab-case")]
 pub enum Origin {
     Choice,
@@ -107,7 +107,7 @@ pub enum Origin {
 }
 
 /// Why a Component is not ready.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "kebab-case")]
 pub enum Problem {
     NotInstalled,
@@ -115,7 +115,7 @@ pub enum Problem {
     DoesNotRun,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct ComponentStatus {
     name: String,
     is_ready: bool,
@@ -286,7 +286,7 @@ pub async fn find_statuses_off_the_main_thread(
     Ok(tokio::task::spawn_blocking(move || find_statuses(&resolver)).await?)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum ModelSlot {
     Transcription,
@@ -360,7 +360,7 @@ impl fmt::Display for ModelError {
 
 impl std::error::Error for ModelError {}
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct SlotView {
     source: Option<ModelSource>,
     /// Where the Model is expected.
@@ -371,7 +371,7 @@ pub struct SlotView {
     preset_index: Option<usize>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct ModelSettingsView {
     transcription: SlotView,
     vad: SlotView,

@@ -21,7 +21,7 @@ mod whisper;
 use settings::TranscriptionSettings;
 use whisper::TranscriptionPlan;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct Transcription {
     audio_seconds: f64,
     transcribe_seconds: f64,

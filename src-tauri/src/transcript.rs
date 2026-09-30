@@ -3,7 +3,7 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct Segment {
     pub start_ms: u64,
     pub end_ms: u64,
@@ -16,7 +16,7 @@ pub struct Segment {
 }
 
 /// Which text each cue of an SRT, or each block of a Plain Text, carries.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum WrittenText {
     Original,

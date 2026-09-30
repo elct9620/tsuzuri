@@ -5,7 +5,7 @@ use std::fmt;
 use serde::Serialize;
 
 /// One timed part of a Mode's run, named in `pipeline-progress`, in the seconds each took and in the log.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 pub enum Phase {
     #[serde(rename = "prepare")]
     Preparation,
@@ -34,7 +34,7 @@ impl fmt::Display for Phase {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
 pub struct PhaseTiming {
     pub phase: Phase,
     pub seconds: f64,

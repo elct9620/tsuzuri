@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// A language Tsuzuri transcribes from or translates into; the webview sends only its code.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub enum Language {
     #[serde(rename = "zh-TW")]
     TraditionalChinese,

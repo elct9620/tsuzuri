@@ -36,7 +36,7 @@ pub use settings::TranslationSettings;
 use speaker_labels::LabelledText;
 
 /// The choices the Translate panel offers for one translation.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(default)]
 pub struct TranslationOptions {
     has_speaker_labels: bool,
@@ -114,7 +114,7 @@ impl TranslationJob<'_> {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct Translation {
     phases: Vec<PhaseTiming>,
     /// How many Segments of the original, retimed while it was translated, find no cue at their

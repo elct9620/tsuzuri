@@ -13,7 +13,7 @@ const PEAKS_PER_SECOND: u32 = 100;
 const SAMPLES_PER_PEAK: usize = (SAMPLE_RATE / PEAKS_PER_SECOND) as usize;
 
 /// How loud a media file is over time, one Peak for each `1 / peaks_per_second` of it.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
 pub struct Waveform {
     /// The media file it was taken from, so an answer for a Resource no longer current is told apart.
     pub media: PathBuf,

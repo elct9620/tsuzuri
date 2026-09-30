@@ -10,7 +10,7 @@ const INSERTED_MS: u64 = 2_000;
 /// Segments may overlap, as when someone cuts in, but keep the order they start in: a Segment a
 /// change makes takes its place by its start, and a change that would start one before the
 /// Segment before it or after the one after it is refused.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum SegmentChange {
     Times {

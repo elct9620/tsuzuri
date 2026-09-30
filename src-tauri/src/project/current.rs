@@ -964,7 +964,7 @@ fn resource_by_name<'a>(resources: &'a [Resource], name: &str) -> Option<&'a Res
 }
 
 /// A Resource as the Resource list shows it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct ResourceView {
     name: String,
     has_media: bool,
@@ -972,7 +972,7 @@ pub struct ResourceView {
     translation_languages: Vec<Language>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct ProjectView {
     directory: PathBuf,
     name: String,

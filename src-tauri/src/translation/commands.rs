@@ -16,6 +16,7 @@ use crate::timing::{Phase, Phases};
 use crate::toolchain::{self, settings, ModelSlot};
 
 #[tauri::command]
+#[specta::specta]
 pub async fn translate(
     app: AppHandle,
     target: Language,
@@ -25,6 +26,7 @@ pub async fn translate(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn retranslate(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -97,6 +99,7 @@ async fn run_translation(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failure> {
     Ok(TranslationSettings::load(&json_settings::settings_dir(
         &app,
@@ -105,6 +108,7 @@ pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failu
 
 /// Saves the settings, stopping the Resident llama-server when it is turned off and starting it when turned on.
 #[tauri::command]
+#[specta::specta]
 pub async fn save_translation_settings(
     app: AppHandle,
     mode_lock: State<'_, ModeLock>,

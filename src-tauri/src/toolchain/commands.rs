@@ -14,6 +14,7 @@ use crate::json_settings::settings_dir;
 use crate::model_source::ModelSource;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, Failure> {
     find_statuses_off_the_main_thread(settings::resolver(&app)?).await
 }
@@ -30,6 +31,7 @@ async fn change_choices(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn choose_component(
     app: AppHandle,
     name: String,
@@ -39,6 +41,7 @@ pub async fn choose_component(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn forget_component(
     app: AppHandle,
     name: String,
@@ -47,11 +50,13 @@ pub async fn forget_component(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, Failure> {
     Ok(load_settings(&app)?.view())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn choose_model(
     app: AppHandle,
     slot: ModelSlot,
@@ -64,6 +69,7 @@ pub fn choose_model(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn download_model(
     app: AppHandle,
     downloads: State<'_, ModelDownloads>,
@@ -82,11 +88,13 @@ pub async fn download_model(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn cancel_model_download(downloads: State<'_, ModelDownloads>, repo: String, file: String) {
     downloads.cancel(&repo, &file);
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn repository_files(
     app: AppHandle,
     repo: String,
@@ -106,6 +114,7 @@ fn slot_model_files(slot: ModelSlot, mut files: Vec<RepositoryFile>) -> Vec<Repo
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn preset_models(slot: ModelSlot) -> Vec<PresetModel> {
     super::presets::slot_presets(slot)
 }

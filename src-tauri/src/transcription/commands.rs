@@ -14,6 +14,7 @@ use crate::toolchain::{self, settings};
 use crate::translation::ResidentLlama;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn transcribe(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -65,6 +66,7 @@ pub async fn transcribe(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn transcription_settings(app: AppHandle) -> Result<TranscriptionSettings, Failure> {
     Ok(TranscriptionSettings::load(&json_settings::settings_dir(
         &app,
@@ -72,6 +74,7 @@ pub fn transcription_settings(app: AppHandle) -> Result<TranscriptionSettings, F
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn save_transcription_settings(
     app: AppHandle,
     settings: TranscriptionSettings,

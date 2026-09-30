@@ -7,14 +7,14 @@ use crate::project::Backup;
 use crate::transcript::{Segment, Transcript};
 
 /// The Backups of one subtitle of the Current Resource: its original, or its translation into `language`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct SubtitleVersions {
     pub language: Option<Language>,
     pub backups: Vec<Backup>,
 }
 
 /// One cue of a Version as a Comparison Row shows it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct ComparedCue {
     pub start_ms: u64,
     pub end_ms: u64,
@@ -22,7 +22,7 @@ pub struct ComparedCue {
 }
 
 /// How the cues of a Comparison Row stand to each other.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "kebab-case")]
 pub enum RowKind {
     Pair,
@@ -33,7 +33,7 @@ pub enum RowKind {
 }
 
 /// The cues of two Versions that cover the same speech, and what changed between them.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct ComparedRow {
     pub kind: RowKind,
     pub left: Vec<ComparedCue>,
@@ -46,13 +46,13 @@ pub struct ComparedRow {
 }
 
 /// A run of characters of a Pair's text, and which Version has it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct TextSpan {
     pub kind: SpanKind,
     pub text: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "kebab-case")]
 pub enum SpanKind {
     Common,
@@ -80,7 +80,7 @@ pub fn compare(left: &Transcript, right: &Transcript) -> Vec<ComparedRow> {
 }
 
 /// Which part of a Comparison Row to take back.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(rename_all = "kebab-case")]
 pub enum RevertPart {
     Text,

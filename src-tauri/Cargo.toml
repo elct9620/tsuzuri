@@ -38,6 +38,9 @@ tauri-plugin-window-state = "2"
 tauri-plugin-updater = "2.13"
 hf-hub = "1.0.0"
 futures = "0.3"
+specta = { version = "=2.0.0-rc.25", features = ["derive"] }
+specta-typescript = "=0.0.12"
+tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
 tauri-plugin-single-instance = "2"
 
 

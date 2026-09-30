@@ -4,7 +4,7 @@ use super::ModelSlot;
 use crate::model_source::ModelSource;
 
 /// A Model Tsuzuri was verified with, offered by name so nobody has to know where to find it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct PresetModel {
     pub slot: ModelSlot,
     pub name: &'static str,

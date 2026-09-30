@@ -11,7 +11,7 @@ use crate::transcript::SrtError;
 
 /// Why a command did not finish. The webview words each code in the interface language,
 /// so a variant carries data rather than prose; `detail` is text a system or Component wrote.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(tag = "code", rename_all = "kebab-case")]
 pub enum Failure {
     /// Reading or writing a file failed.

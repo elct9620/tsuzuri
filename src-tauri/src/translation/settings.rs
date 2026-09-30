@@ -9,7 +9,7 @@ use crate::json_settings;
 const SETTINGS_FILE: &str = "translation.json";
 
 /// How a translation is batched and repaired, saved across launches.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(default)]
 pub struct TranslationSettings {
     /// Segments per Batch.

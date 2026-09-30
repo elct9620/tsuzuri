@@ -9,6 +9,7 @@ use crate::project::CurrentProject;
 use crate::toolchain::{self, settings};
 
 #[tauri::command]
+#[specta::specta]
 pub async fn extract_waveform(
     app: AppHandle,
     current: State<'_, CurrentProject>,

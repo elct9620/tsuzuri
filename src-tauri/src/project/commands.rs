@@ -24,6 +24,7 @@ use crate::toolchain::ModelSlot;
 use crate::transcript::WrittenText;
 
 #[tauri::command]
+#[specta::specta]
 pub fn open_project(
     app: AppHandle,
     mode_lock: State<'_, ModeLock>,
@@ -34,6 +35,7 @@ pub fn open_project(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn open_srt(
     app: AppHandle,
     mode_lock: State<'_, ModeLock>,
@@ -60,11 +62,13 @@ pub fn request_srt_argument<R: Runtime>(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn take_requested_srt(requested: State<'_, RequestedSrt>) -> Option<PathBuf> {
     requested.take()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn recent_projects(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -138,6 +142,7 @@ pub fn reload_if_changed<R: Runtime>(app: &AppHandle<R>) {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn select_resource(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -149,6 +154,7 @@ pub fn select_resource(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn show_translation(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -160,6 +166,7 @@ pub fn show_translation(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn reload_project(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
     let reload = current.reload()?;
     announce_reload(&app, reload);
@@ -167,6 +174,7 @@ pub fn reload_project(app: AppHandle, current: State<'_, CurrentProject>) -> Res
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn set_primary_language(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -178,6 +186,7 @@ pub fn set_primary_language(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn set_project_options(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -189,6 +198,7 @@ pub fn set_project_options(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView> {
     current.view().map(|view| {
         let presets = project_model_presets(&view.options().models);
@@ -211,6 +221,7 @@ fn project_model_presets(models: &ProjectModels) -> ProjectModelPresets {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn edit_segment(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -222,6 +233,7 @@ pub fn edit_segment(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn set_speakers(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -232,6 +244,7 @@ pub fn set_speakers(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn replace_text(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -242,6 +255,7 @@ pub fn replace_text(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn find_text(
     current: State<'_, CurrentProject>,
     field: SegmentField,
@@ -251,6 +265,7 @@ pub fn find_text(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn clean_simplified(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -260,6 +275,7 @@ pub fn clean_simplified(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn change_segments(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -269,6 +285,7 @@ pub fn change_segments(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn translation_cues(
     current: State<'_, CurrentProject>,
     language: Language,
@@ -277,6 +294,7 @@ pub fn translation_cues(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn revert_row(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -289,16 +307,19 @@ pub fn revert_row(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn undo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
     announce_after(&app, current.undo())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn redo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
     announce_after(&app, current.redo())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn export_path(
     current: State<'_, CurrentProject>,
     content: WrittenText,
@@ -308,6 +329,7 @@ pub fn export_path(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn save_srt(
     current: State<'_, CurrentProject>,
     path: PathBuf,
@@ -317,6 +339,7 @@ pub fn save_srt(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn save_text(
     current: State<'_, CurrentProject>,
     path: PathBuf,
@@ -328,6 +351,7 @@ pub fn save_text(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn subtitle_versions(
     current: State<'_, CurrentProject>,
 ) -> Result<Vec<SubtitleVersions>, Failure> {
@@ -335,6 +359,7 @@ pub fn subtitle_versions(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn compare_versions(
     current: State<'_, CurrentProject>,
     language: Option<Language>,
@@ -348,6 +373,7 @@ pub fn compare_versions(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn restore_version(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -358,6 +384,7 @@ pub fn restore_version(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn translation_glossary_table(
     current: State<'_, CurrentProject>,
 ) -> Result<GlossaryTable, Failure> {
@@ -365,6 +392,7 @@ pub fn translation_glossary_table(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn save_translation_glossary(
     app: AppHandle,
     current: State<'_, CurrentProject>,

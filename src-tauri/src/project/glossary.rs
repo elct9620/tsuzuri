@@ -24,7 +24,7 @@ pub struct TranslationGlossary {
 
 /// What the webview shows of a Translation Glossary: the file it came from, how many terms it
 /// holds, and the Speakers it names in the Primary Language.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct TranslationGlossaryView {
     file: PathBuf,
     term_count: usize,
@@ -32,14 +32,14 @@ pub struct TranslationGlossaryView {
 }
 
 /// One term: its word in each Language, and whether it names a Speaker.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct GlossaryRow {
     pub words: Vec<String>,
     pub is_speaker: bool,
 }
 
 /// A Translation Glossary laid out for editing: a column for every Language and a row per term.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct GlossaryTable {
     languages: Vec<Language>,
     rows: Vec<GlossaryRow>,

@@ -37,6 +37,7 @@ impl fmt::Display for Phase {
 #[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
 pub struct PhaseTiming {
     pub phase: Phase,
+    #[specta(type = specta_typescript::Number)]
     pub seconds: f64,
 }
 

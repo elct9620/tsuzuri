@@ -9,9 +9,11 @@ pub struct Segment {
     pub end_ms: u64,
     /// Who says it, written as a Speaker Label before its text and its translation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[specta(type = String)]
     pub speaker: Option<String>,
     pub text: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[specta(type = String)]
     pub translation: Option<String>,
 }
 

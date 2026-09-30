@@ -82,12 +82,36 @@ pub fn builder() -> Builder<tauri::Wry> {
 mod tests {
     use specta_typescript::Typescript;
 
+    fn exported_bindings(name: &str) -> String {
+        let path = std::env::temp_dir().join(format!("tsuzuri-{name}.ts"));
+        super::builder()
+            .export(Typescript::default(), &path)
+            .expect("the bindings export");
+        std::fs::read_to_string(path).unwrap()
+    }
+
     #[test]
     fn exports_the_typescript_bindings() {
-        let path = std::env::temp_dir().join("tsuzuri-bindings-export.ts");
+        let bindings = exported_bindings("exports");
 
-        let result = super::builder().export(Typescript::default(), &path);
+        assert!(bindings.contains("export const commands"));
+    }
 
-        assert!(result.is_ok(), "{result:?}");
+    #[test]
+    fn types_fields_as_rust_sends_them() {
+        let bindings = exported_bindings("fields");
+
+        assert_eq!(
+            [
+                "\tpeaks: number[],",
+                "\tseconds: number,",
+                "\taudio_seconds: number,",
+                "\ttranscribe_seconds: number,",
+                "\tspeaker?: string,",
+                "\ttranslation?: string,",
+            ]
+            .map(|field| bindings.contains(field)),
+            [true; 6]
+        );
     }
 }

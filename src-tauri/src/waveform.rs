@@ -18,6 +18,7 @@ pub struct Waveform {
     /// The media file it was taken from, so an answer for a Resource no longer current is told apart.
     pub media: PathBuf,
     pub peaks_per_second: u32,
+    #[specta(type = Vec<specta_typescript::Number>)]
     pub peaks: Vec<f32>,
 }
 

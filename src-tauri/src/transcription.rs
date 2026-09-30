@@ -23,7 +23,9 @@ use whisper::TranscriptionPlan;
 
 #[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct Transcription {
+    #[specta(type = specta_typescript::Number)]
     audio_seconds: f64,
+    #[specta(type = specta_typescript::Number)]
     transcribe_seconds: f64,
     phases: Vec<PhaseTiming>,
     /// The positions of the Segments written within an Audio Window, none for the whole media file.

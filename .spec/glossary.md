@@ -256,7 +256,7 @@ Voice activity detection: whisper-cli finds where speech is with the VAD Model a
 
 ### Step
 
-One Component run inside a Mode: convert (ffmpeg), transcribe (whisper-cli) or translate (llama-server). A Step starts only after the previous Step's process has exited, so two Models are never loaded at once.
+One run of a Component. A Mode runs its Steps one after another, so only one Model is loaded at a time.
 
 ### Phase
 

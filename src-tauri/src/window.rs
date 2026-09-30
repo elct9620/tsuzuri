@@ -11,6 +11,9 @@ use tauri_specta::Event;
 
 use crate::json_settings;
 
+/// The label of the main window, as `tauri.conf.json` names it.
+const MAIN_WINDOW: &str = "main";
+
 /// The label of the window the main window's page opens for the Preview's video.
 pub const VIDEO_WINDOW: &str = "video";
 
@@ -39,7 +42,7 @@ pub fn size_first_window(app: &App) -> tauri::Result<()> {
     if saved_state.exists() {
         return Ok(());
     }
-    let Some(window) = app.get_webview_window("main") else {
+    let Some(window) = app.get_webview_window(MAIN_WINDOW) else {
         return Ok(());
     };
     let work_area = window
@@ -51,7 +54,7 @@ pub fn size_first_window(app: &App) -> tauri::Result<()> {
 
 /// Shows the main window in front, as when a second launch hands its request over to it.
 pub fn bring_main_window_forward<R: Runtime>(app: &AppHandle<R>) {
-    if let Some(window) = app.get_webview_window("main") {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
         let _ = window.unminimize();
         let _ = window.set_focus();
     }
@@ -65,7 +68,7 @@ pub fn build_main_window(app: &App) -> tauri::Result<WebviewWindow> {
         .app
         .windows
         .iter()
-        .find(|window| window.label == "main")
+        .find(|window| window.label == MAIN_WINDOW)
         .ok_or(tauri::Error::WindowNotFound)?;
     let handle = app.handle().clone();
     WebviewWindowBuilder::from_config(app.handle(), config)?
@@ -200,7 +203,7 @@ pub fn hand_back_video<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
 
 /// Closes the Video Window along with the main window, which no longer moves its video back.
 pub fn close_video_with_main<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
-    if let ("main", WindowEvent::Destroyed) = (window.label(), event) {
+    if let (MAIN_WINDOW, WindowEvent::Destroyed) = (window.label(), event) {
         if let Some(video) = window.app_handle().get_webview_window(VIDEO_WINDOW) {
             let _ = video.destroy();
         }

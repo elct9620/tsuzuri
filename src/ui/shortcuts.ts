@@ -183,7 +183,7 @@ const OTHER_LABELS: Record<string, string> = {
 };
 
 /** The keys and mouse actions written as words of the Interface Language. */
-const WORDS = ["space", "click", "drag", "wheel"];
+const WORDS = ["space", "click", "dblclick", "drag", "wheel"];
 
 const MODIFIERS = ["meta", "ctrl", "alt", "shift"] as const;
 

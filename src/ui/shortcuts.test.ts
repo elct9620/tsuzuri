@@ -106,6 +106,10 @@ describe("shortcuts", () => {
     expect(formatChord("meta+wheel", true)).toBe("⌘+滾輪");
   });
 
+  it("writes a double click as a word of the Interface Language", () => {
+    expect(formatChord("dblclick", false)).toBe("點兩下");
+  });
+
   it("writes a chord with words joined by + elsewhere", () => {
     expect(formatChord("ctrl+alt+enter", false)).toBe("Ctrl+Alt+Enter");
   });

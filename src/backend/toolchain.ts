@@ -1,18 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
+import type * as bindings from "./bindings";
 
-/** Where a ready Component was found. */
-export type Origin = "choice" | "detection" | "bundled-variant";
+export type Origin = bindings.Origin;
 
-export interface ComponentStatus {
-  name: string;
-  is_ready: boolean;
-  path: string | null;
-  origin: Origin | null;
-  variant: string | null;
-  problem: "not-installed" | "does-not-run" | null;
-  /** The command that installs it, where the platform has one to name. */
-  install: string | null;
-}
+export type ComponentStatus = bindings.ComponentStatus;
 
 export function componentStatuses(): Promise<ComponentStatus[]> {
   return invoke<ComponentStatus[]>("component_statuses");
@@ -29,25 +20,13 @@ export function forgetComponent(name: string): Promise<ComponentStatus[]> {
   return invoke<ComponentStatus[]>("forget_component", { name });
 }
 
-export type ModelSlot = "transcription" | "vad" | "translation";
+export type ModelSlot = bindings.ModelSlot;
 
-/** Where a Model Slot's Model comes from. */
-export type ModelSource =
-  | { kind: "file"; path: string }
-  | { kind: "repository"; repo: string; file: string; commit: string };
+export type ModelSource = bindings.ModelSource;
 
-export interface SlotView {
-  source: ModelSource | null;
-  /** Where the Model is expected. */
-  path: string | null;
-  has_file: boolean;
-  /** The file extensions a Model for the slot has. */
-  extensions: string[];
-  /** Which of the slot's Preset Models the Model is, as its place among them. */
-  preset_index: number | null;
-}
+export type SlotView = bindings.SlotView;
 
-export type ModelSettingsView = Record<ModelSlot, SlotView>;
+export type ModelSettingsView = bindings.ModelSettingsView;
 
 export function modelSettings(): Promise<ModelSettingsView> {
   return invoke<ModelSettingsView>("model_settings");
@@ -60,27 +39,14 @@ export function chooseModel(
   return invoke<ModelSettingsView>("choose_model", { slot, source });
 }
 
-/** A Model Tsuzuri was verified with, offered by name so nobody has to know where to find it. */
-export interface PresetModel {
-  slot: ModelSlot;
-  name: string;
-  quantization: string;
-  source: ModelSource;
-  size: number;
-}
+export type PresetModel = bindings.PresetModel;
 
 /** The Preset Models of `slot`, in the order the settings offer them. */
 export function presetModels(slot: ModelSlot): Promise<PresetModel[]> {
   return invoke<PresetModel[]>("preset_models", { slot });
 }
 
-/** How much of a Model being downloaded has arrived, as `model-download-progress` tells it. */
-export interface DownloadProgress {
-  repo: string;
-  file: string;
-  downloaded: number;
-  total: number | null;
-}
+export type DownloadProgress = bindings.DownloadProgress;
 
 /** Downloads `file` of `repo` into the Hugging Face Cache, at the main branch when no `revision` is given. */
 export function downloadModel(
@@ -91,11 +57,7 @@ export function downloadModel(
   return invoke<ModelSource>("download_model", { repo, file, revision });
 }
 
-/** A file of a Hugging Face Repository, by its path in the Repository. */
-export interface RepositoryFile {
-  path: string;
-  size: number;
-}
+export type RepositoryFile = bindings.RepositoryFile;
 
 /** The files of `repo` at its main branch a Model for `slot` can be. */
 export function repositoryFiles(

@@ -367,14 +367,14 @@ export type PipelineProgress = PipelineProgress_Serialize | PipelineProgress_Des
 export type PipelineProgress_Deserialize = {
 	phase: Phase,
 	percent: number | null,
-	count: Count | null,
+	count: Count,
 };
 
 /**  Sent as each Phase starts and as its percentage changes; a Phase that cannot tell how far along it is has no percentage. */
 export type PipelineProgress_Serialize = {
 	phase: Phase,
 	percent: number | null,
-	count?: Count | null,
+	count?: Count,
 };
 
 /**  A Model Tsuzuri was verified with, offered by name so nobody has to know where to find it. */
@@ -687,10 +687,10 @@ export type Transcription = {
 
 /**  The Transcription Settings a Project sets for itself; one left `None` follows the general settings. */
 export type TranscriptionOverrides = {
-	has_vad?: boolean | null,
-	is_non_speech_suppressed?: boolean | null,
-	is_context_carried?: boolean | null,
-	is_simplified_cleaned?: boolean | null,
+	has_vad: boolean | null,
+	is_non_speech_suppressed: boolean | null,
+	is_context_carried: boolean | null,
+	is_simplified_cleaned: boolean | null,
 };
 
 /**

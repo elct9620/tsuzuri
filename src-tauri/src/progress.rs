@@ -25,6 +25,7 @@ pub struct PipelineProgress {
     phase: Phase,
     percent: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[specta(type = Count)]
     count: Option<Count>,
 }
 

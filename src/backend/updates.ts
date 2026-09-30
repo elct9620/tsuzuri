@@ -1,26 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
+import type * as bindings from "./bindings";
 
-/** A release of Tsuzuri newer than the running one, with its Release Name. */
-export interface AppUpdate {
-  release_number: string;
-  release_name: string;
-  is_preview_build: boolean;
-}
+export type AppUpdate = bindings.AppUpdate;
 
-/** Where Tsuzuri looks for an App Update. */
-export type UpdateChannel = "stable" | "preview";
+export type UpdateChannel = bindings.UpdateChannel;
 
-/** Whether Tsuzuri looks for an App Update at launch, and in which Update Channel. */
-export interface UpdateSettings {
-  has_launch_check: boolean;
-  channel: UpdateChannel;
-}
+export type UpdateSettings = bindings.UpdateSettings;
 
-/** How much of the App Update being installed has downloaded, in bytes; the total when the release names it. */
-export interface UpdateProgress {
-  downloaded: number;
-  total: number | null;
-}
+export type UpdateProgress = bindings.UpdateProgress;
 
 /** Looks for an App Update, failing when the releases cannot be read. */
 export function checkForUpdate(): Promise<AppUpdate | null> {

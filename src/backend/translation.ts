@@ -1,31 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import type { PhaseTiming } from "./progress";
+import type * as bindings from "./bindings";
 
-/** The choices a translation is started with, named as Rust names them. */
-export interface TranslationOptions {
-  has_self_review: boolean;
-  summary_word_limit: number | null;
-  /** Whether a Simplified Cleanup follows a translation into `zh-TW`. */
-  is_simplified_cleaned: boolean;
-}
+export type TranslationOptions = bindings.TranslationOptions;
 
-/** How a translation is batched and repaired, as Rust saves it. */
-export interface TranslationSettings {
-  batch_size: number;
-  retries: number;
-  reference_lines: number;
-  has_resident_llama: boolean;
-  model_keep_seconds: number;
-  /** Whether a Simplified Cleanup follows a translation into `zh-TW`. */
-  is_simplified_cleaned: boolean;
-}
+/** Rust sends every field; only a saved file read back may leave one out. */
+export type TranslationSettings = Required<bindings.TranslationSettings>;
 
-export interface Translation {
-  phases: PhaseTiming[];
-  /** How many Segments of the original, retimed while it was translated, find no cue at their times. */
-  unmatched_count: number;
-}
+export type Translation = bindings.Translation;
 
 /** Translates the Current Resource from the Primary Language; the translations land in the Project, not in the answer. */
 export function translate(

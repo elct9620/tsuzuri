@@ -145,9 +145,10 @@ mod tests {
                 "\ttranscribe_seconds: number,",
                 "\tspeaker?: string,",
                 "\ttranslation?: string,",
+                "\tcount?: Count,",
             ]
             .map(|field| bindings.contains(field)),
-            [true; 6]
+            [true; 7]
         );
     }
 

@@ -254,7 +254,9 @@ export default class SpeakersController extends Controller {
   private async addSpeaker(name: string): Promise<void> {
     try {
       const table = await translationGlossaryTable();
-      const column = table.languages.indexOf(this.project?.language ?? "");
+      const column = this.project
+        ? table.languages.indexOf(this.project.language)
+        : -1;
       const term = table.rows.find((row) => row.words[column] === name);
       const rows = term
         ? table.rows.map((row) =>

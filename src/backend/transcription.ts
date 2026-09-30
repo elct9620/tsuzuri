@@ -1,21 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import type { PhaseTiming } from "./progress";
-import type { SegmentSpan } from "./project";
+import type * as bindings from "./bindings";
 
-export interface Transcription {
-  audio_seconds: number;
-  transcribe_seconds: number;
-  phases: PhaseTiming[];
-  /** The positions of the Segments written within an Audio Window, none for the whole media file. */
-  written_span: SegmentSpan | null;
-}
+export type Transcription = bindings.Transcription;
 
-/** Which Segments a transcription replaces, by the positions the Current Resource shows. */
-export type TranscriptionScope =
-  | { kind: "whole" }
-  | { kind: "rest"; first: number }
-  | ({ kind: "span" } & SegmentSpan);
+export type TranscriptionScope = bindings.TranscriptionScope;
 
 /** Transcribes the Current Resource's media file within `scope`, over its original subtitle only when `overwrite`. */
 export function transcribe(
@@ -25,15 +14,8 @@ export function transcribe(
   return invoke<Transcription>("transcribe", { overwrite, scope });
 }
 
-/** How a transcription runs beyond the Language and the Model. */
-export interface TranscriptionSettings {
-  has_vad: boolean;
-  is_non_speech_suppressed: boolean;
-  /** Whether each window carries the text before it as context. */
-  is_context_carried: boolean;
-  /** Whether a Simplified Cleanup follows a transcription in `zh-TW`. */
-  is_simplified_cleaned: boolean;
-}
+/** Rust sends every field; only a saved file read back may leave one out. */
+export type TranscriptionSettings = Required<bindings.TranscriptionSettings>;
 
 export function transcriptionSettings(): Promise<TranscriptionSettings> {
   return invoke<TranscriptionSettings>("transcription_settings");

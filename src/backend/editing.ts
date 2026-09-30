@@ -11,34 +11,15 @@ import type {
   TranscriptView,
 } from "../editor";
 import type { ProjectView, Segment } from "./project";
+import type * as bindings from "./bindings";
 
-/** Which text of a Segment an edit replaces. */
-export type SegmentField = "text" | "translation" | "speaker";
+export type SegmentField = bindings.SegmentField;
 
-/** A change to the Segments themselves, named as Rust names it. */
-export type SegmentChange =
-  | { kind: "times"; index: number; start_ms: number; end_ms: number }
-  | { kind: "boundary"; index: number; at_ms: number }
-  | { kind: "insertion"; start_ms: number; end_ms: number }
-  | { kind: "insertion-before"; index: number }
-  | { kind: "insertion-after"; index: number }
-  | { kind: "deletion"; indexes: number[] }
-  | { kind: "split"; index: number; at: number }
-  | { kind: "merge"; first: number; last: number }
-  | { kind: "shift"; first: number; last: number; offset_ms: number };
+export type SegmentChange = bindings.SegmentChange;
 
-/** What to look for in the texts, read as a replacement's pattern is. */
-export interface Search {
-  pattern: string;
-  is_regex: boolean;
-}
+export type Search = bindings.Search;
 
-/** Where a Search matches: characters `start` to `end` of the Segment at `index`. */
-export interface TextMatch {
-  index: number;
-  start: number;
-  end: number;
-}
+export type TextMatch = bindings.TextMatch;
 
 /** Where `search` matches `field` of each Segment of the Current Resource, in order. */
 export function findText(

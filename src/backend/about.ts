@@ -1,13 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
+import type * as bindings from "./bindings";
 
-/** The release number of the running Tsuzuri with its Release Name, whether it is a Preview build, whether its install offers the Preview channel, and the commit it was built from. */
-export interface AppBuild {
-  release_number: string;
-  release_name: string;
-  is_preview_build: boolean;
-  has_preview_channel: boolean;
-  commit: string;
-}
+export type AppBuild = bindings.AppBuild;
 
 export function appBuild(): Promise<AppBuild> {
   return invoke<AppBuild>("app_build");

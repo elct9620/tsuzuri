@@ -524,7 +524,6 @@ pub struct ProjectModelPresets {
 
 /// The Transcription Settings a Project sets for itself; one left `None` follows the general settings.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
-#[serde(default)]
 pub struct TranscriptionOverrides {
     pub has_vad: Option<bool>,
     pub is_non_speech_suppressed: Option<bool>,

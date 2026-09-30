@@ -805,6 +805,26 @@ mod tests {
     }
 
     #[test]
+    fn follows_the_general_settings_where_a_file_sets_no_transcription_override() {
+        let dir = TempDir::new("config-some-overrides");
+        fs::write(
+            dir.path().join(CONFIG_FILE),
+            r#"{"transcription":{"has_vad":true}}"#,
+        )
+        .unwrap();
+
+        let config = ProjectConfig::load(dir.path()).unwrap();
+
+        assert_eq!(
+            config.options.transcription,
+            TranscriptionOverrides {
+                has_vad: Some(true),
+                ..TranscriptionOverrides::default()
+            }
+        );
+    }
+
+    #[test]
     fn loads_the_default_without_a_file() {
         let dir = TempDir::new("config-missing");
 

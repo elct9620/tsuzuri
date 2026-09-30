@@ -1,10 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
+import type * as bindings from "./bindings";
 
-/** The directory the log is written to in this launch, and the one chosen for the next. */
-export interface LogDirectory {
-  in_use: string;
-  next_launch: string;
-}
+export type LogDirectory = bindings.LogDirectory;
 
 export function logDirectory(): Promise<LogDirectory> {
   return invoke<LogDirectory>("log_directory");
@@ -15,11 +12,7 @@ export function chooseLogDirectory(path: string): Promise<LogDirectory> {
   return invoke<LogDirectory>("choose_log_directory", { path });
 }
 
-/** Whether the Debug Log is written in this launch, and whether it is chosen for the next. */
-export interface DebugLog {
-  is_written_now: boolean;
-  is_written_next_launch: boolean;
-}
+export type DebugLog = bindings.DebugLog;
 
 export function debugLog(): Promise<DebugLog> {
   return invoke<DebugLog>("debug_log");

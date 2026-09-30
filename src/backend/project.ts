@@ -1,96 +1,25 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-import type { ModelSource } from "./toolchain";
-import type { TranscriptionSettings } from "./transcription";
+import type * as bindings from "./bindings";
 
 export type { UnlistenFn };
 
-export interface Segment {
-  start_ms: number;
-  end_ms: number;
-  speaker?: string;
-  text: string;
-  translation?: string;
-}
+export type Segment = bindings.Segment_Serialize;
 
-/** What the user sets for one Project in the settings beside its Primary Language. */
-export interface ProjectOptions {
-  /** The Project Name the user gave, or none to name the Project after its directory. */
-  name: string | null;
-  bilingual_order: "original-first" | "translation-first";
-  is_bilingual_autosaved: boolean;
-  is_overwrite_backed_up: boolean;
-  /** The Project Models; a slot without one uses the general settings' Model. */
-  models: ProjectModels;
-  transcription: TranscriptionOverrides;
-}
+export type ProjectOptions = bindings.ProjectOptions_Serialize;
 
-export interface ProjectModels {
-  transcription: ModelSource | null;
-  translation: ModelSource | null;
-}
+export type ProjectModels = bindings.ProjectModels_Serialize;
 
-/** The Transcription Settings a Project sets for itself; `null` follows the general ones. */
-export type TranscriptionOverrides = {
-  [Setting in keyof TranscriptionSettings]: boolean | null;
-};
+export type TranscriptionOverrides = bindings.TranscriptionOverrides;
 
-/** A Resource as the Resource list shows it. */
-export interface ResourceView {
-  name: string;
-  has_media: boolean;
-  has_subtitle: boolean;
-  /** The Language codes of its translation files. */
-  translation_languages: string[];
-}
+export type ResourceView = bindings.ResourceView;
 
-/** The Project as Rust holds it; the webview only ever shows this, never a copy of its own. */
-export interface ProjectView {
-  directory: string;
-  /** The Project Name, the directory's name when the Project Options give none. */
-  name: string;
-  /** The name the Project takes from its directory without a Project Name of its own. */
-  directory_name: string;
-  /** The Primary Language code. */
-  language: string;
-  /** The Language code of the last translation. */
-  translation_language: string | null;
-  options: ProjectOptions;
-  translation_glossary: TranslationGlossaryView | null;
-  resources: ResourceView[];
-  current_resource: string | null;
-  /** The Current Resource's media file. */
-  media: string | null;
-  /** The Current Resource's Segments. */
-  segments: Segment[];
-  /** The Language code of the translations the Segments carry. */
-  shown_translation: string | null;
-  /** What the Translation Glossary calls each Speaker in the translation shown, by its name in the Primary Language. */
-  shown_speaker_names: Record<string, string>;
-  /** Whether the Current Resource has a change to undo. */
-  has_undo: boolean;
-  /** Whether the Current Resource has an undone change to redo. */
-  has_redo: boolean;
-  /** The Mode running on the Current Resource, holding the subtitles it writes. */
-  running_mode: RunningMode | null;
-  /** The Segments the running translation works on now, by position. */
-  pending_batch: SegmentSpan | null;
-  /** Which Preset Model each Project Model is, as its place among its slot's Preset Models. */
-  project_model_presets: ProjectModelPresets;
-}
+export type ProjectView = bindings.ProjectView_Serialize;
 
-/** Which Preset Model each Project Model is; none without one or for a Model no Preset Model is. */
-export interface ProjectModelPresets {
-  transcription: number | null;
-  translation: number | null;
-}
+export type ProjectModelPresets = bindings.ProjectModelPresets;
 
-/** The Segments from `first` through `last`, by position. */
-export interface SegmentSpan {
-  first: number;
-  last: number;
-}
+export type SegmentSpan = bindings.SegmentSpan;
 
 /** The position of every Segment `span` covers, first to last. */
 export function spanIndexes(span: SegmentSpan): number[] {
@@ -100,13 +29,7 @@ export function spanIndexes(span: SegmentSpan): number[] {
   );
 }
 
-/**
- * A transcription holds every subtitle of its Resource; a translation, the one it writes, or only
- * its Segments at `indexes` while they are translated again.
- */
-export type RunningMode =
-  | { mode: "transcription" }
-  | { mode: "translation"; language: string; indexes: number[] | null };
+export type RunningMode = bindings.RunningMode;
 
 /** Whether the Current Resource shows a text in `zh-TW` to clean: the original of a `zh-TW` Project, or the translation shown. */
 export function hasTraditionalChinese(project: ProjectView | null): boolean {
@@ -129,12 +52,7 @@ export function mediaUrl(media: string): string {
   return convertFileSrc(media);
 }
 
-/** The file a Translation Glossary came from, how many terms it holds, and the Speakers it names in the Primary Language. */
-export interface TranslationGlossaryView {
-  file: string;
-  term_count: number;
-  speakers: string[];
-}
+export type TranslationGlossaryView = bindings.TranslationGlossaryView;
 
 /** The Project Rust holds now, or none before one is made. */
 export function currentProject(): Promise<ProjectView | null> {
@@ -201,8 +119,7 @@ function callReporting(callback: () => void): void {
   }
 }
 
-/** Undo, Redo, Select All or Clean Simplified Chinese chosen from the Edit menu. */
-export type EditCommand = "undo" | "redo" | "select-all" | "clean-simplified";
+export type EditCommand = bindings.EditCommand;
 
 /** The command that opens a directory as the Project, or the directory of an SRT file. */
 export type OpenCommand = "open_project" | "open_srt";
@@ -221,13 +138,7 @@ export function takeRequestedSrt(): Promise<string | null> {
   return invoke("take_requested_srt");
 }
 
-/** A directory opened as a Project before, by its Project Name, and when it was last opened. */
-export interface RecentProjectView {
-  directory: string;
-  /** The Project Name, the directory's name when its Project Config gives none or does not answer. */
-  name: string;
-  opened_at_ms: number;
-}
+export type RecentProjectView = bindings.RecentProjectView;
 
 /** The Recent Projects, the latest opened first, without the Project already open. */
 export function recentProjects(): Promise<RecentProjectView[]> {
@@ -255,11 +166,9 @@ export function showTranslation(language: string | null): Promise<void> {
   return invoke("show_translation", { language });
 }
 
-/** Which texts an SRT written from the Current Resource carries. */
-export type WrittenText = "original" | "translation" | "bilingual";
+export type WrittenText = bindings.WrittenText;
 
-/** The form an export of the Current Resource is written in. */
-export type ExportFormat = "srt" | "plain_text";
+export type ExportFormat = bindings.ExportFormat;
 
 export function exportPath(
   content: WrittenText,
@@ -285,49 +194,19 @@ export function saveText(
   return invoke("save_text", { path, content, hasSpeakers, hasBlankLines });
 }
 
-/** A Backup as Rust lists it: its file name in the history, the UTC time it was taken and its kind. */
-export interface Backup {
-  file: string;
-  /** `YYYYMMDDTHHMMSSZ` */
-  taken_at: string;
-  kind: BackupKind;
-}
+export type Backup = bindings.Backup;
 
-/** What a Mode has just written, or a subtitle just before it was written over. */
-export type BackupKind = "output" | "overwrite";
+export type BackupKind = bindings.BackupKind;
 
-/** The Backups of the original, with no Language, or of one translation. */
-export interface SubtitleVersions {
-  language: string | null;
-  backups: Backup[];
-}
+export type SubtitleVersions = bindings.SubtitleVersions;
 
-/** One cue of a Version as a Comparison Row shows it. */
-export interface ComparedCue {
-  start_ms: number;
-  end_ms: number;
-  text: string;
-}
+export type ComparedCue = bindings.ComparedCue;
 
-/** How the cues of a Comparison Row stand to each other. */
-export type RowKind = "pair" | "addition" | "removal" | "split" | "merge";
+export type RowKind = bindings.RowKind;
 
-/** The cues of two Versions that cover the same speech, and what changed between them. */
-export interface ComparedRow {
-  kind: RowKind;
-  left: ComparedCue[];
-  right: ComparedCue[];
-  is_text_changed: boolean;
-  is_time_changed: boolean;
-  /** A Pair's changed text character by character; empty otherwise. */
-  text_spans: TextSpan[];
-}
+export type ComparedRow = bindings.ComparedRow;
 
-/** A run of characters of a Pair's text: in both Versions, only the earlier, or only the later. */
-export interface TextSpan {
-  kind: "common" | "removal" | "addition";
-  text: string;
-}
+export type TextSpan = bindings.TextSpan;
 
 export function subtitleVersions(): Promise<SubtitleVersions[]> {
   return invoke<SubtitleVersions[]>("subtitle_versions");
@@ -342,10 +221,7 @@ export function compareVersions(
   return invoke<ComparedRow[]>("compare_versions", { language, left, right });
 }
 
-/** What a restore left behind: how many Segments it gave times that no translation lines up with. */
-export interface Restoration {
-  unmatched_count: number;
-}
+export type Restoration = bindings.Restoration;
 
 export function restoreVersion(
   language: string | null,
@@ -359,8 +235,7 @@ export function translationCues(language: string): Promise<ComparedCue[]> {
   return invoke<ComparedCue[]>("translation_cues", { language });
 }
 
-/** Which part of a Comparison Row to take back. */
-export type RevertPart = "text" | "times" | "whole";
+export type RevertPart = bindings.RevertPart;
 
 /** Takes back one Comparison Row of `backup` against the subtitle in `language`, as they compare now. */
 export function revertRow(
@@ -372,18 +247,9 @@ export function revertRow(
   return invoke<Restoration>("revert_row", { language, backup, row, part });
 }
 
-/** One term: its word in each Language, and whether it names a Speaker. */
-export interface GlossaryRow {
-  words: string[];
-  is_speaker: boolean;
-}
+export type GlossaryRow = bindings.GlossaryRow;
 
-/** The Translation Glossary laid out for editing, named as Rust names it. */
-export interface GlossaryTable {
-  languages: string[];
-  rows: GlossaryRow[];
-  has_source_target_header: boolean;
-}
+export type GlossaryTable = bindings.GlossaryTable;
 
 export function translationGlossaryTable(): Promise<GlossaryTable> {
   return invoke<GlossaryTable>("translation_glossary_table");

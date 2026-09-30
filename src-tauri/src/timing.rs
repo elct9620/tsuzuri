@@ -21,16 +21,10 @@ pub enum Phase {
     Translation,
 }
 
+/// Written in the log as the webview is sent it.
 impl fmt::Display for Phase {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(match self {
-            Phase::Preparation => "prepare",
-            Phase::Conversion => "convert",
-            Phase::Loading => "load",
-            Phase::Transcription => "transcribe",
-            Phase::Detection => "detect",
-            Phase::Translation => "translate",
-        })
+        self.serialize(formatter)
     }
 }
 

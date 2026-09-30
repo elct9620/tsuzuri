@@ -3,16 +3,12 @@
  * scripts, so the Preview moves its own player into it rather than playing a copy.
  */
 
-/** The label Rust's window.rs lets the main window open, as backend/video_window.ts names it too. */
-const VIDEO_WINDOW = "video";
-
-/** Opens the Video Window dressed as this page, empty; none when the webview refuses a window. */
-export function openVideoWindow(title: string): Window | null {
-  const videoWindow = window.open(
-    "about:blank",
-    VIDEO_WINDOW,
-    "width=960,height=540",
-  );
+/**
+ * Opens the Video Window under the `label` Rust knows it by, dressed as this page and empty; none
+ * when the webview refuses a window.
+ */
+export function openVideoWindow(label: string, title: string): Window | null {
+  const videoWindow = window.open("about:blank", label, "width=960,height=540");
   if (!videoWindow) return null;
   const page = videoWindow.document;
   page.title = title;

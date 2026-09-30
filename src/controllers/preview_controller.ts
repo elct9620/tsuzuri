@@ -8,6 +8,7 @@ import {
   type Segment,
 } from "../backend/project";
 import {
+  VIDEO_WINDOW,
   destroyVideoWindow,
   leaveVideoWindowFullscreen,
   toggleVideoWindowFullscreen,
@@ -351,7 +352,10 @@ export default class PreviewController extends Controller {
 
   private moveVideoOut(): void {
     if (this.videoWindow) return;
-    const videoWindow = openVideoWindow(t("preview.videoWindowTitle"));
+    const videoWindow = openVideoWindow(
+      VIDEO_WINDOW,
+      t("preview.videoWindowTitle"),
+    );
     if (!videoWindow) return;
     forwardKeys(videoWindow);
     videoWindow.addEventListener("keydown", ({ key }) => {

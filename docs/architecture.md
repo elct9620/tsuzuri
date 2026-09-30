@@ -124,7 +124,7 @@ controller ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/command
 | `updates.ts` | `updates/commands.rs` | 檢查、安裝、通道、退回 |
 | `progress.ts` | `steps/commands.rs` | `cancel_task` |
 
-指令名稱與參數以 `.spec/contract/commands.md` 為準。`bindings.ts` 由 Rust 的 `bindings::builder()` 生成，名稱、參數與型別都來自 Rust，測試確認它沒過期。
+指令名稱與參數以 `.spec/contract/commands.md` 為準。`bindings.ts` 由 Rust 的 `bindings::builder()` 生成，名稱、參數與型別都來自 Rust，測試確認它沒過期。視窗標籤這類兩邊共用的常數也由它帶出。
 
 ### 2.3 事件（Rust → Webview）
 
@@ -223,7 +223,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 目錄 | 模組 | 層 | 負責 |
 |---|---|---|---|
 | — | `lib` | 介面 | 組裝 |
-| — | `bindings` | 介面 | 登記指令與事件 |
+| — | `bindings` | 介面 | 登記指令、事件與常數 |
 | — | `edit_command` | 介面 | 編輯選單的指令 |
 | — | `window` | 介面 | 視窗大小、影片視窗 |
 | — | `menu` | 轉接 | macOS 復原與重做 |
@@ -635,7 +635,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `about.ts` | App Build、開啟釋出與贊助頁面 |
 | `waveform.ts` | 波形的指令與型別 |
 | `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |
-| `bindings.ts` | 生成的指令、事件與型別 |
+| `bindings.ts` | 生成的指令、事件、型別與常數 |
 | `events.ts` | 把 Rust 事件轉到 window |
 | `failure.ts` | `Failure` 型別 |
 | `dialog.ts`、`system.ts` | 系統對話方塊、語系與平台 |
@@ -687,5 +687,6 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | 關閉 | 先移回，再 destroy |
 | 再開 | 等上一個關完 |
 | 位置與大小 | 建立時放回上次 |
+| 視窗標籤 | Rust 定義，bindings 帶出 |
 
 元素離開主視窗的 document 後，Stimulus 找不到 target，也解除 `data-action`，所以參照在 connect 時留下，播放器的事件由 `preview` 自己綁定。關閉前先移回，播放器才不隨影片視窗結束。

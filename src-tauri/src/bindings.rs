@@ -1,5 +1,5 @@
-//! The commands and events the webview reaches, registered once so the app serves them and the
-//! TypeScript bindings are generated from the same list.
+//! The commands and events the webview reaches and the constants it shares with Rust, registered
+//! once so the app serves them and the TypeScript bindings are generated from the same list.
 
 use tauri_specta::{collect_commands, collect_events, Builder, ErrorHandlingMode, Events};
 
@@ -79,6 +79,7 @@ pub fn builder() -> Builder<tauri::Wry> {
             project::commands::translation_glossary_table,
         ])
         .events(events())
+        .constant("VIDEO_WINDOW", window::VIDEO_WINDOW)
 }
 
 /// The events Rust emits, apart from any runtime so the tests' apps can mount them too.
@@ -107,7 +108,7 @@ mod tests {
         super::builder()
             .export(
                 Typescript::default().header(
-                    "// Generated from the Rust commands and events by `cargo test bindings`; change those instead.",
+                    "// Generated from the Rust commands, events and constants by `cargo test bindings`; change those instead.",
                 ),
                 &path,
             )
@@ -115,8 +116,8 @@ mod tests {
         fs::read_to_string(path).unwrap()
     }
 
-    // The webview is type-checked against the committed file, so a change to a command or an event
-    // rewrites it here and fails once, leaving the new file to commit.
+    // The webview is type-checked against the committed file, so a change to a command, an event or
+    // a constant rewrites it here and fails once, leaving the new file to commit.
     #[test]
     fn keeps_the_webview_bindings_current() {
         let bindings = exported_bindings("current");

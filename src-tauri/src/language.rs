@@ -1,3 +1,6 @@
+use std::fmt;
+
+use serde::de::value::{Error, StrDeserializer};
 use serde::{Deserialize, Serialize};
 
 /// A language Tsuzuri transcribes from or translates into; the webview sends only its code.
@@ -9,6 +12,13 @@ pub enum Language {
     English,
     #[serde(rename = "ja")]
     Japanese,
+}
+
+/// Written as its code, which the webview sends and export file names carry.
+impl fmt::Display for Language {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.serialize(formatter)
+    }
 }
 
 /// The Languages a translation goes from and into.
@@ -25,20 +35,9 @@ impl Language {
         Language::Japanese,
     ];
 
-    /// The code the webview sends, and export file names carry.
-    pub fn code(self) -> &'static str {
-        match self {
-            Language::TraditionalChinese => "zh-TW",
-            Language::English => "en",
-            Language::Japanese => "ja",
-        }
-    }
-
     /// The Language a code names, such as the one a subtitle's file name carries.
     pub fn from_code(code: &str) -> Option<Language> {
-        Language::ALL
-            .into_iter()
-            .find(|language| language.code() == code)
+        Language::deserialize(StrDeserializer::<Error>::new(code)).ok()
     }
 
     /// The name a Model is told the language by.

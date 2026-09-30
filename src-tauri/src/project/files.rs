@@ -19,7 +19,7 @@ pub fn file_name(name: &str, languages: impl IntoIterator<Item = Option<Language
     let mut file_name = name.to_string();
     for language in languages.into_iter().flatten() {
         file_name.push('.');
-        file_name.push_str(language.code());
+        file_name.push_str(&language.to_string());
     }
     file_name.push('.');
     file_name.push_str(SUBTITLE_EXTENSION);

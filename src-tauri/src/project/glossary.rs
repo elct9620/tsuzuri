@@ -123,13 +123,9 @@ impl TranslationGlossary {
     pub fn write(directory: &Path, rows: &[GlossaryRow]) -> Result<(), GlossaryError> {
         let mut writer =
             csv::Writer::from_path(directory.join(GLOSSARY_FILE)).map_err(malformed_glossary)?;
+        let codes = Language::ALL.map(|language| language.to_string());
         writer
-            .write_record(
-                Language::ALL
-                    .map(Language::code)
-                    .iter()
-                    .chain(&[TYPE_COLUMN]),
-            )
+            .write_record(codes.iter().map(String::as_str).chain([TYPE_COLUMN]))
             .map_err(malformed_glossary)?;
         for row in rows {
             let words: Vec<&str> = (0..Language::ALL.len())

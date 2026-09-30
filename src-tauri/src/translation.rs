@@ -12,7 +12,7 @@ use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, Restoration, SegmentSpan, TranslationSource};
-use crate::steps::{ModeRun, StepEvent, Steps};
+use crate::steps::{ModeRun, StepEvent, Steps, TRANSLATION_STEP};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -274,7 +274,7 @@ async fn translate_on_job_server(
     let (mut events, pid) = ports
         .start(llama, &llama::server_args(model, port))
         .map_err(|detail| Failure::StepFailed {
-            step: "translate".to_string(),
+            step: TRANSLATION_STEP.to_string(),
             detail,
         })?;
     let has_exited = Arc::new(AtomicBool::new(false));

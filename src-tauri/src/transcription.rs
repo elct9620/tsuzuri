@@ -8,7 +8,7 @@ use crate::failure::Failure;
 use crate::language::Language;
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, RunningMode, SegmentSpan, TranscriptionTarget};
-use crate::steps::{run_step, ModeRun, Steps};
+use crate::steps::{run_step, ModeRun, Steps, CONVERSION_STEP, TRANSCRIPTION_STEP};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -85,7 +85,7 @@ pub async fn run_transcribe<'a>(
     enter(ports, &mut phases, Phase::Conversion);
     run_step(
         ports,
-        "convert",
+        CONVERSION_STEP,
         &tools.ffmpeg,
         &whisper::conversion_args(input, &wav, job.window),
         |_| {},
@@ -100,7 +100,7 @@ pub async fn run_transcribe<'a>(
     ports.announce_project();
     run_step(
         ports,
-        "transcribe",
+        TRANSCRIPTION_STEP,
         &tools.whisper,
         &whisper::transcription_args(&plan, &wav, &srt_prefix),
         |line| {
@@ -917,6 +917,16 @@ mod tests {
 
         assert!(matches!(error, Failure::StepFailed { step, .. } if step == "convert"));
         assert!(!fixture.whisper_started.exists());
+    }
+
+    #[tokio::test]
+    async fn names_the_transcribe_step_when_whisper_fails() {
+        let fixture = Fixture::new("tx-whisper-fails", TWO_SECOND_WAV);
+        write_executable(&fixture.tools.whisper, "#!/bin/sh\nexit 1\n");
+
+        let error = fixture.transcribe().await.unwrap_err();
+
+        assert!(matches!(error, Failure::StepFailed { step, .. } if step == "transcribe"));
     }
 
     // @behavior TX-056

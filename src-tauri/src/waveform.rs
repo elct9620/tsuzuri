@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::failure::Failure;
 use crate::project::CurrentProject;
-use crate::steps::{run_step, Steps};
+use crate::steps::{run_step, Steps, WAVEFORM_STEP};
 
 pub mod commands;
 
@@ -35,7 +35,7 @@ pub async fn extract(
     let wav = work.join("waveform.wav");
     let conversion = run_step(
         steps,
-        "waveform",
+        WAVEFORM_STEP,
         ffmpeg,
         &conversion_args(&media, &wav),
         |_| {},

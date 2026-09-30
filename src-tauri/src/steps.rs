@@ -11,6 +11,12 @@ pub mod commands;
 
 const STDERR_TAIL_LINES: usize = 5;
 
+// What each Step is called when it fails, which is how the webview names it to the user
+pub const CONVERSION_STEP: &str = "convert";
+pub const TRANSCRIPTION_STEP: &str = "transcribe";
+pub const WAVEFORM_STEP: &str = "waveform";
+pub const TRANSLATION_STEP: &str = "translate";
+
 /// What a started Component does: each line it writes, without its line ending, and last how it ended.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StepEvent {

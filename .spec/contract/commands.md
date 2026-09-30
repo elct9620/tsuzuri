@@ -1,6 +1,6 @@
 # Commands
 
-The Tauri commands the webview invokes. The frontend depends on these names and arguments, so each is kept to one implementation. A command that fails answers a Failure, never text. A command that changes the Project emits `project-changed`, and the webview asks `current_project` for what it now holds.
+The Tauri commands the webview invokes. The frontend depends on these names and arguments, so each is kept to one implementation, and the webview calls them through `src/backend/bindings.ts`, generated from these signatures. A command that fails answers a Failure, never text. A command that changes the Project emits `project-changed`, and the webview asks `current_project` for what it now holds.
 
 ## Includes
 

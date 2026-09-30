@@ -105,10 +105,10 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 ### 2.2 指令（Webview ↔ Rust）
 
 ```
-controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs ─▶ 用例／CurrentProject
+controller ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/commands.rs ─▶ 用例／CurrentProject
     │    ▲                                                             │
     │    └─────────────── 回答，或 Failure ◀──────────────────────────┘
-    └─▶ editor/ session ─▶ backend/editing.ts ─▶ invoke             編輯只走這條
+    └─▶ editor/ session ─▶ backend/editing.ts ─▶ bindings.ts        編輯只走這條
 ```
 
 | backend 模組 | Rust 模組 | 指令 |
@@ -124,22 +124,22 @@ controller ─▶ backend/<情境>.ts ─▶ invoke ─▶ <情境>/commands.rs 
 | `updates.ts` | `updates/commands.rs` | 檢查、安裝、通道、退回 |
 | `progress.ts` | `steps/commands.rs` | `cancel_task` |
 
-指令名稱與參數以 `.spec/contract/commands.md` 為準。
+指令名稱與參數以 `.spec/contract/commands.md` 為準。`bindings.ts` 由 Rust 的 `bindings::builder()` 生成，名稱、參數與型別都來自 Rust，測試確認它沒過期。
 
 ### 2.3 事件（Rust → Webview）
 
 | 事件 | 送出者 | 接收者 |
 |---|---|---|
 | `project-changed` | 改變專案的指令 | `ProjectFeed` |
-| 進度 | 用例經 `Progress` | `progress` |
-| 復原、重做、全選 | macOS 編輯選單 | `undo`、`segment-changes` |
-| 外部修改已留存 | 重新載入 | `project` |
-| 系統要開 SRT | 第二次啟動、macOS 開檔 | `project` |
-| 影片視窗要關閉 | 關閉影片視窗 | `preview` |
-| 更新下載進度 | `install_update` | `updates` |
-| 模型下載進度 | `download_model` | 設定頁 |
+| `pipeline-progress` | 用例經 `Progress` | `progress` |
+| `edit-command` | macOS 編輯選單 | `undo`、`segment-changes` |
+| `changed-elsewhere-kept` | 重新載入 | `project` |
+| `srt-requested` | 第二次啟動、macOS 開檔 | `project` |
+| `video-window-closing` | 關閉影片視窗 | `preview` |
+| `update-progress` | `install_update` | `updates` |
+| `model-download-progress` | `download_model` | 設定頁 |
 
-事件只說有變化或到哪一步，內容再用指令取得。進度是 `pipeline-progress`，編輯選單是 `menu.rs` 的 `edit-command`，外部修改已留存是 `changed-elsewhere-kept`，系統要開 SRT 是 `srt-requested`，影片視窗要關閉是 `window.rs` 的 `video-window-closing`，更新下載進度是 `update-progress`，模型下載進度是 `model-download-progress`；七者由 `relayEvents` 轉成 window 的 `rust:` 事件。
+事件只說有變化或到哪一步，內容再用指令取得。每個事件是 Rust 的一個型別，名稱寫在型別上，`bindings.ts` 的 `events` 依此列出；`project-changed` 以外的七者由 `relayEvents` 轉成 window 的 `rust:` 事件。
 
 ### 2.4 錯誤與通知
 
@@ -196,6 +196,8 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 各情境的設定檔經 `json_settings` | 同一種讀寫 |
 | 模型下載與清單的指令直接用 `hub` | 只有傳輸，沒有規則 |
 | `current_project` 補上預設模型位置 | 專案不引用工具鏈 |
+| 領域型別標上 specta 的 `Type` | 生成 webview 的型別 |
+| 浮點欄位指定 TS 的 `Number` | specta 預設多一個 null |
 
 ### 3.2 情境
 
@@ -221,6 +223,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 目錄 | 模組 | 層 | 負責 |
 |---|---|---|---|
 | — | `lib` | 介面 | 組裝 |
+| — | `bindings` | 介面 | 登記指令與事件 |
 | — | `window` | 介面 | 視窗大小、影片視窗 |
 | — | `menu` | 轉接 | macOS 復原與重做 |
 | — | `logs` | 轉接 | log 目錄與層級 |
@@ -630,6 +633,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `about.ts` | App Build、開啟釋出與贊助頁面 |
 | `waveform.ts` | 波形的指令與型別 |
 | `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |
+| `bindings.ts` | 生成的指令、事件與型別 |
 | `events.ts` | 把 Rust 事件轉到 window |
 | `failure.ts` | `Failure` 型別 |
 | `dialog.ts`、`system.ts` | 系統對話方塊、語系與平台 |

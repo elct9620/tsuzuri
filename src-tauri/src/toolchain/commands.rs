@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 
 use hf_hub::HFClient;
-use tauri::{AppHandle, Emitter, Manager, State};
+use serde::Serialize;
+use tauri::{AppHandle, Manager, State};
+use tauri_specta::Event;
 
-use super::hub::{self, hub_client, hub_token, ModelDownloads, RepositoryFile};
+use super::hub::{self, hub_client, hub_token, DownloadProgress, ModelDownloads, RepositoryFile};
 use super::presets::PresetModel;
 use super::settings::{self, load_settings};
 use super::{
@@ -12,6 +14,13 @@ use super::{
 use crate::failure::Failure;
 use crate::json_settings::settings_dir;
 use crate::model_source::ModelSource;
+
+/// How much of a Model being downloaded has arrived.
+// @event model-download-progress
+#[derive(Clone, Serialize, specta::Type, Event)]
+#[serde(transparent)]
+#[tauri_specta(event_name = "model-download-progress")]
+pub struct ModelDownloadProgress(DownloadProgress);
 
 #[tauri::command]
 #[specta::specta]
@@ -81,8 +90,7 @@ pub async fn download_model(
     let progress_app = app.clone();
     downloads
         .download(client, repo, file, revision, move |progress| {
-            // @event model-download-progress
-            let _ = progress_app.emit("model-download-progress", progress);
+            let _ = ModelDownloadProgress(progress).emit(&progress_app);
         })
         .await
 }

@@ -1,5 +1,8 @@
 use tauri::menu::{Menu, MenuEvent, MenuItem};
-use tauri::{AppHandle, Emitter, Runtime};
+use tauri::{AppHandle, Runtime};
+use tauri_specta::Event;
+
+use crate::edit_command::EditCommand;
 
 const UNDO_ID: &str = "undo";
 const REDO_ID: &str = "redo";
@@ -47,12 +50,12 @@ pub fn build_app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> 
 
 /// Sends a command chosen from the Edit menu on to the webview.
 pub fn forward_edit_command<R: Runtime>(app: &AppHandle<R>, event: MenuEvent) {
-    let command = event.id().0.as_str();
-    if matches!(
-        command,
-        UNDO_ID | REDO_ID | SELECT_ALL_ID | CLEAN_SIMPLIFIED_ID
-    ) {
-        // @event edit-command
-        let _ = app.emit("edit-command", command);
-    }
+    let command = match event.id().0.as_str() {
+        UNDO_ID => EditCommand::Undo,
+        REDO_ID => EditCommand::Redo,
+        SELECT_ALL_ID => EditCommand::SelectAll,
+        CLEAN_SIMPLIFIED_ID => EditCommand::CleanSimplified,
+        _ => return,
+    };
+    let _ = command.emit(app);
 }

@@ -147,8 +147,12 @@ pub async fn run_transcribe<'a>(
 mod tests {
     use std::sync::{Arc, Mutex};
 
-    use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+    use crate::test_support::build_mock_app;
+    use tauri::test::{mock_builder, MockRuntime};
     use tauri::Listener;
+    use tauri_specta::Event;
+
+    use crate::progress::{PipelineProgress, ProjectChanged};
 
     use tauri::Manager;
 
@@ -214,11 +218,11 @@ mod tests {
                     path: dir.file("breeze.bin"),
                 },
             );
-            let app = mock_builder()
-                .plugin(tauri_plugin_shell::init())
-                .manage(CurrentProject::default())
-                .build(mock_context(noop_assets()))
-                .unwrap();
+            let app = build_mock_app(
+                mock_builder()
+                    .plugin(tauri_plugin_shell::init())
+                    .manage(CurrentProject::default()),
+            );
             Fixture {
                 dir,
                 app,
@@ -365,7 +369,7 @@ mod tests {
         fn progress_events(&self) -> Arc<Mutex<Vec<String>>> {
             let progress_events = Arc::new(Mutex::new(Vec::new()));
             let sink = Arc::clone(&progress_events);
-            self.app.listen_any("pipeline-progress", move |event| {
+            self.app.listen_any(PipelineProgress::NAME, move |event| {
                 sink.lock().unwrap().push(event.payload().to_string());
             });
             progress_events
@@ -561,7 +565,7 @@ mod tests {
     async fn holds_the_resource_while_it_is_transcribed() {
         let fixture = Fixture::new("pj-hold-transcribing", TWO_SECOND_WAV);
         let modes = Arc::new(Mutex::new(Vec::new()));
-        fixture.app.listen_any("project-changed", {
+        ProjectChanged::listen_any(&fixture.app, {
             let modes = Arc::clone(&modes);
             let handle = fixture.app.handle().clone();
             move |_| {
@@ -586,7 +590,7 @@ mod tests {
         let hold = fixture.whisper_started.with_extension("hold");
         std::fs::write(&hold, b"").unwrap();
         let announced_counts = Arc::new(Mutex::new(Vec::new()));
-        fixture.app.listen_any("project-changed", {
+        ProjectChanged::listen_any(&fixture.app, {
             let announced_counts = Arc::clone(&announced_counts);
             let handle = fixture.app.handle().clone();
             move |_| {
@@ -1014,11 +1018,11 @@ mod tests {
         let tools = Tools { ffmpeg, whisper };
         let mut settings = ModelSettings::default();
         settings.choose(ModelSlot::Transcription, ModelSource::File { path: model });
-        let app = mock_builder()
-            .plugin(tauri_plugin_shell::init())
-            .manage(CurrentProject::default())
-            .build(mock_context(noop_assets()))
-            .unwrap();
+        let app = build_mock_app(
+            mock_builder()
+                .plugin(tauri_plugin_shell::init())
+                .manage(CurrentProject::default()),
+        );
         let processes = Processes::new(dir.path().join("processes.json"));
         let project = app.state::<CurrentProject>();
         let mut opened_project = Project::open(

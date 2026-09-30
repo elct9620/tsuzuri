@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use tauri::{AppHandle, Emitter, Manager, Runtime, State};
+use serde::Serialize;
+use tauri::{AppHandle, Manager, Runtime, State};
+use tauri_specta::Event;
 
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
@@ -45,6 +47,20 @@ pub fn open_srt(
     hold_opened(&app, &mode_lock, || open_directory_of(&path, language))
 }
 
+/// The system asked to open an SRT file while Tsuzuri runs; the webview takes it with
+/// `take_requested_srt`.
+// @event srt-requested
+#[derive(Clone, Serialize, specta::Type, Event)]
+#[tauri_specta(event_name = "srt-requested")]
+pub struct SrtRequested;
+
+/// A subtitle changed elsewhere was read again, and what Tsuzuri last held of it kept as an
+/// Overwrite Backup.
+// @event changed-elsewhere-kept
+#[derive(Clone, Serialize, specta::Type, Event)]
+#[tauri_specta(event_name = "changed-elsewhere-kept")]
+pub struct ChangedElsewhereKept;
+
 /// Keeps the SRT file among `arguments`, given to a launch in `directory`, as the Requested SRT
 /// and tells the webview, which opens it as the toolbar would: only the webview knows the
 /// Interface Language a directory without a Project Config opens in.
@@ -57,8 +73,7 @@ pub fn request_srt_argument<R: Runtime>(
         return;
     };
     app.state::<RequestedSrt>().request(srt);
-    // @event srt-requested
-    let _ = app.emit("srt-requested", ());
+    let _ = SrtRequested.emit(app);
 }
 
 #[tauri::command]
@@ -126,8 +141,7 @@ fn announce_reload<R: Runtime>(app: &AppHandle<R>, reload: Reload) {
     }
     app.announce_project();
     if reload == Reload::ChangedWithBackup {
-        // @event changed-elsewhere-kept
-        let _ = app.emit("changed-elsewhere-kept", ());
+        let _ = ChangedElsewhereKept.emit(app);
     }
 }
 
@@ -409,23 +423,21 @@ mod tests {
     use std::path::Path;
     use std::time::{Duration, UNIX_EPOCH};
 
-    use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+    use crate::test_support::build_mock_app;
+    use tauri::test::{mock_builder, MockRuntime};
 
     use crate::project::recent::RecentProject;
 
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
 
-    use tauri::Listener;
+    use crate::progress::ProjectChanged;
 
     use super::*;
     use crate::test_support::TempDir;
 
     fn mock_app() -> tauri::App<MockRuntime> {
-        mock_builder()
-            .manage(CurrentProject::default())
-            .build(mock_context(noop_assets()))
-            .unwrap()
+        build_mock_app(mock_builder().manage(CurrentProject::default()))
     }
 
     fn create_directory(dir: &TempDir, name: &str, files: &[&str]) -> PathBuf {
@@ -661,7 +673,7 @@ mod tests {
         let app = mock_app();
         let is_heard = Arc::new(AtomicBool::new(false));
         let is_heard_by_listener = Arc::clone(&is_heard);
-        app.listen("project-changed", move |_| {
+        ProjectChanged::listen(&app, move |_| {
             is_heard_by_listener.store(true, Ordering::SeqCst)
         });
 

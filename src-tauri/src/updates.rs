@@ -126,7 +126,7 @@ pub struct AppUpdate {
 }
 
 /// How much of the App Update being installed has downloaded, in bytes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 pub struct UpdateProgress {
     pub downloaded: u64,
     pub total: Option<u64>,

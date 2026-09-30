@@ -282,7 +282,8 @@ mod tests {
     use std::process::{Child, Command};
     use std::time::{Duration, Instant};
 
-    use tauri::test::{mock_builder, mock_context, noop_assets};
+    use crate::test_support::build_mock_app;
+    use tauri::test::mock_builder;
     use tauri_plugin_shell::process::TerminatedPayload;
 
     use super::*;
@@ -291,10 +292,7 @@ mod tests {
     use crate::test_support::{captured_logs, TempDir};
 
     fn mock_app() -> tauri::App<tauri::test::MockRuntime> {
-        mock_builder()
-            .plugin(tauri_plugin_shell::init())
-            .build(mock_context(noop_assets()))
-            .unwrap()
+        build_mock_app(mock_builder().plugin(tauri_plugin_shell::init()))
     }
 
     fn sleep_path() -> PathBuf {

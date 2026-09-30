@@ -224,6 +224,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 |---|---|---|---|
 | — | `lib` | 介面 | 組裝 |
 | — | `bindings` | 介面 | 登記指令與事件 |
+| — | `edit_command` | 介面 | 編輯選單的指令 |
 | — | `window` | 介面 | 視窗大小、影片視窗 |
 | — | `menu` | 轉接 | macOS 復原與重做 |
 | — | `logs` | 轉接 | log 目錄與層級 |
@@ -289,6 +290,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 啟動
   │ single-instance    已有 Tsuzuri 時交出參數並結束
   │ RequestedSrt       setup 前就 manage，macOS 可能先送開檔
+  │ mount_events       build 後、run 前登記事件，先送的開檔才送得出
   │ reap_strays        清掉上次留下的元件行程（processes.json）
   │ manage             Processes、CurrentProject；收下啟動參數的 SRT
   │ build_main_window  依設定建立主視窗，只准它開影片視窗

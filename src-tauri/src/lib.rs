@@ -1,6 +1,7 @@
 pub mod about;
 pub mod bindings;
 pub mod cleanup;
+pub mod edit_command;
 pub mod failure;
 pub mod json_settings;
 pub mod language;
@@ -45,13 +46,12 @@ use updates::FoundUpdate;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let bindings = bindings::builder();
-    let invoke_handler = bindings.invoke_handler();
     let builder = with_requested_srt(tauri::Builder::default());
     #[cfg(target_os = "macos")]
     let builder = builder
         .menu(menu::build_app_menu)
         .on_menu_event(menu::forward_edit_command);
-    builder
+    let app = builder
         .plugin(tauri_plugin_single_instance::init(follow_second_launch))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
@@ -62,8 +62,7 @@ pub fn run() {
                 .skip_initial_state(window::VIDEO_WINDOW)
                 .build(),
         )
-        .setup(move |app| {
-            bindings.mount_events(app);
+        .setup(|app| {
             let log_settings = LogSettings::load(&app.path().app_config_dir()?)?;
             let log_dir = log_settings.log_dir(app.path().app_log_dir()?);
             app.handle().plugin(
@@ -114,19 +113,21 @@ pub fn run() {
             window::hand_back_video(window, event);
             window::close_video_with_main(window, event);
         })
-        .invoke_handler(invoke_handler)
+        .invoke_handler(bindings.invoke_handler())
         .build(tauri::generate_context!())
-        .expect("error while building tauri application")
-        .run(|app, event| match event {
-            RunEvent::Exit => app.state::<Processes>().kill_all(),
-            #[cfg(target_os = "macos")]
-            RunEvent::Opened { urls } => project::commands::request_srt_argument(
-                app,
-                urls.iter().map(|url| url.to_string()),
-                Path::new("/"),
-            ),
-            _ => {}
-        });
+        .expect("error while building tauri application");
+    // Mounted before the app runs, since the system may ask to open an SRT file before setup.
+    bindings.mount_events(&app);
+    app.run(|app, event| match event {
+        RunEvent::Exit => app.state::<Processes>().kill_all(),
+        #[cfg(target_os = "macos")]
+        RunEvent::Opened { urls } => project::commands::request_srt_argument(
+            app,
+            urls.iter().map(|url| url.to_string()),
+            Path::new("/"),
+        ),
+        _ => {}
+    });
 }
 
 /// `builder` keeping the Requested SRT from before setup: macOS asks to open a file with
@@ -147,16 +148,15 @@ fn follow_second_launch(app: &AppHandle, arguments: Vec<String>, directory: Stri
 mod tests {
     use std::path::PathBuf;
 
-    use tauri::test::{mock_builder, mock_context, noop_assets};
+    use crate::test_support::build_mock_app;
+    use tauri::test::mock_builder;
 
     use super::*;
 
     // @behavior PJ-180
     #[test]
     fn keeps_an_srt_file_the_system_asks_for_before_setup() {
-        let app = with_requested_srt(mock_builder())
-            .build(mock_context(noop_assets()))
-            .unwrap();
+        let app = build_mock_app(with_requested_srt(mock_builder()));
 
         project::commands::request_srt_argument(
             app.handle(),

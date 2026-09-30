@@ -606,8 +606,12 @@ mod tests {
 
     use std::sync::Mutex;
 
-    use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+    use crate::test_support::build_mock_app;
+    use tauri::test::{mock_builder, MockRuntime};
     use tauri::Listener;
+    use tauri_specta::Event;
+
+    use crate::progress::{PipelineProgress, ProjectChanged};
 
     use tauri::Manager;
 
@@ -634,11 +638,11 @@ mod tests {
     }
 
     fn mock_app() -> tauri::App<MockRuntime> {
-        mock_builder()
-            .plugin(tauri_plugin_shell::init())
-            .manage(CurrentProject::default())
-            .build(mock_context(noop_assets()))
-            .unwrap()
+        build_mock_app(
+            mock_builder()
+                .plugin(tauri_plugin_shell::init())
+                .manage(CurrentProject::default()),
+        )
     }
 
     /// Detects, then translates, as a job does once llama-server is ready.
@@ -1570,7 +1574,7 @@ mod tests {
             },
         );
         let shown_counts = Arc::new(Mutex::new(Vec::new()));
-        app.listen_any("project-changed", {
+        ProjectChanged::listen_any(&app, {
             let shown_counts = Arc::clone(&shown_counts);
             let handle = app.handle().clone();
             move |_| {
@@ -1619,7 +1623,7 @@ mod tests {
             },
         );
         let pending_batches = Arc::new(Mutex::new(Vec::new()));
-        app.listen_any("project-changed", {
+        ProjectChanged::listen_any(&app, {
             let pending_batches = Arc::clone(&pending_batches);
             let handle = app.handle().clone();
             move |_| {
@@ -1928,7 +1932,7 @@ mod tests {
         let llama = FakeLlama::with_echo(0);
         let app = mock_app();
         let progress_events = Arc::new(Mutex::new(Vec::new()));
-        app.listen_any("pipeline-progress", {
+        app.listen_any(PipelineProgress::NAME, {
             let progress_events = Arc::clone(&progress_events);
             move |event| {
                 progress_events

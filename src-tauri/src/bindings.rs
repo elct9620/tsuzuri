@@ -1,10 +1,12 @@
 //! The commands and events the webview reaches, registered once so the app serves them and the
 //! TypeScript bindings are generated from the same list.
 
-use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
+use tauri_specta::{collect_commands, collect_events, Builder, ErrorHandlingMode, Events};
 
+use crate::edit_command::EditCommand;
 use crate::{
-    about, logs, project, steps, toolchain, transcription, translation, updates, waveform,
+    about, logs, progress, project, steps, toolchain, transcription, translation, updates,
+    waveform, window,
 };
 
 /// A command that fails rejects with its `Failure`, as a plain `invoke` does, and the counts and
@@ -76,6 +78,21 @@ pub fn builder() -> Builder<tauri::Wry> {
             project::commands::save_translation_glossary,
             project::commands::translation_glossary_table,
         ])
+        .events(events())
+}
+
+/// The events Rust emits, apart from any runtime so the tests' apps can mount them too.
+pub fn events() -> Events {
+    collect_events![
+        progress::ProjectChanged,
+        progress::PipelineProgress,
+        EditCommand,
+        project::commands::ChangedElsewhereKept,
+        project::commands::SrtRequested,
+        window::VideoWindowClosing,
+        updates::commands::AppUpdateProgress,
+        toolchain::commands::ModelDownloadProgress,
+    ]
 }
 
 #[cfg(test)]
@@ -112,6 +129,27 @@ mod tests {
             ]
             .map(|field| bindings.contains(field)),
             [true; 6]
+        );
+    }
+
+    // The webview relays each event by the name the events contract gives it.
+    #[test]
+    fn names_each_event_as_the_contract_does() {
+        let bindings = exported_bindings("events");
+
+        assert_eq!(
+            [
+                "project-changed",
+                "pipeline-progress",
+                "edit-command",
+                "changed-elsewhere-kept",
+                "srt-requested",
+                "video-window-closing",
+                "update-progress",
+                "model-download-progress",
+            ]
+            .map(|name| bindings.contains(&format!(">(\"{name}\")"))),
+            [true; 8]
         );
     }
 }

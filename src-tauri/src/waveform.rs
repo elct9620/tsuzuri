@@ -97,7 +97,8 @@ fn peaks(samples: &[i16]) -> Vec<f32> {
 
 #[cfg(all(test, unix))]
 mod tests {
-    use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+    use crate::test_support::build_mock_app;
+    use tauri::test::{mock_builder, MockRuntime};
     use tauri::Manager;
 
     use super::*;
@@ -128,11 +129,11 @@ mod tests {
 
     impl Fixture {
         fn new(name: &str) -> Fixture {
-            let app = mock_builder()
-                .plugin(tauri_plugin_shell::init())
-                .manage(CurrentProject::default())
-                .build(mock_context(noop_assets()))
-                .unwrap();
+            let app = build_mock_app(
+                mock_builder()
+                    .plugin(tauri_plugin_shell::init())
+                    .manage(CurrentProject::default()),
+            );
             Fixture {
                 dir: TempDir::new(name),
                 app,

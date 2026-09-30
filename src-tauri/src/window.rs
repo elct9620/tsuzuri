@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tauri::webview::NewWindowResponse;
 use tauri::{
-    App, AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Monitor, PhysicalPosition,
-    PhysicalSize, Runtime, Size, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window,
-    WindowEvent,
+    App, AppHandle, LogicalPosition, LogicalSize, Manager, Monitor, PhysicalPosition, PhysicalSize,
+    Runtime, Size, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window, WindowEvent,
 };
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
+use tauri_specta::Event;
 
 use crate::json_settings;
 
@@ -182,13 +182,19 @@ fn save_and_read_video_window_place<R: Runtime>(app: &AppHandle<R>) -> Option<Wi
     places.get(VIDEO_WINDOW).copied()
 }
 
+/// The Video Window was asked to close and stays open until the main window's page takes its
+/// video back.
+// @event video-window-closing
+#[derive(Clone, Serialize, specta::Type, Event)]
+#[tauri_specta(event_name = "video-window-closing")]
+pub struct VideoWindowClosing;
+
 /// Keeps the Video Window open when asked to close, and asks the main window's page to take its
 /// video back first: the video lives in that page, and would end with the Video Window's.
 pub fn hand_back_video<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
     if let (VIDEO_WINDOW, WindowEvent::CloseRequested { api, .. }) = (window.label(), event) {
         api.prevent_close();
-        // @event video-window-closing
-        let _ = window.emit("video-window-closing", ());
+        let _ = VideoWindowClosing.emit(window);
     }
 }
 

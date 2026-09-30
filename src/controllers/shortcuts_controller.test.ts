@@ -99,6 +99,21 @@ describe("ShortcutsController", () => {
     expect([isOpenByCtrl, dialog().open]).toEqual([false, true]);
   });
 
+  it.each<[string, KeyboardEventInit]>([
+    ["Ctrl+Alt+/", { key: "/", ctrlKey: true, altKey: true }],
+    ["Ctrl+Meta+/", { key: "/", ctrlKey: true, metaKey: true }],
+    ["Ctrl+/ while composing", { key: "/", ctrlKey: true, isComposing: true }],
+    ["/", { key: "/" }],
+    ["Ctrl+?", { key: "?", shiftKey: true, ctrlKey: true }],
+    ["Meta+?", { key: "?", shiftKey: true, metaKey: true }],
+    ["Alt+?", { key: "?", shiftKey: true, altKey: true }],
+    ["? while composing", { key: "?", shiftKey: true, isComposing: true }],
+  ])("leaves %s alone", (_name, init) => {
+    press("#elsewhere", init);
+
+    expect(dialog().open).toBe(false);
+  });
+
   // @behavior IF-033
   it("lists only the keys of macOS on macOS", () => {
     usePlatform("macos");

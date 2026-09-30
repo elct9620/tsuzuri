@@ -146,6 +146,47 @@ describe("ReplacementController", () => {
     ]);
   });
 
+  it("opens by ⌘+Option+F on macOS with Shift held too", async () => {
+    Object.assign(window, {
+      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
+    });
+    await hold(translatedProject);
+
+    press({
+      key: "Ï",
+      code: "KeyF",
+      metaKey: true,
+      altKey: true,
+      shiftKey: true,
+    });
+
+    expect(target<HTMLDialogElement>("dialog").open).toBe(true);
+  });
+
+  it("opens by the key that types H, wherever it is", async () => {
+    await hold(translatedProject);
+
+    press({ key: "d", code: "KeyH", ctrlKey: true });
+    const isOpenByPlace = target<HTMLDialogElement>("dialog").open;
+    press({ key: "h", code: "KeyJ", ctrlKey: true });
+
+    expect([isOpenByPlace, target<HTMLDialogElement>("dialog").open]).toEqual([
+      false,
+      true,
+    ]);
+  });
+
+  it.each([{ shiftKey: true }, { altKey: true }, { metaKey: true }])(
+    "leaves Ctrl+H with %o alone",
+    async (modifier) => {
+      await hold(translatedProject);
+
+      press({ key: "h", code: "KeyH", ctrlKey: true, ...modifier });
+
+      expect(target<HTMLDialogElement>("dialog").open).toBe(false);
+    },
+  );
+
   // @behavior ED-088
   it("replaces with Enter and says how many were replaced", async () => {
     await hold(translatedProject);

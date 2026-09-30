@@ -186,16 +186,39 @@ describe("SearchController", () => {
     expect([isOpenByCtrlF, target("bar").hidden]).toEqual([false, false]);
   });
 
+  // @behavior ED-138
+  it("opens by the place of F, whatever the key there types", async () => {
+    await hold(commaProject);
+
+    press({ key: "f", code: "KeyU", ctrlKey: true });
+    const isOpenByTypedF = !target("bar").hidden;
+    press({ key: "ㄑ", code: "KeyF", ctrlKey: true });
+
+    expect([isOpenByTypedF, target("bar").hidden]).toEqual([false, false]);
+  });
+
+  // @behavior ED-138
+  it.each([{ shiftKey: true }, { altKey: true }, { metaKey: true }])(
+    "leaves Ctrl+F with %o alone",
+    async (modifier) => {
+      await hold(commaProject);
+
+      press({ key: "f", code: "KeyF", ctrlKey: true, ...modifier });
+
+      expect(target("bar").hidden).toBe(true);
+    },
+  );
+
   // @behavior ED-139
   it("moves to the next match, making its Segment current", async () => {
     await hold(commaProject);
     await openFinding("，");
 
     press({ key: "Enter" }, target("pattern"));
-    const byEnter = [target("count").textContent, currentRow()];
+    const matchByEnter = [target("count").textContent, currentRow()];
     press({ key: "F3" });
 
-    expect([byEnter, target("count").textContent, currentRow()]).toEqual([
+    expect([matchByEnter, target("count").textContent, currentRow()]).toEqual([
       ["2/2", 2],
       "1/2",
       0,
@@ -235,11 +258,42 @@ describe("SearchController", () => {
     await openFinding("，");
 
     press({ key: "Enter", shiftKey: true }, target("pattern"));
-    const byShiftEnter = target("count").textContent;
+    const countByShiftEnter = target("count").textContent;
     press({ key: "F3", shiftKey: true });
 
-    expect([byShiftEnter, target("count").textContent]).toEqual(["2/2", "1/2"]);
+    expect([countByShiftEnter, target("count").textContent]).toEqual([
+      "2/2",
+      "1/2",
+    ]);
   });
+
+  // @behavior ED-141
+  it("moves to the previous match by ⇧⌘G on macOS, leaving F3 to the system", async () => {
+    Object.assign(window, {
+      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
+    });
+    await hold(commaProject);
+    await openFinding("，");
+
+    press({ key: "F3" });
+    const countAfterF3 = target("count").textContent;
+    press({ key: "G", code: "KeyG", metaKey: true, shiftKey: true });
+
+    expect([countAfterF3, target("count").textContent]).toEqual(["1/2", "2/2"]);
+  });
+
+  // @behavior ED-139
+  it.each([{ ctrlKey: true }, { altKey: true }, { metaKey: true }])(
+    "moves nowhere by F3 with %o",
+    async (modifier) => {
+      await hold(commaProject);
+      await openFinding("，");
+
+      press({ key: "F3", ...modifier });
+
+      expect(target("count").textContent).toBe("1/2");
+    },
+  );
 
   // @behavior ED-139
   it("moves nowhere by F3 while the bar is closed", async () => {

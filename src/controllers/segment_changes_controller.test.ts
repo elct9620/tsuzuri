@@ -974,12 +974,31 @@ describe("SegmentChangesController", () => {
       expect([changes, event.defaultPrevented]).toEqual([[], false]);
     });
 
-    // @behavior ED-098
-    it("leaves Delete with a modifier alone", async () => {
+    // @behavior ED-100
+    it("deletes with Delete on macOS too", async () => {
+      Object.assign(window, {
+        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
+      });
       await hold(threeSegments);
       row(1).click();
 
-      press(document.body, "Delete", { ctrlKey: true });
+      press(document.body);
+      await settle();
+
+      expect(changes).toEqual([{ kind: "deletion", indexes: [1] }]);
+    });
+
+    // @behavior ED-098
+    it.each([
+      { ctrlKey: true },
+      { metaKey: true },
+      { altKey: true },
+      { shiftKey: true },
+    ])("leaves Delete with %o alone", async (modifier) => {
+      await hold(threeSegments);
+      row(1).click();
+
+      press(document.body, "Delete", modifier);
       await settle();
 
       expect(changes).toEqual([]);

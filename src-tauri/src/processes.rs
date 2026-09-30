@@ -12,6 +12,9 @@ use crate::progress::Progress;
 use crate::steps::{StepEvent, Steps};
 use crate::timing::Phase;
 
+/// How many of a process's events wait to be read before the task forwarding them waits too.
+const EVENT_CAPACITY: usize = 64;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct RecordedProcess {
     pid: u32,
@@ -62,7 +65,7 @@ impl Processes {
         );
         self.write_record();
 
-        let (forward, received) = async_runtime::channel(64);
+        let (forward, received) = async_runtime::channel(EVENT_CAPACITY);
         let processes = self.clone();
         async_runtime::spawn(async move {
             forward_in_order(&name, events, forward).await;

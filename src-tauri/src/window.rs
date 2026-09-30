@@ -21,6 +21,12 @@ pub const VIDEO_WINDOW: &str = "video";
 /// window's page moves its own video into it.
 const VIDEO_WINDOW_PAGE: &str = "about:blank";
 
+/// The smallest the Video Window is made, a 16:9 frame.
+const VIDEO_WINDOW_MIN_SIZE: LogicalSize<f64> = LogicalSize {
+    width: 320.0,
+    height: 180.0,
+};
+
 /// The size when the screen reports none: one and a half times the 800×600 the window is configured with.
 const FALLBACK_SIZE: LogicalSize<f64> = LogicalSize {
     width: 1200.0,
@@ -102,7 +108,7 @@ fn open_video_window<R: Runtime>(
     let builder = WebviewWindowBuilder::new(app, VIDEO_WINDOW, WebviewUrl::External(url))
         .window_features(features)
         .title("Tsuzuri")
-        .min_inner_size(320.0, 180.0)
+        .min_inner_size(VIDEO_WINDOW_MIN_SIZE.width, VIDEO_WINDOW_MIN_SIZE.height)
         .on_document_title_changed(|window, title| {
             let _ = window.set_title(&title);
         });

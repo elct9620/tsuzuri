@@ -3,12 +3,15 @@
  * scripts, so the Preview moves its own player into it rather than playing a copy.
  */
 
+/** The size the Video Window first opens at, a 16:9 frame, as `window.open` reads it. */
+const FIRST_SIZE = "width=960,height=540";
+
 /**
  * Opens the Video Window under the `label` Rust knows it by, dressed as this page and empty; none
  * when the webview refuses a window.
  */
 export function openVideoWindow(label: string, title: string): Window | null {
-  const videoWindow = window.open("about:blank", label, "width=960,height=540");
+  const videoWindow = window.open("about:blank", label, FIRST_SIZE);
   if (!videoWindow) return null;
   const page = videoWindow.document;
   page.title = title;

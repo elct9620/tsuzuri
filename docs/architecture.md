@@ -658,11 +658,11 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `ui/timeline_spans.ts` | 時間軸區段與選段的落點 |
 | `ui/file_name.ts` | 路徑的最後一段 |
-| `ui/shortcuts.ts` | 各平台的快速鍵與寫法 |
+| `ui/shortcuts.ts` | 各平台的快速鍵、比對與寫法 |
 | `ui/text_fields.ts` | 原文或譯文的選擇、選取的文字 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
-圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。快速鍵綁在 `data-action` 與 controller，`ui/shortcuts.ts` 只供顯示，由測試確認一致。
+圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。快速鍵以 `ui/shortcuts.ts` 為準：controller 自己比對的鍵用 `isShortcut` 讀它，寫在 `data-action` 與 Rust 選單的鍵由測試雙向核對。
 
 ### 4.9 影片視窗
 

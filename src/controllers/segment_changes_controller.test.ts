@@ -136,9 +136,10 @@ describe("SegmentChangesController", () => {
 
     expect([
       changes,
+      start.value,
       notifications(),
       notificationCountdown(0) !== null,
-    ]).toEqual([[], ["時間要寫成 00:00:01.000 的格式"], true]);
+    ]).toEqual([[], "00:00:00.000", ["時間要寫成 00:00:01.000 的格式"], true]);
   });
 
   // @behavior ED-109

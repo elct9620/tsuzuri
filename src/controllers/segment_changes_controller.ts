@@ -2,8 +2,8 @@ import { Controller } from "@hotwired/stimulus";
 
 import {
   currentResource,
-  refreshProject,
   type EditCommand,
+  type ProjectFeed,
   type ProjectView,
 } from "../backend/project";
 import type { TranscriptionScope } from "../backend/transcription";
@@ -56,6 +56,7 @@ export default class SegmentChangesController extends Controller {
     "offset",
   ];
 
+  declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
   /** The bar that shows while Segments are checked. */
   declare readonly checkedBarTarget: HTMLElement;
@@ -92,7 +93,7 @@ export default class SegmentChangesController extends Controller {
     const [start_ms, end_ms] = [time("start"), time("end")];
     if (start_ms === null || end_ms === null) {
       notify({ title: t("edit.unreadableTime"), kind: "warning" });
-      await refreshProject();
+      await this.feed.refresh();
       return;
     }
     const edge = (currentTarget as HTMLElement).dataset.edge as TimeEdge;

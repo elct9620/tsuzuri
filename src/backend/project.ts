@@ -1,5 +1,5 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type { ModelSource } from "./toolchain";
 import type { TranscriptionSettings } from "./transcription";
@@ -175,12 +175,13 @@ export class ProjectFeed {
 
   /** Reads the Project now and each time Rust announces a change. */
   async start(): Promise<UnlistenFn> {
-    const unlisten = await listen("project-changed", () => void this.read());
-    await this.read();
+    const unlisten = await listen("project-changed", () => void this.refresh());
+    await this.refresh();
     return unlisten;
   }
 
-  private async read(): Promise<void> {
+  /** Reads the Project now, as when Rust announces nothing after refusing a change. */
+  async refresh(): Promise<void> {
     const readNumber = ++this.readsAsked;
     const project = await currentProject();
     if (readNumber < this.latestShownRead) return;
@@ -202,11 +203,6 @@ function callReporting(callback: () => void): void {
 
 /** Undo, Redo, Select All or Clean Simplified Chinese chosen from the Edit menu. */
 export type EditCommand = "undo" | "redo" | "select-all" | "clean-simplified";
-
-/** Asks every view to read the Project again, as when Rust announces nothing after a refusal. */
-export function refreshProject(): Promise<void> {
-  return emit("project-changed");
-}
 
 /** The command that opens a directory as the Project, or the directory of an SRT file. */
 export type OpenCommand = "open_project" | "open_srt";

@@ -4,7 +4,6 @@ import { message, open, SRT_FILTERS } from "../backend/dialog";
 import {
   openProject,
   type OpenCommand,
-  refreshProject,
   reloadProject,
   selectResource,
   setProjectOptions,
@@ -143,7 +142,7 @@ export default class ProjectController extends Controller {
   }: Event & { params: { directory: string } }): Promise<void> {
     closeMenu(currentTarget);
     const isOpened = await this.run("open_project", params.directory);
-    if (!isOpened) await refreshProject();
+    if (!isOpened) await this.feed.refresh();
   }
 
   async select({ currentTarget }: Event): Promise<void> {
@@ -152,7 +151,7 @@ export default class ProjectController extends Controller {
     this.dispatch("select");
     const isSelected = await this.report(() => selectResource(name));
     // Rust announces nothing when it could not select, so the editor is told to read what it holds.
-    if (!isSelected) await refreshProject();
+    if (!isSelected) await this.feed.refresh();
   }
 
   /**

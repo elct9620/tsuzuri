@@ -2,7 +2,7 @@ use std::path::Path;
 
 use super::settings::TranscriptionSettings;
 use crate::language::Language;
-use crate::transcript::{parse_timestamp, AudioWindow, Segment};
+use crate::transcript::{parse_timestamp, AudioWindow, Segment, MS_PER_SECOND};
 
 /// The sample rate whisper-cli is given its 16-bit mono PCM at, the only one it takes.
 const SAMPLE_RATE: u64 = 16_000;
@@ -38,7 +38,7 @@ pub fn conversion_args(input: &Path, wav: &Path, window: Option<AudioWindow>) ->
 /// What whisper-cli transcribes with; `vad` is the VAD Model, given only when the settings turn VAD on.
 /// `ms` as the seconds ffmpeg reads a time in.
 fn seconds_arg(ms: u64) -> String {
-    format!("{}.{:03}", ms / 1000, ms % 1000)
+    format!("{}.{:03}", ms / MS_PER_SECOND, ms % MS_PER_SECOND)
 }
 
 pub struct TranscriptionPlan<'a> {

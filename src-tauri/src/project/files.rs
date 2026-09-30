@@ -428,18 +428,22 @@ fn is_utc_stamp(text: &str) -> bool {
             .all(u8::is_ascii_digit)
 }
 
+const SECONDS_PER_MINUTE: u64 = 60;
+const SECONDS_PER_HOUR: u64 = 60 * SECONDS_PER_MINUTE;
+const SECONDS_PER_DAY: u64 = 24 * SECONDS_PER_HOUR;
+
 /// `at` as `YYYYMMDDTHHMMSSZ` in UTC, which sorts in time order and names no time zone.
 fn utc_stamp(at: SystemTime) -> String {
     let seconds = at
         .duration_since(UNIX_EPOCH)
         .map_or(0, |since| since.as_secs());
-    let (days, of_day) = (seconds / 86_400, seconds % 86_400);
+    let (days, of_day) = (seconds / SECONDS_PER_DAY, seconds % SECONDS_PER_DAY);
     let (year, month, day) = civil_date(days as i64);
     format!(
         "{year:04}{month:02}{day:02}T{:02}{:02}{:02}Z",
-        of_day / 3_600,
-        of_day / 60 % 60,
-        of_day % 60
+        of_day / SECONDS_PER_HOUR,
+        of_day / SECONDS_PER_MINUTE % 60,
+        of_day % SECONDS_PER_MINUTE
     )
 }
 

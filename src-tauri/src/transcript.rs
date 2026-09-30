@@ -273,6 +273,10 @@ pub fn split_label(line: &str) -> (Option<String>, &str) {
     (Some(line[..label_end].to_string()), dialogue)
 }
 
+pub(crate) const MS_PER_SECOND: u64 = 1000;
+const MS_PER_MINUTE: u64 = 60 * MS_PER_SECOND;
+const MS_PER_HOUR: u64 = 60 * MS_PER_MINUTE;
+
 /// Reads `HH:MM:SS,mmm`; a `.` before the milliseconds is accepted since some tools write WebVTT-style times into SRT.
 pub(crate) fn parse_timestamp(value: &str) -> Option<u64> {
     let (clock, millis) = value.split_once([',', '.'])?;
@@ -284,16 +288,16 @@ pub(crate) fn parse_timestamp(value: &str) -> Option<u64> {
         return None;
     }
     let millis: u64 = millis.parse().ok()?;
-    Some(((hours * 60 + minutes) * 60 + seconds) * 1000 + millis)
+    Some(hours * MS_PER_HOUR + minutes * MS_PER_MINUTE + seconds * MS_PER_SECOND + millis)
 }
 
 fn format_timestamp(ms: u64) -> String {
     format!(
         "{:02}:{:02}:{:02},{:03}",
-        ms / 3_600_000,
-        ms / 60_000 % 60,
-        ms / 1000 % 60,
-        ms % 1000
+        ms / MS_PER_HOUR,
+        ms / MS_PER_MINUTE % 60,
+        ms / MS_PER_SECOND % 60,
+        ms % MS_PER_SECOND
     )
 }
 

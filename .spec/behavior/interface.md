@@ -349,6 +349,26 @@ A key alone does not say where it works or what it leaves alone, so each shortcu
 | When | the keys they bind are read |
 | Then | the shortcut list has each of them |
 
+## `IF-043` Binding every key the shortcut list names
+
+A key the list shows and nothing answers to is a promise the interface does not keep, so the list is held to what is bound as what is bound is held to the list.
+
+| Step | Statement |
+| --- | --- |
+| Given | the shortcut list, the actions the page and its controllers bind, and the Shortcuts the controllers read from the list |
+| When | each key the list names for either platform is looked for among them |
+| Then | every one is bound by an action or belongs to a Shortcut a controller reads |
+
+## `IF-044` Listing every key the app menu takes
+
+The app menu takes its keys before the webview sees them, so the keys it is given are held to the list too.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Edit menu as Rust builds it on macOS |
+| When | the keys of its items are read |
+| Then | the shortcut list has each of them among the keys of macOS |
+
 ## `IF-037` Letting the Save Mark go on its own
 
 | Step | Statement |

@@ -18,7 +18,7 @@ import {
 import { t } from "../i18n";
 import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { notifyEdit, notifyFailure } from "../ui/notification";
-import { type ShortcutId, chords, shortcutById } from "../ui/shortcuts";
+import { type Shortcut, chords, shortcutById } from "../ui/shortcuts";
 import {
   choiceLanding,
   formatLength,
@@ -65,9 +65,11 @@ const SNAPPING_KEY = "tsuzuri.timeline-snapping";
 /** The key that sets the Current Segment's start or end where the media is, as `KeyboardEvent.key` names it. */
 function timeKeys(): Record<UpdateSide, string> {
   const isMac = isMacOS();
-  const key = (id: ShortcutId) =>
-    chords(shortcutById(id), isMac)[0].toUpperCase();
-  return { start: key("setStart"), end: key("setEnd") };
+  const key = (shortcut: Shortcut) => chords(shortcut, isMac)[0].toUpperCase();
+  return {
+    start: key(shortcutById("setStart")),
+    end: key(shortcutById("setEnd")),
+  };
 }
 
 /** A drag of the Current Segment's region under way, from its Segment's times to where it is shown. */

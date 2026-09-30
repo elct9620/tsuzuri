@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
 import page from "../../index.html?raw";
+import menu from "../../src-tauri/src/menu.rs?raw";
 import {
   SHORTCUTS,
   formatChord,
@@ -21,6 +22,26 @@ function boundChords(source: string): string[] {
   );
 }
 
+/** The Shortcuts `source` reads from the list, as `isShortcut(event, "search", isMac)` reads `search`. */
+function shortcutIds(source: string): string[] {
+  return [
+    ...source.matchAll(/(?:isShortcut\(\s*\w+,|shortcutById\()\s*"(\w+)"/g),
+  ].map(([, id]) => id);
+}
+
+/** The keys `source` gives its menu items on macOS, as `CmdOrCtrl+Shift+Z` is `meta+shift+z` there. */
+function menuChords(source: string): string[] {
+  return [...source.matchAll(/Some\("([^"]+)"\)/g)].map(([, accelerator]) =>
+    accelerator.toLowerCase().replace("cmdorctrl", "meta"),
+  );
+}
+
+const MOUSE_ACTIONS = ["click", "dblclick", "drag", "wheel"];
+
+function isKeyboardChord(chord: string): boolean {
+  return !MOUSE_ACTIONS.some((action) => chord.endsWith(action));
+}
+
 describe("shortcuts", () => {
   // @behavior IF-036
   it("lists every key the page and its controllers bind", () => {
@@ -34,6 +55,34 @@ describe("shortcuts", () => {
     expect([
       usedChords.length > 0,
       usedChords.filter((chord) => !listedChords.has(chord)),
+    ]).toEqual([true, []]);
+  });
+
+  // @behavior IF-043
+  it("names no key that nothing binds", () => {
+    const sources = Object.values(controllers);
+    const boundChordSet = new Set([page, ...sources].flatMap(boundChords));
+    const shortcutIdSet = new Set(sources.flatMap(shortcutIds));
+
+    const unboundChords = SHORTCUTS.filter(
+      (shortcut) => !shortcutIdSet.has(shortcut.id),
+    )
+      .flatMap((shortcut) => [...shortcut.mac, ...shortcut.other])
+      .filter((chord) => isKeyboardChord(chord) && !boundChordSet.has(chord));
+
+    expect([shortcutIdSet.size > 0, unboundChords]).toEqual([true, []]);
+  });
+
+  // @behavior IF-044
+  it("lists every key the app menu takes among the keys of macOS", () => {
+    const macChords = new Set<string>(
+      SHORTCUTS.flatMap((shortcut) => shortcut.mac),
+    );
+    const takenChords = menuChords(menu);
+
+    expect([
+      takenChords.length > 0,
+      takenChords.filter((chord) => !macChords.has(chord)),
     ]).toEqual([true, []]);
   });
 

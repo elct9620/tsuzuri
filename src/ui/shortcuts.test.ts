@@ -4,6 +4,7 @@ import page from "../../index.html?raw";
 import {
   SHORTCUTS,
   formatChord,
+  isShortcut,
   shortcutById,
   shortcutText,
 } from "./shortcuts";
@@ -34,6 +35,18 @@ describe("shortcuts", () => {
       usedChords.length > 0,
       usedChords.filter((chord) => !listedChords.has(chord)),
     ]).toEqual([true, []]);
+  });
+
+  it("reads a key by what the browser calls it", () => {
+    const isPressed = (key: string, id: "play" | "cancel" | "stepBack") =>
+      isShortcut(new KeyboardEvent("keydown", { key }), id, false);
+
+    expect([
+      isPressed(" ", "play"),
+      isPressed("Escape", "cancel"),
+      isPressed("ArrowLeft", "stepBack"),
+      isPressed("ArrowRight", "stepBack"),
+    ]).toEqual([true, true, true, false]);
   });
 
   it("writes a chord as macOS draws it", () => {

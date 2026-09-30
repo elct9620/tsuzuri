@@ -20,17 +20,11 @@ import {
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { notify, notifyEdit } from "../ui/notification";
+import { isShortcut } from "../ui/shortcuts";
 import { parseTime } from "../ui/time";
 
 function indexOf(element: EventTarget | null): number {
   return Number((element as HTMLElement).dataset.index);
-}
-
-/** Whether `event` is a bare Delete, or Backspace on macOS, where the key labelled delete types it. */
-function isDeleteKey(event: KeyboardEvent): boolean {
-  if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey)
-    return false;
-  return event.key === "Delete" || (event.key === "Backspace" && isMacOS());
 }
 
 /** Whether the user is working in an open dialog, a menu or a drop-down list, which Delete leaves alone. */
@@ -142,7 +136,11 @@ export default class SegmentChangesController extends Controller {
    * the Current Segment moves only once the deletion shows.
    */
   async deleteByShortcut(event: KeyboardEvent): Promise<void> {
-    if (!isDeleteKey(event) || isWorkingElsewhere(event.target)) return;
+    if (
+      !isShortcut(event, "delete", isMacOS()) ||
+      isWorkingElsewhere(event.target)
+    )
+      return;
     const indexes = this.indexesToDelete;
     if (indexes.length === 0) return;
     event.preventDefault();

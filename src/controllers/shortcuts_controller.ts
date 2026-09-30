@@ -9,26 +9,14 @@ import {
   type Shortcut,
   type ShortcutGroup,
   chords,
+  isShortcut,
   keyLabels,
 } from "../ui/shortcuts";
 
-/**
- * Whether `event` asks for the shortcut list: ⌘/ or Ctrl+/ anywhere, or ? where no text is typed.
- * `/` is read as the key typed, since some keyboards type it with Shift.
- */
+/** Whether `event` asks for the shortcut list: ⌘/ or Ctrl+/ anywhere, or ? where no text is typed. */
 function isListShortcut(event: KeyboardEvent): boolean {
-  if (event.isComposing || event.altKey) return false;
-  const isMac = isMacOS();
-  const hasModifier = isMac
-    ? event.metaKey && !event.ctrlKey
-    : event.ctrlKey && !event.metaKey;
-  if (event.key === "/") return hasModifier;
-  return (
-    event.key === "?" &&
-    !event.ctrlKey &&
-    !event.metaKey &&
-    !isTextField(event.target)
-  );
+  if (event.isComposing || !isShortcut(event, "list", isMacOS())) return false;
+  return event.ctrlKey || event.metaKey || !isTextField(event.target);
 }
 
 /** One chord as a `kbd` for each key. */

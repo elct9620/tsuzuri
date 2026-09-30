@@ -18,15 +18,15 @@ export type ShortcutGroup = (typeof SHORTCUT_GROUPS)[number];
 export interface Shortcut {
   id: string;
   group: ShortcutGroup;
-  mac: string[];
-  other: string[];
+  mac: readonly string[];
+  other: readonly string[];
 }
 
 /**
  * Every shortcut, in the order the list shows them. Only what is shown is kept here; each binding
  * stays in the `data-action` or controller that acts on it.
  */
-export const SHORTCUTS: Shortcut[] = [
+export const SHORTCUTS = [
   {
     id: "list",
     group: "anywhere",
@@ -124,7 +124,10 @@ export const SHORTCUTS: Shortcut[] = [
     mac: ["dblclick"],
     other: ["dblclick"],
   },
-];
+] as const satisfies readonly Shortcut[];
+
+/** What a Shortcut is known by: the key of its words, and what an element's `data-shortcut` names. */
+export type ShortcutId = (typeof SHORTCUTS)[number]["id"];
 
 /** How macOS writes the keys it draws as symbols; every other platform writes them as words. */
 const MAC_LABELS: Record<string, string> = {
@@ -152,13 +155,15 @@ const OTHER_LABELS: Record<string, string> = {
 /** The keys and mouse actions written as words of the Interface Language. */
 const WORDS = ["space", "click", "drag", "wheel"];
 
-/** The shortcut `id` names, as an element's `data-shortcut` does. */
+/** The shortcut `id` names, or none for a name an element's `data-shortcut` got wrong. */
+export function shortcutById(id: ShortcutId): Shortcut;
+export function shortcutById(id: string): Shortcut | undefined;
 export function shortcutById(id: string): Shortcut | undefined {
   return SHORTCUTS.find((shortcut) => shortcut.id === id);
 }
 
 /** The chords that press `shortcut` on this platform. */
-export function chords(shortcut: Shortcut, isMac: boolean): string[] {
+export function chords(shortcut: Shortcut, isMac: boolean): readonly string[] {
   return isMac ? shortcut.mac : shortcut.other;
 }
 

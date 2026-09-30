@@ -23,7 +23,7 @@ function boundChords(source: string): string[] {
 describe("shortcuts", () => {
   // @behavior IF-036
   it("lists every key the page and its controllers bind", () => {
-    const listedChords = new Set(
+    const listedChords = new Set<string>(
       SHORTCUTS.flatMap((shortcut) => [...shortcut.mac, ...shortcut.other]),
     );
     const usedChords = [page, ...Object.values(controllers)].flatMap(
@@ -49,7 +49,7 @@ describe("shortcuts", () => {
   });
 
   it("writes every chord of a Shortcut, in the Interface Language", () => {
-    expect(shortcutText(shortcutById("redo")!, false)).toBe(
+    expect(shortcutText(shortcutById("redo"), false)).toBe(
       "Ctrl+Shift+Z 或 Ctrl+Y",
     );
   });

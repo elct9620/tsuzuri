@@ -18,7 +18,7 @@ import {
 import { t } from "../i18n";
 import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { notifyEdit, notifyFailure } from "../ui/notification";
-import { chords, shortcutById } from "../ui/shortcuts";
+import { type ShortcutId, chords, shortcutById } from "../ui/shortcuts";
 import {
   choiceLanding,
   formatLength,
@@ -65,7 +65,8 @@ const SNAPPING_KEY = "tsuzuri.timeline-snapping";
 /** The key that sets the Current Segment's start or end where the media is, as `KeyboardEvent.key` names it. */
 function timeKeys(): Record<UpdateSide, string> {
   const isMac = isMacOS();
-  const key = (id: string) => chords(shortcutById(id)!, isMac)[0].toUpperCase();
+  const key = (id: ShortcutId) =>
+    chords(shortcutById(id), isMac)[0].toUpperCase();
   return { start: key("setStart"), end: key("setEnd") };
 }
 
@@ -938,6 +939,6 @@ export default class TimelineController extends Controller {
 
 /** Whether the key the shortcut list names for drawing a range over the Segments is held. */
 function isDrawingKey(event: MouseEvent): boolean {
-  const [modifier] = chords(shortcutById("drawOver")!, isMacOS())[0].split("+");
+  const [modifier] = chords(shortcutById("drawOver"), isMacOS())[0].split("+");
   return modifier === "meta" ? event.metaKey : event.ctrlKey;
 }

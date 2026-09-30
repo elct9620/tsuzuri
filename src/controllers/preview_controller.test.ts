@@ -221,6 +221,15 @@ describe("PreviewController", () => {
     expect(target("time").textContent).toBe("01:02 / 24:10");
   });
 
+  // @behavior PV-014
+  it("shows the hours of media lasting an hour or more", async () => {
+    await show(projectWithMedia());
+
+    playTo(62, 60 * 60 + 2 * 60 + 5);
+
+    expect(target("time").textContent).toBe("01:02 / 1:02:05");
+  });
+
   // @behavior PV-015
   it("shows the Segment being played over the video", async () => {
     await show(

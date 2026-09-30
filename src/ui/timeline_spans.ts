@@ -1,6 +1,6 @@
 import type { Segment } from "../backend/project";
 import type { ChoiceSource } from "../editor";
-import { formatTime } from "./time";
+import { MS_PER_SECOND, formatTime } from "./time";
 
 /**
  * Where Segments run on the Preview's timeline, in seconds, where a dragged one lands, and where
@@ -44,8 +44,9 @@ export function snapTime(
   return nearestTime;
 }
 
-export const toMilliseconds = (seconds: number) => Math.round(seconds * 1000);
-export const toSeconds = (ms: number) => ms / 1000;
+export const toMilliseconds = (seconds: number) =>
+  Math.round(seconds * MS_PER_SECOND);
+export const toSeconds = (ms: number) => ms / MS_PER_SECOND;
 
 /** The Lane a region lies in, counted from the bottom, of the `count` Lanes it shares with those it overlaps. */
 export interface RegionLane {

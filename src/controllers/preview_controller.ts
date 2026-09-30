@@ -21,7 +21,7 @@ import {
   rememberedFlag,
   rememberFlag,
 } from "../ui/choices";
-import { formatClock, formatTime } from "../ui/time";
+import { MS_PER_SECOND, formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
 import {
   playAtVolume,
@@ -300,7 +300,7 @@ export default class PreviewController extends Controller {
     const length = Number.isFinite(duration) ? duration : 0;
     showText(
       this.timeTarget,
-      `${formatClock(currentTime * 1000)} / ${formatClock(length * 1000)}`,
+      `${formatClock(currentTime * MS_PER_SECOND)} / ${formatClock(length * MS_PER_SECOND)}`,
     );
   }
 
@@ -407,7 +407,7 @@ export default class PreviewController extends Controller {
 
   /** The indexes of the Segments at the media's time, in the order they start; none between Segments. */
   private segmentIndexesAtTime(): number[] {
-    const at = this.player.currentTime * 1000;
+    const at = this.player.currentTime * MS_PER_SECOND;
     return this.segments.flatMap((segment, index) =>
       segment.start_ms <= at && at < segment.end_ms ? [index] : [],
     );

@@ -2,6 +2,10 @@
 export const TIME_FIELD_ACTIONS =
   "keydown->time-field#typeKey:!composing paste->time-field#pasteTime:prevent cut->time-field#copySelection:prevent compositionstart->time-field#keepTime compositionend->time-field#restoreTime";
 
+export const MS_PER_SECOND = 1000;
+export const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+export const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+
 /** `value` written with leading zeros to `width` digits, as every time the interface shows is. */
 function padDigits(value: number, width = 2): string {
   return String(value).padStart(width, "0");
@@ -9,14 +13,14 @@ function padDigits(value: number, width = 2): string {
 
 /** `ms` as the editor writes a time: `HH:MM:SS.mmm`. */
 export function formatTime(ms: number): string {
-  const hours = Math.floor(ms / 3_600_000);
-  const minutes = Math.floor(ms / 60_000) % 60;
-  const seconds = Math.floor(ms / 1000) % 60;
-  return `${padDigits(hours)}:${padDigits(minutes)}:${padDigits(seconds)}.${padDigits(ms % 1000, 3)}`;
+  const hours = Math.floor(ms / MS_PER_HOUR);
+  const minutes = Math.floor(ms / MS_PER_MINUTE) % 60;
+  const seconds = Math.floor(ms / MS_PER_SECOND) % 60;
+  return `${padDigits(hours)}:${padDigits(minutes)}:${padDigits(seconds)}.${padDigits(ms % MS_PER_SECOND, 3)}`;
 }
 
 /** The longest time the editor writes: `99:59:59.999`. */
-const LONGEST_MS = 100 * 3_600_000 - 1;
+const LONGEST_MS = 100 * MS_PER_HOUR - 1;
 
 /**
  * The milliseconds of a time typed as `HH:MM:SS.mmm`, `MM:SS.mmm` or `SS.mmm`, a comma standing
@@ -30,9 +34,9 @@ export function parseTime(text: string): number | null {
   if (!match) return null;
   const [, hours = "0", minutes = "0", seconds, fraction = "0"] = match;
   return Math.min(
-    Number(hours) * 3_600_000 +
-      Number(minutes) * 60_000 +
-      Number(seconds) * 1000 +
+    Number(hours) * MS_PER_HOUR +
+      Number(minutes) * MS_PER_MINUTE +
+      Number(seconds) * MS_PER_SECOND +
       Number(fraction.padEnd(3, "0")),
     LONGEST_MS,
   );
@@ -72,9 +76,9 @@ export function localTime(utcTime: string): string {
 
 /** `ms` as a player shows a position: `MM:SS`, or `H:MM:SS` from an hour on. */
 export function formatClock(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60) % 60;
-  const hours = Math.floor(seconds / 3600);
-  const clock = `${padDigits(minutes)}:${padDigits(seconds % 60)}`;
+  const seconds = Math.floor(ms / MS_PER_SECOND) % 60;
+  const minutes = Math.floor(ms / MS_PER_MINUTE) % 60;
+  const hours = Math.floor(ms / MS_PER_HOUR);
+  const clock = `${padDigits(minutes)}:${padDigits(seconds)}`;
   return hours > 0 ? `${hours}:${clock}` : clock;
 }

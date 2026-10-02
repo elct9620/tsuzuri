@@ -16,7 +16,15 @@ One piece of speech with a start time, an end time, its text and, when known, it
 
 ### Speaker
 
-Who says a Segment, named by the user and never detected. In an SRT it is the Speaker Label on the cue's first line when no other line carries one, and it is written back as `name: ` before the original, and before the translation as the Translation Glossary names that Speaker in the translation's Language, or as it is where the glossary names it no other way; reading a translation takes off only that label, so dialogue opening like one stays as written.
+Who says a Segment, named by the user or numbered by Speaker Diarization. In an SRT it is the Speaker Label on the cue's first line when no other line carries one, and it is written back as `name: ` before the original, and before the translation as the Translation Glossary names that Speaker in the translation's Language, or as it is where the glossary names it no other way; reading a translation takes off only that label, so dialogue opening like one stays as written.
+
+### Speaker Diarization
+
+Finding who is heard when in a media file, by Tsuzuri's own diarize Step running the diarization Model, and giving each Segment the Speaker heard longest during it. Speakers are numbered `Speaker 1`, `Speaker 2` and on in the order they are first heard, up to eight; a Segment nobody is heard during keeps no Speaker.
+
+### Speaker Turn
+
+One span of a media file during which Speaker Diarization hears one Speaker, by its start, its end and the Speaker's number. Turns of different Speakers may overlap where people talk at once.
 
 ### Transcript
 
@@ -225,7 +233,7 @@ Consecutive Segments the Model reports as one sentence cut apart by transcriptio
 
 ### Speaker Label
 
-The `name:` or `name：` before a line of dialogue, everything up to the line's first colon not followed by a digit, as a clock time's is, unless it is digits only, such as `co:`; a name of any length reads back as it was written. The label of a cue with one becomes its Segment's Speaker; the labels of a cue whose lines name several stay in its text, and a translation asked to keep them sends only the dialogue and puts each label back in front of its line; the translate dialog does not ask yet, as Speakers are not detected.
+The `name:` or `name：` before a line of dialogue, everything up to the line's first colon not followed by a digit, as a clock time's is, unless it is digits only, such as `co:`; a name of any length reads back as it was written. The label of a cue with one becomes its Segment's Speaker; the labels of a cue whose lines name several stay in its text, and a translation asked to keep them sends only the dialogue and puts each label back in front of its line; the translate dialog does not ask yet.
 
 ### Translation Glossary
 

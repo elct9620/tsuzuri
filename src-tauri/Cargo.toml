@@ -42,6 +42,10 @@ specta = { version = "=2.0.0-rc.25", features = ["derive"] }
 specta-typescript = "=0.0.12"
 tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
 tauri-plugin-single-instance = "2"
+candle-core = "0.11"
+candle-nn = "0.11"
+ndarray = "0.17"
+realfft = "3.5"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

@@ -224,6 +224,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
   └────────┘ └──────────┘ └──────────────┘
   轉錄（transcription）是「工具鏈 → 字幕」的用例，沒有自己的規則
   波形（waveform）是「工具鏈 → 預覽」的用例，只有取峰值的規則
+  說話者辨識（diarization）是「工具鏈 → 字幕」的用例，只有指派說話者的規則
 ```
 
 情境之間只經由共用核心的型別與 `CurrentProject` 往來，翻譯與轉錄都不直接讀寫專案目錄。
@@ -270,6 +271,11 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `transcription/` | `whisper` | 轉接 | whisper-cli 參數 |
 | `transcription/` | `settings` | 轉接 | 轉錄設定檔 |
 | — | `waveform` | 應用、領域 | 波形與峰值 |
+| — | `diarization` | 應用 | 說話者辨識 |
+| `diarization/` | `turns` | 領域 | Speaker Turn 與指派 |
+| `diarization/` | `sortformer` | 轉接 | 辨識模型 |
+| `diarization/` | `streaming` | 轉接 | 串流推論 |
+| `diarization/` | `features` | 轉接 | mel 特徵與 WAV |
 | — | `toolchain` | 應用 | 尋找元件、模型設定 |
 | `toolchain/` | `detection` | 轉接 | 偵測已安裝的元件 |
 | `toolchain/` | `hub` | 轉接 | Hugging Face 快取與下載 |

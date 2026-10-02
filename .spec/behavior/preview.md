@@ -86,13 +86,25 @@ A quiet recording is stretched to its loudest Peak, so a Peak holds enough of a 
 | When | the Project is shown |
 | Then | the player reads `/talks/ep01.mp4` through the asset protocol |
 
-## `PV-009` Leaving the Preview out of a Resource without media
+## `PV-009` Showing the Preview for a Resource without media
+
+A subtitle alone still has timing to check and captions to see, so it takes the same Preview as a media file, with silence in place of the sound.
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource of a subtitle alone |
 | When | the Project is shown |
-| Then | no player or controls are shown |
+| Then | the player and its controls are shown |
+
+## `PV-197` Playing silence a minute past the last Segment for a Resource without media
+
+The silence runs a minute past the last Segment, so that Segment can still be dragged later and a new one drawn after it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone whose last Segment ends at 10 s |
+| When | the Project is shown |
+| Then | the player reads a WAV of silence lasting 70 s |
 
 ## `PV-010` Showing the Dummy Video for media without a picture
 
@@ -336,6 +348,14 @@ A window takes the scale of the screen it is made on, so the Video Window is mad
 | Given | a Current Resource with `ep02.mp4` |
 | When | a Waveform taken from `ep01.mp4` arrives |
 | Then | the timeline does not draw it |
+
+## `PV-198` Drawing a flat Waveform for a Resource without media
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone whose last Segment ends at 10 s |
+| When | the Project is shown |
+| Then | the timeline draws a flat Waveform 70 s long, taking none from Rust |
 
 ## `PV-152` Drawing the Waveform in the colours of the theme turned to
 

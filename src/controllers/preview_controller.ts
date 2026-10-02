@@ -23,6 +23,7 @@ import {
   rememberFlag,
 } from "../ui/choices";
 import { showFold } from "../ui/fold";
+import { playedSource, silenceLengthMs, silentWav } from "../ui/silence";
 import { isShortcut } from "../ui/shortcuts";
 import { MS_PER_SECOND, formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
@@ -171,7 +172,10 @@ export default class PreviewController extends Controller {
   declare readonly currentTextTarget: HTMLElement;
   declare readonly currentTranslationTarget: HTMLElement;
 
-  private media: string | null = null;
+  /** What the player reads, as `playedSource` names it. */
+  private source: string | null = null;
+  /** The object URL of the silence the player reads, released once it reads something else. */
+  private silenceUrl: string | null = null;
   private segments: Segment[] = [];
   private playingIndexes: number[] = [];
   private hasTranslation = false;
@@ -240,6 +244,7 @@ export default class PreviewController extends Controller {
     if (this.videoWindow) this.closeVideoWindow();
     for (const [name, listener] of this.playerListeners)
       this.player.removeEventListener(name, listener);
+    this.releaseSilence();
   }
 
   /** Shows the Current Segment in the card beside the video. */
@@ -539,13 +544,13 @@ export default class PreviewController extends Controller {
   }
 
   private showPanel(): void {
-    const hasMedia = this.media !== null;
+    const hasSource = this.source !== null;
     this.panelTarget.hidden =
-      !hasMedia || (this.isPlayerFolded && this.isTimelineFolded);
+      !hasSource || (this.isPlayerFolded && this.isTimelineFolded);
     this.screenRowTarget.hidden = this.isPlayerFolded;
     this.timelineTarget.hidden = this.isTimelineFolded;
-    this.playerFoldButtonTarget.hidden = !hasMedia;
-    this.timelineFoldButtonTarget.hidden = !hasMedia;
+    this.playerFoldButtonTarget.hidden = !hasSource;
+    this.timelineFoldButtonTarget.hidden = !hasSource;
     showFold(this.playerFoldButtonTarget, this.isPlayerFolded);
     showFold(this.timelineFoldButtonTarget, this.isTimelineFolded);
   }
@@ -563,21 +568,34 @@ export default class PreviewController extends Controller {
     this.speakerNames = project?.shown_speaker_names ?? {};
     this.bilingualOrder = project?.options.bilingual_order ?? "original-first";
     this.showCaptionChoice();
-    const media = project?.media ?? null;
+    const source = playedSource(project);
     this.showCurrentSegment();
-    if (media === this.media) {
+    if (source === this.source) {
       this.showCaption(this.segmentIndexesAtTime());
       return;
     }
-    this.media = media;
-    if (media === null && this.videoWindow) this.closeVideoWindow();
+    this.source = source;
+    if (source === null && this.videoWindow) this.closeVideoWindow();
     this.showPanel();
     this.player.hidden = false;
     this.unplayableHint.hidden = true;
     this.captionChoiceTarget.hidden = false;
     this.captionBox.textContent = "";
     this.markPlaying([]);
-    if (media === null) this.player.removeAttribute("src");
-    else this.player.src = mediaUrl(media);
+    this.releaseSilence();
+    if (source === null) this.player.removeAttribute("src");
+    else if (project?.media) this.player.src = mediaUrl(project.media);
+    else this.playSilence(silenceLengthMs(this.segments));
+  }
+
+  /** Puts silence lasting `lengthMs` in the player, for a Resource without a media file. */
+  private playSilence(lengthMs: number): void {
+    this.silenceUrl = URL.createObjectURL(silentWav(lengthMs));
+    this.player.src = this.silenceUrl;
+  }
+
+  private releaseSilence(): void {
+    if (this.silenceUrl !== null) URL.revokeObjectURL(this.silenceUrl);
+    this.silenceUrl = null;
   }
 }

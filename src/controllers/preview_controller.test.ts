@@ -202,10 +202,45 @@ describe("PreviewController", () => {
   });
 
   // @behavior PV-009
-  it("shows no player or controls for a Resource without media", async () => {
+  it("shows the player and its controls for a Resource without media", async () => {
     await show(projectOf());
 
-    expect(panel().hidden).toBe(true);
+    expect(panel().hidden).toBe(false);
+  });
+
+  // @behavior PV-197
+  it("plays silence a minute past the last Segment for a Resource without media", async () => {
+    const made: Blob[] = [];
+    vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+      made.push(blob as Blob);
+      return "blob:silence";
+    });
+
+    await show(
+      projectOf({
+        segments: [{ start_ms: 2000, end_ms: 10000, text: "Hello" }],
+      }),
+    );
+    const wav = new DataView(await made[0].arrayBuffer());
+    const sampleRate = wav.getUint32(24, true);
+    const samples = new Uint8Array(wav.buffer, 44);
+
+    expect([
+      media().getAttribute("src"),
+      made[0].type,
+      samples.length / sampleRate,
+      samples.every((sample) => sample === 128),
+    ]).toEqual(["blob:silence", "audio/wav", 70, true]);
+  });
+
+  it("lets the silence go once the player reads a media file", async () => {
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:silence");
+    const revoke = vi.spyOn(URL, "revokeObjectURL");
+    await show(projectOf());
+
+    await show(projectWithMedia());
+
+    expect(revoke).toHaveBeenCalledWith("blob:silence");
   });
 
   // @behavior PV-010

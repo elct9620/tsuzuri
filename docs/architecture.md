@@ -175,6 +175,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 子目錄 | 不含 |
 | 路徑來源 | `ProjectView.media` |
 | CORS | anonymous，供 Web Audio |
+| 沒有媒體檔 | webview 產生靜音，不讀檔 |
 
 影片要能拖動與串流，經由指令傳送整個檔案不可行，所以媒體檔是 webview 唯一直接讀取的資料。路徑仍由 Rust 給出，範圍只含開啟過的專案目錄。
 
@@ -674,6 +675,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `ui/timeline_spans.ts` | 時間軸區段與選段的落點 |
 | `ui/file_name.ts` | 路徑的最後一段 |
+| `ui/silence.ts` | 沒有媒體檔時播放的靜音 |
 | `ui/shortcuts.ts` | 各平台的快速鍵、比對與寫法 |
 | `ui/text_fields.ts` | 原文或譯文的選擇、選取的文字 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |

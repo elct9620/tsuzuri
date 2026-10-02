@@ -76,11 +76,11 @@ A directory opened as a Project before, kept in the app's settings with when it 
 
 ### Preview
 
-The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. It appears only for a Resource with a media file.
+The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. A Resource without a media file plays silence under a Dummy Video, so its subtitles are still watched and retimed in the same Preview.
 
 ### Dummy Video
 
-What the Preview shows in place of a picture its media does not have: a 16:9 frame, black unless white is chosen on this machine, with the Segment being played over it, so a Resource of sound alone shows its subtitles as they will look over a video. It is drawn by the webview and never written as a file; the Video Window shows it as it shows a picture.
+What the Preview shows in place of a picture its media does not have: a 16:9 frame, black unless white is chosen on this machine, with the Segment being played over it, so a Resource of sound alone shows its subtitles as they will look over a video. It is drawn by the webview and never written as a file; the Video Window shows it as it shows a picture. For a Resource without a media file it plays over silence the webview makes, a minute longer than the last Segment, so the player stays the one clock the Preview and the timeline follow.
 
 #### Rejected
 

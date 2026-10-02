@@ -145,6 +145,19 @@ describe("TimelineController", () => {
     expect(wrapper().style.width).toBe("200px");
   });
 
+  // @behavior PV-198
+  it("draws a flat Waveform over the silence of a Resource without media", async () => {
+    let takenWaveforms = 0;
+    takeWaveform = () => {
+      takenWaveforms += 1;
+      return waveform;
+    };
+
+    await show(projectOf({ media: null, segments: [segmentAt(2, 10)] }));
+
+    expect([wrapper().style.width, takenWaveforms]).toEqual(["7000px", 0]);
+  });
+
   // @behavior PV-152
   it("draws the Waveform in the colours of the theme turned to", async () => {
     const timeline = document.querySelector<HTMLElement>(

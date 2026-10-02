@@ -18,6 +18,7 @@ import {
 import { t } from "../i18n";
 import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { notifyEdit, notifyFailure } from "../ui/notification";
+import { SILENT_PEAKS, playedSource, silenceLengthMs } from "../ui/silence";
 import { type Shortcut, chords, shortcutById } from "../ui/shortcuts";
 import {
   choiceLanding,
@@ -161,7 +162,8 @@ export default class TimelineController extends Controller {
   declare readonly startKeyTarget: HTMLElement;
   declare readonly endKeyTarget: HTMLElement;
 
-  private media: string | null = null;
+  /** What the player reads, as `playedSource` names it. */
+  private source: string | null = null;
   private segments: Segment[] = [];
   /** Whether a running Mode holds the Current Resource, which refuses every Segment Change. */
   private isHeld = false;
@@ -434,29 +436,40 @@ export default class TimelineController extends Controller {
     if (this.drag) this.regions?.clearRegions();
     this.drag = null;
     this.dropRange();
-    const media = project?.media ?? null;
-    if (media === this.media) {
+    const source = playedSource(project);
+    if (source === this.source) {
       this.markSegments();
       return;
     }
-    this.media = media;
-    void this.loadWaveform(media);
+    this.source = source;
+    void this.loadWaveform(project?.media ?? null);
   }
 
+  /** Draws the Waveform of `media`, taken by Rust, or a flat one over the silence without it. */
   private async loadWaveform(media: string | null): Promise<void> {
     this.surfer?.destroy();
     this.surfer = undefined;
     this.regions = undefined;
     this.waveformRequest = undefined;
-    this.waveformTarget.hidden = media === null;
-    if (media === null) return;
+    this.waveformTarget.hidden = this.source === null;
+    if (this.source === null) return;
+    if (media === null) {
+      this.drawWaveform(
+        SILENT_PEAKS,
+        toSeconds(silenceLengthMs(this.segments)),
+      );
+      return;
+    }
     this.waveformTarget.classList.add("skeleton");
     const request = extractWaveform();
     this.waveformRequest = request;
     try {
       const waveform = await request;
-      if (request === this.waveformRequest && waveform.media === this.media)
-        this.drawWaveform(waveform);
+      if (request === this.waveformRequest && waveform.media === this.source)
+        this.drawWaveform(
+          waveform.peaks,
+          waveform.peaks.length / waveform.peaks_per_second,
+        );
     } catch (error) {
       if (request === this.waveformRequest)
         notifyFailure(t("preview.noWaveform"), error);
@@ -466,7 +479,8 @@ export default class TimelineController extends Controller {
     }
   }
 
-  private drawWaveform(waveform: Waveform): void {
+  /** Draws `peaks` spread over `duration` seconds, with a region for each Segment. */
+  private drawWaveform(peaks: number[], duration: number): void {
     const regions = RegionsPlugin.create();
     this.regions = regions;
     regions.on("region-clicked", (region, event) =>
@@ -488,8 +502,8 @@ export default class TimelineController extends Controller {
     this.surfer = WaveSurfer.create({
       container: this.waveformTarget,
       media: this.player,
-      peaks: [waveform.peaks],
-      duration: waveform.peaks.length / waveform.peaks_per_second,
+      peaks: [peaks],
+      duration,
       height: "auto",
       normalize: true,
       hideScrollbar: true,

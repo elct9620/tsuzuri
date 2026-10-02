@@ -16,9 +16,9 @@ use super::versions::{self, ComparedCue, RevertPart, SubtitleVersions};
 use super::{directory_name, trimmed_name};
 use super::{
     translation_only, translation_srt, translation_with_speakers, BackupKind, CleanupScope,
-    CurrentResource, ExportFormat, KnownSubtitle, Project, ProjectConfig, ProjectModelPresets,
-    ProjectOptions, Resource, Restoration, SegmentField, SegmentSpan, TextMatch,
-    TranscriptionScope, TranscriptionTarget, TranslationSource,
+    CurrentResource, DiarizationTarget, ExportFormat, KnownSubtitle, Project, ProjectConfig,
+    ProjectModelPresets, ProjectOptions, Resource, Restoration, SegmentField, SegmentSpan,
+    TextMatch, TranscriptionScope, TranscriptionTarget, TranslationSource,
 };
 use crate::cleanup::{clean_range, clean_text};
 use crate::failure::Failure;
@@ -1370,6 +1370,72 @@ impl CurrentProject {
             overrides: project.options.transcription,
             window,
         })
+    }
+
+    /// The Current Resource's media file and the original subtitle a diarization gives Speakers
+    /// to, refused without either.
+    pub fn diarization_target(&self) -> Result<DiarizationTarget, Failure> {
+        let held_project = self.lock();
+        let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
+        let name = project.current()?.name.clone();
+        let resource = project.resource(&name)?;
+        let media = resource.media.clone().ok_or(Failure::NoMedia)?;
+        let subtitle = resource.subtitle.clone().ok_or_else(|| Failure::Internal {
+            detail: format!("{name} has no subtitle to give Speakers to"),
+        })?;
+        Ok(DiarizationTarget {
+            directory: project.directory.clone(),
+            name,
+            media,
+            subtitle,
+        })
+    }
+
+    /// Gives each Segment of the diarized Resource's original subtitle the Speaker `speakers`
+    /// answers for it, kept as a Backup first, and each cue of its translations with the same
+    /// times that Speaker, as one change, as a transcription writes.
+    pub fn write_speakers(
+        &self,
+        job: &DiarizationTarget,
+        speakers: impl FnOnce(&[Segment]) -> Vec<Option<String>>,
+    ) -> Result<(), Failure> {
+        let mut held_project = self.lock();
+        let HeldProject { project, mode_hold } = &mut *held_project;
+        let mut project = project
+            .as_mut()
+            .filter(|project| project.directory == job.directory);
+        let previous = files::transcript_at(&job.subtitle)?;
+        let mut transcript = previous.clone();
+        for (segment, speaker) in transcript
+            .segments
+            .iter_mut()
+            .zip(speakers(&previous.segments))
+        {
+            segment.speaker = speaker;
+        }
+        write_mode_result(
+            project.as_deref_mut(),
+            &job.directory,
+            &job.name,
+            &job.subtitle,
+            transcript.to_srt(WrittenText::Original),
+            ResultBackup::ModeOutput,
+            |project| {
+                let policy = project.mode_backup_policy();
+                project.write_speakers_to_translations(&job.name, &previous, policy)?;
+                project.write_bilingual_subtitles(&job.name, None)
+            },
+        )?;
+        if let Some(project) = project.as_mut() {
+            if project.is_current(&job.name) {
+                let translation = project.current()?.translation;
+                project.read_again_showing(&job.name, translation)?;
+            }
+        }
+        if let Some(hold) = mode_hold.as_mut() {
+            hold.progress = None;
+        }
+        Ok(())
     }
 
     /// Shows `segments` as what the running Mode has transcribed so far.

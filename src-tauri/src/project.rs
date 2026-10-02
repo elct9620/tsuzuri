@@ -437,6 +437,17 @@ impl TranscriptionScope {
     }
 }
 
+/// What a diarization needs from the Project when it starts.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DiarizationTarget {
+    pub directory: PathBuf,
+    /// The Resource being diarized.
+    pub name: String,
+    pub media: PathBuf,
+    /// The Resource's original subtitle, whose Segments get the Speakers.
+    pub subtitle: PathBuf,
+}
+
 /// What a transcription needs from the Project when it starts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TranscriptionTarget {

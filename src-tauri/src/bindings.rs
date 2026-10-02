@@ -5,8 +5,8 @@ use tauri_specta::{collect_commands, collect_events, Builder, ErrorHandlingMode,
 
 use crate::edit_command::EditCommand;
 use crate::{
-    about, logs, progress, project, steps, toolchain, transcription, translation, updates,
-    waveform, window,
+    about, diarization, logs, progress, project, steps, toolchain, transcription, translation,
+    updates, waveform, window,
 };
 
 /// A command that fails rejects with its `Failure`, as a plain `invoke` does, and the counts and
@@ -27,6 +27,7 @@ pub fn builder() -> Builder<tauri::Wry> {
             toolchain::commands::repository_files,
             toolchain::commands::cancel_model_download,
             transcription::commands::transcribe,
+            diarization::commands::diarize,
             transcription::commands::transcription_settings,
             transcription::commands::save_transcription_settings,
             project::commands::current_project,

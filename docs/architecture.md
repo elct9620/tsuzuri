@@ -442,6 +442,7 @@ ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 | 規則 | 做法 |
 |---|---|
 | 一次一個 | `ModeLock::begin` |
+| diarize 指令 | 同 transcribe 的流程 |
 | 取消 | `cancel_task` 經 `ModeLock` |
 | 取消後 | 只結束它啟動的行程 |
 | 取波形 | 不是任務，不取鎖 |

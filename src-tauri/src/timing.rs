@@ -15,6 +15,8 @@ pub enum Phase {
     Loading,
     #[serde(rename = "transcribe")]
     Transcription,
+    #[serde(rename = "diarize")]
+    Diarization,
     #[serde(rename = "detect")]
     Detection,
     #[serde(rename = "translate")]

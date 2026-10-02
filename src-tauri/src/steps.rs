@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 use std::future::Future;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::watch;
@@ -17,6 +17,7 @@ pub const WORK_DIR: &str = "work";
 // What each Step is called when it fails, which is how the webview names it to the user
 pub const CONVERSION_STEP: &str = "convert";
 pub const TRANSCRIPTION_STEP: &str = "transcribe";
+pub const DIARIZATION_STEP: &str = "diarize";
 pub const WAVEFORM_STEP: &str = "waveform";
 pub const TRANSLATION_STEP: &str = "translate";
 
@@ -173,6 +174,16 @@ impl Turn<'_> {
         if cancel.wait_for(|is_cancelled| *is_cancelled).await.is_err() {
             std::future::pending::<()>().await;
         }
+    }
+}
+
+/// The directory a Mode writes its intermediate files to, removed with them once the
+/// Mode's run ends, however it ends.
+pub struct WorkDir(pub PathBuf);
+
+impl Drop for WorkDir {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
     }
 }
 

@@ -441,6 +441,7 @@ const zhHant: typeof en = {
     load: "載入模型",
     detect: "找出被切開的句子",
     transcribe: "轉錄",
+    diarize: "辨識說話者",
     translate: "翻譯",
     waveform: "擷取波形",
     firstLoad: "{{phase}}（第一次使用會比較久）",

@@ -18,7 +18,7 @@ export type FieldKind = "text" | "translation" | "other";
 
 /**
  * Whether the Mode running on the Current Resource holds a field of `kind` of the Segment at
- * `index`: a transcription holds every field, a translation every one but the texts and a
+ * `index`: a transcription or a diarization holds every field, a translation every one but the texts and a
  * translation it does not write, which translating chosen Segments again narrows to theirs.
  */
 export function isHeld(
@@ -27,7 +27,7 @@ export function isHeld(
   index: number,
 ): boolean {
   if (runningMode === null) return false;
-  if (runningMode.mode === "transcription") return true;
+  if (runningMode.mode !== "translation") return true;
   if (kind === "text") return false;
   if (kind !== "translation") return true;
   const { language, indexes } = runningMode;

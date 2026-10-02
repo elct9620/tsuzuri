@@ -88,6 +88,7 @@ impl Diarizer {
         let num_chunks = total_frames.div_ceil(chunk_stride);
 
         let mut chunk_predictions = Vec::with_capacity(num_chunks);
+        progress(0, num_chunks);
         for chunk_idx in 0..num_chunks {
             let start = chunk_idx * chunk_stride;
             let end = (start + feed_size).min(total_frames);

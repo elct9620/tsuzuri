@@ -17,6 +17,7 @@ export const commands = {
 	repositoryFiles: (repo: string, slot: ModelSlot) => __TAURI_INVOKE<RepositoryFile[]>("repository_files", { repo, slot }),
 	cancelModelDownload: (repo: string, file: string) => __TAURI_INVOKE<void>("cancel_model_download", { repo, file }),
 	transcribe: (overwrite: boolean, scope: TranscriptionScope) => __TAURI_INVOKE<Transcription>("transcribe", { overwrite, scope }),
+	diarize: () => __TAURI_INVOKE<Diarization>("diarize"),
 	transcriptionSettings: () => __TAURI_INVOKE<TranscriptionSettings>("transcription_settings"),
 	saveTranscriptionSettings: (settings: TranscriptionSettings) => __TAURI_INVOKE<TranscriptionSettings>("save_transcription_settings", { settings }),
 	currentProject: () => __TAURI_INVOKE<{
@@ -219,6 +220,12 @@ export type DebugLog = {
 	is_written_next_launch: boolean,
 };
 
+export type Diarization = {
+	audio_seconds: number,
+	diarize_seconds: number,
+	phases: PhaseTiming[],
+};
+
 /**  How much of a Model being downloaded has arrived. */
 export type DownloadProgress = {
 	repo: string,
@@ -357,7 +364,7 @@ export type ModelSource = { kind: "file"; path: string } |
 export type Origin = "choice" | "detection" | "bundled-variant";
 
 /**  One timed part of a Mode's run, named in `pipeline-progress`, in the seconds each took and in the log. */
-export type Phase = "prepare" | "convert" | "load" | "transcribe" | "detect" | "translate";
+export type Phase = "prepare" | "convert" | "load" | "transcribe" | "diarize" | "detect" | "translate";
 
 export type PhaseTiming = {
 	phase: Phase,
@@ -564,6 +571,8 @@ export type RowKind = "pair" | "addition" | "removal" | "split" | "merge";
 export type RunningMode = 
 /**  Holds every subtitle of the Resource. */
 { mode: "transcription" } | 
+/**  Holds every subtitle of the Resource, as it gives each its Speakers. */
+{ mode: "diarization" } | 
 /**
  *  Holds only the translation into `language`, or only its Segments at `indexes` while they
  *  are translated again.

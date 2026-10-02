@@ -9,7 +9,7 @@ use crate::failure::Failure;
 use crate::language::Language;
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, RunningMode, SegmentSpan, TranscriptionTarget};
-use crate::steps::{run_step, ModeRun, Steps, CONVERSION_STEP, TRANSCRIPTION_STEP};
+use crate::steps::{run_step, ModeRun, Steps, WorkDir, CONVERSION_STEP, TRANSCRIPTION_STEP};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -36,16 +36,6 @@ pub struct Transcription {
 pub struct Tools {
     pub ffmpeg: PathBuf,
     pub whisper: PathBuf,
-}
-
-/// The directory a transcription writes its intermediate files to, removed with them once the
-/// Mode's run ends, however it ends.
-struct WorkDir(PathBuf);
-
-impl Drop for WorkDir {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.0);
-    }
 }
 
 #[allow(clippy::too_many_arguments)]

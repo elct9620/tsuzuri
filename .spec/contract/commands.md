@@ -86,6 +86,14 @@ Run the Transcribe Mode on the Current Resource's media file in the Primary Lang
 pub async fn transcribe(app: AppHandle, current: State<'_, CurrentProject>, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, resident: State<'_, ResidentLlama>, overwrite: bool, scope: TranscriptionScope) -> Result<Transcription, Failure> {}
 ```
 
+## `diarize`
+
+Run the Diarize Mode on the Current Resource: convert its whole media file, run the diarize Step with the diarization Model, and give each Segment of its Primary Language subtitle the Speaker heard longest during it, writing that subtitle once after keeping it as a Backup, and each cue of its translations with the times of a Segment that Speaker. It emits `pipeline-progress` as each Phase starts and as the diarize Step's percentage changes, and answers how long the audio is and the seconds each Phase took. A Resource without a media file or a Primary Language subtitle is refused before any Step runs.
+
+```rust
+pub async fn diarize(app: AppHandle, current: State<'_, CurrentProject>, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, resident: State<'_, ResidentLlama>) -> Result<Diarization, Failure> {}
+```
+
 ## `transcription_settings`
 
 The general Transcription Settings: whether VAD runs, whether non-speech tokens are suppressed, whether each window carries the text before it as context, and whether a Simplified Cleanup follows a transcription in `zh-TW`.

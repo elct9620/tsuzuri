@@ -455,6 +455,7 @@ const en = {
     load: "Loading the model",
     detect: "Finding split sentences",
     transcribe: "Transcribing",
+    diarize: "Telling speakers apart",
     translate: "Translating",
     waveform: "Taking the waveform",
     firstLoad: "{{phase}} (slower the first time)",

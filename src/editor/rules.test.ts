@@ -41,6 +41,14 @@ describe("rules", () => {
     ]);
   });
 
+  it("holds every field while diarizing", () => {
+    expect(
+      (["text", "translation", "other"] as const).map((kind) =>
+        isHeld(kind, view({ runningMode: { mode: "diarization" } }), 0),
+      ),
+    ).toEqual([true, true, true]);
+  });
+
   it("splits only where text is left on both sides", () => {
     expect([
       splitPoint("你好世界", 0),

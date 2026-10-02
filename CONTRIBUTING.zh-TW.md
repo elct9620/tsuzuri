@@ -14,7 +14,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # 對照 .spec/ 檢查程式碼
 ```
 
-webview 的 `src/backend/bindings.ts` 由 Rust 的指令、事件與常數生成：改動其中之一時，`cargo test` 會改寫它並失敗一次，改寫後的檔案和改動一起 commit。
+webview 的 `src/backend/bindings.ts` 由 Rust 的指令、事件與常數生成：改動其中之一時，`cargo test` 會改寫它並失敗一次；改寫後的檔案和改動一起 commit。
 
 ## 元件
 
@@ -29,7 +29,7 @@ scripts/vendor.sh whisper cpu   # 單一元件、單一變體
 | Linux 的 OpenBLAS、Vulkan 版 | pkg-config、libopenblas-dev、libvulkan-dev、glslc、spirv-headers |
 | Windows | 在 MSYS2 UCRT64 裡編譯 |
 
-App 依序使用：指定的執行檔、偵測到的已安裝版本（Homebrew、Nix、`PATH`）、內建版本。開發時的建置不內建元件，`scripts/vendor.sh` 依 [`components.json`](components.json) 釘住的原始程式碼編譯到 `vendor/<元件>/<變體>/`，debug build 會優先使用；沒有指定變體時用該平台列出的第一個。
+App 依序使用：指定的執行檔、偵測到的已安裝版本（Homebrew、Nix、`PATH`）、內建版本。開發時的建置不內建元件。`scripts/vendor.sh` 依 [`components.json`](components.json) 釘住的原始程式碼編譯到 `vendor/<元件>/<變體>/`，debug build 會優先使用；沒有指定變體時用該平台列出的第一個。
 
 ## 打包
 
@@ -65,9 +65,9 @@ Releases Preview Build 20260929+143 (173c0ed).
 | 用 merge commit 合併 | `stable` 保留每個 commit |
 | merge commit 用 PR 標題 | 第一行維持 conventional 格式 |
 
-釋出 PR 把 `main` 合進 `stable`。版號要等合併後才由 release-please 算出，所以標題寫預覽版的 Build；合併前確認 PR 的 head 仍是該 Build 的 commit。
+釋出 PR 把 `main` 合進 `stable`。版號要等合併後才由 release-please 算出，所以標題寫預覽版的 Build。合併前確認 PR 的 head 仍是該 Build 的 commit。
 
-## 實際執行引擎的測試
+## 引擎測試
 
 ```bash
 cd src-tauri

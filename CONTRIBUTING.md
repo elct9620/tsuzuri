@@ -14,7 +14,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # check code against .spec/
 ```
 
-The webview's `src/backend/bindings.ts` is generated from the Rust commands, events and constants: when one changes, `cargo test` rewrites the file and fails once, and the rewritten file is committed with the change.
+The webview's `src/backend/bindings.ts` is generated from the Rust commands, events and constants. When one changes, `cargo test` rewrites the file and fails once; commit the rewritten file with the change.
 
 ## Components
 
@@ -29,7 +29,7 @@ scripts/vendor.sh whisper cpu   # one Component, one Variant
 | Linux, OpenBLAS and Vulkan builds | pkg-config, libopenblas-dev, libvulkan-dev, glslc and spirv-headers |
 | Windows | MSYS2 UCRT64 |
 
-Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else the bundled one. Development builds bundle nothing: `scripts/vendor.sh` builds from the source [`components.json`](components.json) pins into `vendor/<component>/<variant>/`, which debug builds look in first, taking the first Variant listed for the platform unless one is named.
+Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else the bundled one. Development builds bundle nothing. `scripts/vendor.sh` builds from the source [`components.json`](components.json) pins into `vendor/<component>/<variant>/`, which debug builds look in first. It takes the first Variant listed for the platform unless one is named.
 
 ## Packaging
 
@@ -65,9 +65,9 @@ Releases Preview Build 20260929+143 (173c0ed).
 | Merge with a merge commit | `stable` keeps every commit |
 | The merge commit takes the PR title | Its first line stays conventional |
 
-A release PR brings `main` into `stable`. release-please picks the version only after it merges, so the title names the Preview Build instead; before merging, check the PR's head is still the Build's commit.
+A release PR brings `main` into `stable`. release-please picks the version only after it merges, so the title names the Preview Build instead. Before merging, check the PR's head is still the Build's commit.
 
-## Tests that run the engines
+## Engine tests
 
 ```bash
 cd src-tauri

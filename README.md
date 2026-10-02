@@ -93,7 +93,7 @@ sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 | A task runs | Updating is refused |
 | No check at launch | Turn it off in Version and updates |
 
-At launch Tsuzuri checks tsuzuri.aotoki.me for a newer version on your update channel and offers **Update** in a notification. Updating downloads the same kind of installer you installed from and checks its signature before it stops the engines and installs; nothing is downloaded until you choose **Update**. On Linux, installing asks for your password as `apt` or `dnf` would.
+At launch Tsuzuri checks tsuzuri.aotoki.me for a newer version on your update channel and offers **Update** in a notification. Updating downloads the same kind of installer you installed from and checks its signature. Only then does it stop the engines and install, and nothing is downloaded until you choose **Update**. On Linux, installing asks for your password as `apt` or `dnf` would.
 
 #### Update channels
 

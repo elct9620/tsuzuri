@@ -8,6 +8,7 @@ const en = {
     openSrt: "Open an SRT file",
     transcribe: "Transcribe",
     translate: "Translate",
+    diarize: "Diarize",
     settings: "Settings",
     export: "Export",
     original: "Save original as",
@@ -77,6 +78,17 @@ const en = {
     factor: "Real-time factor (RTF)",
     failed: "Transcription failed",
     cancelled: "Transcription cancelled",
+  },
+  diarize: {
+    title: "Tell speakers apart",
+    model: "Model",
+    overwrite:
+      "The Speakers the Segments carry will be replaced; the subtitle is backed up first",
+    start: "Diarize",
+    overwriteAndStart: "Replace and diarize",
+    done: "Speakers told apart",
+    failed: "Speaker diarization failed",
+    cancelled: "Speaker diarization cancelled",
   },
   translate: {
     notShown: "Translation not shown",

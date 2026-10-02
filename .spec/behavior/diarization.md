@@ -6,6 +6,7 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 
 - `src-tauri/src/diarization.rs`
 - `src-tauri/src/diarization/*.rs`
+- `src/controllers/diarize_controller.test.ts`
 
 ## `DZ-001` Giving a Segment the Speaker heard longest during it
 
@@ -118,4 +119,28 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 | Given | a Resource with a media file and no Primary Language subtitle |
 | When | it is diarized |
 | Then | it is refused before any Step runs |
+
+## `DZ-015` Diarizing the Current Resource from the toolbar
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and a subtitle |
+| When | its diarization is started from the toolbar |
+| Then | the Resource is diarized and a Notification says so, with how long it took |
+
+## `DZ-016` Offering a diarization only with a media file and a subtitle
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and no subtitle |
+| When | the toolbar is shown |
+| Then | its diarize button cannot be pressed |
+
+## `DZ-017` Warning that a diarization replaces the Speakers given
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Segments carry Speakers |
+| When | its diarization dialog opens |
+| Then | it warns that their Speakers are replaced and names the start button for it |
 

@@ -124,6 +124,7 @@ controller ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/command
 | `editing.ts` | `project/commands.rs` | 編輯、搜尋、取代、清理、段落改動、復原 |
 | `transcription.ts` | `transcription/commands.rs` | `transcribe` |
 | `translation.ts` | `translation/commands.rs` | `translate`、`retranslate`、翻譯設定 |
+| `diarization.ts` | `diarization/commands.rs` | `diarize` |
 | `toolchain.ts` | `toolchain/commands.rs` | 元件、模型設定與下載 |
 | `waveform.ts` | `waveform/commands.rs` | `extract_waveform` |
 | `logs.ts` | `logs/commands.rs` | log 目錄、除錯紀錄 |
@@ -599,6 +600,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `search` | 搜尋列與符合處標記 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 任務 modal，含重做 |
+| `diarize` | 辨識說話者的 modal |
 | `resource-list` | 資源清單的固定與收起 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
@@ -651,7 +653,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 |---|---|
 | `project.ts` | 專案、版本、詞彙表的指令與訂閱 |
 | `editing.ts` | 實作 `editor/` 的 port |
-| `transcription.ts`、`translation.ts` | 任務與設定的指令、型別 |
+| `transcription.ts`、`translation.ts`、`diarization.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄、除錯紀錄的指令 |
 | `about.ts` | App Build、開啟釋出與贊助頁面 |

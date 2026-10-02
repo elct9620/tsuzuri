@@ -20,12 +20,14 @@ import {
 const PHASES_BY_TASK: Record<TaskKind, Phase[]> = {
   transcription: ["prepare", "convert", "load", "transcribe"],
   translation: ["prepare", "load", "detect", "translate"],
+  diarization: ["prepare", "convert", "load", "diarize"],
 };
 
 /** Where each task's messages are kept: under the dialog that starts it. */
 const MESSAGES_BY_TASK: Record<TaskKind, string> = {
   transcription: "transcribe",
   translation: "translate",
+  diarization: "diarize",
 };
 
 /**

@@ -34,6 +34,7 @@ import TimelineController, {
   controlOption,
 } from "./controllers/timeline_controller";
 import TooltipController from "./controllers/tooltip_controller";
+import DiarizeController from "./controllers/diarize_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
 import TranscriptionSettingsController from "./controllers/transcription_settings_controller";
@@ -80,6 +81,7 @@ async function start(): Promise<void> {
     "resource-list": ResourceListController,
     cleanup: CleanupController,
     search: SearchController,
+    diarize: DiarizeController,
     "segment-changes": SegmentChangesController,
     shortcuts: ShortcutsController,
     speakers: SpeakersController,

@@ -95,6 +95,13 @@ export const SHORTCUTS = [
   },
   { id: "reload", group: "anywhere", mac: ["meta+r"], other: ["ctrl+r"] },
   { id: "following", group: "anywhere", mac: ["meta+l"], other: ["ctrl+l"] },
+  // ⌘B as editors with a sidebar bind it
+  {
+    id: "resourceList",
+    group: "anywhere",
+    mac: ["meta+b"],
+    other: ["ctrl+b"],
+  },
   { id: "play", group: "playback", mac: ["space"], other: ["space"] },
   // F11 and F12 as Subtitle Edit binds them, but F9 on macOS, which shows the desktop with F11
   { id: "setStart", group: "playback", mac: ["f9"], other: ["f11"] },

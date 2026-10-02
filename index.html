@@ -58,26 +58,44 @@
       </section>
 
       <div
-        class="drawer h-dvh lg:drawer-open"
+        class="drawer h-dvh lg:data-is-docked:drawer-open"
         data-project-target="workspace"
+        data-controller="resource-list"
+        data-action="system:orientation@window->resource-list#follow keydown@window->resource-list#toggleByShortcut project:select@window->resource-list#putAway"
         hidden
       >
         <input
           id="resources-drawer"
           type="checkbox"
           class="drawer-toggle"
-          data-project-target="resourcesToggle"
+          data-resource-list-target="toggle"
         />
         <div class="drawer-content @container flex h-dvh min-w-0 flex-col">
           <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
             <label
               for="resources-drawer"
               class="btn btn-square btn-sm btn-ghost drawer-button lg:hidden"
+              data-resource-list-target="overlayButton"
               data-i18n-label="resources.open"
               data-i18n-tooltip="resources.open"
+              data-shortcut="resourceList"
             >
               <i data-lucide="menu" class="size-4"></i>
             </label>
+            <button
+              type="button"
+              class="btn btn-square btn-sm btn-ghost hidden lg:inline-flex"
+              data-resource-list-target="dockButton"
+              data-action="resource-list#toggleDocked"
+              data-i18n-label="resources.dock"
+              data-i18n-tooltip="resources.dock"
+              data-shortcut="resourceList"
+            >
+              <span class="swap" data-resource-list-target="dockIcon">
+                <i data-lucide="panel-left-open" class="swap-on size-4"></i>
+                <i data-lucide="panel-left-close" class="swap-off size-4"></i>
+              </span>
+            </button>
             <h1 class="navbar-start w-auto min-w-0 flex-1">
               <label
                 class="group input input-ghost input-sm w-full max-w-md hover:border-base-300"

@@ -22,6 +22,7 @@ import {
   rememberedFlag,
   rememberFlag,
 } from "../ui/choices";
+import { showFold } from "../ui/fold";
 import { isShortcut } from "../ui/shortcuts";
 import { MS_PER_SECOND, formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
@@ -80,18 +81,6 @@ function showText(element: HTMLElement, text: string): void {
 }
 
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
-/** Shows the fold `button` for a part only with media to fold, its `icon` saying which way it goes. */
-function showFold(
-  button: HTMLElement,
-  icon: HTMLElement,
-  hasMedia: boolean,
-  isFolded: boolean,
-): void {
-  button.hidden = !hasMedia;
-  icon.classList.toggle("swap-active", isFolded);
-  button.setAttribute("aria-pressed", String(isFolded));
-}
-
 export default class PreviewController extends Controller {
   static targets = [
     "panel",
@@ -525,16 +514,16 @@ export default class PreviewController extends Controller {
       !hasMedia || (this.isPlayerFolded && this.isTimelineFolded);
     this.screenRowTarget.hidden = this.isPlayerFolded;
     this.timelineTarget.hidden = this.isTimelineFolded;
+    this.playerFoldButtonTarget.hidden = !hasMedia;
+    this.timelineFoldButtonTarget.hidden = !hasMedia;
     showFold(
       this.playerFoldButtonTarget,
       this.playerFoldIconTarget,
-      hasMedia,
       this.isPlayerFolded,
     );
     showFold(
       this.timelineFoldButtonTarget,
       this.timelineFoldIconTarget,
-      hasMedia,
       this.isTimelineFolded,
     );
   }

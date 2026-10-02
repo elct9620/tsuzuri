@@ -528,6 +528,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
   |-- session.onChange -> window 的 editor:cursor、editor:choice、editor:checks
   |-- start() -> relayEvents：Rust 事件 -> window 的 rust:<事件名稱>
   |-- start() -> 系統換深淺色 -> window 的 system:color-scheme
+  |-- start() -> 螢幕轉向 -> window 的 system:orientation
   +-- application.register(名稱, class extends X { session, feed })
 ```
 
@@ -581,6 +582,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `search` | 搜尋列與符合處標記 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `transcribe`、`translate`、`translation-options` | 任務 modal，含重做 |
+| `resource-list` | 資源清單的固定與收起 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
@@ -603,6 +605,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 |---|---|---|
 | `progress:task` | `progress` | 字幕編輯顯示 skeleton |
 | `project:select` | `project` | 字幕編輯顯示 skeleton |
+| `project:select` | `project` | `resource-list` 收回蓋上的清單 |
 | `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
 | `transcript:shown` | 字幕編輯 | `segment-changes` 顯示入口 |
 | `transcript:selection` | 字幕編輯 | 焦點欄位跟上選取 |
@@ -616,6 +619,8 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
 | `rust:srt-requested` | Rust，經 `relayEvents` | `project` 開啟系統要開的 SRT |
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `model-slot` 顯示下載進度 |
+| `system:color-scheme` | 系統，經 `assembly.ts` | `timeline` 重畫波形 |
+| `system:orientation` | 系統，經 `assembly.ts` | `resource-list` 換成該方向的選擇 |
 | `model-slot:choose` | `model-slot` | `models`、`project-settings` 記下來源 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
@@ -653,6 +658,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/models.ts` | Model Source 的名稱與大小 |
 | `ui/options.ts` | 選單的選項 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
+| `ui/fold.ts` | 收起按鈕的狀態與圖示 |
 | `ui/volume.ts` | 音量曲線、增益與限幅 |
 | `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |

@@ -1,6 +1,6 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, telling what just happened in Notifications and that an edit was saved in the Save Mark, opening where Tsuzuri can be sponsored, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
+Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, docking the Resource list beside a window wide enough to hold it, telling what just happened in Notifications and that an edit was saved in the Save Mark, opening where Tsuzuri can be sponsored, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
@@ -14,6 +14,7 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/controllers/shortcuts_controller.test.ts`
 - `src-tauri/src/window.rs`
 - `src/controllers/sponsorship_controller.test.ts`
+- `src/controllers/resource_list_controller.test.ts`
 
 ## `IF-001` Following the system language
 
@@ -412,3 +413,63 @@ Each edit saved is marked anew rather than stacked, so writing field after field
 | Given | the About section of the settings |
 | When | sponsoring is chosen |
 | Then | Rust is asked to open the sponsorship page |
+
+## `IF-046` Docking the Resource list beside a landscape window
+
+A window held landscape has width to spare, while one turned upright to show more Segments needs all of its width for them; each starts the way it is held until the user chooses.
+
+| Step | Statement |
+| --- | --- |
+| Given | a window wide enough to dock the Resource list, held landscape, with nothing chosen |
+| When | the page opens |
+| Then | the Resource list is docked beside the editor |
+
+## `IF-047` Laying the Resource list over a portrait window
+
+| Step | Statement |
+| --- | --- |
+| Given | a window wide enough to dock the Resource list, held portrait, with nothing chosen |
+| When | the page opens |
+| Then | the Resource list is not docked |
+
+## `IF-048` Undocking the Resource list with its button
+
+| Step | Statement |
+| --- | --- |
+| Given | a wide window with the Resource list docked |
+| When | the Resource list's button is pressed |
+| Then | the Resource list is not docked |
+
+## `IF-049` Docking the Resource list by shortcut
+
+| Step | Statement |
+| --- | --- |
+| Given | a wide window held portrait with the Resource list not docked |
+| When | ⌘B on macOS or Ctrl+B elsewhere is pressed |
+| Then | the Resource list is docked |
+
+## `IF-050` Keeping the Resource list as chosen for the orientation
+
+| Step | Statement |
+| --- | --- |
+| Given | the Resource list undocked in a landscape window |
+| When | the page opens again in a landscape window |
+| Then | the Resource list is not docked |
+
+## `IF-051` Following the screen as it turns
+
+| Step | Statement |
+| --- | --- |
+| Given | the Resource list undocked in a landscape window, nothing chosen for portrait |
+| When | the screen turns portrait and then landscape again |
+| Then | the Resource list is not docked |
+
+## `IF-052` Opening the Resource list by shortcut in a narrow window
+
+A narrow window never docks the list, so the shortcut lays it over the editor as its button does.
+
+| Step | Statement |
+| --- | --- |
+| Given | a window too narrow to dock the Resource list |
+| When | ⌘B on macOS or Ctrl+B elsewhere is pressed |
+| Then | the Resource list is laid over the editor |

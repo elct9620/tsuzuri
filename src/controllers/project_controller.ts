@@ -71,7 +71,6 @@ export default class ProjectController extends Controller {
     "workspace",
     "name",
     "resources",
-    "resourcesToggle",
     "glossary",
   ];
 
@@ -82,8 +81,6 @@ export default class ProjectController extends Controller {
   /** The Project Name in the toolbar, typed over to rename the Project; its default value is the name shown. */
   declare readonly nameTarget: HTMLInputElement;
   declare readonly resourcesTarget: HTMLUListElement;
-  /** The drawer's checkbox, checked while the Resource list is laid over the editor of a narrow window. */
-  declare readonly resourcesToggleTarget: HTMLInputElement;
   declare readonly glossaryTarget: HTMLElement;
 
   declare readonly feed: ProjectFeed;
@@ -147,7 +144,6 @@ export default class ProjectController extends Controller {
 
   async select({ currentTarget }: Event): Promise<void> {
     const name = (currentTarget as HTMLElement).dataset.name!;
-    this.resourcesToggleTarget.checked = false;
     this.dispatch("select");
     const isSelected = await this.report(() => selectResource(name));
     // Rust announces nothing when it could not select, so the editor is told to read what it holds.

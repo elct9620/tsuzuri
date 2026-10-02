@@ -33,6 +33,7 @@ const en = {
     title: "Resources",
     open: "Resources",
     close: "Put the resources away",
+    dock: "Dock or fold the resources",
     reload: "Reload",
     reloadHint: "Read the folder again for files changed elsewhere",
     subtitleOnly: "Subtitle",
@@ -532,6 +533,7 @@ const en = {
       searchPrevious: "Previous match",
       reload: "Reload",
       following: "Follow playback",
+      resourceList: "Dock or fold the resources",
       play: "Play or stop",
       setStart: "Set the start",
       setEnd: "Set the end",
@@ -567,6 +569,8 @@ const en = {
       reload: "Reads the folder again for files changed elsewhere",
       following:
         "Scrolls the list to the Segment being played; works in a text field too",
+      resourceList:
+        "Docks or folds the resources in a wide window, and lays them over the editor in a narrow one",
       play: "Plays on from where the media is, or only the Current Segment when playing alone",
       setStart: "Moves the Current Segment's start to where the media is",
       setEnd: "Moves the Current Segment's end to where the media is",

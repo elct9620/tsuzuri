@@ -23,6 +23,7 @@ import ProjectSettingsController from "./controllers/project_settings_controller
 import RecentProjectsController from "./controllers/recent_projects_controller";
 import RepositoryController from "./controllers/repository_controller";
 import ReplacementController from "./controllers/replacement_controller";
+import ResourceListController from "./controllers/resource_list_controller";
 import SearchController from "./controllers/search_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
 import ShortcutsController from "./controllers/shortcuts_controller";
@@ -76,6 +77,7 @@ async function start(): Promise<void> {
     "recent-projects": RecentProjectsController,
     replacement: ReplacementController,
     repository: RepositoryController,
+    "resource-list": ResourceListController,
     cleanup: CleanupController,
     search: SearchController,
     "segment-changes": SegmentChangesController,

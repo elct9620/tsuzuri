@@ -36,7 +36,7 @@
 
 ## 安裝
 
-從 [Releases](https://github.com/elct9620/tsuzuri/releases) 下載對應平台的安裝檔。每個版本都附上 `SHA256SUMS`，列出每個檔案的校驗碼；macOS 與 Linux 在下載的資料夾執行 `shasum -a 256 -c SHA256SUMS --ignore-missing` 即可確認；Windows 在 PowerShell 執行 `Get-FileHash <檔案>`，再與該檔案那一行比對。
+從 [Releases](https://github.com/elct9620/tsuzuri/releases) 下載對應平台的安裝檔。
 
 | 平台 | 下載 | 內建的 whisper.cpp、llama.cpp |
 |---|---|---|
@@ -45,6 +45,17 @@
 | Linux x64 | `.deb` 或 `.rpm` | Vulkan 版 |
 
 安裝檔也內建 ffmpeg。顯示卡驅動程式不支援 Vulkan，或想改用 CUDA 等版本時，請在 App 裡指定執行檔。Tsuzuri 沒有程式碼簽章，第一次開啟時會出現警告。
+
+### 驗證下載
+
+每個版本都附上 `SHA256SUMS`，列出每個檔案的校驗碼。在下載的資料夾執行：
+
+```bash
+shasum -a 256 -c SHA256SUMS --ignore-missing   # macOS、Linux
+Get-FileHash <檔案>                            # Windows PowerShell
+```
+
+Windows 請把印出的校驗碼與 `SHA256SUMS` 裡該檔案那一行比對。
 
 ### macOS
 
@@ -55,6 +66,8 @@ xattr -dr com.apple.quarantine /Applications/Tsuzuri.app
 ```
 
 ### Windows
+
+Windows 第一次開啟時可能遇到兩種情況：
 
 | 情況 | 做法 |
 |---|---|
@@ -74,16 +87,20 @@ sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 
 | 時機 | 會發生什麼 |
 |---|---|
-| 開啟 Tsuzuri | 到 tsuzuri.aotoki.me 檢查所選更新通道有沒有新版本，有的話以通知提供「更新」 |
+| 開啟 Tsuzuri | 檢查有沒有新版本 |
 | 任何時候 | 設定 →「版本與更新」→「檢查更新」 |
-| 按下「更新」 | 下載與你安裝時同一種的安裝檔，驗證簽章、停止引擎、安裝並重新啟動 |
+| 按下「更新」 | 下載、驗證、安裝、重啟 |
+| 任務進行中 | 無法更新 |
+| 不想啟動時檢查 | 在「版本與更新」關閉 |
 
-按下「更新」之前不會下載任何東西；轉錄或翻譯進行中時無法更新。啟動時的檢查可以在設定 →「版本與更新」關閉。Linux 安裝時會像 `apt`、`dnf` 一樣詢問密碼。
+啟動時會到 tsuzuri.aotoki.me 檢查所選更新通道，有新版本就以通知提供「更新」。更新會下載與你安裝時同一種的安裝檔，驗證簽章後才停止引擎並安裝；按下「更新」之前不會下載任何東西。Linux 安裝時會像 `apt`、`dnf` 一樣詢問密碼。
+
+#### 更新通道
 
 | 更新通道 | 會收到 |
 |---|---|
 | 穩定版（預設） | 正式發布的版本 |
-| 預覽版 | 開發中每次變更的建置，以及每個正式版 |
+| 預覽版 | 每次開發建置與正式版 |
 
 在設定 →「版本與更新」切換通道。預覽版會標示以哪個正式版為基礎與建置時間。從預覽版切回穩定版後，會等下一個正式版再更新；也可以按「立即退回穩定版」馬上裝回目前的正式版。rpm 套件只有穩定版。
 
@@ -106,13 +123,25 @@ sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 
 ## 模型
 
-在設定選擇模型。下表的預設模型會從 Hugging Face 下載到 Hugging Face 快取，這個快取和其他 Hugging Face 工具共用，已經在裡面的檔案不會再下載。也可以指定電腦上的檔案，或 Hugging Face repository 裡這個用途能用的任一檔案。需要登入的 repository 會使用 `hf auth login` 存下的 token。每個專案可以另外指定自己的轉錄與翻譯模型，例如日文專案用日文模型。
+在設定選擇模型；下表的預設模型在第一次使用時下載。
 
 | 用途 | 格式 | 預設模型 |
 |---|---|---|
 | 轉錄 | whisper.cpp GGML（`.bin`） | [Breeze-ASR-25](https://huggingface.co/tsuzuri-app/Breeze-ASR-25-ggml)（中文）、[Whisper large-v3-turbo 與 large-v3](https://huggingface.co/ggerganov/whisper.cpp) |
 | VAD（開啟時） | whisper.cpp GGML（`.bin`） | [Silero v6.2.0](https://huggingface.co/ggml-org/whisper-vad) |
 | 翻譯 | GGUF | [Qwen3-4B-Instruct-2507](https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF) |
+
+### 模型來源
+
+| 來源 | 做法 |
+|---|---|
+| 預設模型 | 下載到 Hugging Face 快取 |
+| 電腦上的檔案 | 這個用途格式的任一檔案 |
+| Hugging Face repository | 這個用途能用的任一檔案 |
+| 需要登入的 repository | 使用 `hf auth login` 的 token |
+| 單一專案 | 另外指定轉錄與翻譯模型 |
+
+Hugging Face 快取和其他 Hugging Face 工具共用，已經在裡面的檔案不會再下載。專案可以依語言選自己的模型，例如日文專案用日文模型。
 
 ## 參與開發
 
@@ -129,12 +158,4 @@ Tsuzuri 免費且開放原始碼，贊助讓開發能持續下去。
 
 ## 授權
 
-| 範圍 | 授權 |
-|---|---|
-| Tsuzuri | [Apache License 2.0](LICENSE)，Copyright 2026 ZhengXian Qiu |
-| [FFmpeg](https://ffmpeg.org) | LGPLv2.1 |
-| [whisper.cpp](https://github.com/ggml-org/whisper.cpp)、[llama.cpp](https://github.com/ggml-org/llama.cpp) | MIT |
-| Rust 相依套件 | `src-tauri/deny.toml` 允許的授權 |
-| [OpenCC](https://github.com/BYVoid/OpenCC) 字典 | Apache License 2.0 |
-
-內建引擎由 `scripts/vendor.sh` 從原始程式碼編譯，以獨立程式執行，也能改用你指定的執行檔。每個版本都附上授權頁，收錄 Tsuzuri 與隨附一切的完整授權文字：引擎與它們帶著的函式庫、Rust 套件，以及介面打包的套件，可從設定的「關於」開啟。OpenCC 字典照原樣編譯進執行檔，版本記在 `src-tauri/opencc/`。
+Tsuzuri 以 [Apache License 2.0](LICENSE) 授權。內建引擎與隨附一切的授權，收錄在設定 →「關於」的授權頁。

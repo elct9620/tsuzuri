@@ -645,6 +645,9 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `failure.ts` | `Failure` 型別 |
 | `dialog.ts`、`system.ts` | 系統對話方塊、語系與平台 |
 | `video_window.ts` | 影片視窗的全螢幕與關閉 |
+| `context_menu.ts` | 右鍵時的系統選單 |
+
+`backend/` 是 webview 接觸 Tauri 的地方：指令、外掛與系統選單都經過它，controller 不直接呼叫 Tauri。
 
 ### 4.8 共用模組
 

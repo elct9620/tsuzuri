@@ -1431,3 +1431,65 @@ Moving to a match makes its Segment current, so the list scrolls to it and the P
 | Given | the search bar open |
 | When | `(` is searched for as a regular expression |
 | Then | nothing is marked and the bar says the pattern cannot be read |
+
+## `ED-164` Opening a Segment's menu with a right-click
+
+Subtitle editors offer a line's changes where the pointer is, as Aegisub and Subtitle Edit do on a right-click, so the changes a Segment's menu holds open beside the pointer as a menu of the system, without reaching for the button at the row's end.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with no Segment checked |
+| When | the first Segment's row is right-clicked |
+| Then | a menu offers what the first Segment's menu offers, in its order |
+
+## `ED-165` Making a right-clicked Segment current
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment is current |
+| When | the second Segment's row is right-clicked |
+| Then | the second Segment is current |
+
+## `ED-166` Changing a Segment from its right-click menu
+
+| Step | Statement |
+| --- | --- |
+| Given | the menu a right-click on the first Segment's row opened |
+| When | inserting below is chosen from it |
+| Then | the Project is asked to insert a Segment after the first |
+
+## `ED-167` Opening the checked Segments' changes with a right-click
+
+While Segments are checked, a change chosen applies to every Checked Segment, as the changes offered above the list for them do.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with two Segments checked |
+| When | a Segment's row is right-clicked |
+| Then | a menu offers the changes offered for the Checked Segments, in their order |
+
+## `ED-168` Offering cut, copy and paste in a text field's right-click menu
+
+The system's menu takes the place of the one the page would show, so a text field keeps the clipboard commands it had.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel |
+| When | the first Segment's original is right-clicked |
+| Then | the menu opens with cut, copy and paste ahead of the Segment's changes |
+
+## `ED-169` Showing a shortcut in the right-click menu
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux |
+| When | a Segment's row is right-clicked |
+| Then | splitting at the Cursor carries `Ctrl+Alt+Enter` in the menu |
+
+## `ED-170` Holding a Segment's changes in its right-click menu
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation running over the first Segment |
+| When | its row is right-clicked |
+| Then | the changes the running Mode holds are offered disabled |

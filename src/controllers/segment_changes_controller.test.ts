@@ -19,12 +19,25 @@ import SegmentChangesController from "./segment_changes_controller";
 import TranscriptController from "./transcript_controller";
 import { typingOption } from "./undo_controller";
 
+/** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
+interface MenuItemSent {
+  item?: string;
+  id?: string;
+  text?: string;
+  enabled?: boolean;
+  accelerator?: string;
+  handler?: { onmessage: (id: string) => void };
+}
+
 describe("SegmentChangesController", () => {
   let application: Application;
   let project: ProjectView | null;
   let changes: unknown[];
   /** What the Project answers each Segment Change with, or none to make it. */
   let refusal: unknown;
+  /** The items of each menu of the system made, in the order they were made. */
+  let menus: MenuItemSent[][];
+  let popupCount: number;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -65,6 +78,8 @@ describe("SegmentChangesController", () => {
     project = null;
     changes = [];
     refusal = null;
+    menus = [];
+    popupCount = 0;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes" data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing rust:edit-command@window->segment-changes#applyEditCommand">
@@ -87,6 +102,12 @@ describe("SegmentChangesController", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
+        if (command === "plugin:menu|new") {
+          const { options } = args as { options?: { items?: MenuItemSent[] } };
+          if (options?.items) menus.push(options.items);
+          return [menus.length, `menu-${menus.length}`];
+        }
+        if (command === "plugin:menu|popup") popupCount++;
         if (command === "change_segments") {
           changes.push((args as { change: unknown }).change);
           if (refusal) throw refusal;
@@ -1102,6 +1123,121 @@ describe("SegmentChangesController", () => {
       await settle();
 
       expect([changes, event.defaultPrevented]).toEqual([[], false]);
+    });
+  });
+
+  describe("the right-click menu", () => {
+    const lastMenu = () => menus[menus.length - 1];
+    const texts = (items: MenuItemSent[]) =>
+      items.map((item) => item.text ?? item.item);
+    /** The text of each visible button in `container`, as the menu it belongs to shows it. */
+    const buttonTexts = (container: Element) =>
+      [...container.querySelectorAll<HTMLButtonElement>("button")]
+        .filter((button) => !button.closest("[hidden]"))
+        .map((button) => button.firstChild!.textContent);
+
+    async function rightClick(target: Element): Promise<boolean> {
+      const event = new MouseEvent("contextmenu", {
+        bubbles: true,
+        cancelable: true,
+      });
+      target.dispatchEvent(event);
+      await settle();
+      return event.defaultPrevented;
+    }
+
+    // @behavior ED-164
+    it("offers a Segment's menu beside the pointer in place of the page's own", async () => {
+      await hold(threeSegments);
+
+      const isTaken = await rightClick(row(0));
+
+      expect([isTaken, popupCount, texts(lastMenu())]).toEqual([
+        true,
+        1,
+        buttonTexts(row(0).querySelector(".change-menu")!),
+      ]);
+    });
+
+    // @behavior ED-165
+    it("makes the right-clicked Segment current", async () => {
+      await hold(threeSegments);
+
+      await rightClick(row(1).querySelector(".start")!);
+
+      expect(row(1).hasAttribute("aria-current")).toBe(true);
+    });
+
+    // @behavior ED-166
+    it("changes the Segment as the choice in its right-click menu says", async () => {
+      await hold(threeSegments);
+      await rightClick(row(0));
+      const insertBelow = row(0).querySelector("button.insertAfter")!;
+
+      const choice = lastMenu().find(
+        (item) => item.text === insertBelow.firstChild!.textContent,
+      )!;
+      choice.handler!.onmessage(choice.id!);
+      await settle();
+
+      expect(changes).toEqual([{ kind: "insertion-after", index: 0 }]);
+    });
+
+    // @behavior ED-167
+    it("offers the changes for the Checked Segments while some are checked", async () => {
+      await hold(threeSegments);
+      await check(0, 1);
+
+      await rightClick(row(2));
+
+      expect(texts(lastMenu())).toEqual(["合併", "平移", "刪除"]);
+    });
+
+    // @behavior ED-168
+    it("puts cut, copy and paste ahead of the changes in a text field", async () => {
+      await hold(threeSegments);
+
+      await rightClick(row(0).querySelector(".field.text")!);
+
+      expect(
+        lastMenu()
+          .slice(0, 4)
+          .map((item) => item.item),
+      ).toEqual(["Cut", "Copy", "Paste", "Separator"]);
+    });
+
+    it("leaves cut, copy and paste out away from a text field", async () => {
+      await hold(threeSegments);
+
+      await rightClick(row(0));
+
+      expect(lastMenu().some((item) => item.item === "Cut")).toBe(false);
+    });
+
+    // @behavior ED-169
+    it("carries a choice's shortcut into the right-click menu", async () => {
+      await hold(threeSegments);
+      await rightClick(row(0));
+      const split = row(0).querySelector("button.split")!;
+
+      const choice = lastMenu().find(
+        (item) => item.text === split.firstChild!.textContent,
+      )!;
+
+      expect(choice.accelerator).toBe("Ctrl+Alt+Enter");
+    });
+
+    // @behavior ED-170
+    it("offers the changes a running Mode holds disabled", async () => {
+      await hold({
+        ...threeSegments,
+        shown_translation: "en",
+        running_mode: { mode: "translation", language: "en", indexes: null },
+      });
+
+      await rightClick(row(0));
+
+      expect(lastMenu().map((item) => item.enabled)).not.toContain(true);
     });
   });
 });

@@ -280,6 +280,32 @@ export function formatChord(chord: string, isMac: boolean): string {
     .join("");
 }
 
+/** The modifiers as a menu of the system names them in an accelerator. */
+const ACCELERATOR_MODIFIERS: Record<string, string> = {
+  meta: "Cmd",
+  ctrl: "Ctrl",
+  alt: "Alt",
+  shift: "Shift",
+};
+
+/**
+ * The first chord of the Shortcut `id` on this platform as a menu of the system reads it, as
+ * `Ctrl+Alt+Enter`, or none for a mouse action, which such a menu cannot show.
+ */
+export function accelerator(id: string, isMac: boolean): string | undefined {
+  const shortcut = shortcutById(id);
+  const chord = shortcut && chords(shortcut, isMac)[0];
+  const keys = chord?.split("+") ?? [];
+  if (keys.length === 0 || keys.some((key) => WORDS.includes(key)))
+    return undefined;
+  return keys
+    .map(
+      (key) =>
+        ACCELERATOR_MODIFIERS[key] ?? key[0].toUpperCase() + key.slice(1),
+    )
+    .join("+");
+}
+
 /** Every chord of `shortcut` on this platform as text, for a tooltip or a menu. */
 export function shortcutText(shortcut: Shortcut, isMac: boolean): string {
   return chords(shortcut, isMac)

@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
+import { type MenuChoice, popUpMenu } from "../backend/context_menu";
 import {
   currentResource,
   type EditCommand,
@@ -20,7 +21,7 @@ import {
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { notify, notifyEdit } from "../ui/notification";
-import { isShortcut } from "../ui/shortcuts";
+import { accelerator, isShortcut } from "../ui/shortcuts";
 import { parseTime } from "../ui/time";
 
 function indexOf(element: EventTarget | null): number {
@@ -33,6 +34,17 @@ function isWorkingElsewhere(target: EventTarget | null): boolean {
     document.querySelector("dialog[open]") !== null ||
     (target instanceof Element && target.closest(".dropdown, select") !== null)
   );
+}
+
+/** `button` as a choice of a menu of the system: its text without the keys drawn beside it, and its shortcut. */
+function choiceOf(button: HTMLButtonElement): MenuChoice {
+  const shortcut = button.dataset.shortcut;
+  return {
+    text: button.firstChild?.textContent ?? "",
+    isEnabled: !button.disabled,
+    accelerator: shortcut ? accelerator(shortcut, isMacOS()) : undefined,
+    run: () => button.click(),
+  };
 }
 
 /**
@@ -157,6 +169,26 @@ export default class SegmentChangesController extends Controller {
   async split({ currentTarget }: Event): Promise<void> {
     closeMenu(currentTarget);
     notifyEdit(await this.session.split(), { refusal: "edit.splitWhere" });
+  }
+
+  /**
+   * Opens what the row's menu offers, or what is offered for the Checked Segments while some are,
+   * as a menu of the system beside the pointer; bound to `contextmenu` on a row.
+   */
+  async openMenu({ currentTarget, target }: Event): Promise<void> {
+    const choiceSource =
+      this.session.checkedIndexes.length > 0
+        ? this.checkedBarTarget
+        : (currentTarget as HTMLElement).querySelector(".change-menu")!;
+    const buttons = [
+      ...choiceSource.querySelectorAll<HTMLButtonElement>("button"),
+    ].filter((button) => !button.closest("[hidden]"));
+    await popUpMenu(
+      buttons.map(choiceOf),
+      isTextField(target)
+        ? { cut: t("edit.cut"), copy: t("edit.copy"), paste: t("edit.paste") }
+        : null,
+    );
   }
 
   check({ currentTarget }: Event): void {

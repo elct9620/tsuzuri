@@ -4,6 +4,7 @@ import page from "../../index.html?raw";
 import menu from "../../src-tauri/src/menu.rs?raw";
 import {
   SHORTCUTS,
+  accelerator,
   formatChord,
   isShortcut,
   shortcutById,
@@ -112,6 +113,18 @@ describe("shortcuts", () => {
 
   it("writes a chord with words joined by + elsewhere", () => {
     expect(formatChord("ctrl+alt+enter", false)).toBe("Ctrl+Alt+Enter");
+  });
+
+  it("writes a Shortcut's first chord as a menu of the system reads it", () => {
+    expect([
+      accelerator("split", true),
+      accelerator("split", false),
+      accelerator("delete", true),
+    ]).toEqual(["Cmd+Alt+Enter", "Ctrl+Alt+Enter", "Backspace"]);
+  });
+
+  it("gives a menu of the system no keys for a mouse action", () => {
+    expect(accelerator("checkRange", false)).toBeUndefined();
   });
 
   it("writes every chord of a Shortcut, in the Interface Language", () => {

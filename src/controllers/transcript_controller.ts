@@ -162,7 +162,7 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
   const menu = document.createElement("ul");
   menu.tabIndex = -1;
   menu.className =
-    "menu dropdown-content z-10 w-60 rounded-box bg-base-100 shadow-md";
+    "change-menu menu dropdown-content z-10 w-60 rounded-box bg-base-100 shadow-md";
   for (const [action, label, shortcutId] of [
     ["insertBefore", "edit.insertAbove"],
     ["insertAfter", "edit.insertBelow"],
@@ -174,8 +174,7 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
     button.className = action;
     button.dataset.index = String(index);
     button.dataset.action = `segment-changes#${action}`;
-    button.textContent = t(label);
-    button.append(...shortcutKeys(shortcutId));
+    labelChoice(button, label, shortcutId);
     const choice = document.createElement("li");
     choice.append(button);
     menu.append(choice);
@@ -196,7 +195,7 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
     button.className = className;
     button.dataset.index = String(index);
     button.dataset.action = `segment-changes#${action}`;
-    button.textContent = t(label);
+    labelChoice(button, label);
     const choice = document.createElement("li");
     choice.append(button);
     menu.append(choice);
@@ -206,14 +205,23 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
   return dropdown;
 }
 
-/** The keys of the shortcut `id` as a menu item lists them on its right, or none without one. */
-function shortcutKeys(id: string | undefined): HTMLElement[] {
+/**
+ * Writes the `label` of a menu's choice on `button`, with the keys of its shortcut `id` on the right
+ * and named on the button, where a right-click menu reads them.
+ */
+function labelChoice(
+  button: HTMLButtonElement,
+  label: string,
+  id?: string,
+): void {
+  button.textContent = t(label);
   const shortcut = shortcutById(id ?? "");
-  if (!shortcut) return [];
+  if (!shortcut) return;
+  button.dataset.shortcut = shortcut.id;
   const keys = document.createElement("kbd");
   keys.className = "kbd kbd-xs ms-auto";
   keys.textContent = shortcutText(shortcut, isMacOS());
-  return [keys];
+  button.append(keys);
 }
 
 /** The Segment menu's cleanup, which the cleanup controller shows only while a text in `zh-TW` is. */
@@ -223,8 +231,7 @@ function cleanupChoice(index: number): HTMLLIElement {
   button.className = "cleanup";
   button.dataset.action = "cleanup#cleanSegment";
   button.dataset.cleanupIndexParam = String(index);
-  button.textContent = t("cleanup.action");
-  button.append(...shortcutKeys("cleanup"));
+  labelChoice(button, "cleanup.action", "cleanup");
   const choice = document.createElement("li");
   choice.dataset.cleanupTarget = "segmentChoice";
   choice.append(button);
@@ -241,7 +248,7 @@ function item(
   // A narrow list lays the times and Speaker in a line, the text below across the row
   li.className = "@max-4xl:grid-cols-[auto_1fr_auto]";
   li.dataset.action =
-    "mousedown->transcript#checkThrough click->transcript#makeCurrent focusin->transcript#makeCurrent";
+    "mousedown->transcript#checkThrough click->transcript#makeCurrent focusin->transcript#makeCurrent contextmenu->transcript#makeCurrent contextmenu->segment-changes#openMenu:prevent";
   li.dataset.transcriptIndexParam = String(index);
   const check = document.createElement("input");
   check.type = "checkbox";

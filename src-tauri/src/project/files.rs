@@ -757,6 +757,7 @@ mod tests {
                 bilingual_order: BilingualOrder::TranslationFirst,
                 is_bilingual_autosaved: true,
                 is_overwrite_backed_up: true,
+                is_diarized_after_transcription: true,
                 models: ProjectModels {
                     transcription: Some(ModelSource::File {
                         path: PathBuf::from("/models/kotoba.bin"),

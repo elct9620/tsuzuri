@@ -1,10 +1,11 @@
+import type { Diarization } from "../backend/diarization";
 import type { Restoration } from "../backend/project";
 import type { Translation } from "../backend/translation";
 import type { Outcome } from "../editor";
 import { iconElement, type IconName } from "./icons";
 import { t } from "../i18n";
 import { failureKind, failureMessage } from "./failure";
-import { phaseItems } from "./progress";
+import { factorItems, phaseItems } from "./progress";
 import { showSaveMark } from "./save_mark";
 
 /** How long a Notification that goes on its own stays, paused while the pointer or focus rests on it. */
@@ -211,6 +212,26 @@ export function notifyTranslation({
     items: phaseItems(phases),
   });
   notifyUnmatched(unmatched_count);
+}
+
+/** Says the Speakers were given, with how long the audio is and how long each Phase took. */
+export function notifyDiarization({
+  audio_seconds,
+  diarize_seconds,
+  phases,
+}: Diarization): void {
+  notify({
+    title: t("diarize.done"),
+    kind: "success",
+    items: [
+      [
+        t("transcribe.audio"),
+        t("phases.seconds", { seconds: audio_seconds.toFixed(1) }),
+      ],
+      ...factorItems(diarize_seconds, audio_seconds),
+      ...phaseItems(phases),
+    ],
+  });
 }
 
 /** Says `title` was restored, warning of the Segments it left with no translation lined up. */

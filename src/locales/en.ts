@@ -67,6 +67,7 @@ const en = {
       "The subtitle and the translation into this language will be overwritten",
     start: "Transcribe",
     overwriteAndStart: "Overwrite and transcribe",
+    diarizeAfter: "Diarize once transcribed",
     translateAfter: "Translate once transcribed",
     again: "Transcribe again",
     scopeRest: "From {{time}} on",
@@ -316,6 +317,9 @@ const en = {
     overwriteBackup: "Back up before overwrite",
     overwriteBackupHelp:
       "When on, a subtitle a transcription or translation is about to overwrite is first copied to the project’s .tsuzuri/history folder with the time in its name, every time; when off, only before its first change each time the project is opened. Versions in the editor compares or restores it. Applies to this project only.",
+    diarizationAfterTranscription: "Diarize after transcribing",
+    diarizationAfterTranscriptionHelp:
+      "When on, the transcribe dialog starts with telling speakers apart once transcribed checked. Applies to this project only.",
     ffmpegHelp:
       "Turns video or audio into the audio file transcription reads. Choose an executable you installed; without one, the detected and then the bundled version is used.",
     whisperHelp:

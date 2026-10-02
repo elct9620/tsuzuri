@@ -28,6 +28,7 @@ export default class ProjectSettingsController extends Controller {
     "bilingualOrder",
     "bilingualAutosave",
     "overwriteBackup",
+    "diarizationAfterTranscription",
     "transcriptionSetting",
     "projectModel",
   ];
@@ -43,6 +44,8 @@ export default class ProjectSettingsController extends Controller {
   declare readonly bilingualOrderTarget: HTMLSelectElement;
   declare readonly bilingualAutosaveTarget: HTMLInputElement;
   declare readonly overwriteBackupTarget: HTMLInputElement;
+  /** Whether the transcribe dialog asks to diarize once transcribed. */
+  declare readonly diarizationAfterTranscriptionTarget: HTMLInputElement;
   /** One per Transcription Setting named by `data-setting`: follow the general settings, `on` or `off`. */
   declare readonly transcriptionSettingTargets: HTMLSelectElement[];
   /** Names the Project Model of the slot in `data-slot`, or that the slot follows the general settings. */
@@ -120,6 +123,8 @@ export default class ProjectSettingsController extends Controller {
         .value as ProjectOptions["bilingual_order"],
       is_bilingual_autosaved: this.bilingualAutosaveTarget.checked,
       is_overwrite_backed_up: this.overwriteBackupTarget.checked,
+      is_diarized_after_transcription:
+        this.diarizationAfterTranscriptionTarget.checked,
       models: project.options.models,
       transcription: this.transcriptionOverrides(project.options.transcription),
       ...changes,
@@ -158,6 +163,8 @@ export default class ProjectSettingsController extends Controller {
     this.bilingualAutosaveTarget.checked =
       project.options.is_bilingual_autosaved;
     this.overwriteBackupTarget.checked = project.options.is_overwrite_backed_up;
+    this.diarizationAfterTranscriptionTarget.checked =
+      project.options.is_diarized_after_transcription;
     this.showTranscriptionOverrides(project.options.transcription);
     this.showProjectModels(
       project.options.models,

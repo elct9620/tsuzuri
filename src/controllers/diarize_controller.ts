@@ -9,8 +9,7 @@ import {
 import { modelSettings } from "../backend/toolchain";
 import { t } from "../i18n";
 import { sourceFileName } from "../ui/models";
-import { notify } from "../ui/notification";
-import { factorItems, phaseItems } from "../ui/progress";
+import { notifyDiarization } from "../ui/notification";
 import type ProgressController from "./progress_controller";
 
 /** The diarize dialog: it gives the Current Resource's Segments the Speakers heard in its media file. */
@@ -67,24 +66,7 @@ export default class DiarizeController extends Controller {
     this.dialogTarget.close();
     progress.begin("diarization");
     try {
-      const diarization = await diarize();
-      notify({
-        title: t("diarize.done"),
-        kind: "success",
-        items: [
-          [
-            t("transcribe.audio"),
-            t("phases.seconds", {
-              seconds: diarization.audio_seconds.toFixed(1),
-            }),
-          ],
-          ...factorItems(
-            diarization.diarize_seconds,
-            diarization.audio_seconds,
-          ),
-          ...phaseItems(diarization.phases),
-        ],
-      });
+      notifyDiarization(await diarize());
       progress.finish();
     } catch (error) {
       progress.fail(error);

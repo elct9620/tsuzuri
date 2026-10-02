@@ -509,6 +509,8 @@ pub struct ProjectOptions {
     pub is_bilingual_autosaved: bool,
     /// Whether a subtitle about to be overwritten is first kept as a Backup.
     pub is_overwrite_backed_up: bool,
+    /// Whether the transcribe dialog asks to diarize the Resource once transcribed.
+    pub is_diarized_after_transcription: bool,
     pub models: ProjectModels,
     pub transcription: TranscriptionOverrides,
 }

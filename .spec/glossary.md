@@ -72,7 +72,7 @@ What a Project is called in the toolbar, the window title and the Recent Project
 
 ### Project Options
 
-What the user sets for one Project in the settings, beside its Primary Language: its Project Name, its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, its Project Models, and the Transcription Settings it sets for itself. The Project Name can also be typed where the toolbar shows it. Each has a default the Project keeps until it is changed.
+What the user sets for one Project in the settings, beside its Primary Language: its Project Name, its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, whether a transcription is followed by Speaker Diarization, its Project Models, and the Transcription Settings it sets for itself. The Project Name can also be typed where the toolbar shows it. Each has a default the Project keeps until it is changed.
 
 ### Project Model
 
@@ -141,7 +141,7 @@ The loudest sample within one 10 ms slice of a Waveform, from 0 for silence to 1
 
 ### Mode
 
-What the user starts on the Current Resource from a task dialog: Transcribe (its media file to its Primary Language subtitle, whole or within an Audio Window), Translate (its Primary Language subtitle into another Language), Diarize (giving the Segments of its Primary Language subtitle and every translation their Speakers, by Speaker Diarization of its media file), or Transcribe and Translate (both, in that order). Its results appear in the editor as they arrive. While a Mode runs on a Resource, nothing else changes the subtitles it writes: a transcription or a diarization holds every subtitle of the Resource, a translation only the one it writes. One Mode runs at a time; another started meanwhile waits for it to end.
+What the user starts on the Current Resource from a task dialog: Transcribe (its media file to its Primary Language subtitle, whole or within an Audio Window), Translate (its Primary Language subtitle into another Language), Diarize (giving the Segments of its Primary Language subtitle and every translation their Speakers, by Speaker Diarization of its media file), or Transcribe followed by Diarize, Translate or both, in that order. Its results appear in the editor as they arrive. While a Mode runs on a Resource, nothing else changes the subtitles it writes: a transcription or a diarization holds every subtitle of the Resource, a translation only the one it writes. One Mode runs at a time; another started meanwhile waits for it to end.
 
 #### Rejected
 

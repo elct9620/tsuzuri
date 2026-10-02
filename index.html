@@ -205,6 +205,17 @@
                       </p>
                       <label
                         class="flex items-center gap-2"
+                        data-transcribe-target="diarizationChoice"
+                      >
+                        <input
+                          type="checkbox"
+                          class="checkbox checkbox-sm"
+                          data-transcribe-target="diarizationToggle"
+                        />
+                        <span data-i18n="transcribe.diarizeAfter"></span>
+                      </label>
+                      <label
+                        class="flex items-center gap-2"
                         data-transcribe-target="translationChoice"
                       >
                         <input
@@ -1737,6 +1748,25 @@
                         type="checkbox"
                         class="toggle"
                         data-project-settings-target="overwriteBackup"
+                        data-action="change->project-settings#setOptions"
+                      />
+                    </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span
+                          data-i18n="settings.diarizationAfterTranscription"
+                        ></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.diarizationAfterTranscriptionHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        class="toggle"
+                        data-project-settings-target="diarizationAfterTranscription"
                         data-action="change->project-settings#setOptions"
                       />
                     </li>

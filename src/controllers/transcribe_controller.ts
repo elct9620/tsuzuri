@@ -7,12 +7,17 @@ import {
   type SegmentSpan,
   spanIndexes,
 } from "../backend/project";
+import { diarize } from "../backend/diarization";
 import { modelSettings } from "../backend/toolchain";
 import { transcribe, type TranscriptionScope } from "../backend/transcription";
 import { translateSegments } from "../backend/translation";
 import { t } from "../i18n";
 import { sourceFileName } from "../ui/models";
-import { notify, notifyTranslation } from "../ui/notification";
+import {
+  notify,
+  notifyDiarization,
+  notifyTranslation,
+} from "../ui/notification";
 import { factorItems, phaseItems } from "../ui/progress";
 import { formatTime } from "../ui/time";
 import type ProgressController from "./progress_controller";
@@ -30,6 +35,8 @@ export default class TranscribeController extends Controller {
     "scopeField",
     "scope",
     "language",
+    "diarizationChoice",
+    "diarizationToggle",
     "translationChoice",
     "translationToggle",
     "overwriteWarning",
@@ -48,6 +55,10 @@ export default class TranscribeController extends Controller {
   declare readonly scopeTarget: HTMLElement;
   /** Names the Primary Language it is transcribed in. */
   declare readonly languageTarget: HTMLElement;
+  /** Offers diarizing afterwards, only for the whole media file. */
+  declare readonly diarizationChoiceTarget: HTMLElement;
+  /** Whether to diarize the Transcript once transcribed, before any translation. */
+  declare readonly diarizationToggleTarget: HTMLInputElement;
   /** Offers translating afterwards, which within an Audio Window needs a translation shown. */
   declare readonly translationChoiceTarget: HTMLElement;
   /** Whether to translate the Transcript once transcribed, with the translation options it shows. */
@@ -99,6 +110,10 @@ export default class TranscribeController extends Controller {
     );
     this.scopeFieldTarget.hidden = isWhole;
     this.scopeTarget.textContent = this.scopeLabel();
+    this.diarizationChoiceTarget.hidden = !isWhole;
+    this.diarizationToggleTarget.checked =
+      isWhole &&
+      (this.project?.options.is_diarized_after_transcription ?? false);
     this.translationChoiceTarget.hidden = !isWhole && shownTranslation === null;
     if (this.translationChoiceTarget.hidden)
       this.translationToggleTarget.checked = false;
@@ -152,6 +167,10 @@ export default class TranscribeController extends Controller {
           ...phaseItems(transcription.phases),
         ],
       });
+      if (this.diarizationToggleTarget.checked) {
+        progress.begin("diarization");
+        notifyDiarization(await diarize());
+      }
       if (this.translationToggleTarget.checked)
         await this.translateAfterwards(transcription.written_span);
       progress.finish();

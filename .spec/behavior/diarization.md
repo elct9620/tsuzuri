@@ -7,6 +7,8 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 - `src-tauri/src/diarization.rs`
 - `src-tauri/src/diarization/*.rs`
 - `src/controllers/diarize_controller.test.ts`
+- `src/controllers/transcribe_controller.test.ts`
+- `src/controllers/project_settings_controller.test.ts`
 
 ## `DZ-001` Giving a Segment the Speaker heard longest during it
 
@@ -143,4 +145,38 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 | Given | a Current Resource whose Segments carry Speakers |
 | When | its diarization dialog opens |
 | Then | it warns that their Speakers are replaced and names the start button for it |
+
+## `DZ-018` Diarizing once transcribed, before translating
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog asking to diarize and to translate once transcribed |
+| When | the transcription is started |
+| Then | the Resource is transcribed, then diarized, then translated |
+
+## `DZ-019` Asking to diarize once transcribed as the Project chooses
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project choosing to diarize after transcribing |
+| When | the transcribe dialog opens |
+| Then | diarizing once transcribed is asked |
+
+## `DZ-020` Leaving a transcription within an Audio Window undiarized
+
+Speakers are numbered by when they are first heard, so diarizing a part would number them apart from the rest.
+
+| Step | Statement |
+| --- | --- |
+| Given | a transcription from a Segment onward |
+| When | its dialog opens |
+| Then | it does not offer to diarize |
+
+## `DZ-021` Choosing whether a Project diarizes after transcribing
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project settings shown |
+| When | diarizing after transcribing is turned on |
+| Then | the Project Options are saved asking for it |
 

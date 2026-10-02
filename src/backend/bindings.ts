@@ -441,6 +441,8 @@ export type ProjectOptions_Deserialize = {
 	is_bilingual_autosaved?: boolean,
 	/**  Whether a subtitle about to be overwritten is first kept as a Backup. */
 	is_overwrite_backed_up?: boolean,
+	/**  Whether the transcribe dialog asks to diarize the Resource once transcribed. */
+	is_diarized_after_transcription?: boolean,
 	models?: ProjectModels_Deserialize,
 	transcription?: TranscriptionOverrides,
 };
@@ -454,6 +456,8 @@ export type ProjectOptions_Serialize = {
 	is_bilingual_autosaved: boolean,
 	/**  Whether a subtitle about to be overwritten is first kept as a Backup. */
 	is_overwrite_backed_up: boolean,
+	/**  Whether the transcribe dialog asks to diarize the Resource once transcribed. */
+	is_diarized_after_transcription: boolean,
 	models: ProjectModels_Serialize,
 	transcription: TranscriptionOverrides,
 };

@@ -79,6 +79,7 @@ describe("ProjectSettingsController", () => {
           </select>
           <input type="checkbox" data-project-settings-target="bilingualAutosave" data-action="change->project-settings#setOptions" />
           <input type="checkbox" data-project-settings-target="overwriteBackup" data-action="change->project-settings#setOptions" />
+          <input type="checkbox" data-project-settings-target="diarizationAfterTranscription" data-action="change->project-settings#setOptions" />
           <select data-project-settings-target="transcriptionSetting" data-setting="has_vad" data-action="change->project-settings#setOptions">
             <option value="">依整體設定</option>
             <option value="on">開啟</option>
@@ -366,6 +367,25 @@ describe("ProjectSettingsController", () => {
 
     expect(sent("set_project_options")).toEqual({
       options: { ...projectOf().options, is_overwrite_backed_up: true },
+    });
+  });
+
+  // @behavior DZ-021
+  it("sets the Project to diarize after transcribing when turned on in the settings", async () => {
+    await hold(projectOf());
+    const diarization = target<HTMLInputElement>(
+      "diarizationAfterTranscription",
+    );
+
+    diarization.checked = true;
+    diarization.dispatchEvent(new Event("change"));
+    await settle();
+
+    expect(sent("set_project_options")).toEqual({
+      options: {
+        ...projectOf().options,
+        is_diarized_after_transcription: true,
+      },
     });
   });
 });

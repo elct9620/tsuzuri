@@ -66,6 +66,7 @@ const zhHant: typeof en = {
     overwriteBoth: "字幕與這個語言的譯文都已存在，開始後會覆蓋",
     start: "開始轉錄",
     overwriteAndStart: "覆蓋並開始",
+    diarizeAfter: "完成後辨識說話者",
     translateAfter: "完成後翻譯",
     again: "重新轉錄",
     scopeRest: "從 {{time}} 以下",
@@ -307,6 +308,9 @@ const zhHant: typeof en = {
     overwriteBackup: "覆蓋前備份",
     overwriteBackupHelp:
       "開啟後，轉錄或翻譯每次覆蓋已有的字幕前，都會先把舊檔複製到專案的 .tsuzuri/history 資料夾，檔名加上時間；關閉時，每次開啟專案只在第一次改動前留一份。可在編輯區的「版本」比較或還原。只影響這個專案。",
+    diarizationAfterTranscription: "轉錄後辨識",
+    diarizationAfterTranscriptionHelp:
+      "開啟後，轉錄視窗預設勾選「完成後辨識說話者」。只影響這個專案。",
     ffmpegHelp:
       "把影片或音訊轉成轉錄用的音檔。按「指定」選擇自己安裝的執行檔；沒有指定時，依序使用偵測到的和內建的版本。",
     whisperHelp:

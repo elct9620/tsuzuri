@@ -49,6 +49,17 @@ type CaptionLanguage = "original" | "translation" | "bilingual";
 /** The height of a Dummy Video to its width: 16:9, the shape most videos take. */
 const DUMMY_VIDEO_RATIO = 9 / 16;
 
+/** What a Dummy Video is filled with: the dark of most pictures, or the light of a bright scene. */
+type DummyVideoColour = "black" | "white";
+
+/** Where the webview remembers the colour of a Dummy Video. */
+const DUMMY_VIDEO_KEY = "tsuzuri.preview-dummy-video";
+
+/** Subtitles are most often watched over a dark picture, so a Dummy Video is black until white is chosen. */
+function dummyVideoColourOf(value: string | null): DummyVideoColour {
+  return value === "white" ? value : "black";
+}
+
 /** Where the webview remembers what is shown over the video. */
 const CAPTION_KEY = "tsuzuri.preview-caption";
 
@@ -97,6 +108,7 @@ export default class PreviewController extends Controller {
     "captionChoice",
     "captionLanguage",
     "captionBackdrop",
+    "dummyVideoColour",
     "captionSpeaker",
     "hint",
     "videoWindowButton",
@@ -134,6 +146,7 @@ export default class PreviewController extends Controller {
   declare readonly captionChoiceTarget: HTMLElement;
   declare readonly captionLanguageTargets: HTMLInputElement[];
   declare readonly captionBackdropTargets: HTMLInputElement[];
+  declare readonly dummyVideoColourTargets: HTMLInputElement[];
   declare readonly captionSpeakerTarget: HTMLInputElement;
   declare readonly hintTarget: HTMLElement;
   /** Moves the video into the Video Window and back; only a picture has one to move. */
@@ -166,6 +179,9 @@ export default class PreviewController extends Controller {
   private bilingualOrder: ProjectOptions["bilingual_order"] = "original-first";
   private captionLanguage = captionLanguageOf(rememberedChoice(CAPTION_KEY));
   private captionBackdrop = captionBackdropOf(rememberedChoice(BACKDROP_KEY));
+  private dummyVideoColour = dummyVideoColourOf(
+    rememberedChoice(DUMMY_VIDEO_KEY),
+  );
   /** A saved cue names its Speaker, so the caption does too until turned off. */
   private isSpeakerShown = rememberedFlag(SPEAKER_KEY, true);
   private isPlayerFolded = rememberedFlag(PLAYER_FOLDED_KEY, false);
@@ -210,6 +226,7 @@ export default class PreviewController extends Controller {
       this.player.addEventListener(name, listener);
     this.player.crossOrigin = "anonymous";
     this.showCaptionBackdrop();
+    this.showDummyVideo();
     this.captionSpeakerTarget.checked = this.isSpeakerShown;
     this.volumeTarget.max = String(SLIDER_END);
     this.volumeTarget.value = String(sliderPosition(this.volume));
@@ -277,6 +294,13 @@ export default class PreviewController extends Controller {
     this.showCaptionBackdrop();
   }
 
+  chooseDummyVideoColour({ target }: Event): void {
+    this.dummyVideoColour = (target as HTMLInputElement)
+      .value as DummyVideoColour;
+    rememberChoice(DUMMY_VIDEO_KEY, this.dummyVideoColour);
+    this.showDummyVideo();
+  }
+
   toggleCaptionSpeaker(): void {
     this.isSpeakerShown = this.captionSpeakerTarget.checked;
     rememberFlag(SPEAKER_KEY, this.isSpeakerShown);
@@ -310,6 +334,7 @@ export default class PreviewController extends Controller {
   /** Sizes the row to the media just loaded, which tells only now whether it has a picture. */
   measure(): void {
     this.fitScreenRow();
+    this.showDummyVideo();
     this.showTime();
   }
 
@@ -485,6 +510,17 @@ export default class PreviewController extends Controller {
     this.captionBox.dataset.backdrop = this.captionBackdrop;
     for (const input of this.captionBackdropTargets) {
       input.checked = input.value === this.captionBackdrop;
+    }
+  }
+
+  /** Fills the screen with the chosen colour while no picture is there, the choice open only then. */
+  private showDummyVideo(): void {
+    const hasPicture = this.player.videoWidth > 0;
+    if (hasPicture) delete this.screen.dataset.dummyVideo;
+    else this.screen.dataset.dummyVideo = this.dummyVideoColour;
+    for (const input of this.dummyVideoColourTargets) {
+      input.disabled = hasPicture;
+      input.checked = input.value === this.dummyVideoColour;
     }
   }
 

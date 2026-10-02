@@ -80,7 +80,7 @@ The Current Resource's media above the editor: a player, its Waveform with a reg
 
 ### Dummy Video
 
-What the Preview shows in place of a picture its media does not have: a 16:9 black frame with the Segment being played over it, so a Resource of sound alone shows its subtitles as they will look over a video. It is drawn by the webview and never written as a file; the Video Window shows it as it shows a picture.
+What the Preview shows in place of a picture its media does not have: a 16:9 frame, black unless white is chosen on this machine, with the Segment being played over it, so a Resource of sound alone shows its subtitles as they will look over a video. It is drawn by the webview and never written as a file; the Video Window shows it as it shows a picture.
 
 #### Rejected
 

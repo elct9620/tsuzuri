@@ -907,7 +907,7 @@
                 data-preview-target="screenRow"
               >
                 <div
-                  class="group relative min-w-0 flex-2 overflow-hidden rounded-box bg-black data-is-away:rounded-none"
+                  class="group relative min-w-0 flex-2 overflow-hidden rounded-box bg-black data-is-away:rounded-none data-[dummy-video=white]:bg-white"
                   data-preview-target="screen"
                 >
                   <video
@@ -1105,6 +1105,34 @@
                                 data-preview-target="captionBackdrop"
                                 data-action="preview#chooseCaptionBackdrop"
                                 data-i18n-label="preview.captionBackdropOpaque"
+                              />
+                            </div>
+                            <p
+                              class="px-3 pt-2 text-sm"
+                              data-i18n="preview.dummyVideo"
+                            ></p>
+                            <div
+                              role="radiogroup"
+                              class="join w-full pt-1"
+                              data-i18n-label="preview.dummyVideo"
+                            >
+                              <input
+                                type="radio"
+                                name="preview-dummy-video"
+                                value="black"
+                                class="join-item btn flex-1 btn-sm"
+                                data-preview-target="dummyVideoColour"
+                                data-action="preview#chooseDummyVideoColour"
+                                data-i18n-label="preview.dummyVideoBlack"
+                              />
+                              <input
+                                type="radio"
+                                name="preview-dummy-video"
+                                value="white"
+                                class="join-item btn flex-1 btn-sm"
+                                data-preview-target="dummyVideoColour"
+                                data-action="preview#chooseDummyVideoColour"
+                                data-i18n-label="preview.dummyVideoWhite"
                               />
                             </div>
                             <label

@@ -861,6 +861,40 @@ A caption drawn with a shadow alone is lost on a bright picture, so it sits on a
 | When | another Resource with a media file becomes current |
 | Then | what is shown over the video still has no backdrop |
 
+## `PV-193` Showing the Dummy Video in black by default
+
+Subtitles are most often watched over a dark picture, so the Dummy Video is black until white is chosen; a bright one shows whether a caption holds over a light scene.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media has no picture, and no colour ever chosen for the Dummy Video on this machine |
+| When | its media loads |
+| Then | the Dummy Video is black |
+
+## `PV-194` Choosing white for the Dummy Video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media has no picture |
+| When | white is chosen for the Dummy Video |
+| Then | the Dummy Video is white |
+
+## `PV-195` Keeping the Dummy Video's colour for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | white chosen for the Dummy Video |
+| When | another Resource whose media has no picture becomes current |
+| Then | its Dummy Video is white |
+
+## `PV-196` Leaving the Dummy Video's colour unchosen for media with a picture
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file |
+| When | its media loads with a picture |
+| Then | no colour can be chosen for the Dummy Video |
+
 ## `PV-164` Playing at full volume until a volume is chosen
 
 Some media is recorded quietly and some loudly, so the Preview has a volume of its own beside the system's, remembered on this machine.

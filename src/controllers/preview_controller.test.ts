@@ -61,6 +61,11 @@ describe("PreviewController", () => {
       `[data-preview-target="captionBackdrop"][value="${value}"]`,
     )!;
 
+  const dummyVideoColour = (value: string) =>
+    document.querySelector<HTMLInputElement>(
+      `[data-preview-target="dummyVideoColour"][value="${value}"]`,
+    )!;
+
   /** Makes the media report a picture `width` by `height`, none at 0, as loaded metadata does. */
   function loadPicture(width: number, height: number): void {
     Object.defineProperty(media(), "videoWidth", {
@@ -163,6 +168,8 @@ describe("PreviewController", () => {
           <input type="radio" name="backdrop" value="translucent" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
           <input type="radio" name="backdrop" value="opaque" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
           <input type="checkbox" data-preview-target="captionSpeaker" data-action="preview#toggleCaptionSpeaker">
+          <input type="radio" name="dummy-video" value="black" data-preview-target="dummyVideoColour" data-action="preview#chooseDummyVideoColour">
+          <input type="radio" name="dummy-video" value="white" data-preview-target="dummyVideoColour" data-action="preview#chooseDummyVideoColour">
         </div>
           <div data-preview-target="currentSection">
           <p data-preview-target="currentHint"></p>
@@ -447,6 +454,56 @@ describe("PreviewController", () => {
     loadPicture(0, 0);
 
     expect(target("captionChoice").hidden).toBe(false);
+  });
+
+  // @behavior PV-193
+  it("shows the Dummy Video in black by default", async () => {
+    await show(projectWithMedia());
+
+    loadPicture(0, 0);
+
+    expect(target("screen").dataset.dummyVideo).toBe("black");
+  });
+
+  // @behavior PV-194
+  it("shows the Dummy Video in the colour chosen", async () => {
+    await show(projectWithMedia());
+    loadPicture(0, 0);
+
+    dummyVideoColour("white").click();
+
+    expect(target("screen").dataset.dummyVideo).toBe("white");
+  });
+
+  // @behavior PV-195
+  it("keeps the Dummy Video's colour for the next Resource", async () => {
+    await show(projectWithMedia());
+    loadPicture(0, 0);
+    dummyVideoColour("white").click();
+    delete target("screen").dataset.dummyVideo;
+    dummyVideoColour("black").checked = true;
+    await reopen();
+
+    await show(projectOf({ media: "/talks/ep02.m4a" }));
+    loadPicture(0, 0);
+
+    expect([
+      target("screen").dataset.dummyVideo,
+      dummyVideoColour("white").checked,
+    ]).toEqual(["white", true]);
+  });
+
+  // @behavior PV-196
+  it("leaves the Dummy Video's colour unchosen for media with a picture", async () => {
+    await show(projectWithMedia());
+
+    loadPicture(1920, 1080);
+
+    expect([
+      target("screen").dataset.dummyVideo,
+      dummyVideoColour("black").disabled,
+      dummyVideoColour("white").disabled,
+    ]).toEqual([undefined, true, true]);
   });
 
   // @behavior PV-068

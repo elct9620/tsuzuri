@@ -78,6 +78,15 @@ A directory opened as a Project before, kept in the app's settings with when it 
 
 The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. It appears only for a Resource with a media file.
 
+### Dummy Video
+
+What the Preview shows in place of a picture its media does not have: a 16:9 black frame with the Segment being played over it, so a Resource of sound alone shows its subtitles as they will look over a video. It is drawn by the webview and never written as a file; the Video Window shows it as it shows a picture.
+
+#### Rejected
+
+- `Fake Video` - nothing poses as the media; the frame stands where a picture would be and says so.
+- `Blank Picture` - it is not empty: the Segment being played is shown over it.
+
 ### Video Window
 
 A window of its own the Preview's video moves into, with the Segment being played over it, so it can sit on another screen and grow while the editor keeps its room. It is the same player, not a copy, so the picture, the sound and the caption never drift apart; the Preview's controls and timeline stay in the editor, and closing the window brings the video back.

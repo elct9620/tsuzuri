@@ -94,13 +94,13 @@ A quiet recording is stretched to its loudest Peak, so a Peak holds enough of a 
 | When | the Project is shown |
 | Then | no player or controls are shown |
 
-## `PV-010` Showing only the controls for media without a picture
+## `PV-010` Showing the Dummy Video for media without a picture
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file |
 | When | its media loads without a picture |
-| Then | the controls are shown without the video |
+| Then | the Dummy Video is shown beside the controls |
 
 ## `PV-011` Telling the user a media file cannot be played
 
@@ -297,13 +297,13 @@ A window takes the scale of the screen it is made on, so the Video Window is mad
 | When | another Resource with a video is chosen |
 | Then | its video is shown in the Video Window |
 
-## `PV-136` Bringing the video back for media without a picture
+## `PV-136` Keeping the Video Window for media without a picture
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a video in the Video Window |
 | When | another Resource is chosen whose media has no picture |
-| Then | the Video Window closes |
+| Then | the Video Window stays open with the Dummy Video |
 
 ## `PV-137` Opening no window but the Video Window from the webview
 
@@ -828,13 +828,13 @@ The shortcut list names ⌘ on macOS where it names Ctrl elsewhere; the wheel it
 | When | another Resource with a media file and a translation shown becomes current |
 | Then | both languages stay chosen |
 
-## `PV-049` Leaving out the choice over the video for media without a picture
+## `PV-049` Offering the choice over the Dummy Video
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file |
 | When | its media loads without a picture |
-| Then | no choice of what is shown over the video is offered |
+| Then | the choice of what is shown over the video is offered |
 ## `PV-068` Showing what is over the video on a translucent black by default
 
 A caption drawn with a shadow alone is lost on a bright picture, so it sits on a backdrop unless the user takes it away.

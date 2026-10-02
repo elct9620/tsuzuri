@@ -46,6 +46,9 @@ const TIMELINE_FOLDED_KEY = "tsuzuri.timeline-folded";
 /** Which text of the Segment being played is shown over the video. */
 type CaptionLanguage = "original" | "translation" | "bilingual";
 
+/** The height of a Dummy Video to its width: 16:9, the shape most videos take. */
+const DUMMY_VIDEO_RATIO = 9 / 16;
+
 /** Where the webview remembers what is shown over the video. */
 const CAPTION_KEY = "tsuzuri.preview-caption";
 
@@ -304,13 +307,8 @@ export default class PreviewController extends Controller {
     else this.player.pause();
   }
 
-  /** Leaves the video out for media without a picture, keeping only the controls. */
+  /** Sizes the row to the media just loaded, which tells only now whether it has a picture. */
   measure(): void {
-    const hasPicture = this.player.videoWidth > 0;
-    if (!hasPicture && this.videoWindow) this.closeVideoWindow();
-    this.screen.hidden = !hasPicture;
-    this.captionChoiceTarget.hidden = !hasPicture;
-    this.videoWindowButtonTarget.hidden = !hasPicture;
     this.fitScreenRow();
     this.showTime();
   }
@@ -343,7 +341,6 @@ export default class PreviewController extends Controller {
   }
 
   showUnplayable(): void {
-    this.screen.hidden = false;
     this.player.hidden = true;
     this.unplayableHint.hidden = false;
     this.captionChoiceTarget.hidden = true;
@@ -427,17 +424,18 @@ export default class PreviewController extends Controller {
   }
 
   /**
-   * Gives the row the height its video takes at the video's width, up to a limit the page sets,
-   * and leaves it to the card while no picture is in the Preview.
+   * Gives the row the height its picture takes at the picture's width, up to a limit the page
+   * sets, a Dummy Video standing in for media without a picture, and leaves it to the card while
+   * the picture is in the Video Window.
    */
   private fitScreenRow(): void {
     const { videoWidth, videoHeight } = this.player;
-    const isPictureInRow = videoWidth > 0 && this.videoWindow === null;
+    const isPictureInRow = this.videoWindow === null;
     this.screenRowTarget.toggleAttribute("data-has-picture", isPictureInRow);
     if (isPictureInRow)
       this.screenRowTarget.style.setProperty(
         "--picture-ratio",
-        String(videoHeight / videoWidth),
+        String(videoWidth > 0 ? videoHeight / videoWidth : DUMMY_VIDEO_RATIO),
       );
   }
 
@@ -538,8 +536,6 @@ export default class PreviewController extends Controller {
     this.media = media;
     if (media === null && this.videoWindow) this.closeVideoWindow();
     this.showPanel();
-    this.screen.hidden = false;
-    this.videoWindowButtonTarget.hidden = false;
     this.player.hidden = false;
     this.unplayableHint.hidden = true;
     this.captionChoiceTarget.hidden = false;

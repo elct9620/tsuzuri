@@ -202,13 +202,12 @@ describe("PreviewController", () => {
   });
 
   // @behavior PV-010
-  it("shows the controls without the video for media without a picture", async () => {
+  it("shows the Dummy Video beside the controls for media without a picture", async () => {
     await show(projectWithMedia());
-    Object.defineProperty(media(), "videoWidth", { value: 0 });
 
-    media().dispatchEvent(new Event("loadedmetadata"));
+    loadPicture(0, 0);
 
-    expect([target("screen").hidden, panel().hidden]).toEqual([true, false]);
+    expect([target("screen").hidden, panel().hidden]).toEqual([false, false]);
   });
 
   it("sizes the row beside the card by the video's shape", async () => {
@@ -222,12 +221,15 @@ describe("PreviewController", () => {
     ]).toEqual([true, "0.5625"]);
   });
 
-  it("leaves the row beside the card to the card for media without a picture", async () => {
+  it("sizes the row beside the card by a 16:9 Dummy Video for media without a picture", async () => {
     await show(projectWithMedia());
 
     loadPicture(0, 0);
 
-    expect(target("screenRow").hasAttribute("data-has-picture")).toBe(false);
+    expect([
+      target("screenRow").hasAttribute("data-has-picture"),
+      target("screenRow").style.getPropertyValue("--picture-ratio"),
+    ]).toEqual([true, "0.5625"]);
   });
 
   // @behavior PV-011
@@ -439,13 +441,12 @@ describe("PreviewController", () => {
   });
 
   // @behavior PV-049
-  it("offers no choice over the video for media without a picture", async () => {
+  it("offers the choice over the Dummy Video for media without a picture", async () => {
     await show(projectTranslated());
-    Object.defineProperty(media(), "videoWidth", { value: 0 });
 
-    media().dispatchEvent(new Event("loadedmetadata"));
+    loadPicture(0, 0);
 
-    expect(target("captionChoice").hidden).toBe(true);
+    expect(target("captionChoice").hidden).toBe(false);
   });
 
   // @behavior PV-068
@@ -1101,19 +1102,18 @@ describe("PreviewController", () => {
     });
 
     // @behavior PV-136
-    it("closes the Video Window for media without a picture", async () => {
+    it("keeps the Video Window with the Dummy Video for media without a picture", async () => {
       await show(projectWithMedia());
       pressVideoWindowButton();
       await show(projectWithMedia({ media: "/talks/ep02.m4a" }));
-      Object.defineProperty(media(), "videoWidth", { value: 0 });
 
-      media().dispatchEvent(new Event("loadedmetadata"));
+      loadPicture(0, 0);
       await settle();
 
-      expect([videoWindow(), windowCalls]).toEqual([
-        null,
-        [["plugin:window|destroy", { label: "video" }]],
-      ]);
+      expect([
+        media().ownerDocument === videoWindow()?.document,
+        windowCalls,
+      ]).toEqual([true, []]);
     });
   });
 });

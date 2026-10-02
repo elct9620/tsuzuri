@@ -221,7 +221,7 @@ A weights file an engine loads, always passed by absolute path, found through th
 
 ### Resident llama-server
 
-The llama-server kept running between translations in router mode, started without a Model: a translation loads the translation Model into it, and it frees the Model again a chosen number of seconds after the translation ends, or at once when a transcription starts, so only one Model is loaded at a time.
+The llama-server kept running between translations in router mode, started without a Model: a translation loads the translation Model into it, and it frees the Model again a chosen number of seconds after the translation ends, or at once when a transcription or a diarization starts, so only one Model is loaded at a time.
 
 ### Batch
 

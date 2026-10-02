@@ -31,7 +31,7 @@ Audio and text never leave the machine, and the transcription and translation en
 | Transcription | whisper.cpp, with optional VAD |
 | Translation | llama.cpp, guided by a glossary |
 | Proofreading | Waveform, comparison, versions |
-| Speakers | Named and carried into exports |
+| Speakers | Told apart or named, carried into exports |
 | Export | SRT or plain text, bilingual too |
 
 ## Installation

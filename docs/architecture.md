@@ -202,7 +202,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 
 第一張表由內而外，依賴一律往內；第二張表是刻意留下的例外與理由。
 | `failure.rs` 把 `tauri::Error` 轉成 `Failure` | 統一轉換指令的錯誤 |
-| 轉錄指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（`docs/design.md` 6.4） |
+| 轉錄與辨識指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（`docs/design.md` 6.4） |
 | `system_opener` 直接執行系統程式 | 開啟目錄與網頁，不是元件 |
 | 各情境的設定檔經 `json_settings` | 同一種讀寫 |
 | 模型下載與清單的指令直接用 `hub` | 只有傳輸，沒有規則 |

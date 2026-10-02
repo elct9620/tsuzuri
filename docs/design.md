@@ -343,6 +343,7 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 | Rust 相依套件 | 見 `deny.toml` | cargo-deny 檢查 |
 | Webview 打包套件 | 同 `about.toml` | 腳本檢查 |
 | OpenCC 字典 | Apache-2.0 | 收進授權頁 |
+| parakeet-rs 的程式碼 | MIT | 收進授權頁 |
 
 `vendor.sh` 把每個變體帶著的授權檔放進 `licenses/`，`scripts/licenses.ts` 再把全部寫成授權頁，從設定的「關於」開啟（`docs/ui.md` 7.6）。ffmpeg 不開 GPL、nonfree，是獨立執行檔，原始程式碼附在每次釋出。
 

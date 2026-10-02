@@ -82,3 +82,12 @@ A development build has no License Notice, since CI writes it into each build.
 | Given | the settings open at About |
 | When | the source is chosen |
 | Then | Rust is asked to open the releases page, each release carrying the source of its ffmpeg |
+
+## `LC-010` Carrying the license of the code Speaker Diarization adapts
+
+| Step | Statement |
+| --- | --- |
+| Given | the parakeet-rs code Speaker Diarization adapts |
+| When | the License Notice is written |
+| Then | it carries the MIT License parakeet-rs is under, naming the version adapted |
+

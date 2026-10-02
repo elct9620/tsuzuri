@@ -627,6 +627,18 @@ mod tests {
         assert_eq!(fixture.subtitle_text(), WHISPER_SRT);
     }
 
+    #[tokio::test]
+    async fn leaves_the_written_subtitle_ready_to_be_diarized() {
+        let fixture = Fixture::new("tx-then-diarize", TWO_SECOND_WAV);
+
+        fixture.transcribe().await.unwrap();
+
+        assert_eq!(
+            fixture.project().diarization_target().unwrap().subtitle,
+            fixture.project_dir().join("lecture.srt")
+        );
+    }
+
     // @behavior PJ-053
     #[tokio::test]
     async fn saves_the_bilingual_srts_once_transcribed() {

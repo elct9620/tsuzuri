@@ -419,6 +419,46 @@ mod tests {
         assert!(!fixture.tools.ffmpeg.with_extension("args").exists());
     }
 
+    /// Runs the whole Mode as the app does, with real Components: `TSUZURI_E2E_FFMPEG`, the app
+    /// built in release as `TSUZURI_E2E_APP`, the diarization Model as
+    /// `TSUZURI_E2E_DIARIZATION_MODEL` and a recording of several Speakers as
+    /// `TSUZURI_E2E_DIARIZATION_AUDIO`, cut into five-second Segments.
+    #[tokio::test]
+    #[ignore]
+    async fn diarizes_a_real_recording_through_the_app() {
+        let env = |name: &str| PathBuf::from(std::env::var(name).unwrap());
+        let mut fixture = Fixture::new("dz-e2e");
+        fixture.tools = Tools {
+            ffmpeg: env("TSUZURI_E2E_FFMPEG"),
+            diarizer: env("TSUZURI_E2E_APP"),
+        };
+        fixture.settings.choose(
+            ModelSlot::Diarization,
+            ModelSource::File {
+                path: env("TSUZURI_E2E_DIARIZATION_MODEL"),
+            },
+        );
+        let dir = fixture.project_dir();
+        std::fs::copy(
+            env("TSUZURI_E2E_DIARIZATION_AUDIO"),
+            dir.join("lecture.mp4"),
+        )
+        .unwrap();
+        let segments = (0..12).map(|i| segment(i * 5000, "…")).collect();
+        std::fs::write(
+            dir.join("lecture.srt"),
+            Transcript { segments }.to_srt(WrittenText::Original),
+        )
+        .unwrap();
+
+        fixture.diarize().await.unwrap();
+
+        let speakers = fixture.file_speakers("lecture.srt");
+        let named: std::collections::BTreeSet<_> = speakers.iter().flatten().collect();
+        println!("{speakers:?}");
+        assert!(named.len() >= 2, "heard only {named:?}");
+    }
+
     #[tokio::test]
     async fn names_the_diarize_step_when_it_fails() {
         let fixture = Fixture::new("dz-step-fails");

@@ -661,7 +661,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `ui/models.ts` | Model Source 的名稱與大小 |
 | `ui/options.ts` | 選單的選項 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
-| `ui/fold.ts` | 收起按鈕的狀態與圖示 |
+| `ui/fold.ts` | 收起時點亮收起鈕 |
 | `ui/volume.ts` | 音量曲線、增益與限幅 |
 | `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |

@@ -23,7 +23,7 @@ describe("ResourceListController", () => {
         data-action="system:orientation@window->resource-list#follow keydown@window->resource-list#toggleByShortcut">
         <input id="toggle" type="checkbox" data-resource-list-target="toggle">
         <label for="toggle" data-resource-list-target="overlayButton" style="${isNarrow ? "" : "display: none"}"></label>
-        <button id="dock" data-resource-list-target="dockButton" data-action="resource-list#toggleDocked"><span data-resource-list-target="dockIcon"></span></button>
+        <button id="dock" data-resource-list-target="dockButton" data-action="resource-list#toggleDocked"></button>
       </div>
     `;
     application = Application.start();
@@ -99,9 +99,11 @@ describe("ResourceListController", () => {
 
     document.querySelector<HTMLElement>("#dock")!.click();
 
-    expect(document.querySelector("#dock")!.getAttribute("aria-pressed")).toBe(
-      "true",
-    );
+    const button = document.querySelector("#dock")!;
+    expect([
+      button.getAttribute("aria-pressed"),
+      button.classList.contains("btn-primary"),
+    ]).toEqual(["true", true]);
   });
 
   // @behavior IF-049

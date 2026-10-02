@@ -139,8 +139,8 @@ describe("PreviewController", () => {
     );
     document.body.innerHTML = `
       <div data-controller="preview" data-action="rust:video-window-closing@window->preview#closeVideoWindow">
-        <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden><span data-preview-target="playerFoldIcon"></span></button>
-        <button id="fold-timeline" data-preview-target="timelineFoldButton" data-action="preview#toggleTimelineFold" hidden><span data-preview-target="timelineFoldIcon"></span></button>
+        <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden></button>
+        <button id="fold-timeline" data-preview-target="timelineFoldButton" data-action="preview#toggleTimelineFold" hidden></button>
         <div data-preview-target="panel" hidden>
         <div data-preview-target="screenRow">
           <div data-preview-target="screen">
@@ -590,6 +590,24 @@ describe("PreviewController", () => {
       target("timeline").hidden,
       panel().hidden,
     ]).toEqual([true, false, false]);
+  });
+
+  it("lights the fold buttons of the parts folded away", async () => {
+    await show(projectWithMedia());
+
+    foldTimeline();
+
+    const isLit = (id: string) => {
+      const button = document.querySelector(id)!;
+      return [
+        button.classList.contains("btn-primary"),
+        button.getAttribute("aria-pressed"),
+      ];
+    };
+    expect([isLit("#fold-player"), isLit("#fold-timeline")]).toEqual([
+      [false, "false"],
+      [true, "true"],
+    ]);
   });
 
   // @behavior PV-035

@@ -207,8 +207,8 @@ describe("Current Segment", () => {
         data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
         <div data-controller="preview timeline"
           data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
-          <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden><span data-preview-target="playerFoldIcon"></span></button>
-          <button data-preview-target="timelineFoldButton" hidden><span data-preview-target="timelineFoldIcon"></span></button>
+          <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden></button>
+          <button data-preview-target="timelineFoldButton" hidden></button>
           <div data-preview-target="panel">
           <div data-preview-target="screenRow">
             <div data-preview-target="screen">

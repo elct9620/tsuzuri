@@ -1,12 +1,8 @@
 /**
- * Marks a fold `button` pressed while its part is folded away, its swap `icon` showing the way the
- * next press goes.
+ * Lights a fold `button` while its part is folded away, as a toggle button is lit while it is on,
+ * so the page shows what it is not showing.
  */
-export function showFold(
-  button: HTMLElement,
-  icon: HTMLElement,
-  isFolded: boolean,
-): void {
-  icon.classList.toggle("swap-active", isFolded);
+export function showFold(button: HTMLElement, isFolded: boolean): void {
+  button.classList.toggle("btn-primary", isFolded);
   button.setAttribute("aria-pressed", String(isFolded));
 }

@@ -81,7 +81,7 @@ describe("ProjectController", () => {
           <button id="reload" data-action="project#reload">重新載入</button>
           <input id="resources-toggle" type="checkbox" data-resource-list-target="toggle" />
           <label data-resource-list-target="overlayButton"></label>
-          <button data-resource-list-target="dockButton"><span data-resource-list-target="dockIcon"></span></button>
+          <button data-resource-list-target="dockButton"></button>
           <ul data-project-target="resources"></ul>
           <p data-project-target="glossary"></p>
         </div>

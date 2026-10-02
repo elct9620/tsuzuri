@@ -33,14 +33,13 @@ function screenOrientation(): Orientation {
  * window never docks it and lays it over the editor from its own button instead.
  */
 export default class ResourceListController extends Controller {
-  static targets = ["toggle", "overlayButton", "dockButton", "dockIcon"];
+  static targets = ["toggle", "overlayButton", "dockButton"];
 
   /** The drawer's checkbox, checked while the list is laid over the editor. */
   declare readonly toggleTarget: HTMLInputElement;
   /** Lays the list over the editor; shown only where the window is too narrow to dock it. */
   declare readonly overlayButtonTarget: HTMLElement;
   declare readonly dockButtonTarget: HTMLElement;
-  declare readonly dockIconTarget: HTMLElement;
 
   connect(): void {
     this.showDocking();
@@ -87,6 +86,6 @@ export default class ResourceListController extends Controller {
   private showDocking(): void {
     const isListDocked = this.isDocked(screenOrientation());
     this.element.toggleAttribute("data-is-docked", isListDocked);
-    showFold(this.dockButtonTarget, this.dockIconTarget, !isListDocked);
+    showFold(this.dockButtonTarget, !isListDocked);
   }
 }

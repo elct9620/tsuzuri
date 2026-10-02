@@ -85,9 +85,7 @@ export default class PreviewController extends Controller {
   static targets = [
     "panel",
     "playerFoldButton",
-    "playerFoldIcon",
     "timelineFoldButton",
-    "timelineFoldIcon",
     "timeline",
     "screen",
     "screenRow",
@@ -120,10 +118,8 @@ export default class PreviewController extends Controller {
   declare readonly panelTarget: HTMLElement;
   /** Hides or shows the player and its controls; only a Resource with media has them to fold. */
   declare readonly playerFoldButtonTarget: HTMLButtonElement;
-  declare readonly playerFoldIconTarget: HTMLElement;
   /** Hides or shows the timeline; only a Resource with media has one to fold. */
   declare readonly timelineFoldButtonTarget: HTMLButtonElement;
-  declare readonly timelineFoldIconTarget: HTMLElement;
   /** The Waveform's frame, with its regions and tools. */
   declare readonly timelineTarget: HTMLElement;
   declare readonly screenTarget: HTMLElement;
@@ -516,16 +512,8 @@ export default class PreviewController extends Controller {
     this.timelineTarget.hidden = this.isTimelineFolded;
     this.playerFoldButtonTarget.hidden = !hasMedia;
     this.timelineFoldButtonTarget.hidden = !hasMedia;
-    showFold(
-      this.playerFoldButtonTarget,
-      this.playerFoldIconTarget,
-      this.isPlayerFolded,
-    );
-    showFold(
-      this.timelineFoldButtonTarget,
-      this.timelineFoldIconTarget,
-      this.isTimelineFolded,
-    );
+    showFold(this.playerFoldButtonTarget, this.isPlayerFolded);
+    showFold(this.timelineFoldButtonTarget, this.isTimelineFolded);
   }
 
   /** Tells the editor which Segments are being played, each time that changes. */

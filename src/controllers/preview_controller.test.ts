@@ -51,6 +51,19 @@ describe("PreviewController", () => {
       `[data-preview-target="captionBackdrop"][value="${value}"]`,
     )!;
 
+  /** Makes the media report a picture `width` by `height`, none at 0, as loaded metadata does. */
+  function loadPicture(width: number, height: number): void {
+    Object.defineProperty(media(), "videoWidth", {
+      value: width,
+      configurable: true,
+    });
+    Object.defineProperty(media(), "videoHeight", {
+      value: height,
+      configurable: true,
+    });
+    media().dispatchEvent(new Event("loadedmetadata"));
+  }
+
   /** `ep01` with media and `今天` from 0 to 1 s, translated `Today` in `en` shown. */
   const projectTranslated = (changes: Partial<ProjectView> = {}) =>
     projectWithMedia({
@@ -118,10 +131,12 @@ describe("PreviewController", () => {
       <div data-controller="preview" data-action="rust:video-window-closing@window->preview#closeVideoWindow">
         <button id="fold" data-preview-target="foldButton" data-action="preview#toggleFold" hidden><span data-preview-target="foldIcon"></span></button>
         <div data-preview-target="panel" hidden>
-        <div data-preview-target="screen">
-          <video data-preview-target="media"></video>
-          <p data-preview-target="caption"></p>
-          <div data-preview-target="hint" hidden></div>
+        <div data-preview-target="screenRow">
+          <div data-preview-target="screen">
+            <video data-preview-target="media"></video>
+            <p data-preview-target="caption"></p>
+            <div data-preview-target="hint" hidden></div>
+          </div>
         </div>
         <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playbackIcon"></span></button>
         <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
@@ -182,6 +197,25 @@ describe("PreviewController", () => {
     media().dispatchEvent(new Event("loadedmetadata"));
 
     expect([target("screen").hidden, panel().hidden]).toEqual([true, false]);
+  });
+
+  it("sizes the row beside the card by the video's shape", async () => {
+    await show(projectWithMedia());
+
+    loadPicture(1920, 1080);
+
+    expect([
+      target("screenRow").hasAttribute("data-has-picture"),
+      target("screenRow").style.getPropertyValue("--picture-ratio"),
+    ]).toEqual([true, "0.5625"]);
+  });
+
+  it("leaves the row beside the card to the card for media without a picture", async () => {
+    await show(projectWithMedia());
+
+    loadPicture(0, 0);
+
+    expect(target("screenRow").hasAttribute("data-has-picture")).toBe(false);
   });
 
   // @behavior PV-011
@@ -871,6 +905,25 @@ describe("PreviewController", () => {
       pressVideoWindowButton();
 
       expect(target("currentSection").hidden).toBe(true);
+    });
+
+    it("leaves the row beside the card to the card while the video is away", async () => {
+      await show(projectWithMedia());
+      loadPicture(1920, 1080);
+
+      pressVideoWindowButton();
+
+      expect(target("screenRow").hasAttribute("data-has-picture")).toBe(false);
+    });
+
+    it("sizes the row beside the card by the video again as it comes back", async () => {
+      await show(projectWithMedia());
+      loadPicture(1920, 1080);
+      pressVideoWindowButton();
+
+      pressVideoWindowButton();
+
+      expect(target("screenRow").hasAttribute("data-has-picture")).toBe(true);
     });
 
     // @behavior PV-139

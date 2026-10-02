@@ -81,6 +81,7 @@ export default class PreviewController extends Controller {
     "foldButton",
     "foldIcon",
     "screen",
+    "screenRow",
     "media",
     "caption",
     "captionChoice",
@@ -112,6 +113,8 @@ export default class PreviewController extends Controller {
   declare readonly foldButtonTarget: HTMLButtonElement;
   declare readonly foldIconTarget: HTMLElement;
   declare readonly screenTarget: HTMLElement;
+  /** The row the video sits in beside the card, and comes back to. */
+  declare readonly screenRowTarget: HTMLElement;
   declare readonly mediaTarget: HTMLVideoElement;
   declare readonly captionTarget: HTMLElement;
   /** Chooses what is shown over the video and what it sits on; only a picture has one. */
@@ -167,8 +170,6 @@ export default class PreviewController extends Controller {
   private player!: HTMLVideoElement;
   private captionBox!: HTMLElement;
   private unplayableHint!: HTMLElement;
-  /** The row the video sits in beside the card, and comes back to. */
-  private screenRow!: HTMLElement;
   /** The window the video is in while it is out of the Preview. */
   private videoWindow: Window | null = null;
   /**
@@ -188,7 +189,6 @@ export default class PreviewController extends Controller {
 
   connect(): void {
     this.screen = this.screenTarget;
-    this.screenRow = this.screen.parentElement!;
     this.player = this.mediaTarget;
     this.captionBox = this.captionTarget;
     this.unplayableHint = this.hintTarget;
@@ -294,6 +294,7 @@ export default class PreviewController extends Controller {
     this.screen.hidden = !hasPicture;
     this.captionChoiceTarget.hidden = !hasPicture;
     this.videoWindowButtonTarget.hidden = !hasPicture;
+    this.fitScreenRow();
     this.showTime();
   }
 
@@ -375,7 +376,7 @@ export default class PreviewController extends Controller {
   private bringVideoBack(): void {
     if (!this.videoWindow) return;
     this.videoWindow = null;
-    this.moveScreen(() => this.screenRow.prepend(this.screen));
+    this.moveScreen(() => this.screenRowTarget.prepend(this.screen));
   }
 
   /**
@@ -402,10 +403,25 @@ export default class PreviewController extends Controller {
    */
   private showVideoWindow(): void {
     const isAway = this.videoWindow !== null;
-    this.screenRow.toggleAttribute("data-is-video-away", isAway);
+    this.fitScreenRow();
     this.currentSectionTarget.hidden = isAway;
     this.videoWindowButtonTarget.setAttribute("aria-pressed", `${isAway}`);
     this.videoWindowButtonTarget.classList.toggle("btn-primary", isAway);
+  }
+
+  /**
+   * Gives the row the height its video takes at the video's width, up to a limit the page sets,
+   * and leaves it to the card while no picture is in the Preview.
+   */
+  private fitScreenRow(): void {
+    const { videoWidth, videoHeight } = this.player;
+    const isPictureInRow = videoWidth > 0 && this.videoWindow === null;
+    this.screenRowTarget.toggleAttribute("data-has-picture", isPictureInRow);
+    if (isPictureInRow)
+      this.screenRowTarget.style.setProperty(
+        "--picture-ratio",
+        String(videoHeight / videoWidth),
+      );
   }
 
   /** The indexes of the Segments at the media's time, in the order they start; none between Segments. */

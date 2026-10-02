@@ -209,10 +209,12 @@ describe("Current Segment", () => {
           data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
           <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
           <div data-preview-target="panel">
-          <div data-preview-target="screen">
-            <video data-preview-target="media" data-timeline-target="media"></video>
-            <p data-preview-target="caption"></p>
-            <div data-preview-target="hint" hidden></div>
+          <div data-preview-target="screenRow">
+            <div data-preview-target="screen">
+              <video data-preview-target="media" data-timeline-target="media"></video>
+              <p data-preview-target="caption"></p>
+              <div data-preview-target="hint" hidden></div>
+            </div>
           </div>
           <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
           <span data-preview-target="playbackIcon"></span>

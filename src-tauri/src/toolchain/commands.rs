@@ -143,6 +143,7 @@ mod tests {
             "ggml-large-v3.bin",
             "ggml-silero-v6.2.0.bin",
             "qwen3.gguf",
+            "Nemotron-3-Diarization.q8_0.gguf",
             "README.md",
         ]
         .into_iter()
@@ -176,5 +177,14 @@ mod tests {
     #[test]
     fn lists_the_translation_models_of_a_repository() {
         assert_eq!(model_paths(ModelSlot::Translation), ["qwen3.gguf"]);
+    }
+
+    // @behavior MD-051
+    #[test]
+    fn lists_the_diarization_models_of_a_repository() {
+        assert_eq!(
+            model_paths(ModelSlot::Diarization),
+            ["Nemotron-3-Diarization.q8_0.gguf"]
+        );
     }
 }

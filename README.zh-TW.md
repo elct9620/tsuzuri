@@ -130,6 +130,7 @@ sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 | 轉錄 | whisper.cpp GGML（`.bin`） | [Breeze-ASR-25](https://huggingface.co/tsuzuri-app/Breeze-ASR-25-ggml)（中文）、[Whisper large-v3-turbo 與 large-v3](https://huggingface.co/ggerganov/whisper.cpp) |
 | VAD（開啟時） | whisper.cpp GGML（`.bin`） | [Silero v6.2.0](https://huggingface.co/ggml-org/whisper-vad) |
 | 翻譯 | GGUF | [Qwen3-4B-Instruct-2507](https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF) |
+| 說話者辨識 | GGUF | [Nemotron-3-Diarization](https://huggingface.co/nvidia/Nemotron-3-Diarization) |
 
 ### 模型來源
 

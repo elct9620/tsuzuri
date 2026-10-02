@@ -241,7 +241,7 @@ An optional second look in which the Model, two lines at a time, restates what e
 
 ### Model Slot
 
-Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli) or translation (llama-server). Each slot holds one Model Source.
+Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli), translation (llama-server) or diarization (Tsuzuri's own diarize step). Each slot holds one Model Source.
 
 ### Model Source
 

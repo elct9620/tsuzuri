@@ -23,7 +23,7 @@ struct PresetFamily {
     files: &'static [(&'static str, &'static str, u64)],
 }
 
-const FAMILIES: [PresetFamily; 5] = [
+const FAMILIES: [PresetFamily; 6] = [
     PresetFamily {
         slot: ModelSlot::Transcription,
         name: "Breeze-ASR-25",
@@ -73,6 +73,13 @@ const FAMILIES: [PresetFamily; 5] = [
             ),
             ("Q8_0", "Qwen3-4B-Instruct-2507-Q8_0.gguf", 4_280_405_600),
         ],
+    },
+    PresetFamily {
+        slot: ModelSlot::Diarization,
+        name: "Nemotron-3-Diarization",
+        repo: "nvidia/Nemotron-3-Diarization",
+        commit: "f667ed73aee57d40cc39428eb768b4fd87a0a29e",
+        files: &[("q8_0", "Nemotron-3-Diarization.q8_0.gguf", 107_012_128)],
     },
 ];
 
@@ -169,6 +176,7 @@ mod tests {
             ModelSlot::Transcription,
             ModelSlot::Vad,
             ModelSlot::Translation,
+            ModelSlot::Diarization,
         ]
         .into_iter()
         .filter(|slot| presets.iter().all(|preset| preset.slot != *slot))

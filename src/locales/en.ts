@@ -324,6 +324,8 @@ const en = {
       "A whisper ggml model file (.bin), such as Breeze-ASR-25. A larger model is more accurate and slower.",
     translationModelHelp:
       "A llama.cpp GGUF model file, such as Qwen3-4B. With 4GB of video memory, a quantized model around 4B fits.",
+    diarizationModelHelp:
+      "A speaker diarization GGUF model file with Diarization in its name, such as Nemotron-3-Diarization. Used only when telling speakers apart.",
     projectName: "Name",
     primaryLanguage: "Primary language",
     bilingualOrder: "Bilingual order",
@@ -415,6 +417,7 @@ const en = {
     transcription: "Transcription",
     vad: "VAD",
     translation: "Translation",
+    diarization: "Speaker diarization",
   },
   components: {
     choice: "Chosen",

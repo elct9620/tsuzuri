@@ -314,6 +314,8 @@ const zhHant: typeof en = {
       "whisper 的 ggml 模型檔（.bin），例如 Breeze-ASR-25。模型越大越準，也越慢。",
     translationModelHelp:
       "llama.cpp 的 GGUF 模型檔，例如 Qwen3-4B。4GB 顯示記憶體建議用 4B 左右的量化模型。",
+    diarizationModelHelp:
+      "辨識說話者的 GGUF 模型檔，檔名含 Diarization，例如 Nemotron-3-Diarization。辨識說話者時才會用到。",
     projectName: "名稱",
     primaryLanguage: "主語言",
     bilingualOrder: "雙語順序",
@@ -403,6 +405,7 @@ const zhHant: typeof en = {
     transcription: "轉錄",
     vad: "VAD",
     translation: "翻譯",
+    diarization: "說話者辨識",
   },
   components: {
     choice: "指定",

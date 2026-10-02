@@ -65,6 +65,7 @@ function viewWith(
     transcription: slot(null, null),
     vad: slot(null, null),
     translation: slot(translation, presetIndex),
+    diarization: slot(null, null),
   };
 }
 

@@ -130,6 +130,7 @@ Choose models in Settings; a preset below downloads the first time it is used.
 | Transcription | whisper.cpp GGML (`.bin`) | [Breeze-ASR-25](https://huggingface.co/tsuzuri-app/Breeze-ASR-25-ggml) (Chinese), [Whisper large-v3-turbo and large-v3](https://huggingface.co/ggerganov/whisper.cpp) |
 | VAD, when turned on | whisper.cpp GGML (`.bin`) | [Silero v6.2.0](https://huggingface.co/ggml-org/whisper-vad) |
 | Translation | GGUF | [Qwen3-4B-Instruct-2507](https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF) |
+| Speaker diarization | GGUF | [Nemotron-3-Diarization](https://huggingface.co/nvidia/Nemotron-3-Diarization) |
 
 ### Model sources
 

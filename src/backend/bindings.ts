@@ -344,9 +344,10 @@ export type ModelSettingsView = {
 	transcription: SlotView,
 	vad: SlotView,
 	translation: SlotView,
+	diarization: SlotView,
 };
 
-export type ModelSlot = "transcription" | "vad" | "translation";
+export type ModelSlot = "transcription" | "vad" | "translation" | "diarization";
 
 /**  Where a Model Slot's Model comes from. */
 export type ModelSource = { kind: "file"; path: string } | 

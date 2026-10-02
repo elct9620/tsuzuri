@@ -347,11 +347,7 @@ impl Diarizer {
     }
 
     /// The frames to keep, and which of the kept slots hold silence instead.
-    fn kept_frames(
-        &self,
-        scores: &Array2<f32>,
-        n_frames_no_sil: usize,
-    ) -> (Vec<usize>, Vec<bool>) {
+    fn kept_frames(&self, scores: &Array2<f32>, n_frames_no_sil: usize) -> (Vec<usize>, Vec<bool>) {
         let n_frames = scores.shape()[0];
 
         // Speaker-major flat index, speaker * n_frames + time, as NeMo flattens (S, T).

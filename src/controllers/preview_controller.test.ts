@@ -31,6 +31,16 @@ describe("PreviewController", () => {
     await settle();
   }
 
+  /** Starts the Preview over, as the next time the app opens. */
+  async function reopen(): Promise<void> {
+    application.stop();
+    application = Application.start();
+    await assemble(application, {
+      preview: PreviewController,
+    }).start();
+    await settle();
+  }
+
   /** Makes the media report `seconds` long and at `at`, as a loaded player does. */
   function playTo(at: number, seconds = 10): void {
     Object.defineProperty(media(), "duration", {
@@ -129,7 +139,8 @@ describe("PreviewController", () => {
     );
     document.body.innerHTML = `
       <div data-controller="preview" data-action="rust:video-window-closing@window->preview#closeVideoWindow">
-        <button id="fold" data-preview-target="foldButton" data-action="preview#toggleFold" hidden><span data-preview-target="foldIcon"></span></button>
+        <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden><span data-preview-target="playerFoldIcon"></span></button>
+        <button id="fold-timeline" data-preview-target="timelineFoldButton" data-action="preview#toggleTimelineFold" hidden><span data-preview-target="timelineFoldIcon"></span></button>
         <div data-preview-target="panel" hidden>
         <div data-preview-target="screenRow">
           <div data-preview-target="screen">
@@ -138,6 +149,7 @@ describe("PreviewController", () => {
             <div data-preview-target="hint" hidden></div>
           </div>
         </div>
+        <div data-preview-target="timeline"></div>
         <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playbackIcon"></span></button>
         <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
         <span data-preview-target="time"></span>
@@ -419,12 +431,7 @@ describe("PreviewController", () => {
   it("keeps what is shown over the video for the next Resource", async () => {
     await show(projectTranslated());
     captionLanguage("bilingual").click();
-    application.stop();
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
+    await reopen();
 
     await show(projectTranslated({ media: "/talks/ep02.mp4" }));
 
@@ -461,12 +468,7 @@ describe("PreviewController", () => {
   it("keeps the backdrop over the video for the next Resource", async () => {
     await show(projectWithMedia());
     captionBackdrop("none").click();
-    application.stop();
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
+    await reopen();
 
     await show(projectOf({ media: "/talks/ep02.mp4" }));
 
@@ -561,12 +563,7 @@ describe("PreviewController", () => {
   it("keeps the Speaker over the video off for the next Resource", async () => {
     await show(projectSpoken());
     captionSpeaker().click();
-    application.stop();
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
+    await reopen();
 
     await show(projectSpoken({ media: "/talks/ep02.mp4" }));
     playTo(0.5);
@@ -577,27 +574,64 @@ describe("PreviewController", () => {
     ]);
   });
 
+  const foldPlayer = () =>
+    document.querySelector<HTMLElement>("#fold-player")!.click();
+  const foldTimeline = () =>
+    document.querySelector<HTMLElement>("#fold-timeline")!.click();
+
   // @behavior PV-034
-  it("hides the Preview when its fold button is pressed", async () => {
+  it("hides the player and its controls, keeping the timeline, when their fold button is pressed", async () => {
     await show(projectWithMedia());
 
-    document.querySelector<HTMLElement>("#fold")!.click();
+    foldPlayer();
 
-    expect(panel().hidden).toBe(true);
+    expect([
+      target("screenRow").hidden,
+      target("timeline").hidden,
+      panel().hidden,
+    ]).toEqual([true, false, false]);
   });
 
   // @behavior PV-035
-  it("keeps the Preview folded for the next Resource with media", async () => {
+  it("keeps the player folded for the next Resource with media", async () => {
     await show(projectWithMedia());
-    document.querySelector<HTMLElement>("#fold")!.click();
-    application.stop();
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
+    foldPlayer();
+    await reopen();
 
     await show(projectOf({ media: "/talks/ep02.mp4" }));
+
+    expect(target("screenRow").hidden).toBe(true);
+  });
+
+  // @behavior PV-189
+  it("hides the timeline, keeping the player and its controls, when its fold button is pressed", async () => {
+    await show(projectWithMedia());
+
+    foldTimeline();
+
+    expect([target("timeline").hidden, target("screenRow").hidden]).toEqual([
+      true,
+      false,
+    ]);
+  });
+
+  // @behavior PV-190
+  it("keeps the timeline folded for the next Resource with media", async () => {
+    await show(projectWithMedia());
+    foldTimeline();
+    await reopen();
+
+    await show(projectOf({ media: "/talks/ep02.mp4" }));
+
+    expect(target("timeline").hidden).toBe(true);
+  });
+
+  // @behavior PV-191
+  it("takes no room once both the player and the timeline are folded", async () => {
+    await show(projectWithMedia());
+    foldPlayer();
+
+    foldTimeline();
 
     expect(panel().hidden).toBe(true);
   });

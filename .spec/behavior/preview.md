@@ -554,21 +554,55 @@ A button clicked keeps the focus, yet Space pressed afterward is meant for the m
 | When | the wheel turns up with Ctrl held, as far as zooming by two takes |
 | Then | the timeline shows 200 pixels a second |
 
-## `PV-034` Folding the Preview away
+## `PV-034` Folding the player and its controls away
+
+Space plays and stops the media and the timeline still selects and retimes Segments, so the player and its controls fold away on their own and give their height to the Segment list.
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file, its Preview shown |
-| When | the Preview's fold button is pressed |
-| Then | the Preview is hidden and the Segment list keeps the room |
+| When | the controls' fold button is pressed |
+| Then | the player and its controls are hidden and the timeline stays |
 
-## `PV-035` Keeping the Preview folded for the next Resource
+## `PV-035` Keeping the player folded for the next Resource
 
 | Step | Statement |
 | --- | --- |
-| Given | the Preview folded away |
+| Given | the player and its controls folded away |
 | When | another Resource with a media file becomes current |
-| Then | its Preview stays folded |
+| Then | its player and controls stay folded |
+
+## `PV-189` Folding the timeline away
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, its Preview shown |
+| When | the timeline's fold button is pressed |
+| Then | the timeline is hidden and the player and its controls stay |
+
+## `PV-190` Keeping the timeline folded for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | the timeline folded away |
+| When | another Resource with a media file becomes current |
+| Then | its timeline stays folded |
+
+## `PV-191` Taking no room with both parts folded
+
+| Step | Statement |
+| --- | --- |
+| Given | the player and its controls folded away |
+| When | the timeline's fold button is pressed |
+| Then | the Preview takes no room above the Segment list |
+
+## `PV-192` Playing with Space while the player is folded
+
+| Step | Statement |
+| --- | --- |
+| Given | the player and its controls folded away, the media paused |
+| When | Space is pressed outside a text field |
+| Then | the media plays |
 
 ## `PV-036` Showing the Current Segment beside the video
 

@@ -195,7 +195,8 @@ const en = {
     pickSegment: "Click a Segment to play from it.",
     playCurrent: "plays this Segment",
     playOn: "plays on from here",
-    fold: "Show or fold the preview",
+    foldPlayer: "Show or fold the player and its controls",
+    foldTimeline: "Show or fold the timeline",
     following: "Follow playback in the Segment list",
     followingHint:
       "Scrolls the list to the Segment being played. Turn it off to keep the list where it is while the media plays on.",

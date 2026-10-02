@@ -34,8 +34,13 @@ import {
   volumeAt,
 } from "../ui/volume";
 
-/** Where the webview remembers the Preview folded away. */
-const FOLDED_KEY = "tsuzuri.preview-folded";
+/**
+ * Where the webview remembers the player and its controls folded away, under the name a fold of the
+ * whole Preview was kept by, so a fold chosen then still holds.
+ */
+const PLAYER_FOLDED_KEY = "tsuzuri.preview-folded";
+/** Where the webview remembers the timeline folded away. */
+const TIMELINE_FOLDED_KEY = "tsuzuri.timeline-folded";
 
 /** Which text of the Segment being played is shown over the video. */
 type CaptionLanguage = "original" | "translation" | "bilingual";
@@ -75,11 +80,26 @@ function showText(element: HTMLElement, text: string): void {
 }
 
 /** The Preview: the Current Resource's media, played whole, with the Segment being played over it. */
+/** Shows the fold `button` for a part only with media to fold, its `icon` saying which way it goes. */
+function showFold(
+  button: HTMLElement,
+  icon: HTMLElement,
+  hasMedia: boolean,
+  isFolded: boolean,
+): void {
+  button.hidden = !hasMedia;
+  icon.classList.toggle("swap-active", isFolded);
+  button.setAttribute("aria-pressed", String(isFolded));
+}
+
 export default class PreviewController extends Controller {
   static targets = [
     "panel",
-    "foldButton",
-    "foldIcon",
+    "playerFoldButton",
+    "playerFoldIcon",
+    "timelineFoldButton",
+    "timelineFoldIcon",
+    "timeline",
     "screen",
     "screenRow",
     "media",
@@ -109,9 +129,14 @@ export default class PreviewController extends Controller {
   declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
   declare readonly panelTarget: HTMLElement;
-  /** Hides or shows the panel; only a Resource with media has one to fold. */
-  declare readonly foldButtonTarget: HTMLButtonElement;
-  declare readonly foldIconTarget: HTMLElement;
+  /** Hides or shows the player and its controls; only a Resource with media has them to fold. */
+  declare readonly playerFoldButtonTarget: HTMLButtonElement;
+  declare readonly playerFoldIconTarget: HTMLElement;
+  /** Hides or shows the timeline; only a Resource with media has one to fold. */
+  declare readonly timelineFoldButtonTarget: HTMLButtonElement;
+  declare readonly timelineFoldIconTarget: HTMLElement;
+  /** The Waveform's frame, with its regions and tools. */
+  declare readonly timelineTarget: HTMLElement;
   declare readonly screenTarget: HTMLElement;
   /** The row the video sits in beside the card, and comes back to. */
   declare readonly screenRowTarget: HTMLElement;
@@ -155,7 +180,8 @@ export default class PreviewController extends Controller {
   private captionBackdrop = captionBackdropOf(rememberedChoice(BACKDROP_KEY));
   /** A saved cue names its Speaker, so the caption does too until turned off. */
   private isSpeakerShown = rememberedFlag(SPEAKER_KEY, true);
-  private isFolded = rememberedFlag(FOLDED_KEY, false);
+  private isPlayerFolded = rememberedFlag(PLAYER_FOLDED_KEY, false);
+  private isTimelineFolded = rememberedFlag(TIMELINE_FOLDED_KEY, false);
   private volume = savedVolume(rememberedChoice(VOLUME_KEY));
   /** A mute is not remembered, so a Preview opening silent never passes for media with no sound. */
   private isMuted = false;
@@ -216,9 +242,15 @@ export default class PreviewController extends Controller {
     this.showCurrentSegment();
   }
 
-  toggleFold(): void {
-    this.isFolded = !this.isFolded;
-    rememberFlag(FOLDED_KEY, this.isFolded);
+  togglePlayerFold(): void {
+    this.isPlayerFolded = !this.isPlayerFolded;
+    rememberFlag(PLAYER_FOLDED_KEY, this.isPlayerFolded);
+    this.showPanel();
+  }
+
+  toggleTimelineFold(): void {
+    this.isTimelineFolded = !this.isTimelineFolded;
+    rememberFlag(TIMELINE_FOLDED_KEY, this.isTimelineFolded);
     this.showPanel();
   }
 
@@ -489,10 +521,22 @@ export default class PreviewController extends Controller {
 
   private showPanel(): void {
     const hasMedia = this.media !== null;
-    this.foldButtonTarget.hidden = !hasMedia;
-    this.panelTarget.hidden = !hasMedia || this.isFolded;
-    this.foldIconTarget.classList.toggle("swap-active", this.isFolded);
-    this.foldButtonTarget.setAttribute("aria-pressed", String(this.isFolded));
+    this.panelTarget.hidden =
+      !hasMedia || (this.isPlayerFolded && this.isTimelineFolded);
+    this.screenRowTarget.hidden = this.isPlayerFolded;
+    this.timelineTarget.hidden = this.isTimelineFolded;
+    showFold(
+      this.playerFoldButtonTarget,
+      this.playerFoldIconTarget,
+      hasMedia,
+      this.isPlayerFolded,
+    );
+    showFold(
+      this.timelineFoldButtonTarget,
+      this.timelineFoldIconTarget,
+      hasMedia,
+      this.isTimelineFolded,
+    );
   }
 
   /** Tells the editor which Segments are being played, each time that changes. */

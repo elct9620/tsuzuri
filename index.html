@@ -862,14 +862,30 @@
               <button
                 type="button"
                 class="btn btn-square btn-sm"
-                data-preview-target="foldButton"
-                data-action="preview#toggleFold"
-                data-i18n-label="preview.fold"
+                data-preview-target="playerFoldButton"
+                data-action="preview#togglePlayerFold"
+                data-i18n-label="preview.foldPlayer"
                 hidden
               >
-                <span class="swap" data-preview-target="foldIcon">
+                <span class="swap" data-preview-target="playerFoldIcon">
                   <i data-lucide="panel-top-open" class="swap-on size-4"></i>
                   <i data-lucide="panel-top-close" class="swap-off size-4"></i>
+                </span>
+              </button>
+              <button
+                type="button"
+                class="btn btn-square btn-sm"
+                data-preview-target="timelineFoldButton"
+                data-action="preview#toggleTimelineFold"
+                data-i18n-label="preview.foldTimeline"
+                hidden
+              >
+                <span class="swap" data-preview-target="timelineFoldIcon">
+                  <i data-lucide="panel-bottom-open" class="swap-on size-4"></i>
+                  <i
+                    data-lucide="panel-bottom-close"
+                    class="swap-off size-4"
+                  ></i>
                 </span>
               </button>
             </div>
@@ -1162,6 +1178,7 @@
               </div>
               <div
                 class="relative h-28 rounded-box border border-base-300 px-2 pt-2 pb-6"
+                data-preview-target="timeline"
               >
                 <div
                   class="absolute top-1 right-1 z-10 flex items-center gap-1"

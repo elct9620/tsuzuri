@@ -207,7 +207,8 @@ describe("Current Segment", () => {
         data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
         <div data-controller="preview timeline"
           data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
-          <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
+          <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden><span data-preview-target="playerFoldIcon"></span></button>
+          <button data-preview-target="timelineFoldButton" hidden><span data-preview-target="timelineFoldIcon"></span></button>
           <div data-preview-target="panel">
           <div data-preview-target="screenRow">
             <div data-preview-target="screen">
@@ -226,7 +227,7 @@ describe("Current Segment", () => {
           <div data-preview-target="currentSection">
           <p data-preview-target="currentHint"></p>
           <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd></div></div>
-          <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
+          <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-preview-target="timeline"><div data-timeline-target="waveform"></div></div>
           </div>
         </div>
         <h2 data-transcript-target="heading"></h2>
@@ -341,6 +342,16 @@ describe("Current Segment", () => {
     pressSpace();
 
     expect(media().paused).toBe(true);
+  });
+
+  // @behavior PV-192
+  it("plays with Space while the player and its controls are folded", async () => {
+    await show(twoSegments);
+    document.querySelector<HTMLElement>("#fold-player")!.click();
+
+    pressSpace();
+
+    expect(media().paused).toBe(false);
   });
 
   // @behavior PV-031

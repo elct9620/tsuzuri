@@ -607,7 +607,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `field` | 每個編輯欄位接上 session |
 | `time-field` | 時間欄覆寫輸入 |
 
-畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`；追蹤播放鈕在預覽卡片，屬於捲動清單的 `transcript`。
+畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`，沒有媒體檔時由 `ui/silence.ts` 決定同一段靜音。追蹤播放鈕在預覽卡片，屬於捲動清單的 `transcript`。
 
 | 事件或 outlet | 送出者 | 接收者與用途 |
 |---|---|---|

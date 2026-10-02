@@ -4,6 +4,7 @@ use std::time::Instant;
 use serde::Serialize;
 
 use crate::cleanup::clean_texts;
+use crate::conversion;
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::progress::{enter, Progress};
@@ -87,7 +88,7 @@ pub async fn run_transcribe<'a>(
         ports,
         CONVERSION_STEP,
         &tools.ffmpeg,
-        &whisper::conversion_args(input, &wav, job.window),
+        &conversion::conversion_args(input, &wav, job.window),
         |_| {},
         |_| {},
     )
@@ -136,7 +137,7 @@ pub async fn run_transcribe<'a>(
     let written_span = project.write_transcription(job, srt)?;
     ports.announce_project();
     Ok(Transcription {
-        audio_seconds: whisper::audio_seconds(audio_bytes),
+        audio_seconds: conversion::audio_seconds(audio_bytes),
         transcribe_seconds,
         phases: phases.finish(),
         written_span,

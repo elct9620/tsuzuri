@@ -1,6 +1,7 @@
 pub mod about;
 pub mod bindings;
 pub mod cleanup;
+pub mod conversion;
 pub mod diarization;
 pub mod edit_command;
 pub mod failure;

@@ -267,6 +267,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `translation/` | `llama` | 轉接 | llama-server |
 | `translation/` | `settings` | 轉接 | 翻譯設定檔 |
 | `translation/` | `resident` | 轉接 | 常駐 llama-server |
+| — | `conversion` | 轉接 | ffmpeg 轉成 16 kHz WAV |
 | — | `transcription` | 應用 | 轉錄用例 |
 | `transcription/` | `whisper` | 轉接 | whisper-cli 參數 |
 | `transcription/` | `settings` | 轉接 | 轉錄設定檔 |

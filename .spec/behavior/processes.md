@@ -40,6 +40,16 @@ Launching Components as child processes so that none outlives the app: those ali
 | When | the app launches |
 | Then | that process keeps running |
 
+## `PR-010` Sparing the app when a recorded PID is now its own
+
+The diarize Step is Tsuzuri itself, so a recorded name can match the app that is launching.
+
+| Step | Statement |
+| --- | --- |
+| Given | a process record naming the launching app's own PID under its own name |
+| When | the app launches |
+| Then | the app keeps running |
+
 ## `PR-005` Delivering all output before the exit status
 
 | Step | Statement |

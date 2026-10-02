@@ -3,6 +3,7 @@
 pub mod features;
 pub mod sortformer;
 pub mod streaming;
+pub mod subcommand;
 pub mod turns;
 
 use std::fmt;

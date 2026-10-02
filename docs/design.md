@@ -282,6 +282,7 @@ CO: Today we talk about privacy
 | App 正常結束 | 在 `RunEvent::Exit` kill 仍在執行的子行程 |
 | App 當掉或被強制結束 | 下次啟動時清理 |
 | PID 已被其他程式重用 | 名稱不符就不動它 |
+| PID 是啟動中的 App | 辨識與 App 同名，不動它 |
 
 下次啟動時 kill 紀錄中還活著且名稱相符的行程，Windows 用 `taskkill /T /F`。`tauri-plugin-shell` 只清理從 JS 端啟動的行程，所以 App 自己負責 Rust 端啟動的行程。當掉後的殘留會佔著 VRAM 直到下次啟動。
 

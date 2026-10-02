@@ -38,3 +38,19 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 | Given | a GGUF file whose architecture is not Sortformer v3 |
 | When | it is loaded as the diarization Model |
 | Then | it is refused, naming the architecture it found |
+
+## `DZ-005` Reporting how far a diarization has come
+
+| Step | Statement |
+| --- | --- |
+| Given | the diarize Step having run two of a recording's four chunks |
+| When | its progress line is read back |
+| Then | it reads as 50 % |
+
+## `DZ-006` Failing a diarize Step whose Model cannot be loaded
+
+| Step | Statement |
+| --- | --- |
+| Given | a diarization Model path where no file is |
+| When | the diarize Step runs |
+| Then | it exits with code 1 and says why on stderr |

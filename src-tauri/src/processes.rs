@@ -228,8 +228,12 @@ pub fn reap_strays(record: &Path) {
         return;
     };
     let records: Vec<RecordedProcess> = serde_json::from_slice(&bytes).unwrap_or_default();
+    // The diarize Step is the app itself, so a recorded name can match the app now launching.
+    let own_pid = std::process::id();
     for stray in records {
-        if find_running_name(stray.pid).is_some_and(|name| name == stray.name) {
+        if stray.pid != own_pid
+            && find_running_name(stray.pid).is_some_and(|name| name == stray.name)
+        {
             kill_tree(stray.pid);
         }
     }
@@ -396,6 +400,19 @@ mod tests {
         let _ = child.kill();
         let _ = child.wait();
         assert!(still_running);
+    }
+
+    // @behavior PR-010
+    #[test]
+    fn spares_the_app_when_a_recorded_pid_is_its_own() {
+        let dir = TempDir::new("pr-own");
+        let own_pid = std::process::id();
+        let own_name = find_running_name(own_pid).unwrap();
+        let record = record(&dir, own_pid, &own_name);
+
+        reap_strays(&record);
+
+        assert!(is_running(own_pid));
     }
 
     // @behavior PR-005

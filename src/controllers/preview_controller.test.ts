@@ -66,6 +66,42 @@ describe("PreviewController", () => {
       `[data-preview-target="dummyVideoColour"][value="${value}"]`,
     )!;
 
+  /** A Resource without media whose one Segment ends at `endMs`. */
+  const projectEndingAt = (endMs: number) =>
+    projectOf({ segments: [{ start_ms: 0, end_ms: endMs, text: "Hello" }] });
+
+  /** Keeps each Blob the Preview makes a URL for, naming them `blob:silence-1` onwards. */
+  function keepMadeSilence(): Blob[] {
+    const made: Blob[] = [];
+    vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+      made.push(blob as Blob);
+      return `blob:silence-${made.length}`;
+    });
+    return made;
+  }
+
+  /** Starts the player over at 0 once its source changes, as a browser does and happy-dom does not. */
+  function startOverOnNewSource(): void {
+    const { set } = Object.getOwnPropertyDescriptor(
+      HTMLMediaElement.prototype,
+      "src",
+    )!;
+    Object.defineProperty(media(), "src", {
+      configurable: true,
+      set(value: string) {
+        set!.call(this, value);
+        (this as HTMLMediaElement).currentTime = 0;
+      },
+    });
+  }
+
+  /** How long a WAV of silence lasts, read from its header and data as a player reads them. */
+  async function silenceSeconds(wav: Blob): Promise<number> {
+    const bytes = await wav.arrayBuffer();
+    const sampleRate = new DataView(bytes).getUint32(24, true);
+    return (bytes.byteLength - 44) / sampleRate;
+  }
+
   /** Makes the media report a picture `width` by `height`, none at 0, as loaded metadata does. */
   function loadPicture(width: number, height: number): void {
     Object.defineProperty(media(), "videoWidth", {
@@ -210,27 +246,68 @@ describe("PreviewController", () => {
 
   // @behavior PV-197
   it("plays silence a minute past the last Segment for a Resource without media", async () => {
-    const made: Blob[] = [];
-    vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
-      made.push(blob as Blob);
-      return "blob:silence";
-    });
+    const made = keepMadeSilence();
 
-    await show(
-      projectOf({
-        segments: [{ start_ms: 2000, end_ms: 10000, text: "Hello" }],
-      }),
-    );
-    const wav = new DataView(await made[0].arrayBuffer());
-    const sampleRate = wav.getUint32(24, true);
-    const samples = new Uint8Array(wav.buffer, 44);
+    await show(projectEndingAt(10000));
 
     expect([
       media().getAttribute("src"),
       made[0].type,
-      samples.length / sampleRate,
-      samples.every((sample) => sample === 128),
-    ]).toEqual(["blob:silence", "audio/wav", 70, true]);
+      await silenceSeconds(made[0]),
+    ]).toEqual(["blob:silence-1", "audio/wav", 70]);
+  });
+
+  it("makes the silence of nothing but silent samples", async () => {
+    const made = keepMadeSilence();
+
+    await show(projectEndingAt(10000));
+    const samples = new Uint8Array(await made[0].arrayBuffer(), 44);
+
+    expect(samples.every((sample) => sample === 128)).toBe(true);
+  });
+
+  // @behavior PV-199
+  it("lengthens the silence once a Segment reaches its end", async () => {
+    const made = keepMadeSilence();
+    await show(projectEndingAt(10000));
+
+    await show(projectEndingAt(70000));
+
+    expect([made.length, await silenceSeconds(made[1])]).toEqual([2, 130]);
+  });
+
+  // @behavior PV-200
+  it("stays at the same time as the silence lengthens", async () => {
+    keepMadeSilence();
+    startOverOnNewSource();
+    await show(projectEndingAt(10000));
+    media().currentTime = 5;
+
+    await show(projectEndingAt(70000));
+
+    expect(media().currentTime).toBe(5);
+  });
+
+  it("makes silence of its own for another Resource without media", async () => {
+    const made = keepMadeSilence();
+    await show(projectEndingAt(10000));
+
+    await show({ ...projectEndingAt(5000), current_resource: "ep02" });
+
+    expect([made.length, await silenceSeconds(made[1])]).toEqual([2, 65]);
+  });
+
+  // @behavior PV-201
+  it("keeps the silence while the Segments stay within it", async () => {
+    const made = keepMadeSilence();
+    await show(projectEndingAt(10000));
+
+    await show(projectEndingAt(30000));
+
+    expect([made.length, media().getAttribute("src")]).toEqual([
+      1,
+      "blob:silence-1",
+    ]);
   });
 
   it("lets the silence go once the player reads a media file", async () => {

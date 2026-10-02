@@ -114,6 +114,44 @@ The silence runs a minute past the last Segment, so that Segment can still be dr
 | When | its media loads without a picture |
 | Then | the Dummy Video is shown beside the controls |
 
+## `PV-199` Lengthening the silence once a Segment reaches its end
+
+The player cannot go past the end of what it reads, so a Segment dragged or typed to the end of the silence gets another minute after it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone playing silence lasting 70 s |
+| When | a Segment's end is moved to 70 s |
+| Then | the player reads a WAV of silence lasting 130 s |
+
+## `PV-200` Staying at the same time as the silence lengthens
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone, its silence at 5 s |
+| When | the silence lengthens |
+| Then | the player is still at 5 s |
+
+## `PV-202` Keeping the timeline where it was scrolled as the silence lengthens
+
+The silence lengthens while a Segment is dragged at the end of the timeline, so the view stays there to drag on.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone, its timeline scrolled to 50 s |
+| When | the silence lengthens |
+| Then | the timeline is still scrolled to 50 s |
+
+## `PV-201` Keeping the silence while the Segments stay within it
+
+Making the silence anew reloads the player and the timeline, so an edit that leaves every Segment inside it keeps the one it has.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone playing silence lasting 70 s |
+| When | a Segment's end is moved to 30 s |
+| Then | the player keeps reading the same silence |
+
 ## `PV-011` Telling the user a media file cannot be played
 
 | Step | Statement |

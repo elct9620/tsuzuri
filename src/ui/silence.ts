@@ -16,23 +16,61 @@ const SILENT_SAMPLE = 128;
 
 const WAV_HEADER_BYTES = 44;
 
-/**
- * What the Preview plays for `project`, named so that a change of it can be seen: the media
- * file's path, the silence of a Resource without one, or null with no Current Resource.
- */
-export function playedSource(project: ProjectView | null): string | null {
-  if (project?.media) return project.media;
-  const resource = project?.current_resource ?? null;
-  return resource === null ? null : `silence:${resource}`;
-}
-
 /** The Peaks of silence: one at nothing, stretched over however long the silence lasts. */
 export const SILENT_PEAKS = [0];
 
-/** How long the silence under `segments` lasts: a minute past the last one to end. */
-export function silenceLengthMs(segments: readonly Segment[]): number {
-  const lastEnd = Math.max(0, ...segments.map((segment) => segment.end_ms));
-  return lastEnd + ROOM_PAST_LAST_SEGMENT_MS;
+/** The silence of a Resource without a media file, lasting `lengthMs`. */
+export type Silence = { resource: string; lengthMs: number };
+
+/** What the Preview plays: a media file by its path, or the silence of a Resource without one. */
+export type PlayedSource = { media: string } | Silence;
+
+/**
+ * What the Preview plays for `project` while it plays `current`: the media file, or the silence of
+ * a Resource without one, or null with no Current Resource. The silence it plays is kept until a
+ * Segment reaches its end, and then made a minute past the last Segment again, since making it
+ * anew reloads the player and the timeline.
+ */
+export function playedSource(
+  project: ProjectView | null,
+  current: PlayedSource | null,
+): PlayedSource | null {
+  if (project === null) return null;
+  if (project.media) return { media: project.media };
+  const resource = project.current_resource;
+  if (resource === null) return null;
+  const lastEndMs = lastEndOf(project.segments);
+  return isSilenceOf(current, resource) && lastEndMs < current.lengthMs
+    ? current
+    : { resource, lengthMs: lastEndMs + ROOM_PAST_LAST_SEGMENT_MS };
+}
+
+/** Whether `source` is the silence of `resource`. */
+export function isSilenceOf(
+  source: PlayedSource | null,
+  resource: string,
+): source is Silence {
+  return (
+    source !== null && "resource" in source && source.resource === resource
+  );
+}
+
+/** Where the last of `segments` to end ends, 0 without any. */
+function lastEndOf(segments: readonly Segment[]): number {
+  return Math.max(0, ...segments.map((segment) => segment.end_ms));
+}
+
+export function isSameSource(
+  one: PlayedSource | null,
+  other: PlayedSource | null,
+): boolean {
+  if (one === null || other === null) return one === other;
+  if ("media" in one) return "media" in other && one.media === other.media;
+  return (
+    "resource" in other &&
+    one.resource === other.resource &&
+    one.lengthMs === other.lengthMs
+  );
 }
 
 /** A WAV of silence lasting `lengthMs`: mono, unsigned 8-bit PCM at the lowest rate every webview plays. */

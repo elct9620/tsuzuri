@@ -18,7 +18,13 @@ import {
 import { t } from "../i18n";
 import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { notifyEdit, notifyFailure } from "../ui/notification";
-import { SILENT_PEAKS, playedSource, silenceLengthMs } from "../ui/silence";
+import {
+  type PlayedSource,
+  SILENT_PEAKS,
+  isSameSource,
+  isSilenceOf,
+  playedSource,
+} from "../ui/silence";
 import { type Shortcut, chords, shortcutById } from "../ui/shortcuts";
 import {
   choiceLanding,
@@ -162,8 +168,7 @@ export default class TimelineController extends Controller {
   declare readonly startKeyTarget: HTMLElement;
   declare readonly endKeyTarget: HTMLElement;
 
-  /** What the player reads, as `playedSource` names it. */
-  private source: string | null = null;
+  private source: PlayedSource | null = null;
   private segments: Segment[] = [];
   /** Whether a running Mode holds the Current Resource, which refuses every Segment Change. */
   private isHeld = false;
@@ -436,36 +441,50 @@ export default class TimelineController extends Controller {
     if (this.drag) this.regions?.clearRegions();
     this.drag = null;
     this.dropRange();
-    const source = playedSource(project);
-    if (source === this.source) {
+    const source = playedSource(project, this.source);
+    if (isSameSource(source, this.source)) {
       this.markSegments();
       return;
     }
+    const lastSource = this.source;
     this.source = source;
-    void this.loadWaveform(project?.media ?? null);
+    void this.loadWaveform(source, lastSource);
   }
 
-  /** Draws the Waveform of `media`, taken by Rust, or a flat one over the silence without it. */
-  private async loadWaveform(media: string | null): Promise<void> {
+  /**
+   * Draws the Waveform of a media file, taken by Rust, or a flat one over silence. Silence made
+   * longer for the same Resource keeps the view where it was, as a Segment is dragged there.
+   */
+  private async loadWaveform(
+    source: PlayedSource | null,
+    lastSource: PlayedSource | null,
+  ): Promise<void> {
+    const isLengthened =
+      source !== null &&
+      !("media" in source) &&
+      isSilenceOf(lastSource, source.resource);
+    const scroll = this.surfer?.getScroll() ?? 0;
     this.surfer?.destroy();
     this.surfer = undefined;
     this.regions = undefined;
     this.waveformRequest = undefined;
-    this.waveformTarget.hidden = this.source === null;
-    if (this.source === null) return;
-    if (media === null) {
+    this.waveformTarget.hidden = source === null;
+    if (source === null) return;
+    if (!("media" in source)) {
       this.drawWaveform(
         SILENT_PEAKS,
-        toSeconds(silenceLengthMs(this.segments)),
+        toSeconds(source.lengthMs),
+        isLengthened ? scroll : 0,
       );
       return;
     }
+    const { media } = source;
     this.waveformTarget.classList.add("skeleton");
     const request = extractWaveform();
     this.waveformRequest = request;
     try {
       const waveform = await request;
-      if (request === this.waveformRequest && waveform.media === this.source)
+      if (request === this.waveformRequest && waveform.media === media)
         this.drawWaveform(
           waveform.peaks,
           waveform.peaks.length / waveform.peaks_per_second,
@@ -479,8 +498,8 @@ export default class TimelineController extends Controller {
     }
   }
 
-  /** Draws `peaks` spread over `duration` seconds, with a region for each Segment. */
-  private drawWaveform(peaks: number[], duration: number): void {
+  /** Draws `peaks` spread over `duration` seconds, with a region for each Segment, scrolled to `scroll` pixels. */
+  private drawWaveform(peaks: number[], duration: number, scroll = 0): void {
     const regions = RegionsPlugin.create();
     this.regions = regions;
     regions.on("region-clicked", (region, event) =>
@@ -522,7 +541,10 @@ export default class TimelineController extends Controller {
         }),
       ],
     });
-    this.surfer.on("ready", () => this.markSegments());
+    this.surfer.on("ready", () => {
+      this.markSegments();
+      this.surfer?.setScroll(scroll);
+    });
     this.surfer.on("timeupdate", (time) => this.pauseAtCurrentEnd(time));
     this.surfer.on("seeking", () => (this.lastTime = null));
     this.surfer.on("interaction", () => this.dropRange());

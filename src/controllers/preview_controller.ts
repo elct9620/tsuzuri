@@ -23,7 +23,14 @@ import {
   rememberFlag,
 } from "../ui/choices";
 import { showFold } from "../ui/fold";
-import { playedSource, silenceLengthMs, silentWav } from "../ui/silence";
+import {
+  type PlayedSource,
+  type Silence,
+  isSameSource,
+  isSilenceOf,
+  playedSource,
+  silentWav,
+} from "../ui/silence";
 import { isShortcut } from "../ui/shortcuts";
 import { MS_PER_SECOND, formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
@@ -132,9 +139,9 @@ export default class PreviewController extends Controller {
   declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
   declare readonly panelTarget: HTMLElement;
-  /** Hides or shows the player and its controls; only a Resource with media has them to fold. */
+  /** Hides or shows the player and its controls; only a Current Resource has them to fold. */
   declare readonly playerFoldButtonTarget: HTMLButtonElement;
-  /** Hides or shows the timeline; only a Resource with media has one to fold. */
+  /** Hides or shows the timeline; only a Current Resource has one to fold. */
   declare readonly timelineFoldButtonTarget: HTMLButtonElement;
   /** The Waveform's frame, with its regions and tools. */
   declare readonly timelineTarget: HTMLElement;
@@ -172,8 +179,7 @@ export default class PreviewController extends Controller {
   declare readonly currentTextTarget: HTMLElement;
   declare readonly currentTranslationTarget: HTMLElement;
 
-  /** What the player reads, as `playedSource` names it. */
-  private source: string | null = null;
+  private source: PlayedSource | null = null;
   /** The object URL of the silence the player reads, released once it reads something else. */
   private silenceUrl: string | null = null;
   private segments: Segment[] = [];
@@ -568,12 +574,13 @@ export default class PreviewController extends Controller {
     this.speakerNames = project?.shown_speaker_names ?? {};
     this.bilingualOrder = project?.options.bilingual_order ?? "original-first";
     this.showCaptionChoice();
-    const source = playedSource(project);
+    const source = playedSource(project, this.source);
     this.showCurrentSegment();
-    if (source === this.source) {
+    if (isSameSource(source, this.source)) {
       this.showCaption(this.segmentIndexesAtTime());
       return;
     }
+    const lastSource = this.source;
     this.source = source;
     if (source === null && this.videoWindow) this.closeVideoWindow();
     this.showPanel();
@@ -584,14 +591,22 @@ export default class PreviewController extends Controller {
     this.markPlaying([]);
     this.releaseSilence();
     if (source === null) this.player.removeAttribute("src");
-    else if (project?.media) this.player.src = mediaUrl(project.media);
-    else this.playSilence(silenceLengthMs(this.segments));
+    else if ("media" in source) this.player.src = mediaUrl(source.media);
+    else this.playSilence(source, lastSource);
   }
 
-  /** Puts silence lasting `lengthMs` in the player, for a Resource without a media file. */
-  private playSilence(lengthMs: number): void {
-    this.silenceUrl = URL.createObjectURL(silentWav(lengthMs));
+  /**
+   * Puts `silence` in the player. Silence made longer for the same Resource goes on from where the
+   * last one was, playing if it played, as the user only moved a Segment.
+   */
+  private playSilence(silence: Silence, lastSource: PlayedSource | null): void {
+    const isLengthened = isSilenceOf(lastSource, silence.resource);
+    const { currentTime, paused } = this.player;
+    this.silenceUrl = URL.createObjectURL(silentWav(silence.lengthMs));
     this.player.src = this.silenceUrl;
+    if (!isLengthened) return;
+    this.player.currentTime = currentTime;
+    if (!paused) void this.player.play();
   }
 
   private releaseSilence(): void {

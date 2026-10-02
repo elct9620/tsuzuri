@@ -158,6 +158,24 @@ describe("TimelineController", () => {
     expect([wrapper().style.width, takenWaveforms]).toEqual(["7000px", 0]);
   });
 
+  it("draws the flat Waveform anew as the silence lengthens", async () => {
+    await show(projectOf({ media: null, segments: [segmentAt(2, 10)] }));
+
+    await show(projectOf({ media: null, segments: [segmentAt(2, 70)] }));
+
+    expect(wrapper().style.width).toBe("13000px");
+  });
+
+  // @behavior PV-202
+  it("keeps the timeline scrolled where it was as the silence lengthens", async () => {
+    await show(projectOf({ media: null, segments: [segmentAt(2, 10)] }));
+    host().querySelector<HTMLElement>(".scroll")!.scrollLeft = 5000;
+
+    await show(projectOf({ media: null, segments: [segmentAt(2, 70)] }));
+
+    expect(host().querySelector<HTMLElement>(".scroll")!.scrollLeft).toBe(5000);
+  });
+
   // @behavior PV-152
   it("draws the Waveform in the colours of the theme turned to", async () => {
     const timeline = document.querySelector<HTMLElement>(

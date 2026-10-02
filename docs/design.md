@@ -1,6 +1,14 @@
 # Tsuzuri 設計
 
-Tsuzuri（綴り）在本機把影片與音訊轉成字幕，並提供翻譯與校對，音訊與文字不離開使用者的電腦。它為有隱私需求、不能上傳雲端的情境而生。這份文件記錄設計的意圖與取捨，行為與介面的細節以 `.spec/` 為準。
+Tsuzuri（綴り）在本機把影片與音訊轉成字幕，並提供翻譯與校對，音訊與文字不離開使用者的電腦。它為有隱私需求、不能上傳雲端的情境而生。這份文件記錄設計的意圖與取捨，其他細節各有所在，見下表。
+
+| 要找 | 看 |
+|---|---|
+| 意圖與取捨 | 這份文件 |
+| 行為 | `.spec/behavior/` |
+| 介面契約 | `.spec/contract/` |
+| 畫面配置 | `docs/ui.md` |
+| 結構與分層 | `docs/architecture.md` |
 
 ## 0 總覽
 
@@ -58,9 +66,12 @@ Webview 顯示的資料都向 Rust 查詢，變更也都寫進 Rust，自己只�
 
 ## 1 字幕資料
 
-所有模組都讀寫同一種資料，沒有相依。
+所有模組都讀寫同一種資料。
 
-行為：`transcript.md`。
+| 項目 | 指向 |
+|---|---|
+| 相依 | 無 |
+| 行為 | `transcript.md` |
 
 ### 1.1 Segment 與 Transcript
 
@@ -88,16 +99,16 @@ SRT 是 Transcript 唯一的交換格式，whisper-cli 輸出與使用者提供�
 
 ### 1.3 雙語 SRT
 
-```
-  1
-  00:00:01,000 --> 00:00:03,500
-  CO: 今天我們來談隱私               ← 原文（預設在上）
-  CO: Today we talk about privacy    ← 譯文
+```srt
+1
+00:00:01,000 --> 00:00:03,500
+CO: 今天我們來談隱私
+CO: Today we talk about privacy
 ```
 
 | 情況 | 處理 |
 |---|---|
-| 順序 | 預設原文在上 |
+| 順序 | 預設原文在上，如上例 |
 | 說話者 | 各自語言的名稱 |
 | 某段沒有譯文 | 只寫出原文 |
 | 讀入雙語 SRT | 使用者選擇是否拆開 |
@@ -106,9 +117,12 @@ SRT 是 Transcript 唯一的交換格式，whisper-cli 輸出與使用者提供�
 
 ## 2 專案
 
-專案對應一個目錄，收納同一系列作品的媒體檔、字幕與設定，例如一部作品的各集。相依：第 1 章。
+專案對應一個目錄，收納同一系列作品的媒體檔、字幕與設定，例如一部作品的各集。
 
-行為：`project.md`、`versions.md`、`undo.md`。
+| 項目 | 指向 |
+|---|---|
+| 相依 | 第 1 章 |
+| 行為 | `project.md`、`versions.md`、`undo.md` |
 
 ### 2.1 專案目錄
 
@@ -243,9 +257,12 @@ SRT 是 Transcript 唯一的交換格式，whisper-cli 輸出與使用者提供�
 
 ## 3 行程
 
-元件以子行程執行，沒有相依。
+元件以子行程執行。
 
-行為：`processes.md`、`observability.md`。
+| 項目 | 指向 |
+|---|---|
+| 相依 | 無 |
+| 行為 | `processes.md`、`observability.md` |
 
 ### 3.1 啟動與紀錄
 
@@ -270,9 +287,12 @@ SRT 是 Transcript 唯一的交換格式，whisper-cli 輸出與使用者提供�
 
 ## 4 元件
 
-相依：第 3 章，元件以行程執行。
+元件以行程執行。
 
-行為：`components.md`、`licenses.md`。
+| 項目 | 指向 |
+|---|---|
+| 相依 | 第 3 章 |
+| 行為 | `components.md`、`licenses.md` |
 
 ### 4.1 尋找順序
 
@@ -327,9 +347,12 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 
 ## 5 模型
 
-模型從預設清單或 Hugging Face 下載，也可以指定本機檔案，沒有相依。
+模型從預設清單或 Hugging Face 下載，也可以指定本機檔案。
 
-行為：`models.md`。
+| 項目 | 指向 |
+|---|---|
+| 相依 | 無 |
+| 行為 | `models.md` |
 
 ### 5.1 來源
 
@@ -398,7 +421,11 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 
 ## 6 工作流程
 
-相依：第 1、3～5 章，流程串起的模組需要字幕資料、行程、元件與模型。
+流程串起的模組需要字幕資料、行程、元件與模型。
+
+| 項目 | 指向 |
+|---|---|
+| 相依 | 第 1、3～5 章 |
 
 ### 6.1 模組與流程
 
@@ -465,9 +492,12 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 
 ## 7 轉錄模組
 
-相依：第 6 章，以模組身分加入流程。
+轉錄以模組身分加入流程。
 
-行為：`transcribe.md`。
+| 項目 | 指向 |
+|---|---|
+| 相依 | 第 6 章 |
+| 行為 | `transcribe.md` |
 
 ### 7.1 Step
 
@@ -528,7 +558,11 @@ whisper-cli 每處理約 30 秒的音訊就送出一批段落與百分比，經�
 
 ## 8 說話者辨識模組
 
-相依：第 6、7 章，以模組身分加入流程，需要轉錄產出的 Transcript。
+說話者辨識以模組身分加入流程，需要轉錄產出的 Transcript。
+
+| 項目 | 指向 |
+|---|---|
+| 相依 | 第 6、7 章 |
 
 ### 8.1 Step
 
@@ -556,9 +590,12 @@ whisper.cpp 不支援說話者辨識，所以在轉錄之後另外辨識。辨�
 
 ## 9 翻譯模組
 
-相依：第 6 章，以模組身分加入流程。機制參考翻譯 PoC（qwen-translator-script），它針對小模型常見的漏翻、重複、跨句錯位設計了分層的修復。
+翻譯以模組身分加入流程。機制參考翻譯 PoC（qwen-translator-script），它針對小模型常見的漏翻、重複、跨句錯位設計了分層的修復。
 
-行為：`translate.md`、`glossary.md`。
+| 項目 | 指向 |
+|---|---|
+| 相依 | 第 6 章 |
+| 行為 | `translate.md`、`glossary.md` |
 
 ### 9.1 llama-server 生命週期
 
@@ -709,9 +746,13 @@ whisper.cpp 不支援說話者辨識，所以在轉錄之後另外辨識。辨�
 
 ## 10 字幕校對與匯出
 
-相依：第 1、2、6 章，校對的對象是目前資源的字幕。
+校對的對象是目前資源的字幕。
 
-行為：`editing.md`、`preview.md`；復原見第 2 章。
+| 項目 | 指向 |
+|---|---|
+| 相依 | 第 1、2、6 章 |
+| 行為 | `editing.md`、`preview.md` |
+| 復原 | 第 2 章 |
 
 ### 10.1 預覽與時間軸
 
@@ -833,11 +874,19 @@ textarea 不能在文字裡標記，後續的詞彙標記與選取都需要。Pr
 ### 10.7 Cursor
 
 ```
-  CURRENT(i) --進入原文或譯文--> LIVE --離開--> KEPT
-      ^  ^                        |  ^           |
-      |  +-------Esc 放棄---------+  +-再次進入--+
-      +------ 其他段成為目前段落、文字被換掉、欄位被鎖住
+  CURRENT(i) --enter--> LIVE --leave--> KEPT
+      ^  ^               |  ^             |
+      |  +----- Esc -----+  +- re-enter --+
+      +------------ let go ---------------+
 ```
+
+| 轉換 | 時機 |
+|---|---|
+| enter | 進入原文或譯文 |
+| leave | 焦點離開欄位 |
+| Esc | 放棄打的字 |
+| re-enter | 再次進入欄位 |
+| let go | 換段、文字被換掉、鎖住 |
 
 | 狀態 | 畫面 |
 |---|---|
@@ -848,7 +897,7 @@ textarea 不能在文字裡標記，後續的詞彙標記與選取都需要。Pr
 
 原生游標只在欄位有焦點時出現，⋮ 選單與右鍵選單卻在焦點移走後才作用在 Cursor 上。所以一律自己畫，有沒有焦點看起來都一樣，不會兩套並存。
 
-### 10.8 目前段落隨改動移動
+### 10.8 目前段落跟隨
 
 | 情況 | 目前段落 | Cursor |
 |---|---|---|
@@ -1005,9 +1054,12 @@ Chromium 把 Web Audio 的延遲當成 0，聲音會晚於畫面。使用者回�
 
 ## 11 介面
 
-相依：第 2、6～10 章，畫面呈現專案、流程與各模組。
+畫面呈現專案、流程與各模組。
 
-行為：`interface.md`。
+| 項目 | 指向 |
+|---|---|
+| 相依 | 第 2、6～10 章 |
+| 行為 | `interface.md` |
 
 ### 11.1 視窗
 
@@ -1081,7 +1133,11 @@ Chromium 把 Web Audio 的延遲當成 0，聲音會晚於畫面。使用者回�
 
 ## 12 首次設定引導
 
-相依：第 4～6、11 章，引導的內容是元件、模型與流程的設定，放在設定畫面。
+引導的內容是元件、模型與流程的設定，放在設定畫面。
+
+| 項目 | 指向 |
+|---|---|
+| 相依 | 第 4～6、11 章 |
 
 ### 12.1 引導內容
 
@@ -1105,23 +1161,27 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
 
 ## 13 建置與釋出
 
-相依：全部章節，打包的是前面各章的成果。
+打包的是前面各章的成果。
+
+| 項目 | 指向 |
+|---|---|
+| 相依 | 全部章節 |
 
 ### 13.1 CI
 
 ```
-  push main／stable、PR ─▶ spec（sumi）
-           ├▶ licenses（cargo-deny、cargo-about）
-           ├▶ frontend（Vitest、型別檢查）
-           └▶ rust × 3 平台（fmt、clippy、test）
-                   │ 全部通過，且是 push 或手動觸發
-                   ▼            （push main 另算預覽版號，見 13.5.3）
-              build × 3 平台（共用的 build.yml）
-                   │ 每個元件的內建變體（build-component action）
-                   │   cache 命中就還原，否則以 vendor.sh 編譯
-                   │   確認能回應版本參數
+  push main / stable, PR ─▶ spec (sumi)
+           ├▶ licenses (cargo-deny, cargo-about)
+           ├▶ frontend (Vitest, type check)
+           └▶ rust × 3 platforms (fmt, clippy, test)
+                   │ all pass, on a push or a manual run
+                   ▼            (push main also numbers the preview, 13.5.3)
+              build × 3 platforms (shared build.yml)
+                   │ each component's bundled variant (build-component action)
+                   │   restore on a cache hit, else compile with vendor.sh
+                   │   check it answers the version flag
                    ▼
-              寫入授權頁 ─▶ 打包並簽章 ─▶ 檢查簽章 ─▶ 上傳產物
+              write licenses page ─▶ bundle and sign ─▶ verify ─▶ upload
 ```
 
 | 觸發 | 新的 push 進來時 | 原因 |
@@ -1131,9 +1191,18 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
 | main 檢查 | 各自跑完 | 每個 commit 有結論 |
 | main 打包 | 跑的做完，只留最新的排隊 | 只發布最新的預覽版 |
 
-預覽版只保留最新一版，所以排隊中較舊的打包直接放棄；正在打包的不中斷，連續 push 時仍會產出。
+圖由上而下是一輪檢查與打包。預覽版只保留最新一版，所以排隊中較舊的打包直接放棄；正在打包的不中斷，連續 push 時仍會產出。
 
-action 釘 commit SHA，下載的工具釘 SHA256。Rust cache 以編譯器版本與 lockfile 為 key，存檔前移除會重新編譯的產物。元件 cache 以平台、變體、該元件的釘版與建置腳本為 key，只重編改到的元件；cache 過期時由 GitHub 清除，下次打包重新編譯。
+#### 13.1.1 釘版與快取
+
+| 對象 | 釘法或 key |
+|---|---|
+| action | commit SHA |
+| 下載的工具 | SHA256 |
+| Rust cache | 編譯器版本、lockfile |
+| 元件 cache | 平台、變體、釘版、腳本 |
+
+釘版讓每輪拿到同一份工具。Rust cache 存檔前移除會重新編譯的產物；元件 cache 只重編改到的元件，過期時由 GitHub 清除，下次打包重新編譯。
 
 ### 13.2 產物與授權頁
 
@@ -1252,10 +1321,10 @@ Windows 的安裝程式啟動後直接結束 Tsuzuri，不經過結束時的 `ki
 #### 13.5.3 更新通道
 
 ```
-  最新正式 tag v0.2.0 ─▶ 預覽版號 0.2.1-preview.<UTC 時間>+<run>
-    0.2.0  <  0.2.1-preview.…  <  任何下一個正式版（0.2.1 起）
-  選穩定版 ─▶ updates/stable.json    選預覽版 ─▶ updates/preview.json
-  預覽版切回穩定版 ─▶ 等下一個正式版，或按「立即退回」
+  latest tag v0.2.0 ─▶ preview 0.2.1-preview.<UTC time>+<run>
+    0.2.0  <  0.2.1-preview.…  <  any later release (0.2.1 on)
+  Stable ─▶ updates/stable.json      Preview ─▶ updates/preview.json
+  Preview back to Stable ─▶ next release, or "Roll back to stable now"
 ```
 
 | 規則 | 原因 |

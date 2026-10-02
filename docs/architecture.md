@@ -1,6 +1,13 @@
 # Tsuzuri 架構
 
-這份文件記錄執行時各部分怎麼組合。用詞見 `.spec/glossary.md`，行為與介面見 `.spec/`，命名見 `docs/convention.md`，設計取捨見 `docs/design.md`。
+這份文件記錄執行時各部分怎麼組合，其他內容各有所在，見下表。
+
+| 要找 | 看 |
+|---|---|
+| 用詞 | `.spec/glossary.md` |
+| 行為與介面 | `.spec/` |
+| 命名 | `docs/convention.md` |
+| 設計取捨 | `docs/design.md` |
 
 ## 1 總覽
 
@@ -190,6 +197,8 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 轉錄用例自行處理暫存工作目錄 | 只放中間檔，不屬於專案 |
 | `project/glossary.rs` 同時是規則與 csv 讀寫 | 詞彙表的格式就是它的規則 |
 | `progress.rs` 與 `Progress` 放在同一檔的 `AppHandle` 實作 | 只發兩個事件，放一起最清楚 |
+
+第一張表由內而外，依賴一律往內；第二張表是刻意留下的例外與理由。
 | `failure.rs` 把 `tauri::Error` 轉成 `Failure` | 統一轉換指令的錯誤 |
 | 轉錄指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（`docs/design.md` 6.4） |
 | `system_opener` 直接執行系統程式 | 開啟目錄與網頁，不是元件 |
@@ -484,17 +493,17 @@ command ── ModeLock::begin(AppPorts::new(..)) ──▶ ModeRun：執行權�
 ### 4.1 分層
 
 ```
-index.html                    data-controller、data-action
+index.html                    data-controller, data-action
     |
-controllers/ ---------------> ui/、backend/（編輯以外）
-    |                         介面：DOM 事件轉成用例，變化轉成畫面
+controllers/ ---------------> ui/, backend/ (editing aside)
+    |                         interface: DOM events to use cases, changes to the page
     v
-editor/  session.ts           應用：Cursor、Checked Segments、用例、port
-         cursor.ts, rules.ts   領域：狀態機與規則
-         field.ts, marks.ts    DOM：欄位換算、畫出 Cursor
+editor/  session.ts           application: Cursor, Checked Segments, use cases, port
+         cursor.ts, rules.ts   domain: state machines and rules
+         field.ts, marks.ts    DOM: field offsets, drawing the Cursor
     ^
-    | 實作 EditingPort
-backend/editing.ts            閘道：唯一呼叫編輯指令的地方
+    | implements EditingPort
+backend/editing.ts            gateway: the one caller of editing commands
 ```
 
 依賴一律往內，和 Rust 端（3.1）同一套規則：介面呼叫應用，應用使用領域，閘道實作應用宣告的 port。`main.ts` 是組裝點（4.3）。
@@ -522,14 +531,14 @@ Controller 之間只 import outlet 的型別，編輯一律經過 session。Cont
 
 ```
 main.ts -> assemble(application, controllers)      assembly.ts
-  |-- feed = new ProjectFeed()        每次變更讀一次 current_project
+  |-- feed = new ProjectFeed()        reads current_project on each change
   |-- session = new EditingSession(editingPort)
-  |-- feed -> session.follow -> 各 controller -> session.announce
-  |-- session.onChange -> window 的 editor:cursor、editor:choice、editor:checks
-  |-- start() -> relayEvents：Rust 事件 -> window 的 rust:<事件名稱>
-  |-- start() -> 系統換深淺色 -> window 的 system:color-scheme
-  |-- start() -> 螢幕轉向 -> window 的 system:orientation
-  +-- application.register(名稱, class extends X { session, feed })
+  |-- feed -> session.follow -> each controller -> session.announce
+  |-- session.onChange -> window: editor:cursor, editor:choice, editor:checks
+  |-- start() -> relayEvents: a Rust event -> window: rust:<event name>
+  |-- start() -> light or dark theme -> window: system:color-scheme
+  |-- start() -> the screen turns -> window: system:orientation
+  +-- application.register(name, class extends X { session, feed })
 ```
 
 | 模式 | 何時用 | 範例 |
@@ -550,9 +559,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | 4 | 各 controller 依專案重畫，出錯的不擋後面 |
 | 5 | 送出 `editor:cursor`，移動焦點 |
 
-`project-changed` 可能比指令的回答先到，所以待套用在送出前就記下，被拒絕時清掉。焦點與 Cursor 等列畫完才動，才不會落在即將被取代的舊列上。某個 controller 重畫時出錯，以 `reportError` 回報，其餘照常重畫。
-
-只有改變段數的改動會移動 Cursor，才記成待套用；段數不變的改動寫入後就清掉勾選。
+`project-changed` 可能比指令的回答先到，所以待套用在送出前就記下，被拒絕時清掉。只有改變段數的改動會移動 Cursor，才記成待套用；段數不變的改動寫入後就清掉勾選。焦點與 Cursor 等列畫完才動，才不會落在即將被取代的舊列上；重畫出錯以 `reportError` 回報。
 
 ### 4.5 editor
 

@@ -1172,10 +1172,10 @@ describe("SegmentChangesController", () => {
     it("changes the Segment as the choice in its right-click menu says", async () => {
       await hold(threeSegments);
       await rightClick(row(0));
-      const insertBelow = row(0).querySelector("button.insertAfter")!;
+      const insertBelowButton = row(0).querySelector("button.insertAfter")!;
 
       const choice = lastMenu().find(
-        (item) => item.text === insertBelow.firstChild!.textContent,
+        (item) => item.text === insertBelowButton.firstChild!.textContent,
       )!;
       choice.handler!.onmessage(choice.id!);
       await settle();
@@ -1218,10 +1218,10 @@ describe("SegmentChangesController", () => {
     it("carries a choice's shortcut into the right-click menu", async () => {
       await hold(threeSegments);
       await rightClick(row(0));
-      const split = row(0).querySelector("button.split")!;
+      const splitButton = row(0).querySelector("button.split")!;
 
       const choice = lastMenu().find(
-        (item) => item.text === split.firstChild!.textContent,
+        (item) => item.text === splitButton.firstChild!.textContent,
       )!;
 
       expect(choice.accelerator).toBe("Ctrl+Alt+Enter");

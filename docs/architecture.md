@@ -290,6 +290,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | — | `failure` | 應用 | 錯誤碼 |
 | — | `processes` | 轉接 | 子行程與 `AppPorts` |
 | — | `json_settings` | 轉接 | 設定檔的讀寫 |
+| — | `preference` | 領域、轉接 | 偏好設定與設定檔 |
 
 目錄以 `src-tauri/src/` 為根，表中的「—」是根目錄，模組省略 `.rs`。各目錄的 `commands` 是介面層的指令，不另列。波形以 ffmpeg 轉成 PCM，每 10 ms 取一個峰值。
 
@@ -656,6 +657,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `transcription.ts`、`translation.ts`、`diarization.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄、除錯紀錄的指令 |
+| `preferences.ts` | 偏好設定的指令與預設值 |
 | `about.ts` | App Build、開啟釋出與贊助頁面 |
 | `waveform.ts` | 波形的指令與型別 |
 | `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |

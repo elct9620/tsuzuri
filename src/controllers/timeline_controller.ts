@@ -7,6 +7,11 @@ import RegionsPlugin, {
 } from "wavesurfer.js/plugins/regions";
 import TimelinePlugin from "wavesurfer.js/plugins/timeline";
 
+import {
+  DEFAULT_PREFERENCES,
+  preferences,
+  type ChoiceLandings,
+} from "../backend/preferences";
 import type { ProjectFeed, ProjectView, Segment } from "../backend/project";
 import { isMacOS } from "../backend/system";
 import { extractWaveform, type Waveform } from "../backend/waveform";
@@ -177,6 +182,8 @@ export default class TimelineController extends Controller {
   private isSnapping = rememberedFlag(SNAPPING_KEY, false);
   /** Whether Space plays the Current Segment alone and stops at its end, rather than on from where the media is. */
   private isPlayingAlone = rememberedFlag(ALONE_KEY, false);
+  /** The Choice Landing of each Choice Source, the defaults until the saved Preferences are read. */
+  private landings: ChoiceLandings = DEFAULT_PREFERENCES.choice_landings;
   /** The modifier keys held as the pointer last moved, which a region's own events do not carry. */
   private modifiers = { shiftKey: false, altKey: false };
   /** The element the focus last reached by keyboard, or none once a pointer took it. */
@@ -214,6 +221,16 @@ export default class TimelineController extends Controller {
     this.showSnapping();
     this.showPlayingAlone();
     this.unfollow = this.feed.follow((project) => this.show(project));
+    void this.readPreferences();
+  }
+
+  /** Takes the Choice Landings the Preferences set; the settings tell of Preferences they cannot read. */
+  async readPreferences(): Promise<void> {
+    try {
+      this.landings = (await preferences()).choice_landings;
+    } catch {
+      // The defaults stay in use
+    }
   }
 
   /** Paints the Waveform in the colours of the theme the system turned to; bound to `system:color-scheme`. */
@@ -322,6 +339,7 @@ export default class TimelineController extends Controller {
         start: toSeconds(segment.start_ms),
         isPaused: this.player.paused,
         isPlayingAlone: this.isPlayingAlone,
+        landings: this.landings,
       }),
     );
   }
@@ -641,6 +659,7 @@ export default class TimelineController extends Controller {
       clicked: this.timeAt(event.clientX),
       isPaused: this.player.paused,
       isPlayingAlone: this.isPlayingAlone,
+      landings: this.landings,
     });
     this.session.makeCurrent(index, "region");
     this.land(landing);

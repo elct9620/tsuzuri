@@ -20,6 +20,8 @@ export const commands = {
 	diarize: () => __TAURI_INVOKE<Diarization>("diarize"),
 	transcriptionSettings: () => __TAURI_INVOKE<TranscriptionSettings>("transcription_settings"),
 	saveTranscriptionSettings: (settings: TranscriptionSettings) => __TAURI_INVOKE<TranscriptionSettings>("save_transcription_settings", { settings }),
+	preferences: () => __TAURI_INVOKE<Preferences>("preferences"),
+	savePreferences: (preferences: Preferences) => __TAURI_INVOKE<Preferences>("save_preferences", { preferences }),
 	currentProject: () => __TAURI_INVOKE<{
 	directory: string,
 	name: string,
@@ -124,6 +126,8 @@ export const events = {
 };
 
 /* Constants */
+export const DEFAULT_PREFERENCES = {"choice_landings":{"text":{"is_pausing":true,"is_from_start":true},"time":{"is_pausing":true,"is_from_start":true},"speaker":{"is_pausing":false,"is_from_start":false},"row":{"is_pausing":true,"is_from_start":true},"next":{"is_pausing":false,"is_from_start":false},"region":{"is_pausing":false,"is_from_start":false},"search":{"is_pausing":true,"is_from_start":true}}} as const;
+
 export const VIDEO_WINDOW = "video" as const;
 
 /* Types */
@@ -168,6 +172,31 @@ export type BilingualOrder = "original-first" | "translation-first";
  *  Overwrite Backup.
  */
 export type ChangedElsewhereKept = null;
+
+/**
+ *  What playing media does as another Segment is chosen from one Choice Source: whether it
+ *  pauses, and whether it moves to the Segment's start or stays where it is, which for a region is
+ *  where it was clicked.
+ */
+export type ChoiceLanding = {
+	is_pausing: boolean,
+	is_from_start: boolean,
+};
+
+/**  The Choice Landing of each Choice Source. */
+export type ChoiceLandings = {
+	/**  A Segment's text or translation. */
+	text?: ChoiceLanding,
+	/**  A time of a Segment. */
+	time?: ChoiceLanding,
+	speaker?: ChoiceLanding,
+	/**  Anywhere else in a Segment's row, or the keyboard's focus reaching it. */
+	row?: ChoiceLanding,
+	/**  Enter moving on from the field before. */
+	next?: ChoiceLanding,
+	region?: ChoiceLanding,
+	search?: ChoiceLanding,
+};
 
 /**  Where a Simplified Cleanup cleans the Current Resource's `zh-TW` text. */
 export type CleanupScope = 
@@ -386,6 +415,10 @@ export type PipelineProgress_Serialize = {
 	phase: Phase,
 	percent: number | null,
 	count?: Count,
+};
+
+export type Preferences = {
+	choice_landings?: ChoiceLandings,
 };
 
 /**  A Model Tsuzuri was verified with, offered by name so nobody has to know where to find it. */

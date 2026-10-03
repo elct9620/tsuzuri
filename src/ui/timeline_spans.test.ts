@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
+import { DEFAULT_PREFERENCES } from "../backend/preferences";
 import {
   choiceLanding,
   landingSpan,
@@ -57,7 +58,8 @@ describe("timeline spans", () => {
     ]);
   });
   describe("choosing another Segment", () => {
-    const playing = { start: 1, clicked: 1.5, isPaused: false };
+    const landings = DEFAULT_PREFERENCES.choice_landings;
+    const playing = { start: 1, clicked: 1.5, isPaused: false, landings };
 
     it("moves a paused media to where a region was clicked, else to the Segment's start", () => {
       const paused = { ...playing, isPaused: true, isPlayingAlone: false };
@@ -94,6 +96,38 @@ describe("timeline spans", () => {
         { at: 1.5, isPausing: false },
         { at: null, isPausing: false },
         { at: null, isPausing: false },
+      ]);
+    });
+
+    it("lands as the Preferences set each Choice Source", () => {
+      const onward = { ...playing, isPlayingAlone: false };
+      const landingsOf = (is_pausing: boolean, is_from_start: boolean) => ({
+        ...landings,
+        row: { is_pausing, is_from_start },
+        region: { is_pausing, is_from_start },
+      });
+
+      expect(
+        [
+          [false, false],
+          [false, true],
+          [true, false],
+        ].flatMap(([isPausing, isFromStart]) =>
+          (["row", "region"] as const).map((source) =>
+            choiceLanding({
+              ...onward,
+              source,
+              landings: landingsOf(isPausing, isFromStart),
+            }),
+          ),
+        ),
+      ).toEqual([
+        { at: null, isPausing: false },
+        { at: 1.5, isPausing: false },
+        { at: 1, isPausing: false },
+        { at: 1, isPausing: false },
+        { at: null, isPausing: true },
+        { at: 1.5, isPausing: true },
       ]);
     });
 

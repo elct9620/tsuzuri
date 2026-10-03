@@ -1,5 +1,6 @@
 import type { Segment } from "../backend/project";
 import type { ChoiceSource } from "../editor";
+import type { ChoiceLandings } from "../backend/preferences";
 import { MS_PER_SECOND, formatTime } from "./time";
 
 /**
@@ -148,13 +149,15 @@ export interface Choice {
   clicked?: number;
   isPaused: boolean;
   isPlayingAlone: boolean;
+  /** The Choice Landing of each Choice Source, as the Preferences set them. */
+  landings: ChoiceLandings;
 }
 
 /**
  * Where the media goes as another Segment is chosen: a paused media moves to it, to where its
  * region was clicked or else to its start. Playing alone keeps to the Segment chosen, so plays it
- * from its start; otherwise a Segment chosen from its row or a search pauses at its start, a
- * region plays on from the click, and a Speaker named or Enter pressed plays on where it is.
+ * from its start; otherwise the Choice Landing of where it was chosen from says whether the media
+ * pauses, and whether it moves to the start or stays, which for a region is where it was clicked.
  */
 export function choiceLanding({
   source,
@@ -162,22 +165,14 @@ export function choiceLanding({
   clicked = start,
   isPaused,
   isPlayingAlone,
+  landings,
 }: Choice): Landing {
   if (isPaused)
     return { at: source === "region" ? clicked : start, isPausing: false };
   if (isPlayingAlone) return { at: start, isPausing: false };
-  switch (source) {
-    case "text":
-    case "time":
-    case "row":
-    case "search":
-      return { at: start, isPausing: true };
-    case "region":
-      return { at: clicked, isPausing: false };
-    case "speaker":
-    case "next":
-      return { at: null, isPausing: false };
-  }
+  const { is_pausing, is_from_start } = landings[source];
+  const stayPoint = source === "region" ? clicked : null;
+  return { at: is_from_start ? start : stayPoint, isPausing: is_pausing };
 }
 
 /** Where `segment` runs on the timeline. */

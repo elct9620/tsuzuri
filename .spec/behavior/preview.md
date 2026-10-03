@@ -712,17 +712,58 @@ Space plays and stops the media and the timeline still selects and retimes Segme
 
 ### Choosing another Segment
 
-A paused media moves to another Segment chosen, to be heard next: to its start from its row, or to where its region was clicked. Playing media stops only where the user means to listen again, since lines are corrected while heard:
+A paused media moves to another Segment chosen, to be heard next: to its start, or to where its region was clicked. Playing media follows the Choice Landing of where the Segment was chosen from, since lines are corrected while heard and only the user knows where they mean to listen again. Until the Preferences change them:
 
 ```
   chosen from            playing on               playing alone
-  its row                pauses at its start      plays from its start
+  its text or a time     pauses at its start      plays from its start
+  its row, a search      pauses at its start      plays from its start
   its Speaker menu       plays on where it is     plays from its start
   Enter in the field     plays on where it is     plays from its start
   its region             plays on from the click  plays from its start
 ```
 
 Playing alone keeps to the Segment chosen, so the media never plays past a Current Segment it has left behind. Staying in the Current Segment, or a Segment Change moving it, plays on.
+
+## `PV-203` Playing on as a text is chosen where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a text to play on |
+| When | the second Segment's text is clicked |
+| Then | the media plays on from 0.5 s |
+
+## `PV-204` Playing another Segment from its start where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing the row to move to the start without pausing |
+| When | the second Segment's row is clicked |
+| Then | the media plays on from 1 s |
+
+## `PV-205` Pausing where the media is where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a Speaker to pause without moving |
+| When | the second Segment's Speaker menu is opened |
+| Then | the media pauses at 0.5 s |
+
+## `PV-206` Pausing where a region is clicked where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a region to pause without moving to the start |
+| When | the second Segment's region is clicked at 1.5 s |
+| Then | the media pauses at 1.5 s |
+
+## `PV-207` Playing alone from the start whatever the Preferences say
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on, and the Preferences choosing the row to pause |
+| When | the second Segment's row is clicked |
+| Then | the media plays on from 1 s |
 
 ## `PV-075` Pausing at the start of a Segment whose row is chosen
 

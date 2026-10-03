@@ -106,7 +106,15 @@ A window of its own the Preview's video moves into, with the Segment being playe
 
 ### Current Segment
 
-The one Segment whose row last took a click or focus in the editor, or whose region was last clicked on the timeline, shown with its own background; Space plays on from it, or plays it alone when the user turns that on. Choosing another one pauses the media there, at its start or where its region was clicked. It stays on its Segment through the Segment Changes around it, moves to the second half of a split and into a Segment just inserted, and is let go only when the Segments change in number by other means. It is the webview's to hold and changes nothing in the Project, unlike the Checked Segments.
+The one Segment whose row last took a click or focus in the editor, or whose region was last clicked on the timeline, shown with its own background; Space plays on from it, or plays it alone when the user turns that on. Choosing another one moves the media as the Choice Landing of where it was chosen from says. It stays on its Segment through the Segment Changes around it, moves to the second half of a split and into a Segment just inserted, and is let go only when the Segments change in number by other means. It is the webview's to hold and changes nothing in the Project, unlike the Checked Segments.
+
+### Choice Source
+
+Where the user chose another Segment from, which tells how much of the listening they mean to leave: its text or translation, a time of it, its Speaker menu, anywhere else in its row, Enter moving on from the field before, its region, or a search. A click or a press of the pointer is taken where it lands; focus the keyboard moves into a row, or a right click, counts as the row, except on the Speaker menu.
+
+### Choice Landing
+
+What playing media does as another Segment is chosen from one Choice Source: whether it pauses, and whether it moves to the Segment's start or stays where it is, which for a region is where it was clicked. Each Choice Source has its own, set in the Preferences. A paused media only moves, and playing alone always plays the Segment chosen from its start.
 
 ### Cursor
 
@@ -266,6 +274,10 @@ The directory Hugging Face tools share for downloaded files, so a Model another 
 ### Transcription Settings
 
 How a transcription runs beyond the Language and the Model: whether VAD runs first, whether non-speech tokens are suppressed, whether each window carries the text before it as context, and whether a Simplified Cleanup follows a transcription in `zh-TW`. The general settings hold their defaults, which leave whisper-cli as it behaves on its own and clean what it writes; a Project may set any of them for itself and follows the general settings in the rest.
+
+### Preferences
+
+How Tsuzuri behaves as it is worked in, the same in every Project: for now the Choice Landing of each Choice Source. They are saved across launches in the settings' own tab, and until changed they keep the landings Tsuzuri always had: a text, a time, the row or a search pauses at the Segment's start, and a Speaker, Enter or a region plays on.
 
 ### VAD
 

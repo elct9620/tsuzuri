@@ -110,6 +110,30 @@ Save the general Transcription Settings and answer them as saved.
 pub fn save_transcription_settings(app: AppHandle, settings: TranscriptionSettings) -> Result<TranscriptionSettings, Failure> {}
 ```
 
+## `preferences`
+
+The Preferences: the Choice Landing of each Choice Source, the defaults where none was saved.
+
+```rust
+pub fn preferences(app: AppHandle) -> Result<Preferences, Failure> {}
+```
+
+## `save_preferences`
+
+Save the Preferences and answer them as saved.
+
+```rust
+pub fn save_preferences(app: AppHandle, preferences: Preferences) -> Result<Preferences, Failure> {}
+```
+
+## `DEFAULT_PREFERENCES`
+
+The Preferences until any are saved: `preferences` answers them then, and the webview follows them until it has read the saved ones.
+
+```rust
+pub const DEFAULT_PREFERENCES: Preferences = Preferences {};
+```
+
 ## `extract_waveform`
 
 The Waveform of the Current Resource's media, with the media file it was taken from so an answer that arrives after another Resource was selected can be told apart. ffmpeg runs as a Step outside any Mode, so a running Mode does not delay it.

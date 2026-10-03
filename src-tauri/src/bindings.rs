@@ -5,8 +5,8 @@ use tauri_specta::{collect_commands, collect_events, Builder, ErrorHandlingMode,
 
 use crate::edit_command::EditCommand;
 use crate::{
-    about, diarization, logs, progress, project, steps, toolchain, transcription, translation,
-    updates, waveform, window,
+    about, diarization, logs, preference, progress, project, steps, toolchain, transcription,
+    translation, updates, waveform, window,
 };
 
 /// A command that fails rejects with its `Failure`, as a plain `invoke` does, and the counts and
@@ -30,6 +30,8 @@ pub fn builder() -> Builder<tauri::Wry> {
             diarization::commands::diarize,
             transcription::commands::transcription_settings,
             transcription::commands::save_transcription_settings,
+            preference::commands::preferences,
+            preference::commands::save_preferences,
             project::commands::current_project,
             project::commands::edit_segment,
             project::commands::set_speakers,
@@ -81,6 +83,7 @@ pub fn builder() -> Builder<tauri::Wry> {
         ])
         .events(events())
         .constant("VIDEO_WINDOW", window::VIDEO_WINDOW)
+        .constant("DEFAULT_PREFERENCES", preference::DEFAULT_PREFERENCES)
 }
 
 /// The events Rust emits, apart from any runtime so the tests' apps can mount them too.

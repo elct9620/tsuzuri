@@ -68,8 +68,7 @@ pub async fn run_transcribe<'a>(
         language: job.language,
         settings,
     };
-    run.keep(WorkDir(work.to_path_buf()));
-    std::fs::create_dir_all(work)?;
+    run.keep(WorkDir::try_new(work)?);
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
 

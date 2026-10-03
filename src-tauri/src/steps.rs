@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::future::Future;
+use std::io;
 use std::path::{Path, PathBuf};
 
 use tokio::sync::mpsc::Receiver;
@@ -180,6 +181,15 @@ impl Turn<'_> {
 /// The directory a Mode writes its intermediate files to, removed with them once the
 /// Mode's run ends, however it ends.
 pub struct WorkDir(pub PathBuf);
+
+impl WorkDir {
+    /// Creates the directory at `path`; one left half made by a failure is removed all the same.
+    pub fn try_new(path: &Path) -> io::Result<WorkDir> {
+        let work = WorkDir(path.to_path_buf());
+        std::fs::create_dir_all(&work.0)?;
+        Ok(work)
+    }
+}
 
 impl Drop for WorkDir {
     fn drop(&mut self) {

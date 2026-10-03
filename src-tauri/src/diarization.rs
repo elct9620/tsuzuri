@@ -52,8 +52,7 @@ pub async fn run_diarize<'a>(
     run.keep(project.hold_resource(&job.directory, &job.name, RunningMode::Diarization));
     let ports = run.ports();
     let model = models.ready_path(ModelSlot::Diarization)?;
-    run.keep(WorkDir(work.to_path_buf()));
-    std::fs::create_dir_all(work)?;
+    run.keep(WorkDir::try_new(work)?);
     let wav = work.join("audio.wav");
     let turns_path = work.join("turns.json");
 

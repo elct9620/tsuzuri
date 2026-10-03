@@ -196,7 +196,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 專案的用例直接呼叫 `project/files.rs` | 目錄是唯一的儲存 |
 | 尋找元件直接呼叫 `toolchain/detection.rs` | 偵測就是執行元件；測試用 shell 腳本 |
 | 翻譯用例直接使用 `llama.rs` 的 `TranslationModel` | 只有一個實作 |
-| 轉錄用例自行處理暫存工作目錄 | 只放中間檔，不屬於專案 |
+| 轉錄與辨識自管暫存工作目錄 | 只放中間檔，不屬於專案 |
 | `project/glossary.rs` 同時是規則與 csv 讀寫 | 詞彙表的格式就是它的規則 |
 | `progress.rs` 與 `Progress` 放在同一檔的 `AppHandle` 實作 | 只發兩個事件，放一起最清楚 |
 

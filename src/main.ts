@@ -37,6 +37,7 @@ import TooltipController from "./controllers/tooltip_controller";
 import DiarizeController from "./controllers/diarize_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
+import PreferencesController from "./controllers/preferences_controller";
 import TranscriptionSettingsController from "./controllers/transcription_settings_controller";
 import TranslateController from "./controllers/translate_controller";
 import TranslationOptionsController from "./controllers/translation_options_controller";
@@ -92,6 +93,7 @@ async function start(): Promise<void> {
     transcribe: TranscribeController,
     transcript: TranscriptController,
     "transcription-settings": TranscriptionSettingsController,
+    preferences: PreferencesController,
     translate: TranslateController,
     "translation-options": TranslationOptionsController,
     "translation-settings": TranslationSettingsController,

@@ -286,7 +286,37 @@ const en = {
     unreadable: "Could not read the versions",
     notRestored: "Not restored",
   },
+  preferences: {
+    choosing: "Choosing another Segment while playing, from",
+    pausing: "Pause",
+    fromStart: "From start",
+    aloneHint:
+      "Playing alone always plays the Segment from its start; while paused, choosing only moves the media",
+    switchLabel: "{{source}}: {{column}}",
+    switchesHelp:
+      "Pause stops the playing media; From start moves it to the Segment's start, else it stays where it is",
+    sourcesHelp: {
+      text: "Clicking another Segment's text or translation",
+      time: "Clicking another Segment's start or end time",
+      speaker: "Opening another Segment's Speaker menu",
+      row: "Clicking another Segment's check, menu, reference or empty space, right-clicking it, or reaching it with Tab",
+      next: "Enter in a field moving on to the next Segment",
+      region:
+        "Clicking another Segment's region on the timeline; without From start, it plays from the click",
+      search: "A search moving to the next or previous match",
+    },
+    sources: {
+      text: "its text or translation",
+      time: "its time",
+      speaker: "its Speaker menu",
+      row: "elsewhere in its row",
+      next: "Enter in a field",
+      region: "its region on the timeline",
+      search: "a search",
+    },
+  },
   settings: {
+    preferences: "Preferences",
     unreadable: "Settings not read",
     notSaved: "Settings not saved",
     project: "Project",

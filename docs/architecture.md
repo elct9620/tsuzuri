@@ -594,6 +594,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 |---|---|
 | `project`、`transcript`、`segment-changes`、`dialog` | 工具列、資源清單、字幕編輯、設定 |
 | `project-settings` | 設定的專案頁 |
+| `preferences` | 設定的偏好頁 |
 | `recent-projects` | 起始畫面與開啟選單的最近專案 |
 | `speakers` | 說話者選單與設定 modal |
 | `replacement` | 搜尋取代 modal |
@@ -642,6 +643,7 @@ Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測
 | `system:color-scheme` | 系統，經 `assembly.ts` | `timeline` 重畫波形 |
 | `system:orientation` | 系統，經 `assembly.ts` | `resource-list` 換成該方向的選擇 |
 | `model-slot:choose` | `model-slot` | `models`、`project-settings` 記下來源 |
+| `preferences:saved` | `preferences` | `timeline` 重讀換段的偏好 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |

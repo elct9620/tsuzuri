@@ -153,8 +153,8 @@ export interface Choice {
 /**
  * Where the media goes as another Segment is chosen: a paused media moves to it, to where its
  * region was clicked or else to its start. Playing alone keeps to the Segment chosen, so plays it
- * from its start; otherwise only a row chosen pauses at its start, a region plays on from the
- * click, and a Speaker named or Enter pressed plays on where it is.
+ * from its start; otherwise a Segment chosen from its row or a search pauses at its start, a
+ * region plays on from the click, and a Speaker named or Enter pressed plays on where it is.
  */
 export function choiceLanding({
   source,
@@ -167,7 +167,10 @@ export function choiceLanding({
     return { at: source === "region" ? clicked : start, isPausing: false };
   if (isPlayingAlone) return { at: start, isPausing: false };
   switch (source) {
+    case "text":
+    case "time":
     case "row":
+    case "search":
       return { at: start, isPausing: true };
     case "region":
       return { at: clicked, isPausing: false };

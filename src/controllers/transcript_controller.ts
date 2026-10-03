@@ -23,6 +23,7 @@ import {
   runWithNeighbour,
   setFieldHeld,
   setFieldValue,
+  type ChoiceSource,
   type CursorField,
   type EditingSession,
   type FieldKind,
@@ -82,6 +83,19 @@ function placeholderRows(count = 3): HTMLLIElement[] {
     li.append(time, text);
     return li;
   });
+}
+
+/**
+ * Where in a row a press of the pointer chooses its Segment from: its text or translation, a
+ * time, its Speaker menu, or anywhere else; a press of another button opens a menu, as from
+ * anywhere else.
+ */
+function pressedSource({ button, target }: PointerEvent): ChoiceSource {
+  if (button !== 0 || !(target instanceof Element)) return "row";
+  if (target.closest(".speaker-menu")) return "speaker";
+  if (target.closest(".field")) return "text";
+  if (target.closest("[data-edge]")) return "time";
+  return "row";
 }
 
 /** Shows who says a Segment on its Speaker button, or that nobody is named yet. */
@@ -251,7 +265,7 @@ function item(
   // A narrow list lays the times and Speaker in a line, the text below across the row
   li.className = "@max-4xl:grid-cols-[auto_1fr_auto]";
   li.dataset.action =
-    "mousedown->transcript#checkThrough click->transcript#makeCurrent focusin->transcript#makeCurrent contextmenu->transcript#makeCurrent contextmenu->segment-changes#openMenu:prevent";
+    "pointerdown->transcript#point mousedown->transcript#checkThrough click->transcript#makeCurrent focusin->transcript#makeCurrent contextmenu->transcript#makeCurrent contextmenu->segment-changes#openMenu:prevent";
   li.dataset.transcriptIndexParam = String(index);
   const check = document.createElement("input");
   check.type = "checkbox";
@@ -391,8 +405,18 @@ export default class TranscriptController extends Controller {
       event.target.closest(".speaker-menu") !== null;
     this.session.makeCurrent(
       event.params.index,
-      isSpeakerMenu ? "speaker" : "row",
+      isSpeakerMenu ? "speaker" : undefined,
     );
+  }
+
+  /** Tells the session where in a row the pointer pressed, for the choice the press goes on to make. */
+  point(event: PointerEvent): void {
+    this.session.pointAt(pressedSource(event));
+  }
+
+  /** Bound to `pointerup@window`, as a press may end outside the row it began in. */
+  releasePointer(): void {
+    this.session.releasePointer();
   }
 
   /** The Current Segment a run checked by `event` on row `index` starts from, or none unless Shift is held on another row. */

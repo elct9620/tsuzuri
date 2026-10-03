@@ -204,7 +204,7 @@ describe("Current Segment", () => {
     );
     document.body.innerHTML = `
       <main data-controller="transcript"
-        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
+        data-action="selectionchange@document->transcript#followSelection pointerup@window->transcript#releasePointer editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
         <div data-controller="preview timeline"
           data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
           <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden></button>
@@ -411,6 +411,76 @@ describe("Current Segment", () => {
     playTo(1.2);
 
     expect(isMarked("data-is-playing")).toEqual([true, true]);
+  });
+
+  describe("telling where another Segment is chosen from", () => {
+    let sources: string[];
+    let listening: AbortController;
+
+    beforeEach(() => {
+      sources = [];
+      listening = new AbortController();
+      window.addEventListener(
+        "editor:choice",
+        () => sources.push(session.choiceSource),
+        { signal: listening.signal },
+      );
+    });
+
+    afterEach(() => listening.abort());
+
+    /** Presses the pointer on `target` with `button`, takes it to focus as Chromium does, and clicks. */
+    function press(target: HTMLElement, button = 0): void {
+      target.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, button }),
+      );
+      target.focus();
+      window.dispatchEvent(new PointerEvent("pointerup", { button }));
+      target.click();
+    }
+
+    const inRow = (index: number, selector: string) =>
+      rows()[index].querySelector<HTMLElement>(selector)!;
+
+    it("tells a text or a translation pressed apart from a time pressed", async () => {
+      await show({ ...twoSegments, shown_translation: "en" });
+
+      press(inRow(1, ".field.text"));
+      press(inRow(0, '[data-edge="end"]'));
+      press(inRow(1, ".field.translation"));
+      press(inRow(0, '[data-edge="start"]'));
+
+      expect(sources).toEqual(["text", "time", "text", "time"]);
+    });
+
+    it("takes a check, the menu or a right click as the row", async () => {
+      await show(twoSegments);
+
+      press(inRow(1, "input.check"));
+      press(inRow(0, ".dropdown-left [role=button]"));
+      press(inRow(1, ".field.text"), 2);
+
+      expect(sources).toEqual(["row", "row", "row"]);
+    });
+
+    it("takes the keyboard's focus reaching a text as the row, but a Speaker menu as its own", async () => {
+      await show(twoSegments);
+
+      textField(1).focus();
+      openSpeakers(0);
+
+      expect(sources).toEqual(["row", "speaker"]);
+    });
+
+    it("forgets a press that chose nothing", async () => {
+      await show(twoSegments);
+      rows()[1].click();
+      press(inRow(1, ".field.text"));
+
+      textField(0).focus();
+
+      expect(sources).toEqual(["row", "row"]);
+    });
   });
 
   // @behavior PV-075

@@ -62,9 +62,11 @@ export type SessionChange = "cursor" | "choice" | "checks";
 
 /**
  * Where the user chose another Segment from, which tells how much of the listening they mean to
- * leave: its row, its Speaker menu, Enter moving on from the field before, or its region.
+ * leave: its text or translation, a time of it, its Speaker menu, anywhere else in its row or the
+ * keyboard's focus reaching it, Enter moving on from the field before, its region, or a search.
  */
-export type ChoiceSource = "row" | "speaker" | "next" | "region";
+export type ChoiceSource =
+  "text" | "time" | "speaker" | "row" | "next" | "region" | "search";
 
 /**
  * A text or a translation as it read when entered, kept past the Cursor so typing done before a
@@ -92,7 +94,10 @@ export class EditingSession {
   private pendingChange: PendingChange | null = null;
   /** The field last entered, so leaving it unchanged writes nothing and Esc puts its text back. */
   private fieldEntry: FieldEntry | null = null;
-  private source: ChoiceSource = "row";
+  /** Where the choice being made is made from, as the one making it says. */
+  private source: ChoiceSource | null = null;
+  /** Where in a row the pointer pressed, for the choice that press makes. */
+  private pointedSource: ChoiceSource | null = null;
   /** The write of the field last left, which a cleanup waits for before reading the Cursor it left. */
   private leavingWrite: Promise<Outcome> = Promise.resolve({
     kind: "unchanged",
@@ -106,9 +111,12 @@ export class EditingSession {
     return this.state;
   }
 
-  /** Where the Segment a `choice` tells of was chosen from, read while it is being told. */
+  /**
+   * Where the Segment a `choice` tells of was chosen from, read while it is being told: where the
+   * one making it says, else where the pointer pressed, else the row, as the keyboard's focus is.
+   */
   get choiceSource(): ChoiceSource {
-    return this.source;
+    return this.source ?? this.pointedSource ?? "row";
   }
 
   /** The Checked Segments' positions, in order. */
@@ -245,8 +253,23 @@ export class EditingSession {
     );
   }
 
-  makeCurrent(index: number, source: ChoiceSource = "row"): void {
-    this.chooseFrom(source, () => this.act({ kind: "current-segment", index }));
+  /** Makes the Segment at `index` current, as chosen from `source`, or else from where the pointer pressed. */
+  makeCurrent(index: number, source?: ChoiceSource): void {
+    const choose = () => this.act({ kind: "current-segment", index });
+    if (source) this.chooseFrom(source, choose);
+    else choose();
+  }
+
+  /**
+   * Takes the choice a press of the pointer goes on to make, as focus moves or the press ends in a
+   * click, as made from `source`, until that choice is made or the pointer is released.
+   */
+  pointAt(source: ChoiceSource): void {
+    this.pointedSource = source;
+  }
+
+  releasePointer(): void {
+    this.pointedSource = null;
   }
 
   /**
@@ -258,7 +281,7 @@ export class EditingSession {
     try {
       choose();
     } finally {
-      this.source = "row";
+      this.source = null;
     }
   }
 
@@ -457,8 +480,13 @@ export class EditingSession {
   private act(event: CursorEvent): void {
     const index = this.state.index;
     this.move(event);
-    if (this.state.index !== index) this.unannouncedChanges.add("choice");
+    if (this.state.index === index) {
+      this.announce();
+      return;
+    }
+    this.unannouncedChanges.add("choice");
     this.announce();
+    this.releasePointer();
   }
 
   private move(event: CursorEvent): void {

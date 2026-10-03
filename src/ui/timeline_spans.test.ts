@@ -71,14 +71,25 @@ describe("timeline spans", () => {
       ]);
     });
 
-    it("pauses only a row chosen, plays on from a click, and stays for a Speaker or Enter", () => {
+    it("pauses a Segment chosen from its row or a search, plays on from a click, and stays for a Speaker or Enter", () => {
       const onward = { ...playing, isPlayingAlone: false };
 
       expect(
-        (["row", "region", "speaker", "next"] as const).map((source) =>
-          choiceLanding({ ...onward, source }),
-        ),
+        (
+          [
+            "text",
+            "time",
+            "row",
+            "search",
+            "region",
+            "speaker",
+            "next",
+          ] as const
+        ).map((source) => choiceLanding({ ...onward, source })),
       ).toEqual([
+        { at: 1, isPausing: true },
+        { at: 1, isPausing: true },
+        { at: 1, isPausing: true },
         { at: 1, isPausing: true },
         { at: 1.5, isPausing: false },
         { at: null, isPausing: false },

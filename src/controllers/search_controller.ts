@@ -116,7 +116,10 @@ export default class SearchController extends Controller {
     if (this.barTarget.hidden || this.matches.length === 0) return;
     const count = this.matches.length;
     this.currentPosition = (this.currentPosition + step + count) % count;
-    this.session.makeCurrent(this.matches[this.currentPosition].index);
+    this.session.makeCurrent(
+      this.matches[this.currentPosition].index,
+      "search",
+    );
     this.show();
   }
 

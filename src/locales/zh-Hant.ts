@@ -136,6 +136,8 @@ const zhHant: typeof en = {
     insertAbove: "在上方新增",
     insertBelow: "在下方新增",
     split: "在游標處切割",
+    mergeWithPrevious: "與上段合併",
+    mergeWithNext: "與下段合併",
     delete: "刪除",
     retranslate: "重新翻譯",
     retranscribe: "重新轉錄",
@@ -529,6 +531,8 @@ const zhHant: typeof en = {
       redo: "重做",
       checkAll: "全部勾選",
       delete: "刪除段落",
+      mergeWithPrevious: "與上段合併",
+      mergeWithNext: "與下段合併",
       replace: "取代",
       cleanup: "清理簡體",
       search: "搜尋",
@@ -562,6 +566,8 @@ const zhHant: typeof en = {
       checkAll: "在欄位中全選文字，其他時候勾選全部段落",
       delete:
         "有勾選刪除勾選的段落，否則刪除目前段落；在欄位、選單、清單或對話方塊中不作用",
+      mergeWithPrevious: "把目前段落和上一段合併成一行；在欄位中也可以",
+      mergeWithNext: "把目前段落和下一段合併成一行；在欄位中也可以",
       replace: "欄位中選取的文字會帶入「尋找」",
       cleanup:
         "有勾選清理勾選的段落，框選文字時只清理框選的部分，否則清理目前段落",

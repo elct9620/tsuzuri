@@ -54,6 +54,19 @@ export const SHORTCUTS = [
     mac: ["backspace", "delete"],
     other: ["delete"],
   },
+  // The keys of a split with the direction to merge, in a text field as well, as a merge needs no Cursor
+  {
+    id: "mergeWithPrevious",
+    group: "anywhere",
+    mac: ["meta+alt+up"],
+    other: ["ctrl+alt+up"],
+  },
+  {
+    id: "mergeWithNext",
+    group: "anywhere",
+    mac: ["meta+alt+down"],
+    other: ["ctrl+alt+down"],
+  },
   // Ctrl+H as subtitle editors bind it; ⌘+Option+F on macOS, where ⌘+H hides the app and Ctrl+H
   // deletes backward in a text. Option changes the key typed, so F is read by its place
   {
@@ -179,6 +192,8 @@ const MAC_LABELS: Record<string, string> = {
   delete: "⌦",
   left: "←",
   right: "→",
+  up: "↑",
+  down: "↓",
 };
 
 const OTHER_LABELS: Record<string, string> = {
@@ -189,6 +204,8 @@ const OTHER_LABELS: Record<string, string> = {
   delete: "Delete",
   left: "←",
   right: "→",
+  up: "↑",
+  down: "↓",
 };
 
 /** The keys and mouse actions written as words of the Interface Language. */
@@ -202,6 +219,8 @@ const EVENT_KEYS: Record<string, string> = {
   space: " ",
   left: "ArrowLeft",
   right: "ArrowRight",
+  up: "ArrowUp",
+  down: "ArrowDown",
 };
 
 /** The shortcut `id` names, or none for a name an element's `data-shortcut` got wrong. */

@@ -13,6 +13,23 @@ export function isRun(indexes: number[]): boolean {
   );
 }
 
+/** Which neighbour a Segment is merged with. */
+export type MergeDirection = "previous" | "next";
+
+/** The run merging the Segment at `index` of `count` with its neighbour in `direction`, or none past either end. */
+export function runWithNeighbour(
+  index: number,
+  direction: MergeDirection,
+  count: number,
+): { first: number; last: number } | null {
+  const neighbour = direction === "previous" ? index - 1 : index + 1;
+  if (neighbour < 0 || neighbour >= count) return null;
+  return {
+    first: Math.min(index, neighbour),
+    last: Math.max(index, neighbour),
+  };
+}
+
 /** A field of a row: a text, a translation, or any other such as a time or a Speaker. */
 export type FieldKind = "text" | "translation" | "other";
 

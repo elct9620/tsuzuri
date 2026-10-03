@@ -140,6 +140,8 @@ const en = {
     insertAbove: "Insert above",
     insertBelow: "Insert below",
     split: "Split at the Cursor",
+    mergeWithPrevious: "Merge with the one above",
+    mergeWithNext: "Merge with the one below",
     delete: "Delete",
     retranslate: "Translate again",
     retranscribe: "Transcribe again",
@@ -552,6 +554,8 @@ const en = {
       redo: "Redo",
       checkAll: "Check every Segment",
       delete: "Delete Segments",
+      mergeWithPrevious: "Merge with the one above",
+      mergeWithNext: "Merge with the one below",
       replace: "Replace",
       cleanup: "Clean Simplified Chinese",
       search: "Search",
@@ -585,6 +589,10 @@ const en = {
       checkAll: "Selects the text in a text field, else checks every Segment",
       delete:
         "Deletes the Checked Segments, else the Current Segment; not in a text field, a menu, a list or a dialog",
+      mergeWithPrevious:
+        "Merges the Current Segment with the one before into one line, in a field too",
+      mergeWithNext:
+        "Merges the Current Segment with the one after into one line, in a field too",
       replace: "Text selected in a field is what is looked for",
       cleanup:
         "Cleans the Checked Segments, else the text selected, else the Current Segment",

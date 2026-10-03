@@ -20,6 +20,7 @@ import {
   isField,
   isHeld,
   placeSelection,
+  runWithNeighbour,
   setFieldHeld,
   setFieldValue,
   type CursorField,
@@ -167,6 +168,8 @@ function changeMenu(index: number, isTranslationShown: boolean): HTMLElement {
     ["insertBefore", "edit.insertAbove"],
     ["insertAfter", "edit.insertBelow"],
     ["split", "edit.split", "split"],
+    ["mergeWithPrevious", "edit.mergeWithPrevious", "mergeWithPrevious"],
+    ["mergeWithNext", "edit.mergeWithNext", "mergeWithNext"],
     ["delete", "edit.delete", "delete"],
   ]) {
     const button = document.createElement("button");
@@ -587,6 +590,7 @@ export default class TranscriptController extends Controller {
       "button.retranscribe",
     ))
       button.closest("li")!.hidden = !hasMedia;
+    this.showMergesWithin(segments.length);
     this.holdFields();
     this.showChecked();
     this.drawCursor();
@@ -657,6 +661,20 @@ export default class TranscriptController extends Controller {
     this.showPendingTranslations();
     this.showSegmentsToCome(segments.length);
     this.markRows();
+  }
+
+  /** Offers no merge past the first or the last of `count` Segments. */
+  private showMergesWithin(count: number): void {
+    for (const [direction, choice] of [
+      ["previous", "mergeWithPrevious"],
+      ["next", "mergeWithNext"],
+    ] as const)
+      for (const button of this.listTarget.querySelectorAll<HTMLButtonElement>(
+        `button.${choice}`,
+      ))
+        button.closest("li")!.hidden =
+          runWithNeighbour(Number(button.dataset.index), direction, count) ===
+          null;
   }
 
   /** Disables each field whose subtitle the Mode running on the Current Resource writes. */

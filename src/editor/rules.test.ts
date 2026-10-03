@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { isHeld, isRun, segmentCountAfter, splitPoint } from "./rules";
+import {
+  isHeld,
+  isRun,
+  runWithNeighbour,
+  segmentCountAfter,
+  splitPoint,
+} from "./rules";
 import type { TranscriptView } from "./segment";
 
 const view = (changes: Partial<TranscriptView>): TranscriptView => ({
@@ -18,6 +24,15 @@ describe("rules", () => {
       false,
       false,
     ]);
+  });
+
+  it("merges a Segment with its neighbour, but none past either end", () => {
+    expect([
+      runWithNeighbour(1, "previous", 3),
+      runWithNeighbour(1, "next", 3),
+      runWithNeighbour(0, "previous", 3),
+      runWithNeighbour(2, "next", 3),
+    ]).toEqual([{ first: 0, last: 1 }, { first: 1, last: 2 }, null, null]);
   });
 
   it("holds every field while transcribing, and only the translation written, or its chosen Segments, while translating", () => {

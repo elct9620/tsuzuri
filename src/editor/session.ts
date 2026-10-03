@@ -365,6 +365,21 @@ export class EditingSession {
     return this.change({ kind: "split", index, at }, before);
   }
 
+  /** Merges the Segments `first` through `last`, writing a text still being typed in one of them first. */
+  async merge(first: number, last: number): Promise<Outcome> {
+    const { index, caret } = this.state;
+    if (
+      index !== null &&
+      index >= first &&
+      index <= last &&
+      caret?.kind === "live"
+    ) {
+      const writeResult = await this.writeText(index, caret.field, caret.text);
+      if (writeResult.kind === "failed") return writeResult;
+    }
+    return this.change({ kind: "merge", first, last });
+  }
+
   undo(): Promise<Outcome> {
     return this.write(() => this.port.undo());
   }

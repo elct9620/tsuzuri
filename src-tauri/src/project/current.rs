@@ -2953,8 +2953,8 @@ mod tests {
         assert_eq!(
             [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
             [
-                srt_of(&[(0, 2_000, "你好\n世界")]),
-                srt_of(&[(0, 2_000, "Hello\nworld")])
+                srt_of(&[(0, 2_000, "你好世界")]),
+                srt_of(&[(0, 2_000, "Hello world")])
             ]
         );
     }
@@ -3231,6 +3231,45 @@ mod tests {
         );
     }
 
+    /// The one Segment `first` and `second`, one second each, read as merged.
+    fn merged_text(name: &str, first: &str, second: &str) -> String {
+        let dir = TempDir::new(name);
+        let current = changing_project_in(&dir, &[(0, 1_000, first), (1_000, 2_000, second)], &[]);
+
+        current
+            .change_segments(SegmentChange::Merge { first: 0, last: 1 })
+            .unwrap();
+
+        read(&dir, "ep01.srt")
+    }
+
+    // @behavior PJ-187
+    #[test]
+    fn joins_chinese_and_english_with_a_space() {
+        assert_eq!(
+            merged_text("pj-merge-english", "這是", "OK 的"),
+            srt_of(&[(0, 2_000, "這是 OK 的")])
+        );
+    }
+
+    // @behavior PJ-188
+    #[test]
+    fn joins_chinese_and_a_number_with_a_space() {
+        assert_eq!(
+            merged_text("pj-merge-number", "一共有", "3 集"),
+            srt_of(&[(0, 2_000, "一共有 3 集")])
+        );
+    }
+
+    // @behavior PJ-189
+    #[test]
+    fn joins_a_text_already_ending_in_a_space_without_another() {
+        assert_eq!(
+            merged_text("pj-merge-spaced", "Hello ", "world"),
+            srt_of(&[(0, 2_000, "Hello world")])
+        );
+    }
+
     // @behavior PJ-145
     #[test]
     fn merges_a_segment_with_one_it_overlaps() {
@@ -3242,10 +3281,7 @@ mod tests {
             .change_segments(SegmentChange::Merge { first: 0, last: 1 })
             .unwrap();
 
-        assert_eq!(
-            read(&dir, "ep01.srt"),
-            srt_of(&[(0, 5_000, "大家好\n對啊")])
-        );
+        assert_eq!(read(&dir, "ep01.srt"), srt_of(&[(0, 5_000, "大家好對啊")]));
     }
 
     // @behavior PJ-146

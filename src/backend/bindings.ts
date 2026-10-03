@@ -622,7 +622,8 @@ export type SegmentChange = { kind: "times"; index: number; start_ms: number; en
 { kind: "split"; index: number; at: number } | 
 /**
  *  One Segment from `first` through the latest end of `first` through `last`, their texts and
- *  translations each a line.
+ *  translations each joined on one line, with a half-width space where either side of a join is a
+ *  half-width letter or digit.
  */
 { kind: "merge"; first: number; last: number } | 
 /**  `first` through `last` moved by `offset_ms`, stopping at the start of the media. */

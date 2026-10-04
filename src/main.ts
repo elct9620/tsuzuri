@@ -8,15 +8,11 @@ import DialogController from "./controllers/dialog_controller";
 import FieldController, {
   composingOption,
 } from "./controllers/field_controller";
-import ModelSlotController from "./controllers/model_slot_controller";
-import ModelsController from "./controllers/models_controller";
 import NotificationController from "./controllers/notification_controller";
 import PreviewController from "./controllers/preview_controller";
 import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
-import ProjectSettingsController from "./controllers/project_settings_controller";
 import RecentProjectsController from "./controllers/recent_projects_controller";
-import RepositoryController from "./controllers/repository_controller";
 import ReplacementController from "./controllers/replacement_controller";
 import ResourceListController from "./controllers/resource_list_controller";
 import SearchController from "./controllers/search_controller";
@@ -54,16 +50,12 @@ async function start(): Promise<void> {
     comparison: ComparisonController,
     dialog: DialogController,
     field: FieldController,
-    "model-slot": ModelSlotController,
-    models: ModelsController,
     notification: NotificationController,
     preview: PreviewController,
     progress: ProgressController,
     project: ProjectController,
-    "project-settings": ProjectSettingsController,
     "recent-projects": RecentProjectsController,
     replacement: ReplacementController,
-    repository: RepositoryController,
     "resource-list": ResourceListController,
     cleanup: CleanupController,
     search: SearchController,

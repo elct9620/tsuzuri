@@ -1,4 +1,4 @@
-import type { ModelSlot, ModelSource, PresetModel } from "../backend/toolchain";
+import type { ModelSource, PresetModel } from "../backend/toolchain";
 import { fileName } from "./file_name";
 
 /** How a Model Source is named to the user: a file by its path, a Repository's file by both. */
@@ -27,10 +27,4 @@ export function presetLabel(preset: PresetModel): string {
 export interface HubFile {
   repo: string;
   file: string;
-}
-
-/** What a slot's row announces as `model-slot:choose`: the Model Source it chose, or none. */
-export interface ModelChoice {
-  slot: ModelSlot;
-  source: ModelSource | null;
 }

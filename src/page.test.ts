@@ -1,11 +1,13 @@
 // @vitest-environment happy-dom
 import { within } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
+import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ProjectFeed } from "./backend/project";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
 import { mockPageMount } from "./test_page";
+import { projectOf } from "./test_project";
 
 describe("drawPage", () => {
   beforeEach(() => {
@@ -35,14 +37,6 @@ describe("drawPage", () => {
     ["resource list", '[data-project-target="resources"]'],
     ["glossary entry", '[data-project-target="glossary"]'],
     ["settings dialog", '[data-dialog-target="dialog"]'],
-    ["Project settings", '[data-project-settings-target="nameField"]'],
-    [
-      "Project's transcription settings",
-      '[data-project-settings-target="transcriptionSetting"]',
-    ],
-    ["Project's Models", "#project-models"],
-    ["general Models", "#general-models"],
-    ["repository dialog", "#repository-dialog"],
     ["shortcuts dialog", '[data-shortcuts-target="dialog"]'],
     ["updates dialog", '[data-updates-target="dialog"]'],
     ["notification stack", "[data-notifications]"],
@@ -64,6 +58,7 @@ describe("drawPage", () => {
     ["translation settings", "settings.translation"],
     ["Components", "settings.components"],
     ["logs", "settings.logs"],
+    ["Models", "settings.models"],
   ])("writes the %s in the general settings", async (_part, name) => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
@@ -112,45 +107,45 @@ describe("drawPage", () => {
   );
 
   it.each([
-    [
-      "#project-models",
-      [
-        ["transcription", "true", "projectModel", undefined],
-        ["translation", "true", "projectModel", undefined],
-      ],
-    ],
-    [
-      "#general-models",
-      [
-        ["transcription", undefined, undefined, "status"],
-        ["vad", undefined, undefined, "status"],
-        ["translation", undefined, undefined, "status"],
-        ["diarization", undefined, undefined, "status"],
-      ],
-    ],
+    ["Project", "settings.project"],
+    ["transcription settings", "settings.transcription"],
+    ["Models", "settings.models"],
   ])(
-    "writes the Model Slots of %s for the controller that reads them",
-    (list, expected) => {
+    "writes the Project's %s in its tab while a Project is open",
+    async (_part, name) => {
       const page = document.createElement("div");
+      await setInterfaceLanguage("zh-TW");
+      mockPageMount(projectOf());
+      const feed = new ProjectFeed();
+      await feed.refresh();
 
-      drawPage(new ProjectFeed(), page);
+      drawPage(feed, page);
+      await tick();
 
-      const slots = [
-        ...page.querySelectorAll<HTMLElement>(
-          `${list} [data-controller="model-slot"]`,
-        ),
-      ].map((slot) => {
-        const status = slot.querySelector<HTMLElement>(
-          '[data-model-slot-target="status"]',
-        )!;
-        return [
-          slot.dataset.modelSlotSlotValue,
-          slot.dataset.modelSlotIsProjectSlotValue,
-          status.dataset.projectSettingsTarget,
-          status.dataset.modelsTarget,
-        ];
-      });
-      expect(slots).toEqual(expected);
+      const projectTab = within(page).getByRole("radio", {
+        hidden: true,
+        name: t("settings.project"),
+      }).nextElementSibling as HTMLElement;
+      expect(
+        within(projectTab).queryByRole("group", {
+          hidden: true,
+          name: t(name),
+        }),
+      ).not.toBeNull();
     },
   );
+
+  it("writes the Repository dialog the Model Slots open", async () => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+
+    drawPage(new ProjectFeed(), page);
+
+    expect(
+      within(page).queryByRole("button", {
+        hidden: true,
+        name: t("repository.list"),
+      }),
+    ).not.toBeNull();
+  });
 });

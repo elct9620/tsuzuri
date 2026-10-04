@@ -12,8 +12,9 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src-tauri/src/transcription/*.rs`
 - `src-tauri/src/translation.rs`
 - `src/backend/project.test.ts`
+- `src/components/Settings.test.ts`
+- `src/components/settings/project/Project.test.ts`
 - `src/controllers/project_controller.test.ts`
-- `src/controllers/project_settings_controller.test.ts`
 - `src/controllers/recent_projects_controller.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 

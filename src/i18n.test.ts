@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { within } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
+import { tick } from "svelte";
 import { afterEach, describe, expect, it } from "vitest";
 import { ProjectFeed } from "./backend/project";
 import {
@@ -10,6 +11,7 @@ import {
 } from "./i18n";
 import { drawPage } from "./page";
 import { mockPageMount } from "./test_page";
+import { projectOf } from "./test_project";
 
 describe("interface language", () => {
   afterEach(() => {
@@ -73,9 +75,12 @@ describe("interface language", () => {
   it.each(["zh-TW", "en"])("explains every setting in %s", async (locale) => {
     const settings = document.createElement("div");
     await setInterfaceLanguage(locale);
-    mockPageMount();
+    mockPageMount(projectOf());
+    const feed = new ProjectFeed();
+    await feed.refresh();
 
-    drawPage(new ProjectFeed(), settings);
+    drawPage(feed, settings);
+    await tick();
 
     const rows = [
       ...settings.querySelectorAll('[data-dialog-target="dialog"] .list-row'),

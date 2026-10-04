@@ -188,3 +188,13 @@ Speakers are numbered by when they are first heard, so diarizing a part would nu
 | Given | a diarization of 60 seconds of audio that took 4 seconds |
 | When | it finishes |
 | Then | the Notification lists a real-time factor of 0.07 |
+
+## `DZ-023` Keeping the translation shown through a diarization
+
+A diarization gives Segments their Speakers and leaves their cues where they were, so the translation shown stays shown.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing its `en` translation |
+| When | it is diarized |
+| Then | the `en` translation is still shown |

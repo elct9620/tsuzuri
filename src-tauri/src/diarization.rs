@@ -235,6 +235,11 @@ mod tests {
 
         async fn diarize(&self) -> Result<Diarization, Failure> {
             self.open();
+            self.run().await
+        }
+
+        /// Diarizes the Current Resource of the Project as it is open now.
+        async fn run(&self) -> Result<Diarization, Failure> {
             let processes = Processes::new(self.dir.path().join("processes.json"));
             let app = self.app.handle();
             run_diarize(
@@ -337,6 +342,29 @@ mod tests {
             fixture.file_speakers("lecture.en.srt"),
             speakers(&["Speaker 1", "Speaker 2"])
         );
+    }
+
+    // @behavior DZ-023
+    #[tokio::test]
+    async fn keeps_the_translation_shown_through_a_diarization() {
+        let fixture = Fixture::new("dz-translation-shown");
+        std::fs::write(
+            fixture.project_dir().join("lecture.en.srt"),
+            Transcript {
+                segments: vec![segment(0, "One"), segment(4000, "Two")],
+            }
+            .to_srt(WrittenText::Original),
+        )
+        .unwrap();
+        fixture.open();
+        fixture
+            .project()
+            .show_translation(Some(Language::English))
+            .unwrap();
+
+        fixture.run().await.unwrap();
+
+        assert_eq!(fixture.project().shown_translation(), Ok(Language::English));
     }
 
     // @behavior DZ-010

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "pnpm run check && vite build",
-    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings --output human",
+    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings --output human && tsc -p tsconfig.node.json",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
@@ -27,6 +27,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/cli": "^2.12.0",
     "@testing-library/svelte": "^5.4.2",
+    "@types/node": "^24.19.1",
     "daisyui": "^5.7.43",
     "happy-dom": "^20.14.5",
     "prettier": "^3.9.9",

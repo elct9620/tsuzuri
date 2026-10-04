@@ -551,7 +551,7 @@ backend/editing.ts            gateway: the one caller of editing commands
 | 不改成 custom element | 翻譯與圖示靠靜態掃描 |
 | 多 controller 的外框留在 `Page.svelte` | target 必須是後代 |
 
-`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。轉換過行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字。其餘 markup 的 i18n 與 Lucide 圖示在寫入後掃描一次，所以不放進會重畫的區塊。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
+`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。其餘 markup 的 i18n 與 `data-lucide` 圖示寫入後掃描一次，所以不放進會重畫的區塊。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
 
 ### 4.2 相依規則
 
@@ -634,7 +634,6 @@ main.ts -> assemble(application, controllers)      assembly.ts
 |---|---|
 | `project`、`transcript`、`segment-changes`、`dialog` | 工具列、資源清單、字幕編輯、設定 |
 | `project-settings` | 設定的專案頁 |
-| `preferences` | 設定的偏好頁 |
 | `recent-projects` | 起始畫面與開啟選單的最近專案 |
 | `speakers` | 說話者選單與設定 modal |
 | `replacement` | 搜尋取代 modal |
@@ -647,7 +646,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
-| `versions`、`glossary` | 版本與詞彙表 modal |
+| `versions` | 版本 modal |
 | `models` | 設定頁 |
 | `model-slot`、`repository` | 模型來源的選單、下載與 Repository |
 | `updates` | 更新檢查、安裝視窗 |
@@ -681,7 +680,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | `system:color-scheme` | 系統，經 `assembly.ts` | `timeline` 重畫波形 |
 | `system:orientation` | 系統，經 `assembly.ts` | `resource-list` 換成該方向的選擇 |
 | `model-slot:choose` | `model-slot` | `models`、`project-settings` 記下來源 |
-| `preferences:saved` | `preferences` | `timeline` 重讀換段的偏好 |
+| `preferences:saved` | `Preferences` | `timeline` 重讀換段的偏好 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
@@ -700,6 +699,8 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
 | `Components` | 元件的狀態、指定與還原 |
 | `Logs` | log 目錄與除錯紀錄 |
+| `Preferences` | 偏好頁的換段設定 |
+| `GlossaryDialog` | 詞彙表 modal |
 
 ### 4.7 backend
 

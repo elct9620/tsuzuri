@@ -95,3 +95,13 @@ A Waveform is taken outside any Mode, so one taken while a Mode runs is not the 
 | Given | a cancel asked while no Mode runs |
 | When | the next Mode takes its turn |
 | Then | it runs to its end |
+
+## `PR-011` Counting no wait for the Mode's turn as preparing
+
+The Phases say how long the work took, so waiting for another Mode to end is counted in none of them.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Mode running |
+| When | another Mode waits for its turn, then begins |
+| Then | its prepare Phase counts none of the time it waited |

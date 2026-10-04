@@ -23,10 +23,7 @@ import TimelineController, {
   controlOption,
 } from "./controllers/timeline_controller";
 import TooltipController from "./controllers/tooltip_controller";
-import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
-import TranslateController from "./controllers/translate_controller";
-import TranslationOptionsController from "./controllers/translation_options_controller";
 import UndoController, { typingOption } from "./controllers/undo_controller";
 import UpdatesController from "./controllers/updates_controller";
 import VersionsController from "./controllers/versions_controller";
@@ -62,15 +59,12 @@ async function start(): Promise<void> {
     "time-field": TimeFieldController,
     timeline: TimelineController,
     tooltip: TooltipController,
-    transcribe: TranscribeController,
     transcript: TranscriptController,
-    translate: TranslateController,
-    "translation-options": TranslationOptionsController,
     undo: UndoController,
     updates: UpdatesController,
     versions: VersionsController,
   });
-  drawPage(assembly.feed, document.body, assembly.taskRun);
+  drawPage(assembly.feed);
   await application.start();
   await assembly.start();
 }

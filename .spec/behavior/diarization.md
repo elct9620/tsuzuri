@@ -8,7 +8,7 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 - `src-tauri/src/diarization/*.rs`
 - `src/components/settings/project/Project.test.ts`
 - `src/components/Diarization.test.ts`
-- `src/controllers/transcribe_controller.test.ts`
+- `src/components/Transcription.test.ts`
 
 ## `DZ-001` Giving a Segment the Speaker heard longest during it
 

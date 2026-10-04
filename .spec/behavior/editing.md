@@ -8,7 +8,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/project_controller.test.ts`
 - `src/controllers/segment_changes_controller.test.ts`
 - `src/controllers/speakers_controller.test.ts`
-- `src/controllers/translate_controller.test.ts`
+- `src/components/Translation.test.ts`
 - `src/controllers/field_controller.test.ts`
 - `src/controllers/time_field_controller.test.ts`
 - `src/controllers/timeline_controller.test.ts`

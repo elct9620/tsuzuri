@@ -1,13 +1,13 @@
 // @vitest-environment happy-dom
 import { within } from "@testing-library/svelte";
-import { clearMocks } from "@tauri-apps/api/mocks";
+import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ProjectFeed } from "./backend/project";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
 import { mockPageMount } from "./test_page";
-import { projectOf } from "./test_project";
+import { projectOf, resourceOf } from "./test_project";
 
 describe("drawPage", () => {
   beforeEach(() => {
@@ -22,17 +22,9 @@ describe("drawPage", () => {
   // the page leaves nothing for them to read.
   it.each([
     ["start screen", '[data-project-target="startScreen"]'],
-    ["toolbar", '[data-controller="transcribe"]'],
+    ["toolbar", '[data-project-target="name"]'],
     ["editor bar", '[data-controller="versions"]'],
     ["preview", '[data-preview-target="panel"]'],
-    [
-      "transcribe dialog's translation options",
-      '#transcribe-options [data-translation-options-target="language"]',
-    ],
-    [
-      "translate dialog's translation options",
-      '#translate-options [data-translation-options-target="language"]',
-    ],
     ["Segment list", '[data-transcript-target="list"]'],
     ["resource list", '[data-project-target="resources"]'],
     ["glossary entry", '[data-project-target="glossary"]'],
@@ -92,19 +84,69 @@ describe("drawPage", () => {
     ).not.toBeNull();
   });
 
-  it.each(["#transcribe-options", "#translate-options"])(
-    "writes the translation options in %s in the interface language",
-    async (options) => {
-      const page = document.createElement("div");
-      await setInterfaceLanguage("zh-TW");
+  // A task's toolbar button and dialog are found by the name the button carries.
+  it.each([
+    ["transcribe", "toolbar.transcribe"],
+    ["translate", "toolbar.translate"],
+    ["diarize", "toolbar.diarize"],
+  ])("writes the %s button in the toolbar", async (_part, name) => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
 
-      drawPage(new ProjectFeed(), page);
+    drawPage(new ProjectFeed(), page);
 
-      expect(
-        page.querySelector(`${options} [data-i18n="work.into"]`)!.textContent,
-      ).toBe(t("work.into"));
-    },
-  );
+    expect(
+      within(page).queryByRole("button", { hidden: true, name: t(name) }),
+    ).not.toBeNull();
+  });
+
+  it("writes the translation options in both the transcribe and the translate dialogs", async () => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+
+    drawPage(new ProjectFeed(), page);
+
+    expect(
+      within(page).queryAllByRole("combobox", {
+        hidden: true,
+        name: t("work.into"),
+      }),
+    ).toHaveLength(2);
+  });
+
+  it("writes the progress a task started from the toolbar reports to", async () => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+    mockIPC((command) => {
+      if (command === "app_build")
+        return { release_name: "v0.2.0", commit: "7649ca4" };
+      if (command === "current_project")
+        return projectOf({ resources: [resourceOf({ has_media: true })] });
+      if (command === "model_settings") return null;
+      if (command === "diarize") return new Promise(() => {});
+      return Promise.reject({ code: "io", detail: "not asked here" });
+    });
+    const feed = new ProjectFeed();
+    await feed.refresh();
+    drawPage(feed, page);
+    await tick();
+
+    within(page)
+      .getByRole("button", { hidden: true, name: t("toolbar.diarize") })
+      .click();
+    await tick();
+    within(page)
+      .getByRole("button", { hidden: true, name: t("diarize.start") })
+      .click();
+    await tick();
+
+    expect(
+      within(page).queryByRole("button", {
+        hidden: true,
+        name: t("work.preparing"),
+      }),
+    ).not.toBeNull();
+  });
 
   it.each([
     ["Project", "settings.project"],

@@ -6,7 +6,7 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 
 - `src-tauri/src/transcription.rs`
 - `src-tauri/src/transcription/*.rs`
-- `src/controllers/transcribe_controller.test.ts`
+- `src/components/Transcription.test.ts`
 - `src/components/TaskProgress.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 - `src/components/settings/general/Transcription.test.ts`
@@ -510,3 +510,13 @@ A transcription within an Audio Window writes only that window's Segments, so th
 | Given | a transcription of 60 seconds of audio that took 30 seconds |
 | When | it finishes |
 | Then | the Notification lists a real-time factor of 0.50 |
+
+## `TX-062` Starting no transcription while another task runs
+
+One task runs at a time, so a transcription asked for while one runs leaves the running task as it is.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, while a diarization runs |
+| When | its transcription is started from the toolbar |
+| Then | no transcription is asked for |

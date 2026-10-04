@@ -7,9 +7,9 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 - `src-tauri/src/translation.rs`
 - `src-tauri/src/translation/*.rs`
 - `src-tauri/src/project/glossary.rs`
-- `src/controllers/translate_controller.test.ts`
+- `src/components/Translation.test.ts`
 - `src/components/TaskProgress.test.ts`
-- `src/controllers/transcribe_controller.test.ts`
+- `src/components/Transcription.test.ts`
 - `src/components/settings/general/Translation.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 
@@ -814,3 +814,13 @@ The translation settings hold whether the cleanup starts checked; each translati
 | Given | the translate dialog into `zh-TW` with the cleanup unchecked |
 | When | translating is started |
 | Then | the Project is translated without the cleanup |
+
+## `TL-103` Starting no translation while another task runs
+
+One task runs at a time, so a translation asked for while one runs leaves the running task as it is.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a subtitle, while a transcription runs |
+| When | its translation is started from the toolbar |
+| Then | no translation is asked for |

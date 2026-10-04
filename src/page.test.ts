@@ -1,10 +1,20 @@
 // @vitest-environment happy-dom
 import { within } from "@testing-library/svelte";
-import { describe, expect, it } from "vitest";
+import { clearMocks } from "@tauri-apps/api/mocks";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
+import { mockPageMount } from "./test_page";
 
 describe("drawPage", () => {
+  beforeEach(() => {
+    mockPageMount();
+  });
+
+  afterEach(() => {
+    clearMocks();
+  });
+
   // Each part is found by what its controller or module reads, so a Svelte Component left out of
   // the page leaves nothing for them to read.
   it.each([

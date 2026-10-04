@@ -1,10 +1,16 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from "vitest";
+import { clearMocks } from "@tauri-apps/api/mocks";
+import { afterEach, describe, expect, it } from "vitest";
 import indexHtml from "../../index.html?raw";
 import { drawPage } from "../page";
+import { mockPageMount } from "../test_page";
 import { iconElement, showIcons } from "./icons";
 
 describe("icons", () => {
+  afterEach(() => {
+    clearMocks();
+  });
+
   it("draws an element naming an icon as that icon, keeping its classes", () => {
     document.body.innerHTML = `<p><i data-lucide="info" class="size-3"></i></p>`;
 
@@ -30,6 +36,7 @@ describe("icons", () => {
   // @behavior IF-028
   it("draws every icon the page names", () => {
     document.documentElement.innerHTML = indexHtml;
+    mockPageMount();
 
     drawPage();
 

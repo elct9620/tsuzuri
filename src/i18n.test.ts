@@ -1,14 +1,20 @@
 // @vitest-environment happy-dom
 import { within } from "@testing-library/svelte";
-import { describe, expect, it } from "vitest";
+import { clearMocks } from "@tauri-apps/api/mocks";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   interfaceLanguageCode,
   setInterfaceLanguage,
   translatePage,
 } from "./i18n";
 import { drawPage } from "./page";
+import { mockPageMount } from "./test_page";
 
 describe("interface language", () => {
+  afterEach(() => {
+    clearMocks();
+  });
+
   async function startWith(locale: string | null): Promise<string> {
     document.body.innerHTML = `<button data-i18n="toolbar.settings"></button>`;
     await setInterfaceLanguage(locale);
@@ -66,6 +72,7 @@ describe("interface language", () => {
   it.each(["zh-TW", "en"])("explains every setting in %s", async (locale) => {
     const settings = document.createElement("div");
     await setInterfaceLanguage(locale);
+    mockPageMount();
 
     drawPage(settings);
 

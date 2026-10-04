@@ -12,6 +12,7 @@ import {
   notifications,
 } from "../ui/test_notification";
 import { drawPage } from "../page";
+import { mockPageMount } from "../test_page";
 import { projectOf } from "../test_project";
 import { fieldValue } from "../editor";
 import FieldController, { composingOption } from "./field_controller";
@@ -714,6 +715,7 @@ describe("SegmentChangesController", () => {
       await enter(0, 2);
 
       const page = document.createElement("div");
+      mockPageMount();
       drawPage(page);
       const list = page.querySelector(
         '[data-transcript-target="list"]',

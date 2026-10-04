@@ -550,8 +550,10 @@ backend/editing.ts            gateway: the one caller of editing commands
 | markup 寫成 Svelte 元件 | 畫面能依區域拆開 |
 | 不改成 custom element | 翻譯與圖示靠靜態掃描 |
 | 多 controller 的外框留在 `Page.svelte` | target 必須是後代 |
+| 有條件的內容用 `{#if}` | `t()` 與 `@lucide/svelte` 重畫時照寫 |
+| 靜態 markup 不放進重畫的區塊 | i18n 與 `data-lucide` 只掃描一次 |
 
-`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。其餘 markup 的 i18n 與 `data-lucide` 圖示寫入後掃描一次，所以不放進會重畫的區塊。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
+`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
 
 ### 4.2 相依規則
 
@@ -561,7 +563,7 @@ backend/editing.ts            gateway: the one caller of editing commands
 | `backend/` | Tauri、`editor/` 的 port | controller |
 | controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
 | `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
-| `page.ts` | `Page.svelte`、i18n、`ui/` | controller |
+| `page.ts` | `Page.svelte`、`components/context.ts`、i18n、`ui/` | controller |
 | `components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/` | controller |
 | `main.ts` | 全部 | — |
 
@@ -574,32 +576,34 @@ Controller 之間只 import outlet 的型別，編輯一律經過 session。對�
 | 誰 | 接法 | 解除 |
 |---|---|---|
 | controller | `data-action` | 隨元素，由 Stimulus |
-| Svelte 元件 | `onclick` 等事件屬性 | 隨元件，由 Svelte |
+| Svelte 元件 | 事件屬性、`<svelte:window>` | 隨元件，由 Svelte |
 | 影片視窗 | `preview` 自己綁定 | 例外，見 4.9 |
 
 ### 4.3 組裝
 
 ```
-main.ts -> drawPage()                               page.ts
-  +-- mount(Page) -> translatePage -> showIcons
 main.ts -> assemble(application, controllers)      assembly.ts
   |-- feed = new ProjectFeed()        reads current_project on each change
   |-- session = new EditingSession(editingPort)
-  |-- feed -> session.follow -> each controller -> session.announce
+  |-- feed -> session.follow -> each follower -> session.announce
   |-- session.onChange -> window: editor:cursor, editor:choice, editor:checks
-  |-- start() -> relayEvents: a Rust event -> window: rust:<event name>
-  |-- start() -> light or dark theme -> window: system:color-scheme
-  |-- start() -> the screen turns -> window: system:orientation
   +-- application.register(name, class extends X { session, feed })
+main.ts -> drawPage(feed)                           page.ts
+  +-- mount(Page, context) -> translatePage -> showIcons
+main.ts -> application.start() -> assembly.start()
+  |-- relayEvents: a Rust event -> window: rust:<event name>
+  |-- light or dark theme -> window: system:color-scheme
+  +-- the screen turns -> window: system:orientation
 ```
 
 | 模式 | 何時用 | 範例 |
 |---|---|---|
 | Composition Root | 組裝 app 範圍物件 | `assembly.ts` |
 | 註冊時注入 | controller 取得依賴 | `class extends` |
+| context 注入 | Svelte 元件取得 feed | `projectFeed()` |
 | 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
-頁面先由 `drawPage` 寫好，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取；要讀 feed 或 session 時，才由 `mount` 的 context 傳入。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。沒有 controller 自己向 Rust 讀專案。
+feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 feed。頁面寫好後 Stimulus 才啟動，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。controller 與 Svelte 元件都不自己向 Rust 讀專案。
 
 ### 4.4 先後順序
 
@@ -633,7 +637,6 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | Controller | 畫面區域 |
 |---|---|
 | `project`、`transcript`、`segment-changes`、`dialog` | 工具列、資源清單、字幕編輯、設定 |
-| `project-settings` | 設定的專案頁 |
 | `recent-projects` | 起始畫面與開啟選單的最近專案 |
 | `speakers` | 說話者選單與設定 modal |
 | `replacement` | 搜尋取代 modal |
@@ -647,8 +650,6 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions` | 版本 modal |
-| `models` | 設定頁 |
-| `model-slot`、`repository` | 模型來源的選單、下載與 Repository |
 | `updates` | 更新檢查、安裝視窗 |
 | `tooltip` | 全頁共用的 tooltip |
 | `shortcuts` | 快速鍵一覽 |
@@ -676,10 +677,9 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
 | `rust:srt-requested` | Rust，經 `relayEvents` | `project` 開啟系統要開的 SRT |
-| `rust:model-download-progress` | Rust，經 `relayEvents` | `model-slot` 顯示下載進度 |
+| `rust:model-download-progress` | Rust，經 `relayEvents` | `ModelSlot` 顯示下載進度 |
 | `system:color-scheme` | 系統，經 `assembly.ts` | `timeline` 重畫波形 |
 | `system:orientation` | 系統，經 `assembly.ts` | `resource-list` 換成該方向的選擇 |
-| `model-slot:choose` | `model-slot` | `models`、`project-settings` 記下來源 |
 | `preferences:saved` | `Preferences` | `timeline` 重讀換段的偏好 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
 | `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
@@ -701,6 +701,10 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | `Logs` | log 目錄與除錯紀錄 |
 | `Preferences` | 偏好頁的換段設定 |
 | `GlossaryDialog` | 詞彙表 modal |
+| `Settings` | 設定的分頁，專案頁只在開啟時出現 |
+| `Project` 與專案的 `Transcription`、`Models` | 專案頁的設定與模型 |
+| `Models`、`ModelSlot` | 整體的模型來源與下載 |
+| `RepositoryDialog` | Hugging Face 的檔案清單 |
 
 ### 4.7 backend
 

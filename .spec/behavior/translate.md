@@ -9,7 +9,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 - `src-tauri/src/project/glossary.rs`
 - `src/controllers/translate_controller.test.ts`
 - `src/controllers/transcribe_controller.test.ts`
-- `src/controllers/translation_settings_controller.test.ts`
+- `src/components/settings/general/Translation.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 
 ## `TL-001` Translating each Segment

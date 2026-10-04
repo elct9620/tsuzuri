@@ -37,7 +37,6 @@ import TranscriptController from "./controllers/transcript_controller";
 import PreferencesController from "./controllers/preferences_controller";
 import TranslateController from "./controllers/translate_controller";
 import TranslationOptionsController from "./controllers/translation_options_controller";
-import TranslationSettingsController from "./controllers/translation_settings_controller";
 import UndoController, { typingOption } from "./controllers/undo_controller";
 import UpdatesController from "./controllers/updates_controller";
 import VersionsController from "./controllers/versions_controller";
@@ -87,7 +86,6 @@ async function start(): Promise<void> {
     preferences: PreferencesController,
     translate: TranslateController,
     "translation-options": TranslationOptionsController,
-    "translation-settings": TranslationSettingsController,
     undo: UndoController,
     updates: UpdatesController,
     versions: VersionsController,

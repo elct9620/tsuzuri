@@ -30,7 +30,6 @@ describe("drawPage", () => {
     ],
     ["Project's Models", "#project-models"],
     ["Components", '[data-controller="components"]'],
-    ["translation settings", '[data-controller="translation-settings"]'],
     ["general Models", "#general-models"],
     ["repository dialog", "#repository-dialog"],
     ["logs", '[data-controller="logs"]'],
@@ -53,6 +52,7 @@ describe("drawPage", () => {
     ["version and updates", "settings.versionAndUpdates"],
     ["about", "settings.about"],
     ["transcription settings", "settings.transcription"],
+    ["translation settings", "settings.translation"],
   ])("writes the %s in the general settings", async (_part, name) => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");

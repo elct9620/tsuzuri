@@ -1,36 +1,34 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
+import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import TranslationSettingsController from "./translation_settings_controller";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import Translation from "./Translation.svelte";
+import {
+  NOTIFICATION_STACK,
+  notifications,
+} from "../../../ui/test_notification";
 
-describe("TranslationSettingsController", () => {
-  let application: Application;
+describe("Translation", () => {
   let savedArgs: unknown;
   /** The command that answers with a failure, if any. */
   let failingCommand: string | null;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const input = (target: string) =>
-    document.querySelector<HTMLInputElement>(
-      `[data-translation-settings-target="${target}"]`,
-    )!;
+  /** The field of the row named `name`, of the given role. */
+  const field = (name: string, role: "spinbutton" | "checkbox") =>
+    within(screen.getByText(name).closest("li")!).getByRole<HTMLInputElement>(
+      role,
+    );
 
-  beforeEach(async () => {
+  async function openSettings(): Promise<void> {
+    render(Translation);
+    await settle();
+  }
+
+  beforeEach(() => {
     savedArgs = undefined;
     failingCommand = null;
-    document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
-      <div data-controller="translation-settings">
-        <input data-translation-settings-target="batchSize" data-action="change->translation-settings#save">
-        <input data-translation-settings-target="retries" data-action="change->translation-settings#save">
-        <input data-translation-settings-target="referenceLines" data-action="change->translation-settings#save">
-        <input type="checkbox" data-translation-settings-target="residentLlama" data-action="change->translation-settings#save">
-        <input data-translation-settings-target="modelKeepSeconds" data-action="change->translation-settings#save">
-        <input type="checkbox" data-translation-settings-target="simplifiedCleaned" data-action="change->translation-settings#save">
-      </div>
-    `;
+    document.body.innerHTML = NOTIFICATION_STACK;
     mockIPC((command, args) => {
       if (command === failingCommand)
         return Promise.reject({ code: "io", detail: "denied" });
@@ -48,22 +46,19 @@ describe("TranslationSettingsController", () => {
         return (args as { settings: unknown }).settings;
       }
     });
-    application = Application.start();
-    application.register("translation-settings", TranslationSettingsController);
-    await settle();
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 
   // @behavior TL-055
   it("saves a translation setting changed on the settings panel", async () => {
-    const batchSize = input("batchSize");
+    await openSettings();
+    const batchSize = field("每批句數", "spinbutton");
 
-    batchSize.value = "4";
-    batchSize.dispatchEvent(new Event("change"));
+    await fireEvent.input(batchSize, { target: { value: "4" } });
+    await fireEvent.change(batchSize);
     await settle();
 
     expect(savedArgs).toEqual({
@@ -80,27 +75,23 @@ describe("TranslationSettingsController", () => {
 
   // @behavior TL-077
   it("saves the Resident llama-server turned off and stops offering the kept seconds", async () => {
-    const residentLlama = input("residentLlama");
+    await openSettings();
 
-    residentLlama.checked = false;
-    residentLlama.dispatchEvent(new Event("change"));
+    field("常駐 llama-server", "checkbox").click();
     await settle();
 
     expect([
       (savedArgs as { settings: { has_resident_llama: boolean } }).settings
         .has_resident_llama,
-      input("modelKeepSeconds").disabled,
+      field("翻譯後保留模型", "spinbutton").disabled,
     ]).toEqual([false, true]);
   });
 
   // @behavior TL-094
   it("says the settings were not read", async () => {
-    application.stop();
     failingCommand = "translation_settings";
 
-    application = Application.start();
-    application.register("translation-settings", TranslationSettingsController);
-    await settle();
+    await openSettings();
 
     expect(notifications()).toEqual(["讀不到設定"]);
   });
@@ -108,8 +99,9 @@ describe("TranslationSettingsController", () => {
   // @behavior TL-095
   it("says the settings were not saved when saving is refused", async () => {
     failingCommand = "save_translation_settings";
+    await openSettings();
 
-    input("batchSize").dispatchEvent(new Event("change"));
+    await fireEvent.change(field("每批句數", "spinbutton"));
     await settle();
 
     expect(notifications()).toEqual(["設定沒有儲存"]);

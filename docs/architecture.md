@@ -14,20 +14,21 @@
 ### 1.1 分層
 
 ```
-            Webview（src/）
-                 │ invoke／listen，只經過 backend/
+            Webview (src/)
+                 │ invoke / listen, only through backend/
  ┌───────────────▼────────────────────────┐
- │ 介面：*/commands.rs、window.rs          │  lib.rs 組裝
+ │ Interface: */commands.rs, window.rs    │  assembled in lib.rs
  └───────────────┬────────────────────────┘
-                 │ 呼叫用例
- ┌───────────────▼────────────────────────┐      ┌─────────────────────────────┐
- │ 應用：用例、CurrentProject、           │◄─────┤ 轉接：project/files、        │
- │       Port（Progress、Steps）          │ 實作 │ processes、whisper、llama、  │
- └───────────────┬────────────────────────┘ Port │ toolchain/{detection,settings}│
-                 ▼                               └──────────────┬──────────────┘
- ┌────────────────────────────────────────┐                     │
- │ 領域：字幕、專案規則、翻譯規則、        │◄────────────────────┘
- │       版本比較、元件尋找順序            │
+                 │ calls use cases
+ ┌───────────────▼────────────────────────┐      ┌──────────────────────────────┐
+ │ Application: use cases, CurrentProject,│◄─────┤ Adapter: project/files,      │
+ │ Ports (Progress, Steps)                │ impl │ processes, conversion,       │
+ └───────────────┬────────────────────────┘ Port │ whisper, llama, diarization/ │
+                 ▼                               │ {sortformer,streaming,       │
+ ┌────────────────────────────────────────┐      │ features}, toolchain/        │
+ │ Domain: transcript, project rules,     │◄─────┴──────────────────────────────┘
+ │ translation rules, Version comparison, │
+ │ Speaker Turns, Component order         │
  └────────────────────────────────────────┘
 ```
 
@@ -61,27 +62,30 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 
 ```
 .
-├─ src/                   Webview（第 4 章）
-│  ├─ main.ts             啟動，呼叫 assembly.ts 組裝（4.3）
-│  ├─ backend/            Rust 的唯一入口
-│  ├─ controllers/        Stimulus controller 與它們的測試
-│  ├─ editor/             編輯核心，不依賴 editor/ 以外（4.5）
-│  ├─ ui/                 共用的畫面模組
-│  └─ locales/            en、zh-Hant
-├─ src-tauri/src/         Rust（第 3 章）
-│  ├─ project/            專案情境
-│  ├─ transcription/      轉錄用例的轉接與指令
-│  ├─ translation/        翻譯規則、轉接與指令
-│  └─ toolchain/          元件與模型的轉接與指令
-├─ vendor/                編譯好的元件，不進版控
-├─ scripts/vendor.sh      依 components.json 編譯元件
-├─ scripts/licenses.ts    授權檢查與授權頁
-├─ scripts/signatures.ts  檢查更新套件的簽章
-├─ scripts/manifest.ts    寫出 latest.json
-├─ scripts/preview_version.ts  預覽版號
-├─ scripts/site.ts        更新網站的版面
-├─ site/                  更新網站的頁面
-└─ .spec/                 glossary、behavior、contract
+├─ src/                   Webview (chapter 4)
+│  ├─ main.ts             starts, assembled by assembly.ts (4.3)
+│  ├─ backend/            the only way to Rust
+│  ├─ controllers/        Stimulus controllers and their tests
+│  ├─ editor/             editing core, depends on nothing outside (4.5)
+│  ├─ ui/                 shared screen modules
+│  └─ locales/            en, zh-Hant
+├─ src-tauri/src/         Rust (chapter 3)
+│  ├─ project/            the Project context
+│  ├─ transcription/      transcription adapters and commands
+│  ├─ diarization/        diarization Model, diarize Step and commands
+│  ├─ translation/        translation rules, adapters and commands
+│  ├─ toolchain/          Component and Model adapters and commands
+│  ├─ steps/              Mode commands' skeleton and cancelling
+│  └─ <module>/           commands of the other modules
+├─ vendor/                built Components, not versioned
+├─ scripts/vendor.sh      builds Components by components.json
+├─ scripts/licenses.ts    license checks and page
+├─ scripts/signatures.ts  checks update signatures
+├─ scripts/manifest.ts    writes latest.json
+├─ scripts/preview_version.ts  preview version number
+├─ scripts/site.ts        update site layout
+├─ site/                  update site pages
+└─ .spec/                 glossary, behavior, contract
 ```
 
 Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規則與用例，`files`、`whisper`、`llama` 等子檔是轉接，`commands.rs` 是介面。
@@ -199,8 +203,6 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 轉錄與辨識自管暫存工作目錄 | 只放中間檔，不屬於專案 |
 | `project/glossary.rs` 同時是規則與 csv 讀寫 | 詞彙表的格式就是它的規則 |
 | `progress.rs` 與 `Progress` 放在同一檔的 `AppHandle` 實作 | 只發兩個事件，放一起最清楚 |
-
-第一張表由內而外，依賴一律往內；第二張表是刻意留下的例外與理由。
 | `failure.rs` 把 `tauri::Error` 轉成 `Failure` | 統一轉換指令的錯誤 |
 | 轉錄與辨識指令請常駐 llama-server 釋放模型 | 一次只載入一個模型（`docs/design.md` 6.4） |
 | `system_opener` 直接執行系統程式 | 開啟目錄與網頁，不是元件 |
@@ -209,6 +211,8 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `current_project` 補上預設模型位置 | 專案不引用工具鏈 |
 | 領域型別標上 specta 的 `Type` | 生成 webview 的型別 |
 | 浮點欄位指定 TS 的 `Number` | specta 預設多一個 null |
+
+第一張表由內而外，依賴一律往內；第二張表是刻意留下的例外與理由。
 
 ### 3.2 情境
 
@@ -278,7 +282,8 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `diarization/` | `turns` | 領域 | Speaker Turn 與指派 |
 | `diarization/` | `sortformer` | 轉接 | 辨識模型 |
 | `diarization/` | `streaming` | 轉接 | 串流推論 |
-| `diarization/` | `features` | 轉接 | mel 特徵與 WAV |
+| `diarization/` | `features` | 轉接 | mel 特徵 |
+| `diarization/` | `subcommand` | 介面 | `diarize` 子行程的入口 |
 | — | `toolchain` | 應用 | 尋找元件、模型設定 |
 | `toolchain/` | `detection` | 轉接 | 偵測已安裝的元件 |
 | `toolchain/` | `hub` | 轉接 | Hugging Face 快取與下載 |
@@ -352,15 +357,16 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 ### 3.7 寫入者
 
 ```
- 使用者（指令）              任務（ModeRun）              外部程式
-  編輯、說話者、取代、清理     轉錄 ─▶ 原文                  任何字幕
-  段落變更、復原、重做         翻譯 ─▶ 那份譯文                 │
-  還原、逐句取回               重譯 ─▶ 勾選段的譯文             │
-       │ 每次一個指令              │ 進度只進 mode_hold           │
-       │ 鎖內寫完                  │ 結束時一次取鎖寫完           │
-       ▼                           ▼                              ▼
- ┌──────────────────────── 字幕檔（基準）─────────────────────────┐
- └────── .tsuzuri/history/：被取代而還沒有備份的版本 ─────────────┘
+ user (commands)             Modes (ModeRun)               other programs
+  edit, Speaker, replace,     transcribe ─▶ original       any subtitle
+  cleanup, Segment change,    diarize ─▶ Speakers               │
+  undo, redo, restore,        translate ─▶ a translation        │
+  take back a cue             retranslate ─▶ chosen cues        │
+       │ one command               │ progress in mode_hold      │
+       │ written in the lock       │ written in one lock at end │
+       ▼                           ▼                            ▼
+ ┌──────────────────────── subtitle files (base) ──────────────────────┐
+ └──── .tsuzuri/history/: versions replaced and not yet backed up ─────┘
 ```
 
 | 寫入者 | 時機 | 寫入 |
@@ -370,6 +376,7 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | 復原、重做 | 使用者改動 | 資源的所有字幕 |
 | 還原、逐句取回 | 使用者改動 | 那份字幕 |
 | 轉錄 | 任務結束 | 原文與譯文的說話者 |
+| 說話者辨識 | 任務結束 | 原文與譯文的說話者 |
 | 翻譯 | 任務結束 | 整份譯文 |
 | 重譯 | 任務結束 | 勾選段的譯文 |
 | 外部程式 | 任何時候 | 任何字幕 |
@@ -495,12 +502,12 @@ answer Phase timings
 
 ```
 lib.rs run() ── manage ──▶ Processes · CurrentProject · ResidentLlama · ModeLock
-                               │ 指令以 State<'_, T> 注入
+                               │ commands take State<'_, T>
                                ▼
-command ── ModeLock::begin(AppPorts::new(..)) ──▶ ModeRun：執行權、ports、keep
-                                                     │ &ModeRun
-                                                     ▼
-                                                  用例（只看得到 Port）
+command ── begin_mode ──▶ ModeRun: turn, ports, keep   + Phases
+                             │ &ModeRun
+                             ▼
+                          use case (sees only Ports) ── end_mode
 ```
 
 | 模式 | 何時用 | 範例 |
@@ -509,7 +516,7 @@ command ── ModeLock::begin(AppPorts::new(..)) ──▶ ModeRun：執行權�
 | 注入 State | 指令取得依賴 | `project/commands.rs` |
 | Mode Run | 任務範圍的狀態 | `transcription/commands.rs` |
 
-任務範圍的東西（取消、它啟動的行程、資源的 hold）由 `ModeRun` 擁有，不寄放在 app 範圍的物件上。`docs/design.md` 6.4 的狀態機動工時重新檢討：Phases 與狀態應一起收進 `ModeRun`。
+任務範圍的東西（取消、它啟動的行程、資源的 hold）由 `ModeRun` 擁有，不寄放在 app 範圍的物件上。Phases 與 `ModeRun` 一起由 `begin_mode` 開始，任務的組合固定，不另寫狀態機。
 
 ## 4 Webview
 

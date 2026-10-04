@@ -14,7 +14,6 @@ export default defineConfig(() => ({
       compilerOptions: {
         // Silenced only while the page moves from Stimulus to Svelte, whose markup still gets its
         // labels from i18n as the page starts; the move ends with this filter gone and no a11y warning.
-        // `pnpm run check` reports errors only, for the same reason.
         warningFilter: (warning) => !warning.code.startsWith("a11y_"),
       },
     }),

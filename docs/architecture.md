@@ -600,10 +600,10 @@ main.ts -> application.start() -> assembly.start()
 |---|---|---|
 | Composition Root | 組裝 app 範圍物件 | `assembly.ts` |
 | 註冊時注入 | controller 取得依賴 | `class extends` |
-| context 注入 | Svelte 元件取得 feed | `projectFeed()` |
+| context 注入 | Svelte 元件取得 feed 與 `TaskRun` | `projectFeed()`、`taskRun()` |
 | 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
-feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 feed。頁面寫好後 Stimulus 才啟動，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。controller 與 Svelte 元件都不自己向 Rust 讀專案。
+feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 feed。`TaskRun` 也經 context 共用。頁面寫好後 Stimulus 才啟動，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。controller 與 Svelte 元件都不自己向 Rust 讀專案。
 
 ### 4.4 先後順序
 
@@ -643,12 +643,9 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 | `cleanup` | 清理簡體的選單、工具列與快速鍵 |
 | `search` | 搜尋列與符合處標記 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
-| `transcribe`、`translate`、`translation-options` | 任務 modal，含重做 |
-| `diarize` | 辨識說話者的 modal |
 | `resource-list` | 資源清單的固定與收起 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
-| `progress` | 標題列的任務進度徽章 |
 | `versions` | 版本 modal |
 | `updates` | 更新檢查、安裝視窗 |
 | `tooltip` | 全頁共用的 tooltip |
@@ -662,7 +659,7 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 
 | 事件或 outlet | 送出者 | 接收者與用途 |
 |---|---|---|
-| `progress:task` | `progress` | 字幕編輯顯示 skeleton |
+| `progress:task` | `TaskProgress` | 字幕編輯顯示 skeleton |
 | `project:select` | `project` | 字幕編輯顯示 skeleton |
 | `project:select` | `project` | `resource-list` 收回蓋上的清單 |
 | `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
@@ -673,7 +670,7 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
 | `editor:choice` | session，經 `assembly.ts` | `timeline` 依來源移動媒體 |
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
-| `rust:pipeline-progress` | Rust，經 `relayEvents` | `progress` 顯示 Phase |
+| `rust:pipeline-progress` | Rust，經 `relayEvents` | `TaskProgress` 顯示 Phase |
 | `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
 | `rust:srt-requested` | Rust，經 `relayEvents` | `project` 開啟系統要開的 SRT |
@@ -682,10 +679,9 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 | `system:orientation` | 系統，經 `assembly.ts` | `resource-list` 換成該方向的選擇 |
 | `preferences:saved` | `Preferences` | `timeline` 重讀換段的偏好 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
-| `translation-options:overwrite` | `translation-options` | 翻譯 modal 改開始鈕文字 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
-| `segment-changes:retranslate` | `segment-changes` | `translate` 開啟重新翻譯 |
-| `segment-changes:retranscribe` | `segment-changes` | `transcribe` 開啟重新轉錄 |
+| `segment-changes:retranslate` | `segment-changes` | `Translation` 開啟重新翻譯 |
+| `segment-changes:retranscribe` | `segment-changes` | `Transcription` 開啟重新轉錄 |
 
 #### 4.6.1 帶行為的 Svelte 元件
 
@@ -696,7 +692,7 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 | `HelpButton` | 設定名稱旁的 ⓘ |
 | `VersionAndUpdates` | 版本列與複製 |
 | `About` | 授權頁、原始程式碼、贊助 |
-| `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
+| 整體的 `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
 | `Components` | 元件的狀態、指定與還原 |
 | `Logs` | log 目錄與除錯紀錄 |
 | `Preferences` | 偏好頁的換段設定 |
@@ -705,6 +701,10 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 | `Project` 與專案的 `Transcription`、`Models` | 專案頁的設定與模型 |
 | `Models`、`ModelSlot` | 整體的模型來源與下載 |
 | `RepositoryDialog` | Hugging Face 的檔案清單 |
+| 工具列的 `Transcription`、`Translation` | 任務 modal，含重做 |
+| `TranslationOptions` | 兩個任務 modal 共用的翻譯選項 |
+| `Diarization` | 辨識說話者的 modal |
+| `TaskProgress` | 標題列的任務進度徽章 |
 
 ### 4.7 backend
 

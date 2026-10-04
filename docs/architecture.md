@@ -648,11 +648,9 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
-| `components`、`models`、`transcription-settings`、`translation-settings`、`logs` | 設定頁 |
+| `components`、`models`、`logs` | 設定頁 |
 | `model-slot`、`repository` | 模型來源的選單、下載與 Repository |
-| `about`、`updates` | 版本與更新、安裝視窗 |
-| `licenses` | 關於的授權頁 |
-| `sponsorship` | 關於的贊助頁面 |
+| `updates` | 更新檢查、安裝視窗 |
 | `tooltip` | 全頁共用的 tooltip |
 | `shortcuts` | 快速鍵一覽 |
 | `notification` | 每則通知的倒數、暫停與按鈕 |
@@ -689,6 +687,17 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
 | `segment-changes:retranslate` | `segment-changes` | `translate` 開啟重新翻譯 |
 | `segment-changes:retranscribe` | `segment-changes` | `transcribe` 開啟重新轉錄 |
+
+#### 4.6.1 帶行為的 Svelte 元件
+
+下列區域的行為已由 Svelte 元件負責，不再經過 controller。
+
+| Svelte 元件 | 畫面區域 |
+|---|---|
+| `HelpButton` | 設定名稱旁的 ⓘ |
+| `VersionAndUpdates` | 版本列與複製 |
+| `About` | 授權頁、原始程式碼、贊助 |
+| `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
 
 ### 4.7 backend
 

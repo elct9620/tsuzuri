@@ -14,11 +14,10 @@ import { translateSegments } from "../backend/translation";
 import { t } from "../i18n";
 import { sourceFileName } from "../ui/models";
 import {
-  notify,
   notifyDiarization,
+  notifyTranscription,
   notifyTranslation,
 } from "../ui/notification";
-import { factorItems, phaseItems } from "../ui/progress";
 import { formatTime } from "../ui/time";
 import type ProgressController from "./progress_controller";
 import type TranslationOptionsController from "./translation_options_controller";
@@ -150,23 +149,7 @@ export default class TranscribeController extends Controller {
           (currentResource(this.project)?.has_subtitle ?? false),
         this.transcriptionScope,
       );
-      notify({
-        title: t("transcribe.done"),
-        kind: "success",
-        items: [
-          [
-            t("transcribe.audio"),
-            t("phases.seconds", {
-              seconds: transcription.audio_seconds.toFixed(1),
-            }),
-          ],
-          ...factorItems(
-            transcription.transcribe_seconds,
-            transcription.audio_seconds,
-          ),
-          ...phaseItems(transcription.phases),
-        ],
-      });
+      notifyTranscription(transcription);
       if (this.diarizationToggleTarget.checked) {
         progress.begin("diarization");
         notifyDiarization(await diarize());

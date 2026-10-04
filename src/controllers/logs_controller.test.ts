@@ -3,6 +3,7 @@ import { Application } from "@hotwired/stimulus";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import LogsController from "./logs_controller";
+import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 
 describe("LogsController", () => {
   let application: Application;
@@ -10,6 +11,8 @@ describe("LogsController", () => {
   let chosenPath: string;
   let debugLogInUse: boolean;
   let hasDebugLogChosen: boolean;
+  /** The command that answers with a failure, if any. */
+  let failingCommand: string | null;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = (name: string) =>
@@ -35,7 +38,9 @@ describe("LogsController", () => {
     chosenPath = "/os/logs";
     debugLogInUse = false;
     hasDebugLogChosen = false;
+    failingCommand = null;
     document.body.innerHTML = `
+      ${NOTIFICATION_STACK}
       <fieldset data-controller="logs">
         <span data-logs-target="path"></span>
         <button id="choose" data-action="logs#choose">切換目錄</button>
@@ -47,6 +52,8 @@ describe("LogsController", () => {
     `;
     mockIPC((command, args) => {
       calls.push({ command, args });
+      if (command === failingCommand)
+        return Promise.reject({ code: "io", detail: "denied" });
       if (command === "log_directory")
         return { in_use: "/os/logs", next_launch: chosenPath };
       if (command === "plugin:dialog|open") return "/logs";
@@ -152,5 +159,46 @@ describe("LogsController", () => {
     await settle();
 
     expect(argsByCommand("open_log_directory")).toHaveLength(1);
+  });
+
+  // @behavior OB-024
+  it("says the log settings were not read", async () => {
+    failingCommand = "log_directory";
+
+    await openSettings();
+
+    expect(notifications()).toEqual(["讀不到日誌目錄"]);
+  });
+
+  // @behavior OB-025
+  it("says the log directory was not changed when recording it fails", async () => {
+    failingCommand = "choose_log_directory";
+    await openSettings();
+
+    await chooseDirectory();
+
+    expect(notifications()).toEqual(["沒有切換日誌目錄"]);
+  });
+
+  // @behavior OB-026
+  it("says the Debug Log was not changed when recording it fails", async () => {
+    failingCommand = "choose_debug_log";
+    await openSettings();
+
+    (target("debugLogToggle") as HTMLInputElement).click();
+    await settle();
+
+    expect(notifications()).toEqual(["沒有切換除錯紀錄"]);
+  });
+
+  // @behavior OB-027
+  it("says the log directory was not opened when opening it fails", async () => {
+    failingCommand = "open_log_directory";
+    await openSettings();
+
+    document.querySelector<HTMLButtonElement>("#open")!.click();
+    await settle();
+
+    expect(notifications()).toEqual(["沒有開啟日誌目錄"]);
   });
 });

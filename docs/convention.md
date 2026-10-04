@@ -69,6 +69,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | 來源 | 名稱 |
 |---|---|
 | Stimulus | `connect`、`disconnect`、`static targets`、`*Target`、`*Targets`、action option 的 `value` |
+| Svelte | Svelte 元件以 `UpperCamelCase` 命名，例如 `Page.svelte` |
 | Rust trait | `fmt`、`from`、`drop`、`enabled`、`log`、`flush` |
 | i18next、Vitest | `t`、`describe`、`it` |
 | DOM、Rust 標準函式庫 | `Event` 的 `composed`、`PoisonError` 的 `poisoned` |

@@ -64,6 +64,8 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 .
 ├─ src/                   Webview (chapter 4)
 │  ├─ main.ts             starts, assembled by assembly.ts (4.3)
+│  ├─ page.ts             draws Page.svelte into <body> (4.3)
+│  ├─ Page.svelte         the page's markup (4.1)
 │  ├─ backend/            the only way to Rust
 │  ├─ controllers/        Stimulus controllers and their tests
 │  ├─ editor/             editing core, depends on nothing outside (4.5)
@@ -523,7 +525,7 @@ command ── begin_mode ──▶ ModeRun: turn, ports, keep   + Phases
 ### 4.1 分層
 
 ```
-index.html                    data-controller, data-action
+index.html, Page.svelte       data-controller, data-action
     |
 controllers/ ---------------> ui/, backend/ (editing aside)
     |                         interface: DOM events to use cases, changes to the page
@@ -540,10 +542,10 @@ backend/editing.ts            gateway: the one caller of editing commands
 
 | 選擇 | 原因 |
 |---|---|
-| 畫面維持單一 `index.html` | 拆檔要加 plugin |
+| markup 寫成 Svelte 元件 | 畫面能依區域拆開 |
 | 不改成 custom element | 翻譯與圖示靠靜態掃描 |
 
-頁面 markup 都在 `index.html`，i18n 與 Lucide 圖示在啟動時掃描整頁；拆成片段或 custom element 就得在執行期掃描，目前的規模還不值得。
+`index.html` 只留 `<body>` 與掛在上面的 controller，其餘 markup 在 `Page.svelte`。i18n 與 Lucide 圖示在寫入後掃描一次，所以這些 markup 寫入後不再重畫。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
 
 ### 4.2 相依規則
 
@@ -553,6 +555,7 @@ backend/editing.ts            gateway: the one caller of editing commands
 | `backend/` | Tauri、`editor/` 的 port | controller |
 | controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
 | `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
+| `page.ts` | `Page.svelte`、i18n、`ui/` | controller |
 | `main.ts` | 全部 | — |
 
 Controller 之間只 import outlet 的型別，編輯一律經過 session。Controller 不自己訂閱 Rust 或 window 的事件，一律寫成 `data-action`，由 Stimulus 隨元素綁定與解除，影片視窗除外（4.9）。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
@@ -560,6 +563,8 @@ Controller 之間只 import outlet 的型別，編輯一律經過 session。Cont
 ### 4.3 組裝
 
 ```
+main.ts -> drawPage()                               page.ts
+  +-- mount(Page) -> translatePage -> showIcons
 main.ts -> assemble(application, controllers)      assembly.ts
   |-- feed = new ProjectFeed()        reads current_project on each change
   |-- session = new EditingSession(editingPort)
@@ -577,7 +582,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | 註冊時注入 | controller 取得依賴 | `class extends` |
 | 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
-Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。沒有 controller 自己向 Rust 讀專案。
+頁面先由 `drawPage` 寫好，controller 才連上。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。沒有 controller 自己向 Rust 讀專案。
 
 ### 4.4 先後順序
 

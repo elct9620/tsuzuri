@@ -6,6 +6,7 @@ Taking back the changes Tsuzuri made to the Current Resource's subtitles, and ma
 
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
+- `src-tauri/src/project/current/tests/undo_behavior.rs`
 - `src/controllers/undo_controller.test.ts`
 
 ## `UD-001` Undoing an edit

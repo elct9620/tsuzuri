@@ -254,7 +254,8 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 | `project/` | `versions` | 領域 | 逐 cue 比較版本 |
 | `project/` | `history` | 領域 | 資源的復原紀錄 |
 | `project/` | `glossary` | 領域、轉接 | 詞彙表與 CSV |
-| `project/` | `current` | 應用 | 開啟、編輯、重新載入 |
+| `project/` | `current` | 應用 | 專案的鎖、任務的 hold 與寫入 |
+| `project/` | `opened_project` | 應用 | 開啟、編輯、重新載入 |
 | `project/` | `mode_hold` | 應用 | 任務對資源的保留 |
 | `project/` | `backups` | 領域 | 備份紀錄與時機 |
 | `project/` | `files` | 轉接 | 檔名、配對、備份 |

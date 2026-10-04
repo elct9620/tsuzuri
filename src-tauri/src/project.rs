@@ -15,6 +15,7 @@ mod files;
 pub mod glossary;
 mod history;
 mod mode_hold;
+mod opened_project;
 mod recent;
 mod requested_srt;
 pub mod versions;

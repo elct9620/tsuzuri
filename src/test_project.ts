@@ -13,6 +13,7 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
       bilingual_order: "original-first",
       is_bilingual_autosaved: false,
       is_overwrite_backed_up: false,
+      is_diarized_after_transcription: false,
       models: { transcription: null, translation: null },
       transcription: {
         has_vad: null,

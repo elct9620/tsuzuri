@@ -30,6 +30,7 @@ describe("TranscribeController", () => {
   let translateArgs: unknown;
   let transcribeArgs: unknown;
   let isCancelAsked: boolean;
+  let commandsSent: string[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = <T extends HTMLElement>(name: string) =>
@@ -78,10 +79,11 @@ describe("TranscribeController", () => {
     translateArgs = undefined;
     transcribeArgs = undefined;
     isCancelAsked = false;
+    commandsSent = [];
     document.body.innerHTML = `
       ${translationOptionsTemplate}
       <div data-controller="transcribe" data-transcribe-progress-outlet="#progress"
-        data-action="translation-options:overwrite->transcribe#followTranslation"
+        data-action="translation-options:overwrite->transcribe#followTranslation segment-changes:retranscribe@window->transcribe#openForScope"
         data-transcribe-translation-options-outlet="#transcribe-options">
         <button data-transcribe-target="openButton" data-action="transcribe#open" disabled>轉錄</button>
         <dialog data-transcribe-target="dialog">
@@ -89,6 +91,9 @@ describe("TranscribeController", () => {
           <p data-transcribe-target="scopeField" hidden><span data-transcribe-target="scope"></span></p>
           <span data-transcribe-target="language"></span>
           <span data-transcribe-target="model"></span>
+          <label data-transcribe-target="diarizationChoice">
+            <input type="checkbox" data-transcribe-target="diarizationToggle" />
+          </label>
           <label data-transcribe-target="translationChoice">
             <input type="checkbox" data-transcribe-target="translationToggle"
               data-action="transcribe#showTranslationOptions">
@@ -111,8 +116,11 @@ describe("TranscribeController", () => {
     `;
     mockIPC(
       (command, args) => {
+        commandsSent.push(command);
         if (command === "current_project") return project;
         if (command === "cancel_task") isCancelAsked = true;
+        if (command === "diarize")
+          return { audio_seconds: 60, diarize_seconds: 4, phases: [] };
         if (command === "model_settings")
           return { transcription: { path: "/models/breeze.bin" } };
         if (command === "transcribe") {
@@ -138,6 +146,73 @@ describe("TranscribeController", () => {
   afterEach(() => {
     application.stop();
     clearMocks();
+  });
+
+  /** The task commands sent, in order. */
+  const tasksSent = () =>
+    commandsSent.filter((command) =>
+      ["transcribe", "diarize", "translate"].includes(command),
+    );
+
+  // @behavior DZ-018
+  it("diarizes once transcribed, before translating", async () => {
+    await hold(media);
+    transcription = async () => ({
+      audio_seconds: 60,
+      transcribe_seconds: 30,
+      phases: [],
+      written_span: null,
+    });
+    target("openButton").click();
+    await settle();
+    target<HTMLInputElement>("diarizationToggle").checked = true;
+    target<HTMLInputElement>("translationToggle").checked = true;
+
+    target("startButton").click();
+    await settle();
+    await settle();
+
+    expect(tasksSent()).toEqual(["transcribe", "diarize", "translate"]);
+  });
+
+  // @behavior DZ-019
+  it("asks to diarize once transcribed as the Project chooses", async () => {
+    const asked = async (isChosen: boolean) => {
+      await hold({
+        ...media,
+        options: {
+          ...media.options,
+          is_diarized_after_transcription: isChosen,
+        },
+      });
+      target("openButton").click();
+      await settle();
+      const isChecked = target<HTMLInputElement>("diarizationToggle").checked;
+      target<HTMLDialogElement>("dialog").close();
+      return isChecked;
+    };
+
+    expect([await asked(false), await asked(true)]).toEqual([false, true]);
+  });
+
+  // @behavior DZ-020
+  it("leaves a transcription within an Audio Window undiarized", async () => {
+    await hold({
+      ...media,
+      options: { ...media.options, is_diarized_after_transcription: true },
+    });
+
+    window.dispatchEvent(
+      new CustomEvent("segment-changes:retranscribe", {
+        detail: { scope: { kind: "rest", first: 0 } },
+      }),
+    );
+    await settle();
+
+    expect([
+      target("diarizationChoice").hidden,
+      target<HTMLInputElement>("diarizationToggle").checked,
+    ]).toEqual([true, false]);
   });
 
   // @behavior TX-007
@@ -261,6 +336,20 @@ describe("TranscribeController", () => {
     expect(notificationItems(0).map(([name]) => name)).not.toContain(
       "即時倍率（RTF）",
     );
+  });
+
+  // @behavior TX-061
+  it("lists the real-time factor", async () => {
+    await hold(media);
+    transcription = async () => ({
+      audio_seconds: 60,
+      transcribe_seconds: 30,
+      phases: [],
+    });
+
+    await start();
+
+    expect(notificationItems(0)).toContainEqual(["即時倍率（RTF）", "0.50"]);
   });
 
   // @behavior TX-025
@@ -446,7 +535,7 @@ describe("TranscribeController", () => {
 
     expect([notifications(), notificationDetail(0)]).toEqual([
       ["轉錄失敗"],
-      "這個資源沒有可轉錄的影片或音訊",
+      "這個資源沒有影片或音訊",
     ]);
   });
 

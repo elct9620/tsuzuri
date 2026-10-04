@@ -5,6 +5,12 @@ import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WaveSurfer from "wavesurfer.js";
 import { assemble } from "../assembly";
+import {
+  DEFAULT_PREFERENCES,
+  type ChoiceLanding,
+  type ChoiceLandings,
+  type Preferences,
+} from "../backend/preferences";
 import type { ProjectView, Segment } from "../backend/project";
 import type { EditingSession } from "../editor";
 import type { Waveform } from "../backend/waveform";
@@ -21,6 +27,7 @@ import TranscriptController from "./transcript_controller";
 describe("Current Segment", () => {
   let application: Application;
   let project: ProjectView | null;
+  let savedPreferences: Preferences;
   let session: EditingSession;
   let takeLayoutBack: () => void;
 
@@ -188,6 +195,7 @@ describe("Current Segment", () => {
     takeLayoutBack = layOutTimeline();
     localStorage.clear();
     project = null;
+    savedPreferences = structuredClone(DEFAULT_PREFERENCES) as Preferences;
     const waveform: Waveform = {
       media: "/talks/ep01.mp4",
       peaks_per_second: 100,
@@ -198,21 +206,25 @@ describe("Current Segment", () => {
       (command) => {
         if (command === "current_project") return project;
         if (command === "extract_waveform") return waveform;
+        if (command === "preferences") return savedPreferences;
         return null;
       },
       { shouldMockEvents: true },
     );
     document.body.innerHTML = `
       <main data-controller="transcript"
-        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
+        data-action="selectionchange@document->transcript#followSelection pointerup@window->transcript#releasePointer editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
         <div data-controller="preview timeline"
-          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
-          <button data-preview-target="foldButton" hidden><span data-preview-target="foldIcon"></span></button>
+          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice preferences:saved@window->timeline#readPreferences keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
+          <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden></button>
+          <button data-preview-target="timelineFoldButton" hidden></button>
           <div data-preview-target="panel">
-          <div data-preview-target="screen">
-            <video data-preview-target="media" data-timeline-target="media"></video>
-            <p data-preview-target="caption"></p>
-            <div data-preview-target="hint" hidden></div>
+          <div data-preview-target="screenRow">
+            <div data-preview-target="screen">
+              <video data-preview-target="media" data-timeline-target="media"></video>
+              <p data-preview-target="caption"></p>
+              <div data-preview-target="hint" hidden></div>
+            </div>
           </div>
           <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
           <span data-preview-target="playbackIcon"></span>
@@ -224,7 +236,7 @@ describe("Current Segment", () => {
           <div data-preview-target="currentSection">
           <p data-preview-target="currentHint"></p>
           <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd></div></div>
-          <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-timeline-target="waveform"></div>
+          <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-preview-target="timeline"><div data-timeline-target="waveform"></div></div>
           </div>
         </div>
         <h2 data-transcript-target="heading"></h2>
@@ -341,6 +353,16 @@ describe("Current Segment", () => {
     expect(media().paused).toBe(true);
   });
 
+  // @behavior PV-192
+  it("plays with Space while the player and its controls are folded", async () => {
+    await show(twoSegments);
+    document.querySelector<HTMLElement>("#fold-player")!.click();
+
+    pressSpace();
+
+    expect(media().paused).toBe(false);
+  });
+
   // @behavior PV-031
   it("leaves Space to the field it is pressed in", async () => {
     await show(twoSegments);
@@ -398,6 +420,148 @@ describe("Current Segment", () => {
     playTo(1.2);
 
     expect(isMarked("data-is-playing")).toEqual([true, true]);
+  });
+
+  describe("telling where another Segment is chosen from", () => {
+    let sources: string[];
+    let listening: AbortController;
+
+    beforeEach(() => {
+      sources = [];
+      listening = new AbortController();
+      window.addEventListener(
+        "editor:choice",
+        () => sources.push(session.choiceSource),
+        { signal: listening.signal },
+      );
+    });
+
+    afterEach(() => listening.abort());
+
+    /** Presses the pointer on `target` with `button`, takes it to focus as Chromium does, and clicks. */
+    function press(target: HTMLElement, button = 0): void {
+      target.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, button }),
+      );
+      target.focus();
+      window.dispatchEvent(new PointerEvent("pointerup", { button }));
+      target.click();
+    }
+
+    const inRow = (index: number, selector: string) =>
+      rows()[index].querySelector<HTMLElement>(selector)!;
+
+    it("tells a text or a translation pressed apart from a time pressed", async () => {
+      await show({ ...twoSegments, shown_translation: "en" });
+
+      press(inRow(1, ".field.text"));
+      press(inRow(0, '[data-edge="end"]'));
+      press(inRow(1, ".field.translation"));
+      press(inRow(0, '[data-edge="start"]'));
+
+      expect(sources).toEqual(["text", "time", "text", "time"]);
+    });
+
+    it("takes a check, the menu or a right click as the row", async () => {
+      await show(twoSegments);
+
+      press(inRow(1, "input.check"));
+      press(inRow(0, ".dropdown-left [role=button]"));
+      press(inRow(1, ".field.text"), 2);
+
+      expect(sources).toEqual(["row", "row", "row"]);
+    });
+
+    it("takes the keyboard's focus reaching a text as the row, but a Speaker menu as its own", async () => {
+      await show(twoSegments);
+
+      textField(1).focus();
+      openSpeakers(0);
+
+      expect(sources).toEqual(["row", "speaker"]);
+    });
+
+    it("forgets a press that chose nothing", async () => {
+      await show(twoSegments);
+      rows()[1].click();
+      press(inRow(1, ".field.text"));
+
+      textField(0).focus();
+
+      expect(sources).toEqual(["row", "row"]);
+    });
+  });
+
+  /** Saves the Preferences with `landing` for `source`, as the settings do, and waits for them to be read. */
+  async function prefer(
+    source: keyof ChoiceLandings,
+    landing: ChoiceLanding,
+  ): Promise<void> {
+    savedPreferences.choice_landings[source] = landing;
+    window.dispatchEvent(new CustomEvent("preferences:saved"));
+    await settle();
+  }
+
+  // @behavior PV-203
+  it("plays on as a text is chosen where the Preferences say so", async () => {
+    await show(twoSegments);
+    await prefer("text", { is_pausing: false, is_from_start: false });
+    await media().play();
+    playTo(0.5);
+
+    const text = textField(1);
+    text.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    text.focus();
+
+    expect([session.cursor.index, media().paused, media().currentTime]).toEqual(
+      [1, false, 0.5],
+    );
+  });
+
+  // @behavior PV-204
+  it("plays another Segment from its start where the Preferences say so", async () => {
+    await show(twoSegments);
+    await prefer("row", { is_pausing: false, is_from_start: true });
+    await media().play();
+    playTo(0.5);
+
+    rows()[1].click();
+
+    expect([media().paused, media().currentTime]).toEqual([false, 1]);
+  });
+
+  // @behavior PV-205
+  it("pauses where the media is where the Preferences say so", async () => {
+    await show(twoSegments);
+    await prefer("speaker", { is_pausing: true, is_from_start: false });
+    await media().play();
+    playTo(0.5);
+
+    openSpeakers(1);
+
+    expect([media().paused, media().currentTime]).toEqual([true, 0.5]);
+  });
+
+  // @behavior PV-206
+  it("pauses where a region is clicked where the Preferences say so", async () => {
+    await show(twoSegments);
+    await prefer("region", { is_pausing: true, is_from_start: false });
+    await media().play();
+    playTo(0.5);
+
+    clickRegion(1, 1.5);
+
+    expect([media().paused, media().currentTime]).toEqual([true, 1.5]);
+  });
+
+  // @behavior PV-207
+  it("plays alone from the start whatever the Preferences say", async () => {
+    await playFirstAlone();
+    await prefer("row", { is_pausing: true, is_from_start: false });
+
+    rows()[1].click();
+
+    expect([media().paused, media().currentTime]).toEqual([false, 1]);
   });
 
   // @behavior PV-075

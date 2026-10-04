@@ -19,12 +19,27 @@ import SegmentChangesController from "./segment_changes_controller";
 import TranscriptController from "./transcript_controller";
 import { typingOption } from "./undo_controller";
 
+/** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
+interface MenuItemSent {
+  item?: string;
+  id?: string;
+  text?: string;
+  enabled?: boolean;
+  accelerator?: string;
+  handler?: { onmessage: (id: string) => void };
+}
+
 describe("SegmentChangesController", () => {
   let application: Application;
   let project: ProjectView | null;
   let changes: unknown[];
+  /** The names of the edit and change commands sent, in the order they were sent. */
+  let sentCommands: string[];
   /** What the Project answers each Segment Change with, or none to make it. */
   let refusal: unknown;
+  /** The items of each menu of the system made, in the order they were made. */
+  let menus: MenuItemSent[][];
+  let popupCount: number;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -64,10 +79,13 @@ describe("SegmentChangesController", () => {
   beforeEach(async () => {
     project = null;
     changes = [];
+    sentCommands = [];
     refusal = null;
+    menus = [];
+    popupCount = 0;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <section data-controller="transcript segment-changes" data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing rust:edit-command@window->segment-changes#applyEditCommand">
+      <section data-controller="transcript segment-changes" data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut rust:edit-command@window->segment-changes#applyEditCommand">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="emptyHint"></p>
@@ -87,6 +105,14 @@ describe("SegmentChangesController", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
+        if (command === "plugin:menu|new") {
+          const { options } = args as { options?: { items?: MenuItemSent[] } };
+          if (options?.items) menus.push(options.items);
+          return [menus.length, `menu-${menus.length}`];
+        }
+        if (command === "plugin:menu|popup") popupCount++;
+        if (command === "edit_segment" || command === "change_segments")
+          sentCommands.push(command);
         if (command === "change_segments") {
           changes.push((args as { change: unknown }).change);
           if (refusal) throw refusal;
@@ -136,9 +162,10 @@ describe("SegmentChangesController", () => {
 
     expect([
       changes,
+      start.value,
       notifications(),
       notificationCountdown(0) !== null,
-    ]).toEqual([[], ["時間要寫成 00:00:01.000 的格式"], true]);
+    ]).toEqual([[], "00:00:00.000", ["時間要寫成 00:00:01.000 的格式"], true]);
   });
 
   // @behavior ED-109
@@ -973,12 +1000,31 @@ describe("SegmentChangesController", () => {
       expect([changes, event.defaultPrevented]).toEqual([[], false]);
     });
 
-    // @behavior ED-098
-    it("leaves Delete with a modifier alone", async () => {
+    // @behavior ED-100
+    it("deletes with Delete on macOS too", async () => {
+      Object.assign(window, {
+        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
+      });
       await hold(threeSegments);
       row(1).click();
 
-      press(document.body, "Delete", { ctrlKey: true });
+      press(document.body);
+      await settle();
+
+      expect(changes).toEqual([{ kind: "deletion", indexes: [1] }]);
+    });
+
+    // @behavior ED-098
+    it.each([
+      { ctrlKey: true },
+      { metaKey: true },
+      { altKey: true },
+      { shiftKey: true },
+    ])("leaves Delete with %o alone", async (modifier) => {
+      await hold(threeSegments);
+      row(1).click();
+
+      press(document.body, "Delete", modifier);
       await settle();
 
       expect(changes).toEqual([]);
@@ -1082,6 +1128,328 @@ describe("SegmentChangesController", () => {
       await settle();
 
       expect([changes, event.defaultPrevented]).toEqual([[], false]);
+    });
+  });
+
+  describe("merging by key", () => {
+    function press(
+      target: EventTarget,
+      key: string,
+      options: KeyboardEventInit = { ctrlKey: true, altKey: true },
+    ): KeyboardEvent {
+      const event = new KeyboardEvent("keydown", {
+        key,
+        bubbles: true,
+        cancelable: true,
+        ...options,
+      });
+      target.dispatchEvent(event);
+      return event;
+    }
+
+    const textOf = (index: number) =>
+      row(index).querySelector<HTMLElement>(".field.text")!;
+
+    afterEach(() => {
+      Object.assign(window, {
+        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
+      });
+    });
+
+    // @behavior ED-171
+    it("merges the Current Segment with the one before with Ctrl+Alt+Up", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      const event = press(document.body, "ArrowUp");
+      await settle();
+
+      expect([changes, event.defaultPrevented]).toEqual([
+        [{ kind: "merge", first: 0, last: 1 }],
+        true,
+      ]);
+    });
+
+    // @behavior ED-172
+    it("merges the Current Segment with the one after with Ctrl+Alt+Down", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      press(document.body, "ArrowDown");
+      await settle();
+
+      expect(changes).toEqual([{ kind: "merge", first: 1, last: 2 }]);
+    });
+
+    // @behavior ED-173
+    it("merges with ⌘+Option+Down while a text is edited on macOS", async () => {
+      Object.assign(window, {
+        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
+      });
+      await hold(threeSegments);
+      textOf(1).focus();
+      await settle();
+
+      press(textOf(1), "ArrowDown", { metaKey: true, altKey: true });
+      await settle();
+
+      expect(changes).toEqual([{ kind: "merge", first: 1, last: 2 }]);
+    });
+
+    // @behavior ED-182
+    it("writes a text still being typed before merging", async () => {
+      await hold(threeSegments);
+      const text = textOf(1);
+      text.focus();
+      await settle();
+      text.textContent = "你好";
+      document.getSelection()!.collapse(text.firstChild!, 2);
+      document.dispatchEvent(new Event("selectionchange"));
+      await settle();
+
+      press(text, "ArrowDown");
+      await settle();
+
+      expect([sentCommands, changes]).toEqual([
+        ["edit_segment", "change_segments"],
+        [{ kind: "merge", first: 1, last: 2 }],
+      ]);
+    });
+
+    // @behavior ED-174
+    it("merges nothing before the first Segment", async () => {
+      await hold(threeSegments);
+      row(0).click();
+
+      const event = press(document.body, "ArrowUp");
+      await settle();
+
+      expect([changes, event.defaultPrevented]).toEqual([[], false]);
+    });
+
+    it("merges nothing after the last Segment", async () => {
+      await hold(threeSegments);
+      row(2).click();
+
+      press(document.body, "ArrowDown");
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    it("leaves Up with Ctrl alone", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      press(document.body, "ArrowUp", { ctrlKey: true });
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior ED-175
+    it("merges nothing while a dialog is open", async () => {
+      await hold(threeSegments);
+      row(1).click();
+      const dialog = document.querySelector<HTMLDialogElement>(
+        '[data-segment-changes-target="shiftDialog"]',
+      )!;
+      dialog.setAttribute("open", "");
+
+      press(dialog.querySelector("button")!, "ArrowUp");
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior ED-176
+    it("merges nothing while a Mode holds the Segments", async () => {
+      await hold(threeSegments);
+      row(1).click();
+      await hold({ ...threeSegments, running_mode: { mode: "transcription" } });
+
+      press(document.body, "ArrowUp");
+      await settle();
+
+      expect(changes).toEqual([]);
+    });
+
+    // @behavior ED-177
+    it("merges once for a held key", async () => {
+      await hold(threeSegments);
+      row(1).click();
+
+      press(document.body, "ArrowUp");
+      press(document.body, "ArrowUp", {
+        ctrlKey: true,
+        altKey: true,
+        repeat: true,
+      });
+      press(document.body, "ArrowUp");
+      await settle();
+
+      expect(changes).toEqual([{ kind: "merge", first: 0, last: 1 }]);
+    });
+  });
+
+  describe("merging from a Segment's menu", () => {
+    const isChoiceHidden = (index: number, action: string) =>
+      row(index).querySelector(`button.${action}`)!.closest("li")!.hidden;
+
+    // @behavior ED-178
+    it("merges a Segment with the one before", async () => {
+      await hold(threeSegments);
+
+      await choose(1, "mergeWithPrevious");
+
+      expect(changes).toEqual([{ kind: "merge", first: 0, last: 1 }]);
+    });
+
+    // @behavior ED-179
+    it("merges a Segment with the one after", async () => {
+      await hold(threeSegments);
+
+      await choose(1, "mergeWithNext");
+
+      expect(changes).toEqual([{ kind: "merge", first: 1, last: 2 }]);
+    });
+
+    // @behavior ED-180
+    it("offers no merge past either end", async () => {
+      await hold(threeSegments);
+
+      expect([
+        isChoiceHidden(0, "mergeWithPrevious"),
+        isChoiceHidden(0, "mergeWithNext"),
+        isChoiceHidden(1, "mergeWithPrevious"),
+        isChoiceHidden(1, "mergeWithNext"),
+        isChoiceHidden(2, "mergeWithPrevious"),
+        isChoiceHidden(2, "mergeWithNext"),
+      ]).toEqual([true, false, false, false, false, true]);
+    });
+
+    // @behavior ED-180
+    it("offers the merge after a row that is no longer the last", async () => {
+      await hold(projectOf({ segments: threeSegments.segments.slice(0, 2) }));
+
+      await hold(threeSegments);
+
+      expect(isChoiceHidden(1, "mergeWithNext")).toBe(false);
+    });
+  });
+
+  describe("the right-click menu", () => {
+    const lastMenu = () => menus[menus.length - 1];
+    const texts = (items: MenuItemSent[]) =>
+      items.map((item) => item.text ?? item.item);
+    /** The text of each visible button in `container`, as the menu it belongs to shows it. */
+    const buttonTexts = (container: Element) =>
+      [...container.querySelectorAll<HTMLButtonElement>("button")]
+        .filter((button) => !button.closest("[hidden]"))
+        .map((button) => button.firstChild!.textContent);
+
+    async function rightClick(target: Element): Promise<boolean> {
+      const event = new MouseEvent("contextmenu", {
+        bubbles: true,
+        cancelable: true,
+      });
+      target.dispatchEvent(event);
+      await settle();
+      return event.defaultPrevented;
+    }
+
+    // @behavior ED-164
+    it("offers a Segment's menu beside the pointer in place of the page's own", async () => {
+      await hold(threeSegments);
+
+      const isTaken = await rightClick(row(0));
+
+      expect([isTaken, popupCount, texts(lastMenu())]).toEqual([
+        true,
+        1,
+        buttonTexts(row(0).querySelector(".change-menu")!),
+      ]);
+    });
+
+    // @behavior ED-165
+    it("makes the right-clicked Segment current", async () => {
+      await hold(threeSegments);
+
+      await rightClick(row(1).querySelector(".start")!);
+
+      expect(row(1).hasAttribute("aria-current")).toBe(true);
+    });
+
+    // @behavior ED-166
+    it("changes the Segment as the choice in its right-click menu says", async () => {
+      await hold(threeSegments);
+      await rightClick(row(0));
+      const insertBelowButton = row(0).querySelector("button.insertAfter")!;
+
+      const choice = lastMenu().find(
+        (item) => item.text === insertBelowButton.firstChild!.textContent,
+      )!;
+      choice.handler!.onmessage(choice.id!);
+      await settle();
+
+      expect(changes).toEqual([{ kind: "insertion-after", index: 0 }]);
+    });
+
+    // @behavior ED-167
+    it("offers the changes for the Checked Segments while some are checked", async () => {
+      await hold(threeSegments);
+      await check(0, 1);
+
+      await rightClick(row(2));
+
+      expect(texts(lastMenu())).toEqual(["合併", "平移", "刪除"]);
+    });
+
+    // @behavior ED-168
+    it("puts cut, copy and paste ahead of the changes in a text field", async () => {
+      await hold(threeSegments);
+
+      await rightClick(row(0).querySelector(".field.text")!);
+
+      expect(
+        lastMenu()
+          .slice(0, 4)
+          .map((item) => item.item),
+      ).toEqual(["Cut", "Copy", "Paste", "Separator"]);
+    });
+
+    it("leaves cut, copy and paste out away from a text field", async () => {
+      await hold(threeSegments);
+
+      await rightClick(row(0));
+
+      expect(lastMenu().some((item) => item.item === "Cut")).toBe(false);
+    });
+
+    // @behavior ED-169
+    it("carries a choice's shortcut into the right-click menu", async () => {
+      await hold(threeSegments);
+      await rightClick(row(0));
+      const splitButton = row(0).querySelector("button.split")!;
+
+      const choice = lastMenu().find(
+        (item) => item.text === splitButton.firstChild!.textContent,
+      )!;
+
+      expect(choice.accelerator).toBe("Ctrl+Alt+Enter");
+    });
+
+    // @behavior ED-170
+    it("offers the changes a running Mode holds disabled", async () => {
+      await hold({
+        ...threeSegments,
+        shown_translation: "en",
+        running_mode: { mode: "translation", language: "en", indexes: null },
+      });
+
+      await rightClick(row(0));
+
+      expect(lastMenu().map((item) => item.enabled)).not.toContain(true);
     });
   });
 });

@@ -9,13 +9,13 @@ use crate::failure::Failure;
 use crate::json_settings;
 use crate::language::Language;
 use crate::processes::{AppPorts, Processes};
-use crate::progress::Progress;
 use crate::project::CurrentProject;
+use crate::steps::commands::{begin_mode, end_mode};
 use crate::steps::ModeLock;
-use crate::timing::{Phase, Phases};
 use crate::toolchain::{self, settings, ModelSlot};
 
 #[tauri::command]
+#[specta::specta]
 pub async fn translate(
     app: AppHandle,
     target: Language,
@@ -25,6 +25,7 @@ pub async fn translate(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn retranslate(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -56,9 +57,7 @@ async fn run_translation(
 ) -> Result<Translation, Failure> {
     let mode_lock = app.state::<ModeLock>();
     let processes = app.state::<Processes>().inner().clone();
-    let run = mode_lock.begin(AppPorts::new(app, &processes)).await;
-    let phases = Phases::start("translate", Phase::Preparation);
-    app.report(Phase::Preparation, None);
+    let (run, phases) = begin_mode(app, &mode_lock, &processes, "translate").await;
     let [llama] =
         toolchain::find_ready_executables(settings::resolver(app)?, [toolchain::LLAMA]).await?;
     let model_settings = settings::load_settings(app)?;
@@ -90,13 +89,12 @@ async fn run_translation(
     {
         resident.release_after(*keep).await;
     }
-    // The Mode's hold and what it showed end with its run, however it ended.
-    drop(run);
-    app.announce_project();
+    end_mode(app, run);
     result
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failure> {
     Ok(TranslationSettings::load(&json_settings::settings_dir(
         &app,
@@ -105,6 +103,7 @@ pub fn translation_settings(app: AppHandle) -> Result<TranslationSettings, Failu
 
 /// Saves the settings, stopping the Resident llama-server when it is turned off and starting it when turned on.
 #[tauri::command]
+#[specta::specta]
 pub async fn save_translation_settings(
     app: AppHandle,
     mode_lock: State<'_, ModeLock>,

@@ -8,11 +8,13 @@ use crate::language::Language;
 use crate::transcript::Segment;
 
 /// A Mode running on one Resource, and so which of its subtitles nothing else may change.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(tag = "mode", rename_all = "kebab-case")]
 pub enum RunningMode {
     /// Holds every subtitle of the Resource.
     Transcription,
+    /// Holds every subtitle of the Resource, as it gives each its Speakers.
+    Diarization,
     /// Holds only the translation into `language`, or only its Segments at `indexes` while they
     /// are translated again.
     Translation {
@@ -66,7 +68,7 @@ impl ModeHold {
             return false;
         }
         match &self.mode {
-            RunningMode::Transcription => true,
+            RunningMode::Transcription | RunningMode::Diarization => true,
             RunningMode::Translation { language, indexes } => {
                 let translation = project
                     .current

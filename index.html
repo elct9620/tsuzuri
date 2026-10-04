@@ -17,7 +17,7 @@
       class="flex h-dvh flex-col"
       data-controller="project recent-projects transcript segment-changes dialog comparison speakers replacement cleanup search"
       data-comparison-versions-outlet="[data-controller~=versions]"
-      data-action="progress:task->transcript#followTask selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->segment-changes#followTasks versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut keydown@window->search#openByShortcut keydown@window->search#moveByShortcut transcript:shown->search#follow keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept rust:srt-requested@window->project#openRequestedSrt"
+      data-action="progress:task->transcript#followTask selectionchange@document->transcript#followSelection pointerup@window->transcript#releasePointer editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->segment-changes#followTasks versions:compare-with->comparison#compareWith keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->replacement#openByShortcut keydown@window->search#openByShortcut keydown@window->search#moveByShortcut transcript:shown->search#follow keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow rust:edit-command@window->segment-changes#applyEditCommand rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept rust:srt-requested@window->project#openRequestedSrt"
     >
       <section class="hero flex-1" data-project-target="startScreen">
         <div class="hero-content flex-col text-center">
@@ -58,26 +58,41 @@
       </section>
 
       <div
-        class="drawer h-dvh lg:drawer-open"
+        class="drawer h-dvh lg:data-is-docked:drawer-open"
         data-project-target="workspace"
+        data-controller="resource-list"
+        data-action="system:orientation@window->resource-list#follow keydown@window->resource-list#toggleByShortcut project:select@window->resource-list#putAway"
         hidden
       >
         <input
           id="resources-drawer"
           type="checkbox"
           class="drawer-toggle"
-          data-project-target="resourcesToggle"
+          data-resource-list-target="toggle"
         />
         <div class="drawer-content @container flex h-dvh min-w-0 flex-col">
           <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
             <label
               for="resources-drawer"
               class="btn btn-square btn-sm btn-ghost drawer-button lg:hidden"
+              data-resource-list-target="overlayButton"
               data-i18n-label="resources.open"
               data-i18n-tooltip="resources.open"
+              data-shortcut="resourceList"
             >
               <i data-lucide="menu" class="size-4"></i>
             </label>
+            <button
+              type="button"
+              class="btn btn-square btn-sm btn-ghost hidden lg:inline-flex"
+              data-resource-list-target="dockButton"
+              data-action="resource-list#toggleDocked"
+              data-i18n-label="resources.dock"
+              data-i18n-tooltip="resources.dock"
+              data-shortcut="resourceList"
+            >
+              <i data-lucide="panel-left" class="size-4"></i>
+            </button>
             <h1 class="navbar-start w-auto min-w-0 flex-1">
               <label
                 class="group input input-ghost input-sm w-full max-w-md hover:border-base-300"
@@ -188,6 +203,17 @@
                           data-transcribe-target="model"
                         ></span>
                       </p>
+                      <label
+                        class="flex items-center gap-2"
+                        data-transcribe-target="diarizationChoice"
+                      >
+                        <input
+                          type="checkbox"
+                          class="checkbox checkbox-sm"
+                          data-transcribe-target="diarizationToggle"
+                        />
+                        <span data-i18n="transcribe.diarizeAfter"></span>
+                      </label>
                       <label
                         class="flex items-center gap-2"
                         data-transcribe-target="translationChoice"
@@ -313,6 +339,68 @@
                         data-translate-target="startButton"
                         data-action="translate#start"
                         data-i18n="translate.start"
+                      ></button>
+                    </div>
+                  </div>
+                  <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                  </form>
+                </dialog>
+              </div>
+
+              <div
+                class="contents"
+                data-controller="diarize"
+                data-diarize-progress-outlet="#progress"
+              >
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  data-diarize-target="openButton"
+                  data-action="diarize#open"
+                  data-i18n-label="toolbar.diarize"
+                  data-i18n-tooltip="toolbar.diarize"
+                  disabled
+                >
+                  <i data-lucide="users" class="size-4"></i
+                  ><span
+                    class="hidden @5xl:inline"
+                    data-i18n="toolbar.diarize"
+                  ></span>
+                </button>
+                <dialog class="modal" data-diarize-target="dialog">
+                  <div class="modal-box">
+                    <h3
+                      class="text-lg font-bold"
+                      data-i18n="diarize.title"
+                    ></h3>
+                    <fieldset class="fieldset gap-3 text-sm">
+                      <p class="flex flex-wrap items-center gap-2">
+                        <span data-i18n="diarize.model"></span>
+                        <span
+                          class="break-all"
+                          data-diarize-target="model"
+                        ></span>
+                      </p>
+                    </fieldset>
+                    <div
+                      role="alert"
+                      class="alert alert-warning mt-2"
+                      data-diarize-target="overwriteWarning"
+                      hidden
+                    >
+                      <span data-i18n="diarize.overwrite"></span>
+                    </div>
+                    <div class="modal-action">
+                      <form method="dialog">
+                        <button class="btn" data-i18n="work.cancel"></button>
+                      </form>
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        data-diarize-target="startButton"
+                        data-action="diarize#start"
+                        data-i18n="diarize.start"
                       ></button>
                     </div>
                   </div>
@@ -461,7 +549,7 @@
           <div
             class="contents"
             data-controller="preview timeline"
-            data-action="editor:cursor@window->timeline#showCursor system:color-scheme@window->timeline#repaintWaveform editor:cursor@window->preview#showCursor rust:video-window-closing@window->preview#closeVideoWindow editor:choice@window->timeline#moveToChoice keydown.space@window->timeline#playOrStop:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange:!control focusin@window->timeline#followFocus pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture pointermove@window->timeline#extendDrawing pointerup@window->timeline#finishDrawing"
+            data-action="editor:cursor@window->timeline#showCursor system:color-scheme@window->timeline#repaintWaveform editor:cursor@window->preview#showCursor rust:video-window-closing@window->preview#closeVideoWindow editor:choice@window->timeline#moveToChoice preferences:saved@window->timeline#readPreferences keydown.space@window->timeline#playOrStop:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange:!control focusin@window->timeline#followFocus pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture pointermove@window->timeline#extendDrawing pointerup@window->timeline#finishDrawing"
           >
             <div
               class="flex items-center gap-2 border-b border-base-300 px-4 py-2"
@@ -862,27 +950,37 @@
               <button
                 type="button"
                 class="btn btn-square btn-sm"
-                data-preview-target="foldButton"
-                data-action="preview#toggleFold"
-                data-i18n-label="preview.fold"
+                data-preview-target="playerFoldButton"
+                data-action="preview#togglePlayerFold"
+                data-i18n-label="preview.foldPlayer"
+                data-i18n-tooltip="preview.foldPlayer"
                 hidden
               >
-                <span class="swap" data-preview-target="foldIcon">
-                  <i data-lucide="panel-top-open" class="swap-on size-4"></i>
-                  <i data-lucide="panel-top-close" class="swap-off size-4"></i>
-                </span>
+                <i data-lucide="square-play" class="size-4"></i>
+              </button>
+              <button
+                type="button"
+                class="btn btn-square btn-sm"
+                data-preview-target="timelineFoldButton"
+                data-action="preview#toggleTimelineFold"
+                data-i18n-label="preview.foldTimeline"
+                data-i18n-tooltip="preview.foldTimeline"
+                hidden
+              >
+                <i data-lucide="audio-waveform" class="size-4"></i>
               </button>
             </div>
             <div
-              class="flex flex-col gap-3 border-b border-base-300 p-3"
+              class="@container flex flex-col gap-3 border-b border-base-300 p-3"
               data-preview-target="panel"
               hidden
             >
               <div
-                class="flex h-[30vh] min-h-40 gap-3 data-is-video-away:h-auto data-is-video-away:min-h-0"
+                class="flex gap-3 data-has-picture:h-[min(30vh,calc((100cqw_-_var(--spacing)*3)*0.4*var(--picture-ratio)))] data-has-picture:min-h-40"
+                data-preview-target="screenRow"
               >
                 <div
-                  class="group relative min-w-0 flex-2 overflow-hidden rounded-box bg-black data-is-away:rounded-none"
+                  class="group relative min-w-0 flex-2 overflow-hidden rounded-box bg-black data-is-away:rounded-none data-[dummy-video=white]:bg-white"
                   data-preview-target="screen"
                 >
                   <video
@@ -1082,6 +1180,34 @@
                                 data-i18n-label="preview.captionBackdropOpaque"
                               />
                             </div>
+                            <p
+                              class="px-3 pt-2 text-sm"
+                              data-i18n="preview.dummyVideo"
+                            ></p>
+                            <div
+                              role="radiogroup"
+                              class="join w-full pt-1"
+                              data-i18n-label="preview.dummyVideo"
+                            >
+                              <input
+                                type="radio"
+                                name="preview-dummy-video"
+                                value="black"
+                                class="join-item btn flex-1 btn-sm"
+                                data-preview-target="dummyVideoColour"
+                                data-action="preview#chooseDummyVideoColour"
+                                data-i18n-label="preview.dummyVideoBlack"
+                              />
+                              <input
+                                type="radio"
+                                name="preview-dummy-video"
+                                value="white"
+                                class="join-item btn flex-1 btn-sm"
+                                data-preview-target="dummyVideoColour"
+                                data-action="preview#chooseDummyVideoColour"
+                                data-i18n-label="preview.dummyVideoWhite"
+                              />
+                            </div>
                             <label
                               class="flex items-center justify-between gap-2 px-3 py-2 text-sm"
                             >
@@ -1161,6 +1287,7 @@
               </div>
               <div
                 class="relative h-28 rounded-box border border-base-300 px-2 pt-2 pb-6"
+                data-preview-target="timeline"
               >
                 <div
                   class="absolute top-1 right-1 z-10 flex items-center gap-1"
@@ -1621,6 +1748,25 @@
                         type="checkbox"
                         class="toggle"
                         data-project-settings-target="overwriteBackup"
+                        data-action="change->project-settings#setOptions"
+                      />
+                    </li>
+                    <li class="list-row items-center">
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span
+                          data-i18n="settings.diarizationAfterTranscription"
+                        ></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.diarizationAfterTranscriptionHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        class="toggle"
+                        data-project-settings-target="diarizationAfterTranscription"
                         data-action="change->project-settings#setOptions"
                       />
                     </li>
@@ -2535,6 +2681,72 @@
                         ></button>
                       </div>
                     </li>
+                    <li
+                      class="list-row items-center"
+                      data-controller="model-slot"
+                      data-model-slot-slot-value="diarization"
+                      data-model-slot-repository-outlet="#repository-dialog"
+                      data-action="rust:model-download-progress@window->model-slot#showProgress"
+                    >
+                      <span class="flex w-32 items-center gap-1 font-medium">
+                        <span data-i18n="slots.diarization"></span>
+                        <span
+                          tabindex="0"
+                          class="cursor-help text-base-content/50"
+                          data-i18n-tooltip="settings.diarizationModelHelp"
+                          ><i data-lucide="info" class="size-3.5"></i
+                        ></span>
+                      </span>
+                      <select
+                        class="select select-sm w-full"
+                        data-model-slot-target="menu"
+                        data-action="model-slot#chooseFromMenu"
+                        data-i18n-label="slots.diarization"
+                      ></select>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-slot="diarization"
+                          data-action="models#choose"
+                          data-i18n="settings.chooseFile"
+                        ></button>
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          data-action="model-slot#pickFromRepository"
+                          data-i18n="models.repository"
+                        ></button>
+                      </div>
+                      <span
+                        class="list-col-wrap col-[2/span_2] break-all text-xs text-base-content/70 [&.missing]:text-error"
+                        data-model-slot-target="status"
+                        data-models-target="status"
+                        data-slot="diarization"
+                        data-i18n="models.notChosen"
+                      ></span>
+                      <div
+                        class="list-col-wrap col-[2/span_2] flex items-center gap-2"
+                        data-model-slot-target="download"
+                        hidden
+                      >
+                        <progress
+                          class="progress progress-primary w-full"
+                          max="100"
+                          data-model-slot-target="downloadBar"
+                        ></progress>
+                        <span
+                          class="text-xs whitespace-nowrap"
+                          data-model-slot-target="downloadLabel"
+                        ></span>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs"
+                          data-action="model-slot#cancelDownload"
+                          data-i18n="models.cancelDownload"
+                        ></button>
+                      </div>
+                    </li>
                   </ul>
                 </fieldset>
                 <dialog
@@ -2740,6 +2952,46 @@
                   </dialog>
                 </fieldset>
               </div>
+            </div>
+            <input
+              type="radio"
+              name="settings-tabs"
+              class="tab"
+              data-i18n-label="settings.preferences"
+            />
+            <div class="tab-content pt-4">
+              <fieldset class="fieldset text-sm" data-controller="preferences">
+                <legend
+                  class="fieldset-legend"
+                  data-i18n="preferences.choosing"
+                ></legend>
+                <ul
+                  class="list rounded-box border border-base-300"
+                  data-preferences-target="landings"
+                >
+                  <li
+                    class="list-row items-center text-xs text-base-content/60"
+                  >
+                    <span class="list-col-grow">
+                      <span
+                        tabindex="0"
+                        class="cursor-help"
+                        data-i18n-tooltip="preferences.switchesHelp"
+                        ><i data-lucide="info" class="size-3.5"></i
+                      ></span>
+                    </span>
+                    <span
+                      class="w-20 text-center"
+                      data-i18n="preferences.pausing"
+                    ></span>
+                    <span
+                      class="w-20 text-center"
+                      data-i18n="preferences.fromStart"
+                    ></span>
+                  </li>
+                </ul>
+                <p class="label" data-i18n="preferences.aloneHint"></p>
+              </fieldset>
             </div>
           </div>
           <div class="modal-action">

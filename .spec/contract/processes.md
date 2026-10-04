@@ -5,6 +5,7 @@ The one way a Component is launched, so every child process is recorded and clea
 ## Includes
 
 - `src-tauri/src/processes.rs`
+- `src-tauri/src/diarization/subcommand.rs`
 
 ## `Processes::spawn`
 
@@ -36,7 +37,7 @@ impl Processes {
 
 ## `reap_strays`
 
-Kill the Stray Processes a previous launch recorded, then clear the record.
+Kill the Stray Processes a previous launch recorded, never the launching app itself, then clear the record.
 
 | Attribute | Value |
 | --- | --- |
@@ -44,4 +45,16 @@ Kill the Stray Processes a previous launch recorded, then clear the record.
 
 ```rust
 pub fn reap_strays(record: &Path) {}
+```
+
+## `run_diarize_subcommand`
+
+Run Speaker Diarization as a child process of the app when the first argument is `diarize`, as `diarize <model.gguf> <audio.wav> <turns.json>`: write the Speaker Turns to `turns.json`, report `diarize: progress = N%` lines to `stderr` as it goes, and answer exit code 0, or 1 with the reason on `stderr`. Any other arguments answer none, and the app starts as usual.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+pub fn run_diarize_subcommand(args: &[String], stderr: &mut impl Write) -> Option<i32> {}
 ```

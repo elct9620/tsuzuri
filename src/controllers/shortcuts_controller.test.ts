@@ -99,6 +99,21 @@ describe("ShortcutsController", () => {
     expect([isOpenByCtrl, dialog().open]).toEqual([false, true]);
   });
 
+  it.each<[string, KeyboardEventInit]>([
+    ["Ctrl+Alt+/", { key: "/", ctrlKey: true, altKey: true }],
+    ["Ctrl+Meta+/", { key: "/", ctrlKey: true, metaKey: true }],
+    ["Ctrl+/ while composing", { key: "/", ctrlKey: true, isComposing: true }],
+    ["/", { key: "/" }],
+    ["Ctrl+?", { key: "?", shiftKey: true, ctrlKey: true }],
+    ["Meta+?", { key: "?", shiftKey: true, metaKey: true }],
+    ["Alt+?", { key: "?", shiftKey: true, altKey: true }],
+    ["? while composing", { key: "?", shiftKey: true, isComposing: true }],
+  ])("leaves %s alone", (_name, init) => {
+    press("#elsewhere", init);
+
+    expect(dialog().open).toBe(false);
+  });
+
   // @behavior IF-033
   it("lists only the keys of macOS on macOS", () => {
     usePlatform("macos");
@@ -119,6 +134,15 @@ describe("ShortcutsController", () => {
       "Ctrl",
       "H",
     ]);
+  });
+
+  // @behavior IF-045
+  it("lists Esc beside the double click for the Video Window's full screen", () => {
+    press("#elsewhere", { key: "?", code: "Slash", shiftKey: true });
+
+    expect(
+      rows().find((row) => row.id === "videoWindowFullscreen")?.keys,
+    ).toEqual(["點兩下", "Esc"]);
   });
 
   // @behavior IF-034

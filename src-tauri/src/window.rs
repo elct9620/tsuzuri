@@ -1,15 +1,18 @@
 use std::collections::HashMap;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tauri::webview::NewWindowResponse;
 use tauri::{
-    App, AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Monitor, PhysicalPosition,
-    PhysicalSize, Runtime, Size, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window,
-    WindowEvent,
+    App, AppHandle, LogicalPosition, LogicalSize, Manager, Monitor, PhysicalPosition, PhysicalSize,
+    Runtime, Size, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window, WindowEvent,
 };
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
+use tauri_specta::Event;
 
 use crate::json_settings;
+
+/// The label of the main window, as `tauri.conf.json` names it.
+const MAIN_WINDOW: &str = "main";
 
 /// The label of the window the main window's page opens for the Preview's video.
 pub const VIDEO_WINDOW: &str = "video";
@@ -17,6 +20,12 @@ pub const VIDEO_WINDOW: &str = "video";
 /// The page the Video Window opens on: blank, so it shares the main window's origin and the main
 /// window's page moves its own video into it.
 const VIDEO_WINDOW_PAGE: &str = "about:blank";
+
+/// The smallest the Video Window is made, a 16:9 frame.
+const VIDEO_WINDOW_MIN_SIZE: LogicalSize<f64> = LogicalSize {
+    width: 320.0,
+    height: 180.0,
+};
 
 /// The size when the screen reports none: one and a half times the 800×600 the window is configured with.
 const FALLBACK_SIZE: LogicalSize<f64> = LogicalSize {
@@ -39,7 +48,7 @@ pub fn size_first_window(app: &App) -> tauri::Result<()> {
     if saved_state.exists() {
         return Ok(());
     }
-    let Some(window) = app.get_webview_window("main") else {
+    let Some(window) = app.get_webview_window(MAIN_WINDOW) else {
         return Ok(());
     };
     let work_area = window
@@ -51,7 +60,7 @@ pub fn size_first_window(app: &App) -> tauri::Result<()> {
 
 /// Shows the main window in front, as when a second launch hands its request over to it.
 pub fn bring_main_window_forward<R: Runtime>(app: &AppHandle<R>) {
-    if let Some(window) = app.get_webview_window("main") {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
         let _ = window.unminimize();
         let _ = window.set_focus();
     }
@@ -65,7 +74,7 @@ pub fn build_main_window(app: &App) -> tauri::Result<WebviewWindow> {
         .app
         .windows
         .iter()
-        .find(|window| window.label == "main")
+        .find(|window| window.label == MAIN_WINDOW)
         .ok_or(tauri::Error::WindowNotFound)?;
     let handle = app.handle().clone();
     WebviewWindowBuilder::from_config(app.handle(), config)?
@@ -99,7 +108,7 @@ fn open_video_window<R: Runtime>(
     let builder = WebviewWindowBuilder::new(app, VIDEO_WINDOW, WebviewUrl::External(url))
         .window_features(features)
         .title("Tsuzuri")
-        .min_inner_size(320.0, 180.0)
+        .min_inner_size(VIDEO_WINDOW_MIN_SIZE.width, VIDEO_WINDOW_MIN_SIZE.height)
         .on_document_title_changed(|window, title| {
             let _ = window.set_title(&title);
         });
@@ -182,19 +191,25 @@ fn save_and_read_video_window_place<R: Runtime>(app: &AppHandle<R>) -> Option<Wi
     places.get(VIDEO_WINDOW).copied()
 }
 
+/// The Video Window was asked to close and stays open until the main window's page takes its
+/// video back.
+// @event video-window-closing
+#[derive(Clone, Serialize, specta::Type, Event)]
+#[tauri_specta(event_name = "video-window-closing")]
+pub struct VideoWindowClosing;
+
 /// Keeps the Video Window open when asked to close, and asks the main window's page to take its
 /// video back first: the video lives in that page, and would end with the Video Window's.
 pub fn hand_back_video<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
     if let (VIDEO_WINDOW, WindowEvent::CloseRequested { api, .. }) = (window.label(), event) {
         api.prevent_close();
-        // @event video-window-closing
-        let _ = window.emit("video-window-closing", ());
+        let _ = VideoWindowClosing.emit(window);
     }
 }
 
 /// Closes the Video Window along with the main window, which no longer moves its video back.
 pub fn close_video_with_main<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
-    if let ("main", WindowEvent::Destroyed) = (window.label(), event) {
+    if let (MAIN_WINDOW, WindowEvent::Destroyed) = (window.label(), event) {
         if let Some(video) = window.app_handle().get_webview_window(VIDEO_WINDOW) {
             let _ = video.destroy();
         }

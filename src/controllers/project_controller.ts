@@ -4,7 +4,6 @@ import { message, open, SRT_FILTERS } from "../backend/dialog";
 import {
   openProject,
   type OpenCommand,
-  refreshProject,
   reloadProject,
   selectResource,
   setProjectOptions,
@@ -72,7 +71,6 @@ export default class ProjectController extends Controller {
     "workspace",
     "name",
     "resources",
-    "resourcesToggle",
     "glossary",
   ];
 
@@ -83,8 +81,6 @@ export default class ProjectController extends Controller {
   /** The Project Name in the toolbar, typed over to rename the Project; its default value is the name shown. */
   declare readonly nameTarget: HTMLInputElement;
   declare readonly resourcesTarget: HTMLUListElement;
-  /** The drawer's checkbox, checked while the Resource list is laid over the editor of a narrow window. */
-  declare readonly resourcesToggleTarget: HTMLInputElement;
   declare readonly glossaryTarget: HTMLElement;
 
   declare readonly feed: ProjectFeed;
@@ -114,13 +110,13 @@ export default class ProjectController extends Controller {
   /** Opens the SRT file the system asked to open, as one chosen here; bound to `rust:srt-requested`. */
   async openRequestedSrt(): Promise<void> {
     const path = await takeRequestedSrt();
-    if (path !== null) await this.run("open_srt", path);
+    if (path !== null) await this.run("openSrt", path);
   }
 
   async openDirectory({ currentTarget }: Event): Promise<void> {
     closeMenu(currentTarget);
     const path = await open({ multiple: false, directory: true });
-    if (path !== null) await this.run("open_project", path);
+    if (path !== null) await this.run("openProject", path);
   }
 
   async openSrt({ currentTarget }: Event): Promise<void> {
@@ -130,7 +126,7 @@ export default class ProjectController extends Controller {
       directory: false,
       filters: SRT_FILTERS,
     });
-    if (path !== null) await this.run("open_srt", path);
+    if (path !== null) await this.run("openSrt", path);
   }
 
   /**
@@ -142,17 +138,16 @@ export default class ProjectController extends Controller {
     params,
   }: Event & { params: { directory: string } }): Promise<void> {
     closeMenu(currentTarget);
-    const isOpened = await this.run("open_project", params.directory);
-    if (!isOpened) await refreshProject();
+    const isOpened = await this.run("openProject", params.directory);
+    if (!isOpened) await this.feed.refresh();
   }
 
   async select({ currentTarget }: Event): Promise<void> {
-    const name = (currentTarget as HTMLElement).dataset.name;
-    this.resourcesToggleTarget.checked = false;
+    const name = (currentTarget as HTMLElement).dataset.name!;
     this.dispatch("select");
     const isSelected = await this.report(() => selectResource(name));
     // Rust announces nothing when it could not select, so the editor is told to read what it holds.
-    if (!isSelected) await refreshProject();
+    if (!isSelected) await this.feed.refresh();
   }
 
   /**

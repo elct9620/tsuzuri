@@ -13,12 +13,29 @@ export function isRun(indexes: number[]): boolean {
   );
 }
 
+/** Which neighbour a Segment is merged with. */
+export type MergeDirection = "previous" | "next";
+
+/** The run merging the Segment at `index` of `count` with its neighbour in `direction`, or none past either end. */
+export function runWithNeighbour(
+  index: number,
+  direction: MergeDirection,
+  count: number,
+): { first: number; last: number } | null {
+  const neighbour = direction === "previous" ? index - 1 : index + 1;
+  if (neighbour < 0 || neighbour >= count) return null;
+  return {
+    first: Math.min(index, neighbour),
+    last: Math.max(index, neighbour),
+  };
+}
+
 /** A field of a row: a text, a translation, or any other such as a time or a Speaker. */
 export type FieldKind = "text" | "translation" | "other";
 
 /**
  * Whether the Mode running on the Current Resource holds a field of `kind` of the Segment at
- * `index`: a transcription holds every field, a translation every one but the texts and a
+ * `index`: a transcription or a diarization holds every field, a translation every one but the texts and a
  * translation it does not write, which translating chosen Segments again narrows to theirs.
  */
 export function isHeld(
@@ -27,7 +44,7 @@ export function isHeld(
   index: number,
 ): boolean {
   if (runningMode === null) return false;
-  if (runningMode.mode === "transcription") return true;
+  if (runningMode.mode !== "translation") return true;
   if (kind === "text") return false;
   if (kind !== "translation") return true;
   const { language, indexes } = runningMode;

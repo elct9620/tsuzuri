@@ -8,6 +8,7 @@ use crate::json_settings::settings_dir;
 use crate::system_opener::open_in_system;
 
 #[tauri::command]
+#[specta::specta]
 pub fn log_directory(
     app: AppHandle,
     log_dir: State<'_, LogDirInUse>,
@@ -21,6 +22,7 @@ pub fn log_directory(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn choose_log_directory(
     app: AppHandle,
     log_dir: State<'_, LogDirInUse>,
@@ -31,6 +33,7 @@ pub fn choose_log_directory(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn debug_log(app: AppHandle, debug_log: State<'_, DebugLogInUse>) -> Result<DebugLog, Failure> {
     let settings = LogSettings::load(&settings_dir(&app)?)?;
     Ok(DebugLog {
@@ -40,6 +43,7 @@ pub fn debug_log(app: AppHandle, debug_log: State<'_, DebugLogInUse>) -> Result<
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn choose_debug_log(
     app: AppHandle,
     debug_log: State<'_, DebugLogInUse>,
@@ -50,6 +54,7 @@ pub fn choose_debug_log(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn open_log_directory(log_dir: State<'_, LogDirInUse>) -> Result<(), Failure> {
     open_in_system(&log_dir.0)?;
     Ok(())

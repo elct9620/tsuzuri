@@ -17,7 +17,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/search_controller.test.ts`
 - `src/editor/*.test.ts`
 - `src-tauri/src/replacement.rs`
-- `src-tauri/src/project/current.rs`
+- `src-tauri/src/project/current/tests/editing_behavior.rs`
 
 ## `ED-001` Writing an edited text to the Project
 
@@ -459,6 +459,104 @@ The Project starts the second half past the spaces at the split, so the text the
 | Given | a Project in the panel with its first and third Segments checked |
 | When | the bar for Checked Segments shows |
 | Then | merging is not offered |
+
+## `ED-171` Merging the Current Segment with the one before by shortcut
+
+A sentence cut apart by transcription is joined back line by line while proofreading, so Ctrl+Alt+Up, or ⌘+Option+Up on macOS, merges the Current Segment with the one before it: the keys of a split, with the direction to merge. They work in a text field too, since a merge needs no Cursor.
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux, three Segments, the second current |
+| When | Ctrl+Alt+Up is pressed |
+| Then | the Project is asked to merge the first through the second |
+
+## `ED-172` Merging the Current Segment with the one after by shortcut
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux, three Segments, the second current |
+| When | Ctrl+Alt+Down is pressed |
+| Then | the Project is asked to merge the second through the third |
+
+## `ED-173` Merging by shortcut while a text is edited
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on macOS, three Segments, with focus in the second Segment's text |
+| When | ⌘+Option+Down is pressed |
+| Then | the Project is asked to merge the second through the third |
+
+## `ED-182` Writing a text still being typed before merging
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux, three Segments, with `你好` typed into the second Segment's text and not yet written |
+| When | Ctrl+Alt+Down is pressed |
+| Then | the Project is asked to write `你好` into the second Segment, then to merge the second through the third |
+
+## `ED-174` Merging nothing before the first Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux, three Segments, the first current |
+| When | Ctrl+Alt+Up is pressed |
+| Then | no Segments are merged |
+
+## `ED-175` Leaving the merge shortcuts to an open dialog
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux, three Segments, the second current, with a dialog open over the editor |
+| When | Ctrl+Alt+Up is pressed |
+| Then | no Segments are merged |
+
+## `ED-176` Merging nothing by shortcut while a Mode holds the Segments
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux, three Segments, the second current, while a transcription runs on the Current Resource |
+| When | Ctrl+Alt+Up is pressed |
+| Then | no Segments are merged |
+
+## `ED-177` Merging once for a held merge shortcut
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux, three Segments, the second current |
+| When | Ctrl+Alt+Up is held down until it repeats |
+| Then | the Project is asked to merge the first through the second once |
+
+## `ED-178` Merging a Segment with the one before from its menu
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments |
+| When | merging with the one before is chosen from the second Segment's menu |
+| Then | the Project is asked to merge the first through the second |
+
+## `ED-179` Merging a Segment with the one after from its menu
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments |
+| When | merging with the one after is chosen from the second Segment's menu |
+| Then | the Project is asked to merge the second through the third |
+
+## `ED-180` Offering no merge past either end
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments |
+| When | the first and the last Segment's menus are read |
+| Then | the first offers no merge with the one before, and the last none with the one after |
+
+## `ED-181` Showing the merge shortcuts in a Segment's menu
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux |
+| When | the second of three Segments' menu is read |
+| Then | merging with the one before reads `Ctrl+Alt+↑` beside it, and with the one after `Ctrl+Alt+↓` |
 
 ## `ED-065` Deleting the Checked Segments
 
@@ -1431,3 +1529,65 @@ Moving to a match makes its Segment current, so the list scrolls to it and the P
 | Given | the search bar open |
 | When | `(` is searched for as a regular expression |
 | Then | nothing is marked and the bar says the pattern cannot be read |
+
+## `ED-164` Opening a Segment's menu with a right-click
+
+Subtitle editors offer a line's changes where the pointer is, as Aegisub and Subtitle Edit do on a right-click, so the changes a Segment's menu holds open beside the pointer as a menu of the system, without reaching for the button at the row's end.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with no Segment checked |
+| When | the first Segment's row is right-clicked |
+| Then | a menu offers what the first Segment's menu offers, in its order |
+
+## `ED-165` Making a right-clicked Segment current
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment is current |
+| When | the second Segment's row is right-clicked |
+| Then | the second Segment is current |
+
+## `ED-166` Changing a Segment from its right-click menu
+
+| Step | Statement |
+| --- | --- |
+| Given | the menu a right-click on the first Segment's row opened |
+| When | inserting below is chosen from it |
+| Then | the Project is asked to insert a Segment after the first |
+
+## `ED-167` Opening the checked Segments' changes with a right-click
+
+While Segments are checked, a change chosen applies to every Checked Segment, as the changes offered above the list for them do.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with two Segments checked |
+| When | a Segment's row is right-clicked |
+| Then | a menu offers the changes offered for the Checked Segments, in their order |
+
+## `ED-168` Offering cut, copy and paste in a text field's right-click menu
+
+The system's menu takes the place of the one the page would show, so a text field keeps the clipboard commands it had.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel |
+| When | the first Segment's original is right-clicked |
+| Then | the menu opens with cut, copy and paste ahead of the Segment's changes |
+
+## `ED-169` Showing a shortcut in the right-click menu
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux |
+| When | a Segment's row is right-clicked |
+| Then | splitting at the Cursor carries `Ctrl+Alt+Enter` in the menu |
+
+## `ED-170` Holding a Segment's changes in its right-click menu
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation running over the first Segment |
+| When | its row is right-clicked |
+| Then | the changes the running Mode holds are offered disabled |

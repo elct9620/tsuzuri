@@ -82,7 +82,7 @@ pub fn hub_client(
 }
 
 /// A file of a Hugging Face Repository, by its path in the Repository.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct RepositoryFile {
     pub path: String,
     pub size: u64,
@@ -110,7 +110,7 @@ pub async fn list_files(client: &HFClient, repo: &str) -> Result<Vec<RepositoryF
 }
 
 /// How much of a Model being downloaded has arrived.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct DownloadProgress {
     pub repo: String,
     pub file: String,

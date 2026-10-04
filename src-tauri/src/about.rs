@@ -8,7 +8,7 @@ use crate::release_number::{is_preview_build, release_name};
 
 /// The App Build: the release number of the running Tsuzuri with its Release Name, whether it is a
 /// Preview build, whether its install offers the Preview channel, and the commit it was built from.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct AppBuild {
     pub release_number: &'static str,
     pub release_name: String,

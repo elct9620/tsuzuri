@@ -68,7 +68,7 @@ impl LogSettings {
 }
 
 /// The directory the log is written to in this launch, and the one chosen for the next.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct LogDirectory {
     pub in_use: PathBuf,
     pub next_launch: PathBuf,
@@ -78,7 +78,7 @@ pub struct LogDirectory {
 pub struct LogDirInUse(pub PathBuf);
 
 /// Whether the Debug Log is written in this launch, and whether it is chosen for the next.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct DebugLog {
     pub is_written_now: bool,
     pub is_written_next_launch: bool,

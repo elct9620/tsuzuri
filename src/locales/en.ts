@@ -8,6 +8,7 @@ const en = {
     openSrt: "Open an SRT file",
     transcribe: "Transcribe",
     translate: "Translate",
+    diarize: "Diarize",
     settings: "Settings",
     export: "Export",
     original: "Save original as",
@@ -33,6 +34,7 @@ const en = {
     title: "Resources",
     open: "Resources",
     close: "Put the resources away",
+    dock: "Dock or fold the resources",
     reload: "Reload",
     reloadHint: "Read the folder again for files changed elsewhere",
     subtitleOnly: "Subtitle",
@@ -65,6 +67,7 @@ const en = {
       "The subtitle and the translation into this language will be overwritten",
     start: "Transcribe",
     overwriteAndStart: "Overwrite and transcribe",
+    diarizeAfter: "Diarize once transcribed",
     translateAfter: "Translate once transcribed",
     again: "Transcribe again",
     scopeRest: "From {{time}} on",
@@ -76,6 +79,17 @@ const en = {
     factor: "Real-time factor (RTF)",
     failed: "Transcription failed",
     cancelled: "Transcription cancelled",
+  },
+  diarize: {
+    title: "Tell speakers apart",
+    model: "Model",
+    overwrite:
+      "The Speakers the Segments carry will be replaced; the subtitle is backed up first",
+    start: "Diarize",
+    overwriteAndStart: "Replace and diarize",
+    done: "Speakers told apart",
+    failed: "Speaker diarization failed",
+    cancelled: "Speaker diarization cancelled",
   },
   translate: {
     notShown: "Translation not shown",
@@ -126,6 +140,8 @@ const en = {
     insertAbove: "Insert above",
     insertBelow: "Insert below",
     split: "Split at the Cursor",
+    mergeWithPrevious: "Merge with the one above",
+    mergeWithNext: "Merge with the one below",
     delete: "Delete",
     retranslate: "Translate again",
     retranscribe: "Transcribe again",
@@ -141,6 +157,9 @@ const en = {
     clearChecks: "Clear checks",
     notSaved: "Edit not saved",
     changes: "Segment changes",
+    cut: "Cut",
+    copy: "Copy",
+    paste: "Paste",
     notUndone: "Change not undone",
     notRedone: "Change not redone",
   },
@@ -184,6 +203,9 @@ const en = {
     captionBackdropNone: "None",
     captionBackdropTranslucent: "Translucent",
     captionBackdropOpaque: "Black",
+    dummyVideo: "Dummy video",
+    dummyVideoBlack: "Black",
+    dummyVideoWhite: "White",
     captionSpeaker: "Speaker",
     zoomHint: "The wheel with a key held also zooms",
     snapping: "Snap to other Segments and the playhead",
@@ -195,7 +217,8 @@ const en = {
     pickSegment: "Click a Segment to play from it.",
     playCurrent: "plays this Segment",
     playOn: "plays on from here",
-    fold: "Show or fold the preview",
+    foldPlayer: "Show or fold the player and its controls",
+    foldTimeline: "Show or fold the timeline",
     following: "Follow playback in the Segment list",
     followingHint:
       "Scrolls the list to the Segment being played. Turn it off to keep the list where it is while the media plays on.",
@@ -263,7 +286,37 @@ const en = {
     unreadable: "Could not read the versions",
     notRestored: "Not restored",
   },
+  preferences: {
+    choosing: "Choosing another Segment while playing, from",
+    pausing: "Pause",
+    fromStart: "From start",
+    aloneHint:
+      "Playing alone always plays the Segment from its start; while paused, choosing only moves the media",
+    switchLabel: "{{source}}: {{column}}",
+    switchesHelp:
+      "Pause stops the playing media; From start moves it to the Segment's start, else it stays where it is",
+    sourcesHelp: {
+      text: "Clicking another Segment's text or translation",
+      time: "Clicking another Segment's start or end time",
+      speaker: "Opening another Segment's Speaker menu",
+      row: "Clicking another Segment's check, menu, reference or empty space, right-clicking it, or reaching it with Tab",
+      next: "Enter in a field moving on to the next Segment",
+      region:
+        "Clicking another Segment's region on the timeline; without From start, it plays from the click",
+      search: "A search moving to the next or previous match",
+    },
+    sources: {
+      text: "its text or translation",
+      time: "its time",
+      speaker: "its Speaker menu",
+      row: "elsewhere in its row",
+      next: "Enter in a field",
+      region: "its region on the timeline",
+      search: "a search",
+    },
+  },
   settings: {
+    preferences: "Preferences",
     unreadable: "Settings not read",
     notSaved: "Settings not saved",
     project: "Project",
@@ -296,6 +349,9 @@ const en = {
     overwriteBackup: "Back up before overwrite",
     overwriteBackupHelp:
       "When on, a subtitle a transcription or translation is about to overwrite is first copied to the project’s .tsuzuri/history folder with the time in its name, every time; when off, only before its first change each time the project is opened. Versions in the editor compares or restores it. Applies to this project only.",
+    diarizationAfterTranscription: "Diarize after transcribing",
+    diarizationAfterTranscriptionHelp:
+      "When on, the transcribe dialog starts with telling speakers apart once transcribed checked. Applies to this project only.",
     ffmpegHelp:
       "Turns video or audio into the audio file transcription reads. Choose an executable you installed; without one, the detected and then the bundled version is used.",
     whisperHelp:
@@ -316,6 +372,8 @@ const en = {
       "A whisper ggml model file (.bin), such as Breeze-ASR-25. A larger model is more accurate and slower.",
     translationModelHelp:
       "A llama.cpp GGUF model file, such as Qwen3-4B. With 4GB of video memory, a quantized model around 4B fits.",
+    diarizationModelHelp:
+      "A speaker diarization GGUF model file with Diarization in its name, such as Nemotron-3-Diarization. Used only when telling speakers apart.",
     projectName: "Name",
     primaryLanguage: "Primary language",
     bilingualOrder: "Bilingual order",
@@ -407,6 +465,7 @@ const en = {
     transcription: "Transcription",
     vad: "VAD",
     translation: "Translation",
+    diarization: "Speaker diarization",
   },
   components: {
     choice: "Chosen",
@@ -444,6 +503,7 @@ const en = {
     load: "Loading the model",
     detect: "Finding split sentences",
     transcribe: "Transcribing",
+    diarize: "Telling speakers apart",
     translate: "Translating",
     waveform: "Taking the waveform",
     firstLoad: "{{phase}} (slower the first time)",
@@ -472,7 +532,8 @@ const en = {
       "{{directory}} no longer exists, so it was removed from the recent projects",
     noProject: "Open a directory or an SRT file first",
     noResource: "The directory has no media file or SRT file to work on",
-    noMedia: "This resource has no video or audio file to transcribe",
+    noMedia: "This resource has no video or audio file",
+    noSubtitle: "This resource has no subtitle in the Primary Language",
     noBackup: "No such backup: {{backup}}",
     noRow: "The comparison has changed; compare again before taking a cue back",
     invalidTimes: "A segment cannot end before it starts",
@@ -524,6 +585,8 @@ const en = {
       redo: "Redo",
       checkAll: "Check every Segment",
       delete: "Delete Segments",
+      mergeWithPrevious: "Merge with the one above",
+      mergeWithNext: "Merge with the one below",
       replace: "Replace",
       cleanup: "Clean Simplified Chinese",
       search: "Search",
@@ -531,6 +594,7 @@ const en = {
       searchPrevious: "Previous match",
       reload: "Reload",
       following: "Follow playback",
+      resourceList: "Dock or fold the resources",
       play: "Play or stop",
       setStart: "Set the start",
       setEnd: "Set the end",
@@ -556,6 +620,10 @@ const en = {
       checkAll: "Selects the text in a text field, else checks every Segment",
       delete:
         "Deletes the Checked Segments, else the Current Segment; not in a text field, a menu, a list or a dialog",
+      mergeWithPrevious:
+        "Merges the Current Segment with the one before into one line, in a field too",
+      mergeWithNext:
+        "Merges the Current Segment with the one after into one line, in a field too",
       replace: "Text selected in a field is what is looked for",
       cleanup:
         "Cleans the Checked Segments, else the text selected, else the Current Segment",
@@ -566,6 +634,8 @@ const en = {
       reload: "Reads the folder again for files changed elsewhere",
       following:
         "Scrolls the list to the Segment being played; works in a text field too",
+      resourceList:
+        "Docks or folds the resources in a wide window, and lays them over the editor in a narrow one",
       play: "Plays on from where the media is, or only the Current Segment when playing alone",
       setStart: "Moves the Current Segment's start to where the media is",
       setEnd: "Moves the Current Segment's end to where the media is",
@@ -589,7 +659,7 @@ const en = {
         "Draws a range for a Segment said over others, as when someone cuts in",
       zoom: "Pinching on a trackpad zooms too",
       videoWindowFullscreen:
-        "Double-click the video in the Video Window to fill the screen or leave it",
+        "Double-click the video in the Video Window to fill the screen or leave it; Esc leaves it too",
     },
   },
 };

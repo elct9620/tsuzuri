@@ -1,6 +1,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use tauri::test::{mock_context, noop_assets, MockRuntime};
+use tauri::{App, Builder};
+
 use crate::language::Language;
 use crate::project::{CurrentResource, Project, ProjectOptions, Resource};
 use crate::transcript::{Segment, Transcript};
@@ -263,4 +266,14 @@ pub fn output_backups(directory: &std::path::Path) -> Vec<(String, String)> {
         .into_iter()
         .filter(|(file, _)| file.ends_with(".output.srt"))
         .collect()
+}
+
+/// Builds a mock app with the app's events mounted, as the app mounts them before it runs, so a
+/// test can emit them.
+pub fn build_mock_app(builder: Builder<MockRuntime>) -> App<MockRuntime> {
+    let app = builder.build(mock_context(noop_assets())).unwrap();
+    tauri_specta::Builder::<MockRuntime>::new()
+        .events(crate::bindings::events())
+        .mount_events(&app);
+    app
 }

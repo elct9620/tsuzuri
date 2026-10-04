@@ -7,6 +7,7 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src-tauri/src/lib.rs`
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
+- `src-tauri/src/project/current/tests/project_behavior.rs`
 - `src-tauri/src/transcription.rs`
 - `src-tauri/src/transcription/*.rs`
 - `src-tauri/src/translation.rs`
@@ -866,8 +867,33 @@ With no gap to fill, the new Segment runs two seconds from the edge it is insert
 | --- | --- |
 | Given | a Current Resource of `你好` from 0 to 1 and `世界` from 1 to 2 seconds, translated as `Hello` and `world` |
 | When | the two are merged |
-| Then | one Segment from 0 to 2 seconds reads `你好` above `世界`, translated as `Hello` above `world` |
+| Then | one Segment from 0 to 2 seconds reads `你好世界`, translated as `Hello world` |
 
+A merge joins the texts on one line, as a sentence cut apart by transcription is read again. A half-width space goes between two texts where either side of the join is a half-width letter or digit, as Chinese puts one beside English and numbers; Chinese meeting Chinese joins with nothing between.
+
+## `PJ-187` Joining Chinese and English with a space
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `這是` from 0 to 1 and `OK 的` from 1 to 2 seconds |
+| When | the two are merged |
+| Then | one Segment reads `這是 OK 的` |
+
+## `PJ-188` Joining Chinese and a number with a space
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `一共有` from 0 to 1 and `3 集` from 1 to 2 seconds |
+| When | the two are merged |
+| Then | one Segment reads `一共有 3 集` |
+
+## `PJ-189` Joining a text already ending in a space without another
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `Hello ` from 0 to 1 and `world` from 1 to 2 seconds |
+| When | the two are merged |
+| Then | one Segment reads `Hello world` |
 
 ## `PJ-145` Merging a Segment with one it overlaps
 
@@ -875,7 +901,8 @@ With no gap to fill, the new Segment runs two seconds from the edge it is insert
 | --- | --- |
 | Given | a Current Resource of `大家好` from 0 to 5 and `對啊` from 2 to 3 seconds |
 | When | the two are merged |
-| Then | one Segment from 0 to 5 seconds reads `大家好` above `對啊` |
+| Then | one Segment from 0 to 5 seconds reads `大家好對啊` |
+
 ## `PJ-063` Shifting a run of Segments
 
 | Step | Statement |

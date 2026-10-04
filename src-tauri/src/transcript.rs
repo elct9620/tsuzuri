@@ -3,20 +3,22 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct Segment {
     pub start_ms: u64,
     pub end_ms: u64,
     /// Who says it, written as a Speaker Label before its text and its translation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[specta(type = String)]
     pub speaker: Option<String>,
     pub text: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[specta(type = String)]
     pub translation: Option<String>,
 }
 
 /// Which text each cue of an SRT, or each block of a Plain Text, carries.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum WrittenText {
     Original,
@@ -271,6 +273,10 @@ pub fn split_label(line: &str) -> (Option<String>, &str) {
     (Some(line[..label_end].to_string()), dialogue)
 }
 
+pub(crate) const MS_PER_SECOND: u64 = 1000;
+const MS_PER_MINUTE: u64 = 60 * MS_PER_SECOND;
+const MS_PER_HOUR: u64 = 60 * MS_PER_MINUTE;
+
 /// Reads `HH:MM:SS,mmm`; a `.` before the milliseconds is accepted since some tools write WebVTT-style times into SRT.
 pub(crate) fn parse_timestamp(value: &str) -> Option<u64> {
     let (clock, millis) = value.split_once([',', '.'])?;
@@ -282,16 +288,16 @@ pub(crate) fn parse_timestamp(value: &str) -> Option<u64> {
         return None;
     }
     let millis: u64 = millis.parse().ok()?;
-    Some(((hours * 60 + minutes) * 60 + seconds) * 1000 + millis)
+    Some(hours * MS_PER_HOUR + minutes * MS_PER_MINUTE + seconds * MS_PER_SECOND + millis)
 }
 
 fn format_timestamp(ms: u64) -> String {
     format!(
         "{:02}:{:02}:{:02},{:03}",
-        ms / 3_600_000,
-        ms / 60_000 % 60,
-        ms / 1000 % 60,
-        ms % 1000
+        ms / MS_PER_HOUR,
+        ms / MS_PER_MINUTE % 60,
+        ms / MS_PER_SECOND % 60,
+        ms % MS_PER_SECOND
     )
 }
 

@@ -19,7 +19,7 @@ use crate::transfer_report::TransferReport;
 const SETTINGS_FILE: &str = "updates.json";
 
 /// Where Tsuzuri looks for an App Update.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum UpdateChannel {
     /// The latest release.
@@ -53,7 +53,7 @@ impl UpdateChannel {
 }
 
 /// Whether Tsuzuri looks for an App Update at launch, and in which Update Channel.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct UpdateSettings {
     pub has_launch_check: bool,
     pub channel: UpdateChannel,
@@ -118,7 +118,7 @@ impl UpdateSettings {
 }
 
 /// The App Update a check found, as the webview shows it: by its Release Name.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct AppUpdate {
     pub release_number: String,
     pub release_name: String,
@@ -126,7 +126,7 @@ pub struct AppUpdate {
 }
 
 /// How much of the App Update being installed has downloaded, in bytes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 pub struct UpdateProgress {
     pub downloaded: u64,
     pub total: Option<u64>,

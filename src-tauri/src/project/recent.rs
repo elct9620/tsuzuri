@@ -26,7 +26,7 @@ pub struct RecentProject {
 }
 
 /// A Recent Project as the start screen and the Open menu list it, by its Project Name.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct RecentProjectView {
     pub directory: PathBuf,
     pub name: String,

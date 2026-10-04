@@ -15,6 +15,7 @@ mod files;
 pub mod glossary;
 mod history;
 mod mode_hold;
+mod opened_project;
 mod recent;
 mod requested_srt;
 pub mod versions;
@@ -241,7 +242,7 @@ fn segments_at_times<'a>(segments: &'a [Segment], cues: &[Segment]) -> Vec<Optio
 
 /// What a restore or a translation left behind: how many Segments of the original have times
 /// that no translation lines up with.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, specta::Type)]
 pub struct Restoration {
     pub unmatched_count: usize,
 }
@@ -351,7 +352,7 @@ fn translation_first(transcript: &Transcript) -> Transcript {
 }
 
 /// Which text of a Segment an edit replaces.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum SegmentField {
     Text,
@@ -361,7 +362,7 @@ pub enum SegmentField {
 }
 
 /// Where a Search matches: characters `start` to `end` of the Segment at `index`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 pub struct TextMatch {
     pub index: usize,
     pub start: usize,
@@ -369,7 +370,7 @@ pub struct TextMatch {
 }
 
 /// Where a Simplified Cleanup cleans the Current Resource's `zh-TW` text.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum CleanupScope {
     /// The Segments at these positions.
@@ -397,7 +398,7 @@ pub struct TranslationSource {
 }
 
 /// The Segments from `first` through `last`, by position.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct SegmentSpan {
     pub first: usize,
     pub last: usize,
@@ -405,7 +406,7 @@ pub struct SegmentSpan {
 
 /// Which Segments a transcription replaces, by the positions the Current Resource shows: every
 /// one, those from `first` on to the media's end, or those of a span.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum TranscriptionScope {
     Whole,
@@ -435,6 +436,25 @@ impl TranscriptionScope {
             end_ms,
         }))
     }
+}
+
+/// What a transcription is asked to cover: the Segments of its scope, and whether it may write
+/// over the original subtitle the Resource already has.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TranscriptionRequest {
+    pub is_overwrite_allowed: bool,
+    pub scope: TranscriptionScope,
+}
+
+/// What a diarization needs from the Project when it starts.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DiarizationTarget {
+    pub directory: PathBuf,
+    /// The Resource being diarized.
+    pub name: String,
+    pub media: PathBuf,
+    /// The Resource's original subtitle, whose Segments get the Speakers.
+    pub subtitle: PathBuf,
 }
 
 /// What a transcription needs from the Project when it starts.
@@ -488,7 +508,7 @@ pub struct ProjectConfig {
 }
 
 /// What the user sets for one Project in the settings beside its Primary Language.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(default)]
 pub struct ProjectOptions {
     /// The Project Name the user gave, or none to name the Project after its directory.
@@ -498,31 +518,34 @@ pub struct ProjectOptions {
     pub is_bilingual_autosaved: bool,
     /// Whether a subtitle about to be overwritten is first kept as a Backup.
     pub is_overwrite_backed_up: bool,
+    /// Whether the transcribe dialog asks to diarize the Resource once transcribed.
+    pub is_diarized_after_transcription: bool,
     pub models: ProjectModels,
     pub transcription: TranscriptionOverrides,
 }
 
 /// The Project Models by the slot each is chosen for; a slot without one uses the general settings' Model.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(default)]
 pub struct ProjectModels {
     #[serde(deserialize_with = "parse_saved_source")]
+    #[specta(type = Option<ModelSource>)]
     pub transcription: Option<ModelSource>,
     #[serde(deserialize_with = "parse_saved_source")]
+    #[specta(type = Option<ModelSource>)]
     pub translation: Option<ModelSource>,
 }
 
 /// Which Preset Model each Project Model is, as its place among its slot's Preset Models; none
 /// where the slot has no Project Model or holds a Model that is none of them.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, specta::Type)]
 pub struct ProjectModelPresets {
     pub transcription: Option<usize>,
     pub translation: Option<usize>,
 }
 
 /// The Transcription Settings a Project sets for itself; one left `None` follows the general settings.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct TranscriptionOverrides {
     pub has_vad: Option<bool>,
     pub is_non_speech_suppressed: Option<bool>,
@@ -531,7 +554,7 @@ pub struct TranscriptionOverrides {
 }
 
 /// The form an export of the Current Resource is written in.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum ExportFormat {
     Srt,
@@ -548,7 +571,7 @@ impl ExportFormat {
 }
 
 /// Which text a Bilingual SRT puts first in each cue and in its file name.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "kebab-case")]
 pub enum BilingualOrder {
     #[default]
@@ -557,7 +580,7 @@ pub enum BilingualOrder {
 }
 
 /// A Backup of one subtitle, by its file name in the history, the UTC time it was taken and its kind.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct Backup {
     pub file: String,
     /// `YYYYMMDDTHHMMSSZ`
@@ -566,7 +589,7 @@ pub struct Backup {
 }
 
 /// What a Backup keeps: what a Mode has just written, or a subtitle just before it was written over.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "kebab-case")]
 pub enum BackupKind {
     Output,

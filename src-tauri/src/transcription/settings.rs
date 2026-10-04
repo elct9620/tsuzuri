@@ -12,7 +12,7 @@ const SETTINGS_FILE: &str = "transcription.json";
 /// How a transcription runs beyond the Language and the Model, saved across launches as the default
 /// of every Project. The defaults leave whisper-cli as it behaves on its own and clean what it
 /// writes in `zh-TW`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(default)]
 pub struct TranscriptionSettings {
     /// Whether VAD finds the speech first, so only that is transcribed.

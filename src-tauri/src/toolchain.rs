@@ -98,7 +98,7 @@ pub fn components() -> Vec<Component> {
     ]
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "kebab-case")]
 pub enum Origin {
     Choice,
@@ -107,7 +107,7 @@ pub enum Origin {
 }
 
 /// Why a Component is not ready.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "kebab-case")]
 pub enum Problem {
     NotInstalled,
@@ -115,7 +115,7 @@ pub enum Problem {
     DoesNotRun,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct ComponentStatus {
     name: String,
     is_ready: bool,
@@ -286,23 +286,26 @@ pub async fn find_statuses_off_the_main_thread(
     Ok(tokio::task::spawn_blocking(move || find_statuses(&resolver)).await?)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum ModelSlot {
     Transcription,
     Vad,
     Translation,
+    Diarization,
 }
 
 /// How whisper.cpp names its VAD Models, the one thing telling them from its transcription Models.
 const VAD_MODEL_PREFIX: &str = "ggml-silero";
+/// What a diarization Model's name carries, the one thing telling it from a translation `.gguf`.
+const DIARIZATION_MODEL_MARK: &str = "diarization";
 
 impl ModelSlot {
     /// The file extensions a Model for this slot has.
     pub fn extensions(self) -> &'static [&'static str] {
         match self {
             ModelSlot::Transcription | ModelSlot::Vad => &["bin"],
-            ModelSlot::Translation => &["gguf"],
+            ModelSlot::Translation | ModelSlot::Diarization => &["gguf"],
         }
     }
 
@@ -317,11 +320,13 @@ impl ModelSlot {
             .and_then(|extension| extension.to_str())
             .is_some_and(|extension| self.extensions().contains(&extension));
         let is_vad_model = name.starts_with(VAD_MODEL_PREFIX);
+        let is_diarization_model = name.to_lowercase().contains(DIARIZATION_MODEL_MARK);
         has_extension
             && match self {
                 ModelSlot::Transcription => !is_vad_model,
                 ModelSlot::Vad => is_vad_model,
-                ModelSlot::Translation => true,
+                ModelSlot::Translation => !is_diarization_model,
+                ModelSlot::Diarization => is_diarization_model,
             }
     }
 }
@@ -334,6 +339,8 @@ pub struct ModelSettings {
     vad: Option<ModelSource>,
     #[serde(default, deserialize_with = "parse_saved_source")]
     translation: Option<ModelSource>,
+    #[serde(default, deserialize_with = "parse_saved_source")]
+    diarization: Option<ModelSource>,
     /// The Hugging Face Cache a Repository's Model is found in; located, never saved.
     #[serde(skip)]
     hub_cache: PathBuf,
@@ -360,7 +367,7 @@ impl fmt::Display for ModelError {
 
 impl std::error::Error for ModelError {}
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct SlotView {
     source: Option<ModelSource>,
     /// Where the Model is expected.
@@ -371,11 +378,12 @@ pub struct SlotView {
     preset_index: Option<usize>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct ModelSettingsView {
     transcription: SlotView,
     vad: SlotView,
     translation: SlotView,
+    diarization: SlotView,
 }
 
 impl ModelSettings {
@@ -434,6 +442,7 @@ impl ModelSettings {
             transcription: slot_view(ModelSlot::Transcription),
             vad: slot_view(ModelSlot::Vad),
             translation: slot_view(ModelSlot::Translation),
+            diarization: slot_view(ModelSlot::Diarization),
         }
     }
 
@@ -442,6 +451,7 @@ impl ModelSettings {
             ModelSlot::Transcription => self.transcription.as_ref(),
             ModelSlot::Vad => self.vad.as_ref(),
             ModelSlot::Translation => self.translation.as_ref(),
+            ModelSlot::Diarization => self.diarization.as_ref(),
         }
     }
 
@@ -450,6 +460,7 @@ impl ModelSettings {
             ModelSlot::Transcription => &mut self.transcription,
             ModelSlot::Vad => &mut self.vad,
             ModelSlot::Translation => &mut self.translation,
+            ModelSlot::Diarization => &mut self.diarization,
         }
     }
 }

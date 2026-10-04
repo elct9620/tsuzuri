@@ -1,59 +1,46 @@
-import { invoke } from "@tauri-apps/api/core";
+import type * as bindings from "./bindings";
+import { commands } from "./bindings";
 
-/** A release of Tsuzuri newer than the running one, with its Release Name. */
-export interface AppUpdate {
-  release_number: string;
-  release_name: string;
-  is_preview_build: boolean;
-}
+export type AppUpdate = bindings.AppUpdate;
 
-/** Where Tsuzuri looks for an App Update. */
-export type UpdateChannel = "stable" | "preview";
+export type UpdateChannel = bindings.UpdateChannel;
 
-/** Whether Tsuzuri looks for an App Update at launch, and in which Update Channel. */
-export interface UpdateSettings {
-  has_launch_check: boolean;
-  channel: UpdateChannel;
-}
+export type UpdateSettings = bindings.UpdateSettings;
 
-/** How much of the App Update being installed has downloaded, in bytes; the total when the release names it. */
-export interface UpdateProgress {
-  downloaded: number;
-  total: number | null;
-}
+export type UpdateProgress = bindings.UpdateProgress;
 
 /** Looks for an App Update, failing when the releases cannot be read. */
 export function checkForUpdate(): Promise<AppUpdate | null> {
-  return invoke<AppUpdate | null>("check_for_update");
+  return commands.checkForUpdate();
 }
 
 /** Looks for an App Update unless the settings turn that off, answering none when the releases cannot be read. */
 export function checkForUpdateAtLaunch(): Promise<AppUpdate | null> {
-  return invoke<AppUpdate | null>("check_for_update_at_launch");
+  return commands.checkForUpdateAtLaunch();
 }
 
 /** Looks for the latest stable release even when it is older than the running one, for a Preview build to go back to. */
 export function checkForRollback(): Promise<AppUpdate | null> {
-  return invoke<AppUpdate | null>("check_for_rollback");
+  return commands.checkForRollback();
 }
 
 export function chooseUpdateChannel(
   channel: UpdateChannel,
 ): Promise<UpdateSettings> {
-  return invoke<UpdateSettings>("choose_update_channel", { channel });
+  return commands.chooseUpdateChannel(channel);
 }
 
 /** Downloads and installs the App Update the last check found, then restarts Tsuzuri. */
-export function installUpdate(): Promise<void> {
-  return invoke("install_update");
+export async function installUpdate(): Promise<void> {
+  await commands.installUpdate();
 }
 
 export function updateSettings(): Promise<UpdateSettings> {
-  return invoke<UpdateSettings>("update_settings");
+  return commands.updateSettings();
 }
 
 export function chooseLaunchCheck(
   hasLaunchCheck: boolean,
 ): Promise<UpdateSettings> {
-  return invoke<UpdateSettings>("choose_launch_check", { hasLaunchCheck });
+  return commands.chooseLaunchCheck(hasLaunchCheck);
 }

@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use std::future::Future;
-use std::path::Path;
+use std::io;
+use std::path::{Path, PathBuf};
 
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::watch;
@@ -10,6 +11,16 @@ use crate::failure::Failure;
 pub mod commands;
 
 const STDERR_TAIL_LINES: usize = 5;
+
+/// The directory in the app's cache that holds what Steps write along the way, one directory a run.
+pub const WORK_DIR: &str = "work";
+
+// What each Step is called when it fails, which is how the webview names it to the user
+pub const CONVERSION_STEP: &str = "convert";
+pub const TRANSCRIPTION_STEP: &str = "transcribe";
+pub const DIARIZATION_STEP: &str = "diarize";
+pub const WAVEFORM_STEP: &str = "waveform";
+pub const TRANSLATION_STEP: &str = "translate";
 
 /// What a started Component does: each line it writes, without its line ending, and last how it ended.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -164,6 +175,25 @@ impl Turn<'_> {
         if cancel.wait_for(|is_cancelled| *is_cancelled).await.is_err() {
             std::future::pending::<()>().await;
         }
+    }
+}
+
+/// The directory a Mode writes its intermediate files to, removed with them once the
+/// Mode's run ends, however it ends.
+pub struct WorkDir(pub PathBuf);
+
+impl WorkDir {
+    /// Creates the directory at `path`; one left half made by a failure is removed all the same.
+    pub fn try_new(path: &Path) -> io::Result<WorkDir> {
+        let work = WorkDir(path.to_path_buf());
+        std::fs::create_dir_all(&work.0)?;
+        Ok(work)
+    }
+}
+
+impl Drop for WorkDir {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
     }
 }
 

@@ -5,7 +5,7 @@ use std::fmt;
 use serde::Serialize;
 
 /// One timed part of a Mode's run, named in `pipeline-progress`, in the seconds each took and in the log.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 pub enum Phase {
     #[serde(rename = "prepare")]
     Preparation,
@@ -15,28 +15,25 @@ pub enum Phase {
     Loading,
     #[serde(rename = "transcribe")]
     Transcription,
+    #[serde(rename = "diarize")]
+    Diarization,
     #[serde(rename = "detect")]
     Detection,
     #[serde(rename = "translate")]
     Translation,
 }
 
+/// Written in the log as the webview is sent it.
 impl fmt::Display for Phase {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(match self {
-            Phase::Preparation => "prepare",
-            Phase::Conversion => "convert",
-            Phase::Loading => "load",
-            Phase::Transcription => "transcribe",
-            Phase::Detection => "detect",
-            Phase::Translation => "translate",
-        })
+        self.serialize(formatter)
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
 pub struct PhaseTiming {
     pub phase: Phase,
+    #[specta(type = specta_typescript::Number)]
     pub seconds: f64,
 }
 

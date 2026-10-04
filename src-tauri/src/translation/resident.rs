@@ -11,7 +11,7 @@ use super::llama::{
     base_url, free_port, wait_until_ready, CHAT_TEMPLATE_KWARGS, CONTEXT_SIZE, HOST, MODEL_NAME,
 };
 use crate::failure::Failure;
-use crate::steps::{StepEvent, Steps};
+use crate::steps::{StepEvent, Steps, TRANSLATION_STEP};
 
 const STATUS_POLL: Duration = Duration::from_millis(250);
 /// How long unloading may take; llama-server forces its Model's process to end after ten seconds.
@@ -172,7 +172,7 @@ impl ResidentLlama {
         let (events, pid) = steps
             .start(llama, &router_args(&preset, port))
             .map_err(|detail| Failure::StepFailed {
-                step: "translate".to_string(),
+                step: TRANSLATION_STEP.to_string(),
                 detail,
             })?;
         let has_exited = watch_exit(events);
@@ -389,6 +389,23 @@ mod tests {
         fn stop_started(&self) {}
     }
 
+    /// Steps that cannot start a process.
+    struct RefusingSteps;
+
+    impl Steps for RefusingSteps {
+        fn start(
+            &self,
+            _program: &Path,
+            _args: &[String],
+        ) -> Result<(tokio::sync::mpsc::Receiver<StepEvent>, u32), String> {
+            Err("no such file".to_string())
+        }
+
+        fn stop(&self, _pid: u32) {}
+
+        fn stop_started(&self) {}
+    }
+
     /// A Resident llama-server whose router the fake answers for, with the Steps that start it.
     struct Fixture {
         llama: FakeLlama,
@@ -446,6 +463,30 @@ mod tests {
         fn log(&self) -> Vec<String> {
             self.llama.log.lock().unwrap().clone()
         }
+    }
+
+    #[tokio::test]
+    async fn names_the_translate_step_when_llama_server_cannot_start() {
+        let fixture = Fixture::new("resident-refused", Replies::default());
+
+        let result = fixture
+            .resident
+            .start(
+                &RefusingSteps,
+                Path::new("llama-server"),
+                &fixture.model(),
+                fixture.dir.path(),
+                TIMEOUT,
+            )
+            .await;
+
+        assert_eq!(
+            result,
+            Err(Failure::StepFailed {
+                step: "translate".to_string(),
+                detail: "no such file".to_string(),
+            })
+        );
     }
 
     // @behavior TL-067

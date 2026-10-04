@@ -513,17 +513,17 @@ describe("ComparisonController", () => {
   it("reads several translations beneath the cues", async () => {
     project = {
       ...project,
-      resources: [resourceOf({ translation_languages: ["ja", "ko"] })],
+      resources: [resourceOf({ translation_languages: ["ja", "en"] })],
     };
-    cuesByLanguage.ko = [cue(0, 1000, "안녕하세요")];
+    cuesByLanguage.en = [cue(0, 1000, "Hello")];
     await show();
 
     await check('input[data-reference][value="ja"]');
-    await check('input[data-reference][value="ko"]');
+    await check('input[data-reference][value="en"]');
 
     expect(references()[0]).toEqual([
       ["ja", "こんにちは"],
-      ["ko", "안녕하세요"],
+      ["en", "Hello"],
     ]);
   });
 

@@ -7,6 +7,11 @@ import RegionsPlugin, {
 } from "wavesurfer.js/plugins/regions";
 import TimelinePlugin from "wavesurfer.js/plugins/timeline";
 
+import {
+  DEFAULT_PREFERENCES,
+  preferences,
+  type ChoiceLandings,
+} from "../backend/preferences";
 import type { ProjectFeed, ProjectView, Segment } from "../backend/project";
 import { isMacOS } from "../backend/system";
 import { extractWaveform, type Waveform } from "../backend/waveform";
@@ -18,7 +23,14 @@ import {
 import { t } from "../i18n";
 import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { notifyEdit, notifyFailure } from "../ui/notification";
-import { chords, shortcutById } from "../ui/shortcuts";
+import {
+  type PlayedSource,
+  SILENT_PEAKS,
+  isSameSource,
+  isSilenceOf,
+  playedSource,
+} from "../ui/silence";
+import { type Shortcut, chords, shortcutById } from "../ui/shortcuts";
 import {
   choiceLanding,
   formatLength,
@@ -65,8 +77,11 @@ const SNAPPING_KEY = "tsuzuri.timeline-snapping";
 /** The key that sets the Current Segment's start or end where the media is, as `KeyboardEvent.key` names it. */
 function timeKeys(): Record<UpdateSide, string> {
   const isMac = isMacOS();
-  const key = (id: string) => chords(shortcutById(id)!, isMac)[0].toUpperCase();
-  return { start: key("setStart"), end: key("setEnd") };
+  const key = (shortcut: Shortcut) => chords(shortcut, isMac)[0].toUpperCase();
+  return {
+    start: key(shortcutById("setStart")),
+    end: key(shortcutById("setEnd")),
+  };
 }
 
 /** A drag of the Current Segment's region under way, from its Segment's times to where it is shown. */
@@ -158,7 +173,7 @@ export default class TimelineController extends Controller {
   declare readonly startKeyTarget: HTMLElement;
   declare readonly endKeyTarget: HTMLElement;
 
-  private media: string | null = null;
+  private source: PlayedSource | null = null;
   private segments: Segment[] = [];
   /** Whether a running Mode holds the Current Resource, which refuses every Segment Change. */
   private isHeld = false;
@@ -167,6 +182,8 @@ export default class TimelineController extends Controller {
   private isSnapping = rememberedFlag(SNAPPING_KEY, false);
   /** Whether Space plays the Current Segment alone and stops at its end, rather than on from where the media is. */
   private isPlayingAlone = rememberedFlag(ALONE_KEY, false);
+  /** The Choice Landing of each Choice Source, the defaults until the saved Preferences are read. */
+  private landings: ChoiceLandings = DEFAULT_PREFERENCES.choice_landings;
   /** The modifier keys held as the pointer last moved, which a region's own events do not carry. */
   private modifiers = { shiftKey: false, altKey: false };
   /** The element the focus last reached by keyboard, or none once a pointer took it. */
@@ -204,6 +221,16 @@ export default class TimelineController extends Controller {
     this.showSnapping();
     this.showPlayingAlone();
     this.unfollow = this.feed.follow((project) => this.show(project));
+    void this.readPreferences();
+  }
+
+  /** Takes the Choice Landings the Preferences set; the settings tell of Preferences they cannot read. */
+  async readPreferences(): Promise<void> {
+    try {
+      this.landings = (await preferences()).choice_landings;
+    } catch {
+      // The defaults stay in use
+    }
   }
 
   /** Paints the Waveform in the colours of the theme the system turned to; bound to `system:color-scheme`. */
@@ -312,6 +339,7 @@ export default class TimelineController extends Controller {
         start: toSeconds(segment.start_ms),
         isPaused: this.player.paused,
         isPlayingAlone: this.isPlayingAlone,
+        landings: this.landings,
       }),
     );
   }
@@ -431,29 +459,54 @@ export default class TimelineController extends Controller {
     if (this.drag) this.regions?.clearRegions();
     this.drag = null;
     this.dropRange();
-    const media = project?.media ?? null;
-    if (media === this.media) {
+    const source = playedSource(project, this.source);
+    if (isSameSource(source, this.source)) {
       this.markSegments();
       return;
     }
-    this.media = media;
-    void this.loadWaveform(media);
+    const lastSource = this.source;
+    this.source = source;
+    void this.loadWaveform(source, lastSource);
   }
 
-  private async loadWaveform(media: string | null): Promise<void> {
+  /**
+   * Draws the Waveform of a media file, taken by Rust, or a flat one over silence. Silence made
+   * longer for the same Resource keeps the view where it was, as a Segment is dragged there.
+   */
+  private async loadWaveform(
+    source: PlayedSource | null,
+    lastSource: PlayedSource | null,
+  ): Promise<void> {
+    const isLengthened =
+      source !== null &&
+      !("media" in source) &&
+      isSilenceOf(lastSource, source.resource);
+    const scroll = this.surfer?.getScroll() ?? 0;
     this.surfer?.destroy();
     this.surfer = undefined;
     this.regions = undefined;
     this.waveformRequest = undefined;
-    this.waveformTarget.hidden = media === null;
-    if (media === null) return;
+    this.waveformTarget.hidden = source === null;
+    if (source === null) return;
+    if (!("media" in source)) {
+      this.drawWaveform(
+        SILENT_PEAKS,
+        toSeconds(source.lengthMs),
+        isLengthened ? scroll : 0,
+      );
+      return;
+    }
+    const { media } = source;
     this.waveformTarget.classList.add("skeleton");
     const request = extractWaveform();
     this.waveformRequest = request;
     try {
       const waveform = await request;
-      if (request === this.waveformRequest && waveform.media === this.media)
-        this.drawWaveform(waveform);
+      if (request === this.waveformRequest && waveform.media === media)
+        this.drawWaveform(
+          waveform.peaks,
+          waveform.peaks.length / waveform.peaks_per_second,
+        );
     } catch (error) {
       if (request === this.waveformRequest)
         notifyFailure(t("preview.noWaveform"), error);
@@ -463,7 +516,8 @@ export default class TimelineController extends Controller {
     }
   }
 
-  private drawWaveform(waveform: Waveform): void {
+  /** Draws `peaks` spread over `duration` seconds, with a region for each Segment, scrolled to `scroll` pixels. */
+  private drawWaveform(peaks: number[], duration: number, scroll = 0): void {
     const regions = RegionsPlugin.create();
     this.regions = regions;
     regions.on("region-clicked", (region, event) =>
@@ -485,8 +539,8 @@ export default class TimelineController extends Controller {
     this.surfer = WaveSurfer.create({
       container: this.waveformTarget,
       media: this.player,
-      peaks: [waveform.peaks],
-      duration: waveform.peaks.length / waveform.peaks_per_second,
+      peaks: [peaks],
+      duration,
       height: "auto",
       normalize: true,
       hideScrollbar: true,
@@ -505,7 +559,10 @@ export default class TimelineController extends Controller {
         }),
       ],
     });
-    this.surfer.on("ready", () => this.markSegments());
+    this.surfer.on("ready", () => {
+      this.markSegments();
+      this.surfer?.setScroll(scroll);
+    });
     this.surfer.on("timeupdate", (time) => this.pauseAtCurrentEnd(time));
     this.surfer.on("seeking", () => (this.lastTime = null));
     this.surfer.on("interaction", () => this.dropRange());
@@ -602,6 +659,7 @@ export default class TimelineController extends Controller {
       clicked: this.timeAt(event.clientX),
       isPaused: this.player.paused,
       isPlayingAlone: this.isPlayingAlone,
+      landings: this.landings,
     });
     this.session.makeCurrent(index, "region");
     this.land(landing);
@@ -938,6 +996,6 @@ export default class TimelineController extends Controller {
 
 /** Whether the key the shortcut list names for drawing a range over the Segments is held. */
 function isDrawingKey(event: MouseEvent): boolean {
-  const [modifier] = chords(shortcutById("drawOver")!, isMacOS())[0].split("+");
+  const [modifier] = chords(shortcutById("drawOver"), isMacOS())[0].split("+");
   return modifier === "meta" ? event.metaKey : event.ctrlKey;
 }

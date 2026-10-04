@@ -40,6 +40,16 @@ Launching Components as child processes so that none outlives the app: those ali
 | When | the app launches |
 | Then | that process keeps running |
 
+## `PR-010` Sparing the app when a recorded PID is now its own
+
+The diarize Step is Tsuzuri itself, so a recorded name can match the app that is launching.
+
+| Step | Statement |
+| --- | --- |
+| Given | a process record naming the launching app's own PID under its own name |
+| When | the app launches |
+| Then | the app keeps running |
+
 ## `PR-005` Delivering all output before the exit status
 
 | Step | Statement |
@@ -85,3 +95,13 @@ A Waveform is taken outside any Mode, so one taken while a Mode runs is not the 
 | Given | a cancel asked while no Mode runs |
 | When | the next Mode takes its turn |
 | Then | it runs to its end |
+
+## `PR-011` Counting no wait for the Mode's turn as preparing
+
+The Phases say how long the work took, so waiting for another Mode to end is counted in none of them.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Mode running |
+| When | another Mode waits for its turn, then begins |
+| Then | its prepare Phase counts none of the time it waited |

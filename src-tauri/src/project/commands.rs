@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use tauri::{AppHandle, Emitter, Manager, Runtime, State};
+use serde::Serialize;
+use tauri::{AppHandle, Manager, Runtime, State};
+use tauri_specta::Event;
 
 use super::current::open_directory_of;
 use super::glossary::{GlossaryRow, GlossaryTable};
@@ -24,6 +26,7 @@ use crate::toolchain::ModelSlot;
 use crate::transcript::WrittenText;
 
 #[tauri::command]
+#[specta::specta]
 pub fn open_project(
     app: AppHandle,
     mode_lock: State<'_, ModeLock>,
@@ -34,6 +37,7 @@ pub fn open_project(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn open_srt(
     app: AppHandle,
     mode_lock: State<'_, ModeLock>,
@@ -42,6 +46,20 @@ pub fn open_srt(
 ) -> Result<(), Failure> {
     hold_opened(&app, &mode_lock, || open_directory_of(&path, language))
 }
+
+/// The system asked to open an SRT file while Tsuzuri runs; the webview takes it with
+/// `take_requested_srt`.
+// @event srt-requested
+#[derive(Clone, Serialize, specta::Type, Event)]
+#[tauri_specta(event_name = "srt-requested")]
+pub struct SrtRequested;
+
+/// A subtitle changed elsewhere was read again, and what Tsuzuri last held of it kept as an
+/// Overwrite Backup.
+// @event changed-elsewhere-kept
+#[derive(Clone, Serialize, specta::Type, Event)]
+#[tauri_specta(event_name = "changed-elsewhere-kept")]
+pub struct ChangedElsewhereKept;
 
 /// Keeps the SRT file among `arguments`, given to a launch in `directory`, as the Requested SRT
 /// and tells the webview, which opens it as the toolbar would: only the webview knows the
@@ -55,16 +73,17 @@ pub fn request_srt_argument<R: Runtime>(
         return;
     };
     app.state::<RequestedSrt>().request(srt);
-    // @event srt-requested
-    let _ = app.emit("srt-requested", ());
+    let _ = SrtRequested.emit(app);
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn take_requested_srt(requested: State<'_, RequestedSrt>) -> Option<PathBuf> {
     requested.take()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn recent_projects(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -122,8 +141,7 @@ fn announce_reload<R: Runtime>(app: &AppHandle<R>, reload: Reload) {
     }
     app.announce_project();
     if reload == Reload::ChangedWithBackup {
-        // @event changed-elsewhere-kept
-        let _ = app.emit("changed-elsewhere-kept", ());
+        let _ = ChangedElsewhereKept.emit(app);
     }
 }
 
@@ -138,6 +156,7 @@ pub fn reload_if_changed<R: Runtime>(app: &AppHandle<R>) {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn select_resource(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -149,6 +168,7 @@ pub fn select_resource(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn show_translation(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -160,6 +180,7 @@ pub fn show_translation(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn reload_project(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
     let reload = current.reload()?;
     announce_reload(&app, reload);
@@ -167,6 +188,7 @@ pub fn reload_project(app: AppHandle, current: State<'_, CurrentProject>) -> Res
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn set_primary_language(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -178,6 +200,7 @@ pub fn set_primary_language(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn set_project_options(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -189,6 +212,7 @@ pub fn set_project_options(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView> {
     current.view().map(|view| {
         let presets = project_model_presets(&view.options().models);
@@ -211,6 +235,7 @@ fn project_model_presets(models: &ProjectModels) -> ProjectModelPresets {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn edit_segment(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -222,6 +247,7 @@ pub fn edit_segment(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn set_speakers(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -232,6 +258,7 @@ pub fn set_speakers(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn replace_text(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -242,6 +269,7 @@ pub fn replace_text(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn find_text(
     current: State<'_, CurrentProject>,
     field: SegmentField,
@@ -251,6 +279,7 @@ pub fn find_text(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn clean_simplified(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -260,6 +289,7 @@ pub fn clean_simplified(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn change_segments(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -269,6 +299,7 @@ pub fn change_segments(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn translation_cues(
     current: State<'_, CurrentProject>,
     language: Language,
@@ -277,6 +308,7 @@ pub fn translation_cues(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn revert_row(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -289,16 +321,19 @@ pub fn revert_row(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn undo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
     announce_after(&app, current.undo())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn redo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Failure> {
     announce_after(&app, current.redo())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn export_path(
     current: State<'_, CurrentProject>,
     content: WrittenText,
@@ -308,6 +343,7 @@ pub fn export_path(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn save_srt(
     current: State<'_, CurrentProject>,
     path: PathBuf,
@@ -317,6 +353,7 @@ pub fn save_srt(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn save_text(
     current: State<'_, CurrentProject>,
     path: PathBuf,
@@ -328,6 +365,7 @@ pub fn save_text(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn subtitle_versions(
     current: State<'_, CurrentProject>,
 ) -> Result<Vec<SubtitleVersions>, Failure> {
@@ -335,6 +373,7 @@ pub fn subtitle_versions(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn compare_versions(
     current: State<'_, CurrentProject>,
     language: Option<Language>,
@@ -348,6 +387,7 @@ pub fn compare_versions(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn restore_version(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -358,6 +398,7 @@ pub fn restore_version(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn translation_glossary_table(
     current: State<'_, CurrentProject>,
 ) -> Result<GlossaryTable, Failure> {
@@ -365,6 +406,7 @@ pub fn translation_glossary_table(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn save_translation_glossary(
     app: AppHandle,
     current: State<'_, CurrentProject>,
@@ -381,23 +423,21 @@ mod tests {
     use std::path::Path;
     use std::time::{Duration, UNIX_EPOCH};
 
-    use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+    use crate::test_support::build_mock_app;
+    use tauri::test::{mock_builder, MockRuntime};
 
     use crate::project::recent::RecentProject;
 
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
 
-    use tauri::Listener;
+    use crate::progress::ProjectChanged;
 
     use super::*;
     use crate::test_support::TempDir;
 
     fn mock_app() -> tauri::App<MockRuntime> {
-        mock_builder()
-            .manage(CurrentProject::default())
-            .build(mock_context(noop_assets()))
-            .unwrap()
+        build_mock_app(mock_builder().manage(CurrentProject::default()))
     }
 
     fn create_directory(dir: &TempDir, name: &str, files: &[&str]) -> PathBuf {
@@ -633,7 +673,7 @@ mod tests {
         let app = mock_app();
         let is_heard = Arc::new(AtomicBool::new(false));
         let is_heard_by_listener = Arc::clone(&is_heard);
-        app.listen("project-changed", move |_| {
+        ProjectChanged::listen(&app, move |_| {
             is_heard_by_listener.store(true, Ordering::SeqCst)
         });
 

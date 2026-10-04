@@ -36,7 +36,7 @@ pub trait Progress {
 
 ## `Phase`
 
-The Phases a Mode goes through: `prepare`, `convert`, `load`, `transcribe`, `detect` and `translate`, the names `pipeline-progress` and the seconds each took carry to the webview.
+The Phases a Mode goes through: `prepare`, `convert`, `load`, `transcribe`, `diarize`, `detect` and `translate`, the names `pipeline-progress` and the seconds each took carry to the webview.
 
 | Attribute | Value |
 | --- | --- |

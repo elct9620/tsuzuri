@@ -1,6 +1,6 @@
 # Events
 
-The events Rust emits to the webview. Each says only that something happened; the webview asks a command for what to show, so an event's name is all the two sides share.
+The events Rust emits to the webview. Each says only that something happened; the webview asks a command for what to show, so an event's name is all the two sides share. Each is a Rust type carrying its name, and the webview hears it through `src/backend/bindings.ts`, generated from those types.
 
 ## Includes
 

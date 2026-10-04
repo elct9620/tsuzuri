@@ -10,7 +10,7 @@ const INSERTED_MS: u64 = 2_000;
 /// Segments may overlap, as when someone cuts in, but keep the order they start in: a Segment a
 /// change makes takes its place by its start, and a change that would start one before the
 /// Segment before it or after the one after it is refused.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum SegmentChange {
     Times {
@@ -34,7 +34,8 @@ pub enum SegmentChange {
     /// first, and the second takes its place by its start.
     Split { index: usize, at: usize },
     /// One Segment from `first` through the latest end of `first` through `last`, their texts and
-    /// translations each a line.
+    /// translations each joined on one line, with a half-width space where either side of a join is a
+    /// half-width letter or digit.
     Merge { first: usize, last: usize },
     /// `first` through `last` moved by `offset_ms`, stopping at the start of the media.
     Shift {
@@ -159,16 +160,14 @@ impl SegmentChange {
                     .map(|segment| segment.end_ms)
                     .fold(merged_segment.end_ms, u64::max);
                 for segment in &run {
-                    merged_segment.text = format!("{}\n{}", merged_segment.text, segment.text);
+                    merged_segment.text = joined_text(&merged_segment.text, &segment.text);
                 }
-                let translations: Vec<&str> =
-                    std::iter::once(merged_segment.translation.as_deref())
-                        .chain(run.iter().map(|segment| segment.translation.as_deref()))
-                        .flatten()
-                        .filter(|translation| !translation.trim().is_empty())
-                        .collect();
-                merged_segment.translation =
-                    (!translations.is_empty()).then(|| translations.join("\n"));
+                merged_segment.translation = std::iter::once(merged_segment.translation.as_deref())
+                    .chain(run.iter().map(|segment| segment.translation.as_deref()))
+                    .flatten()
+                    .filter(|translation| !translation.trim().is_empty())
+                    .map(str::to_string)
+                    .reduce(|joined, translation| joined_text(&joined, &translation));
             }
             SegmentChange::Shift {
                 first,
@@ -192,6 +191,19 @@ impl SegmentChange {
         }
         Ok(())
     }
+}
+
+/// `first` and `second` on one line, with a half-width space between where either side of the
+/// join is a half-width letter or digit, as Chinese sets one beside English and numbers.
+fn joined_text(first: &str, second: &str) -> String {
+    let (Some(end), Some(start)) = (first.chars().last(), second.chars().next()) else {
+        return format!("{first}{second}");
+    };
+    let needs_space = !end.is_whitespace()
+        && !start.is_whitespace()
+        && (end.is_ascii_alphanumeric() || start.is_ascii_alphanumeric());
+    let separator = if needs_space { " " } else { "" };
+    format!("{first}{separator}{second}")
 }
 
 fn segment_at(segments: &mut [Segment], index: usize) -> Result<&mut Segment, SegmentChangeError> {
@@ -280,6 +292,11 @@ mod tests {
                 },
             ]
         );
+    }
+
+    #[test]
+    fn joins_an_empty_text_without_a_space() {
+        assert_eq!([joined_text("", "OK"), joined_text("OK", "")], ["OK", "OK"]);
     }
 
     #[test]

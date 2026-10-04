@@ -23,6 +23,7 @@ import ProjectSettingsController from "./controllers/project_settings_controller
 import RecentProjectsController from "./controllers/recent_projects_controller";
 import RepositoryController from "./controllers/repository_controller";
 import ReplacementController from "./controllers/replacement_controller";
+import ResourceListController from "./controllers/resource_list_controller";
 import SearchController from "./controllers/search_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
 import ShortcutsController from "./controllers/shortcuts_controller";
@@ -33,8 +34,10 @@ import TimelineController, {
   controlOption,
 } from "./controllers/timeline_controller";
 import TooltipController from "./controllers/tooltip_controller";
+import DiarizeController from "./controllers/diarize_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
+import PreferencesController from "./controllers/preferences_controller";
 import TranscriptionSettingsController from "./controllers/transcription_settings_controller";
 import TranslateController from "./controllers/translate_controller";
 import TranslationOptionsController from "./controllers/translation_options_controller";
@@ -76,8 +79,10 @@ async function start(): Promise<void> {
     "recent-projects": RecentProjectsController,
     replacement: ReplacementController,
     repository: RepositoryController,
+    "resource-list": ResourceListController,
     cleanup: CleanupController,
     search: SearchController,
+    diarize: DiarizeController,
     "segment-changes": SegmentChangesController,
     shortcuts: ShortcutsController,
     speakers: SpeakersController,
@@ -88,6 +93,7 @@ async function start(): Promise<void> {
     transcribe: TranscribeController,
     transcript: TranscriptController,
     "transcription-settings": TranscriptionSettingsController,
+    preferences: PreferencesController,
     translate: TranslateController,
     "translation-options": TranslationOptionsController,
     "translation-settings": TranslationSettingsController,

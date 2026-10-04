@@ -14,6 +14,8 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # check code against .spec/
 ```
 
+The webview's `src/backend/bindings.ts` is generated from the Rust commands, events and constants. When one changes, `cargo test` rewrites the file and fails once; commit the rewritten file with the change.
+
 ## Components
 
 ```bash
@@ -27,7 +29,7 @@ scripts/vendor.sh whisper cpu   # one Component, one Variant
 | Linux, OpenBLAS and Vulkan builds | pkg-config, libopenblas-dev, libvulkan-dev, glslc and spirv-headers |
 | Windows | MSYS2 UCRT64 |
 
-Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else the bundled one. Development builds bundle nothing: `scripts/vendor.sh` builds from the source [`components.json`](components.json) pins into `vendor/<component>/<variant>/`, which debug builds look in first, taking the first Variant listed for the platform unless one is named.
+Tsuzuri uses the executable chosen in the app, else one it finds installed (Homebrew, Nix, `PATH`), else the bundled one. Development builds bundle nothing. `scripts/vendor.sh` builds from the source [`components.json`](components.json) pins into `vendor/<component>/<variant>/`, which debug builds look in first. It takes the first Variant listed for the platform unless one is named.
 
 ## Packaging
 
@@ -37,7 +39,35 @@ pnpm tauri build --config src-tauri/tauri.bundle.conf.json
 
 This configuration bundles `vendor/` into the installer, and the app takes the first bundled Variant that runs, in the order `components.json` lists them. CI builds the first Variant listed for each platform the same way, caching each by its pin.
 
-## Tests that run the engines
+## Releasing
+
+```
+Title: chore(stable): release Build 20260929+143
+
+Releases Preview Build 20260929+143 (173c0ed).
+
+## Verified
+- <what testers checked>
+
+## Known issues
+- <or none>
+
+## After merging
+1. Approve and run the CI of the release PR release-please opens
+2. Merge it; release-assets publishes the draft release
+```
+
+| Rule | Why |
+|---|---|
+| Title names the Build | Testers checked it |
+| `main` is the head | Trunk, no release branch |
+| No push to `main` until merged | The head stays the Build |
+| Merge with a merge commit | `stable` keeps every commit |
+| The merge commit takes the PR title | Its first line stays conventional |
+
+A release PR brings `main` into `stable`. release-please picks the version only after it merges, so the title names the Preview Build instead. Before merging, check the PR's head is still the Build's commit.
+
+## Engine tests
 
 ```bash
 cd src-tauri

@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  parakeetWork,
   acceptedLicenses,
   licenseText,
   type Notice,
@@ -135,5 +136,16 @@ describe("licenses", () => {
     expect(notice).toContain(
       "<h3>MIT License</h3><ul><li>serde 1.0.228</li></ul><pre>Permission is hereby granted</pre>",
     );
+  });
+
+  // @behavior LC-010
+  it("carries the license of the code Speaker Diarization adapts", () => {
+    const work = parakeetWork();
+
+    expect([
+      work.name.startsWith("parakeet-rs 0.3.8"),
+      work.text.startsWith("MIT License"),
+      work.text.includes("Copyright (c) 2025 Enes Altun"),
+    ]).toEqual([true, true, true]);
   });
 });

@@ -30,7 +30,9 @@ export {
   isHeld,
   isRun,
   orderedTimes,
+  runWithNeighbour,
   type FieldKind,
+  type MergeDirection,
   type TimeEdge,
 } from "./rules";
 export type {

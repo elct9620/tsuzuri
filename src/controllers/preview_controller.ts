@@ -7,7 +7,9 @@ import {
   type ProjectView,
   type Segment,
 } from "../backend/project";
+import { isMacOS } from "../backend/system";
 import {
+  VIDEO_WINDOW,
   destroyVideoWindow,
   leaveVideoWindowFullscreen,
   toggleVideoWindowFullscreen,
@@ -20,7 +22,17 @@ import {
   rememberedFlag,
   rememberFlag,
 } from "../ui/choices";
-import { formatClock, formatTime } from "../ui/time";
+import { showFold } from "../ui/fold";
+import {
+  type PlayedSource,
+  type Silence,
+  isSameSource,
+  isSilenceOf,
+  playedSource,
+  silentWav,
+} from "../ui/silence";
+import { isShortcut } from "../ui/shortcuts";
+import { MS_PER_SECOND, formatClock, formatTime } from "../ui/time";
 import { forwardKeys, openVideoWindow } from "../ui/video_window";
 import {
   playAtVolume,
@@ -31,11 +43,30 @@ import {
   volumeAt,
 } from "../ui/volume";
 
-/** Where the webview remembers the Preview folded away. */
-const FOLDED_KEY = "tsuzuri.preview-folded";
+/**
+ * Where the webview remembers the player and its controls folded away, under the name a fold of the
+ * whole Preview was kept by, so a fold chosen then still holds.
+ */
+const PLAYER_FOLDED_KEY = "tsuzuri.preview-folded";
+/** Where the webview remembers the timeline folded away. */
+const TIMELINE_FOLDED_KEY = "tsuzuri.timeline-folded";
 
 /** Which text of the Segment being played is shown over the video. */
 type CaptionLanguage = "original" | "translation" | "bilingual";
+
+/** The height of a Dummy Video to its width: 16:9, the shape most videos take. */
+const DUMMY_VIDEO_RATIO = 9 / 16;
+
+/** What a Dummy Video is filled with: the dark of most pictures, or the light of a bright scene. */
+type DummyVideoColour = "black" | "white";
+
+/** Where the webview remembers the colour of a Dummy Video. */
+const DUMMY_VIDEO_KEY = "tsuzuri.preview-dummy-video";
+
+/** Subtitles are most often watched over a dark picture, so a Dummy Video is black until white is chosen. */
+function dummyVideoColourOf(value: string | null): DummyVideoColour {
+  return value === "white" ? value : "black";
+}
 
 /** Where the webview remembers what is shown over the video. */
 const CAPTION_KEY = "tsuzuri.preview-caption";
@@ -75,14 +106,17 @@ function showText(element: HTMLElement, text: string): void {
 export default class PreviewController extends Controller {
   static targets = [
     "panel",
-    "foldButton",
-    "foldIcon",
+    "playerFoldButton",
+    "timelineFoldButton",
+    "timeline",
     "screen",
+    "screenRow",
     "media",
     "caption",
     "captionChoice",
     "captionLanguage",
     "captionBackdrop",
+    "dummyVideoColour",
     "captionSpeaker",
     "hint",
     "videoWindowButton",
@@ -105,16 +139,22 @@ export default class PreviewController extends Controller {
   declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
   declare readonly panelTarget: HTMLElement;
-  /** Hides or shows the panel; only a Resource with media has one to fold. */
-  declare readonly foldButtonTarget: HTMLButtonElement;
-  declare readonly foldIconTarget: HTMLElement;
+  /** Hides or shows the player and its controls; only a Current Resource has them to fold. */
+  declare readonly playerFoldButtonTarget: HTMLButtonElement;
+  /** Hides or shows the timeline; only a Current Resource has one to fold. */
+  declare readonly timelineFoldButtonTarget: HTMLButtonElement;
+  /** The Waveform's frame, with its regions and tools. */
+  declare readonly timelineTarget: HTMLElement;
   declare readonly screenTarget: HTMLElement;
+  /** The row the video sits in beside the card, and comes back to. */
+  declare readonly screenRowTarget: HTMLElement;
   declare readonly mediaTarget: HTMLVideoElement;
   declare readonly captionTarget: HTMLElement;
   /** Chooses what is shown over the video and what it sits on; only a picture has one. */
   declare readonly captionChoiceTarget: HTMLElement;
   declare readonly captionLanguageTargets: HTMLInputElement[];
   declare readonly captionBackdropTargets: HTMLInputElement[];
+  declare readonly dummyVideoColourTargets: HTMLInputElement[];
   declare readonly captionSpeakerTarget: HTMLInputElement;
   declare readonly hintTarget: HTMLElement;
   /** Moves the video into the Video Window and back; only a picture has one to move. */
@@ -139,7 +179,9 @@ export default class PreviewController extends Controller {
   declare readonly currentTextTarget: HTMLElement;
   declare readonly currentTranslationTarget: HTMLElement;
 
-  private media: string | null = null;
+  private source: PlayedSource | null = null;
+  /** The object URL of the silence the player reads, released once it reads something else. */
+  private silenceUrl: string | null = null;
   private segments: Segment[] = [];
   private playingIndexes: number[] = [];
   private hasTranslation = false;
@@ -147,9 +189,13 @@ export default class PreviewController extends Controller {
   private bilingualOrder: ProjectOptions["bilingual_order"] = "original-first";
   private captionLanguage = captionLanguageOf(rememberedChoice(CAPTION_KEY));
   private captionBackdrop = captionBackdropOf(rememberedChoice(BACKDROP_KEY));
+  private dummyVideoColour = dummyVideoColourOf(
+    rememberedChoice(DUMMY_VIDEO_KEY),
+  );
   /** A saved cue names its Speaker, so the caption does too until turned off. */
   private isSpeakerShown = rememberedFlag(SPEAKER_KEY, true);
-  private isFolded = rememberedFlag(FOLDED_KEY, false);
+  private isPlayerFolded = rememberedFlag(PLAYER_FOLDED_KEY, false);
+  private isTimelineFolded = rememberedFlag(TIMELINE_FOLDED_KEY, false);
   private volume = savedVolume(rememberedChoice(VOLUME_KEY));
   /** A mute is not remembered, so a Preview opening silent never passes for media with no sound. */
   private isMuted = false;
@@ -164,8 +210,6 @@ export default class PreviewController extends Controller {
   private player!: HTMLVideoElement;
   private captionBox!: HTMLElement;
   private unplayableHint!: HTMLElement;
-  /** The row the video sits in beside the card, and comes back to. */
-  private screenRow!: HTMLElement;
   /** The window the video is in while it is out of the Preview. */
   private videoWindow: Window | null = null;
   /**
@@ -185,7 +229,6 @@ export default class PreviewController extends Controller {
 
   connect(): void {
     this.screen = this.screenTarget;
-    this.screenRow = this.screen.parentElement!;
     this.player = this.mediaTarget;
     this.captionBox = this.captionTarget;
     this.unplayableHint = this.hintTarget;
@@ -193,6 +236,7 @@ export default class PreviewController extends Controller {
       this.player.addEventListener(name, listener);
     this.player.crossOrigin = "anonymous";
     this.showCaptionBackdrop();
+    this.showDummyVideo();
     this.captionSpeakerTarget.checked = this.isSpeakerShown;
     this.volumeTarget.max = String(SLIDER_END);
     this.volumeTarget.value = String(sliderPosition(this.volume));
@@ -206,6 +250,7 @@ export default class PreviewController extends Controller {
     if (this.videoWindow) this.closeVideoWindow();
     for (const [name, listener] of this.playerListeners)
       this.player.removeEventListener(name, listener);
+    this.releaseSilence();
   }
 
   /** Shows the Current Segment in the card beside the video. */
@@ -213,9 +258,15 @@ export default class PreviewController extends Controller {
     this.showCurrentSegment();
   }
 
-  toggleFold(): void {
-    this.isFolded = !this.isFolded;
-    rememberFlag(FOLDED_KEY, this.isFolded);
+  togglePlayerFold(): void {
+    this.isPlayerFolded = !this.isPlayerFolded;
+    rememberFlag(PLAYER_FOLDED_KEY, this.isPlayerFolded);
+    this.showPanel();
+  }
+
+  toggleTimelineFold(): void {
+    this.isTimelineFolded = !this.isTimelineFolded;
+    rememberFlag(TIMELINE_FOLDED_KEY, this.isTimelineFolded);
     this.showPanel();
   }
 
@@ -254,6 +305,13 @@ export default class PreviewController extends Controller {
     this.showCaptionBackdrop();
   }
 
+  chooseDummyVideoColour({ target }: Event): void {
+    this.dummyVideoColour = (target as HTMLInputElement)
+      .value as DummyVideoColour;
+    rememberChoice(DUMMY_VIDEO_KEY, this.dummyVideoColour);
+    this.showDummyVideo();
+  }
+
   toggleCaptionSpeaker(): void {
     this.isSpeakerShown = this.captionSpeakerTarget.checked;
     rememberFlag(SPEAKER_KEY, this.isSpeakerShown);
@@ -284,13 +342,10 @@ export default class PreviewController extends Controller {
     else this.player.pause();
   }
 
-  /** Leaves the video out for media without a picture, keeping only the controls. */
+  /** Sizes the row to the media just loaded, which tells only now whether it has a picture. */
   measure(): void {
-    const hasPicture = this.player.videoWidth > 0;
-    if (!hasPicture && this.videoWindow) this.closeVideoWindow();
-    this.screen.hidden = !hasPicture;
-    this.captionChoiceTarget.hidden = !hasPicture;
-    this.videoWindowButtonTarget.hidden = !hasPicture;
+    this.fitScreenRow();
+    this.showDummyVideo();
     this.showTime();
   }
 
@@ -299,7 +354,7 @@ export default class PreviewController extends Controller {
     const length = Number.isFinite(duration) ? duration : 0;
     showText(
       this.timeTarget,
-      `${formatClock(currentTime * 1000)} / ${formatClock(length * 1000)}`,
+      `${formatClock(currentTime * MS_PER_SECOND)} / ${formatClock(length * MS_PER_SECOND)}`,
     );
   }
 
@@ -322,7 +377,6 @@ export default class PreviewController extends Controller {
   }
 
   showUnplayable(): void {
-    this.screen.hidden = false;
     this.player.hidden = true;
     this.unplayableHint.hidden = false;
     this.captionChoiceTarget.hidden = true;
@@ -351,11 +405,15 @@ export default class PreviewController extends Controller {
 
   private moveVideoOut(): void {
     if (this.videoWindow) return;
-    const videoWindow = openVideoWindow(t("preview.videoWindowTitle"));
+    const videoWindow = openVideoWindow(
+      VIDEO_WINDOW,
+      t("preview.videoWindowTitle"),
+    );
     if (!videoWindow) return;
     forwardKeys(videoWindow);
-    videoWindow.addEventListener("keydown", ({ key }) => {
-      if (key === "Escape") void leaveVideoWindowFullscreen();
+    videoWindow.addEventListener("keydown", (event) => {
+      if (isShortcut(event, "videoWindowFullscreen", isMacOS()))
+        void leaveVideoWindowFullscreen();
     });
     videoWindow.addEventListener(
       "dblclick",
@@ -368,7 +426,7 @@ export default class PreviewController extends Controller {
   private bringVideoBack(): void {
     if (!this.videoWindow) return;
     this.videoWindow = null;
-    this.moveScreen(() => this.screenRow.prepend(this.screen));
+    this.moveScreen(() => this.screenRowTarget.prepend(this.screen));
   }
 
   /**
@@ -395,15 +453,31 @@ export default class PreviewController extends Controller {
    */
   private showVideoWindow(): void {
     const isAway = this.videoWindow !== null;
-    this.screenRow.toggleAttribute("data-is-video-away", isAway);
+    this.fitScreenRow();
     this.currentSectionTarget.hidden = isAway;
     this.videoWindowButtonTarget.setAttribute("aria-pressed", `${isAway}`);
     this.videoWindowButtonTarget.classList.toggle("btn-primary", isAway);
   }
 
+  /**
+   * Gives the row the height its picture takes at the picture's width, up to a limit the page
+   * sets, a Dummy Video standing in for media without a picture, and leaves it to the card while
+   * the picture is in the Video Window.
+   */
+  private fitScreenRow(): void {
+    const { videoWidth, videoHeight } = this.player;
+    const isPictureInRow = this.videoWindow === null;
+    this.screenRowTarget.toggleAttribute("data-has-picture", isPictureInRow);
+    if (isPictureInRow)
+      this.screenRowTarget.style.setProperty(
+        "--picture-ratio",
+        String(videoWidth > 0 ? videoHeight / videoWidth : DUMMY_VIDEO_RATIO),
+      );
+  }
+
   /** The indexes of the Segments at the media's time, in the order they start; none between Segments. */
   private segmentIndexesAtTime(): number[] {
-    const at = this.player.currentTime * 1000;
+    const at = this.player.currentTime * MS_PER_SECOND;
     return this.segments.flatMap((segment, index) =>
       segment.start_ms <= at && at < segment.end_ms ? [index] : [],
     );
@@ -450,6 +524,17 @@ export default class PreviewController extends Controller {
     }
   }
 
+  /** Fills the screen with the chosen colour while no picture is there, the choice open only then. */
+  private showDummyVideo(): void {
+    const hasPicture = this.player.videoWidth > 0;
+    if (hasPicture) delete this.screen.dataset.dummyVideo;
+    else this.screen.dataset.dummyVideo = this.dummyVideoColour;
+    for (const input of this.dummyVideoColourTargets) {
+      input.disabled = hasPicture;
+      input.checked = input.value === this.dummyVideoColour;
+    }
+  }
+
   private showCurrentSegment(): void {
     const index = this.session.cursor.index;
     const segment = index === null ? undefined : this.segments[index];
@@ -465,11 +550,15 @@ export default class PreviewController extends Controller {
   }
 
   private showPanel(): void {
-    const hasMedia = this.media !== null;
-    this.foldButtonTarget.hidden = !hasMedia;
-    this.panelTarget.hidden = !hasMedia || this.isFolded;
-    this.foldIconTarget.classList.toggle("swap-active", this.isFolded);
-    this.foldButtonTarget.setAttribute("aria-pressed", String(this.isFolded));
+    const hasSource = this.source !== null;
+    this.panelTarget.hidden =
+      !hasSource || (this.isPlayerFolded && this.isTimelineFolded);
+    this.screenRowTarget.hidden = this.isPlayerFolded;
+    this.timelineTarget.hidden = this.isTimelineFolded;
+    this.playerFoldButtonTarget.hidden = !hasSource;
+    this.timelineFoldButtonTarget.hidden = !hasSource;
+    showFold(this.playerFoldButtonTarget, this.isPlayerFolded);
+    showFold(this.timelineFoldButtonTarget, this.isTimelineFolded);
   }
 
   /** Tells the editor which Segments are being played, each time that changes. */
@@ -485,23 +574,43 @@ export default class PreviewController extends Controller {
     this.speakerNames = project?.shown_speaker_names ?? {};
     this.bilingualOrder = project?.options.bilingual_order ?? "original-first";
     this.showCaptionChoice();
-    const media = project?.media ?? null;
+    const source = playedSource(project, this.source);
     this.showCurrentSegment();
-    if (media === this.media) {
+    if (isSameSource(source, this.source)) {
       this.showCaption(this.segmentIndexesAtTime());
       return;
     }
-    this.media = media;
-    if (media === null && this.videoWindow) this.closeVideoWindow();
+    const lastSource = this.source;
+    this.source = source;
+    if (source === null && this.videoWindow) this.closeVideoWindow();
     this.showPanel();
-    this.screen.hidden = false;
-    this.videoWindowButtonTarget.hidden = false;
     this.player.hidden = false;
     this.unplayableHint.hidden = true;
     this.captionChoiceTarget.hidden = false;
     this.captionBox.textContent = "";
     this.markPlaying([]);
-    if (media === null) this.player.removeAttribute("src");
-    else this.player.src = mediaUrl(media);
+    this.releaseSilence();
+    if (source === null) this.player.removeAttribute("src");
+    else if ("media" in source) this.player.src = mediaUrl(source.media);
+    else this.playSilence(source, lastSource);
+  }
+
+  /**
+   * Puts `silence` in the player. Silence made longer for the same Resource goes on from where the
+   * last one was, playing if it played, as the user only moved a Segment.
+   */
+  private playSilence(silence: Silence, lastSource: PlayedSource | null): void {
+    const isLengthened = isSilenceOf(lastSource, silence.resource);
+    const { currentTime, paused } = this.player;
+    this.silenceUrl = URL.createObjectURL(silentWav(silence.lengthMs));
+    this.player.src = this.silenceUrl;
+    if (!isLengthened) return;
+    this.player.currentTime = currentTime;
+    if (!paused) void this.player.play();
+  }
+
+  private releaseSilence(): void {
+    if (this.silenceUrl !== null) URL.revokeObjectURL(this.silenceUrl);
+    this.silenceUrl = null;
   }
 }

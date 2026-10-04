@@ -1,14 +1,23 @@
-use tauri::{AppHandle, Emitter, State};
+use serde::Serialize;
+use tauri::{AppHandle, State};
+use tauri_specta::Event;
 
 use super::{
     check_at_launch, install_release, look_for_rollback, look_for_update, AppUpdate, FoundUpdate,
-    UpdateChannel, UpdateSettings,
+    UpdateChannel, UpdateProgress, UpdateSettings,
 };
 use crate::failure::Failure;
 use crate::json_settings::settings_dir;
 use crate::processes::Processes;
 use crate::release_number::is_preview_build;
 use crate::steps::ModeLock;
+
+/// How much of the App Update being installed has downloaded.
+// @event update-progress
+#[derive(Clone, Serialize, specta::Type, Event)]
+#[serde(transparent)]
+#[tauri_specta(event_name = "update-progress")]
+pub struct AppUpdateProgress(UpdateProgress);
 
 /// The update site, which publishes each Update Channel's manifest.
 const UPDATE_SITE: &str = "https://tsuzuri.aotoki.me";
@@ -19,6 +28,7 @@ fn running_build_channel() -> UpdateChannel {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn check_for_update(
     app: AppHandle,
     found_update: State<'_, FoundUpdate>,
@@ -29,6 +39,7 @@ pub async fn check_for_update(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn check_for_update_at_launch(
     app: AppHandle,
     found_update: State<'_, FoundUpdate>,
@@ -40,6 +51,7 @@ pub async fn check_for_update_at_launch(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn check_for_rollback(
     app: AppHandle,
     found_update: State<'_, FoundUpdate>,
@@ -50,6 +62,7 @@ pub async fn check_for_rollback(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn install_update(
     app: AppHandle,
     found_update: State<'_, FoundUpdate>,
@@ -62,8 +75,7 @@ pub async fn install_update(
         &mode_lock,
         || processes.kill_all(),
         |progress| {
-            // @event update-progress
-            let _ = app.emit("update-progress", progress);
+            let _ = AppUpdateProgress(progress).emit(&app);
         },
     )
     .await?;
@@ -72,6 +84,7 @@ pub async fn install_update(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn update_settings(app: AppHandle) -> Result<UpdateSettings, Failure> {
     Ok(UpdateSettings::load(
         &settings_dir(&app)?,
@@ -80,6 +93,7 @@ pub fn update_settings(app: AppHandle) -> Result<UpdateSettings, Failure> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn choose_launch_check(
     app: AppHandle,
     has_launch_check: bool,
@@ -89,6 +103,7 @@ pub fn choose_launch_check(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn choose_update_channel(
     app: AppHandle,
     channel: UpdateChannel,

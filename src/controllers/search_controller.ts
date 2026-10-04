@@ -10,6 +10,7 @@ import {
 } from "../editor";
 import { t } from "../i18n";
 import { failureMessage } from "../ui/failure";
+import { isShortcut } from "../ui/shortcuts";
 import {
   chosenTextField,
   offerTextFields,
@@ -20,32 +21,12 @@ import {
 const MATCH_HIGHLIGHT = "search-match";
 const CURRENT_MATCH_HIGHLIGHT = "search-current";
 
-/**
- * Whether `event` asks for the search bar: Ctrl+F, or ⌘F on macOS, where Ctrl+F moves forward in a
- * text.
- */
-function isSearchShortcut(event: KeyboardEvent): boolean {
-  const isCommand = isMacOS() ? event.metaKey : event.ctrlKey;
-  const isOtherCommand = isMacOS() ? event.ctrlKey : event.metaKey;
-  return (
-    isCommand &&
-    !isOtherCommand &&
-    !event.altKey &&
-    !event.shiftKey &&
-    event.code === "KeyF"
-  );
-}
-
-/**
- * How far `event` moves between matches: F3 on, Shift+F3 back, or ⌘G and ⇧⌘G on macOS, where F3
- * belongs to the system; 0 for any other key.
- */
+/** How far `event` moves between matches: one on, one back, or 0 for any other key. */
 function matchStep(event: KeyboardEvent): number {
-  const isStep = isMacOS()
-    ? event.metaKey && !event.ctrlKey && !event.altKey && event.code === "KeyG"
-    : event.key === "F3" && !event.ctrlKey && !event.altKey && !event.metaKey;
-  if (!isStep) return 0;
-  return event.shiftKey ? -1 : 1;
+  const isMac = isMacOS();
+  if (isShortcut(event, "searchNext", isMac)) return 1;
+  if (isShortcut(event, "searchPrevious", isMac)) return -1;
+  return 0;
 }
 
 /**
@@ -76,7 +57,7 @@ export default class SearchController extends Controller {
 
   /** Opens the bar; bound to `keydown@window`, it acts only on the search shortcuts. */
   openByShortcut(event: KeyboardEvent): void {
-    if (!isSearchShortcut(event)) return;
+    if (!isShortcut(event, "search", isMacOS())) return;
     event.preventDefault();
     this.open();
   }
@@ -135,7 +116,10 @@ export default class SearchController extends Controller {
     if (this.barTarget.hidden || this.matches.length === 0) return;
     const count = this.matches.length;
     this.currentPosition = (this.currentPosition + step + count) % count;
-    this.session.makeCurrent(this.matches[this.currentPosition].index);
+    this.session.makeCurrent(
+      this.matches[this.currentPosition].index,
+      "search",
+    );
     this.show();
   }
 

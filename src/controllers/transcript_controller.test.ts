@@ -804,6 +804,18 @@ describe("TranscriptController", () => {
     );
   });
 
+  // @behavior ED-181
+  it("shows the merge shortcuts beside merging in a Segment's menu", async () => {
+    await hold(translatedProject);
+
+    expect(
+      [".mergeWithPrevious", ".mergeWithNext"].map(
+        (choice) =>
+          document.querySelector(`li button${choice} kbd`)?.textContent,
+      ),
+    ).toEqual(["Ctrl+Alt+↑", "Ctrl+Alt+↓"]);
+  });
+
   // @behavior ED-107
   it("shows the delete shortcut beside deleting in a Segment's menu", async () => {
     await hold(translatedProject);

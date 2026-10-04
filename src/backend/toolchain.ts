@@ -1,86 +1,52 @@
-import { invoke } from "@tauri-apps/api/core";
+import type * as bindings from "./bindings";
+import { commands } from "./bindings";
 
-/** Where a ready Component was found. */
-export type Origin = "choice" | "detection" | "bundled-variant";
+export type Origin = bindings.Origin;
 
-export interface ComponentStatus {
-  name: string;
-  is_ready: boolean;
-  path: string | null;
-  origin: Origin | null;
-  variant: string | null;
-  problem: "not-installed" | "does-not-run" | null;
-  /** The command that installs it, where the platform has one to name. */
-  install: string | null;
-}
+export type ComponentStatus = bindings.ComponentStatus;
 
 export function componentStatuses(): Promise<ComponentStatus[]> {
-  return invoke<ComponentStatus[]>("component_statuses");
+  return commands.componentStatuses();
 }
 
 export function chooseComponent(
   name: string,
   path: string,
 ): Promise<ComponentStatus[]> {
-  return invoke<ComponentStatus[]>("choose_component", { name, path });
+  return commands.chooseComponent(name, path);
 }
 
 export function forgetComponent(name: string): Promise<ComponentStatus[]> {
-  return invoke<ComponentStatus[]>("forget_component", { name });
+  return commands.forgetComponent(name);
 }
 
-export type ModelSlot = "transcription" | "vad" | "translation";
+export type ModelSlot = bindings.ModelSlot;
 
-/** Where a Model Slot's Model comes from. */
-export type ModelSource =
-  | { kind: "file"; path: string }
-  | { kind: "repository"; repo: string; file: string; commit: string };
+export type ModelSource = bindings.ModelSource;
 
-export interface SlotView {
-  source: ModelSource | null;
-  /** Where the Model is expected. */
-  path: string | null;
-  has_file: boolean;
-  /** The file extensions a Model for the slot has. */
-  extensions: string[];
-  /** Which of the slot's Preset Models the Model is, as its place among them. */
-  preset_index: number | null;
-}
+export type SlotView = bindings.SlotView;
 
-export type ModelSettingsView = Record<ModelSlot, SlotView>;
+export type ModelSettingsView = bindings.ModelSettingsView;
 
 export function modelSettings(): Promise<ModelSettingsView> {
-  return invoke<ModelSettingsView>("model_settings");
+  return commands.modelSettings();
 }
 
 export function chooseModel(
   slot: ModelSlot,
   source: ModelSource,
 ): Promise<ModelSettingsView> {
-  return invoke<ModelSettingsView>("choose_model", { slot, source });
+  return commands.chooseModel(slot, source);
 }
 
-/** A Model Tsuzuri was verified with, offered by name so nobody has to know where to find it. */
-export interface PresetModel {
-  slot: ModelSlot;
-  name: string;
-  quantization: string;
-  source: ModelSource;
-  size: number;
-}
+export type PresetModel = bindings.PresetModel;
 
 /** The Preset Models of `slot`, in the order the settings offer them. */
 export function presetModels(slot: ModelSlot): Promise<PresetModel[]> {
-  return invoke<PresetModel[]>("preset_models", { slot });
+  return commands.presetModels(slot);
 }
 
-/** How much of a Model being downloaded has arrived, as `model-download-progress` tells it. */
-export interface DownloadProgress {
-  repo: string;
-  file: string;
-  downloaded: number;
-  total: number | null;
-}
+export type DownloadProgress = bindings.DownloadProgress;
 
 /** Downloads `file` of `repo` into the Hugging Face Cache, at the main branch when no `revision` is given. */
 export function downloadModel(
@@ -88,23 +54,22 @@ export function downloadModel(
   file: string,
   revision: string | null = null,
 ): Promise<ModelSource> {
-  return invoke<ModelSource>("download_model", { repo, file, revision });
+  return commands.downloadModel(repo, file, revision);
 }
 
-/** A file of a Hugging Face Repository, by its path in the Repository. */
-export interface RepositoryFile {
-  path: string;
-  size: number;
-}
+export type RepositoryFile = bindings.RepositoryFile;
 
 /** The files of `repo` at its main branch a Model for `slot` can be. */
 export function repositoryFiles(
   repo: string,
   slot: ModelSlot,
 ): Promise<RepositoryFile[]> {
-  return invoke<RepositoryFile[]>("repository_files", { repo, slot });
+  return commands.repositoryFiles(repo, slot);
 }
 
-export function cancelModelDownload(repo: string, file: string): Promise<void> {
-  return invoke<void>("cancel_model_download", { repo, file });
+export async function cancelModelDownload(
+  repo: string,
+  file: string,
+): Promise<void> {
+  await commands.cancelModelDownload(repo, file);
 }

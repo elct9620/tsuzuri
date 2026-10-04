@@ -11,7 +11,7 @@ use crate::transcript::SrtError;
 
 /// Why a command did not finish. The webview words each code in the interface language,
 /// so a variant carries data rather than prose; `detail` is text a system or Component wrote.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(tag = "code", rename_all = "kebab-case")]
 pub enum Failure {
     /// Reading or writing a file failed.
@@ -62,8 +62,10 @@ pub enum Failure {
     NoProject,
     /// The Project has no Resource by the name asked for, or none is current.
     NoResource,
-    /// Transcribing a Current Resource that has no media file.
+    /// The media file of a Current Resource that has none, asked for to convert it.
     NoMedia,
+    /// A diarization asked of a Current Resource that has no Primary Language subtitle.
+    NoSubtitle,
     /// An edit refused because a subtitle of the Current Resource was changed elsewhere since
     /// Tsuzuri last read or wrote it; the Current Resource was read again instead.
     ChangedElsewhere,

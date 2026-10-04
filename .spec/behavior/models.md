@@ -230,11 +230,11 @@ Downloading again after an update or on a second slot costs nothing, as with any
 
 ## `MD-025` Listing the transcription Models of a Repository
 
-A Repository keeps other files beside its Models, and whisper.cpp's transcription and VAD Models are both `.bin`, so only a file the slot can load is offered.
+A Repository keeps other files beside its Models, whisper.cpp's transcription and VAD Models are both `.bin`, and the translation and diarization Models are both `.gguf`, so only a file the slot can load is offered.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf` and `README.md` |
+| Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf`, `Nemotron-3-Diarization.q8_0.gguf` and `README.md` |
 | When | its files are listed for the transcription slot |
 | Then | only `ggml-large-v3.bin` is listed, with its size |
 
@@ -242,7 +242,7 @@ A Repository keeps other files beside its Models, and whisper.cpp's transcriptio
 
 | Step | Statement |
 | --- | --- |
-| Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf` and `README.md` |
+| Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf`, `Nemotron-3-Diarization.q8_0.gguf` and `README.md` |
 | When | its files are listed for the VAD slot |
 | Then | only `ggml-silero-v6.2.0.bin` is listed |
 
@@ -250,7 +250,7 @@ A Repository keeps other files beside its Models, and whisper.cpp's transcriptio
 
 | Step | Statement |
 | --- | --- |
-| Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf` and `README.md` |
+| Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf`, `Nemotron-3-Diarization.q8_0.gguf` and `README.md` |
 | When | its files are listed for the translation slot |
 | Then | only `qwen3.gguf` is listed |
 
@@ -429,3 +429,11 @@ The Hub answers a Repository that does not exist, or is private to someone else,
 | Given | the translation slot whose Model Rust names as its first Preset Model |
 | When | its menu is shown |
 | Then | the menu has that Preset Model chosen |
+
+## `MD-051` Listing the diarization Models of a Repository
+
+| Step | Statement |
+| --- | --- |
+| Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf`, `Nemotron-3-Diarization.q8_0.gguf` and `README.md` |
+| When | its files are listed for the diarization slot |
+| Then | only `Nemotron-3-Diarization.q8_0.gguf` is listed |

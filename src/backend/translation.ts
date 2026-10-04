@@ -1,38 +1,20 @@
-import { invoke } from "@tauri-apps/api/core";
+import type * as bindings from "./bindings";
+import type { Language } from "./project";
+import { commands } from "./bindings";
 
-import type { PhaseTiming } from "./progress";
+export type TranslationOptions = bindings.TranslationOptions;
 
-/** The choices a translation is started with, named as Rust names them. */
-export interface TranslationOptions {
-  has_self_review: boolean;
-  summary_word_limit: number | null;
-  /** Whether a Simplified Cleanup follows a translation into `zh-TW`. */
-  is_simplified_cleaned: boolean;
-}
+/** Rust sends every field; only a saved file read back may leave one out. */
+export type TranslationSettings = Required<bindings.TranslationSettings>;
 
-/** How a translation is batched and repaired, as Rust saves it. */
-export interface TranslationSettings {
-  batch_size: number;
-  retries: number;
-  reference_lines: number;
-  has_resident_llama: boolean;
-  model_keep_seconds: number;
-  /** Whether a Simplified Cleanup follows a translation into `zh-TW`. */
-  is_simplified_cleaned: boolean;
-}
-
-export interface Translation {
-  phases: PhaseTiming[];
-  /** How many Segments of the original, retimed while it was translated, find no cue at their times. */
-  unmatched_count: number;
-}
+export type Translation = bindings.Translation;
 
 /** Translates the Current Resource from the Primary Language; the translations land in the Project, not in the answer. */
 export function translate(
   target: string,
   options: TranslationOptions,
 ): Promise<Translation> {
-  return invoke<Translation>("translate", { target, options });
+  return commands.translate(target as Language, options);
 }
 
 /** Translates the Segments at `indexes` again into the translation shown with `options`, save the Rolling Summary, as one change. */
@@ -40,7 +22,7 @@ export function retranslate(
   indexes: number[],
   options: TranslationOptions,
 ): Promise<Translation> {
-  return invoke<Translation>("retranslate", { indexes, options });
+  return commands.retranslate(indexes, options);
 }
 
 /** Translates the whole Current Resource into `target`, or with `indexes` the Segments at them again into the translation shown. */
@@ -55,11 +37,13 @@ export function translateSegments(
 }
 
 export function translationSettings(): Promise<TranslationSettings> {
-  return invoke<TranslationSettings>("translation_settings");
+  return commands.translationSettings() as Promise<TranslationSettings>;
 }
 
 export function saveTranslationSettings(
   settings: TranslationSettings,
 ): Promise<TranslationSettings> {
-  return invoke<TranslationSettings>("save_translation_settings", { settings });
+  return commands.saveTranslationSettings(
+    settings,
+  ) as Promise<TranslationSettings>;
 }

@@ -12,6 +12,9 @@ use crate::progress::Progress;
 use crate::steps::{StepEvent, Steps};
 use crate::timing::Phase;
 
+/// How many of a process's events wait to be read before the task forwarding them waits too.
+const EVENT_CAPACITY: usize = 64;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct RecordedProcess {
     pid: u32,
@@ -62,7 +65,7 @@ impl Processes {
         );
         self.write_record();
 
-        let (forward, received) = async_runtime::channel(64);
+        let (forward, received) = async_runtime::channel(EVENT_CAPACITY);
         let processes = self.clone();
         async_runtime::spawn(async move {
             forward_in_order(&name, events, forward).await;
@@ -225,8 +228,12 @@ pub fn reap_strays(record: &Path) {
         return;
     };
     let records: Vec<RecordedProcess> = serde_json::from_slice(&bytes).unwrap_or_default();
+    // The diarize Step is the app itself, so a recorded name can match the app now launching.
+    let own_pid = std::process::id();
     for stray in records {
-        if find_running_name(stray.pid).is_some_and(|name| name == stray.name) {
+        if stray.pid != own_pid
+            && find_running_name(stray.pid).is_some_and(|name| name == stray.name)
+        {
             kill_tree(stray.pid);
         }
     }
@@ -282,7 +289,8 @@ mod tests {
     use std::process::{Child, Command};
     use std::time::{Duration, Instant};
 
-    use tauri::test::{mock_builder, mock_context, noop_assets};
+    use crate::test_support::build_mock_app;
+    use tauri::test::mock_builder;
     use tauri_plugin_shell::process::TerminatedPayload;
 
     use super::*;
@@ -291,10 +299,7 @@ mod tests {
     use crate::test_support::{captured_logs, TempDir};
 
     fn mock_app() -> tauri::App<tauri::test::MockRuntime> {
-        mock_builder()
-            .plugin(tauri_plugin_shell::init())
-            .build(mock_context(noop_assets()))
-            .unwrap()
+        build_mock_app(mock_builder().plugin(tauri_plugin_shell::init()))
     }
 
     fn sleep_path() -> PathBuf {
@@ -395,6 +400,19 @@ mod tests {
         let _ = child.kill();
         let _ = child.wait();
         assert!(still_running);
+    }
+
+    // @behavior PR-010
+    #[test]
+    fn spares_the_app_when_a_recorded_pid_is_its_own() {
+        let dir = TempDir::new("pr-own");
+        let own_pid = std::process::id();
+        let own_name = find_running_name(own_pid).unwrap();
+        let record = record(&dir, own_pid, &own_name);
+
+        reap_strays(&record);
+
+        assert!(is_running(own_pid));
     }
 
     // @behavior PR-005

@@ -1,5 +1,9 @@
 pub mod about;
+pub mod bindings;
 pub mod cleanup;
+pub mod conversion;
+pub mod diarization;
+pub mod edit_command;
 pub mod failure;
 pub mod json_settings;
 pub mod language;
@@ -7,6 +11,7 @@ pub mod logs;
 #[cfg(target_os = "macos")]
 pub mod menu;
 pub mod model_source;
+pub mod preference;
 pub mod processes;
 pub mod progress;
 pub mod project;
@@ -43,12 +48,13 @@ use updates::FoundUpdate;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let bindings = bindings::builder();
     let builder = with_requested_srt(tauri::Builder::default());
     #[cfg(target_os = "macos")]
     let builder = builder
         .menu(menu::build_app_menu)
         .on_menu_event(menu::forward_edit_command);
-    builder
+    let app = builder
         .plugin(tauri_plugin_single_instance::init(follow_second_launch))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
@@ -110,81 +116,21 @@ pub fn run() {
             window::hand_back_video(window, event);
             window::close_video_with_main(window, event);
         })
-        .invoke_handler(tauri::generate_handler![
-            waveform::commands::extract_waveform,
-            toolchain::commands::choose_component,
-            toolchain::commands::forget_component,
-            toolchain::commands::component_statuses,
-            toolchain::commands::model_settings,
-            toolchain::commands::choose_model,
-            toolchain::commands::preset_models,
-            toolchain::commands::download_model,
-            toolchain::commands::repository_files,
-            toolchain::commands::cancel_model_download,
-            transcription::commands::transcribe,
-            transcription::commands::transcription_settings,
-            transcription::commands::save_transcription_settings,
-            project::commands::current_project,
-            project::commands::edit_segment,
-            project::commands::set_speakers,
-            project::commands::replace_text,
-            project::commands::clean_simplified,
-            project::commands::find_text,
-            steps::commands::cancel_task,
-            translation::commands::retranslate,
-            project::commands::change_segments,
-            project::commands::translation_cues,
-            logs::commands::log_directory,
-            logs::commands::choose_log_directory,
-            logs::commands::debug_log,
-            logs::commands::choose_debug_log,
-            logs::commands::open_log_directory,
-            about::commands::app_build,
-            about::commands::open_releases,
-            about::commands::open_sponsorship,
-            updates::commands::check_for_update,
-            updates::commands::check_for_update_at_launch,
-            updates::commands::install_update,
-            updates::commands::update_settings,
-            updates::commands::choose_launch_check,
-            updates::commands::choose_update_channel,
-            updates::commands::check_for_rollback,
-            project::commands::revert_row,
-            project::commands::undo,
-            project::commands::redo,
-            project::commands::subtitle_versions,
-            project::commands::compare_versions,
-            project::commands::restore_version,
-            project::commands::export_path,
-            project::commands::open_project,
-            project::commands::open_srt,
-            project::commands::recent_projects,
-            project::commands::take_requested_srt,
-            project::commands::save_srt,
-            project::commands::save_text,
-            project::commands::select_resource,
-            project::commands::set_primary_language,
-            project::commands::set_project_options,
-            project::commands::show_translation,
-            project::commands::reload_project,
-            translation::commands::save_translation_settings,
-            translation::commands::translate,
-            translation::commands::translation_settings,
-            project::commands::save_translation_glossary,
-            project::commands::translation_glossary_table,
-        ])
+        .invoke_handler(bindings.invoke_handler())
         .build(tauri::generate_context!())
-        .expect("error while building tauri application")
-        .run(|app, event| match event {
-            RunEvent::Exit => app.state::<Processes>().kill_all(),
-            #[cfg(target_os = "macos")]
-            RunEvent::Opened { urls } => project::commands::request_srt_argument(
-                app,
-                urls.iter().map(|url| url.to_string()),
-                Path::new("/"),
-            ),
-            _ => {}
-        });
+        .expect("error while building tauri application");
+    // Mounted before the app runs, since the system may ask to open an SRT file before setup.
+    bindings.mount_events(&app);
+    app.run(|app, event| match event {
+        RunEvent::Exit => app.state::<Processes>().kill_all(),
+        #[cfg(target_os = "macos")]
+        RunEvent::Opened { urls } => project::commands::request_srt_argument(
+            app,
+            urls.iter().map(|url| url.to_string()),
+            Path::new("/"),
+        ),
+        _ => {}
+    });
 }
 
 /// `builder` keeping the Requested SRT from before setup: macOS asks to open a file with
@@ -205,16 +151,15 @@ fn follow_second_launch(app: &AppHandle, arguments: Vec<String>, directory: Stri
 mod tests {
     use std::path::PathBuf;
 
-    use tauri::test::{mock_builder, mock_context, noop_assets};
+    use crate::test_support::build_mock_app;
+    use tauri::test::mock_builder;
 
     use super::*;
 
     // @behavior PJ-180
     #[test]
     fn keeps_an_srt_file_the_system_asks_for_before_setup() {
-        let app = with_requested_srt(mock_builder())
-            .build(mock_context(noop_assets()))
-            .unwrap();
+        let app = build_mock_app(with_requested_srt(mock_builder()));
 
         project::commands::request_srt_argument(
             app.handle(),

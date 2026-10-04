@@ -12,7 +12,7 @@ use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, Restoration, SegmentSpan, TranslationSource};
-use crate::steps::{ModeRun, StepEvent, Steps};
+use crate::steps::{ModeRun, StepEvent, Steps, TRANSLATION_STEP};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -36,7 +36,7 @@ pub use settings::TranslationSettings;
 use speaker_labels::LabelledText;
 
 /// The choices the Translate panel offers for one translation.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(default)]
 pub struct TranslationOptions {
     has_speaker_labels: bool,
@@ -114,7 +114,7 @@ impl TranslationJob<'_> {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct Translation {
     phases: Vec<PhaseTiming>,
     /// How many Segments of the original, retimed while it was translated, find no cue at their
@@ -274,7 +274,7 @@ async fn translate_on_job_server(
     let (mut events, pid) = ports
         .start(llama, &llama::server_args(model, port))
         .map_err(|detail| Failure::StepFailed {
-            step: "translate".to_string(),
+            step: TRANSLATION_STEP.to_string(),
             detail,
         })?;
     let has_exited = Arc::new(AtomicBool::new(false));
@@ -606,8 +606,12 @@ mod tests {
 
     use std::sync::Mutex;
 
-    use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+    use crate::test_support::build_mock_app;
+    use tauri::test::{mock_builder, MockRuntime};
     use tauri::Listener;
+    use tauri_specta::Event;
+
+    use crate::progress::{PipelineProgress, ProjectChanged};
 
     use tauri::Manager;
 
@@ -634,11 +638,11 @@ mod tests {
     }
 
     fn mock_app() -> tauri::App<MockRuntime> {
-        mock_builder()
-            .plugin(tauri_plugin_shell::init())
-            .manage(CurrentProject::default())
-            .build(mock_context(noop_assets()))
-            .unwrap()
+        build_mock_app(
+            mock_builder()
+                .plugin(tauri_plugin_shell::init())
+                .manage(CurrentProject::default()),
+        )
     }
 
     /// Detects, then translates, as a job does once llama-server is ready.
@@ -1570,7 +1574,7 @@ mod tests {
             },
         );
         let shown_counts = Arc::new(Mutex::new(Vec::new()));
-        app.listen_any("project-changed", {
+        ProjectChanged::listen_any(&app, {
             let shown_counts = Arc::clone(&shown_counts);
             let handle = app.handle().clone();
             move |_| {
@@ -1619,7 +1623,7 @@ mod tests {
             },
         );
         let pending_batches = Arc::new(Mutex::new(Vec::new()));
-        app.listen_any("project-changed", {
+        ProjectChanged::listen_any(&app, {
             let pending_batches = Arc::clone(&pending_batches);
             let handle = app.handle().clone();
             move |_| {
@@ -1928,7 +1932,7 @@ mod tests {
         let llama = FakeLlama::with_echo(0);
         let app = mock_app();
         let progress_events = Arc::new(Mutex::new(Vec::new()));
-        app.listen_any("pipeline-progress", {
+        app.listen_any(PipelineProgress::NAME, {
             let progress_events = Arc::clone(&progress_events);
             move |event| {
                 progress_events

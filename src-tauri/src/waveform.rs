@@ -2,9 +2,10 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
+use crate::conversion::{conversion_args, wav_chunks};
 use crate::failure::Failure;
 use crate::project::CurrentProject;
-use crate::steps::{run_step, Steps};
+use crate::steps::{run_step, Steps, WAVEFORM_STEP};
 
 pub mod commands;
 
@@ -13,11 +14,12 @@ const PEAKS_PER_SECOND: u32 = 100;
 const SAMPLES_PER_PEAK: usize = (SAMPLE_RATE / PEAKS_PER_SECOND) as usize;
 
 /// How loud a media file is over time, one Peak for each `1 / peaks_per_second` of it.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
 pub struct Waveform {
     /// The media file it was taken from, so an answer for a Resource no longer current is told apart.
     pub media: PathBuf,
     pub peaks_per_second: u32,
+    #[specta(type = Vec<specta_typescript::Number>)]
     pub peaks: Vec<f32>,
 }
 
@@ -34,9 +36,9 @@ pub async fn extract(
     let wav = work.join("waveform.wav");
     let conversion = run_step(
         steps,
-        "waveform",
+        WAVEFORM_STEP,
         ffmpeg,
-        &conversion_args(&media, &wav),
+        &conversion_args(&media, &wav, SAMPLE_RATE, None),
         |_| {},
         |_| {},
     )
@@ -50,35 +52,17 @@ pub async fn extract(
     })
 }
 
-fn conversion_args(media: &Path, wav: &Path) -> Vec<String> {
-    let mut args: Vec<String> = ["-nostdin", "-y", "-i"].map(String::from).to_vec();
-    args.push(media.to_string_lossy().into_owned());
-    args.extend(["-vn", "-ac", "1", "-ar"].map(String::from));
-    args.push(SAMPLE_RATE.to_string());
-    args.extend(["-c:a", "pcm_s16le"].map(String::from));
-    args.push(wav.to_string_lossy().into_owned());
-    args
-}
-
 /// The 16-bit little-endian samples of a WAV file's `data` chunk; none when it has no such chunk.
 fn pcm_samples(wav: &[u8]) -> Vec<i16> {
-    const RIFF_HEADER_LEN: usize = 12;
-    let mut rest = wav.get(RIFF_HEADER_LEN..).unwrap_or_default();
-    while rest.len() >= 8 {
-        let (id, size) = (&rest[..4], &rest[4..8]);
-        let size = u32::from_le_bytes([size[0], size[1], size[2], size[3]]) as usize;
-        let body = &rest[8..];
-        if id == b"data" {
-            return body[..size.min(body.len())]
-                .as_chunks::<2>()
+    wav_chunks(wav)
+        .find(|(id, _)| *id == b"data")
+        .map_or_else(Vec::new, |(_, data)| {
+            data.as_chunks::<2>()
                 .0
                 .iter()
                 .map(|pair| i16::from_le_bytes(*pair))
-                .collect();
-        }
-        rest = body.get(size + size % 2..).unwrap_or_default();
-    }
-    Vec::new()
+                .collect()
+        })
 }
 
 /// The loudest sample of each slice as a fraction of full scale, to three decimals: fine enough
@@ -96,7 +80,8 @@ fn peaks(samples: &[i16]) -> Vec<f32> {
 
 #[cfg(all(test, unix))]
 mod tests {
-    use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+    use crate::test_support::build_mock_app;
+    use tauri::test::{mock_builder, MockRuntime};
     use tauri::Manager;
 
     use super::*;
@@ -127,11 +112,11 @@ mod tests {
 
     impl Fixture {
         fn new(name: &str) -> Fixture {
-            let app = mock_builder()
-                .plugin(tauri_plugin_shell::init())
-                .manage(CurrentProject::default())
-                .build(mock_context(noop_assets()))
-                .unwrap();
+            let app = build_mock_app(
+                mock_builder()
+                    .plugin(tauri_plugin_shell::init())
+                    .manage(CurrentProject::default()),
+            );
             Fixture {
                 dir: TempDir::new(name),
                 app,

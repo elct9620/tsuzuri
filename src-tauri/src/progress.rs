@@ -1,5 +1,6 @@
-use serde::Serialize;
-use tauri::{AppHandle, Emitter, Runtime};
+use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Runtime};
+use tauri_specta::Event;
 
 use crate::timing::{Phase, Phases};
 
@@ -17,24 +18,32 @@ pub fn enter(progress: &impl Progress, phases: &mut Phases, phase: Phase) {
 }
 
 /// Sent as each Phase starts and as its percentage changes; a Phase that cannot tell how far along it is has no percentage.
-#[derive(Clone, Serialize)]
-struct PipelineProgress {
+// @event pipeline-progress
+#[derive(Clone, Serialize, specta::Type, Event)]
+#[tauri_specta(event_name = "pipeline-progress")]
+pub struct PipelineProgress {
     phase: Phase,
     percent: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[specta(type = Count)]
     count: Option<Count>,
 }
 
 /// How many of the things a Phase works through it has finished.
-#[derive(Clone, Serialize)]
-struct Count {
+#[derive(Clone, Serialize, specta::Type)]
+pub struct Count {
     done_count: usize,
     total: usize,
 }
 
+/// The Project changed; the webview reads it again.
+// @event project-changed
+#[derive(Clone, Serialize, Deserialize, specta::Type, Event)]
+#[tauri_specta(event_name = "project-changed")]
+pub struct ProjectChanged;
+
 fn emit_progress<R: Runtime>(app: &AppHandle<R>, progress: PipelineProgress) {
-    // @event pipeline-progress
-    let _ = app.emit("pipeline-progress", progress);
+    let _ = progress.emit(app);
 }
 
 impl<R: Runtime> Progress for AppHandle<R> {
@@ -61,7 +70,6 @@ impl<R: Runtime> Progress for AppHandle<R> {
     }
 
     fn announce_project(&self) {
-        // @event project-changed
-        let _ = self.emit("project-changed", ());
+        let _ = ProjectChanged.emit(self);
     }
 }

@@ -52,6 +52,7 @@ export type SegmentChange =
 /** The Mode running on the Current Resource, holding the subtitles it writes. */
 export type RunningMode =
   | { mode: "transcription" }
+  | { mode: "diarization" }
   | { mode: "translation"; language: string; indexes: number[] | null };
 
 /** The Current Resource's Transcript as the editor edits it. */

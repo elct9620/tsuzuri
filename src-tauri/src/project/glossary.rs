@@ -24,7 +24,7 @@ pub struct TranslationGlossary {
 
 /// What the webview shows of a Translation Glossary: the file it came from, how many terms it
 /// holds, and the Speakers it names in the Primary Language.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct TranslationGlossaryView {
     file: PathBuf,
     term_count: usize,
@@ -32,14 +32,14 @@ pub struct TranslationGlossaryView {
 }
 
 /// One term: its word in each Language, and whether it names a Speaker.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct GlossaryRow {
     pub words: Vec<String>,
     pub is_speaker: bool,
 }
 
 /// A Translation Glossary laid out for editing: a column for every Language and a row per term.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 pub struct GlossaryTable {
     languages: Vec<Language>,
     rows: Vec<GlossaryRow>,
@@ -123,13 +123,9 @@ impl TranslationGlossary {
     pub fn write(directory: &Path, rows: &[GlossaryRow]) -> Result<(), GlossaryError> {
         let mut writer =
             csv::Writer::from_path(directory.join(GLOSSARY_FILE)).map_err(malformed_glossary)?;
+        let codes = Language::ALL.map(|language| language.to_string());
         writer
-            .write_record(
-                Language::ALL
-                    .map(Language::code)
-                    .iter()
-                    .chain(&[TYPE_COLUMN]),
-            )
+            .write_record(codes.iter().map(String::as_str).chain([TYPE_COLUMN]))
             .map_err(malformed_glossary)?;
         for row in rows {
             let words: Vec<&str> = (0..Language::ALL.len())

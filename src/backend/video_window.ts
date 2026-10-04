@@ -4,9 +4,10 @@
  */
 
 import { Window } from "@tauri-apps/api/window";
+import { VIDEO_WINDOW } from "./bindings";
 
-/** The label Rust gives the Video Window. */
-const VIDEO_WINDOW = "video";
+/** The label Rust gives the Video Window, which a page opening it has to open it under. */
+export { VIDEO_WINDOW };
 
 /** Makes the Video Window fill its screen, or go back to its size when it does. */
 export async function toggleVideoWindowFullscreen(): Promise<void> {

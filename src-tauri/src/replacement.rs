@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 /// What to look for in a text and what to put in its place. Rust reads the pattern, so a regular
 /// expression means the same whatever the webview's engine would make of it.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, specta::Type)]
 pub struct Replacement {
     pub pattern: String,
     /// Put in place of each match; groups of a regular expression are named as `$1` or `${name}`.
@@ -13,7 +13,7 @@ pub struct Replacement {
 }
 
 /// What to look for in the texts, read as a Replacement's `pattern` is.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, specta::Type)]
 pub struct Search {
     pub pattern: String,
     pub is_regex: bool,

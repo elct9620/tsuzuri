@@ -4,11 +4,12 @@ use std::time::Instant;
 use serde::Serialize;
 
 use crate::cleanup::clean_texts;
+use crate::conversion;
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::progress::{enter, Progress};
-use crate::project::{CurrentProject, RunningMode, SegmentSpan, TranscriptionTarget};
-use crate::steps::{run_step, ModeRun, Steps};
+use crate::project::{CurrentProject, SegmentSpan, TranscriptionRequest};
+use crate::steps::{run_step, ModeRun, Steps, WorkDir, CONVERSION_STEP, TRANSCRIPTION_STEP};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -21,9 +22,11 @@ mod whisper;
 use settings::TranscriptionSettings;
 use whisper::TranscriptionPlan;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct Transcription {
+    #[specta(type = specta_typescript::Number)]
     audio_seconds: f64,
+    #[specta(type = specta_typescript::Number)]
     transcribe_seconds: f64,
     phases: Vec<PhaseTiming>,
     /// The positions of the Segments written within an Audio Window, none for the whole media file.
@@ -35,16 +38,6 @@ pub struct Tools {
     pub whisper: PathBuf,
 }
 
-/// The directory a transcription writes its intermediate files to, removed with them once the
-/// Mode's run ends, however it ends.
-struct WorkDir(PathBuf);
-
-impl Drop for WorkDir {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.0);
-    }
-}
-
 #[allow(clippy::too_many_arguments)]
 pub async fn run_transcribe<'a>(
     run: &ModeRun<'a, impl Progress + Steps>,
@@ -52,11 +45,12 @@ pub async fn run_transcribe<'a>(
     tools: &Tools,
     models: &ModelSettings,
     settings: TranscriptionSettings,
-    job: &TranscriptionTarget,
+    request: TranscriptionRequest,
     work: &Path,
     mut phases: Phases,
 ) -> Result<Transcription, Failure> {
-    run.keep(project.hold_resource(&job.directory, &job.name, RunningMode::Transcription));
+    let (job, hold) = project.hold_for_transcription(request)?;
+    run.keep(hold);
     let ports = run.ports();
     let input = job.media.as_path();
     let models = models
@@ -75,17 +69,16 @@ pub async fn run_transcribe<'a>(
         language: job.language,
         settings,
     };
-    run.keep(WorkDir(work.to_path_buf()));
-    std::fs::create_dir_all(work)?;
+    run.keep(WorkDir::try_new(work)?);
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
 
     enter(ports, &mut phases, Phase::Conversion);
     run_step(
         ports,
-        "convert",
+        CONVERSION_STEP,
         &tools.ffmpeg,
-        &whisper::conversion_args(input, &wav, job.window),
+        &conversion::conversion_args(input, &wav, conversion::SPEECH_SAMPLE_RATE, job.window),
         |_| {},
         |_| {},
     )
@@ -94,11 +87,11 @@ pub async fn run_transcribe<'a>(
 
     enter(ports, &mut phases, Phase::Loading);
     let start = Instant::now();
-    project.show_transcript(project.kept_segments(job)?);
+    project.show_transcript(project.kept_segments(&job)?);
     ports.announce_project();
     run_step(
         ports,
-        "transcribe",
+        TRANSCRIPTION_STEP,
         &tools.whisper,
         &whisper::transcription_args(&plan, &wav, &srt_prefix),
         |line| {
@@ -131,10 +124,10 @@ pub async fn run_transcribe<'a>(
         clean_texts(&mut transcript.segments);
         srt = transcript.to_srt(WrittenText::Original);
     }
-    let written_span = project.write_transcription(job, srt)?;
+    let written_span = project.write_transcription(&job, srt)?;
     ports.announce_project();
     Ok(Transcription {
-        audio_seconds: whisper::audio_seconds(audio_bytes),
+        audio_seconds: conversion::audio_seconds(audio_bytes),
         transcribe_seconds,
         phases: phases.finish(),
         written_span,
@@ -145,8 +138,12 @@ pub async fn run_transcribe<'a>(
 mod tests {
     use std::sync::{Arc, Mutex};
 
-    use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+    use crate::test_support::build_mock_app;
+    use tauri::test::{mock_builder, MockRuntime};
     use tauri::Listener;
+    use tauri_specta::Event;
+
+    use crate::progress::{PipelineProgress, ProjectChanged};
 
     use tauri::Manager;
 
@@ -155,7 +152,8 @@ mod tests {
     use crate::model_source::ModelSource;
     use crate::processes::{AppPorts, Processes};
     use crate::project::{
-        Project, ProjectModels, ProjectOptions, TranscriptionOverrides, TranscriptionScope,
+        Project, ProjectModels, ProjectOptions, RunningMode, TranscriptionOverrides,
+        TranscriptionScope,
     };
     use crate::steps::ModeLock;
     use crate::test_support::{write_executable, TempDir};
@@ -212,11 +210,11 @@ mod tests {
                     path: dir.file("breeze.bin"),
                 },
             );
-            let app = mock_builder()
-                .plugin(tauri_plugin_shell::init())
-                .manage(CurrentProject::default())
-                .build(mock_context(noop_assets()))
-                .unwrap();
+            let app = build_mock_app(
+                mock_builder()
+                    .plugin(tauri_plugin_shell::init())
+                    .manage(CurrentProject::default()),
+            );
             Fixture {
                 dir,
                 app,
@@ -238,7 +236,7 @@ mod tests {
 
         /// Transcribes in `zh-TW`, answering the Segments shown once whisper-cli writes its first.
         async fn segments_shown_while_transcribing(&self) -> Vec<(u64, String)> {
-            let target = self.target_in(Language::TraditionalChinese);
+            let request = self.request_in(Language::TraditionalChinese);
             let hold = self.whisper_started.with_extension("hold");
             std::fs::write(&hold, b"").unwrap();
             let watch = async {
@@ -253,7 +251,7 @@ mod tests {
                 std::fs::remove_file(&hold).unwrap();
                 Vec::new()
             };
-            let (result, shown) = tokio::join!(self.run(&target), watch);
+            let (result, shown) = tokio::join!(self.run(request), watch);
             result.unwrap();
             shown
         }
@@ -262,12 +260,10 @@ mod tests {
             self.app.state::<CurrentProject>()
         }
 
-        /// Opens a Project of `lecture.mp4` in `language` and takes what transcribing it needs.
-        fn target_in(&self, language: Language) -> TranscriptionTarget {
+        /// Opens a Project of `lecture.mp4` in `language` and asks to transcribe all of it.
+        fn request_in(&self, language: Language) -> TranscriptionRequest {
             self.open_in(language);
-            self.project()
-                .transcription_target(false, TranscriptionScope::Whole)
-                .unwrap()
+            transcription_request(false, TranscriptionScope::Whole)
         }
 
         fn open_in(&self, language: Language) {
@@ -288,11 +284,11 @@ mod tests {
         }
 
         async fn transcribe(&self) -> Result<Transcription, Failure> {
-            let target = self.target_in(Language::TraditionalChinese);
-            self.run(&target).await
+            let request = self.request_in(Language::TraditionalChinese);
+            self.run(request).await
         }
 
-        async fn run(&self, target: &TranscriptionTarget) -> Result<Transcription, Failure> {
+        async fn run(&self, request: TranscriptionRequest) -> Result<Transcription, Failure> {
             let processes = Processes::new(self.dir.path().join("processes.json"));
             let app = self.app.handle();
             run_transcribe(
@@ -303,7 +299,7 @@ mod tests {
                 &self.tools,
                 &self.settings,
                 self.transcription,
-                target,
+                request,
                 &self.dir.path().join("work"),
                 Phases::start("transcribe", Phase::Preparation),
             )
@@ -315,13 +311,11 @@ mod tests {
             std::fs::read_to_string(self.whisper_started.with_extension("args")).unwrap()
         }
 
-        /// Records `options` as the Project's, as the settings do, and takes what transcribing needs.
-        fn target_with(&self, options: ProjectOptions) -> TranscriptionTarget {
+        /// Records `options` as the Project's, as the settings do, and asks to transcribe all of it.
+        fn request_with(&self, options: ProjectOptions) -> TranscriptionRequest {
             self.open_in(Language::TraditionalChinese);
             self.project().set_options(options).unwrap();
-            self.project()
-                .transcription_target(false, TranscriptionScope::Whole)
-                .unwrap()
+            transcription_request(false, TranscriptionScope::Whole)
         }
 
         /// Opens a Project whose `lecture.srt` holds a Segment of 4 s starting at each of `starts`,
@@ -363,7 +357,7 @@ mod tests {
         fn progress_events(&self) -> Arc<Mutex<Vec<String>>> {
             let progress_events = Arc::new(Mutex::new(Vec::new()));
             let sink = Arc::clone(&progress_events);
-            self.app.listen_any("pipeline-progress", move |event| {
+            self.app.listen_any(PipelineProgress::NAME, move |event| {
                 sink.lock().unwrap().push(event.payload().to_string());
             });
             progress_events
@@ -375,6 +369,16 @@ mod tests {
             .iter()
             .map(|segment| (segment.start_ms, segment.text.clone()))
             .collect()
+    }
+
+    fn transcription_request(
+        is_overwrite_allowed: bool,
+        scope: TranscriptionScope,
+    ) -> TranscriptionRequest {
+        TranscriptionRequest {
+            is_overwrite_allowed,
+            scope,
+        }
     }
 
     fn script(dir: &TempDir, name: &str, body: &str) -> PathBuf {
@@ -405,9 +409,9 @@ mod tests {
     #[tokio::test]
     async fn transcribes_in_the_primary_language() {
         let fixture = Fixture::new("tx-language", TWO_SECOND_WAV);
-        let target = fixture.target_in(Language::Japanese);
+        let request = fixture.request_in(Language::Japanese);
 
-        fixture.run(&target).await.unwrap();
+        fixture.run(request).await.unwrap();
 
         let args = std::fs::read_to_string(fixture.whisper_started.with_extension("args")).unwrap();
         assert!(args.contains("-l ja "), "whisper-cli ran with {args}");
@@ -488,7 +492,7 @@ mod tests {
                 path: fixture.dir.file("ggml-silero-v6.2.0.bin"),
             },
         );
-        let target = fixture.target_with(ProjectOptions {
+        let request = fixture.request_with(ProjectOptions {
             transcription: TranscriptionOverrides {
                 has_vad: Some(true),
                 ..TranscriptionOverrides::default()
@@ -496,7 +500,7 @@ mod tests {
             ..ProjectOptions::default()
         });
 
-        fixture.run(&target).await.unwrap();
+        fixture.run(request).await.unwrap();
 
         let args = fixture.whisper_args();
         assert!(args.contains("--vad "), "whisper-cli ran with {args}");
@@ -507,7 +511,7 @@ mod tests {
     async fn transcribes_with_the_project_model() {
         let fixture = Fixture::new("tx-project-model", TWO_SECOND_WAV);
         let project_model = fixture.dir.file("kotoba.bin");
-        let target = fixture.target_with(ProjectOptions {
+        let request = fixture.request_with(ProjectOptions {
             models: ProjectModels {
                 transcription: Some(ModelSource::File {
                     path: project_model.clone(),
@@ -517,7 +521,7 @@ mod tests {
             ..ProjectOptions::default()
         });
 
-        fixture.run(&target).await.unwrap();
+        fixture.run(request).await.unwrap();
 
         let args = fixture.whisper_args();
         assert!(
@@ -535,10 +539,20 @@ mod tests {
             "1\n00:00:00,000 --> 00:00:01,000\n另一份\n",
         )
         .unwrap();
-        let target = fixture.target_in(Language::TraditionalChinese);
-        fixture.project().select("notes").unwrap();
+        let request = fixture.request_in(Language::TraditionalChinese);
+        let hold = fixture.whisper_started.with_extension("hold");
+        std::fs::write(&hold, b"").unwrap();
+        let select_meanwhile = async {
+            while !fixture.whisper_started.exists() {
+                tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+            }
+            fixture.project().select("notes").unwrap();
+            std::fs::remove_file(&hold).unwrap();
+        };
 
-        fixture.run(&target).await.unwrap();
+        let (result, ()) = tokio::join!(fixture.run(request), select_meanwhile);
+
+        result.unwrap();
 
         let texts: Vec<String> = fixture
             .project()
@@ -551,6 +565,53 @@ mod tests {
         assert_eq!(texts, vec!["另一份"]);
     }
 
+    /// Writes `lecture.en.srt` with the cues of `lecture.srt` as its translation and shows it.
+    fn show_english_translation(fixture: &Fixture) {
+        let srt = std::fs::read_to_string(fixture.project_dir().join("lecture.srt")).unwrap();
+        std::fs::write(fixture.project_dir().join("lecture.en.srt"), srt).unwrap();
+        fixture.open_in(Language::TraditionalChinese);
+        fixture
+            .project()
+            .show_translation(Some(Language::English))
+            .unwrap();
+    }
+
+    // @behavior TX-059
+    #[tokio::test]
+    async fn shows_no_translation_once_the_whole_media_file_is_transcribed_again() {
+        let fixture = Fixture::new("tx-whole-unshown", TWO_SECOND_WAV);
+        fixture.open_with_segments(&[0, 5_000]);
+        show_english_translation(&fixture);
+
+        fixture
+            .run(transcription_request(true, TranscriptionScope::Whole))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            fixture.project().shown_translation(),
+            Err(Failure::NoTranslationShown)
+        );
+    }
+
+    // @behavior TX-060
+    #[tokio::test]
+    async fn keeps_the_translation_shown_through_a_transcription_within_an_audio_window() {
+        let fixture = Fixture::new("tx-window-shown", TWO_SECOND_WAV);
+        fixture.open_with_segments(&[0, 5_000, 10_000]);
+        show_english_translation(&fixture);
+
+        fixture
+            .run(transcription_request(
+                true,
+                TranscriptionScope::Span(SegmentSpan { first: 1, last: 1 }),
+            ))
+            .await
+            .unwrap();
+
+        assert_eq!(fixture.project().shown_translation(), Ok(Language::English));
+    }
+
     const WHISPER_SRT: &str =
         "1\n00:00:00,000 --> 00:00:01,000\n大家好\n\n2\n00:00:01,000 --> 00:00:02,000\n今天天氣很好\n";
 
@@ -559,7 +620,7 @@ mod tests {
     async fn holds_the_resource_while_it_is_transcribed() {
         let fixture = Fixture::new("pj-hold-transcribing", TWO_SECOND_WAV);
         let modes = Arc::new(Mutex::new(Vec::new()));
-        fixture.app.listen_any("project-changed", {
+        ProjectChanged::listen_any(&fixture.app, {
             let modes = Arc::clone(&modes);
             let handle = fixture.app.handle().clone();
             move |_| {
@@ -580,11 +641,11 @@ mod tests {
     #[tokio::test]
     async fn shows_each_segment_as_whisper_prints_it() {
         let fixture = Fixture::new("tx-stream", TWO_SECOND_WAV);
-        let target = fixture.target_in(Language::TraditionalChinese);
+        let request = fixture.request_in(Language::TraditionalChinese);
         let hold = fixture.whisper_started.with_extension("hold");
         std::fs::write(&hold, b"").unwrap();
         let announced_counts = Arc::new(Mutex::new(Vec::new()));
-        fixture.app.listen_any("project-changed", {
+        ProjectChanged::listen_any(&fixture.app, {
             let announced_counts = Arc::clone(&announced_counts);
             let handle = fixture.app.handle().clone();
             move |_| {
@@ -610,7 +671,7 @@ mod tests {
             false
         };
 
-        let (result, saw_one_segment) = tokio::join!(fixture.run(&target), watch);
+        let (result, saw_one_segment) = tokio::join!(fixture.run(request), watch);
 
         result.unwrap();
         assert!(saw_one_segment, "no Segment arrived while whisper-cli ran");
@@ -628,6 +689,18 @@ mod tests {
         fixture.transcribe().await.unwrap();
 
         assert_eq!(fixture.subtitle_text(), WHISPER_SRT);
+    }
+
+    #[tokio::test]
+    async fn leaves_the_written_subtitle_ready_to_be_diarized() {
+        let fixture = Fixture::new("tx-then-diarize", TWO_SECOND_WAV);
+
+        fixture.transcribe().await.unwrap();
+
+        assert_eq!(
+            fixture.project().hold_for_diarization().unwrap().0.subtitle,
+            fixture.project_dir().join("lecture.srt")
+        );
     }
 
     // @behavior PJ-053
@@ -663,12 +736,9 @@ mod tests {
         )
         .unwrap();
         fixture.open_in(Language::TraditionalChinese);
-        let target = fixture
-            .project()
-            .transcription_target(true, TranscriptionScope::Whole)
-            .unwrap();
+        let request = transcription_request(true, TranscriptionScope::Whole);
 
-        fixture.run(&target).await.unwrap();
+        fixture.run(request).await.unwrap();
 
         let backups = crate::test_support::overwrite_backups(&dir);
         assert_eq!(
@@ -687,12 +757,12 @@ mod tests {
         std::fs::write(fixture.project_dir().join("lecture.srt"), "").unwrap();
         fixture.open_in(Language::TraditionalChinese);
 
-        let target = fixture
-            .project()
-            .transcription_target(false, TranscriptionScope::Whole);
+        let result = fixture
+            .run(transcription_request(false, TranscriptionScope::Whole))
+            .await;
 
         assert_eq!(
-            target.map(|_| ()),
+            result.map(|_| ()),
             Err(Failure::SubtitleExists {
                 path: fixture.project_dir().join("lecture.srt")
             })
@@ -705,12 +775,9 @@ mod tests {
         let fixture = Fixture::new("tx-overwrite", TWO_SECOND_WAV);
         std::fs::write(fixture.project_dir().join("lecture.srt"), "").unwrap();
         fixture.open_in(Language::TraditionalChinese);
-        let target = fixture
-            .project()
-            .transcription_target(true, TranscriptionScope::Whole)
-            .unwrap();
+        let request = transcription_request(true, TranscriptionScope::Whole);
 
-        fixture.run(&target).await.unwrap();
+        fixture.run(request).await.unwrap();
 
         assert_eq!(fixture.subtitle_text(), WHISPER_SRT);
     }
@@ -720,12 +787,9 @@ mod tests {
     async fn transcribes_from_a_segment_onward() {
         let fixture = Fixture::new("tx-rest", TWO_SECOND_WAV);
         fixture.open_with_segments(&[0, 5_000, 10_000]);
-        let target = fixture
-            .project()
-            .transcription_target(true, TranscriptionScope::Rest { first: 1 })
-            .unwrap();
+        let request = transcription_request(true, TranscriptionScope::Rest { first: 1 });
 
-        fixture.run(&target).await.unwrap();
+        fixture.run(request).await.unwrap();
 
         assert_eq!(
             fixture.subtitle_segments(),
@@ -742,15 +806,12 @@ mod tests {
     async fn transcribes_a_span_of_segments() {
         let fixture = Fixture::new("tx-span", TWO_SECOND_WAV);
         fixture.open_with_segments(&[0, 5_000, 10_000, 15_000]);
-        let target = fixture
-            .project()
-            .transcription_target(
-                true,
-                TranscriptionScope::Span(SegmentSpan { first: 1, last: 2 }),
-            )
-            .unwrap();
+        let request = transcription_request(
+            true,
+            TranscriptionScope::Span(SegmentSpan { first: 1, last: 2 }),
+        );
 
-        fixture.run(&target).await.unwrap();
+        fixture.run(request).await.unwrap();
 
         assert_eq!(
             fixture.subtitle_segments(),
@@ -768,15 +829,12 @@ mod tests {
     async fn converts_only_the_audio_window() {
         let fixture = Fixture::new("tx-window-convert", RECORDING_FFMPEG);
         fixture.open_with_segments(&[5_000, 10_000]);
-        let target = fixture
-            .project()
-            .transcription_target(
-                true,
-                TranscriptionScope::Span(SegmentSpan { first: 0, last: 1 }),
-            )
-            .unwrap();
+        let request = transcription_request(
+            true,
+            TranscriptionScope::Span(SegmentSpan { first: 0, last: 1 }),
+        );
 
-        fixture.run(&target).await.unwrap();
+        fixture.run(request).await.unwrap();
 
         assert!(fixture
             .ffmpeg_args()
@@ -789,13 +847,10 @@ mod tests {
     async fn shows_the_kept_segments_while_transcribing_a_span() {
         let fixture = Fixture::new("tx-window-stream", TWO_SECOND_WAV);
         fixture.open_with_segments(&[0, 5_000, 10_000]);
-        let target = fixture
-            .project()
-            .transcription_target(
-                true,
-                TranscriptionScope::Span(SegmentSpan { first: 1, last: 1 }),
-            )
-            .unwrap();
+        let request = transcription_request(
+            true,
+            TranscriptionScope::Span(SegmentSpan { first: 1, last: 1 }),
+        );
         let hold = fixture.whisper_started.with_extension("hold");
         std::fs::write(&hold, b"").unwrap();
         let watch = async {
@@ -811,7 +866,7 @@ mod tests {
             Vec::new()
         };
 
-        let (result, shown) = tokio::join!(fixture.run(&target), watch);
+        let (result, shown) = tokio::join!(fixture.run(request), watch);
 
         result.unwrap();
         assert_eq!(
@@ -850,9 +905,9 @@ mod tests {
     #[tokio::test]
     async fn leaves_a_transcription_in_another_language_as_whisper_wrote_it() {
         let fixture = Fixture::new("tx-clean-ja", TWO_SECOND_WAV).with_whisper_writing("这是测试");
-        let target = fixture.target_in(Language::Japanese);
+        let request = fixture.request_in(Language::Japanese);
 
-        fixture.run(&target).await.unwrap();
+        fixture.run(request).await.unwrap();
 
         assert_eq!(fixture.subtitle_segments()[0], (0, "这是测试".to_string()));
     }
@@ -862,12 +917,9 @@ mod tests {
     async fn answers_the_segments_a_span_wrote() {
         let fixture = Fixture::new("tx-written-span", TWO_SECOND_WAV);
         fixture.open_with_segments(&[0, 5_000, 10_000]);
-        let target = fixture
-            .project()
-            .transcription_target(true, TranscriptionScope::Rest { first: 1 })
-            .unwrap();
+        let request = transcription_request(true, TranscriptionScope::Rest { first: 1 });
 
-        let transcription = fixture.run(&target).await.unwrap();
+        let transcription = fixture.run(request).await.unwrap();
 
         assert_eq!(
             transcription.written_span,
@@ -881,11 +933,14 @@ mod tests {
         let fixture = Fixture::new("tx-window-missing", TWO_SECOND_WAV);
         fixture.open_with_segments(&[0, 5_000, 10_000]);
 
-        let target = fixture
-            .project()
-            .transcription_target(true, TranscriptionScope::Rest { first: 4 });
+        let result = fixture
+            .run(transcription_request(
+                true,
+                TranscriptionScope::Rest { first: 4 },
+            ))
+            .await;
 
-        assert!(matches!(target, Err(Failure::Internal { .. })));
+        assert!(matches!(result, Err(Failure::Internal { .. })));
         assert!(!fixture.whisper_started.exists());
     }
 
@@ -911,6 +966,16 @@ mod tests {
 
         assert!(matches!(error, Failure::StepFailed { step, .. } if step == "convert"));
         assert!(!fixture.whisper_started.exists());
+    }
+
+    #[tokio::test]
+    async fn names_the_transcribe_step_when_whisper_fails() {
+        let fixture = Fixture::new("tx-whisper-fails", TWO_SECOND_WAV);
+        write_executable(&fixture.tools.whisper, "#!/bin/sh\nexit 1\n");
+
+        let error = fixture.transcribe().await.unwrap_err();
+
+        assert!(matches!(error, Failure::StepFailed { step, .. } if step == "transcribe"));
     }
 
     // @behavior TX-056
@@ -1012,11 +1077,11 @@ mod tests {
         let tools = Tools { ffmpeg, whisper };
         let mut settings = ModelSettings::default();
         settings.choose(ModelSlot::Transcription, ModelSource::File { path: model });
-        let app = mock_builder()
-            .plugin(tauri_plugin_shell::init())
-            .manage(CurrentProject::default())
-            .build(mock_context(noop_assets()))
-            .unwrap();
+        let app = build_mock_app(
+            mock_builder()
+                .plugin(tauri_plugin_shell::init())
+                .manage(CurrentProject::default()),
+        );
         let processes = Processes::new(dir.path().join("processes.json"));
         let project = app.state::<CurrentProject>();
         let mut opened_project = Project::open(
@@ -1028,9 +1093,7 @@ mod tests {
             .select(&media.file_stem().unwrap().to_string_lossy())
             .unwrap();
         project.replace(opened_project);
-        let target = project
-            .transcription_target(true, TranscriptionScope::Whole)
-            .unwrap();
+        let request = transcription_request(true, TranscriptionScope::Whole);
 
         let transcription = run_transcribe(
             &ModeLock::default()
@@ -1040,7 +1103,7 @@ mod tests {
             &tools,
             &settings,
             TranscriptionSettings::default(),
-            &target,
+            request,
             &dir.path().join("work"),
             Phases::start("transcribe", Phase::Preparation),
         )

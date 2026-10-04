@@ -31,6 +31,16 @@ describe("PreviewController", () => {
     await settle();
   }
 
+  /** Starts the Preview over, as the next time the app opens. */
+  async function reopen(): Promise<void> {
+    application.stop();
+    application = Application.start();
+    await assemble(application, {
+      preview: PreviewController,
+    }).start();
+    await settle();
+  }
+
   /** Makes the media report `seconds` long and at `at`, as a loaded player does. */
   function playTo(at: number, seconds = 10): void {
     Object.defineProperty(media(), "duration", {
@@ -50,6 +60,60 @@ describe("PreviewController", () => {
     document.querySelector<HTMLInputElement>(
       `[data-preview-target="captionBackdrop"][value="${value}"]`,
     )!;
+
+  const dummyVideoColour = (value: string) =>
+    document.querySelector<HTMLInputElement>(
+      `[data-preview-target="dummyVideoColour"][value="${value}"]`,
+    )!;
+
+  /** A Resource without media whose one Segment ends at `endMs`. */
+  const projectEndingAt = (endMs: number) =>
+    projectOf({ segments: [{ start_ms: 0, end_ms: endMs, text: "Hello" }] });
+
+  /** Keeps each Blob the Preview makes a URL for, naming them `blob:silence-1` onwards. */
+  function keepMadeSilence(): Blob[] {
+    const made: Blob[] = [];
+    vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+      made.push(blob as Blob);
+      return `blob:silence-${made.length}`;
+    });
+    return made;
+  }
+
+  /** Starts the player over at 0 once its source changes, as a browser does and happy-dom does not. */
+  function startOverOnNewSource(): void {
+    const { set } = Object.getOwnPropertyDescriptor(
+      HTMLMediaElement.prototype,
+      "src",
+    )!;
+    Object.defineProperty(media(), "src", {
+      configurable: true,
+      set(value: string) {
+        set!.call(this, value);
+        (this as HTMLMediaElement).currentTime = 0;
+      },
+    });
+  }
+
+  /** How long a WAV of silence lasts, read from its header and data as a player reads them. */
+  async function silenceSeconds(wav: Blob): Promise<number> {
+    const bytes = await wav.arrayBuffer();
+    const sampleRate = new DataView(bytes).getUint32(24, true);
+    return (bytes.byteLength - 44) / sampleRate;
+  }
+
+  /** Makes the media report a picture `width` by `height`, none at 0, as loaded metadata does. */
+  function loadPicture(width: number, height: number): void {
+    Object.defineProperty(media(), "videoWidth", {
+      value: width,
+      configurable: true,
+    });
+    Object.defineProperty(media(), "videoHeight", {
+      value: height,
+      configurable: true,
+    });
+    media().dispatchEvent(new Event("loadedmetadata"));
+  }
 
   /** `ep01` with media and `今天` from 0 to 1 s, translated `Today` in `en` shown. */
   const projectTranslated = (changes: Partial<ProjectView> = {}) =>
@@ -116,13 +180,17 @@ describe("PreviewController", () => {
     );
     document.body.innerHTML = `
       <div data-controller="preview" data-action="rust:video-window-closing@window->preview#closeVideoWindow">
-        <button id="fold" data-preview-target="foldButton" data-action="preview#toggleFold" hidden><span data-preview-target="foldIcon"></span></button>
+        <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden></button>
+        <button id="fold-timeline" data-preview-target="timelineFoldButton" data-action="preview#toggleTimelineFold" hidden></button>
         <div data-preview-target="panel" hidden>
-        <div data-preview-target="screen">
-          <video data-preview-target="media"></video>
-          <p data-preview-target="caption"></p>
-          <div data-preview-target="hint" hidden></div>
+        <div data-preview-target="screenRow">
+          <div data-preview-target="screen">
+            <video data-preview-target="media"></video>
+            <p data-preview-target="caption"></p>
+            <div data-preview-target="hint" hidden></div>
+          </div>
         </div>
+        <div data-preview-target="timeline"></div>
         <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playbackIcon"></span></button>
         <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
         <span data-preview-target="time"></span>
@@ -136,6 +204,8 @@ describe("PreviewController", () => {
           <input type="radio" name="backdrop" value="translucent" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
           <input type="radio" name="backdrop" value="opaque" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
           <input type="checkbox" data-preview-target="captionSpeaker" data-action="preview#toggleCaptionSpeaker">
+          <input type="radio" name="dummy-video" value="black" data-preview-target="dummyVideoColour" data-action="preview#chooseDummyVideoColour">
+          <input type="radio" name="dummy-video" value="white" data-preview-target="dummyVideoColour" data-action="preview#chooseDummyVideoColour">
         </div>
           <div data-preview-target="currentSection">
           <p data-preview-target="currentHint"></p>
@@ -168,20 +238,117 @@ describe("PreviewController", () => {
   });
 
   // @behavior PV-009
-  it("shows no player or controls for a Resource without media", async () => {
+  it("shows the player and its controls for a Resource without media", async () => {
     await show(projectOf());
 
-    expect(panel().hidden).toBe(true);
+    expect(panel().hidden).toBe(false);
+  });
+
+  // @behavior PV-197
+  it("plays silence a minute past the last Segment for a Resource without media", async () => {
+    const made = keepMadeSilence();
+
+    await show(projectEndingAt(10000));
+
+    expect([
+      media().getAttribute("src"),
+      made[0].type,
+      await silenceSeconds(made[0]),
+    ]).toEqual(["blob:silence-1", "audio/wav", 70]);
+  });
+
+  it("makes the silence of nothing but silent samples", async () => {
+    const made = keepMadeSilence();
+
+    await show(projectEndingAt(10000));
+    const samples = new Uint8Array(await made[0].arrayBuffer(), 44);
+
+    expect(samples.every((sample) => sample === 128)).toBe(true);
+  });
+
+  // @behavior PV-199
+  it("lengthens the silence once a Segment reaches its end", async () => {
+    const made = keepMadeSilence();
+    await show(projectEndingAt(10000));
+
+    await show(projectEndingAt(70000));
+
+    expect([made.length, await silenceSeconds(made[1])]).toEqual([2, 130]);
+  });
+
+  // @behavior PV-200
+  it("stays at the same time as the silence lengthens", async () => {
+    keepMadeSilence();
+    startOverOnNewSource();
+    await show(projectEndingAt(10000));
+    media().currentTime = 5;
+
+    await show(projectEndingAt(70000));
+
+    expect(media().currentTime).toBe(5);
+  });
+
+  it("makes silence of its own for another Resource without media", async () => {
+    const made = keepMadeSilence();
+    await show(projectEndingAt(10000));
+
+    await show({ ...projectEndingAt(5000), current_resource: "ep02" });
+
+    expect([made.length, await silenceSeconds(made[1])]).toEqual([2, 65]);
+  });
+
+  // @behavior PV-201
+  it("keeps the silence while the Segments stay within it", async () => {
+    const made = keepMadeSilence();
+    await show(projectEndingAt(10000));
+
+    await show(projectEndingAt(30000));
+
+    expect([made.length, media().getAttribute("src")]).toEqual([
+      1,
+      "blob:silence-1",
+    ]);
+  });
+
+  it("lets the silence go once the player reads a media file", async () => {
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:silence");
+    const revoke = vi.spyOn(URL, "revokeObjectURL");
+    await show(projectOf());
+
+    await show(projectWithMedia());
+
+    expect(revoke).toHaveBeenCalledWith("blob:silence");
   });
 
   // @behavior PV-010
-  it("shows the controls without the video for media without a picture", async () => {
+  it("shows the Dummy Video beside the controls for media without a picture", async () => {
     await show(projectWithMedia());
-    Object.defineProperty(media(), "videoWidth", { value: 0 });
 
-    media().dispatchEvent(new Event("loadedmetadata"));
+    loadPicture(0, 0);
 
-    expect([target("screen").hidden, panel().hidden]).toEqual([true, false]);
+    expect([target("screen").hidden, panel().hidden]).toEqual([false, false]);
+  });
+
+  it("sizes the row beside the card by the video's shape", async () => {
+    await show(projectWithMedia());
+
+    loadPicture(1920, 1080);
+
+    expect([
+      target("screenRow").hasAttribute("data-has-picture"),
+      target("screenRow").style.getPropertyValue("--picture-ratio"),
+    ]).toEqual([true, "0.5625"]);
+  });
+
+  it("sizes the row beside the card by a 16:9 Dummy Video for media without a picture", async () => {
+    await show(projectWithMedia());
+
+    loadPicture(0, 0);
+
+    expect([
+      target("screenRow").hasAttribute("data-has-picture"),
+      target("screenRow").style.getPropertyValue("--picture-ratio"),
+    ]).toEqual([true, "0.5625"]);
   });
 
   // @behavior PV-011
@@ -219,6 +386,15 @@ describe("PreviewController", () => {
     playTo(62, 24 * 60 + 10);
 
     expect(target("time").textContent).toBe("01:02 / 24:10");
+  });
+
+  // @behavior PV-014
+  it("shows the hours of media lasting an hour or more", async () => {
+    await show(projectWithMedia());
+
+    playTo(62, 60 * 60 + 2 * 60 + 5);
+
+    expect(target("time").textContent).toBe("01:02 / 1:02:05");
   });
 
   // @behavior PV-015
@@ -376,12 +552,7 @@ describe("PreviewController", () => {
   it("keeps what is shown over the video for the next Resource", async () => {
     await show(projectTranslated());
     captionLanguage("bilingual").click();
-    application.stop();
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
+    await reopen();
 
     await show(projectTranslated({ media: "/talks/ep02.mp4" }));
 
@@ -389,13 +560,62 @@ describe("PreviewController", () => {
   });
 
   // @behavior PV-049
-  it("offers no choice over the video for media without a picture", async () => {
+  it("offers the choice over the Dummy Video for media without a picture", async () => {
     await show(projectTranslated());
-    Object.defineProperty(media(), "videoWidth", { value: 0 });
 
-    media().dispatchEvent(new Event("loadedmetadata"));
+    loadPicture(0, 0);
 
-    expect(target("captionChoice").hidden).toBe(true);
+    expect(target("captionChoice").hidden).toBe(false);
+  });
+
+  // @behavior PV-193
+  it("shows the Dummy Video in black by default", async () => {
+    await show(projectWithMedia());
+
+    loadPicture(0, 0);
+
+    expect(target("screen").dataset.dummyVideo).toBe("black");
+  });
+
+  // @behavior PV-194
+  it("shows the Dummy Video in the colour chosen", async () => {
+    await show(projectWithMedia());
+    loadPicture(0, 0);
+
+    dummyVideoColour("white").click();
+
+    expect(target("screen").dataset.dummyVideo).toBe("white");
+  });
+
+  // @behavior PV-195
+  it("keeps the Dummy Video's colour for the next Resource", async () => {
+    await show(projectWithMedia());
+    loadPicture(0, 0);
+    dummyVideoColour("white").click();
+    delete target("screen").dataset.dummyVideo;
+    dummyVideoColour("black").checked = true;
+    await reopen();
+
+    await show(projectOf({ media: "/talks/ep02.m4a" }));
+    loadPicture(0, 0);
+
+    expect([
+      target("screen").dataset.dummyVideo,
+      dummyVideoColour("white").checked,
+    ]).toEqual(["white", true]);
+  });
+
+  // @behavior PV-196
+  it("leaves the Dummy Video's colour unchosen for media with a picture", async () => {
+    await show(projectWithMedia());
+
+    loadPicture(1920, 1080);
+
+    expect([
+      target("screen").dataset.dummyVideo,
+      dummyVideoColour("black").disabled,
+      dummyVideoColour("white").disabled,
+    ]).toEqual([undefined, true, true]);
   });
 
   // @behavior PV-068
@@ -418,12 +638,7 @@ describe("PreviewController", () => {
   it("keeps the backdrop over the video for the next Resource", async () => {
     await show(projectWithMedia());
     captionBackdrop("none").click();
-    application.stop();
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
+    await reopen();
 
     await show(projectOf({ media: "/talks/ep02.mp4" }));
 
@@ -518,12 +733,7 @@ describe("PreviewController", () => {
   it("keeps the Speaker over the video off for the next Resource", async () => {
     await show(projectSpoken());
     captionSpeaker().click();
-    application.stop();
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
+    await reopen();
 
     await show(projectSpoken({ media: "/talks/ep02.mp4" }));
     playTo(0.5);
@@ -534,27 +744,82 @@ describe("PreviewController", () => {
     ]);
   });
 
+  const foldPlayer = () =>
+    document.querySelector<HTMLElement>("#fold-player")!.click();
+  const foldTimeline = () =>
+    document.querySelector<HTMLElement>("#fold-timeline")!.click();
+
   // @behavior PV-034
-  it("hides the Preview when its fold button is pressed", async () => {
+  it("hides the player and its controls, keeping the timeline, when their fold button is pressed", async () => {
     await show(projectWithMedia());
 
-    document.querySelector<HTMLElement>("#fold")!.click();
+    foldPlayer();
 
-    expect(panel().hidden).toBe(true);
+    expect([
+      target("screenRow").hidden,
+      target("timeline").hidden,
+      panel().hidden,
+    ]).toEqual([true, false, false]);
+  });
+
+  it("lights the fold buttons of the parts folded away", async () => {
+    await show(projectWithMedia());
+
+    foldTimeline();
+
+    const isLit = (id: string) => {
+      const button = document.querySelector(id)!;
+      return [
+        button.classList.contains("btn-primary"),
+        button.getAttribute("aria-pressed"),
+      ];
+    };
+    expect([isLit("#fold-player"), isLit("#fold-timeline")]).toEqual([
+      [false, "false"],
+      [true, "true"],
+    ]);
   });
 
   // @behavior PV-035
-  it("keeps the Preview folded for the next Resource with media", async () => {
+  it("keeps the player folded for the next Resource with media", async () => {
     await show(projectWithMedia());
-    document.querySelector<HTMLElement>("#fold")!.click();
-    application.stop();
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
+    foldPlayer();
+    await reopen();
 
     await show(projectOf({ media: "/talks/ep02.mp4" }));
+
+    expect(target("screenRow").hidden).toBe(true);
+  });
+
+  // @behavior PV-189
+  it("hides the timeline, keeping the player and its controls, when its fold button is pressed", async () => {
+    await show(projectWithMedia());
+
+    foldTimeline();
+
+    expect([target("timeline").hidden, target("screenRow").hidden]).toEqual([
+      true,
+      false,
+    ]);
+  });
+
+  // @behavior PV-190
+  it("keeps the timeline folded for the next Resource with media", async () => {
+    await show(projectWithMedia());
+    foldTimeline();
+    await reopen();
+
+    await show(projectOf({ media: "/talks/ep02.mp4" }));
+
+    expect(target("timeline").hidden).toBe(true);
+  });
+
+  // @behavior PV-191
+  it("takes no room once both the player and the timeline are folded", async () => {
+    await show(projectWithMedia());
+    foldPlayer();
+
+    foldTimeline();
 
     expect(panel().hidden).toBe(true);
   });
@@ -864,6 +1129,25 @@ describe("PreviewController", () => {
       expect(target("currentSection").hidden).toBe(true);
     });
 
+    it("leaves the row beside the card to the card while the video is away", async () => {
+      await show(projectWithMedia());
+      loadPicture(1920, 1080);
+
+      pressVideoWindowButton();
+
+      expect(target("screenRow").hasAttribute("data-has-picture")).toBe(false);
+    });
+
+    it("sizes the row beside the card by the video again as it comes back", async () => {
+      await show(projectWithMedia());
+      loadPicture(1920, 1080);
+      pressVideoWindowButton();
+
+      pressVideoWindowButton();
+
+      expect(target("screenRow").hasAttribute("data-has-picture")).toBe(true);
+    });
+
     // @behavior PV-139
     it("shows the Current Segment's card again as the video comes back", async () => {
       await show(projectWithMedia());
@@ -987,19 +1271,18 @@ describe("PreviewController", () => {
     });
 
     // @behavior PV-136
-    it("closes the Video Window for media without a picture", async () => {
+    it("keeps the Video Window with the Dummy Video for media without a picture", async () => {
       await show(projectWithMedia());
       pressVideoWindowButton();
       await show(projectWithMedia({ media: "/talks/ep02.m4a" }));
-      Object.defineProperty(media(), "videoWidth", { value: 0 });
 
-      media().dispatchEvent(new Event("loadedmetadata"));
+      loadPicture(0, 0);
       await settle();
 
-      expect([videoWindow(), windowCalls]).toEqual([
-        null,
-        [["plugin:window|destroy", { label: "video" }]],
-      ]);
+      expect([
+        media().ownerDocument === videoWindow()?.document,
+        windowCalls,
+      ]).toEqual([true, []]);
     });
   });
 });

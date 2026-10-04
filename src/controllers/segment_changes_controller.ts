@@ -1,9 +1,10 @@
 import { Controller } from "@hotwired/stimulus";
 
+import { type MenuChoice, popUpMenu } from "../backend/context_menu";
 import {
   currentResource,
-  refreshProject,
   type EditCommand,
+  type ProjectFeed,
   type ProjectView,
 } from "../backend/project";
 import type { TranscriptionScope } from "../backend/transcription";
@@ -12,25 +13,22 @@ import {
   isHeld,
   isRun,
   orderedTimes,
+  runWithNeighbour,
+  type MergeDirection,
   type TimeEdge,
   isTextField,
   type EditingSession,
+  type Outcome,
   type SegmentChange,
 } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { notify, notifyEdit } from "../ui/notification";
+import { accelerator, isShortcut } from "../ui/shortcuts";
 import { parseTime } from "../ui/time";
 
 function indexOf(element: EventTarget | null): number {
   return Number((element as HTMLElement).dataset.index);
-}
-
-/** Whether `event` is a bare Delete, or Backspace on macOS, where the key labelled delete types it. */
-function isDeleteKey(event: KeyboardEvent): boolean {
-  if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey)
-    return false;
-  return event.key === "Delete" || (event.key === "Backspace" && isMacOS());
 }
 
 /** Whether the user is working in an open dialog, a menu or a drop-down list, which Delete leaves alone. */
@@ -39,6 +37,27 @@ function isWorkingElsewhere(target: EventTarget | null): boolean {
     document.querySelector("dialog[open]") !== null ||
     (target instanceof Element && target.closest(".dropdown, select") !== null)
   );
+}
+
+/** The neighbour the merge shortcut `event` presses merges with, or none for another key. */
+function mergeDirection(
+  event: KeyboardEvent,
+  isMac: boolean,
+): MergeDirection | null {
+  if (isShortcut(event, "mergeWithPrevious", isMac)) return "previous";
+  if (isShortcut(event, "mergeWithNext", isMac)) return "next";
+  return null;
+}
+
+/** `button` as a choice of a menu of the system: its text without the keys drawn beside it, and its shortcut. */
+function choiceOf(button: HTMLButtonElement): MenuChoice {
+  const shortcut = button.dataset.shortcut;
+  return {
+    text: button.firstChild?.textContent ?? "",
+    isEnabled: !button.disabled,
+    accelerator: shortcut ? accelerator(shortcut, isMacOS()) : undefined,
+    run: () => button.click(),
+  };
 }
 
 /**
@@ -56,6 +75,7 @@ export default class SegmentChangesController extends Controller {
     "offset",
   ];
 
+  declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
   /** The bar that shows while Segments are checked. */
   declare readonly checkedBarTarget: HTMLElement;
@@ -68,8 +88,8 @@ export default class SegmentChangesController extends Controller {
   declare readonly shiftDialogTarget: HTMLDialogElement;
   /** Milliseconds to shift by, negative for earlier. */
   declare readonly offsetTarget: HTMLInputElement;
-  /** A deletion by key is being sent. */
-  private isDeleting = false;
+  /** A change by key is being sent. */
+  private isChangingByKey = false;
 
   /**
    * Select All chosen from the Edit menu selects the text in focus, or else checks every Segment;
@@ -92,7 +112,7 @@ export default class SegmentChangesController extends Controller {
     const [start_ms, end_ms] = [time("start"), time("end")];
     if (start_ms === null || end_ms === null) {
       notify({ title: t("edit.unreadableTime"), kind: "warning" });
-      await refreshProject();
+      await this.feed.refresh();
       return;
     }
     const edge = (currentTarget as HTMLElement).dataset.edge as TimeEdge;
@@ -137,27 +157,66 @@ export default class SegmentChangesController extends Controller {
 
   /**
    * Deletes the Checked Segments, or else the Current Segment, as one change; bound to
-   * `keydown@window` with `:!typing`. A repeat or a press while a deletion is sent is dropped, as
-   * the Current Segment moves only once the deletion shows.
+   * `keydown@window` with `:!typing`.
    */
   async deleteByShortcut(event: KeyboardEvent): Promise<void> {
-    if (!isDeleteKey(event) || isWorkingElsewhere(event.target)) return;
+    if (
+      !isShortcut(event, "delete", isMacOS()) ||
+      isWorkingElsewhere(event.target)
+    )
+      return;
     const indexes = this.indexesToDelete;
     if (indexes.length === 0) return;
-    event.preventDefault();
-    if (event.repeat || this.isDeleting || this.isAnyHeld(indexes)) return;
-    this.isDeleting = true;
-    try {
-      await this.change({ kind: "deletion", indexes });
-    } finally {
-      this.isDeleting = false;
-    }
+    await this.changeByKey(event, indexes, () =>
+      this.session.change({ kind: "deletion", indexes }),
+    );
+  }
+
+  /**
+   * Merges the Current Segment with the one before or after it, as the key pressed tells; bound to
+   * `keydown@window`, a text field included, as a merge needs no Cursor.
+   */
+  async mergeByShortcut(event: KeyboardEvent): Promise<void> {
+    const direction = mergeDirection(event, isMacOS());
+    const index = this.session.cursor.index;
+    if (
+      direction === null ||
+      index === null ||
+      event.isComposing ||
+      isWorkingElsewhere(event.target)
+    )
+      return;
+    const run = runWithNeighbour(index, direction, this.segmentCount);
+    if (run === null) return;
+    await this.changeByKey(event, [run.first, run.last], () =>
+      this.session.merge(run.first, run.last),
+    );
   }
 
   /** Splits the Segment whose menu was used where the Cursor in its text starts, which is kept while the menu has focus. */
   async split({ currentTarget }: Event): Promise<void> {
     closeMenu(currentTarget);
     notifyEdit(await this.session.split(), { refusal: "edit.splitWhere" });
+  }
+
+  /**
+   * Opens what the row's menu offers, or what is offered for the Checked Segments while some are,
+   * as a menu of the system beside the pointer; bound to `contextmenu` on a row.
+   */
+  async openMenu({ currentTarget, target }: Event): Promise<void> {
+    const choiceSource =
+      this.session.checkedIndexes.length > 0
+        ? this.checkedBarTarget
+        : (currentTarget as HTMLElement).querySelector(".change-menu")!;
+    const buttons = [
+      ...choiceSource.querySelectorAll<HTMLButtonElement>("button"),
+    ].filter((button) => !button.closest("[hidden]"));
+    await popUpMenu(
+      buttons.map(choiceOf),
+      isTextField(target)
+        ? { cut: t("edit.cut"), copy: t("edit.copy"), paste: t("edit.paste") }
+        : null,
+    );
   }
 
   check({ currentTarget }: Event): void {
@@ -173,6 +232,16 @@ export default class SegmentChangesController extends Controller {
       count: indexes.length,
     });
     this.mergeButtonTarget.disabled = !isRun(indexes);
+  }
+
+  /** Merges the Segment whose menu was used with the one before it. */
+  async mergeWithPrevious({ currentTarget }: Event): Promise<void> {
+    await this.mergeFromMenu(currentTarget, "previous");
+  }
+
+  /** Merges the Segment whose menu was used with the one after it. */
+  async mergeWithNext({ currentTarget }: Event): Promise<void> {
+    await this.mergeFromMenu(currentTarget, "next");
   }
 
   async merge(): Promise<void> {
@@ -279,6 +348,40 @@ export default class SegmentChangesController extends Controller {
     return (
       view !== null && indexes.some((index) => isHeld("other", view, index))
     );
+  }
+
+  private get segmentCount(): number {
+    return this.session.transcript?.segments.length ?? 0;
+  }
+
+  /** Merges the Segment of the menu item `choice` with its neighbour in `direction`. */
+  private async mergeFromMenu(
+    choice: EventTarget | null,
+    direction: MergeDirection,
+  ): Promise<void> {
+    closeMenu(choice);
+    const run = runWithNeighbour(indexOf(choice), direction, this.segmentCount);
+    if (run) notifyEdit(await this.session.merge(run.first, run.last));
+  }
+
+  /**
+   * Sends a change to the Segments at `indexes` for a key pressed, taking the key from the page; a
+   * repeat or a press while a change is sent is dropped, as the Current Segment moves only once
+   * the change shows, and so is one a running Mode holds.
+   */
+  private async changeByKey(
+    event: KeyboardEvent,
+    indexes: number[],
+    send: () => Promise<Outcome>,
+  ): Promise<void> {
+    event.preventDefault();
+    if (event.repeat || this.isChangingByKey || this.isAnyHeld(indexes)) return;
+    this.isChangingByKey = true;
+    try {
+      notifyEdit(await send());
+    } finally {
+      this.isChangingByKey = false;
+    }
   }
 
   private async change(change: SegmentChange): Promise<void> {

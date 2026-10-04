@@ -16,7 +16,15 @@ One piece of speech with a start time, an end time, its text and, when known, it
 
 ### Speaker
 
-Who says a Segment, named by the user and never detected. In an SRT it is the Speaker Label on the cue's first line when no other line carries one, and it is written back as `name: ` before the original, and before the translation as the Translation Glossary names that Speaker in the translation's Language, or as it is where the glossary names it no other way; reading a translation takes off only that label, so dialogue opening like one stays as written.
+Who says a Segment, named by the user or numbered by Speaker Diarization. In an SRT it is the Speaker Label on the cue's first line when no other line carries one, and it is written back as `name: ` before the original, and before the translation as the Translation Glossary names that Speaker in the translation's Language, or as it is where the glossary names it no other way; reading a translation takes off only that label, so dialogue opening like one stays as written.
+
+### Speaker Diarization
+
+Finding who is heard when in a media file, by Tsuzuri's own diarize Step running the diarization Model, and giving each Segment the Speaker heard longest during it. Speakers are numbered `Speaker 1`, `Speaker 2` and on in the order they are first heard, up to eight; a Segment nobody is heard during keeps no Speaker.
+
+### Speaker Turn
+
+One span of a media file during which Speaker Diarization hears one Speaker, by its start, its end and the Speaker's number. Turns of different Speakers may overlap where people talk at once.
 
 ### Transcript
 
@@ -64,7 +72,7 @@ What a Project is called in the toolbar, the window title and the Recent Project
 
 ### Project Options
 
-What the user sets for one Project in the settings, beside its Primary Language: its Project Name, its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, its Project Models, and the Transcription Settings it sets for itself. The Project Name can also be typed where the toolbar shows it. Each has a default the Project keeps until it is changed.
+What the user sets for one Project in the settings, beside its Primary Language: its Project Name, its Bilingual Order, whether a Bilingual SRT is saved beside each translation, whether a subtitle about to be overwritten is kept as an Overwrite Backup, whether a transcription is followed by Speaker Diarization, its Project Models, and the Transcription Settings it sets for itself. The Project Name can also be typed where the toolbar shows it. Each has a default the Project keeps until it is changed.
 
 ### Project Model
 
@@ -76,7 +84,16 @@ A directory opened as a Project before, kept in the app's settings with when it 
 
 ### Preview
 
-The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. It appears only for a Resource with a media file.
+The Current Resource's media above the editor: a player, its Waveform with a region for each Segment, and the controls to play it. A Resource without a media file plays silence under a Dummy Video, so its subtitles are still watched and retimed in the same Preview.
+
+### Dummy Video
+
+What the Preview shows in place of a picture its media does not have: a 16:9 frame, black unless white is chosen on this machine, with the Segment being played over it, so a Resource of sound alone shows its subtitles as they will look over a video. It is drawn by the webview and never written as a file; the Video Window shows it as it shows a picture. For a Resource without a media file it plays over silence the webview makes, a minute longer than the last Segment and made a minute longer again once a Segment reaches its end, so the player stays the one clock the Preview and the timeline follow.
+
+#### Rejected
+
+- `Fake Video` - nothing poses as the media; the frame stands where a picture would be and says so.
+- `Blank Picture` - it is not empty: the Segment being played is shown over it.
 
 ### Video Window
 
@@ -89,7 +106,15 @@ A window of its own the Preview's video moves into, with the Segment being playe
 
 ### Current Segment
 
-The one Segment whose row last took a click or focus in the editor, or whose region was last clicked on the timeline, shown with its own background; Space plays on from it, or plays it alone when the user turns that on. Choosing another one pauses the media there, at its start or where its region was clicked. It stays on its Segment through the Segment Changes around it, moves to the second half of a split and into a Segment just inserted, and is let go only when the Segments change in number by other means. It is the webview's to hold and changes nothing in the Project, unlike the Checked Segments.
+The one Segment whose row last took a click or focus in the editor, or whose region was last clicked on the timeline, shown with its own background; Space plays on from it, or plays it alone when the user turns that on. Choosing another one moves the media as the Choice Landing of where it was chosen from says. It stays on its Segment through the Segment Changes around it, moves to the second half of a split and into a Segment just inserted, and is let go only when the Segments change in number by other means. It is the webview's to hold and changes nothing in the Project, unlike the Checked Segments.
+
+### Choice Source
+
+Where the user chose another Segment from, which tells how much of the listening they mean to leave: its text or translation, a time of it, its Speaker menu, anywhere else in its row, Enter moving on from the field before, its region, or a search. A click or a press of the pointer is taken where it lands; focus the keyboard moves into a row, or a right click, counts as the row, except on the Speaker menu.
+
+### Choice Landing
+
+What playing media does as another Segment is chosen from one Choice Source: whether it pauses, and whether it moves to the Segment's start or stays where it is, which for a region is where it was clicked. Each Choice Source has its own, set in the Preferences. A paused media only moves, and playing alone always plays the Segment chosen from its start.
 
 ### Cursor
 
@@ -124,7 +149,7 @@ The loudest sample within one 10 ms slice of a Waveform, from 0 for silence to 1
 
 ### Mode
 
-What the user starts on the Current Resource from a task dialog: Transcribe (its media file to its Primary Language subtitle, whole or within an Audio Window), Translate (its Primary Language subtitle into another Language), or Transcribe and Translate (both, in that order). Its results appear in the editor as they arrive. While a Mode runs on a Resource, nothing else changes the subtitles it writes: a transcription holds every subtitle of the Resource, a translation only the one it writes. One Mode runs at a time; another started meanwhile waits for it to end.
+What the user starts on the Current Resource from a task dialog: Transcribe (its media file to its Primary Language subtitle, whole or within an Audio Window), Translate (its Primary Language subtitle into another Language), Diarize (giving the Segments of its Primary Language subtitle and every translation their Speakers, by Speaker Diarization of its media file), or Transcribe followed by Diarize, Translate or both, in that order. Its results appear in the editor as they arrive. While a Mode runs on a Resource, nothing else changes the subtitles it writes: a transcription or a diarization holds every subtitle of the Resource, a translation only the one it writes. One Mode runs at a time; another started meanwhile waits for it to end.
 
 #### Rejected
 
@@ -204,7 +229,7 @@ A weights file an engine loads, always passed by absolute path, found through th
 
 ### Resident llama-server
 
-The llama-server kept running between translations in router mode, started without a Model: a translation loads the translation Model into it, and it frees the Model again a chosen number of seconds after the translation ends, or at once when a transcription starts, so only one Model is loaded at a time.
+The llama-server kept running between translations in router mode, started without a Model: a translation loads the translation Model into it, and it frees the Model again a chosen number of seconds after the translation ends, or at once when a transcription or a diarization starts, so only one Model is loaded at a time.
 
 ### Batch
 
@@ -216,7 +241,7 @@ Consecutive Segments the Model reports as one sentence cut apart by transcriptio
 
 ### Speaker Label
 
-The `name:` or `name：` before a line of dialogue, everything up to the line's first colon not followed by a digit, as a clock time's is, unless it is digits only, such as `co:`; a name of any length reads back as it was written. The label of a cue with one becomes its Segment's Speaker; the labels of a cue whose lines name several stay in its text, and a translation asked to keep them sends only the dialogue and puts each label back in front of its line; the translate dialog does not ask yet, as Speakers are not detected.
+The `name:` or `name：` before a line of dialogue, everything up to the line's first colon not followed by a digit, as a clock time's is, unless it is digits only, such as `co:`; a name of any length reads back as it was written. The label of a cue with one becomes its Segment's Speaker; the labels of a cue whose lines name several stay in its text, and a translation asked to keep them sends only the dialogue and puts each label back in front of its line; the translate dialog does not ask yet.
 
 ### Translation Glossary
 
@@ -232,7 +257,7 @@ An optional second look in which the Model, two lines at a time, restates what e
 
 ### Model Slot
 
-Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli) or translation (llama-server). Each slot holds one Model Source.
+Which job a Model is chosen for: transcription (whisper-cli), VAD (whisper-cli), translation (llama-server) or diarization (Tsuzuri's own diarize step). Each slot holds one Model Source.
 
 ### Model Source
 
@@ -250,13 +275,17 @@ The directory Hugging Face tools share for downloaded files, so a Model another 
 
 How a transcription runs beyond the Language and the Model: whether VAD runs first, whether non-speech tokens are suppressed, whether each window carries the text before it as context, and whether a Simplified Cleanup follows a transcription in `zh-TW`. The general settings hold their defaults, which leave whisper-cli as it behaves on its own and clean what it writes; a Project may set any of them for itself and follows the general settings in the rest.
 
+### Preferences
+
+How Tsuzuri behaves as it is worked in, the same in every Project: for now the Choice Landing of each Choice Source. They are saved across launches in the settings' own tab, and until changed they keep the landings Tsuzuri always had: a text, a time, the row or a search pauses at the Segment's start, and a Speaker, Enter or a region plays on.
+
 ### VAD
 
 Voice activity detection: whisper-cli finds where speech is with the VAD Model and transcribes only there, so silence and music do not lead a Model to write text nobody said.
 
 ### Step
 
-One Component run inside a Mode: convert (ffmpeg), transcribe (whisper-cli) or translate (llama-server). A Step starts only after the previous Step's process has exited, so two Models are never loaded at once.
+One run of a Component. A Mode runs its Steps one after another, so only one Model is loaded at a time.
 
 ### Phase
 

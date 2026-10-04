@@ -1,10 +1,13 @@
+import type { Diarization } from "../backend/diarization";
+import type { PhaseTiming } from "../backend/progress";
 import type { Restoration } from "../backend/project";
+import type { Transcription } from "../backend/transcription";
 import type { Translation } from "../backend/translation";
 import type { Outcome } from "../editor";
 import { iconElement, type IconName } from "./icons";
 import { t } from "../i18n";
 import { failureKind, failureMessage } from "./failure";
-import { phaseItems } from "./progress";
+import { factorItems, phaseItems } from "./progress";
 import { showSaveMark } from "./save_mark";
 
 /** How long a Notification that goes on its own stays, paused while the pointer or focus rests on it. */
@@ -211,6 +214,48 @@ export function notifyTranslation({
     items: phaseItems(phases),
   });
   notifyUnmatched(unmatched_count);
+}
+
+/** Says a transcription finished, with how long the audio is and how long each Phase took. */
+export function notifyTranscription({
+  audio_seconds,
+  transcribe_seconds,
+  phases,
+}: Transcription): void {
+  notify({
+    title: t("transcribe.done"),
+    kind: "success",
+    items: audioRunItems(audio_seconds, transcribe_seconds, phases),
+  });
+}
+
+/** Says the Speakers were given, with how long the audio is and how long each Phase took. */
+export function notifyDiarization({
+  audio_seconds,
+  diarize_seconds,
+  phases,
+}: Diarization): void {
+  notify({
+    title: t("diarize.done"),
+    kind: "success",
+    items: audioRunItems(audio_seconds, diarize_seconds, phases),
+  });
+}
+
+/** The items of a run over `audioSeconds` of audio that took `runSeconds`, Phase by Phase. */
+function audioRunItems(
+  audioSeconds: number,
+  runSeconds: number,
+  phases: PhaseTiming[],
+): [string, string][] {
+  return [
+    [
+      t("transcribe.audio"),
+      t("phases.seconds", { seconds: audioSeconds.toFixed(1) }),
+    ],
+    ...factorItems(runSeconds, audioSeconds),
+    ...phaseItems(phases),
+  ];
 }
 
 /** Says `title` was restored, warning of the Segments it left with no translation lined up. */

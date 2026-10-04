@@ -86,21 +86,71 @@ A quiet recording is stretched to its loudest Peak, so a Peak holds enough of a 
 | When | the Project is shown |
 | Then | the player reads `/talks/ep01.mp4` through the asset protocol |
 
-## `PV-009` Leaving the Preview out of a Resource without media
+## `PV-009` Showing the Preview for a Resource without media
+
+A subtitle alone still has timing to check and captions to see, so it takes the same Preview as a media file, with silence in place of the sound.
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource of a subtitle alone |
 | When | the Project is shown |
-| Then | no player or controls are shown |
+| Then | the player and its controls are shown |
 
-## `PV-010` Showing only the controls for media without a picture
+## `PV-197` Playing silence a minute past the last Segment for a Resource without media
+
+The silence runs a minute past the last Segment, so that Segment can still be dragged later and a new one drawn after it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone whose last Segment ends at 10 s |
+| When | the Project is shown |
+| Then | the player reads a WAV of silence lasting 70 s |
+
+## `PV-010` Showing the Dummy Video for media without a picture
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file |
 | When | its media loads without a picture |
-| Then | the controls are shown without the video |
+| Then | the Dummy Video is shown beside the controls |
+
+## `PV-199` Lengthening the silence once a Segment reaches its end
+
+The player cannot go past the end of what it reads, so a Segment dragged or typed to the end of the silence gets another minute after it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone playing silence lasting 70 s |
+| When | a Segment's end is moved to 70 s |
+| Then | the player reads a WAV of silence lasting 130 s |
+
+## `PV-200` Staying at the same time as the silence lengthens
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone, its silence at 5 s |
+| When | the silence lengthens |
+| Then | the player is still at 5 s |
+
+## `PV-202` Keeping the timeline where it was scrolled as the silence lengthens
+
+The silence lengthens while a Segment is dragged at the end of the timeline, so the view stays there to drag on.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone, its timeline scrolled to 50 s |
+| When | the silence lengthens |
+| Then | the timeline is still scrolled to 50 s |
+
+## `PV-201` Keeping the silence while the Segments stay within it
+
+Making the silence anew reloads the player and the timeline, so an edit that leaves every Segment inside it keeps the one it has.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone playing silence lasting 70 s |
+| When | a Segment's end is moved to 30 s |
+| Then | the player keeps reading the same silence |
 
 ## `PV-011` Telling the user a media file cannot be played
 
@@ -297,13 +347,13 @@ A window takes the scale of the screen it is made on, so the Video Window is mad
 | When | another Resource with a video is chosen |
 | Then | its video is shown in the Video Window |
 
-## `PV-136` Bringing the video back for media without a picture
+## `PV-136` Keeping the Video Window for media without a picture
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a video in the Video Window |
 | When | another Resource is chosen whose media has no picture |
-| Then | the Video Window closes |
+| Then | the Video Window stays open with the Dummy Video |
 
 ## `PV-137` Opening no window but the Video Window from the webview
 
@@ -336,6 +386,14 @@ A window takes the scale of the screen it is made on, so the Video Window is mad
 | Given | a Current Resource with `ep02.mp4` |
 | When | a Waveform taken from `ep01.mp4` arrives |
 | Then | the timeline does not draw it |
+
+## `PV-198` Drawing a flat Waveform for a Resource without media
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone whose last Segment ends at 10 s |
+| When | the Project is shown |
+| Then | the timeline draws a flat Waveform 70 s long, taking none from Rust |
 
 ## `PV-152` Drawing the Waveform in the colours of the theme turned to
 
@@ -554,21 +612,55 @@ A button clicked keeps the focus, yet Space pressed afterward is meant for the m
 | When | the wheel turns up with Ctrl held, as far as zooming by two takes |
 | Then | the timeline shows 200 pixels a second |
 
-## `PV-034` Folding the Preview away
+## `PV-034` Folding the player and its controls away
+
+Space plays and stops the media and the timeline still selects and retimes Segments, so the player and its controls fold away on their own and give their height to the Segment list.
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file, its Preview shown |
-| When | the Preview's fold button is pressed |
-| Then | the Preview is hidden and the Segment list keeps the room |
+| When | the controls' fold button is pressed |
+| Then | the player and its controls are hidden and the timeline stays |
 
-## `PV-035` Keeping the Preview folded for the next Resource
+## `PV-035` Keeping the player folded for the next Resource
 
 | Step | Statement |
 | --- | --- |
-| Given | the Preview folded away |
+| Given | the player and its controls folded away |
 | When | another Resource with a media file becomes current |
-| Then | its Preview stays folded |
+| Then | its player and controls stay folded |
+
+## `PV-189` Folding the timeline away
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, its Preview shown |
+| When | the timeline's fold button is pressed |
+| Then | the timeline is hidden and the player and its controls stay |
+
+## `PV-190` Keeping the timeline folded for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | the timeline folded away |
+| When | another Resource with a media file becomes current |
+| Then | its timeline stays folded |
+
+## `PV-191` Taking no room with both parts folded
+
+| Step | Statement |
+| --- | --- |
+| Given | the player and its controls folded away |
+| When | the timeline's fold button is pressed |
+| Then | the Preview takes no room above the Segment list |
+
+## `PV-192` Playing with Space while the player is folded
+
+| Step | Statement |
+| --- | --- |
+| Given | the player and its controls folded away, the media paused |
+| When | Space is pressed outside a text field |
+| Then | the media plays |
 
 ## `PV-036` Showing the Current Segment beside the video
 
@@ -620,17 +712,58 @@ A button clicked keeps the focus, yet Space pressed afterward is meant for the m
 
 ### Choosing another Segment
 
-A paused media moves to another Segment chosen, to be heard next: to its start from its row, or to where its region was clicked. Playing media stops only where the user means to listen again, since lines are corrected while heard:
+A paused media moves to another Segment chosen, to be heard next: to its start, or to where its region was clicked. Playing media follows the Choice Landing of where the Segment was chosen from, since lines are corrected while heard and only the user knows where they mean to listen again. Until the Preferences change them:
 
 ```
   chosen from            playing on               playing alone
-  its row                pauses at its start      plays from its start
+  its text or a time     pauses at its start      plays from its start
+  its row, a search      pauses at its start      plays from its start
   its Speaker menu       plays on where it is     plays from its start
   Enter in the field     plays on where it is     plays from its start
   its region             plays on from the click  plays from its start
 ```
 
 Playing alone keeps to the Segment chosen, so the media never plays past a Current Segment it has left behind. Staying in the Current Segment, or a Segment Change moving it, plays on.
+
+## `PV-203` Playing on as a text is chosen where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a text to play on |
+| When | the second Segment's text is clicked |
+| Then | the media plays on from 0.5 s |
+
+## `PV-204` Playing another Segment from its start where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing the row to move to the start without pausing |
+| When | the second Segment's row is clicked |
+| Then | the media plays on from 1 s |
+
+## `PV-205` Pausing where the media is where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a Speaker to pause without moving |
+| When | the second Segment's Speaker menu is opened |
+| Then | the media pauses at 0.5 s |
+
+## `PV-206` Pausing where a region is clicked where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a region to pause without moving to the start |
+| When | the second Segment's region is clicked at 1.5 s |
+| Then | the media pauses at 1.5 s |
+
+## `PV-207` Playing alone from the start whatever the Preferences say
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on, and the Preferences choosing the row to pause |
+| When | the second Segment's row is clicked |
+| Then | the media plays on from 1 s |
 
 ## `PV-075` Pausing at the start of a Segment whose row is chosen
 
@@ -720,6 +853,16 @@ Playing alone keeps to the Segment chosen, so the media never plays past a Curre
 | When | the wheel turns up with Alt held, as far as zooming by two takes |
 | Then | the timeline shows 200 pixels a second |
 
+## `PV-188` Zooming the timeline with ⌘ and the wheel
+
+The shortcut list names ⌘ on macOS where it names Ctrl elsewhere; the wheel itself zooms under Ctrl, Alt or ⌘ on every platform, since a trackpad pinch reports itself as Ctrl wherever it is made.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second |
+| When | the wheel turns up with ⌘ held, as far as zooming by two takes |
+| Then | the timeline shows 200 pixels a second |
+
 ## `PV-041` Showing how far the timeline is zoomed
 
 | Step | Statement |
@@ -784,13 +927,13 @@ Playing alone keeps to the Segment chosen, so the media never plays past a Curre
 | When | another Resource with a media file and a translation shown becomes current |
 | Then | both languages stay chosen |
 
-## `PV-049` Leaving out the choice over the video for media without a picture
+## `PV-049` Offering the choice over the Dummy Video
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file |
 | When | its media loads without a picture |
-| Then | no choice of what is shown over the video is offered |
+| Then | the choice of what is shown over the video is offered |
 ## `PV-068` Showing what is over the video on a translucent black by default
 
 A caption drawn with a shadow alone is lost on a bright picture, so it sits on a backdrop unless the user takes it away.
@@ -816,6 +959,40 @@ A caption drawn with a shadow alone is lost on a bright picture, so it sits on a
 | Given | the backdrop over the video taken away |
 | When | another Resource with a media file becomes current |
 | Then | what is shown over the video still has no backdrop |
+
+## `PV-193` Showing the Dummy Video in black by default
+
+Subtitles are most often watched over a dark picture, so the Dummy Video is black until white is chosen; a bright one shows whether a caption holds over a light scene.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media has no picture, and no colour ever chosen for the Dummy Video on this machine |
+| When | its media loads |
+| Then | the Dummy Video is black |
+
+## `PV-194` Choosing white for the Dummy Video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media has no picture |
+| When | white is chosen for the Dummy Video |
+| Then | the Dummy Video is white |
+
+## `PV-195` Keeping the Dummy Video's colour for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | white chosen for the Dummy Video |
+| When | another Resource whose media has no picture becomes current |
+| Then | its Dummy Video is white |
+
+## `PV-196` Leaving the Dummy Video's colour unchosen for media with a picture
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file |
+| When | its media loads with a picture |
+| Then | no colour can be chosen for the Dummy Video |
 
 ## `PV-164` Playing at full volume until a volume is chosen
 

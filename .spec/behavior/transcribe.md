@@ -481,3 +481,31 @@ A speech recognition Model writing Traditional Chinese still leaves Simplified c
 | Given | Transcription Settings with the cleanup off, a Project in `zh-TW`, and whisper-cli writing `这是测试` |
 | When | the Current Resource is transcribed |
 | Then | the subtitle reads `这是测试` |
+
+## `TX-059` Showing no translation once the whole media file is transcribed again
+
+A new transcription writes new Segments the translations no longer line up with, so the one shown stops being shown.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing its `en` translation |
+| When | its whole media file is transcribed again |
+| Then | no translation is shown |
+
+## `TX-060` Keeping the translation shown through a transcription within an Audio Window
+
+A transcription within an Audio Window writes only that window's Segments, so the translation shown stays shown.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing its `en` translation |
+| When | a span of its Segments is transcribed again |
+| Then | the `en` translation is still shown |
+
+## `TX-061` Listing the real-time factor
+
+| Step | Statement |
+| --- | --- |
+| Given | a transcription of 60 seconds of audio that took 30 seconds |
+| When | it finishes |
+| Then | the Notification lists a real-time factor of 0.50 |

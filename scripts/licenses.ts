@@ -131,6 +131,14 @@ function openccWork(): LicensedWork {
   };
 }
 
+/** The parakeet-rs code Speaker Diarization adapts, under the license kept beside it. */
+export function parakeetWork(): LicensedWork {
+  return {
+    name: "parakeet-rs 0.3.8, adapted in src-tauri/src/diarization",
+    text: readFileSync("src-tauri/src/diarization/LICENSE-parakeet-rs", "utf8"),
+  };
+}
+
 function escapeHtml(text: string): string {
   return text
     .replaceAll("&", "&amp;")
@@ -163,7 +171,7 @@ export function noticeHtml(notice: Notice): string {
     ),
     sectionHtml(
       "data",
-      "Data compiled into Tsuzuri",
+      "Code and data compiled into Tsuzuri",
       notice.data.map((work) => workHtml("h3", work)),
     ),
     sectionHtml(
@@ -259,7 +267,7 @@ if (import.meta.main) {
     noticeHtml({
       tsuzuri: readFileSync("LICENSE", "utf8"),
       variants: variantLicenses("vendor"),
-      data: [openccWork()],
+      data: [openccWork(), parakeetWork()],
       crates: JSON.parse(readFileSync(crateJson, "utf8")) as CrateLicenses,
       packages: packages.map((each) => ({
         ...each,

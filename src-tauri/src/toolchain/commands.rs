@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 
 use hf_hub::HFClient;
-use tauri::{AppHandle, Emitter, Manager, State};
+use serde::Serialize;
+use tauri::{AppHandle, Manager, State};
+use tauri_specta::Event;
 
-use super::hub::{self, hub_client, hub_token, ModelDownloads, RepositoryFile};
+use super::hub::{self, hub_client, hub_token, DownloadProgress, ModelDownloads, RepositoryFile};
 use super::presets::PresetModel;
 use super::settings::{self, load_settings};
 use super::{
@@ -13,7 +15,15 @@ use crate::failure::Failure;
 use crate::json_settings::settings_dir;
 use crate::model_source::ModelSource;
 
+/// How much of a Model being downloaded has arrived.
+// @event model-download-progress
+#[derive(Clone, Serialize, specta::Type, Event)]
+#[serde(transparent)]
+#[tauri_specta(event_name = "model-download-progress")]
+pub struct ModelDownloadProgress(DownloadProgress);
+
 #[tauri::command]
+#[specta::specta]
 pub async fn component_statuses(app: AppHandle) -> Result<Vec<ComponentStatus>, Failure> {
     find_statuses_off_the_main_thread(settings::resolver(&app)?).await
 }
@@ -30,6 +40,7 @@ async fn change_choices(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn choose_component(
     app: AppHandle,
     name: String,
@@ -39,6 +50,7 @@ pub async fn choose_component(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn forget_component(
     app: AppHandle,
     name: String,
@@ -47,11 +59,13 @@ pub async fn forget_component(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn model_settings(app: AppHandle) -> Result<ModelSettingsView, Failure> {
     Ok(load_settings(&app)?.view())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn choose_model(
     app: AppHandle,
     slot: ModelSlot,
@@ -64,6 +78,7 @@ pub fn choose_model(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn download_model(
     app: AppHandle,
     downloads: State<'_, ModelDownloads>,
@@ -75,18 +90,19 @@ pub async fn download_model(
     let progress_app = app.clone();
     downloads
         .download(client, repo, file, revision, move |progress| {
-            // @event model-download-progress
-            let _ = progress_app.emit("model-download-progress", progress);
+            let _ = ModelDownloadProgress(progress).emit(&progress_app);
         })
         .await
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn cancel_model_download(downloads: State<'_, ModelDownloads>, repo: String, file: String) {
     downloads.cancel(&repo, &file);
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn repository_files(
     app: AppHandle,
     repo: String,
@@ -106,6 +122,7 @@ fn slot_model_files(slot: ModelSlot, mut files: Vec<RepositoryFile>) -> Vec<Repo
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn preset_models(slot: ModelSlot) -> Vec<PresetModel> {
     super::presets::slot_presets(slot)
 }
@@ -126,6 +143,7 @@ mod tests {
             "ggml-large-v3.bin",
             "ggml-silero-v6.2.0.bin",
             "qwen3.gguf",
+            "Nemotron-3-Diarization.q8_0.gguf",
             "README.md",
         ]
         .into_iter()
@@ -159,5 +177,14 @@ mod tests {
     #[test]
     fn lists_the_translation_models_of_a_repository() {
         assert_eq!(model_paths(ModelSlot::Translation), ["qwen3.gguf"]);
+    }
+
+    // @behavior MD-051
+    #[test]
+    fn lists_the_diarization_models_of_a_repository() {
+        assert_eq!(
+            model_paths(ModelSlot::Diarization),
+            ["Nemotron-3-Diarization.q8_0.gguf"]
+        );
     }
 }

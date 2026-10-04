@@ -13,6 +13,7 @@ import {
 } from "../ui/test_notification";
 import { composingOption } from "./field_controller";
 import ProjectController from "./project_controller";
+import ResourceListController from "./resource_list_controller";
 
 describe("ProjectController", () => {
   let application: Application;
@@ -50,6 +51,7 @@ describe("ProjectController", () => {
     application.registerActionOption("composing", composingOption);
     await assemble(application, {
       project: ProjectController,
+      "resource-list": ResourceListController,
     }).start();
     await settle();
   }
@@ -69,7 +71,7 @@ describe("ProjectController", () => {
         data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept rust:srt-requested@window->project#openRequestedSrt"
       >
         <section data-project-target="startScreen"></section>
-        <div data-project-target="workspace" hidden>
+        <div data-project-target="workspace" data-controller="resource-list" data-action="project:select@window->resource-list#putAway" hidden>
           <input data-project-target="name" data-action="change->project#rename keydown.enter->project#leaveName:!composing keydown.esc->project#discardName:!composing" />
           <div class="dropdown">
             <div tabindex="0" role="button">開啟</div>
@@ -77,7 +79,9 @@ describe("ProjectController", () => {
             <button id="open-srt" data-action="project#openSrt">開啟 SRT</button>
           </div>
           <button id="reload" data-action="project#reload">重新載入</button>
-          <input type="checkbox" data-project-target="resourcesToggle" />
+          <input id="resources-toggle" type="checkbox" data-resource-list-target="toggle" />
+          <label data-resource-list-target="overlayButton"></label>
+          <button data-resource-list-target="dockButton"></button>
           <ul data-project-target="resources"></ul>
           <p data-project-target="glossary"></p>
         </div>
@@ -267,7 +271,8 @@ describe("ProjectController", () => {
         resources: [resourceOf(), resourceOf({ name: "ep02" })],
       }),
     );
-    const toggle = target<HTMLInputElement>("resourcesToggle");
+    const toggle =
+      document.querySelector<HTMLInputElement>("#resources-toggle")!;
     toggle.checked = true;
 
     await click('[data-name="ep02"]');

@@ -4,30 +4,12 @@ import { isMacOS } from "../backend/system";
 import type { EditingSession } from "../editor";
 import { t } from "../i18n";
 import { notify, notifyFailure } from "../ui/notification";
+import { isShortcut } from "../ui/shortcuts";
 import {
   chosenTextField,
   offerTextFields,
   selectedText,
 } from "../ui/text_fields";
-
-/**
- * Whether `event` asks for the replace dialog: Ctrl+H, as subtitle editors bind it, or ⌘+Option+F
- * on macOS, where ⌘+H hides the app and Ctrl+H deletes backward in a text. Option changes the key
- * typed, so F is read by its place on the keyboard.
- */
-function isReplaceShortcut(event: KeyboardEvent): boolean {
-  if (isMacOS())
-    return (
-      event.metaKey && event.altKey && !event.ctrlKey && event.code === "KeyF"
-    );
-  return (
-    event.ctrlKey &&
-    !event.metaKey &&
-    !event.altKey &&
-    !event.shiftKey &&
-    event.key.toLowerCase() === "h"
-  );
-}
 
 /**
  * The replace dialog: what to find across the Current Resource's original or the translation it
@@ -47,7 +29,8 @@ export default class ReplacementController extends Controller {
 
   /** Opens the dialog; bound to `keydown@window`, it acts only on the replace shortcuts. */
   openByShortcut(event: KeyboardEvent): void {
-    if (!isReplaceShortcut(event) || this.dialogTarget.open) return;
+    if (!isShortcut(event, "replace", isMacOS()) || this.dialogTarget.open)
+      return;
     event.preventDefault();
     this.open();
   }

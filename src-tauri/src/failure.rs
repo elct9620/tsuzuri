@@ -62,8 +62,10 @@ pub enum Failure {
     NoProject,
     /// The Project has no Resource by the name asked for, or none is current.
     NoResource,
-    /// Transcribing a Current Resource that has no media file.
+    /// The media file of a Current Resource that has none, asked for to convert it.
     NoMedia,
+    /// A diarization asked of a Current Resource that has no Primary Language subtitle.
+    NoSubtitle,
     /// An edit refused because a subtitle of the Current Resource was changed elsewhere since
     /// Tsuzuri last read or wrote it; the Current Resource was read again instead.
     ChangedElsewhere,

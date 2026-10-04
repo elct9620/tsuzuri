@@ -120,7 +120,7 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 | --- | --- |
 | Given | a Resource with a media file and no Primary Language subtitle |
 | When | it is diarized |
-| Then | it is refused before any Step runs |
+| Then | it is refused as `no-subtitle` before any Step runs |
 
 ## `DZ-015` Diarizing the Current Resource from the toolbar
 

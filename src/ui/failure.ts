@@ -23,6 +23,7 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "no-project": "warning",
   "no-resource": "warning",
   "no-media": "warning",
+  "no-subtitle": "warning",
   "changed-elsewhere": "warning",
   "mode-running": "warning",
   "mode-cancelled": "warning",
@@ -99,6 +100,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.noResource");
     case "no-media":
       return t("failures.noMedia");
+    case "no-subtitle":
+      return t("failures.noSubtitle");
     case "changed-elsewhere":
       return t("failures.changedElsewhere");
     case "mode-running":

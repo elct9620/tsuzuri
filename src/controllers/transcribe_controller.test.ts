@@ -521,7 +521,7 @@ describe("TranscribeController", () => {
 
     expect([notifications(), notificationDetail(0)]).toEqual([
       ["轉錄失敗"],
-      "這個資源沒有可轉錄的影片或音訊",
+      "這個資源沒有影片或音訊",
     ]);
   });
 

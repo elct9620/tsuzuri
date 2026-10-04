@@ -507,9 +507,7 @@ impl Project {
             .transcript
             .segments
             .get_mut(index)
-            .ok_or_else(|| Failure::Internal {
-                detail: format!("no Segment at {index}"),
-            })?;
+            .ok_or_else(|| missing_segment(index))?;
         match field {
             SegmentField::Text => segment.text = text_from(value),
             SegmentField::Translation => segment.translation = Some(text_from(value)),
@@ -619,9 +617,7 @@ impl Project {
     fn refuse_absent_segments(&self, indexes: &[usize]) -> Result<(), Failure> {
         let length = self.current()?.transcript.segments.len();
         match indexes.iter().find(|index| **index >= length) {
-            Some(index) => Err(Failure::Internal {
-                detail: format!("no Segment at {index}"),
-            }),
+            Some(index) => Err(missing_segment(*index)),
             None => Ok(()),
         }
     }
@@ -634,9 +630,7 @@ impl Project {
             .transcript
             .segments
             .get(index)
-            .ok_or_else(|| Failure::Internal {
-                detail: format!("no Segment at {index}"),
-            })?;
+            .ok_or_else(|| missing_segment(index))?;
         Ok(match field {
             SegmentField::Translation => segment.translation.as_deref().unwrap_or_default(),
             _ => &segment.text,
@@ -958,6 +952,14 @@ fn resource_in(project: Option<&Project>, source: &TranslationSource) -> Result<
     }
 }
 
+/// The failure of asking for a Segment at `index` the Current Resource does not have, which the
+/// webview never offers.
+fn missing_segment(index: usize) -> Failure {
+    Failure::Internal {
+        detail: format!("no Segment at {index}"),
+    }
+}
+
 /// The Resource of `resources` named `name`, if any.
 fn resource_by_name<'a>(resources: &'a [Resource], name: &str) -> Option<&'a Resource> {
     resources.iter().find(|resource| resource.name == name)
@@ -1164,9 +1166,7 @@ impl CurrentProject {
         let source = project.translation_source(target)?;
         let count = source.transcript.segments.len();
         if let Some(index) = indexes.iter().flatten().find(|index| **index >= count) {
-            return Err(Failure::Internal {
-                detail: format!("no Segment at {index}"),
-            });
+            return Err(missing_segment(*index));
         }
         if indexes.is_some() {
             project.show_translation(Some(target))?;
@@ -1380,9 +1380,7 @@ impl CurrentProject {
         let name = project.current()?.name.clone();
         let resource = project.resource(&name)?;
         let media = resource.media.clone().ok_or(Failure::NoMedia)?;
-        let subtitle = resource.subtitle.clone().ok_or_else(|| Failure::Internal {
-            detail: format!("{name} has no subtitle to give Speakers to"),
-        })?;
+        let subtitle = resource.subtitle.clone().ok_or(Failure::NoSubtitle)?;
         Ok(DiarizationTarget {
             directory: project.directory.clone(),
             name,

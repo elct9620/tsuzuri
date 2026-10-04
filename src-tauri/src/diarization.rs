@@ -414,7 +414,7 @@ mod tests {
 
         let result = fixture.diarize().await;
 
-        assert!(result.is_err());
+        assert!(matches!(result, Err(Failure::NoSubtitle)));
         assert!(!fixture.tools.ffmpeg.with_extension("args").exists());
     }
 

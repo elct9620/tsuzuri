@@ -66,7 +66,7 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 │  ├─ main.ts             starts, assembled by assembly.ts (4.3)
 │  ├─ page.ts             draws Page.svelte into <body> (4.3)
 │  ├─ Page.svelte         composes the page's regions (4.1)
-│  ├─ components/         Svelte Components by region (4.1)
+│  ├─ components/         Svelte Components and their tests (4.1)
 │  ├─ backend/            the only way to Rust
 │  ├─ controllers/        Stimulus controllers and their tests
 │  ├─ editor/             editing core, depends on nothing outside (4.5)
@@ -526,10 +526,9 @@ command ── begin_mode ──▶ ModeRun: turn, ports, keep   + Phases
 ### 4.1 分層
 
 ```
-index.html, Page.svelte,      data-controller, data-action
-components/
+index.html, Page.svelte       data-controller, data-action
     |
-controllers/ ---------------> ui/, backend/ (editing aside)
+components/, controllers/ --> ui/, backend/ (editing aside)
     |                         interface: DOM events to use cases, changes to the page
     v
 editor/  session.ts           application: Cursor, Checked Segments, use cases, port
@@ -552,7 +551,7 @@ backend/editing.ts            gateway: the one caller of editing commands
 | 不改成 custom element | 翻譯與圖示靠靜態掃描 |
 | 多 controller 的外框留在 `Page.svelte` | target 必須是後代 |
 
-`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。i18n 與 Lucide 圖示在寫入後掃描一次，所以 markup 寫入後不再重畫。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
+`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。轉換過行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字。其餘 markup 的 i18n 與 Lucide 圖示在寫入後掃描一次，所以不放進會重畫的區塊。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
 
 ### 4.2 相依規則
 
@@ -563,10 +562,20 @@ backend/editing.ts            gateway: the one caller of editing commands
 | controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
 | `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
 | `page.ts` | `Page.svelte`、i18n、`ui/` | controller |
-| `components/` | 其他 Svelte 元件、`backend/` 的型別 | controller |
+| `components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/` | controller |
 | `main.ts` | 全部 | — |
 
-Controller 之間只 import outlet 的型別，編輯一律經過 session。Controller 不自己訂閱 Rust 或 window 的事件，一律寫成 `data-action`，由 Stimulus 隨元素綁定與解除，影片視窗除外（4.9）。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
+Controller 之間只 import outlet 的型別，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
+
+#### 4.2.1 事件的接法
+
+事件交給框架接上與解除，所以不自己訂閱 Rust 或 window 的事件；只有影片視窗例外。下表是各處的接法。
+
+| 誰 | 接法 | 解除 |
+|---|---|---|
+| controller | `data-action` | 隨元素，由 Stimulus |
+| Svelte 元件 | `onclick` 等事件屬性 | 隨元件，由 Svelte |
+| 影片視窗 | `preview` 自己綁定 | 例外，見 4.9 |
 
 ### 4.3 組裝
 
@@ -590,7 +599,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | 註冊時注入 | controller 取得依賴 | `class extends` |
 | 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
-頁面先由 `drawPage` 寫好，controller 才連上。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。沒有 controller 自己向 Rust 讀專案。
+頁面先由 `drawPage` 寫好，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取；要讀 feed 或 session 時，才由 `mount` 的 context 傳入。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。沒有 controller 自己向 Rust 讀專案。
 
 ### 4.4 先後順序
 

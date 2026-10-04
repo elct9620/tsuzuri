@@ -91,29 +91,30 @@
           >{t("repository.list")}</button
         >
       </div>
-      <div
-        class="list max-h-72 overflow-y-auto rounded-box border border-base-300"
-        hidden={files.length === 0}
-      >
-        {#each files as file (file.path)}
-          <label class="list-row cursor-pointer items-center">
-            <input
-              type="radio"
-              name="repository-file"
-              class="radio radio-sm"
-              value={file.path}
-              bind:group={checkedFile}
-            />
-            <span class="break-all">{file.path}</span>
-            <span class="text-base-content/70 whitespace-nowrap"
-              >{sizeLabel(file.size)}</span
-            >
-          </label>
-        {/each}
-      </div>
-      <div role="alert" class="alert alert-warning" hidden={hint === null}>
-        {hint}
-      </div>
+      {#if files.length > 0}
+        <div
+          class="list max-h-72 overflow-y-auto rounded-box border border-base-300"
+        >
+          {#each files as file (file.path)}
+            <label class="list-row cursor-pointer items-center">
+              <input
+                type="radio"
+                name="repository-file"
+                class="radio radio-sm"
+                value={file.path}
+                bind:group={checkedFile}
+              />
+              <span class="break-all">{file.path}</span>
+              <span class="text-base-content/70 whitespace-nowrap"
+                >{sizeLabel(file.size)}</span
+              >
+            </label>
+          {/each}
+        </div>
+      {/if}
+      {#if hint !== null}
+        <div role="alert" class="alert alert-warning">{hint}</div>
+      {/if}
     </fieldset>
     <div class="modal-action">
       <form method="dialog">

@@ -26,7 +26,7 @@ describe("Components", () => {
   function llamaStatus(): string | null {
     return (
       within(llamaRow()).queryByText(/.+/, {
-        selector: "li > span:not([hidden])",
+        selector: "li > span",
       })?.textContent ?? null
     );
   }
@@ -216,9 +216,9 @@ describe("Components", () => {
     await mountWith({ component_statuses: () => new Promise(() => {}) });
 
     expect([
-      llamaRow().querySelector<HTMLElement>(".skeleton")!.hidden,
+      llamaRow().querySelector(".skeleton") !== null,
       llamaStatus(),
-    ]).toEqual([false, null]);
+    ]).toEqual([true, null]);
   });
 
   // @behavior CP-027
@@ -237,10 +237,10 @@ describe("Components", () => {
       ],
     });
 
-    expect([
-      llamaRow().querySelector<HTMLElement>(".skeleton")!.hidden,
-      llamaStatus(),
-    ]).toEqual([true, "偵測到：/usr/bin/llama-server"]);
+    expect([llamaRow().querySelector(".skeleton"), llamaStatus()]).toEqual([
+      null,
+      "偵測到：/usr/bin/llama-server",
+    ]);
   });
 
   // @behavior CP-024

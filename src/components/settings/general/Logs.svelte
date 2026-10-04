@@ -113,18 +113,10 @@
       />
     </li>
   </ul>
-  <div
-    role="alert"
-    class="alert alert-info text-sm"
-    hidden={directoryHint === null}
-  >
-    {directoryHint}
-  </div>
-  <div
-    role="alert"
-    class="alert alert-info text-sm"
-    hidden={debugLogHint === null}
-  >
-    {debugLogHint}
-  </div>
+  {#if directoryHint !== null}
+    <div role="alert" class="alert alert-info text-sm">{directoryHint}</div>
+  {/if}
+  {#if debugLogHint !== null}
+    <div role="alert" class="alert alert-info text-sm">{debugLogHint}</div>
+  {/if}
 </fieldset>

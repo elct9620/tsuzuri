@@ -10,9 +10,9 @@ describe("About", () => {
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const dialog = () =>
     screen.getByRole<HTMLDialogElement>("dialog", { hidden: true });
-  const notice = () => screen.getByTitle<HTMLIFrameElement>("LICENSE.html");
+  const notice = () => screen.queryByTitle<HTMLIFrameElement>("LICENSE.html");
   const missingHint = () =>
-    screen.getByText("開發版沒有附上完整授權，每個釋出的版本都會附上。");
+    screen.queryByText("開發版沒有附上完整授權，每個釋出的版本都會附上。");
 
   /** Serves `page` wherever the interface asks for LICENSE.html. */
   function servePage(page: string): void {
@@ -51,10 +51,9 @@ describe("About", () => {
 
     expect([
       dialog().open,
-      notice().hidden,
-      notice().srcdoc.includes("Apache License"),
-      missingHint().hidden,
-    ]).toEqual([true, false, true, true]);
+      notice()?.srcdoc.includes("Apache License"),
+      missingHint(),
+    ]).toEqual([true, true, null]);
   });
 
   // @behavior LC-008
@@ -65,10 +64,10 @@ describe("About", () => {
 
     await choose("完整授權");
 
-    expect([dialog().open, missingHint().hidden, notice().hidden]).toEqual([
+    expect([dialog().open, missingHint() !== null, notice()]).toEqual([
       true,
-      false,
       true,
+      null,
     ]);
   });
 

@@ -62,16 +62,14 @@
 <dialog class="modal" bind:this={dialog}>
   <div class="modal-box max-w-5xl">
     <h3 class="mb-2 text-lg font-bold">{t("translate.glossary")}</h3>
-    <div
-      role="alert"
-      class="alert alert-warning mb-2"
-      hidden={!hasSourceTargetHeader}
-    >
-      <span>{t("glossary.sourceTargetHeader")}</span>
-    </div>
-    <div role="alert" class="alert alert-error mb-2" hidden={failure === null}>
-      {failure}
-    </div>
+    {#if hasSourceTargetHeader}
+      <div role="alert" class="alert alert-warning mb-2">
+        <span>{t("glossary.sourceTargetHeader")}</span>
+      </div>
+    {/if}
+    {#if failure !== null}
+      <div role="alert" class="alert alert-error mb-2">{failure}</div>
+    {/if}
     <div class="max-h-[60vh] overflow-auto">
       <table class="table table-sm table-pin-rows">
         <thead>

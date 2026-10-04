@@ -12,11 +12,8 @@ import Settings from "./Settings.svelte";
 describe("Settings", () => {
   let feed: ProjectFeed;
 
-  /** The tab named `name`, found by its label since a hidden tab has no accessible name. */
   const tab = (name: string) =>
-    document.querySelector<HTMLInputElement>(
-      `[role="tablist"] > input[aria-label="${name}"]`,
-    )!;
+    screen.queryByRole<HTMLInputElement>("radio", { hidden: true, name });
 
   /** Opens the settings while `project` is open, or none. */
   async function openSettings(project: ProjectView | null): Promise<void> {
@@ -41,10 +38,10 @@ describe("Settings", () => {
     await openSettings(null);
 
     expect([
-      tab("專案").hidden,
+      tab("專案"),
       screen.queryByRole("group", { hidden: true, name: "專案" }),
-      tab("整體").checked,
-    ]).toEqual([true, null, true]);
+      tab("整體")?.checked,
+    ]).toEqual([null, null, true]);
   });
 
   // @behavior PJ-049
@@ -53,6 +50,6 @@ describe("Settings", () => {
 
     await open(projectOf());
 
-    expect(tab("專案").checked).toBe(true);
+    expect(tab("專案")?.checked).toBe(true);
   });
 });

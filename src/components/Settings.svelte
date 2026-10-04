@@ -40,24 +40,23 @@
   <div class="modal-box max-w-3xl">
     <h3 class="mb-2 text-lg font-bold">{t("toolbar.settings")}</h3>
     <div role="tablist" class="tabs tabs-border">
-      <input
-        type="radio"
-        name="settings-tabs"
-        class="tab"
-        aria-label={t("settings.project")}
-        checked={tab === "project"}
-        onchange={() => (tab = "project")}
-        hidden={project === null}
-      />
-      <div class="tab-content pt-4" hidden={project === null}>
-        {#if project !== null}
+      {#if project !== null}
+        <input
+          type="radio"
+          name="settings-tabs"
+          class="tab"
+          aria-label={t("settings.project")}
+          checked={tab === "project"}
+          onchange={() => (tab = "project")}
+        />
+        <div class="tab-content pt-4">
           <div class="flex flex-col gap-4">
             <Project {project} />
             <ProjectTranscription {project} />
             <ProjectModels {project} {pick} />
           </div>
-        {/if}
-      </div>
+        </div>
+      {/if}
       <input
         type="radio"
         name="settings-tabs"

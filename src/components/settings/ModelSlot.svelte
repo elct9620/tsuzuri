@@ -203,23 +203,24 @@
       >{t("models.repository")}</button
     >
   </div>
-  <span
-    class="list-col-wrap col-[2/span_2] break-all text-xs text-base-content/70"
-    class:text-error={isMissing}
-    hidden={pendingDownload !== null}>{status}</span
-  >
-  <div
-    class="list-col-wrap col-[2/span_2] flex items-center gap-2"
-    hidden={pendingDownload === null}
-  >
-    <progress
-      class="progress progress-primary w-full"
-      max="100"
-      value={downloadPercent}
-    ></progress>
-    <span class="text-xs whitespace-nowrap">{downloadLabel}</span>
-    <button type="button" class="btn btn-ghost btn-xs" onclick={cancelDownload}
-      >{t("models.cancelDownload")}</button
+  {#if pendingDownload === null}
+    <span
+      class="list-col-wrap col-[2/span_2] break-all text-xs text-base-content/70"
+      class:text-error={isMissing}>{status}</span
     >
-  </div>
+  {:else}
+    <div class="list-col-wrap col-[2/span_2] flex items-center gap-2">
+      <progress
+        class="progress progress-primary w-full"
+        max="100"
+        value={downloadPercent}
+      ></progress>
+      <span class="text-xs whitespace-nowrap">{downloadLabel}</span>
+      <button
+        type="button"
+        class="btn btn-ghost btn-xs"
+        onclick={cancelDownload}>{t("models.cancelDownload")}</button
+      >
+    </div>
+  {/if}
 </li>

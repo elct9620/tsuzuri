@@ -77,20 +77,18 @@
   <dialog class="modal" bind:this={dialog}>
     <div class="modal-box w-11/12 max-w-4xl">
       <h3 class="text-lg font-bold">{t("settings.licenses")}</h3>
-      <iframe
-        class="mt-4 h-[60vh] w-full rounded-box border border-base-300"
-        title="LICENSE.html"
-        sandbox=""
-        srcdoc={notice || undefined}
-        hidden={!notice}
-      ></iframe>
-      <div
-        role="alert"
-        class="alert alert-info mt-4 text-sm"
-        hidden={notice !== null}
-      >
-        {t("settings.licensesMissing")}
-      </div>
+      {#if notice}
+        <iframe
+          class="mt-4 h-[60vh] w-full rounded-box border border-base-300"
+          title="LICENSE.html"
+          sandbox=""
+          srcdoc={notice}
+        ></iframe>
+      {:else if notice === null}
+        <div role="alert" class="alert alert-info mt-4 text-sm">
+          {t("settings.licensesMissing")}
+        </div>
+      {/if}
       <div class="modal-action">
         <form method="dialog">
           <button class="btn">{t("work.close")}</button>

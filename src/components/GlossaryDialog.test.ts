@@ -16,10 +16,11 @@ describe("GlossaryDialog", () => {
   /** Each row of terms, below the row naming the Languages. */
   const termRows = () =>
     within(glossary()).getAllByRole("row", { hidden: true }).slice(1);
+  /** The alert saying why the glossary could not be read or saved, or null while none is shown. */
   const failure = () =>
     within(glossary())
-      .getAllByRole("alert", { hidden: true })
-      .find((alert) => alert.classList.contains("alert-error"))!;
+      .queryAllByRole("alert", { hidden: true })
+      .find((alert) => alert.classList.contains("alert-error")) ?? null;
   const saveButton = () =>
     within(glossary()).getByRole<HTMLButtonElement>("button", {
       hidden: true,
@@ -133,8 +134,8 @@ describe("GlossaryDialog", () => {
     expect(
       within(glossary())
         .getByText("目前的標頭是 source,target，儲存後改用語言代碼")
-        .closest<HTMLElement>("[role=alert]")!.hidden,
-    ).toBe(false);
+        .closest("[role=alert]"),
+    ).not.toBeNull();
   });
 
   // @behavior GL-010
@@ -143,7 +144,7 @@ describe("GlossaryDialog", () => {
 
     await openDialog();
 
-    expect([failure().hidden, saveButton().disabled]).toEqual([false, true]);
+    expect([failure() !== null, saveButton().disabled]).toEqual([true, true]);
   });
 
   // @behavior GL-015
@@ -203,8 +204,8 @@ describe("GlossaryDialog", () => {
     expect([
       (glossary() as HTMLDialogElement).open,
       fields(),
-      failure().hidden,
-    ]).toEqual([true, [["蝙蝠俠", "Batman", ""]], false]);
+      failure() !== null,
+    ]).toEqual([true, [["蝙蝠俠", "Batman", ""]], true]);
   });
 
   // @behavior GL-020
@@ -216,6 +217,6 @@ describe("GlossaryDialog", () => {
 
     await openDialog();
 
-    expect([failure().hidden, saveButton().disabled]).toEqual([true, false]);
+    expect([failure(), saveButton().disabled]).toEqual([null, false]);
   });
 });

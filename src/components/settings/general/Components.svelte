@@ -91,22 +91,26 @@
           <span>{label}</span>
           <HelpButton {tip} />
         </span>
-        <span class="skeleton h-4 w-48" hidden={statuses !== null}></span>
-        <span class="break-all text-base-content/70" hidden={!status}
-          >{status ? statusMessage(status) : ""}</span
-        >
+        {#if statuses === null}
+          <span class="skeleton h-4 w-48"></span>
+        {:else if status}
+          <span class="break-all text-base-content/70"
+            >{statusMessage(status)}</span
+          >
+        {/if}
         <button
           type="button"
           class="btn btn-sm"
           onclick={() => choosePath(name)}>{t("settings.choose")}</button
         >
-        <button
-          type="button"
-          class="btn btn-sm btn-ghost"
-          hidden={status?.origin !== "choice"}
-          onclick={() => restoreDefault(name)}
-          >{t("settings.restoreDefault")}</button
-        >
+        {#if status?.origin === "choice"}
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost"
+            onclick={() => restoreDefault(name)}
+            >{t("settings.restoreDefault")}</button
+          >
+        {/if}
       </li>
     {/each}
   </ul>

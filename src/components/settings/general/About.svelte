@@ -1,7 +1,55 @@
-<fieldset class="fieldset text-sm" data-controller="licenses">
-  <legend class="fieldset-legend" data-i18n="settings.about"></legend>
+<script lang="ts">
+  import { openReleases, openSponsorship } from "../../../backend/about";
+  import { t } from "../../../i18n";
+  import { notifyFailure } from "../../../ui/notification";
+
+  let dialog: HTMLDialogElement;
+  /** The License Notice, read the first time the dialog opens; null for a build without one. */
+  let notice = $state<string | null>();
+
+  async function showLicenses(): Promise<void> {
+    dialog.showModal();
+    if (notice !== undefined) return;
+    notice = await licenseNotice();
+  }
+
+  /**
+   * The License Notice CI writes into the interface, or null for a build without one,
+   * where the page answered in its place is not the notice.
+   */
+  async function licenseNotice(): Promise<string | null> {
+    try {
+      const response = await fetch("LICENSE.html");
+      if (!response.ok) return null;
+      const text = await response.text();
+      const page = new DOMParser().parseFromString(text, "text/html");
+      return page.querySelector("section#tsuzuri") ? text : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function openSource(): Promise<void> {
+    try {
+      await openReleases();
+    } catch (error) {
+      notifyFailure(t("settings.releasesNotOpened"), error);
+    }
+  }
+
+  async function openSponsorshipPage(): Promise<void> {
+    try {
+      await openSponsorship();
+    } catch (error) {
+      notifyFailure(t("settings.sponsorshipNotOpened"), error);
+    }
+  }
+</script>
+
+<fieldset class="fieldset text-sm">
+  <legend class="fieldset-legend">{t("settings.about")}</legend>
   <div class="flex flex-col gap-1 text-base-content/70">
-    <p data-i18n="settings.license"></p>
+    <p>{t("settings.license")}</p>
     <p>
       This software uses code of FFmpeg licensed under the LGPLv2.1.
       Transcription uses whisper.cpp and translation uses llama.cpp, both under
@@ -15,48 +63,37 @@
     </p>
   </div>
   <div class="flex gap-2">
-    <button
-      type="button"
-      class="btn btn-sm"
-      data-action="licenses#showLicenses"
-      data-i18n="settings.fullLicenses"
-    ></button>
-    <button
-      type="button"
-      class="btn btn-sm"
-      data-action="licenses#openSource"
-      data-i18n="settings.sourceCode"
-    ></button>
-    <button
-      type="button"
-      class="btn btn-sm"
-      data-controller="sponsorship"
-      data-action="sponsorship#open"
-    >
+    <button type="button" class="btn btn-sm" onclick={showLicenses}>
+      {t("settings.fullLicenses")}
+    </button>
+    <button type="button" class="btn btn-sm" onclick={openSource}>
+      {t("settings.sourceCode")}
+    </button>
+    <button type="button" class="btn btn-sm" onclick={openSponsorshipPage}>
       <i data-lucide="heart" class="size-4"></i>
-      <span data-i18n="settings.sponsor"></span>
+      <span>{t("settings.sponsor")}</span>
     </button>
   </div>
-  <dialog class="modal" data-licenses-target="dialog">
+  <dialog class="modal" bind:this={dialog}>
     <div class="modal-box w-11/12 max-w-4xl">
-      <h3 class="text-lg font-bold" data-i18n="settings.licenses"></h3>
+      <h3 class="text-lg font-bold">{t("settings.licenses")}</h3>
       <iframe
         class="mt-4 h-[60vh] w-full rounded-box border border-base-300"
         title="LICENSE.html"
         sandbox=""
-        data-licenses-target="notice"
-        hidden
+        srcdoc={notice || undefined}
+        hidden={!notice}
       ></iframe>
       <div
         role="alert"
         class="alert alert-info mt-4 text-sm"
-        data-licenses-target="missingHint"
-        data-i18n="settings.licensesMissing"
-        hidden
-      ></div>
+        hidden={notice !== null}
+      >
+        {t("settings.licensesMissing")}
+      </div>
       <div class="modal-action">
         <form method="dialog">
-          <button class="btn" data-i18n="work.close"></button>
+          <button class="btn">{t("work.close")}</button>
         </form>
       </div>
     </div>

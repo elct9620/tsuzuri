@@ -35,7 +35,6 @@ describe("drawPage", () => {
     ["general Models", "#general-models"],
     ["repository dialog", "#repository-dialog"],
     ["logs", '[data-controller="logs"]'],
-    ["about", '[data-controller="licenses"]'],
     ["preferences", '[data-controller="preferences"]'],
     ["shortcuts dialog", '[data-shortcuts-target="dialog"]'],
     ["updates dialog", '[data-updates-target="dialog"]'],
@@ -50,19 +49,19 @@ describe("drawPage", () => {
   });
 
   // A part whose Svelte Component reads for itself is found by the name the settings show for it.
-  it.each([["version and updates", "settings.versionAndUpdates"]])(
-    "writes the %s",
-    async (_part, name) => {
-      const page = document.createElement("div");
-      await setInterfaceLanguage("zh-TW");
+  it.each([
+    ["version and updates", "settings.versionAndUpdates"],
+    ["about", "settings.about"],
+  ])("writes the %s", async (_part, name) => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
 
-      drawPage(page);
+    drawPage(page);
 
-      expect(
-        within(page).queryByRole("group", { hidden: true, name: t(name) }),
-      ).not.toBeNull();
-    },
-  );
+    expect(
+      within(page).queryByRole("group", { hidden: true, name: t(name) }),
+    ).not.toBeNull();
+  });
 
   it.each(["#transcribe-options", "#translate-options"])(
     "writes the translation options in %s in the interface language",

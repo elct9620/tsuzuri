@@ -10,7 +10,6 @@ import FieldController, {
   composingOption,
 } from "./controllers/field_controller";
 import GlossaryController from "./controllers/glossary_controller";
-import LicensesController from "./controllers/licenses_controller";
 import LogsController from "./controllers/logs_controller";
 import ModelSlotController from "./controllers/model_slot_controller";
 import ModelsController from "./controllers/models_controller";
@@ -27,7 +26,6 @@ import SearchController from "./controllers/search_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
 import ShortcutsController from "./controllers/shortcuts_controller";
 import SpeakersController from "./controllers/speakers_controller";
-import SponsorshipController from "./controllers/sponsorship_controller";
 import TimeFieldController from "./controllers/time_field_controller";
 import TimelineController, {
   controlOption,
@@ -64,7 +62,6 @@ async function start(): Promise<void> {
     dialog: DialogController,
     field: FieldController,
     glossary: GlossaryController,
-    licenses: LicensesController,
     logs: LogsController,
     "model-slot": ModelSlotController,
     models: ModelsController,
@@ -83,7 +80,6 @@ async function start(): Promise<void> {
     "segment-changes": SegmentChangesController,
     shortcuts: ShortcutsController,
     speakers: SpeakersController,
-    sponsorship: SponsorshipController,
     "time-field": TimeFieldController,
     timeline: TimelineController,
     tooltip: TooltipController,

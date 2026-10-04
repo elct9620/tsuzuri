@@ -171,6 +171,10 @@ An upstream executable Tsuzuri runs as a child process: ffmpeg, whisper.cpp (`wh
 
 - `Sidecar` - Tauri's sidecar is one binary per target triple; a Variant is a directory that can carry its own libraries, so it is bundled as a resource and launched by absolute path.
 
+### Svelte Component
+
+A `.svelte` file under `src/components/` that writes one part of the page, named for what the screen shows there. It is always said in full, since a bare Component is the upstream executable above. The component column of `docs/ui.md` names daisyUI's components instead.
+
 ### Detection
 
 Looking for a Component already on the computer: `vendor/` in debug builds, then the `PATH` and the directories package managers install into. The first executable that answers its version flag is taken. A macOS app does not inherit the shell's `PATH`, so those directories are listed explicitly.

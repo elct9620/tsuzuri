@@ -31,7 +31,6 @@ describe("drawPage", () => {
     ["Project's Models", "#project-models"],
     ["Components", '[data-controller="components"]'],
     ["translation settings", '[data-controller="translation-settings"]'],
-    ["transcription settings", '[data-controller="transcription-settings"]'],
     ["general Models", "#general-models"],
     ["repository dialog", "#repository-dialog"],
     ["logs", '[data-controller="logs"]'],
@@ -48,18 +47,24 @@ describe("drawPage", () => {
     expect(page.querySelector(selector)).not.toBeNull();
   });
 
-  // A part whose Svelte Component reads for itself is found by the name the settings show for it.
+  // A general setting whose Svelte Component reads for itself is found by the name of its group
+  // under the general tab, since the Project tab names some groups the same.
   it.each([
     ["version and updates", "settings.versionAndUpdates"],
     ["about", "settings.about"],
-  ])("writes the %s", async (_part, name) => {
+    ["transcription settings", "settings.transcription"],
+  ])("writes the %s in the general settings", async (_part, name) => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
 
     drawPage(page);
 
+    const generalTab = within(page).getByRole("radio", {
+      hidden: true,
+      name: t("settings.general"),
+    }).nextElementSibling as HTMLElement;
     expect(
-      within(page).queryByRole("group", { hidden: true, name: t(name) }),
+      within(generalTab).queryByRole("group", { hidden: true, name: t(name) }),
     ).not.toBeNull();
   });
 

@@ -1,34 +1,34 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
+import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import TranscriptionSettingsController from "./transcription_settings_controller";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import Transcription from "./Transcription.svelte";
+import {
+  NOTIFICATION_STACK,
+  notifications,
+} from "../../../ui/test_notification";
 
-describe("TranscriptionSettingsController", () => {
-  let application: Application;
+describe("Transcription", () => {
   let savedArgs: unknown;
   /** The command that answers with a failure, if any. */
   let failingCommand: string | null;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const input = (target: string) =>
-    document.querySelector<HTMLInputElement>(
-      `[data-transcription-settings-target="${target}"]`,
-    )!;
+  /** The switch of the row named `name`. */
+  const toggle = (name: string) =>
+    within(screen.getByText(name).closest("li")!).getByRole<HTMLInputElement>(
+      "checkbox",
+    );
 
-  beforeEach(async () => {
+  async function openSettings(): Promise<void> {
+    render(Transcription);
+    await settle();
+  }
+
+  beforeEach(() => {
     savedArgs = undefined;
     failingCommand = null;
-    document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
-      <div data-controller="transcription-settings">
-        <input type="checkbox" data-transcription-settings-target="vad" data-action="change->transcription-settings#save">
-        <input type="checkbox" data-transcription-settings-target="nonSpeechSuppressed" data-action="change->transcription-settings#save">
-        <input type="checkbox" data-transcription-settings-target="contextCarried" data-action="change->transcription-settings#save">
-        <input type="checkbox" data-transcription-settings-target="simplifiedCleaned" data-action="change->transcription-settings#save">
-      </div>
-    `;
+    document.body.innerHTML = NOTIFICATION_STACK;
     mockIPC((command, args) => {
       if (command === failingCommand)
         return Promise.reject({ code: "io", detail: "denied" });
@@ -44,25 +44,17 @@ describe("TranscriptionSettingsController", () => {
         return (args as { settings: unknown }).settings;
       }
     });
-    application = Application.start();
-    application.register(
-      "transcription-settings",
-      TranscriptionSettingsController,
-    );
-    await settle();
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 
   // @behavior TX-039
   it("saves VAD turned on in the general settings with the rest as they were", async () => {
-    const vad = input("vad");
+    await openSettings();
 
-    vad.checked = true;
-    vad.dispatchEvent(new Event("change"));
+    toggle("VAD").click();
     await settle();
 
     expect(savedArgs).toEqual({
@@ -77,15 +69,9 @@ describe("TranscriptionSettingsController", () => {
 
   // @behavior TX-053
   it("says the settings were not read", async () => {
-    application.stop();
     failingCommand = "transcription_settings";
 
-    application = Application.start();
-    application.register(
-      "transcription-settings",
-      TranscriptionSettingsController,
-    );
-    await settle();
+    await openSettings();
 
     expect(notifications()).toEqual(["讀不到設定"]);
   });
@@ -93,8 +79,9 @@ describe("TranscriptionSettingsController", () => {
   // @behavior TX-054
   it("says the settings were not saved when saving is refused", async () => {
     failingCommand = "save_transcription_settings";
+    await openSettings();
 
-    input("vad").dispatchEvent(new Event("change"));
+    toggle("VAD").click();
     await settle();
 
     expect(notifications()).toEqual(["設定沒有儲存"]);

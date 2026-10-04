@@ -9,6 +9,7 @@ describe("GlossaryController", () => {
   let application: Application;
   let table: GlossaryTable | Promise<never>;
   let savedArgs: unknown;
+  let isSavingRefused: boolean;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = <T extends HTMLElement>(name: string) =>
@@ -39,6 +40,11 @@ describe("GlossaryController", () => {
     ].map((choice) => choice.checked);
   }
 
+  async function save(): Promise<void> {
+    document.querySelector<HTMLButtonElement>("#save")!.click();
+    await settle();
+  }
+
   async function openDialog(): Promise<void> {
     document
       .querySelector<HTMLElement>('[data-action="glossary#open"]')!
@@ -49,6 +55,7 @@ describe("GlossaryController", () => {
   beforeEach(async () => {
     table = tableOf();
     savedArgs = undefined;
+    isSavingRefused = false;
     document.body.innerHTML = `
       <div data-controller="glossary">
         <button data-action="glossary#open">詞彙表</button>
@@ -66,7 +73,11 @@ describe("GlossaryController", () => {
     `;
     mockIPC((command, args) => {
       if (command === "translation_glossary_table") return table;
-      if (command === "save_translation_glossary") savedArgs = args;
+      if (command === "save_translation_glossary") {
+        if (isSavingRefused)
+          return Promise.reject({ code: "io", detail: "denied" });
+        savedArgs = args;
+      }
     });
     application = Application.start();
     application.register("glossary", GlossaryController);
@@ -102,8 +113,7 @@ describe("GlossaryController", () => {
     newRowInputs[0].value = "阿福";
     newRowInputs[1].value = "Alfred";
 
-    document.querySelector<HTMLButtonElement>("#save")!.click();
-    await settle();
+    await save();
 
     expect(savedArgs).toEqual({
       rows: [
@@ -144,11 +154,68 @@ describe("GlossaryController", () => {
       .querySelector<HTMLInputElement>("input[type=checkbox]")!
       .click();
 
-    document.querySelector<HTMLButtonElement>("#save")!.click();
-    await settle();
+    await save();
 
     expect(savedArgs).toEqual({
       rows: [{ words: ["小明", "Xiao Ming", ""], is_speaker: true }],
     });
+  });
+
+  // @behavior GL-017
+  it("leaves a removed row out of what is saved", async () => {
+    table = tableOf({
+      rows: [
+        { words: ["蝙蝠俠", "Batman", ""], is_speaker: false },
+        { words: ["阿福", "Alfred", ""], is_speaker: false },
+      ],
+    });
+    await openDialog();
+    target("rows")
+      .querySelector<HTMLButtonElement>('button[aria-label="刪除這一列"]')!
+      .click();
+
+    await save();
+
+    expect(savedArgs).toEqual({
+      rows: [{ words: ["阿福", "Alfred", ""], is_speaker: false }],
+    });
+  });
+
+  // @behavior GL-018
+  it("closes the dialog once saved", async () => {
+    await openDialog();
+
+    await save();
+
+    expect(target<HTMLDialogElement>("dialog").open).toBe(false);
+  });
+
+  // @behavior GL-019
+  it("keeps the rows open and says why when saving fails", async () => {
+    isSavingRefused = true;
+    await openDialog();
+
+    await save();
+
+    expect([
+      target<HTMLDialogElement>("dialog").open,
+      fields(),
+      target("failure").hidden,
+    ]).toEqual([true, [["蝙蝠俠", "Batman", ""]], false]);
+  });
+
+  // @behavior GL-020
+  it("says nothing failed when the glossary is readable on opening again", async () => {
+    table = Promise.reject({ code: "glossary-without-header" });
+    await openDialog();
+    target<HTMLDialogElement>("dialog").close();
+    table = tableOf();
+
+    await openDialog();
+
+    expect([
+      target("failure").hidden,
+      target<HTMLButtonElement>("saveButton").disabled,
+    ]).toEqual([true, false]);
   });
 });

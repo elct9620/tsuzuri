@@ -141,3 +141,37 @@ A Speaker is named in dialogue as well as in labels, so its row is a term like a
 | When | the Project is shown |
 | Then | its Translation Glossary names the Speaker `小明` |
 
+
+## `GL-017` Removing a term in the dialog
+
+| Step | Statement |
+| --- | --- |
+| Given | the glossary dialog with the rows `蝙蝠俠`, `Batman`, empty and `阿福`, `Alfred`, empty |
+| When | the first row is removed and the dialog saved |
+| Then | only the row `阿福`, `Alfred`, empty is sent to be saved |
+
+## `GL-018` Closing the dialog once saved
+
+| Step | Statement |
+| --- | --- |
+| Given | the glossary dialog with the row `蝙蝠俠`, `Batman`, empty |
+| When | it is saved |
+| Then | the dialog closes |
+
+## `GL-019` Keeping the dialog open when saving fails
+
+The rows stay as edited, so nothing typed is lost to a refusal.
+
+| Step | Statement |
+| --- | --- |
+| Given | the glossary dialog with the row `蝙蝠俠`, `Batman`, empty, and saving refused |
+| When | it is saved |
+| Then | the dialog stays open with the row and says why it was not saved |
+
+## `GL-020` Opening the dialog again after a failure
+
+| Step | Statement |
+| --- | --- |
+| Given | the glossary dialog that said `glossary.csv` could not be read, and the file readable since |
+| When | the dialog opens again |
+| Then | it says nothing failed and can be saved |

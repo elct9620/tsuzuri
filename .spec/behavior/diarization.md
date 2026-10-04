@@ -180,3 +180,11 @@ Speakers are numbered by when they are first heard, so diarizing a part would nu
 | When | diarizing after transcribing is turned on |
 | Then | the Project Options are saved asking for it |
 
+
+## `DZ-022` Listing the real-time factor of a diarization
+
+| Step | Statement |
+| --- | --- |
+| Given | a diarization of 60 seconds of audio that took 4 seconds |
+| When | it finishes |
+| Then | the Notification lists a real-time factor of 0.07 |

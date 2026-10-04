@@ -501,3 +501,11 @@ A transcription within an Audio Window writes only that window's Segments, so th
 | Given | a Current Resource showing its `en` translation |
 | When | a span of its Segments is transcribed again |
 | Then | the `en` translation is still shown |
+
+## `TX-061` Listing the real-time factor
+
+| Step | Statement |
+| --- | --- |
+| Given | a transcription of 60 seconds of audio that took 30 seconds |
+| When | it finishes |
+| Then | the Notification lists a real-time factor of 0.50 |

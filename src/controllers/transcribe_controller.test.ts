@@ -338,6 +338,20 @@ describe("TranscribeController", () => {
     );
   });
 
+  // @behavior TX-061
+  it("lists the real-time factor", async () => {
+    await hold(media);
+    transcription = async () => ({
+      audio_seconds: 60,
+      transcribe_seconds: 30,
+      phases: [],
+    });
+
+    await start();
+
+    expect(notificationItems(0)).toContainEqual(["即時倍率（RTF）", "0.50"]);
+  });
+
   // @behavior TX-025
   it("clears the progress once the transcription ends", async () => {
     await hold(media);

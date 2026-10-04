@@ -119,6 +119,17 @@ describe("DiarizeController", () => {
     ]).toEqual([true, ["說話者辨識完成"], ["音檔長度", "60.0 秒"]]);
   });
 
+  // @behavior DZ-022
+  it("lists the real-time factor of a diarization", async () => {
+    await hold(resourceWithMedia);
+    await openDialog();
+
+    target("startButton").click();
+    await settle();
+
+    expect(notificationItems(0)).toContainEqual(["即時倍率（RTF）", "0.07"]);
+  });
+
   // @behavior DZ-016
   it("offers a diarization only with a media file and a subtitle", async () => {
     await hold(

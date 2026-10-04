@@ -1,3 +1,9 @@
+<script>
+  import Notifications from "./components/Notifications.svelte";
+  import ShortcutsDialog from "./components/ShortcutsDialog.svelte";
+  import UpdatesDialog from "./components/UpdatesDialog.svelte";
+</script>
+
 <main
   class="flex h-dvh flex-col"
   data-controller="project recent-projects transcript segment-changes dialog comparison speakers replacement cleanup search"
@@ -2954,42 +2960,6 @@
     <span data-i18n="cleanup.action"></span>
   </label>
 </template>
-<dialog class="modal" data-shortcuts-target="dialog">
-  <div class="modal-box max-w-md">
-    <h3 class="text-lg font-bold" data-i18n="shortcuts.title"></h3>
-    <div data-shortcuts-target="list"></div>
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn" data-i18n="work.close"></button>
-      </form>
-    </div>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
-<dialog
-  class="modal"
-  data-updates-target="dialog"
-  data-action="cancel->updates#refuseClose"
->
-  <div class="modal-box max-w-md">
-    <h3 class="text-lg font-bold" data-updates-target="dialogTitle"></h3>
-    <p class="mt-4 text-sm" data-updates-target="progressText"></p>
-    <progress
-      class="progress progress-primary mt-2 w-full"
-      max="100"
-      data-updates-target="progressBar"
-    ></progress>
-    <p
-      class="mt-4 text-sm text-base-content/70"
-      data-i18n="settings.updateRestartHint"
-    ></p>
-  </div>
-</dialog>
-<div class="toast toast-end toast-bottom z-40" data-notifications></div>
-<div
-  class="tooltip tooltip-open tooltip-right pointer-events-none fixed z-50"
-  data-tooltip-target="bubble"
-  hidden
-></div>
+<ShortcutsDialog />
+<UpdatesDialog />
+<Notifications />

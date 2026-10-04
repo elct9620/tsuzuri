@@ -429,22 +429,32 @@ controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> �
 ### 3.11 任務
 
 ```
-transcribe 指令                       translate 指令
-  │ transcription_target               │ hold_for_translation、讀取詞彙表
-  │ 釋放常駐 llama-server 的模型        │ 常駐 router 載入模型（關掉常駐時啟動單一模型的行程）
-  │ Steps：ffmpeg 轉成 WAV              │ 等待載入完成
-  │ Steps：whisper-cli，段落逐行出現    │ 分批翻譯 ─▶ show_translations、mark_pending_batch ＋ project-changed
-  │   └─ push_segment ＋ project-changed│ 保留 N 秒後釋放（或停止行程）
-  │ write_transcription（一次取鎖寫完） │
-  ▼                                    ▼ write_translations（一次取鎖寫完）
-ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
-回答各 Phase 耗時                      回答各 Phase 耗時
+mode command: transcribe, diarize, translate, retranslate
+  │ begin_mode    wait ModeLock ─▶ Phases start ─▶ prepare
+  │ make room for the Model, find Components, work_directory
+  ▼ run_until_cancelled(use case)
+  │   hold_for_*  target + hold in one lock
+  │   Steps       progress + project-changed
+  │   write_*     one lock
+  ▼ end_mode      drop ModeRun ─▶ project-changed
+answer Phase timings
 ```
+
+任務指令都走同一條骨架，等鎖的時間不算進任何 Phase。用例在取得執行權後才取目標，目標與 hold 在同一次取鎖內拿到。
+
+| 任務 | 目標與 hold | Steps | 寫回 |
+|---|---|---|---|
+| 轉錄 | `hold_for_transcription` | ffmpeg、whisper-cli | `write_transcription` |
+| 辨識 | `hold_for_diarization` | ffmpeg、`diarize` | `write_speakers` |
+| 翻譯 | `hold_for_translation` | 常駐 router 載入 | `write_translations` |
+
+轉錄與辨識先請常駐 llama-server 釋放模型。轉錄逐段 `push_segment`，翻譯分批 `show_translations` 並 `mark_pending_batch`，保留 N 秒後釋放模型。
+
+### 3.12 任務的規則
 
 | 規則 | 做法 |
 |---|---|
 | 一次一個 | `ModeLock::begin` |
-| diarize 指令 | 同 transcribe 的流程 |
 | 取消 | `cancel_task` 經 `ModeLock` |
 | 取消後 | 只結束它啟動的行程 |
 | 取波形 | 不是任務，不取鎖 |
@@ -452,9 +462,9 @@ ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 | 暫存目錄 | 隨 `ModeRun` 結束刪除 |
 | 安裝更新 | `try_turn`，執行中拒絕 |
 
-轉錄與翻譯以 `ModeLock::begin` 開始一個 `ModeRun`，關掉常駐 llama-server 也先取得 `ModeLock`，後來的等前一個結束。取消時 `ModeRun` 丟下任務，只結束經它啟動的行程。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
+關掉常駐 llama-server 也先取得 `ModeLock`，後來的等前一個結束。取消時 `ModeRun` 丟下任務，只結束經它啟動的行程。每個 Phase 開始時經由 `Progress` 送出 `pipeline-progress`。
 
-### 3.12 行程
+### 3.13 行程
 
 | 時機 | `Processes` 做什麼 |
 |---|---|
@@ -469,7 +479,7 @@ ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 
 元件一律經 shell plugin 啟動。介面以 `.spec/contract/processes.md` 為準。
 
-### 3.13 元件解析
+### 3.14 元件解析
 
 ```
 使用者指定（components.json 設定檔）
@@ -480,7 +490,7 @@ ModeRun 結束：放開 hold、丟掉進度 ＋ project-changed
 
 偵測會執行元件的版本旗標，所以放在 tokio 的 blocking pool，視窗不會停住。每次找到都記錄來源與耗時。
 
-### 3.14 模式
+### 3.15 模式
 
 ```
 lib.rs run() ── manage ──▶ Processes · CurrentProject · ResidentLlama · ModeLock

@@ -18,7 +18,7 @@ use super::{
     translation_only, translation_srt, translation_with_speakers, BackupKind, CleanupScope,
     CurrentResource, DiarizationTarget, ExportFormat, KnownSubtitle, Project, ProjectConfig,
     ProjectModelPresets, ProjectOptions, Resource, Restoration, SegmentField, SegmentSpan,
-    TextMatch, TranscriptionScope, TranscriptionTarget, TranslationSource,
+    TextMatch, TranscriptionRequest, TranscriptionTarget, TranslationSource,
 };
 use crate::cleanup::{clean_range, clean_text};
 use crate::failure::Failure;
@@ -861,6 +861,55 @@ impl Project {
         Ok(())
     }
 
+    /// The Current Resource's media file, the Language to transcribe it in, the subtitle to write
+    /// and the Audio Window `request` covers, refused when that subtitle exists unless `request`
+    /// allows writing over it.
+    fn transcription_target(
+        &self,
+        request: TranscriptionRequest,
+    ) -> Result<TranscriptionTarget, Failure> {
+        let resource = self.resource(&self.current()?.name)?;
+        let media = resource.media.clone().ok_or(Failure::NoMedia)?;
+        let window = request
+            .scope
+            .audio_window(&self.current()?.transcript.segments)
+            .map_err(|SegmentSpan { first, last }| Failure::Internal {
+                detail: format!("no Segments at {first}..={last}"),
+            })?;
+        let subtitle = match &resource.subtitle {
+            Some(path) if !request.is_overwrite_allowed => {
+                return Err(Failure::SubtitleExists { path: path.clone() })
+            }
+            Some(path) => path.clone(),
+            None => self.export_path(WrittenText::Original, ExportFormat::Srt)?,
+        };
+        Ok(TranscriptionTarget {
+            directory: self.directory.clone(),
+            name: self.current()?.name.clone(),
+            media,
+            subtitle,
+            language: self.language,
+            model: self.options.models.transcription.clone(),
+            overrides: self.options.transcription,
+            window,
+        })
+    }
+
+    /// The Current Resource's media file and the original subtitle a diarization gives Speakers
+    /// to, refused without either.
+    fn diarization_target(&self) -> Result<DiarizationTarget, Failure> {
+        let name = self.current()?.name.clone();
+        let resource = self.resource(&name)?;
+        let media = resource.media.clone().ok_or(Failure::NoMedia)?;
+        let subtitle = resource.subtitle.clone().ok_or(Failure::NoSubtitle)?;
+        Ok(DiarizationTarget {
+            directory: self.directory.clone(),
+            name,
+            media,
+            subtitle,
+        })
+    }
+
     fn save_config(&self) -> Result<(), Failure> {
         Ok(self.config().save(&self.directory)?)
     }
@@ -1141,7 +1190,8 @@ impl CurrentProject {
     }
 
     /// Keeps the subtitles `mode` writes of the named Resource in `directory` from being changed
-    /// by anything else until the answer is dropped.
+    /// by anything else until the answer is dropped, as a Mode's hold does.
+    #[cfg(test)]
     pub fn hold_resource(
         &self,
         directory: &Path,
@@ -1336,57 +1386,37 @@ impl CurrentProject {
         resource.media.clone().ok_or(Failure::NoMedia)
     }
 
-    /// The Current Resource's media file, the Language to transcribe it in, the subtitle to
-    /// write and the Audio Window `scope` covers, refused when that subtitle exists unless
-    /// `is_overwrite_allowed`.
-    pub fn transcription_target(
+    /// Holds the Current Resource for a transcription to write, answering what it starts from:
+    /// the media file, the Language to transcribe it in, the subtitle to write and the Audio Window
+    /// the request's scope covers; refused when that subtitle exists unless the request allows
+    /// writing over it. Both are taken in one hold of the lock, so nothing changes between them.
+    pub fn hold_for_transcription(
         &self,
-        is_overwrite_allowed: bool,
-        scope: TranscriptionScope,
-    ) -> Result<TranscriptionTarget, Failure> {
-        let held_project = self.lock();
+        request: TranscriptionRequest,
+    ) -> Result<(TranscriptionTarget, ResourceHold<'_>), Failure> {
+        let mut held_project = self.lock();
         let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
-        let resource = project.resource(&project.current()?.name)?;
-        let media = resource.media.clone().ok_or(Failure::NoMedia)?;
-        let window = scope
-            .audio_window(&project.current()?.transcript.segments)
-            .map_err(|SegmentSpan { first, last }| Failure::Internal {
-                detail: format!("no Segments at {first}..={last}"),
-            })?;
-        let subtitle = match &resource.subtitle {
-            Some(path) if !is_overwrite_allowed => {
-                return Err(Failure::SubtitleExists { path: path.clone() })
-            }
-            Some(path) => path.clone(),
-            None => project.export_path(WrittenText::Original, ExportFormat::Srt)?,
-        };
-        Ok(TranscriptionTarget {
-            directory: project.directory.clone(),
-            name: project.current()?.name.clone(),
-            media,
-            subtitle,
-            language: project.language,
-            model: project.options.models.transcription.clone(),
-            overrides: project.options.transcription,
-            window,
-        })
+        let target = project.transcription_target(request)?;
+        held_project.mode_hold = Some(ModeHold::new(
+            &target.directory,
+            &target.name,
+            RunningMode::Transcription,
+        ));
+        Ok((target, ResourceHold(self)))
     }
 
-    /// The Current Resource's media file and the original subtitle a diarization gives Speakers
-    /// to, refused without either.
-    pub fn diarization_target(&self) -> Result<DiarizationTarget, Failure> {
-        let held_project = self.lock();
+    /// Holds the Current Resource for a diarization to write, answering its media file and the
+    /// original subtitle it gives Speakers to, refused without either, in one hold of the lock.
+    pub fn hold_for_diarization(&self) -> Result<(DiarizationTarget, ResourceHold<'_>), Failure> {
+        let mut held_project = self.lock();
         let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
-        let name = project.current()?.name.clone();
-        let resource = project.resource(&name)?;
-        let media = resource.media.clone().ok_or(Failure::NoMedia)?;
-        let subtitle = resource.subtitle.clone().ok_or(Failure::NoSubtitle)?;
-        Ok(DiarizationTarget {
-            directory: project.directory.clone(),
-            name,
-            media,
-            subtitle,
-        })
+        let target = project.diarization_target()?;
+        held_project.mode_hold = Some(ModeHold::new(
+            &target.directory,
+            &target.name,
+            RunningMode::Diarization,
+        ));
+        Ok((target, ResourceHold(self)))
     }
 
     /// Gives each Segment of the diarized Resource's original subtitle the Speaker `speakers`
@@ -1970,7 +2000,9 @@ pub(super) fn open_directory_of(path: &Path, language: Language) -> Result<Proje
 mod tests {
     use super::*;
     use crate::model_source::ModelSource;
-    use crate::project::{BilingualOrder, ProjectConfig, ProjectModels, TranscriptionOverrides};
+    use crate::project::{
+        BilingualOrder, ProjectConfig, ProjectModels, TranscriptionOverrides, TranscriptionScope,
+    };
     use crate::test_support::{backups, output_backups, overwrite_backups, project_of, TempDir};
 
     fn segment(text: &str, translation: Option<&str>) -> Segment {
@@ -1981,6 +2013,18 @@ mod tests {
             text: text.to_string(),
             translation: translation.map(str::to_string),
         }
+    }
+
+    /// What transcribing all of the Current Resource of `current` starts from, writing over its
+    /// subtitle.
+    fn whole_transcription_target(current: &CurrentProject) -> TranscriptionTarget {
+        current
+            .hold_for_transcription(TranscriptionRequest {
+                is_overwrite_allowed: true,
+                scope: TranscriptionScope::Whole,
+            })
+            .unwrap()
+            .0
     }
 
     fn cue(text: &str) -> String {
@@ -3386,9 +3430,7 @@ mod tests {
     fn keeps_what_a_transcription_wrote_as_an_output() {
         let dir = directory_of("pj-output-transcribed", &[("lecture.mp4", "")]);
         let current = project_in(&dir);
-        let target = current
-            .transcription_target(true, TranscriptionScope::Whole)
-            .unwrap();
+        let target = whole_transcription_target(&current);
 
         current.write_transcription(&target, cue("你好")).unwrap();
 
@@ -3673,7 +3715,12 @@ mod tests {
         let current = current_project_of(vec![]);
 
         assert_eq!(
-            current.transcription_target(false, TranscriptionScope::Whole),
+            current
+                .hold_for_transcription(TranscriptionRequest {
+                    is_overwrite_allowed: false,
+                    scope: TranscriptionScope::Whole,
+                })
+                .map(|(target, _)| target),
             Err(Failure::NoMedia)
         );
     }
@@ -4730,9 +4777,7 @@ mod tests {
                 ..ProjectOptions::default()
             })
             .unwrap();
-        let target = current
-            .transcription_target(true, TranscriptionScope::Whole)
-            .unwrap();
+        let target = whole_transcription_target(&current);
 
         current.write_transcription(&target, cue("你好")).unwrap();
     }
@@ -4956,9 +5001,7 @@ mod tests {
             &[("ep01.mp4", ""), ("ep01.srt", &cue("舊的"))],
         );
         let current = project_in(&dir);
-        let target = current
-            .transcription_target(true, TranscriptionScope::Whole)
-            .unwrap();
+        let target = whole_transcription_target(&current);
         current.write_transcription(&target, cue("新的")).unwrap();
 
         current.undo().unwrap();

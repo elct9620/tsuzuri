@@ -9,10 +9,9 @@ use crate::failure::Failure;
 use crate::json_settings;
 use crate::language::Language;
 use crate::processes::{AppPorts, Processes};
-use crate::progress::Progress;
 use crate::project::CurrentProject;
+use crate::steps::commands::{begin_mode, end_mode};
 use crate::steps::ModeLock;
-use crate::timing::{Phase, Phases};
 use crate::toolchain::{self, settings, ModelSlot};
 
 #[tauri::command]
@@ -58,9 +57,7 @@ async fn run_translation(
 ) -> Result<Translation, Failure> {
     let mode_lock = app.state::<ModeLock>();
     let processes = app.state::<Processes>().inner().clone();
-    let run = mode_lock.begin(AppPorts::new(app, &processes)).await;
-    let phases = Phases::start("translate", Phase::Preparation);
-    app.report(Phase::Preparation, None);
+    let (run, phases) = begin_mode(app, &mode_lock, &processes, "translate").await;
     let [llama] =
         toolchain::find_ready_executables(settings::resolver(app)?, [toolchain::LLAMA]).await?;
     let model_settings = settings::load_settings(app)?;
@@ -92,9 +89,7 @@ async fn run_translation(
     {
         resident.release_after(*keep).await;
     }
-    // The Mode's hold and what it showed end with its run, however it ended.
-    drop(run);
-    app.announce_project();
+    end_mode(app, run);
     result
 }
 

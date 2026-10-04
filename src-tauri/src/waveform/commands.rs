@@ -1,12 +1,10 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, State};
 
 use super::{extract, Waveform};
 use crate::failure::Failure;
 use crate::processes::{AppPorts, Processes};
 use crate::project::CurrentProject;
-use crate::steps::WORK_DIR;
+use crate::steps::commands::work_directory;
 use crate::toolchain::{self, settings};
 
 #[tauri::command]
@@ -19,13 +17,6 @@ pub async fn extract_waveform(
     let [ffmpeg] =
         toolchain::find_ready_executables(settings::resolver(&app)?, [toolchain::FFMPEG]).await?;
     let ports = AppPorts::new(&app, &processes);
-    let started_at = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |since| since.as_nanos());
-    let work = app
-        .path()
-        .app_cache_dir()?
-        .join(WORK_DIR)
-        .join(format!("waveform-{started_at}"));
+    let work = work_directory(&app, "waveform")?;
     extract(&ports, &current, &ffmpeg, &work).await
 }

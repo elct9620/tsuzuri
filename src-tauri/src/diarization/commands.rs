@@ -1,14 +1,11 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, State};
 
 use super::{run_diarize, Diarization, Tools};
 use crate::failure::Failure;
-use crate::processes::{AppPorts, Processes};
-use crate::progress::Progress;
+use crate::processes::Processes;
 use crate::project::CurrentProject;
-use crate::steps::{ModeLock, WORK_DIR};
-use crate::timing::{Phase, Phases};
+use crate::steps::commands::{begin_mode, end_mode, work_directory};
+use crate::steps::ModeLock;
 use crate::toolchain::{self, settings};
 use crate::translation::ResidentLlama;
 
@@ -21,10 +18,7 @@ pub async fn diarize(
     processes: State<'_, Processes>,
     resident: State<'_, ResidentLlama>,
 ) -> Result<Diarization, Failure> {
-    let job = current.diarization_target()?;
-    let phases = Phases::start("diarize", Phase::Preparation);
-    app.report(Phase::Preparation, None);
-    let run = mode_lock.begin(AppPorts::new(&app, &processes)).await;
+    let (run, phases) = begin_mode(&app, &mode_lock, &processes, "diarize").await;
     // Only one Model is loaded at a time, so the translation Model makes way.
     resident.make_room(run.ports()).await;
     let [ffmpeg] =
@@ -34,27 +28,17 @@ pub async fn diarize(
         diarizer: std::env::current_exe()?,
     };
     let models = settings::load_settings(&app)?;
-    let started_at = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |since| since.as_millis());
-    let work = app
-        .path()
-        .app_cache_dir()?
-        .join(WORK_DIR)
-        .join(started_at.to_string());
+    let work = work_directory(&app, "diarize")?;
     let result = run
         .run_until_cancelled(run_diarize(
             &run,
             current.inner(),
             &tools,
             &models,
-            &job,
             &work,
             phases,
         ))
         .await;
-    // The Mode's hold and its intermediate files end with its run, however it ended.
-    drop(run);
-    app.announce_project();
+    end_mode(&app, run);
     result
 }

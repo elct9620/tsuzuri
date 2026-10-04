@@ -16,7 +16,7 @@ use serde::Serialize;
 use crate::conversion;
 use crate::failure::Failure;
 use crate::progress::{enter, Progress};
-use crate::project::{CurrentProject, DiarizationTarget, RunningMode};
+use crate::project::CurrentProject;
 use crate::steps::{run_step, ModeRun, Steps, WorkDir, CONVERSION_STEP, DIARIZATION_STEP};
 use crate::timing::{Phase, PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -38,18 +38,18 @@ pub struct Tools {
     pub diarizer: PathBuf,
 }
 
-/// Runs the Diarize Mode on `job`: converts its whole media file, runs the diarize Step and gives
-/// the Segments of its subtitle the Speakers heard.
+/// Runs the Diarize Mode on the Current Resource: converts its whole media file, runs the diarize
+/// Step and gives the Segments of its subtitle the Speakers heard.
 pub async fn run_diarize<'a>(
     run: &ModeRun<'a, impl Progress + Steps>,
     project: &'a CurrentProject,
     tools: &Tools,
     models: &ModelSettings,
-    job: &DiarizationTarget,
     work: &Path,
     mut phases: Phases,
 ) -> Result<Diarization, Failure> {
-    run.keep(project.hold_resource(&job.directory, &job.name, RunningMode::Diarization));
+    let (job, hold) = project.hold_for_diarization()?;
+    run.keep(hold);
     let ports = run.ports();
     let model = models.ready_path(ModelSlot::Diarization)?;
     run.keep(WorkDir::try_new(work)?);
@@ -101,7 +101,7 @@ pub async fn run_diarize<'a>(
                 detail: format!("unreadable Speaker Turns: {error}"),
             }
         })?;
-    project.write_speakers(job, |segments| segment_speakers(segments, &turns))?;
+    project.write_speakers(&job, |segments| segment_speakers(segments, &turns))?;
     ports.announce_project();
     Ok(Diarization {
         audio_seconds: conversion::audio_seconds(audio_bytes),
@@ -158,7 +158,7 @@ mod tests {
     use crate::model_source::ModelSource;
     use crate::processes::{AppPorts, Processes};
     use crate::progress::{PipelineProgress, ProjectChanged};
-    use crate::project::Project;
+    use crate::project::{Project, RunningMode};
     use crate::steps::ModeLock;
     use crate::test_support::{build_mock_app, write_executable, TempDir};
     use crate::transcript::{Segment, Transcript, WrittenText};
@@ -235,7 +235,6 @@ mod tests {
 
         async fn diarize(&self) -> Result<Diarization, Failure> {
             self.open();
-            let job = self.project().diarization_target()?;
             let processes = Processes::new(self.dir.path().join("processes.json"));
             let app = self.app.handle();
             run_diarize(
@@ -245,7 +244,6 @@ mod tests {
                 app.state::<CurrentProject>().inner(),
                 &self.tools,
                 &self.settings,
-                &job,
                 &self.dir.path().join("work"),
                 Phases::start("diarize", Phase::Preparation),
             )

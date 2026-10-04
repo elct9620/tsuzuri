@@ -437,6 +437,14 @@ impl TranscriptionScope {
     }
 }
 
+/// What a transcription is asked to cover: the Segments of its scope, and whether it may write
+/// over the original subtitle the Resource already has.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TranscriptionRequest {
+    pub is_overwrite_allowed: bool,
+    pub scope: TranscriptionScope,
+}
+
 /// What a diarization needs from the Project when it starts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DiarizationTarget {

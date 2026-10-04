@@ -112,6 +112,16 @@ A dialog is drawn above the whole page, so the tooltip of an element inside it i
 | When | the pointer moves onto it |
 | Then | the tooltip is shown inside that dialog |
 
+## `IF-053` Showing a tooltip once focus reaches an element
+
+The keyboard reaches the same explanation the pointer does, as Tab moves to each ⓘ in the settings.
+
+| Step | Statement |
+| --- | --- |
+| Given | an element with a tooltip |
+| When | focus moves onto it |
+| Then | a tooltip shows its text |
+
 ## `IF-012` Writing a tooltip in the Interface Language
 
 | Step | Statement |

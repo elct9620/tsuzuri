@@ -2,6 +2,14 @@
 import { Application } from "@hotwired/stimulus";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import TooltipController from "./tooltip_controller";
+import page from "../../index.html?raw";
+
+/** The tooltip's actions as the page binds them on `<body>`. */
+const TOOLTIP_ACTIONS = /<body[^>]*\sdata-action="([^"]*)"/
+  .exec(page)![1]
+  .split(/\s+/)
+  .filter((action) => action.includes("->tooltip#"))
+  .join(" ");
 
 describe("TooltipController", () => {
   let application: Application;
@@ -18,12 +26,13 @@ describe("TooltipController", () => {
 
   beforeEach(async () => {
     document.body.innerHTML = `
-      <div data-controller="tooltip" data-action="pointerover->tooltip#show focusin->tooltip#show pointerout->tooltip#hide focusout->tooltip#hide scroll->tooltip#hide:capture">
+      <div data-controller="tooltip" data-action="${TOOLTIP_ACTIONS}">
         <ul><li><button id="resource" data-tooltip="ep03-a-very-long-name">ep03…</button></li></ul>
         <button id="following" data-tooltip="清單會捲到正在播放的段落" data-shortcut="following"></button>
         <button id="replace" data-shortcut="replace">取代</button>
         <dialog open>
           <span id="setting" data-tooltip="每批送給模型的句數">每批</span>
+          <button id="help" type="button" data-tooltip="一次送給模型幾句">ⓘ</button>
         </dialog>
         <div class="tooltip tooltip-open fixed" data-tooltip-target="bubble" hidden></div>
       </div>
@@ -54,6 +63,16 @@ describe("TooltipController", () => {
     point("pointerout", "#resource");
 
     expect(bubble().hidden).toBe(true);
+  });
+
+  // @behavior IF-053
+  it("shows the text of the element focus moves onto", () => {
+    document.querySelector<HTMLButtonElement>("#help")!.focus();
+
+    expect([bubble().hidden, bubble().dataset.tip]).toEqual([
+      false,
+      "一次送給模型幾句",
+    ]);
   });
 
   // @behavior IF-011

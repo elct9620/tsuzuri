@@ -1,15 +1,14 @@
+<script lang="ts">
+  import HelpButton from "../HelpButton.svelte";
+</script>
+
 <fieldset class="fieldset text-sm">
   <legend class="fieldset-legend" data-i18n="settings.project"></legend>
   <ul class="list rounded-box border border-base-300">
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.projectName"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.projectNameHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.projectNameHelp" />
       </span>
       <input
         type="text"
@@ -21,12 +20,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.primaryLanguage"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.primaryLanguageHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.primaryLanguageHelp" />
       </span>
       <select
         class="select select-sm w-auto"
@@ -41,12 +35,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.bilingualOrder"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.bilingualOrderHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.bilingualOrderHelp" />
       </span>
       <select
         class="select select-sm w-auto"
@@ -62,12 +51,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.bilingualAutosave"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.bilingualAutosaveHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.bilingualAutosaveHelp" />
       </span>
       <input
         type="checkbox"
@@ -79,12 +63,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.overwriteBackup"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.overwriteBackupHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.overwriteBackupHelp" />
       </span>
       <input
         type="checkbox"
@@ -96,12 +75,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.diarizationAfterTranscription"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.diarizationAfterTranscriptionHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.diarizationAfterTranscriptionHelp" />
       </span>
       <input
         type="checkbox"

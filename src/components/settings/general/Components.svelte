@@ -1,15 +1,14 @@
+<script lang="ts">
+  import HelpButton from "../HelpButton.svelte";
+</script>
+
 <fieldset class="fieldset text-sm" data-controller="components">
   <legend class="fieldset-legend" data-i18n="settings.components"></legend>
   <ul class="list rounded-box border border-base-300">
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span>ffmpeg</span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.ffmpegHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.ffmpegHelp" />
       </span>
       <span class="skeleton h-4 w-48" data-components-target="placeholder"
       ></span>
@@ -39,12 +38,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span>whisper.cpp</span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.whisperHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.whisperHelp" />
       </span>
       <span class="skeleton h-4 w-48" data-components-target="placeholder"
       ></span>
@@ -74,12 +68,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span>llama.cpp</span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.llamaHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.llamaHelp" />
       </span>
       <span class="skeleton h-4 w-48" data-components-target="placeholder"
       ></span>

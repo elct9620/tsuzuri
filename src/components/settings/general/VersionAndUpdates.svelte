@@ -1,3 +1,7 @@
+<script lang="ts">
+  import HelpButton from "../HelpButton.svelte";
+</script>
+
 <fieldset class="fieldset text-sm" data-controller="about">
   <legend class="fieldset-legend" data-i18n="settings.versionAndUpdates"
   ></legend>
@@ -5,12 +9,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.version"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.versionHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.versionHelp" />
       </span>
       <div class="flex items-center gap-2">
         <span data-about-target="build"></span>
@@ -25,12 +24,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.updates"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.updatesHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.updatesHelp" />
       </span>
       <div class="flex items-center gap-2">
         <button
@@ -59,12 +53,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.launchCheck"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.launchCheckHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.launchCheckHelp" />
       </span>
       <input
         type="checkbox"
@@ -76,12 +65,7 @@
     <li class="list-row items-center" data-updates-target="channelRow">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.updateChannel"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.updateChannelHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.updateChannelHelp" />
       </span>
       <div class="flex items-center gap-2">
         <select

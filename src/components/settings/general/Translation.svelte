@@ -1,15 +1,14 @@
+<script lang="ts">
+  import HelpButton from "../HelpButton.svelte";
+</script>
+
 <fieldset class="fieldset text-sm" data-controller="translation-settings">
   <legend class="fieldset-legend" data-i18n="settings.translation"></legend>
   <ul class="list rounded-box border border-base-300">
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.batchSize"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.batchSizeHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.batchSizeHelp" />
       </span>
       <input
         type="number"
@@ -22,12 +21,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.retries"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.retriesHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.retriesHelp" />
       </span>
       <input
         type="number"
@@ -40,12 +34,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.referenceLines"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.referenceLinesHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.referenceLinesHelp" />
       </span>
       <input
         type="number"
@@ -58,12 +47,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.residentLlama"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.residentLlamaHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.residentLlamaHelp" />
       </span>
       <input
         type="checkbox"
@@ -75,12 +59,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.modelKeepSeconds"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.modelKeepSecondsHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.modelKeepSecondsHelp" />
       </span>
       <label class="input input-sm w-24">
         <input
@@ -95,12 +74,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.simplifiedCleaned"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.translationCleanedHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.translationCleanedHelp" />
       </span>
       <input
         type="checkbox"

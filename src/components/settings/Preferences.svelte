@@ -1,3 +1,7 @@
+<script lang="ts">
+  import HelpButton from "./HelpButton.svelte";
+</script>
+
 <fieldset class="fieldset text-sm" data-controller="preferences">
   <legend class="fieldset-legend" data-i18n="preferences.choosing"></legend>
   <ul
@@ -6,12 +10,7 @@
   >
     <li class="list-row items-center text-xs text-base-content/60">
       <span class="list-col-grow">
-        <span
-          tabindex="0"
-          class="cursor-help"
-          data-i18n-tooltip="preferences.switchesHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="preferences.switchesHelp" class="text-inherit" />
       </span>
       <span class="w-20 text-center" data-i18n="preferences.pausing"></span>
       <span class="w-20 text-center" data-i18n="preferences.fromStart"></span>

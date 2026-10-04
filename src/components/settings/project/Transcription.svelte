@@ -1,15 +1,14 @@
+<script lang="ts">
+  import HelpButton from "../HelpButton.svelte";
+</script>
+
 <fieldset class="fieldset text-sm">
   <legend class="fieldset-legend" data-i18n="settings.transcription"></legend>
   <ul class="list rounded-box border border-base-300">
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.vad"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.projectTranscriptionHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.projectTranscriptionHelp" />
       </span>
       <select
         class="select select-sm w-auto"
@@ -25,12 +24,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.nonSpeechSuppressed"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.projectTranscriptionHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.projectTranscriptionHelp" />
       </span>
       <select
         class="select select-sm w-auto"
@@ -46,12 +40,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.contextCarried"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.projectTranscriptionHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.projectTranscriptionHelp" />
       </span>
       <select
         class="select select-sm w-auto"
@@ -67,12 +56,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.simplifiedCleaned"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.projectTranscriptionHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.projectTranscriptionHelp" />
       </span>
       <select
         class="select select-sm w-auto"

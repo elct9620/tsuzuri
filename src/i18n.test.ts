@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { within } from "@testing-library/svelte";
 import { describe, expect, it } from "vitest";
 import {
   interfaceLanguageCode,
@@ -71,13 +72,15 @@ describe("interface language", () => {
     const rows = [
       ...settings.querySelectorAll('[data-dialog-target="dialog"] .list-row'),
     ];
-    const rowsWithoutTip = rows.filter((row) => {
-      const help = row.querySelector<HTMLElement>("[data-i18n-tooltip]");
-      return (
-        !help?.dataset.tooltip ||
-        help.dataset.tooltip === help.dataset.i18nTooltip
-      );
+    const rowsWithoutHelp = rows.filter((row) => {
+      const help = within(row as HTMLElement).queryByRole("button", {
+        hidden: true,
+        name: (name, button) =>
+          name === (button as HTMLElement).dataset.tooltip,
+      });
+      // i18next answers a key it has no text for with the key itself.
+      return !help || /^[a-z]+\.[\w.]+$/i.test(help.dataset.tooltip ?? "");
     });
-    expect([rows.length > 0, rowsWithoutTip.length]).toEqual([true, 0]);
+    expect([rows.length > 0, rowsWithoutHelp.length]).toEqual([true, 0]);
   });
 });

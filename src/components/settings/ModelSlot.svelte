@@ -1,4 +1,5 @@
 <script lang="ts">
+  import HelpButton from "./HelpButton.svelte";
   import type { ModelSlot } from "../../backend/toolchain";
 
   interface Props {
@@ -20,14 +21,11 @@
 >
   <span class="flex w-32 items-center gap-1 font-medium">
     <span data-i18n="slots.{slot}"></span>
-    <span
-      tabindex="0"
-      class="cursor-help text-base-content/50"
-      data-i18n-tooltip={isProjectSlot
+    <HelpButton
+      tip={isProjectSlot
         ? "settings.projectModelHelp"
         : `settings.${slot}ModelHelp`}
-      ><i data-lucide="info" class="size-3.5"></i></span
-    >
+    />
   </span>
   <select
     class="select select-sm w-full"

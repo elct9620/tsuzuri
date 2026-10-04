@@ -1,15 +1,14 @@
+<script lang="ts">
+  import HelpButton from "../HelpButton.svelte";
+</script>
+
 <fieldset class="fieldset text-sm" data-controller="logs">
   <legend class="fieldset-legend" data-i18n="settings.logs"></legend>
   <ul class="list rounded-box border border-base-300">
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.logDirectory"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.logDirectoryHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.logDirectoryHelp" />
       </span>
       <span
         class="list-col-grow truncate font-mono text-xs"
@@ -31,12 +30,7 @@
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span data-i18n="settings.debugLog"></span>
-        <span
-          tabindex="0"
-          class="cursor-help text-base-content/50"
-          data-i18n-tooltip="settings.debugLogHelp"
-          ><i data-lucide="info" class="size-3.5"></i></span
-        >
+        <HelpButton tip="settings.debugLogHelp" />
       </span>
       <input
         type="checkbox"

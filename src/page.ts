@@ -4,7 +4,7 @@
 
 import { mount } from "svelte";
 
-import App from "./App.svelte";
+import Page from "./Page.svelte";
 import { translatePage } from "./i18n";
 import { showIcons } from "./ui/icons";
 
@@ -13,7 +13,7 @@ import { showIcons } from "./ui/icons";
  * read from the markup once, so they come after it is written.
  */
 export function drawPage(target: Element = document.body): void {
-  mount(App, { target });
+  mount(Page, { target });
   translatePage(target);
   showIcons(target);
 }

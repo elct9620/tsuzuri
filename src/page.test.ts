@@ -31,7 +31,8 @@ describe("drawPage", () => {
       '#translate-options [data-translation-options-target="language"]',
     ],
     ["Segment list", '[data-transcript-target="list"]'],
-    ["resource list", '[data-controller="glossary"]'],
+    ["resource list", '[data-project-target="resources"]'],
+    ["glossary entry", '[data-project-target="glossary"]'],
     ["settings dialog", '[data-dialog-target="dialog"]'],
     ["Project settings", '[data-project-settings-target="nameField"]'],
     [

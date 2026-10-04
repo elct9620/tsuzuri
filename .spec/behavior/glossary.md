@@ -6,7 +6,7 @@ Editing the Project's Translation Glossary as a table in its own dialog, opened 
 
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
-- `src/controllers/glossary_controller.test.ts`
+- `src/components/GlossaryDialog.test.ts`
 - `src/controllers/project_controller.test.ts`
 
 ## `GL-001` Laying out the Translation Glossary as a table

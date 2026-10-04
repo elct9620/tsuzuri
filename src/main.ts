@@ -8,7 +8,6 @@ import DialogController from "./controllers/dialog_controller";
 import FieldController, {
   composingOption,
 } from "./controllers/field_controller";
-import GlossaryController from "./controllers/glossary_controller";
 import ModelSlotController from "./controllers/model_slot_controller";
 import ModelsController from "./controllers/models_controller";
 import NotificationController from "./controllers/notification_controller";
@@ -55,7 +54,6 @@ async function start(): Promise<void> {
     comparison: ComparisonController,
     dialog: DialogController,
     field: FieldController,
-    glossary: GlossaryController,
     "model-slot": ModelSlotController,
     models: ModelsController,
     notification: NotificationController,

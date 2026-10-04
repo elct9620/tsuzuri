@@ -1,19 +1,30 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
+import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { GlossaryTable } from "../backend/project";
-import GlossaryController from "./glossary_controller";
+import GlossaryDialog from "./GlossaryDialog.svelte";
 
-describe("GlossaryController", () => {
-  let application: Application;
+describe("GlossaryDialog", () => {
   let table: GlossaryTable | Promise<never>;
   let savedArgs: unknown;
   let isSavingRefused: boolean;
+  let dialog: { open(): Promise<void> };
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const target = <T extends HTMLElement>(name: string) =>
-    document.querySelector<T>(`[data-glossary-target="${name}"]`)!;
+  const glossary = () => screen.getByRole("dialog", { hidden: true });
+  /** Each row of terms, below the row naming the Languages. */
+  const termRows = () =>
+    within(glossary()).getAllByRole("row", { hidden: true }).slice(1);
+  const failure = () =>
+    within(glossary())
+      .getAllByRole("alert", { hidden: true })
+      .find((alert) => alert.classList.contains("alert-error"))!;
+  const saveButton = () =>
+    within(glossary()).getByRole<HTMLButtonElement>("button", {
+      hidden: true,
+      name: "儲存",
+    });
 
   function tableOf(changes: Partial<GlossaryTable> = {}): GlossaryTable {
     return {
@@ -25,52 +36,35 @@ describe("GlossaryController", () => {
   }
 
   function fields(): string[][] {
-    return [...target("rows").querySelectorAll("tr")].map((row) =>
-      [...row.querySelectorAll<HTMLInputElement>("input[type=text]")].map(
-        (input) => input.value,
-      ),
+    return termRows().map((row) =>
+      within(row)
+        .getAllByRole<HTMLInputElement>("textbox", { hidden: true })
+        .map((input) => input.value),
     );
   }
 
   function speakerChoices(): boolean[] {
-    return [
-      ...target("rows").querySelectorAll<HTMLInputElement>(
-        "input[type=checkbox]",
-      ),
-    ].map((choice) => choice.checked);
+    return termRows().map(
+      (row) =>
+        within(row).getByRole<HTMLInputElement>("checkbox", { hidden: true })
+          .checked,
+    );
   }
 
   async function save(): Promise<void> {
-    document.querySelector<HTMLButtonElement>("#save")!.click();
+    saveButton().click();
     await settle();
   }
 
   async function openDialog(): Promise<void> {
-    document
-      .querySelector<HTMLElement>('[data-action="glossary#open"]')!
-      .click();
+    await dialog.open();
     await settle();
   }
 
-  beforeEach(async () => {
+  beforeEach(() => {
     table = tableOf();
     savedArgs = undefined;
     isSavingRefused = false;
-    document.body.innerHTML = `
-      <div data-controller="glossary">
-        <button data-action="glossary#open">詞彙表</button>
-        <dialog data-glossary-target="dialog">
-          <div data-glossary-target="warning" hidden>儲存後改用語言代碼標頭</div>
-          <p data-glossary-target="failure" hidden></p>
-          <table>
-            <thead><tr data-glossary-target="languages"></tr></thead>
-            <tbody data-glossary-target="rows"></tbody>
-          </table>
-          <button id="add" data-action="glossary#addRow">新增一列</button>
-          <button id="save" data-glossary-target="saveButton" data-action="glossary#save">儲存</button>
-        </dialog>
-      </div>
-    `;
     mockIPC((command, args) => {
       if (command === "translation_glossary_table") return table;
       if (command === "save_translation_glossary") {
@@ -79,13 +73,10 @@ describe("GlossaryController", () => {
         savedArgs = args;
       }
     });
-    application = Application.start();
-    application.register("glossary", GlossaryController);
-    await settle();
+    dialog = render(GlossaryDialog).component;
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 
@@ -93,9 +84,9 @@ describe("GlossaryController", () => {
   it("lays out each Language as a column and each term as a row of fields", async () => {
     await openDialog();
 
-    const languages = [...target("languages").querySelectorAll("th")].map(
-      (cell) => cell.textContent,
-    );
+    const languages = within(glossary())
+      .getAllByRole("columnheader", { hidden: true })
+      .map((cell) => cell.textContent);
     expect([languages.slice(0, 4), fields(), speakerChoices()]).toEqual([
       ["繁體中文", "English", "日本語", "說話者"],
       [["蝙蝠俠", "Batman", ""]],
@@ -106,12 +97,22 @@ describe("GlossaryController", () => {
   // @behavior GL-008
   it("sends the rows of the dialog to be saved", async () => {
     await openDialog();
-    document.querySelector<HTMLButtonElement>("#add")!.click();
-    const newRowInputs = target("rows").querySelectorAll<HTMLInputElement>(
-      "tr:last-child input[type=text]",
+    within(glossary())
+      .getByRole("button", { hidden: true, name: "新增一列" })
+      .click();
+    await settle();
+    const [, addedRow] = termRows();
+    const newRowInputs = within(addedRow).getAllByRole<HTMLInputElement>(
+      "textbox",
+      { hidden: true },
     );
-    newRowInputs[0].value = "阿福";
-    newRowInputs[1].value = "Alfred";
+    for (const [input, word] of [
+      [newRowInputs[0], "阿福"],
+      [newRowInputs[1], "Alfred"],
+    ] as const) {
+      input.value = word;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
 
     await save();
 
@@ -129,7 +130,11 @@ describe("GlossaryController", () => {
 
     await openDialog();
 
-    expect(target("warning").hidden).toBe(false);
+    expect(
+      within(glossary())
+        .getByText("目前的標頭是 source,target，儲存後改用語言代碼")
+        .closest<HTMLElement>("[role=alert]")!.hidden,
+    ).toBe(false);
   });
 
   // @behavior GL-010
@@ -138,10 +143,7 @@ describe("GlossaryController", () => {
 
     await openDialog();
 
-    expect([
-      target("failure").hidden,
-      target<HTMLButtonElement>("saveButton").disabled,
-    ]).toEqual([false, true]);
+    expect([failure().hidden, saveButton().disabled]).toEqual([false, true]);
   });
 
   // @behavior GL-015
@@ -150,8 +152,8 @@ describe("GlossaryController", () => {
       rows: [{ words: ["小明", "Xiao Ming", ""], is_speaker: false }],
     });
     await openDialog();
-    target("rows")
-      .querySelector<HTMLInputElement>("input[type=checkbox]")!
+    within(termRows()[0])
+      .getByRole("checkbox", { hidden: true, name: "說話者" })
       .click();
 
     await save();
@@ -170,9 +172,10 @@ describe("GlossaryController", () => {
       ],
     });
     await openDialog();
-    target("rows")
-      .querySelector<HTMLButtonElement>('button[aria-label="刪除這一列"]')!
+    within(termRows()[0])
+      .getByRole("button", { hidden: true, name: "刪除這一列" })
       .click();
+    await settle();
 
     await save();
 
@@ -187,7 +190,7 @@ describe("GlossaryController", () => {
 
     await save();
 
-    expect(target<HTMLDialogElement>("dialog").open).toBe(false);
+    expect((glossary() as HTMLDialogElement).open).toBe(false);
   });
 
   // @behavior GL-019
@@ -198,9 +201,9 @@ describe("GlossaryController", () => {
     await save();
 
     expect([
-      target<HTMLDialogElement>("dialog").open,
+      (glossary() as HTMLDialogElement).open,
       fields(),
-      target("failure").hidden,
+      failure().hidden,
     ]).toEqual([true, [["蝙蝠俠", "Batman", ""]], false]);
   });
 
@@ -208,14 +211,11 @@ describe("GlossaryController", () => {
   it("says nothing failed when the glossary is readable on opening again", async () => {
     table = Promise.reject({ code: "glossary-without-header" });
     await openDialog();
-    target<HTMLDialogElement>("dialog").close();
+    (glossary() as HTMLDialogElement).close();
     table = tableOf();
 
     await openDialog();
 
-    expect([
-      target("failure").hidden,
-      target<HTMLButtonElement>("saveButton").disabled,
-    ]).toEqual([true, false]);
+    expect([failure().hidden, saveButton().disabled]).toEqual([true, false]);
   });
 });

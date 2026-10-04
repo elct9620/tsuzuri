@@ -648,7 +648,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | `timeline` | 波形、段落區段、縮放 |
 | `progress` | 標題列的任務進度徽章 |
 | `versions`、`glossary` | 版本與詞彙表 modal |
-| `components`、`models`、`logs` | 設定頁 |
+| `models` | 設定頁 |
 | `model-slot`、`repository` | 模型來源的選單、下載與 Repository |
 | `updates` | 更新檢查、安裝視窗 |
 | `tooltip` | 全頁共用的 tooltip |
@@ -698,6 +698,8 @@ main.ts -> assemble(application, controllers)      assembly.ts
 | `VersionAndUpdates` | 版本列與複製 |
 | `About` | 授權頁、原始程式碼、贊助 |
 | `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
+| `Components` | 元件的狀態、指定與還原 |
+| `Logs` | log 目錄與除錯紀錄 |
 
 ### 4.7 backend
 

@@ -9,7 +9,7 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 - `src-tauri/src/about.rs`
 - `src-tauri/src/release_number.rs`
 - `src/controllers/updates_controller.test.ts`
-- `src/controllers/about_controller.test.ts`
+- `src/components/settings/general/VersionAndUpdates.test.ts`
 
 ## `UP-001` Finding a newer release
 

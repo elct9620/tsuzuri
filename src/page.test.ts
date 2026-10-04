@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { within } from "@testing-library/svelte";
 import { describe, expect, it } from "vitest";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
@@ -28,7 +29,6 @@ describe("drawPage", () => {
       '[data-project-settings-target="transcriptionSetting"]',
     ],
     ["Project's Models", "#project-models"],
-    ["version and updates", '[data-controller="about"]'],
     ["Components", '[data-controller="components"]'],
     ["translation settings", '[data-controller="translation-settings"]'],
     ["transcription settings", '[data-controller="transcription-settings"]'],
@@ -48,6 +48,21 @@ describe("drawPage", () => {
 
     expect(page.querySelector(selector)).not.toBeNull();
   });
+
+  // A part whose Svelte Component reads for itself is found by the name the settings show for it.
+  it.each([["version and updates", "settings.versionAndUpdates"]])(
+    "writes the %s",
+    async (_part, name) => {
+      const page = document.createElement("div");
+      await setInterfaceLanguage("zh-TW");
+
+      drawPage(page);
+
+      expect(
+        within(page).queryByRole("group", { hidden: true, name: t(name) }),
+      ).not.toBeNull();
+    },
+  );
 
   it.each(["#transcribe-options", "#translate-options"])(
     "writes the translation options in %s in the interface language",

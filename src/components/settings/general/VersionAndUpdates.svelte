@@ -1,24 +1,52 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+
+  import { appBuild } from "../../../backend/about";
+  import { t } from "../../../i18n";
+  import { notify, notifyFailure } from "../../../ui/notification";
   import HelpButton from "../HelpButton.svelte";
+
+  /** How much of the commit is shown, as git abbreviates it. */
+  const SHORT_COMMIT_LENGTH = 7;
+
+  /** The App Build atop the general settings, for a report to name and copy. */
+  let shownBuild = $state("");
+  /** The App Build as a report names it, in any Interface Language. */
+  let buildLine = "";
+
+  onMount(async () => {
+    const build = await appBuild();
+    const commit = build.commit.slice(0, SHORT_COMMIT_LENGTH);
+    shownBuild = t("settings.appBuild", {
+      releaseName: build.release_name,
+      commit,
+    });
+    buildLine = `Tsuzuri ${build.release_name} (${commit})`;
+  });
+
+  async function copyBuild(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(buildLine);
+      notify({ title: t("settings.appBuildCopied"), kind: "success" });
+    } catch (error) {
+      notifyFailure(t("settings.appBuildNotCopied"), error);
+    }
+  }
 </script>
 
-<fieldset class="fieldset text-sm" data-controller="about">
-  <legend class="fieldset-legend" data-i18n="settings.versionAndUpdates"
-  ></legend>
+<fieldset class="fieldset text-sm">
+  <legend class="fieldset-legend">{t("settings.versionAndUpdates")}</legend>
   <ul class="list rounded-box border border-base-300">
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
-        <span data-i18n="settings.version"></span>
+        <span>{t("settings.version")}</span>
         <HelpButton tip="settings.versionHelp" />
       </span>
       <div class="flex items-center gap-2">
-        <span data-about-target="build"></span>
-        <button
-          type="button"
-          class="btn btn-sm"
-          data-action="about#copyBuild"
-          data-i18n="settings.copyAppBuild"
-        ></button>
+        <span>{shownBuild}</span>
+        <button type="button" class="btn btn-sm" onclick={copyBuild}>
+          {t("settings.copyAppBuild")}
+        </button>
       </div>
     </li>
     <li class="list-row items-center">

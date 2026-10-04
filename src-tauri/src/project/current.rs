@@ -1399,43 +1399,72 @@ impl CurrentProject {
         job: &DiarizationTarget,
         speakers: impl FnOnce(&[Segment]) -> Vec<Option<String>>,
     ) -> Result<(), Failure> {
+        // Only the Speakers change, so the translation shown stays shown.
+        let is_translation_kept = true;
+        self.write_original(
+            &job.directory,
+            &job.name,
+            &job.subtitle,
+            is_translation_kept,
+            |previous| {
+                let mut transcript = previous.clone();
+                for (segment, speaker) in transcript
+                    .segments
+                    .iter_mut()
+                    .zip(speakers(&previous.segments))
+                {
+                    segment.speaker = speaker;
+                }
+                Ok((transcript.to_srt(WrittenText::Original), ()))
+            },
+        )
+    }
+
+    /// Writes the SRT `srt_from` makes of the original subtitle as read as a Mode's result: kept as
+    /// a Backup first, its translations given its Speakers, its bilingual subtitles written again
+    /// and, while it is current, read again showing the translation shown when
+    /// `is_translation_kept`; then what the Mode showed ends.
+    fn write_original<T>(
+        &self,
+        directory: &Path,
+        name: &str,
+        subtitle: &Path,
+        is_translation_kept: bool,
+        srt_from: impl FnOnce(&Transcript) -> Result<(String, T), Failure>,
+    ) -> Result<T, Failure> {
         let mut held_project = self.lock();
         let HeldProject { project, mode_hold } = &mut *held_project;
         let mut project = project
             .as_mut()
-            .filter(|project| project.directory == job.directory);
-        let previous = files::transcript_at(&job.subtitle)?;
-        let mut transcript = previous.clone();
-        for (segment, speaker) in transcript
-            .segments
-            .iter_mut()
-            .zip(speakers(&previous.segments))
-        {
-            segment.speaker = speaker;
-        }
+            .filter(|project| project.directory == directory);
+        let previous = files::transcript_at(subtitle)?;
+        let (srt, answer) = srt_from(&previous)?;
         write_mode_result(
             project.as_deref_mut(),
-            &job.directory,
-            &job.name,
-            &job.subtitle,
-            transcript.to_srt(WrittenText::Original),
+            directory,
+            name,
+            subtitle,
+            srt,
             ResultBackup::ModeOutput,
             |project| {
                 let policy = project.mode_backup_policy();
-                project.write_speakers_to_translations(&job.name, &previous, policy)?;
-                project.write_bilingual_subtitles(&job.name, None)
+                project.write_speakers_to_translations(name, &previous, policy)?;
+                project.write_bilingual_subtitles(name, None)
             },
         )?;
         if let Some(project) = project.as_mut() {
-            if project.is_current(&job.name) {
-                let translation = project.current()?.translation;
-                project.read_again_showing(&job.name, translation)?;
+            if project.is_current(name) {
+                let translation = project
+                    .current()?
+                    .translation
+                    .filter(|_| is_translation_kept);
+                project.read_again_showing(name, translation)?;
             }
         }
         if let Some(hold) = mode_hold.as_mut() {
             hold.progress = None;
         }
-        Ok(())
+        Ok(answer)
     }
 
     /// Shows `segments` as what the running Mode has transcribed so far.
@@ -1508,53 +1537,32 @@ impl CurrentProject {
         job: &TranscriptionTarget,
         srt: String,
     ) -> Result<Option<SegmentSpan>, Failure> {
-        let mut held_project = self.lock();
-        let HeldProject { project, mode_hold } = &mut *held_project;
-        let mut project = project
-            .as_mut()
-            .filter(|project| project.directory == job.directory);
-        let previous = files::transcript_at(&job.subtitle)?;
-        let (srt, written_span) = match job.window {
-            None => (srt, None),
-            Some(window) => {
-                let mut transcript = previous.clone();
-                let window_segments = Transcript::from_srt(&srt)?
-                    .segments
-                    .into_iter()
-                    .map(|segment| window.segment_in_media(segment))
-                    .collect();
-                let positions = transcript.replace_within(window, window_segments);
-                let written_span = (!positions.is_empty()).then(|| SegmentSpan {
-                    first: positions.start,
-                    last: positions.end - 1,
-                });
-                (transcript.to_srt(WrittenText::Original), written_span)
-            }
-        };
-        write_mode_result(
-            project.as_deref_mut(),
+        // A transcription within an Audio Window changes only that window, so the translation shown
+        // stays shown.
+        let is_translation_kept = job.window.is_some();
+        self.write_original(
             &job.directory,
             &job.name,
             &job.subtitle,
-            srt,
-            ResultBackup::ModeOutput,
-            |project| {
-                let policy = project.mode_backup_policy();
-                project.write_speakers_to_translations(&job.name, &previous, policy)?;
-                project.write_bilingual_subtitles(&job.name, None)
+            is_translation_kept,
+            |previous| match job.window {
+                None => Ok((srt, None)),
+                Some(window) => {
+                    let mut transcript = previous.clone();
+                    let window_segments = Transcript::from_srt(&srt)?
+                        .segments
+                        .into_iter()
+                        .map(|segment| window.segment_in_media(segment))
+                        .collect();
+                    let positions = transcript.replace_within(window, window_segments);
+                    let written_span = (!positions.is_empty()).then(|| SegmentSpan {
+                        first: positions.start,
+                        last: positions.end - 1,
+                    });
+                    Ok((transcript.to_srt(WrittenText::Original), written_span))
+                }
             },
-        )?;
-        if let Some(project) = project.as_mut() {
-            if project.is_current(&job.name) {
-                // Only the window changed, so the translation shown stays shown.
-                let translation = job.window.and(project.current()?.translation);
-                project.read_again_showing(&job.name, translation)?;
-            }
-        }
-        if let Some(hold) = mode_hold.as_mut() {
-            hold.progress = None;
-        }
-        Ok(written_span)
+        )
     }
 
     /// Writes the translations into `target` to the Resource's translation file, whichever

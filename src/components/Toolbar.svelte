@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Diarization from "./Diarization.svelte";
   import TranslationOptions from "./TranslationOptions.svelte";
 </script>
 
@@ -273,56 +274,7 @@
       </dialog>
     </div>
 
-    <div class="contents" data-controller="diarize">
-      <button
-        type="button"
-        class="btn btn-sm"
-        data-diarize-target="openButton"
-        data-action="diarize#open"
-        data-i18n-label="toolbar.diarize"
-        data-i18n-tooltip="toolbar.diarize"
-        disabled
-      >
-        <i data-lucide="users" class="size-4"></i><span
-          class="hidden @5xl:inline"
-          data-i18n="toolbar.diarize"
-        ></span>
-      </button>
-      <dialog class="modal" data-diarize-target="dialog">
-        <div class="modal-box">
-          <h3 class="text-lg font-bold" data-i18n="diarize.title"></h3>
-          <fieldset class="fieldset gap-3 text-sm">
-            <p class="flex flex-wrap items-center gap-2">
-              <span data-i18n="diarize.model"></span>
-              <span class="break-all" data-diarize-target="model"></span>
-            </p>
-          </fieldset>
-          <div
-            role="alert"
-            class="alert alert-warning mt-2"
-            data-diarize-target="overwriteWarning"
-            hidden
-          >
-            <span data-i18n="diarize.overwrite"></span>
-          </div>
-          <div class="modal-action">
-            <form method="dialog">
-              <button class="btn" data-i18n="work.cancel"></button>
-            </form>
-            <button
-              type="button"
-              class="btn btn-primary"
-              data-diarize-target="startButton"
-              data-action="diarize#start"
-              data-i18n="diarize.start"
-            ></button>
-          </div>
-        </div>
-        <form method="dialog" class="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
-    </div>
+    <Diarization />
 
     <div class="dropdown dropdown-end">
       <div

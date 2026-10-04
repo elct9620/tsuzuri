@@ -7,7 +7,7 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 - `src-tauri/src/diarization.rs`
 - `src-tauri/src/diarization/*.rs`
 - `src/components/settings/project/Project.test.ts`
-- `src/controllers/diarize_controller.test.ts`
+- `src/components/Diarization.test.ts`
 - `src/controllers/transcribe_controller.test.ts`
 
 ## `DZ-001` Giving a Segment the Speaker heard longest during it
@@ -198,3 +198,13 @@ A diarization gives Segments their Speakers and leaves their cues where they wer
 | Given | a Current Resource showing its `en` translation |
 | When | it is diarized |
 | Then | the `en` translation is still shown |
+
+## `DZ-024` Starting no diarization while another task runs
+
+One task runs at a time, so a diarization asked for while one runs leaves the running task as it is.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and a subtitle, while a transcription runs |
+| When | its diarization is started from the toolbar |
+| Then | no diarization is asked for |

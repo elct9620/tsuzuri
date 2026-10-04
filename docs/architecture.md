@@ -65,7 +65,8 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 ├─ src/                   Webview (chapter 4)
 │  ├─ main.ts             starts, assembled by assembly.ts (4.3)
 │  ├─ page.ts             draws Page.svelte into <body> (4.3)
-│  ├─ Page.svelte         the page's markup (4.1)
+│  ├─ Page.svelte         composes the page's regions (4.1)
+│  ├─ components/         Svelte Components by region (4.1)
 │  ├─ backend/            the only way to Rust
 │  ├─ controllers/        Stimulus controllers and their tests
 │  ├─ editor/             editing core, depends on nothing outside (4.5)
@@ -525,7 +526,8 @@ command ── begin_mode ──▶ ModeRun: turn, ports, keep   + Phases
 ### 4.1 分層
 
 ```
-index.html, Page.svelte       data-controller, data-action
+index.html, Page.svelte,      data-controller, data-action
+components/
     |
 controllers/ ---------------> ui/, backend/ (editing aside)
     |                         interface: DOM events to use cases, changes to the page
@@ -540,12 +542,17 @@ backend/editing.ts            gateway: the one caller of editing commands
 
 依賴一律往內，和 Rust 端（3.1）同一套規則：介面呼叫應用，應用使用領域，閘道實作應用宣告的 port。`main.ts` 是組裝點（4.3）。
 
+#### 4.1.1 頁面 markup
+
+`index.html` 只留 `<body>` 與掛在上面的 controller，其餘 markup 由 Svelte 元件寫出。
+
 | 選擇 | 原因 |
 |---|---|
 | markup 寫成 Svelte 元件 | 畫面能依區域拆開 |
 | 不改成 custom element | 翻譯與圖示靠靜態掃描 |
+| 多 controller 的外框留在 `Page.svelte` | target 必須是後代 |
 
-`index.html` 只留 `<body>` 與掛在上面的 controller，其餘 markup 在 `Page.svelte`。i18n 與 Lucide 圖示在寫入後掃描一次，所以這些 markup 寫入後不再重畫。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
+`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。i18n 與 Lucide 圖示在寫入後掃描一次，所以 markup 寫入後不再重畫。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
 
 ### 4.2 相依規則
 
@@ -556,6 +563,7 @@ backend/editing.ts            gateway: the one caller of editing commands
 | controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
 | `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
 | `page.ts` | `Page.svelte`、i18n、`ui/` | controller |
+| `components/` | 其他 Svelte 元件、`backend/` 的型別 | controller |
 | `main.ts` | 全部 | — |
 
 Controller 之間只 import outlet 的型別，編輯一律經過 session。Controller 不自己訂閱 Rust 或 window 的事件，一律寫成 `data-action`，由 Stimulus 隨元素綁定與解除，影片視窗除外（4.9）。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。

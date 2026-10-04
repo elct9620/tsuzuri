@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import About from "./settings/general/About.svelte";
   import Components from "./settings/general/Components.svelte";
   import GeneralModels from "./settings/general/Models.svelte";

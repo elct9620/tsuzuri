@@ -46,8 +46,8 @@ if touches '^(src/|index\.html$|package\.json$|pnpm-lock\.yaml$|tsconfig\.json$|
 	if ! out="$(pnpm test 2>&1)"; then
 		record "Frontend tests (pnpm test)" "$out"
 	fi
-	if ! out="$(pnpm exec tsc --noEmit 2>&1)"; then
-		record "Type check (tsc --noEmit)" "$out"
+	if ! out="$(pnpm run check 2>&1)"; then
+		record "Type check (pnpm run check)" "$out"
 	fi
 fi
 

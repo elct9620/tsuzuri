@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import EditorBar from "./components/EditorBar.svelte";
   import Notifications from "./components/Notifications.svelte";
   import Preview from "./components/Preview.svelte";

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import TranslationOptions from "./TranslationOptions.svelte";
 </script>
 

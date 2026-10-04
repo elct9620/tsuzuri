@@ -2,6 +2,7 @@
 import { within } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { afterEach, describe, expect, it } from "vitest";
+import { ProjectFeed } from "./backend/project";
 import {
   interfaceLanguageCode,
   setInterfaceLanguage,
@@ -74,7 +75,7 @@ describe("interface language", () => {
     await setInterfaceLanguage(locale);
     mockPageMount();
 
-    drawPage(settings);
+    drawPage(new ProjectFeed(), settings);
 
     const rows = [
       ...settings.querySelectorAll('[data-dialog-target="dialog"] .list-row'),

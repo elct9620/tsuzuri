@@ -4,7 +4,7 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
-import type { ProjectView } from "../backend/project";
+import { ProjectFeed, type ProjectView } from "../backend/project";
 import {
   NOTIFICATION_STACK,
   notificationCountdown,
@@ -716,7 +716,7 @@ describe("SegmentChangesController", () => {
 
       const page = document.createElement("div");
       mockPageMount();
-      drawPage(page);
+      drawPage(new ProjectFeed(), page);
       const list = page.querySelector(
         '[data-transcript-target="list"]',
       )!.className;

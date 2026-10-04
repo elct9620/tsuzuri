@@ -2,6 +2,7 @@
 import { within } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { ProjectFeed } from "./backend/project";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
 import { mockPageMount } from "./test_page";
@@ -49,7 +50,7 @@ describe("drawPage", () => {
   ])("writes the %s", (_part, selector) => {
     const page = document.createElement("div");
 
-    drawPage(page);
+    drawPage(new ProjectFeed(), page);
 
     expect(page.querySelector(selector)).not.toBeNull();
   });
@@ -67,7 +68,7 @@ describe("drawPage", () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
 
-    drawPage(page);
+    drawPage(new ProjectFeed(), page);
 
     const generalTab = within(page).getByRole("radio", {
       hidden: true,
@@ -82,7 +83,7 @@ describe("drawPage", () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
 
-    drawPage(page);
+    drawPage(new ProjectFeed(), page);
 
     const preferencesTab = within(page).getByRole("radio", {
       hidden: true,
@@ -102,7 +103,7 @@ describe("drawPage", () => {
       const page = document.createElement("div");
       await setInterfaceLanguage("zh-TW");
 
-      drawPage(page);
+      drawPage(new ProjectFeed(), page);
 
       expect(
         page.querySelector(`${options} [data-i18n="work.into"]`)!.textContent,
@@ -132,7 +133,7 @@ describe("drawPage", () => {
     (list, expected) => {
       const page = document.createElement("div");
 
-      drawPage(page);
+      drawPage(new ProjectFeed(), page);
 
       const slots = [
         ...page.querySelectorAll<HTMLElement>(

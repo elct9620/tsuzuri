@@ -2,6 +2,7 @@
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { afterEach, describe, expect, it } from "vitest";
 import indexHtml from "../../index.html?raw";
+import { ProjectFeed } from "../backend/project";
 import { drawPage } from "../page";
 import { mockPageMount } from "../test_page";
 import { iconElement, showIcons } from "./icons";
@@ -38,7 +39,7 @@ describe("icons", () => {
     document.documentElement.innerHTML = indexHtml;
     mockPageMount();
 
-    drawPage();
+    drawPage(new ProjectFeed());
 
     expect(
       [...document.querySelectorAll("i[data-lucide]")].map((icon) =>

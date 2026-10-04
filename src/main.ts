@@ -41,16 +41,16 @@ import { drawPage } from "./page";
 
 /**
  * Controllers write text as they connect, so the language is settled and the page drawn before any
- * of them starts; `assemble` then hands each of them the Project feed and the editing session.
+ * of them starts. `assemble` hands each of them the Project feed and the editing session, and the
+ * page is drawn with the same feed, after the session that reads each Project first.
  */
 async function start(): Promise<void> {
   await setInterfaceLanguage(await locale());
-  drawPage();
-  const application = Application.start();
+  const application = new Application();
   application.registerActionOption("composing", composingOption);
   application.registerActionOption("control", controlOption);
   application.registerActionOption("typing", typingOption);
-  await assemble(application, {
+  const assembly = assemble(application, {
     comparison: ComparisonController,
     dialog: DialogController,
     field: FieldController,
@@ -81,7 +81,10 @@ async function start(): Promise<void> {
     undo: UndoController,
     updates: UpdatesController,
     versions: VersionsController,
-  }).start();
+  });
+  drawPage(assembly.feed);
+  await application.start();
+  await assembly.start();
 }
 
 void start();

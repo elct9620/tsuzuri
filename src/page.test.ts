@@ -8,6 +8,7 @@ describe("drawPage", () => {
   // the page leaves nothing for them to read.
   it.each([
     ["start screen", '[data-project-target="startScreen"]'],
+    ["toolbar", '[data-controller="transcribe"]'],
     ["editor bar", '[data-controller="versions"]'],
     ["preview", '[data-preview-target="panel"]'],
     [

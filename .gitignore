@@ -36,3 +36,6 @@ public/LICENSE.html
 models/.build/
 models/*/*.bin
 models/*/LICENSE
+
+# Working notes kept out of the repository
+tmp/

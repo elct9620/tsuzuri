@@ -61,7 +61,7 @@ pub async fn run_diarize<'a>(
         ports,
         CONVERSION_STEP,
         &tools.ffmpeg,
-        &conversion::conversion_args(&job.media, &wav, None),
+        &conversion::conversion_args(&job.media, &wav, conversion::SPEECH_SAMPLE_RATE, None),
         |_| {},
         |_| {},
     )

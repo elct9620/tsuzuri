@@ -7,6 +7,7 @@ use ndarray::{Array2, Array3, Axis};
 use realfft::RealFftPlanner;
 
 use super::DiarizationError;
+use crate::conversion::{wav_chunks, SPEECH_SAMPLE_RATE};
 
 const N_FFT: usize = 512;
 const WIN_LENGTH: usize = 400;
@@ -14,7 +15,7 @@ const HOP_LENGTH: usize = 160;
 pub const N_MELS: usize = 128;
 const PREEMPH: f32 = 0.97;
 const LOG_ZERO_GUARD: f32 = 5.960_464_5e-8;
-pub const SAMPLE_RATE: usize = 16000;
+const SAMPLE_RATE: usize = SPEECH_SAMPLE_RATE as usize;
 
 /// Round to the nearest bfloat16 value. The checkpoint stores the STFT window and mel filterbank
 /// in bf16 and NeMo runs with those values, so the features only match NeMo when ours do too.
@@ -31,22 +32,15 @@ pub struct MelFeatures {
 /// The samples of a 16 kHz mono 16-bit PCM WAV, the format the conversion Step writes.
 pub fn wav_samples(wav: &[u8]) -> Result<Vec<f32>, DiarizationError> {
     let unreadable = |detail: &str| DiarizationError::Engine(format!("unreadable WAV: {detail}"));
-    if wav.len() < 12 || &wav[0..4] != b"RIFF" || &wav[8..12] != b"WAVE" {
-        return Err(unreadable("not RIFF WAVE"));
-    }
-    let mut at = 12;
     let mut is_format_read = false;
-    while at + 8 <= wav.len() {
-        let id = &wav[at..at + 4];
-        let size = u32::from_le_bytes(wav[at + 4..at + 8].try_into().unwrap()) as usize;
-        let body = &wav[at + 8..(at + 8 + size).min(wav.len())];
+    for (id, body) in wav_chunks(wav) {
         match id {
             b"fmt " => {
                 let field = |offset: usize| u16::from_le_bytes([body[offset], body[offset + 1]]);
                 let is_pcm16_mono = body.len() >= 16
                     && field(0) == 1
                     && field(2) == 1
-                    && u32::from_le_bytes(body[4..8].try_into().unwrap()) == SAMPLE_RATE as u32
+                    && u32::from_le_bytes(body[4..8].try_into().unwrap()) == SPEECH_SAMPLE_RATE
                     && field(14) == 16;
                 if !is_pcm16_mono {
                     return Err(unreadable("not 16 kHz mono 16-bit PCM"));
@@ -63,7 +57,6 @@ pub fn wav_samples(wav: &[u8]) -> Result<Vec<f32>, DiarizationError> {
             }
             _ => {}
         }
-        at += 8 + size + size % 2;
     }
     Err(unreadable("no audio data"))
 }

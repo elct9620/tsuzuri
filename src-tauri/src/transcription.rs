@@ -78,7 +78,7 @@ pub async fn run_transcribe<'a>(
         ports,
         CONVERSION_STEP,
         &tools.ffmpeg,
-        &conversion::conversion_args(input, &wav, job.window),
+        &conversion::conversion_args(input, &wav, conversion::SPEECH_SAMPLE_RATE, job.window),
         |_| {},
         |_| {},
     )

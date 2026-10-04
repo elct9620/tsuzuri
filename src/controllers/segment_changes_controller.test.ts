@@ -5,13 +5,13 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
-import page from "../../index.html?raw";
 import {
   NOTIFICATION_STACK,
   notificationCountdown,
   notificationDetail,
   notifications,
 } from "../ui/test_notification";
+import { drawPage } from "../page";
 import { projectOf } from "../test_project";
 import { fieldValue } from "../editor";
 import FieldController, { composingOption } from "./field_controller";
@@ -713,9 +713,11 @@ describe("SegmentChangesController", () => {
 
       await enter(0, 2);
 
-      const list = new DOMParser()
-        .parseFromString(page, "text/html")
-        .querySelector('[data-transcript-target="list"]')!.className;
+      const page = document.createElement("div");
+      drawPage(page);
+      const list = page.querySelector(
+        '[data-transcript-target="list"]',
+      )!.className;
       expect([
         field(0).dataset.cursor,
         caretMark(0)?.classList.contains("animate-blink"),

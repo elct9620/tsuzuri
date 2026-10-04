@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 /// <reference types="vite/client" />
 import { describe, expect, it } from "vitest";
-import page from "../index.html?raw";
 import {
   interfaceLanguageCode,
   setInterfaceLanguage,
   translatePage,
 } from "./i18n";
+import { drawPage } from "./page";
 
 describe("interface language", () => {
   async function startWith(locale: string | null): Promise<string> {
@@ -64,12 +64,10 @@ describe("interface language", () => {
 
   // @behavior IF-013
   it.each(["zh-TW", "en"])("explains every setting in %s", async (locale) => {
-    // Only the markup is read, so nothing the page links to is fetched.
-    const markup = page.replace(/<link[^>]*>|<script[\s\S]*?<\/script>/g, "");
-    const settings = new DOMParser().parseFromString(markup, "text/html");
+    const settings = document.createElement("div");
     await setInterfaceLanguage(locale);
 
-    translatePage(settings);
+    drawPage(settings);
 
     const rows = [
       ...settings.querySelectorAll('[data-dialog-target="dialog"] .list-row'),

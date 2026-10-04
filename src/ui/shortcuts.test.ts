@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import page from "../../index.html?raw";
+import indexHtml from "../../index.html?raw";
 import menu from "../../src-tauri/src/menu.rs?raw";
 import {
   SHORTCUTS,
@@ -15,6 +15,18 @@ const controllers = import.meta.glob<string>(
   ["../controllers/*_controller.ts"],
   { query: "?raw", import: "default", eager: true },
 );
+
+/** The page's markup: `index.html` and the Svelte components written into it. */
+const pageSources = [
+  indexHtml,
+  ...Object.values(
+    import.meta.glob<string>(["../**/*.svelte"], {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }),
+  ),
+];
 
 /** The key filters `source` binds in its actions, as `keydown.ctrl+z` names `ctrl+z`. */
 function boundChords(source: string): string[] {
@@ -49,7 +61,7 @@ describe("shortcuts", () => {
     const listedChords = new Set<string>(
       SHORTCUTS.flatMap((shortcut) => [...shortcut.mac, ...shortcut.other]),
     );
-    const usedChords = [page, ...Object.values(controllers)].flatMap(
+    const usedChords = [...pageSources, ...Object.values(controllers)].flatMap(
       boundChords,
     );
 
@@ -62,7 +74,9 @@ describe("shortcuts", () => {
   // @behavior IF-043
   it("names no key that nothing binds", () => {
     const sources = Object.values(controllers);
-    const boundChordSet = new Set([page, ...sources].flatMap(boundChords));
+    const boundChordSet = new Set(
+      [...pageSources, ...sources].flatMap(boundChords),
+    );
     const shortcutIdSet = new Set(sources.flatMap(shortcutIds));
 
     const unboundChords = SHORTCUTS.filter(

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import page from "../../index.html?raw";
+import indexHtml from "../../index.html?raw";
+import { drawPage } from "../page";
 import { iconElement, showIcons } from "./icons";
 
 describe("icons", () => {
@@ -28,9 +29,9 @@ describe("icons", () => {
 
   // @behavior IF-028
   it("draws every icon the page names", () => {
-    document.documentElement.innerHTML = page;
+    document.documentElement.innerHTML = indexHtml;
 
-    showIcons();
+    drawPage();
 
     expect(
       [...document.querySelectorAll("i[data-lucide]")].map((icon) =>

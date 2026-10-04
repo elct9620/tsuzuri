@@ -276,7 +276,7 @@ A scrolling list does not tell its page it scrolled, so the tooltip would stay w
 
 | Step | Statement |
 | --- | --- |
-| Given | the page as `index.html` writes it |
+| Given | the page as `index.html` and its Svelte components write it |
 | When | its icons are drawn |
 | Then | no element naming an icon is left undrawn |
 
@@ -346,7 +346,7 @@ A key alone does not say where it works or what it leaves alone, so each shortcu
 
 | Step | Statement |
 | --- | --- |
-| Given | the page as `index.html` writes it and the actions its controllers bind |
+| Given | the page as `index.html` and its Svelte components write it, and the actions its controllers bind |
 | When | the keys they bind are read |
 | Then | the shortcut list has each of them |
 

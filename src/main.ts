@@ -45,17 +45,16 @@ import TranslationSettingsController from "./controllers/translation_settings_co
 import UndoController, { typingOption } from "./controllers/undo_controller";
 import UpdatesController from "./controllers/updates_controller";
 import VersionsController from "./controllers/versions_controller";
-import { setInterfaceLanguage, translatePage } from "./i18n";
-import { showIcons } from "./ui/icons";
+import { setInterfaceLanguage } from "./i18n";
+import { drawPage } from "./page";
 
 /**
- * Controllers write text as they connect, so the language is settled before any of them starts;
- * `assemble` then hands each of them the Project feed and the editing session.
+ * Controllers write text as they connect, so the language is settled and the page drawn before any
+ * of them starts; `assemble` then hands each of them the Project feed and the editing session.
  */
 async function start(): Promise<void> {
   await setInterfaceLanguage(await locale());
-  translatePage();
-  showIcons();
+  drawPage();
   const application = Application.start();
   application.registerActionOption("composing", composingOption);
   application.registerActionOption("control", controlOption);

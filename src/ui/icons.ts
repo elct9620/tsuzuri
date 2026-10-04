@@ -1,7 +1,6 @@
 import {
   ArrowLeftRight,
   ArrowRightToLine,
-  AudioLines,
   AudioWaveform,
   Captions,
   Check,
@@ -17,7 +16,6 @@ import {
   History,
   Info,
   Keyboard,
-  Languages,
   LocateFixed,
   Magnet,
   Menu,
@@ -48,7 +46,6 @@ import {
 const ICONS = {
   ArrowLeftRight,
   ArrowRightToLine,
-  AudioLines,
   AudioWaveform,
   Captions,
   Check,
@@ -64,7 +61,6 @@ const ICONS = {
   History,
   Info,
   Keyboard,
-  Languages,
   LocateFixed,
   Magnet,
   Menu,

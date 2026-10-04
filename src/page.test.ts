@@ -29,7 +29,6 @@ describe("drawPage", () => {
       '[data-project-settings-target="transcriptionSetting"]',
     ],
     ["Project's Models", "#project-models"],
-    ["Components", '[data-controller="components"]'],
     ["general Models", "#general-models"],
     ["repository dialog", "#repository-dialog"],
     ["preferences", '[data-controller="preferences"]'],
@@ -52,6 +51,7 @@ describe("drawPage", () => {
     ["about", "settings.about"],
     ["transcription settings", "settings.transcription"],
     ["translation settings", "settings.translation"],
+    ["Components", "settings.components"],
     ["logs", "settings.logs"],
   ])("writes the %s in the general settings", async (_part, name) => {
     const page = document.createElement("div");

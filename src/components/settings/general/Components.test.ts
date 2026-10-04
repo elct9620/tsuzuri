@@ -1,54 +1,45 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
+import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import ComponentsController from "./components_controller";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import Components from "./Components.svelte";
+import {
+  NOTIFICATION_STACK,
+  notifications,
+} from "../../../ui/test_notification";
 
-describe("ComponentsController", () => {
-  let application: Application;
-
+describe("Components", () => {
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  /** The row of llama.cpp, which every case here looks at. */
+  const llamaRow = () => screen.getByText("llama.cpp").closest("li")!;
 
+  /** Opens the settings, which find the Components as they are written. */
   async function mountWith(
     handlers: Record<string, (args?: unknown) => unknown>,
   ): Promise<void> {
-    mockIPC((command, args) => handlers[command]?.(args), {
-      shouldMockEvents: true,
-    });
-    application = Application.start();
-    application.register("components", ComponentsController);
+    mockIPC((command, args) => handlers[command]?.(args));
+    render(Components);
     await settle();
   }
 
-  function restoreButton(): HTMLButtonElement {
-    return document.querySelector<HTMLButtonElement>(
-      '[data-components-target="restoreButton"]',
-    )!;
+  /** The status the row shows, or null while none is shown. */
+  function llamaStatus(): string | null {
+    return (
+      within(llamaRow()).queryByText(/.+/, {
+        selector: "li > span:not([hidden])",
+      })?.textContent ?? null
+    );
   }
 
-  function statusOf(name: string): string {
-    return document.querySelector(
-      `[data-components-target="status"][data-component="${name}"]`,
-    )!.textContent!;
+  function restoreButton(): HTMLButtonElement | null {
+    return within(llamaRow()).queryByRole("button", { name: "還原預設值" });
   }
 
   beforeEach(() => {
-    document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
-      <ul data-controller="components">
-        <li>
-          <span data-components-target="placeholder"></span>
-          <span data-components-target="status" data-component="llama" hidden></span>
-          <button data-component="llama" data-action="components#choose">指定</button>
-          <button data-components-target="restoreButton" data-component="llama" data-action="components#restore" hidden>還原預設值</button>
-        </li>
-      </ul>
-    `;
+    document.body.innerHTML = NOTIFICATION_STACK;
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 
@@ -68,7 +59,7 @@ describe("ComponentsController", () => {
       ],
     });
 
-    expect(statusOf("llama")).toBe("內建：/components/llama/bin/llama-server");
+    expect(llamaStatus()).toBe("內建：/components/llama/bin/llama-server");
   });
 
   // @behavior CP-019
@@ -87,7 +78,7 @@ describe("ComponentsController", () => {
       ],
     });
 
-    expect(statusOf("llama")).toBe(
+    expect(llamaStatus()).toBe(
       "內建（vulkan）：/components/llama/vulkan/bin/llama-server",
     );
   });
@@ -108,7 +99,7 @@ describe("ComponentsController", () => {
       ],
     });
 
-    expect(statusOf("llama")).toBe(
+    expect(llamaStatus()).toBe(
       "未就緒（內建的版本無法執行，可能缺少驅動程式或系統函式庫）",
     );
   });
@@ -129,9 +120,7 @@ describe("ComponentsController", () => {
       ],
     });
 
-    expect(statusOf("llama")).toBe(
-      "未就緒（可用 brew install llama.cpp 安裝）",
-    );
+    expect(llamaStatus()).toBe("未就緒（可用 brew install llama.cpp 安裝）");
   });
 
   // @behavior CP-013
@@ -164,10 +153,10 @@ describe("ComponentsController", () => {
       },
     });
 
-    document.querySelector<HTMLButtonElement>("button")!.click();
+    within(llamaRow()).getByRole("button", { name: "指定" }).click();
     await settle();
 
-    expect(statusOf("llama")).toBe("指定：/opt/llama/llama-server");
+    expect(llamaStatus()).toBe("指定：/opt/llama/llama-server");
   });
 
   // @behavior CP-021
@@ -197,10 +186,10 @@ describe("ComponentsController", () => {
       ],
     });
 
-    restoreButton().click();
+    restoreButton()!.click();
     await settle();
 
-    expect(statusOf("llama")).toBe("偵測到：/usr/bin/llama-server");
+    expect(llamaStatus()).toBe("偵測到：/usr/bin/llama-server");
   });
 
   // @behavior CP-022
@@ -219,7 +208,7 @@ describe("ComponentsController", () => {
       ],
     });
 
-    expect(restoreButton().hidden).toBe(true);
+    expect(restoreButton()).toBeNull();
   });
 
   // @behavior CP-023
@@ -227,12 +216,31 @@ describe("ComponentsController", () => {
     await mountWith({ component_statuses: () => new Promise(() => {}) });
 
     expect([
-      document.querySelector<HTMLElement>(
-        '[data-components-target="placeholder"]',
-      )!.hidden,
-      document.querySelector<HTMLElement>('[data-components-target="status"]')!
-        .hidden,
-    ]).toEqual([false, true]);
+      llamaRow().querySelector<HTMLElement>(".skeleton")!.hidden,
+      llamaStatus(),
+    ]).toEqual([false, null]);
+  });
+
+  // @behavior CP-027
+  it("shows the status in place of the Placeholder once it is found", async () => {
+    await mountWith({
+      component_statuses: () => [
+        {
+          name: "llama",
+          is_ready: true,
+          path: "/usr/bin/llama-server",
+          origin: "detection",
+          variant: null,
+          problem: null,
+          install: null,
+        },
+      ],
+    });
+
+    expect([
+      llamaRow().querySelector<HTMLElement>(".skeleton")!.hidden,
+      llamaStatus(),
+    ]).toEqual([true, "偵測到：/usr/bin/llama-server"]);
   });
 
   // @behavior CP-024
@@ -256,7 +264,7 @@ describe("ComponentsController", () => {
       },
     });
 
-    document.querySelector<HTMLButtonElement>("button")!.click();
+    within(llamaRow()).getByRole("button", { name: "指定" }).click();
     await settle();
 
     expect(notifications()).toEqual(["設定沒有儲存"]);
@@ -265,13 +273,23 @@ describe("ComponentsController", () => {
   // @behavior CP-026
   it("says a Component was not restored when forgetting the choice fails", async () => {
     await mountWith({
-      component_statuses: () => [],
+      component_statuses: () => [
+        {
+          name: "llama",
+          is_ready: true,
+          path: "/opt/llama/llama-server",
+          origin: "choice",
+          variant: null,
+          problem: null,
+          install: null,
+        },
+      ],
       forget_component: () => {
         throw { code: "io", detail: "denied" };
       },
     });
 
-    restoreButton().click();
+    restoreButton()!.click();
     await settle();
 
     expect(notifications()).toEqual(["設定沒有儲存"]);

@@ -4,7 +4,6 @@ import { assemble } from "./assembly";
 import { locale } from "./backend/system";
 import CleanupController from "./controllers/cleanup_controller";
 import ComparisonController from "./controllers/comparison_controller";
-import ComponentsController from "./controllers/components_controller";
 import DialogController from "./controllers/dialog_controller";
 import FieldController, {
   composingOption,
@@ -55,7 +54,6 @@ async function start(): Promise<void> {
   application.registerActionOption("typing", typingOption);
   await assemble(application, {
     comparison: ComparisonController,
-    components: ComponentsController,
     dialog: DialogController,
     field: FieldController,
     glossary: GlossaryController,

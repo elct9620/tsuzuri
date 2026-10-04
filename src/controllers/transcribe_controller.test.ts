@@ -8,7 +8,7 @@ import type { ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import {
   translationOption,
-  translationOptionsTemplate,
+  translationOptions,
 } from "../test_translation_options";
 import ProgressController from "./progress_controller";
 import {
@@ -81,7 +81,6 @@ describe("TranscribeController", () => {
     isCancelAsked = false;
     commandsSent = [];
     document.body.innerHTML = `
-      ${translationOptionsTemplate}
       <div data-controller="transcribe" data-transcribe-progress-outlet="#progress"
         data-action="translation-options:overwrite->transcribe#followTranslation segment-changes:retranscribe@window->transcribe#openForScope"
         data-transcribe-translation-options-outlet="#transcribe-options">
@@ -98,7 +97,7 @@ describe("TranscribeController", () => {
             <input type="checkbox" data-transcribe-target="translationToggle"
               data-action="transcribe#showTranslationOptions">
           </label>
-          <fieldset id="transcribe-options" data-controller="translation-options" hidden></fieldset>
+          <fieldset id="transcribe-options" data-controller="translation-options" hidden>${translationOptions}</fieldset>
           <div data-transcribe-target="overwriteWarning" hidden>
             <span data-transcribe-target="overwriteMessage"></span>
           </div>

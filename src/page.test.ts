@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
+import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
 
 describe("drawPage", () => {
@@ -9,6 +10,14 @@ describe("drawPage", () => {
     ["start screen", '[data-project-target="startScreen"]'],
     ["editor bar", '[data-controller="versions"]'],
     ["preview", '[data-preview-target="panel"]'],
+    [
+      "transcribe dialog's translation options",
+      '#transcribe-options [data-translation-options-target="language"]',
+    ],
+    [
+      "translate dialog's translation options",
+      '#translate-options [data-translation-options-target="language"]',
+    ],
     ["Segment list", '[data-transcript-target="list"]'],
     ["resource list", '[data-controller="glossary"]'],
     ["shortcuts dialog", '[data-shortcuts-target="dialog"]'],
@@ -22,4 +31,18 @@ describe("drawPage", () => {
 
     expect(page.querySelector(selector)).not.toBeNull();
   });
+
+  it.each(["#transcribe-options", "#translate-options"])(
+    "writes the translation options in %s in the interface language",
+    async (options) => {
+      const page = document.createElement("div");
+      await setInterfaceLanguage("zh-TW");
+
+      drawPage(page);
+
+      expect(
+        page.querySelector(`${options} [data-i18n="work.into"]`)!.textContent,
+      ).toBe(t("work.into"));
+    },
+  );
 });

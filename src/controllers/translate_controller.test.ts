@@ -8,7 +8,7 @@ import type { ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import {
   translationOption,
-  translationOptionsTemplate,
+  translationOptions,
 } from "../test_translation_options";
 import ProgressController from "./progress_controller";
 import {
@@ -70,7 +70,6 @@ describe("TranslateController", () => {
       unmatched_count: 0,
     });
     document.body.innerHTML = `
-      ${translationOptionsTemplate}
       <div data-controller="translate" data-translate-progress-outlet="#progress"
         data-action="translation-options:overwrite->translate#showOverwrite"
         data-translate-translation-options-outlet="#translate-options">
@@ -79,7 +78,7 @@ describe("TranslateController", () => {
           <h3 data-translate-target="title"></h3>
           <p data-translate-target="scopeField" hidden><span data-translate-target="scope"></span></p>
           <span data-translate-target="source"></span>
-          <div id="translate-options" data-controller="translation-options"></div>
+          <div id="translate-options" data-controller="translation-options">${translationOptions}</div>
           <div data-translate-target="overwriteWarning" hidden></div>
           <div data-translate-target="continuationHint" hidden></div>
           <button id="start" data-translate-target="startButton" data-action="translate#start">開始翻譯</button>

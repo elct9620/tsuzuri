@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { t, translatePage } from "../i18n";
+import { t } from "../i18n";
 import {
   TRADITIONAL_CHINESE,
   currentResource,
@@ -21,7 +21,7 @@ function glossaryLabel(glossary: TranslationGlossaryView | null): string {
 
 /**
  * The translation options both the translate and the transcribe dialogs offer, laid out once in
- * the page's `#translation-options` template so the two always offer the same choices.
+ * the TranslationOptions Svelte Component so the two always offer the same choices.
  */
 export default class TranslationOptionsController extends Controller {
   static targets = [
@@ -49,15 +49,6 @@ export default class TranslationOptionsController extends Controller {
 
   /** The Languages the Current Resource is already translated into. */
   private translatedLanguages: string[] = [];
-
-  initialize(): void {
-    const template = document.querySelector<HTMLTemplateElement>(
-      "template#translation-options",
-    );
-    if (template === null) return;
-    this.element.append(template.content.cloneNode(true));
-    translatePage(this.element);
-  }
 
   /**
    * Shows the Project's glossary and starts from the Language it was last translated into, or

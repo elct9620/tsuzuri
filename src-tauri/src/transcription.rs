@@ -565,6 +565,53 @@ mod tests {
         assert_eq!(texts, vec!["另一份"]);
     }
 
+    /// Writes `lecture.en.srt` with the cues of `lecture.srt` as its translation and shows it.
+    fn show_english_translation(fixture: &Fixture) {
+        let srt = std::fs::read_to_string(fixture.project_dir().join("lecture.srt")).unwrap();
+        std::fs::write(fixture.project_dir().join("lecture.en.srt"), srt).unwrap();
+        fixture.open_in(Language::TraditionalChinese);
+        fixture
+            .project()
+            .show_translation(Some(Language::English))
+            .unwrap();
+    }
+
+    // @behavior TX-059
+    #[tokio::test]
+    async fn shows_no_translation_once_the_whole_media_file_is_transcribed_again() {
+        let fixture = Fixture::new("tx-whole-unshown", TWO_SECOND_WAV);
+        fixture.open_with_segments(&[0, 5_000]);
+        show_english_translation(&fixture);
+
+        fixture
+            .run(transcription_request(true, TranscriptionScope::Whole))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            fixture.project().shown_translation(),
+            Err(Failure::NoTranslationShown)
+        );
+    }
+
+    // @behavior TX-060
+    #[tokio::test]
+    async fn keeps_the_translation_shown_through_a_transcription_within_an_audio_window() {
+        let fixture = Fixture::new("tx-window-shown", TWO_SECOND_WAV);
+        fixture.open_with_segments(&[0, 5_000, 10_000]);
+        show_english_translation(&fixture);
+
+        fixture
+            .run(transcription_request(
+                true,
+                TranscriptionScope::Span(SegmentSpan { first: 1, last: 1 }),
+            ))
+            .await
+            .unwrap();
+
+        assert_eq!(fixture.project().shown_translation(), Ok(Language::English));
+    }
+
     const WHISPER_SRT: &str =
         "1\n00:00:00,000 --> 00:00:01,000\n大家好\n\n2\n00:00:01,000 --> 00:00:02,000\n今天天氣很好\n";
 

@@ -10,7 +10,6 @@ import FieldController, {
   composingOption,
 } from "./controllers/field_controller";
 import GlossaryController from "./controllers/glossary_controller";
-import LogsController from "./controllers/logs_controller";
 import ModelSlotController from "./controllers/model_slot_controller";
 import ModelsController from "./controllers/models_controller";
 import NotificationController from "./controllers/notification_controller";
@@ -60,7 +59,6 @@ async function start(): Promise<void> {
     dialog: DialogController,
     field: FieldController,
     glossary: GlossaryController,
-    logs: LogsController,
     "model-slot": ModelSlotController,
     models: ModelsController,
     notification: NotificationController,

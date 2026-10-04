@@ -8,7 +8,7 @@ What a run leaves in the log, so a slow or failed run can be diagnosed afterward
 - `src-tauri/src/processes.rs`
 - `src-tauri/src/logs.rs`
 - `src-tauri/src/translation/llama.rs`
-- `src/controllers/logs_controller.test.ts`
+- `src/components/settings/general/Logs.test.ts`
 - `src-tauri/src/about.rs`
 - `src/components/settings/general/VersionAndUpdates.test.ts`
 

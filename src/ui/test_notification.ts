@@ -1,12 +1,14 @@
 /** Where `notify` puts Notifications, for a test page to include. */
 export const NOTIFICATION_STACK = `<div data-notifications></div>`;
 
-/** The Notifications shown, leaving out one already fading away. */
+/** The Notifications shown in the stack, leaving out one already fading away. */
 function shown(): HTMLElement[] {
   return [
-    ...document.querySelectorAll<HTMLElement>(
-      '[role="alert"]:not([data-is-leaving])',
-    ),
+    ...(document
+      .querySelector("[data-notifications]")
+      ?.querySelectorAll<HTMLElement>(
+        '[role="alert"]:not([data-is-leaving])',
+      ) ?? []),
   ];
 }
 

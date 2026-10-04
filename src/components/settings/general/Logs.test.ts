@@ -1,12 +1,14 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
+import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import LogsController from "./logs_controller";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import Logs from "./Logs.svelte";
+import {
+  NOTIFICATION_STACK,
+  notifications,
+} from "../../../ui/test_notification";
 
-describe("LogsController", () => {
-  let application: Application;
+describe("Logs", () => {
   let calls: { command: string; args: unknown }[];
   let chosenPath: string;
   let debugLogInUse: boolean;
@@ -15,41 +17,43 @@ describe("LogsController", () => {
   let failingCommand: string | null;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const target = (name: string) =>
-    document.querySelector<HTMLElement>(`[data-logs-target="${name}"]`)!;
   const argsByCommand = (command: string) =>
     calls.filter((call) => call.command === command).map((call) => call.args);
+  const logs = () => screen.getByRole("group", { name: "日誌" });
+  /** The text of each hint the log settings show. */
+  const hints = () =>
+    within(logs())
+      .queryAllByRole("alert")
+      .map((hint) => hint.textContent!.trim());
+  const debugLogToggle = () =>
+    within(
+      screen.getByText("除錯紀錄").closest("li")!,
+    ).getByRole<HTMLInputElement>("checkbox");
 
-  /** Opens the general settings, where the logs controller reads the log directory as it connects. */
+  /** Opens the general settings, which read the log settings as they are written. */
   async function openSettings(): Promise<void> {
-    application = Application.start();
-    application.register("logs", LogsController);
+    render(Logs);
     await settle();
   }
 
   async function chooseDirectory(): Promise<void> {
-    document.querySelector<HTMLButtonElement>("#choose")!.click();
+    screen.getByRole("button", { name: "切換目錄" }).click();
     await settle();
     await settle();
   }
 
-  beforeEach(async () => {
+  async function openDirectory(): Promise<void> {
+    screen.getByRole("button", { name: "開啟目錄" }).click();
+    await settle();
+  }
+
+  beforeEach(() => {
     calls = [];
     chosenPath = "/os/logs";
     debugLogInUse = false;
     hasDebugLogChosen = false;
     failingCommand = null;
-    document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
-      <fieldset data-controller="logs">
-        <span data-logs-target="path"></span>
-        <button id="choose" data-action="logs#choose">切換目錄</button>
-        <button id="open" data-action="logs#openDirectory">開啟目錄</button>
-        <div data-logs-target="pendingHint" hidden></div>
-        <input type="checkbox" data-logs-target="debugLogToggle" data-action="change->logs#chooseDebugLog" />
-        <div data-logs-target="debugLogPendingHint" hidden></div>
-      </fieldset>
-    `;
+    document.body.innerHTML = NOTIFICATION_STACK;
     mockIPC((command, args) => {
       calls.push({ command, args });
       if (command === failingCommand)
@@ -72,7 +76,6 @@ describe("LogsController", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 
@@ -84,9 +87,9 @@ describe("LogsController", () => {
 
     expect([
       argsByCommand("choose_log_directory"),
-      target("pendingHint").hidden,
-      target("path").textContent,
-    ]).toEqual([[{ path: "/logs" }], false, "/os/logs"]);
+      hints(),
+      screen.getByTitle("/os/logs").textContent,
+    ]).toEqual([[{ path: "/logs" }], ["重新啟動後改寫到 /logs"], "/os/logs"]);
   });
 
   // @behavior OB-010
@@ -95,14 +98,14 @@ describe("LogsController", () => {
 
     await chooseDirectory();
 
-    expect(target("pendingHint").textContent).toBe("重新啟動後改寫到 /logs");
+    expect(hints()).toEqual(["重新啟動後改寫到 /logs"]);
   });
 
   // @behavior OB-011
   it("says nothing of a restart while the chosen directory is in use", async () => {
     await openSettings();
 
-    expect(target("pendingHint").hidden).toBe(true);
+    expect(hints()).toEqual([]);
   });
 
   // @behavior OB-012
@@ -111,32 +114,22 @@ describe("LogsController", () => {
 
     await openSettings();
 
-    expect([
-      target("pendingHint").hidden,
-      target("pendingHint").textContent,
-    ]).toEqual([false, "重新啟動後改寫到 /logs"]);
+    expect(hints()).toEqual(["重新啟動後改寫到 /logs"]);
   });
 
   // @behavior OB-020
   it("turns the Debug Log on for the next launch", async () => {
     await openSettings();
-    const toggle = target("debugLogToggle") as HTMLInputElement;
 
-    toggle.click();
+    debugLogToggle().click();
     await settle();
     await settle();
 
     expect([
       argsByCommand("choose_debug_log"),
-      toggle.checked,
-      target("debugLogPendingHint").hidden,
-      target("debugLogPendingHint").textContent,
-    ]).toEqual([
-      [{ hasDebugLog: true }],
-      true,
-      false,
-      "重新啟動後開始寫入除錯紀錄",
-    ]);
+      debugLogToggle().checked,
+      hints(),
+    ]).toEqual([[{ hasDebugLog: true }], true, ["重新啟動後開始寫入除錯紀錄"]]);
   });
 
   // @behavior OB-021
@@ -146,17 +139,14 @@ describe("LogsController", () => {
 
     await openSettings();
 
-    expect([
-      (target("debugLogToggle") as HTMLInputElement).checked,
-      target("debugLogPendingHint").hidden,
-    ]).toEqual([true, true]);
+    expect([debugLogToggle().checked, hints()]).toEqual([true, []]);
   });
 
   // @behavior OB-008
   it("opens the log directory", async () => {
     await openSettings();
-    document.querySelector<HTMLButtonElement>("#open")!.click();
-    await settle();
+
+    await openDirectory();
 
     expect(argsByCommand("open_log_directory")).toHaveLength(1);
   });
@@ -185,7 +175,7 @@ describe("LogsController", () => {
     failingCommand = "choose_debug_log";
     await openSettings();
 
-    (target("debugLogToggle") as HTMLInputElement).click();
+    debugLogToggle().click();
     await settle();
 
     expect(notifications()).toEqual(["沒有切換除錯紀錄"]);
@@ -196,8 +186,7 @@ describe("LogsController", () => {
     failingCommand = "open_log_directory";
     await openSettings();
 
-    document.querySelector<HTMLButtonElement>("#open")!.click();
-    await settle();
+    await openDirectory();
 
     expect(notifications()).toEqual(["沒有開啟日誌目錄"]);
   });

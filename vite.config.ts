@@ -10,13 +10,7 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(() => ({
   plugins: [
     tailwindcss(),
-    svelte({
-      compilerOptions: {
-        // Silenced only while the page moves from Stimulus to Svelte, whose markup still gets its
-        // labels from i18n as the page starts; the move ends with this filter gone and no a11y warning.
-        warningFilter: (warning) => !warning.code.startsWith("a11y_"),
-      },
-    }),
+    svelte(),
     // Tests mount components in happy-dom, so they need Svelte's browser build and a page
     // emptied after each.
     svelteTesting(),

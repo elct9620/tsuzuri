@@ -41,7 +41,7 @@ if touches '^src-tauri/' && command -v cargo >/dev/null 2>&1; then
 	fi
 fi
 
-if touches '^(src/|index\.html$|package\.json$|pnpm-lock\.yaml$|tsconfig(\.node)?\.json$|vite\.config\.ts$)' &&
+if touches '^(src/|index\.html$|package\.json$|pnpm-lock\.yaml$|tsconfig(\.node)?\.json$|vite\.config\.ts$|svelte\.config\.js$)' &&
 	command -v pnpm >/dev/null 2>&1; then
 	if ! out="$(pnpm test 2>&1)"; then
 		record "Frontend tests (pnpm test)" "$out"

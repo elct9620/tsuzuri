@@ -37,7 +37,7 @@ case "$file" in
 		exit 2
 	fi
 	;;
-*.ts | *.svelte)
+*.ts | *.svelte | "$ROOT"/svelte.config.js)
 	# Types span the whole frontend, so one file is checked through the project
 	if [ -x "$SVELTE_CHECK" ] && ! out="$(cd "$ROOT" && pnpm run --silent check 2>&1)"; then
 		printf 'Type check failed:\n%s\n' "$out" >&2

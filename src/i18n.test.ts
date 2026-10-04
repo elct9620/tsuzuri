@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-/// <reference types="vite/client" />
 import { describe, expect, it } from "vitest";
 import {
   interfaceLanguageCode,

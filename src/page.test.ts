@@ -6,6 +6,9 @@ describe("drawPage", () => {
   // Each part is found by what its controller or module reads, so a Svelte Component left out of
   // the page leaves nothing for them to read.
   it.each([
+    ["start screen", '[data-project-target="startScreen"]'],
+    ["Segment list", '[data-transcript-target="list"]'],
+    ["resource list", '[data-controller="glossary"]'],
     ["shortcuts dialog", '[data-shortcuts-target="dialog"]'],
     ["updates dialog", '[data-updates-target="dialog"]'],
     ["notification stack", "[data-notifications]"],

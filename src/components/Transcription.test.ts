@@ -20,11 +20,7 @@ import { pageContext } from "./context";
 import { TaskRun } from "./task_run.svelte";
 import TaskProgress from "./TaskProgress.svelte";
 import { progressSteps } from "./test_task_progress";
-import {
-  languageSelect,
-  optionCheckbox,
-  setSummaryWords,
-} from "./test_translation_options";
+import { optionCheckbox, setSummaryWords } from "./test_translation_options";
 import Transcription from "./Transcription.svelte";
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -35,6 +31,12 @@ const startButton = () =>
 /** A choice the transcribe dialog offers, or none while it is not offered. */
 const choice = (name: string) =>
   screen.queryByRole<HTMLInputElement>("checkbox", { hidden: true, name });
+
+/** Chooses to translate once transcribed, which shows the translation options. */
+async function chooseTranslatingAfter(): Promise<void> {
+  choice("完成後翻譯")!.click();
+  await settle();
+}
 
 async function startFromDialog(): Promise<void> {
   startButton().click();
@@ -133,7 +135,7 @@ describe("Transcription", () => {
     transcription = transcribed;
     await openDialog();
     choice("完成後辨識說話者")!.click();
-    choice("完成後翻譯")!.click();
+    await chooseTranslatingAfter();
 
     await startFromDialog();
     await settle();
@@ -166,7 +168,7 @@ describe("Transcription", () => {
     transcription = transcribed;
     translation = () => new Promise(() => {});
     await openDialog();
-    choice("完成後翻譯")!.click();
+    await chooseTranslatingAfter();
 
     await startFromDialog();
 
@@ -182,7 +184,7 @@ describe("Transcription", () => {
   it("starts no transcription to translate while the summary has no word limit", async () => {
     await hold(media);
     await openDialog();
-    choice("完成後翻譯")!.click();
+    await chooseTranslatingAfter();
     optionCheckbox(/滾動摘要/)!.click();
     setSummaryWords("");
 
@@ -244,7 +246,7 @@ describe("Transcription", () => {
     await hold(media);
     transcription = transcribed;
     await openDialog();
-    choice("完成後翻譯")!.click();
+    await chooseTranslatingAfter();
 
     await startFromDialog();
 
@@ -256,7 +258,7 @@ describe("Transcription", () => {
     await hold(media);
     transcription = transcribed;
     await openDialog();
-    choice("完成後翻譯")!.click();
+    await chooseTranslatingAfter();
 
     await startFromDialog();
 
@@ -268,7 +270,7 @@ describe("Transcription", () => {
     await hold(media);
     transcription = transcribed;
     await openDialog();
-    choice("完成後翻譯")!.click();
+    await chooseTranslatingAfter();
     optionCheckbox("自我檢查")!.click();
 
     await startFromDialog();
@@ -277,6 +279,21 @@ describe("Transcription", () => {
       target: "en",
       options: { has_self_review: true },
     });
+  });
+
+  // @behavior TX-063
+  it("keeps the translation options through unchecking translating afterwards", async () => {
+    await hold(media);
+    transcription = transcribed;
+    await openDialog();
+    await chooseTranslatingAfter();
+    optionCheckbox("自我檢查")!.click();
+
+    await chooseTranslatingAfter();
+    await chooseTranslatingAfter();
+    await startFromDialog();
+
+    expect(translateArgs).toMatchObject({ options: { has_self_review: true } });
   });
 
   // @behavior TX-041
@@ -301,13 +318,14 @@ describe("Transcription", () => {
   it("shows the translation options once translating afterwards is chosen", async () => {
     await hold(media);
     await openDialog();
-    const options = languageSelect().closest("fieldset")!;
-    const isHiddenBefore = options.hidden;
+    const isShownBefore = optionCheckbox("自我檢查") !== null;
 
-    choice("完成後翻譯")!.click();
-    await settle();
+    await chooseTranslatingAfter();
 
-    expect([isHiddenBefore, options.hidden]).toEqual([true, false]);
+    expect([isShownBefore, optionCheckbox("自我檢查") !== null]).toEqual([
+      false,
+      true,
+    ]);
   });
 
   const translatedIntoEnglish = (hasSubtitle: boolean) =>
@@ -327,8 +345,7 @@ describe("Transcription", () => {
     await hold(translatedIntoEnglish(false));
     await openDialog();
 
-    choice("完成後翻譯")!.click();
-    await settle();
+    await chooseTranslatingAfter();
 
     expect(warning()).toEqual([
       "這個語言的譯文已存在，開始後會覆蓋",
@@ -341,8 +358,7 @@ describe("Transcription", () => {
     await hold(translatedIntoEnglish(true));
     await openDialog();
 
-    choice("完成後翻譯")!.click();
-    await settle();
+    await chooseTranslatingAfter();
 
     expect(warning()).toEqual([
       "字幕與這個語言的譯文都已存在，開始後會覆蓋",
@@ -354,10 +370,9 @@ describe("Transcription", () => {
   it("stops warning of a translation it will not make", async () => {
     await hold(translatedIntoEnglish(false));
     await openDialog();
-    choice("完成後翻譯")!.click();
+    await chooseTranslatingAfter();
 
-    choice("完成後翻譯")!.click();
-    await settle();
+    await chooseTranslatingAfter();
 
     expect(warning()).toEqual([null, "開始轉錄"]);
   });
@@ -561,7 +576,7 @@ describe("Transcription, transcribing again from the editor", () => {
       written_span: { first: 1, last: 2 },
     });
     await openFromMenu(1);
-    choice("完成後翻譯")!.click();
+    await chooseTranslatingAfter();
 
     await startFromDialog();
     await settle();

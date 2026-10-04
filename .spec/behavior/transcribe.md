@@ -520,3 +520,13 @@ One task runs at a time, so a transcription asked for while one runs leaves the 
 | Given | a Current Resource with a media file, while a diarization runs |
 | When | its transcription is started from the toolbar |
 | Then | no transcription is asked for |
+
+## `TX-063` Keeping the translation options through unchecking translating afterwards
+
+The dialog holds the translation options until it opens again, so hiding them loses nothing chosen.
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog translating afterwards with self-review chosen |
+| When | translating afterwards is unchecked and checked again before starting |
+| Then | the translation asked for still has self-review |

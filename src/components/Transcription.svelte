@@ -29,20 +29,22 @@
   } from "../ui/notification";
   import { formatTime } from "../ui/time";
   import { projectFeed, taskRun } from "./context";
+  import { TranslationChoices } from "./translation_choices.svelte";
   import TranslationOptions from "./TranslationOptions.svelte";
 
   const feed = projectFeed();
   const run = taskRun();
   let dialog: HTMLDialogElement;
-  let options: TranslationOptions;
+  let options = $state<TranslationOptions>();
+  const choices = new TranslationChoices();
   let project = $state<ProjectView | null>(null);
   let scope = $state<TranscriptionScope>({ kind: "whole" });
   /** Whether to diarize the Transcript once transcribed, before any translation. */
   let isDiarizedAfter = $state(false);
   /** Whether to translate the Transcript once transcribed, with the translation options it shows. */
   let isTranslatedAfter = $state(false);
-  /** Whether the Language the translation options have chosen is already translated. */
-  let isLanguageTranslated = $state(false);
+  /** Whether the Language chosen is already translated. */
+  const isLanguageTranslated = $derived(choices.isTranslated(project));
   /** The file of the transcription Model it runs with, the Project Model when there is one. */
   let model = $state("");
 
@@ -106,7 +108,7 @@
       isWhole && (project?.options.is_diarized_after_transcription ?? false);
     if (!isTranslationOffered) isTranslatedAfter = false;
     if (project !== null)
-      options.show(project, isWhole ? null : project.shown_translation);
+      choices.reset(project, isWhole ? null : project.shown_translation);
     dialog.showModal();
     const source =
       project?.options.models.transcription ??
@@ -116,7 +118,11 @@
   }
 
   async function start(): Promise<void> {
-    if (run.isBusy || (isTranslatedAfter && !options.reportValidity())) return;
+    if (
+      run.isBusy ||
+      (isTranslatedAfter && options?.reportValidity() === false)
+    )
+      return;
     dialog.close();
     run.begin("transcription");
     try {
@@ -143,12 +149,11 @@
    */
   async function translateAfterwards(span: SegmentSpan | null): Promise<void> {
     if (!isWhole && span === null) return;
-    const { language, options: chosen } = options.choices();
     run.begin("translation");
     notifyTranslation(
       await translateSegments(
-        language,
-        chosen,
+        choices.language,
+        choices.options,
         isWhole || span === null ? null : spanIndexes(span),
       ),
     );
@@ -210,17 +215,18 @@
           <span>{t("transcribe.translateAfter")}</span>
         </label>
       {/if}
-      <!-- Kept while hidden: the dialog shows the options afresh as it opens, before they are asked for. -->
-      <fieldset
-        class="fieldset gap-3 rounded-box border border-base-300 px-4 pb-4"
-        hidden={!isTranslatedAfter}
-      >
-        <legend class="fieldset-legend">{t("toolbar.translate")}</legend>
-        <TranslationOptions
-          bind:this={options}
-          onoverwrite={(isTranslated) => (isLanguageTranslated = isTranslated)}
-        />
-      </fieldset>
+      {#if isTranslatedAfter}
+        <fieldset
+          class="fieldset gap-3 rounded-box border border-base-300 px-4 pb-4"
+        >
+          <legend class="fieldset-legend">{t("toolbar.translate")}</legend>
+          <TranslationOptions
+            bind:this={options}
+            {choices}
+            glossary={project?.translation_glossary ?? null}
+          />
+        </fieldset>
+      {/if}
     </fieldset>
     {#if warning !== null}
       <div role="alert" class="alert alert-warning mt-2">

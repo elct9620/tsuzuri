@@ -12,17 +12,19 @@
   import { t } from "../i18n";
   import { notifyTranslation } from "../ui/notification";
   import { projectFeed, taskRun } from "./context";
+  import { TranslationChoices } from "./translation_choices.svelte";
   import TranslationOptions from "./TranslationOptions.svelte";
 
   const feed = projectFeed();
   const run = taskRun();
   let dialog: HTMLDialogElement;
   let options: TranslationOptions;
+  const choices = new TranslationChoices();
   let project = $state<ProjectView | null>(null);
   /** The Segments to translate again, or none to translate the whole subtitle. */
   let chosenIndexes = $state<number[] | null>(null);
   /** Whether the Language chosen is already translated. */
-  let isLanguageTranslated = $state(false);
+  const isLanguageTranslated = $derived(choices.isTranslated(project));
 
   /** Translating chosen Segments again is one step to undo, so it overwrites nothing to warn of. */
   const isOverwriting = $derived(
@@ -54,7 +56,7 @@
 
   function showDialog(): void {
     if (project !== null)
-      options.show(
+      choices.reset(
         project,
         chosenIndexes === null ? null : project.shown_translation,
       );
@@ -66,9 +68,12 @@
     dialog.close();
     run.begin("translation");
     try {
-      const { language, options: chosen } = options.choices();
       notifyTranslation(
-        await translateSegments(language, chosen, chosenIndexes),
+        await translateSegments(
+          choices.language,
+          choices.options,
+          chosenIndexes,
+        ),
       );
       run.finish();
     } catch (error) {
@@ -110,7 +115,8 @@
       </p>
       <TranslationOptions
         bind:this={options}
-        onoverwrite={(isTranslated) => (isLanguageTranslated = isTranslated)}
+        {choices}
+        glossary={project?.translation_glossary ?? null}
       />
     </fieldset>
     {#if isOverwriting}

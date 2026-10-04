@@ -100,18 +100,18 @@ describe("drawPage", () => {
     ).not.toBeNull();
   });
 
-  it("writes the translation options in both the transcribe and the translate dialogs", async () => {
+  it("writes the translation options in the translate dialog", async () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
 
     drawPage(new ProjectFeed(), page);
 
     expect(
-      within(page).queryAllByRole("combobox", {
+      within(page).queryByRole("combobox", {
         hidden: true,
         name: t("work.into"),
       }),
-    ).toHaveLength(2);
+    ).not.toBeNull();
   });
 
   it("writes the progress a task started from the toolbar reports to", async () => {

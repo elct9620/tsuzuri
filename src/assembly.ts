@@ -12,12 +12,15 @@ import type { Application, ControllerConstructor } from "@hotwired/stimulus";
 import { editingPort, transcriptView } from "./backend/editing";
 import { relayEvents } from "./backend/events";
 import { ProjectFeed, type UnlistenFn } from "./backend/project";
+import { TaskRun } from "./components/task_run.svelte";
 import { EditingSession } from "./editor";
 
 /** What a controller is handed as it is registered. */
 export interface Dependencies {
   feed: ProjectFeed;
   session: EditingSession;
+  /** The task run the task dialogs report to until each is a Svelte Component. */
+  taskRun: TaskRun;
 }
 
 export interface Assembly extends Dependencies {
@@ -42,6 +45,7 @@ export function assemble(
 ): Assembly {
   const feed = new ProjectFeed();
   const session = new EditingSession(editingPort);
+  const taskRun = new TaskRun();
   feed.follow((project) => session.follow(transcriptView(project)));
   feed.afterEach(() => session.announce());
   session.onChange((change) =>
@@ -53,6 +57,7 @@ export function assemble(
       class extends controller {
         readonly feed = feed;
         readonly session = session;
+        readonly taskRun = taskRun;
       },
     );
   const start = async () => {
@@ -75,5 +80,5 @@ export function assemble(
       unrelay();
     };
   };
-  return { feed, session, start };
+  return { feed, session, taskRun, start };
 }

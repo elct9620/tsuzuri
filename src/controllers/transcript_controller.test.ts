@@ -9,13 +9,13 @@ import { projectOf, resourceOf } from "../test_project";
 import { fieldValue, isFieldHeld } from "../editor";
 import FieldController from "./field_controller";
 import NotificationController from "./notification_controller";
-import ProgressController from "./progress_controller";
 import {
   NOTIFICATION_STACK,
   notificationAction,
   notificationDetail,
   notifications,
 } from "../ui/test_notification";
+import type { TaskKind } from "../ui/progress";
 import { SAVE_MARK, saveMark } from "../ui/test_save_mark";
 import SpeakersController from "./speakers_controller";
 import TranscriptController from "./transcript_controller";
@@ -56,11 +56,13 @@ describe("TranscriptController", () => {
     field.dispatchEvent(new FocusEvent("blur"));
   }
 
-  function progress(): ProgressController {
-    return application.getControllerForElementAndIdentifier(
-      document.querySelector("#progress")!,
-      "progress",
-    ) as ProgressController;
+  /** Tells the editor `task` began, as the progress above it does. */
+  function beginTask(task: TaskKind): void {
+    document
+      .querySelector("[data-controller~=transcript]")!
+      .dispatchEvent(
+        new CustomEvent("progress:task", { bubbles: true, detail: { task } }),
+      );
   }
 
   const placeholders = () =>
@@ -99,12 +101,6 @@ describe("TranscriptController", () => {
       ${SAVE_MARK}
       <section data-controller="transcript speakers"
         data-action="selectionchange@document->transcript#followSelection progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->speakers#follow">
-        <div id="progress" data-controller="progress" hidden>
-          <span data-progress-target="summary"></span>
-          <ul data-progress-target="steps"></ul>
-          <p data-progress-target="status"></p>
-          <progress data-progress-target="bar" hidden></progress>
-        </div>
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage" data-action="change->transcript#showTranslation"></select>
         <p data-transcript-target="emptyHint">尚無內容</p>
@@ -141,7 +137,6 @@ describe("TranscriptController", () => {
     await assemble(application, {
       field: FieldController,
       notification: NotificationController,
-      progress: ProgressController,
       speakers: SpeakersController,
       transcript: TranscriptController,
     }).start();
@@ -368,7 +363,6 @@ describe("TranscriptController", () => {
     await assemble(application, {
       field: FieldController,
       notification: NotificationController,
-      progress: ProgressController,
       speakers: SpeakersController,
       transcript: TranscriptController,
     }).start();
@@ -399,7 +393,6 @@ describe("TranscriptController", () => {
     await assemble(application, {
       field: FieldController,
       notification: NotificationController,
-      progress: ProgressController,
       speakers: SpeakersController,
       transcript: TranscriptController,
     }).start();
@@ -467,7 +460,7 @@ describe("TranscriptController", () => {
   it("shows Placeholder rows until a transcription writes a Segment", async () => {
     await hold(projectOf({ segments: [] }));
 
-    progress().begin("transcription");
+    beginTask("transcription");
     await settle();
 
     expect([
@@ -506,7 +499,7 @@ describe("TranscriptController", () => {
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }] }),
     );
 
-    progress().begin("transcription");
+    beginTask("transcription");
     await settle();
 
     const rows = [
@@ -532,7 +525,7 @@ describe("TranscriptController", () => {
           ...(at < translatedCount ? { translation: `line ${at}` } : {}),
         })),
       });
-    progress().begin("translation");
+    beginTask("translation");
     await hold(translatedUpTo(0));
 
     await hold(translatedUpTo(6));

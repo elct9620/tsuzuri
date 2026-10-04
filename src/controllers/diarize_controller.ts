@@ -7,10 +7,10 @@ import {
   type ProjectView,
 } from "../backend/project";
 import { modelSettings } from "../backend/toolchain";
+import type { TaskRun } from "../components/task_run.svelte";
 import { t } from "../i18n";
 import { sourceFileName } from "../ui/models";
 import { notifyDiarization } from "../ui/notification";
-import type ProgressController from "./progress_controller";
 
 /** The diarize dialog: it gives the Current Resource's Segments the Speakers heard in its media file. */
 export default class DiarizeController extends Controller {
@@ -21,7 +21,6 @@ export default class DiarizeController extends Controller {
     "overwriteWarning",
     "startButton",
   ];
-  static outlets = ["progress"];
 
   /** The toolbar button, usable only for a Current Resource with a media file and a subtitle. */
   declare readonly openButtonTarget: HTMLButtonElement;
@@ -31,9 +30,9 @@ export default class DiarizeController extends Controller {
   /** Warns that the Speakers the Segments carry are replaced. */
   declare readonly overwriteWarningTarget: HTMLElement;
   declare readonly startButtonTarget: HTMLButtonElement;
-  declare readonly progressOutlet: ProgressController;
 
   declare readonly feed: ProjectFeed;
+  declare readonly taskRun: TaskRun;
 
   private unfollow?: () => void;
   private project: ProjectView | null = null;
@@ -61,7 +60,7 @@ export default class DiarizeController extends Controller {
   }
 
   async start(): Promise<void> {
-    const progress = this.progressOutlet;
+    const progress = this.taskRun;
     if (progress.isBusy) return;
     this.dialogTarget.close();
     progress.begin("diarization");

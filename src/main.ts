@@ -10,7 +10,6 @@ import FieldController, {
 } from "./controllers/field_controller";
 import NotificationController from "./controllers/notification_controller";
 import PreviewController from "./controllers/preview_controller";
-import ProgressController from "./controllers/progress_controller";
 import ProjectController from "./controllers/project_controller";
 import RecentProjectsController from "./controllers/recent_projects_controller";
 import ReplacementController from "./controllers/replacement_controller";
@@ -52,7 +51,6 @@ async function start(): Promise<void> {
     field: FieldController,
     notification: NotificationController,
     preview: PreviewController,
-    progress: ProgressController,
     project: ProjectController,
     "recent-projects": RecentProjectsController,
     replacement: ReplacementController,
@@ -74,7 +72,7 @@ async function start(): Promise<void> {
     updates: UpdatesController,
     versions: VersionsController,
   });
-  drawPage(assembly.feed);
+  drawPage(assembly.feed, document.body, assembly.taskRun);
   await application.start();
   await assembly.start();
 }

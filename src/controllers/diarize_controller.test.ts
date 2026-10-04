@@ -12,7 +12,6 @@ import {
   notifications,
 } from "../ui/test_notification";
 import DiarizeController from "./diarize_controller";
-import ProgressController from "./progress_controller";
 
 describe("DiarizeController", () => {
   let application: Application;
@@ -48,19 +47,13 @@ describe("DiarizeController", () => {
     project = null;
     commandsSent = [];
     document.body.innerHTML = `
-      <div data-controller="diarize" data-diarize-progress-outlet="#progress">
+      <div data-controller="diarize">
         <button data-diarize-target="openButton" data-action="diarize#open" disabled>辨識</button>
         <dialog data-diarize-target="dialog">
           <span data-diarize-target="model"></span>
           <div data-diarize-target="overwriteWarning" hidden></div>
           <button data-diarize-target="startButton" data-action="diarize#start">開始辨識</button>
         </dialog>
-      </div>
-      <div id="progress" data-controller="progress" data-action="rust:pipeline-progress@window->progress#show" hidden>
-        <span data-progress-target="summary"></span>
-        <ul data-progress-target="steps"></ul>
-        <p data-progress-target="status"></p>
-        <progress max="100" data-progress-target="bar" hidden></progress>
       </div>
       ${NOTIFICATION_STACK}
     `;
@@ -94,7 +87,6 @@ describe("DiarizeController", () => {
     application = Application.start();
     await assemble(application, {
       diarize: DiarizeController,
-      progress: ProgressController,
     }).start();
     await settle();
   });

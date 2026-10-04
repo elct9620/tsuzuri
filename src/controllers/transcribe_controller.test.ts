@@ -3,14 +3,17 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { render } from "@testing-library/svelte";
 import { assemble } from "../assembly";
+import { pageContext } from "../components/context";
+import TaskProgress from "../components/TaskProgress.svelte";
+import { progressSteps } from "../components/test_task_progress";
 import type { ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import {
   translationOption,
   translationOptions,
 } from "../test_translation_options";
-import ProgressController from "./progress_controller";
 import {
   NOTIFICATION_STACK,
   notificationDetail,
@@ -29,32 +32,11 @@ describe("TranscribeController", () => {
   let translation: () => Promise<unknown>;
   let translateArgs: unknown;
   let transcribeArgs: unknown;
-  let isCancelAsked: boolean;
   let commandsSent: string[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const target = <T extends HTMLElement>(name: string) =>
     document.querySelector<T>(`[data-transcribe-target="${name}"]`)!;
-  const status = () =>
-    document.querySelector('[data-progress-target="status"]')!.textContent;
-  /** Each listed Phase, marked ✓ once done, ◌ while it runs, ○ before it. */
-  const steps = () =>
-    [...document.querySelectorAll('[data-progress-target="steps"] > li')].map(
-      (step) => {
-        const mark =
-          step.getAttribute("aria-current") === "step"
-            ? "◌"
-            : step.classList.contains("step-primary")
-              ? "✓"
-              : "○";
-        return `${mark}${step.textContent}`;
-      },
-    );
-  const bar = () =>
-    document.querySelector<HTMLProgressElement>(
-      '[data-progress-target="bar"]',
-    )!;
-
   async function hold(next: ProjectView): Promise<void> {
     project = next;
     await emit("project-changed");
@@ -78,10 +60,9 @@ describe("TranscribeController", () => {
     translation = async () => ({ phases: [], unmatched_count: 0 });
     translateArgs = undefined;
     transcribeArgs = undefined;
-    isCancelAsked = false;
     commandsSent = [];
     document.body.innerHTML = `
-      <div data-controller="transcribe" data-transcribe-progress-outlet="#progress"
+      <div data-controller="transcribe"
         data-action="translation-options:overwrite->transcribe#followTranslation segment-changes:retranscribe@window->transcribe#openForScope"
         data-transcribe-translation-options-outlet="#transcribe-options">
         <button data-transcribe-target="openButton" data-action="transcribe#open" disabled>轉錄</button>
@@ -104,20 +85,12 @@ describe("TranscribeController", () => {
           <button data-transcribe-target="startButton" data-action="transcribe#start">開始</button>
         </dialog>
       </div>
-      <div id="progress" data-controller="progress" data-action="rust:pipeline-progress@window->progress#show" hidden>
-        <span data-progress-target="summary"></span>
-        <ul data-progress-target="steps"></ul>
-        <p data-progress-target="status"></p>
-        <progress max="100" data-progress-target="bar" hidden></progress>
-        <button id="cancel-task" data-action="progress#cancel">取消任務</button>
-      </div>
       ${NOTIFICATION_STACK}
     `;
     mockIPC(
       (command, args) => {
         commandsSent.push(command);
         if (command === "current_project") return project;
-        if (command === "cancel_task") isCancelAsked = true;
         if (command === "diarize")
           return { audio_seconds: 60, diarize_seconds: 4, phases: [] };
         if (command === "model_settings")
@@ -134,11 +107,14 @@ describe("TranscribeController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    await assemble(application, {
-      progress: ProgressController,
+    const assembly = assemble(application, {
       transcribe: TranscribeController,
       "translation-options": TranslationOptionsController,
-    }).start();
+    });
+    render(TaskProgress, {
+      context: pageContext(assembly.feed, assembly.taskRun),
+    });
+    await assembly.start();
     await settle();
   });
 
@@ -214,52 +190,6 @@ describe("TranscribeController", () => {
     ]).toEqual([true, false]);
   });
 
-  // @behavior TX-007
-  it("shows the Phase and its percentage in the editor", async () => {
-    await hold(media);
-    await start();
-
-    await emit("pipeline-progress", { phase: "transcribe", percent: 42 });
-    await settle();
-
-    expect(status()).toBe("轉錄 42%");
-  });
-
-  // @behavior TX-010
-  it("shows a Phase without a percentage as a bar with no value", async () => {
-    await hold(media);
-    await start();
-
-    await emit("pipeline-progress", { phase: "load", percent: null });
-    await settle();
-
-    expect([bar().hidden, bar().hasAttribute("value")]).toEqual([false, false]);
-  });
-
-  // @behavior TX-028
-  it("sums up the running Phase in the heading's progress button", async () => {
-    await hold(media);
-    await start();
-
-    await emit("pipeline-progress", { phase: "transcribe", percent: 23 });
-    await settle();
-
-    expect(
-      document.querySelector('[data-progress-target="summary"]')!.textContent,
-    ).toBe("轉錄 23%");
-  });
-
-  // @behavior TX-027
-  it("lists the Phases of a transcription, marking the ones reached", async () => {
-    await hold(media);
-    await start();
-
-    await emit("pipeline-progress", { phase: "load", percent: null });
-    await settle();
-
-    expect(steps()).toEqual(["✓準備元件", "✓轉檔", "◌載入模型", "○轉錄"]);
-  });
-
   // @behavior TL-066
   it("lists the Phases of the translation once a transcription goes on to it", async () => {
     await hold(media);
@@ -273,7 +203,7 @@ describe("TranscribeController", () => {
 
     await start();
 
-    expect(steps()).toEqual([
+    expect(progressSteps()).toEqual([
       "○準備元件",
       "○載入模型",
       "○找出被切開的句子",
@@ -349,20 +279,6 @@ describe("TranscribeController", () => {
     await start();
 
     expect(notificationItems(0)).toContainEqual(["即時倍率（RTF）", "0.50"]);
-  });
-
-  // @behavior TX-025
-  it("clears the progress once the transcription ends", async () => {
-    await hold(media);
-    transcription = async () => ({
-      audio_seconds: 60,
-      transcribe_seconds: 30,
-      phases: [],
-    });
-
-    await start();
-
-    expect(document.querySelector<HTMLElement>("#progress")!.hidden).toBe(true);
   });
 
   // @behavior TX-012
@@ -510,21 +426,6 @@ describe("TranscribeController", () => {
     expect(warning()).toEqual([null, "開始轉錄"]);
   });
 
-  // @behavior TX-029
-  it("cancels a transcription from its progress", async () => {
-    await hold(media);
-    let stop: (failure: unknown) => void = () => {};
-    transcription = () => new Promise((_, reject) => (stop = reject));
-    await start();
-
-    document.querySelector<HTMLButtonElement>("#cancel-task")!.click();
-    await settle();
-    stop({ code: "mode-cancelled" });
-    await settle();
-
-    expect([isCancelAsked, notifications()]).toEqual([true, ["已取消轉錄"]]);
-  });
-
   // @behavior TX-014
   it("shows why the transcription failed", async () => {
     await hold(media);
@@ -645,7 +546,6 @@ describe("TranscribeController", () => {
       );
       application = Application.start();
       await assemble(application, {
-        progress: ProgressController,
         transcript: TranscriptController,
         "segment-changes": SegmentChangesController,
         transcribe: TranscribeController,

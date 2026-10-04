@@ -11,6 +11,7 @@ import { diarize } from "../backend/diarization";
 import { modelSettings } from "../backend/toolchain";
 import { transcribe, type TranscriptionScope } from "../backend/transcription";
 import { translateSegments } from "../backend/translation";
+import type { TaskRun } from "../components/task_run.svelte";
 import { t } from "../i18n";
 import { sourceFileName } from "../ui/models";
 import {
@@ -19,7 +20,6 @@ import {
   notifyTranslation,
 } from "../ui/notification";
 import { formatTime } from "../ui/time";
-import type ProgressController from "./progress_controller";
 import type TranslationOptionsController from "./translation_options_controller";
 
 /**
@@ -43,7 +43,7 @@ export default class TranscribeController extends Controller {
     "startButton",
     "model",
   ];
-  static outlets = ["progress", "translation-options"];
+  static outlets = ["translation-options"];
 
   /** The toolbar button, usable only for a Current Resource with a media file. */
   declare readonly openButtonTarget: HTMLButtonElement;
@@ -68,11 +68,11 @@ export default class TranscribeController extends Controller {
   declare readonly startButtonTarget: HTMLButtonElement;
   /** Names the file of the transcription Model it runs with, the Project Model when there is one. */
   declare readonly modelTarget: HTMLElement;
-  declare readonly progressOutlet: ProgressController;
   declare readonly translationOptionsOutlet: TranslationOptionsController;
   declare readonly translationOptionsOutletElement: HTMLElement;
 
   declare readonly feed: ProjectFeed;
+  declare readonly taskRun: TaskRun;
 
   private unfollow?: () => void;
   private project: ProjectView | null = null;
@@ -134,7 +134,7 @@ export default class TranscribeController extends Controller {
   }
 
   async start(): Promise<void> {
-    const progress = this.progressOutlet;
+    const progress = this.taskRun;
     if (
       progress.isBusy ||
       (this.translationToggleTarget.checked &&
@@ -170,7 +170,7 @@ export default class TranscribeController extends Controller {
     const isWhole = this.transcriptionScope.kind === "whole";
     if (!isWhole && span === null) return;
     const choices = this.translationOptionsOutlet;
-    this.progressOutlet.begin("translation");
+    this.taskRun.begin("translation");
     notifyTranslation(
       await translateSegments(
         choices.language,

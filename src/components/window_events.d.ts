@@ -3,6 +3,7 @@
  * `rust:<name>` with the payload as `detail` (`backend/events.ts`).
  */
 
+import type { PipelineProgress } from "../backend/progress";
 import type { DownloadProgress } from "../backend/toolchain";
 
 declare module "svelte/elements" {
@@ -10,6 +11,7 @@ declare module "svelte/elements" {
     "onrust:model-download-progress"?: (
       event: CustomEvent<DownloadProgress>,
     ) => void;
+    "onrust:pipeline-progress"?: (event: CustomEvent<PipelineProgress>) => void;
   }
 }
 

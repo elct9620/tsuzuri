@@ -86,7 +86,6 @@
       class="contents"
       data-controller="transcribe"
       data-action="translation-options:overwrite->transcribe#followTranslation segment-changes:retranscribe@window->transcribe#openForScope"
-      data-transcribe-progress-outlet="#progress"
       data-transcribe-translation-options-outlet="#transcribe-options"
     >
       <button
@@ -195,7 +194,6 @@
       class="contents"
       data-controller="translate"
       data-action="translation-options:overwrite->translate#showOverwrite segment-changes:retranslate@window->translate#openForSegments"
-      data-translate-progress-outlet="#progress"
       data-translate-translation-options-outlet="#translate-options"
     >
       <button
@@ -275,11 +273,7 @@
       </dialog>
     </div>
 
-    <div
-      class="contents"
-      data-controller="diarize"
-      data-diarize-progress-outlet="#progress"
-    >
+    <div class="contents" data-controller="diarize">
       <button
         type="button"
         class="btn btn-sm"

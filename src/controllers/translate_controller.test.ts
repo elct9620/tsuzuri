@@ -3,14 +3,17 @@ import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { render } from "@testing-library/svelte";
 import { assemble } from "../assembly";
+import { pageContext } from "../components/context";
+import TaskProgress from "../components/TaskProgress.svelte";
+import { progressSteps } from "../components/test_task_progress";
 import type { ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import {
   translationOption,
   translationOptions,
 } from "../test_translation_options";
-import ProgressController from "./progress_controller";
 import {
   NOTIFICATION_STACK,
   notificationItems,
@@ -70,7 +73,7 @@ describe("TranslateController", () => {
       unmatched_count: 0,
     });
     document.body.innerHTML = `
-      <div data-controller="translate" data-translate-progress-outlet="#progress"
+      <div data-controller="translate"
         data-action="translation-options:overwrite->translate#showOverwrite"
         data-translate-translation-options-outlet="#translate-options">
         <button data-translate-target="openButton" data-action="translate#open" disabled>翻譯</button>
@@ -83,12 +86,6 @@ describe("TranslateController", () => {
           <div data-translate-target="continuationHint" hidden></div>
           <button id="start" data-translate-target="startButton" data-action="translate#start">開始翻譯</button>
         </dialog>
-      </div>
-      <div id="progress" data-controller="progress" data-action="rust:pipeline-progress@window->progress#show" hidden>
-        <span data-progress-target="summary"></span>
-        <ul data-progress-target="steps"></ul>
-        <p data-progress-target="status"></p>
-        <progress max="100" data-progress-target="bar" hidden></progress>
       </div>
       ${NOTIFICATION_STACK}
     `;
@@ -106,7 +103,6 @@ describe("TranslateController", () => {
     );
     application = Application.start();
     await assemble(application, {
-      progress: ProgressController,
       translate: TranslateController,
       "translation-options": TranslationOptionsController,
     }).start();
@@ -116,24 +112,6 @@ describe("TranslateController", () => {
   afterEach(() => {
     application.stop();
     clearMocks();
-  });
-
-  // @behavior TL-065
-  it("shows how many Segments are translated beside the percentage", async () => {
-    await hold(projectOf());
-    translation = () => new Promise(() => {});
-    await start();
-
-    await emit("pipeline-progress", {
-      phase: "translate",
-      percent: 63,
-      count: { done_count: 132, total: 210 },
-    });
-    await settle();
-
-    expect(
-      document.querySelector('[data-progress-target="status"]')!.textContent,
-    ).toBe("翻譯 63%，132 / 210");
   });
 
   // @behavior TL-005
@@ -385,18 +363,20 @@ describe("TranslateController", () => {
         { shouldMockEvents: true },
       );
       application = Application.start();
-      await assemble(application, {
-        progress: ProgressController,
+      const assembly = assemble(application, {
         transcript: TranscriptController,
         "segment-changes": SegmentChangesController,
         translate: TranslateController,
         "translation-options": TranslationOptionsController,
-      }).start();
+      });
+      render(TaskProgress, {
+        context: pageContext(assembly.feed, assembly.taskRun),
+      });
+      await assembly.start();
       await settle();
     });
 
-    const isProgressShown = () =>
-      !document.querySelector<HTMLElement>("#progress")!.hidden;
+    const isProgressShown = () => progressSteps().length > 0;
 
     async function startFromDialog(): Promise<void> {
       document.querySelector<HTMLButtonElement>("#start")!.click();

@@ -6,9 +6,9 @@ import {
   type ProjectFeed,
 } from "../backend/project";
 import { translateSegments } from "../backend/translation";
+import type { TaskRun } from "../components/task_run.svelte";
 import { t } from "../i18n";
 import { notifyTranslation } from "../ui/notification";
-import type ProgressController from "./progress_controller";
 import type TranslationOptionsController from "./translation_options_controller";
 
 /**
@@ -27,7 +27,7 @@ export default class TranslateController extends Controller {
     "continuationHint",
     "startButton",
   ];
-  static outlets = ["progress", "translation-options"];
+  static outlets = ["translation-options"];
 
   /** The toolbar button, usable only for a Current Resource with an original subtitle. */
   declare readonly openButtonTarget: HTMLButtonElement;
@@ -43,10 +43,10 @@ export default class TranslateController extends Controller {
   /** Warns that a line translated again may read as going on from the one before, which is left as it is. */
   declare readonly continuationHintTarget: HTMLElement;
   declare readonly startButtonTarget: HTMLButtonElement;
-  declare readonly progressOutlet: ProgressController;
   declare readonly translationOptionsOutlet: TranslationOptionsController;
 
   declare readonly feed: ProjectFeed;
+  declare readonly taskRun: TaskRun;
 
   private unfollow?: () => void;
   private project: ProjectView | null = null;
@@ -83,7 +83,7 @@ export default class TranslateController extends Controller {
   }
 
   async start(): Promise<void> {
-    const progress = this.progressOutlet;
+    const progress = this.taskRun;
     if (progress.isBusy || !this.translationOptionsOutlet.reportValidity())
       return;
     this.dialogTarget.close();

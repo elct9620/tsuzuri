@@ -1,3 +1,7 @@
+<script lang="ts">
+  import TaskProgress from "./TaskProgress.svelte";
+</script>
+
 <div class="flex items-center gap-2 border-b border-base-300 px-4 py-2">
   <div class="flex min-w-0 grow items-center gap-2">
     <h2 class="truncate font-semibold" data-transcript-target="heading"></h2>
@@ -309,48 +313,7 @@
       <button>close</button>
     </form>
   </dialog>
-  <div
-    id="progress"
-    class="dropdown dropdown-end"
-    data-controller="progress"
-    data-action="rust:pipeline-progress@window->progress#show"
-    hidden
-  >
-    <div tabindex="0" role="button" class="btn btn-sm">
-      <span class="loading loading-spinner loading-xs"></span>
-      <span
-        class="max-w-28 truncate tabular-nums @5xl:max-w-none"
-        data-progress-target="summary"
-      ></span>
-      <i data-lucide="chevron-down" class="size-4"></i>
-    </div>
-    <div
-      tabindex="-1"
-      class="dropdown-content card card-sm z-20 w-96 bg-base-100 shadow-md"
-    >
-      <div class="card-body">
-        <ul class="steps w-full text-xs" data-progress-target="steps"></ul>
-        <p
-          class="whitespace-pre-line text-sm text-base-content/70"
-          data-progress-target="status"
-        ></p>
-        <progress
-          class="progress progress-primary w-full"
-          max="100"
-          data-progress-target="bar"
-          hidden
-        ></progress>
-        <div class="card-actions justify-end">
-          <button
-            type="button"
-            class="btn btn-sm"
-            data-action="progress#cancel"
-            data-i18n="work.cancelTask"
-          ></button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <TaskProgress />
   <button
     type="button"
     class="btn btn-square btn-sm"

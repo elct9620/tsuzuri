@@ -62,4 +62,47 @@ describe("drawPage", () => {
       ).toBe(t("work.into"));
     },
   );
+
+  it.each([
+    [
+      "#project-models",
+      [
+        ["transcription", "true", "projectModel", undefined],
+        ["translation", "true", "projectModel", undefined],
+      ],
+    ],
+    [
+      "#general-models",
+      [
+        ["transcription", undefined, undefined, "status"],
+        ["vad", undefined, undefined, "status"],
+        ["translation", undefined, undefined, "status"],
+        ["diarization", undefined, undefined, "status"],
+      ],
+    ],
+  ])(
+    "writes the Model Slots of %s for the controller that reads them",
+    (list, expected) => {
+      const page = document.createElement("div");
+
+      drawPage(page);
+
+      const slots = [
+        ...page.querySelectorAll<HTMLElement>(
+          `${list} [data-controller="model-slot"]`,
+        ),
+      ].map((slot) => {
+        const status = slot.querySelector<HTMLElement>(
+          '[data-model-slot-target="status"]',
+        )!;
+        return [
+          slot.dataset.modelSlotSlotValue,
+          slot.dataset.modelSlotIsProjectSlotValue,
+          status.dataset.projectSettingsTarget,
+          status.dataset.modelsTarget,
+        ];
+      });
+      expect(slots).toEqual(expected);
+    },
+  );
 });

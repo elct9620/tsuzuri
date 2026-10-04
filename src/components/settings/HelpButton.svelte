@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Info from "@lucide/svelte/icons/info";
   import type { ClassValue } from "svelte/elements";
 
   import { t } from "../../i18n";
@@ -17,5 +18,5 @@
   type="button"
   class={["cursor-help", tone]}
   aria-label={t(tip)}
-  data-tooltip={t(tip)}><i data-lucide="info" class="size-3.5"></i></button
+  data-tooltip={t(tip)}><Info class="size-3.5" /></button
 >

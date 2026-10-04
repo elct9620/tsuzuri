@@ -32,7 +32,6 @@ import TooltipController from "./controllers/tooltip_controller";
 import DiarizeController from "./controllers/diarize_controller";
 import TranscribeController from "./controllers/transcribe_controller";
 import TranscriptController from "./controllers/transcript_controller";
-import PreferencesController from "./controllers/preferences_controller";
 import TranslateController from "./controllers/translate_controller";
 import TranslationOptionsController from "./controllers/translation_options_controller";
 import UndoController, { typingOption } from "./controllers/undo_controller";
@@ -79,7 +78,6 @@ async function start(): Promise<void> {
     tooltip: TooltipController,
     transcribe: TranscribeController,
     transcript: TranscriptController,
-    preferences: PreferencesController,
     translate: TranslateController,
     "translation-options": TranslationOptionsController,
     undo: UndoController,

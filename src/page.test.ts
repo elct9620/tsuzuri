@@ -31,7 +31,6 @@ describe("drawPage", () => {
     ["Project's Models", "#project-models"],
     ["general Models", "#general-models"],
     ["repository dialog", "#repository-dialog"],
-    ["preferences", '[data-controller="preferences"]'],
     ["shortcuts dialog", '[data-shortcuts-target="dialog"]'],
     ["updates dialog", '[data-updates-target="dialog"]'],
     ["notification stack", "[data-notifications]"],
@@ -65,6 +64,24 @@ describe("drawPage", () => {
     }).nextElementSibling as HTMLElement;
     expect(
       within(generalTab).queryByRole("group", { hidden: true, name: t(name) }),
+    ).not.toBeNull();
+  });
+
+  it("writes the Choice Landings in the preferences tab", async () => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+
+    drawPage(page);
+
+    const preferencesTab = within(page).getByRole("radio", {
+      hidden: true,
+      name: t("settings.preferences"),
+    }).nextElementSibling as HTMLElement;
+    expect(
+      within(preferencesTab).queryByRole("group", {
+        hidden: true,
+        name: t("preferences.choosing"),
+      }),
     ).not.toBeNull();
   });
 

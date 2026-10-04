@@ -5,7 +5,7 @@ How Tsuzuri behaves as it is worked in, saved across launches and the same in ev
 ## Includes
 
 - `src-tauri/src/preference.rs`
-- `src/controllers/preferences_controller.test.ts`
+- `src/components/settings/Preferences.test.ts`
 
 ## `PF-001` Remembering the Preferences
 

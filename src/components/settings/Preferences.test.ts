@@ -1,24 +1,25 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
+import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { DEFAULT_PREFERENCES, type Preferences } from "../backend/preferences";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
-import PreferencesController from "./preferences_controller";
+import {
+  DEFAULT_PREFERENCES,
+  type Preferences as SavedPreferences,
+} from "../../backend/preferences";
+import { NOTIFICATION_STACK, notifications } from "../../ui/test_notification";
+import Preferences from "./Preferences.svelte";
 
-describe("PreferencesController", () => {
-  let application: Application;
-  let savedPreferences: Preferences;
+describe("Preferences", () => {
+  let savedPreferences: SavedPreferences;
   let savedArgs: unknown[];
   let isSavingRefused: boolean;
   let savedEvents: number;
   let listening: AbortController;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const landingSwitch = (source: string, half: string) =>
-    document.querySelector<HTMLInputElement>(
-      `[data-choice-source="${source}"][data-landing-switch="${half}"]`,
-    )!;
+  /** The switch named `name`, as its Choice Source and its column read. */
+  const switchByName = (name: string) =>
+    screen.getByRole<HTMLInputElement>("checkbox", { name });
 
   function turn(toggle: HTMLInputElement): void {
     toggle.checked = !toggle.checked;
@@ -26,22 +27,16 @@ describe("PreferencesController", () => {
   }
 
   async function openSettings(): Promise<void> {
-    application = Application.start();
-    application.register("preferences", PreferencesController);
+    render(Preferences);
     await settle();
   }
 
   beforeEach(async () => {
-    savedPreferences = structuredClone(DEFAULT_PREFERENCES) as Preferences;
+    savedPreferences = structuredClone(DEFAULT_PREFERENCES) as SavedPreferences;
     savedArgs = [];
     isSavingRefused = false;
     savedEvents = 0;
-    document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
-      <fieldset data-controller="preferences">
-        <ul data-preferences-target="landings"></ul>
-      </fieldset>
-    `;
+    document.body.innerHTML = NOTIFICATION_STACK;
     listening = new AbortController();
     window.addEventListener("preferences:saved", () => savedEvents++, {
       signal: listening.signal,
@@ -52,14 +47,14 @@ describe("PreferencesController", () => {
         if (isSavingRefused)
           return Promise.reject({ code: "io", detail: "denied" });
         savedArgs.push(args);
-        savedPreferences = (args as { preferences: Preferences }).preferences;
+        savedPreferences = (args as { preferences: SavedPreferences })
+          .preferences;
         return savedPreferences;
       }
     });
   });
 
   afterEach(() => {
-    application.stop();
     listening.abort();
     clearMocks();
   });
@@ -74,12 +69,9 @@ describe("PreferencesController", () => {
     await openSettings();
 
     expect(
-      [
-        ["text", "is_pausing"],
-        ["text", "is_from_start"],
-        ["time", "is_pausing"],
-        ["time", "is_from_start"],
-      ].map(([source, half]) => landingSwitch(source, half).checked),
+      ["文字或譯文：暫停", "文字或譯文：從頭", "時間：暫停", "時間：從頭"].map(
+        (name) => switchByName(name).checked,
+      ),
     ).toEqual([false, false, true, true]);
   });
 
@@ -87,28 +79,32 @@ describe("PreferencesController", () => {
     await openSettings();
 
     expect(
-      landingSwitch("region", "is_from_start").getAttribute("aria-label"),
-    ).toBe("時間軸區段：從頭");
+      within(screen.getByText("時間軸區段").closest("li")!)
+        .getAllByRole("checkbox")
+        .map((toggle) => toggle.getAttribute("aria-label")),
+    ).toEqual(["時間軸區段：暫停", "時間軸區段：從頭"]);
   });
 
   it("explains when each Choice Source is chosen from beside its name", async () => {
     await openSettings();
 
-    const helps = [
-      ...document.querySelectorAll<HTMLElement>(".list-row [data-tooltip]"),
-    ].map((help) => help.dataset.tooltip);
+    const helpBySource = (source: string) =>
+      within(screen.getByText(source).closest("li")!)
+        .getByRole("button")
+        .getAttribute("aria-label");
 
     expect([
-      helps.length,
-      helps.every((help) => help && !help.startsWith("preferences.")),
-    ]).toEqual([7, true]);
+      screen.getAllByRole("listitem").slice(1).length,
+      helpBySource("文字或譯文"),
+      helpBySource("時間"),
+    ]).toEqual([7, "點另一段的原文或譯文欄位", "點另一段的開始或結束時間"]);
   });
 
   // @behavior PF-004
   it("saves a switch as soon as it is turned, with every other landing as it was", async () => {
     await openSettings();
 
-    turn(landingSwitch("text", "is_pausing"));
+    turn(switchByName("文字或譯文：暫停"));
     await settle();
 
     expect(savedArgs).toEqual([
@@ -127,7 +123,7 @@ describe("PreferencesController", () => {
   it("tells the editor the Preferences were saved", async () => {
     await openSettings();
 
-    turn(landingSwitch("text", "is_pausing"));
+    turn(switchByName("文字或譯文：暫停"));
     await settle();
 
     expect(savedEvents).toBe(1);
@@ -137,7 +133,7 @@ describe("PreferencesController", () => {
   it("shows the switch as saved, and says so, when saving fails", async () => {
     await openSettings();
     isSavingRefused = true;
-    const pausing = landingSwitch("text", "is_pausing");
+    const pausing = switchByName("文字或譯文：暫停");
 
     turn(pausing);
     await settle();

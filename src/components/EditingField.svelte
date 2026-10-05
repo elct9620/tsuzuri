@@ -88,13 +88,6 @@
     setTimeout(() => (hasComposition = false), 0);
   }
 
-  /** Whether `event` splits the Segment: either platform's chord, as the text field has always taken both. */
-  function isSplitKey(event: KeyboardEvent): boolean {
-    return (
-      isShortcut(event, "split", true) || isShortcut(event, "split", false)
-    );
-  }
-
   function pressKey(event: KeyboardEvent): void {
     if (hasComposition || isComposingKey(event)) return;
     if (isShortcut(event, "next", isMac)) {
@@ -107,7 +100,7 @@
     } else if (isShortcut(event, "revert", isMac)) {
       event.preventDefault();
       revert();
-    } else if (kind === "text" && isSplitKey(event)) {
+    } else if (kind === "text" && isShortcut(event, "split", isMac)) {
       event.preventDefault();
       void split();
     }

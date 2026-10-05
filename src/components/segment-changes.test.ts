@@ -310,6 +310,24 @@ describe("Segment Changes", () => {
     expect(changes).toEqual([{ kind: "split", index: 0, at: 2 }]);
   });
 
+  // @behavior ED-192
+  it("leaves the other platform's split shortcut alone", async () => {
+    await hold(threeSegments);
+    const text = placeCaret();
+
+    text.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        metaKey: true,
+        altKey: true,
+        bubbles: true,
+      }),
+    );
+    await settle();
+
+    expect(changes).toEqual([]);
+  });
+
   // @behavior ED-018
   it("asks to merge the Checked Segments", async () => {
     await hold(threeSegments);

@@ -400,6 +400,16 @@ Subtitle editors bind splitting to a modified line break, so a long cue can be s
 | When | Ctrl+Alt+Enter is pressed |
 | Then | the Project is asked to split it after two characters |
 
+## `ED-192` Leaving another platform's split shortcut alone
+
+Each platform splits by its own chord, as editors on it bind keys, so the other platform's chord types nothing and splits nothing.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment reads `你好世界`, with the Cursor after `你好` in its text, on Windows or Linux |
+| When | ⌘+Option+Enter is pressed |
+| Then | the Project is not asked to split |
+
 ## `ED-053` Moving to the second half after a split
 
 Editing goes on from where the text was cut, which is the start of the second half.

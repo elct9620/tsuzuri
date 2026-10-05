@@ -272,7 +272,7 @@ A time field takes a time as Aegisub's does: each digit overwrites the one at th
 
 | Step | Statement |
 | --- | --- |
-| Given | a Segment's start reading `00:00:32.360`, all of it selected as Tab leaves it |
+| Given | a Segment's start reading `00:00:32.360`, all of it selected, as moving into it by keyboard leaves it |
 | When | `1` is typed |
 | Then | it reads `10:00:32.360` with the caret after the `1` |
 

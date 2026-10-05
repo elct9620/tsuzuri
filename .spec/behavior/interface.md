@@ -114,7 +114,7 @@ A dialog is drawn above the whole page, so the tooltip is drawn in the layer abo
 
 ## `IF-053` Showing a tooltip once focus reaches an element
 
-The keyboard reaches the same explanation the pointer does, as Tab moves to each ⓘ in the settings.
+The keyboard reaches the same explanation the pointer does, moving focus to each ⓘ in the settings in turn.
 
 | Step | Statement |
 | --- | --- |

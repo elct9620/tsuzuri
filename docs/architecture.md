@@ -147,7 +147,7 @@ controller ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/command
 |---|---|---|
 | `project-changed` | 改變專案的指令 | `ProjectFeed` |
 | `pipeline-progress` | 用例經 `Progress` | `TaskProgress` |
-| `edit-command` | macOS 編輯選單 | `Undo`、`segment-changes` |
+| `edit-command` | macOS 編輯選單 | `Undo`、`SegmentList` |
 | `changed-elsewhere-kept` | 重新載入 | `Page` |
 | `srt-requested` | 第二次啟動、macOS 開檔 | `Page` |
 | `video-window-closing` | 關閉影片視窗 | `preview` |
@@ -568,7 +568,7 @@ body
   +-- Tooltip               popover, shown again over each modal
 ```
 
-祖先沒有畫出來時，modal 開了也看不到，所以不放進其他 modal 或會隱藏的區域。開啟函式由 `Page.svelte` 以 prop 往下交；hub controller 要開 modal 時，在 window 送事件。
+祖先沒有畫出來時，modal 開了也看不到，所以不放進其他 modal 或會隱藏的區域。開啟函式由 `Page.svelte` 以 prop 往下交；段落選單與勾選工具列隔了幾層，改經 context 取得。
 
 ### 4.2 相依規則
 
@@ -616,7 +616,7 @@ main.ts -> application.start() -> assembly.start()
 |---|---|---|
 | Composition Root | 組裝 app 範圍物件 | `assembly.ts` |
 | 註冊時注入 | controller 取得依賴 | `class extends` |
-| context 注入 | Svelte 元件取得共用的物件 | `projectFeed()`、`editingSession()` |
+| context 注入 | Svelte 元件取得共用的物件 | `projectFeed()`、`segmentDialogs()` |
 | 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
 feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`TaskRun` 與 `AppUpdates` 也經 context 共用。頁面寫好後 Stimulus 才啟動，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。controller 與 Svelte 元件都不自己向 Rust 讀專案。
@@ -652,7 +652,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 | Controller | 畫面區域 |
 |---|---|
-| `segment-changes` | 段落的改動與勾選工具列 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
@@ -664,7 +663,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 事件 | 送出者 | 接收者與用途 |
 |---|---|---|
 | `transcript:shown` | `SegmentRows` | `comparison` 重新標記 |
-| `transcript:shown` | `SegmentRows` | `segment-changes` 顯示入口；`SearchBar` 重新搜尋 |
+| `transcript:shown` | `SegmentRows` | `SearchBar` 重新搜尋 |
 | `transcript:selection` | `SegmentRows` | 焦點欄位跟上選取 |
 | `comparison:choose-in-versions` | `comparison` | `VersionsDialog` 開在該字幕 |
 | `versions:compare-with` | `VersionsDialog` | `comparison` 換對照 |
@@ -673,17 +672,13 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `TaskProgress` 顯示 Phase |
 | `rust:update-progress` | Rust，經 `relayEvents` | `UpdatesDialog` 顯示下載進度 |
-| `rust:edit-command` | Rust，經 `relayEvents` | `Undo`、`SegmentList`、`segment-changes` |
+| `rust:edit-command` | Rust，經 `relayEvents` | `Undo`、`SegmentList` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `Page` 顯示通知 |
 | `rust:srt-requested` | Rust，經 `relayEvents` | `Page` 開啟系統要開的 SRT |
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `ModelSlot` 顯示下載進度 |
 | `system:color-scheme` | 系統，經 `assembly.ts` | `timeline` 重畫波形 |
 | `preferences:saved` | `Preferences` | `timeline` 重讀換段的偏好 |
 | `preview:playing` | `preview` | `SegmentRows` 標出播放中，追蹤時捲動 |
-| `segment-changes:speakers` | `segment-changes` | `SpeakersDialog` 為 Checked Segments 開啟 |
-| `segment-changes:shift` | `segment-changes` | `ShiftDialog` 開啟平移 |
-| `segment-changes:retranslate` | `segment-changes` | `TranslationDialog` 開啟重新翻譯 |
-| `segment-changes:retranscribe` | `segment-changes` | `TranscriptionDialog` 開啟重新轉錄 |
 
 #### 4.6.1 帶行為的 Svelte 元件
 
@@ -711,9 +706,9 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ExportMenu` | 匯出選單與純文字的兩個開關 |
 | `EditorBar` | 資源名稱與譯文選單 |
 | `SearchBar` | 搜尋列與符合處標記 |
-| `SegmentList` | 清理簡體的快速鍵與編輯選單 |
-| `CheckedBar` | 勾選工具列的清理簡體 |
-| `SegmentRows`、`SegmentRow` | 段落列、Placeholder、說話者選單、Cursor、追蹤播放 |
+| `SegmentList` | 段落的快速鍵與編輯選單 |
+| `CheckedBar` | 勾選工具列 |
+| `SegmentRows`、`SegmentRow` | 段落列與選單、Placeholder、Cursor、追蹤播放 |
 | `ResourceList` | 資源列、詞彙表、重新載入、⌘/Ctrl+B |
 | `TranscriptionDialog`、`TranslationDialog` | 任務 modal，含重做 |
 | `TranslationOptions` | 兩個任務 modal 共用的翻譯選項 |
@@ -730,7 +725,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 #### 4.6.2 共用的狀態與動作
 
-共用的狀態由 Page 保存，自己使用或以 prop 交下；共用的動作寫成模組。
+共用的狀態由 Page 保存，自己使用或以 prop、context 交下；共用的動作寫成模組。
 
 | 共用 | 位置 | 使用者 |
 |---|---|---|
@@ -741,6 +736,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 開啟、重新載入、命名 | `project-actions.ts` | 起始畫面、工具列、資源清單 |
 | 寫入說話者後的通知 | `speaker-actions.ts` | 說話者 modal、段落列 |
 | 清理簡體與通知 | `cleanup-actions.ts` | 段落列、勾選工具列、快速鍵 |
+| Segment Changes 的選項 | `segment-changes.ts` | 段落選單、勾選工具列、右鍵 |
 
 資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。
 

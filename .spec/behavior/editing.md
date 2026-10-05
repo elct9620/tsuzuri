@@ -189,6 +189,14 @@ The translation being written is held from typing, and a held field is still the
 | When | `co` is typed as a new name in the first Segment's Speaker menu |
 | Then | the edit is written to the Project as its Speaker |
 
+## `ED-191` Leaving Enter to an input method in a new Speaker name
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel, an input method composing a new name in the first Segment's Speaker menu |
+| When | Enter is pressed to pick a candidate |
+| Then | no Speaker is written and the input method keeps the key |
+
 ## `ED-013` Offering every Speaker whatever a Segment names
 
 A choice limited to names like the one already set would hide the others, the very ones a correction reaches for.

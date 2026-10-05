@@ -11,7 +11,6 @@ import PreviewController from "./controllers/preview-controller";
 import SegmentChangesController, {
   typingOption,
 } from "./controllers/segment-changes-controller";
-import SpeakersController from "./controllers/speakers-controller";
 import TimeFieldController from "./controllers/time-field-controller";
 import TimelineController, {
   controlOption,
@@ -36,7 +35,6 @@ async function start(): Promise<void> {
     preview: PreviewController,
     cleanup: CleanupController,
     "segment-changes": SegmentChangesController,
-    speakers: SpeakersController,
     "time-field": TimeFieldController,
     timeline: TimelineController,
   });

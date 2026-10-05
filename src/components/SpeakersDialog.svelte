@@ -1,29 +1,16 @@
 <!--
   @component
-  The Speaker dialog, naming many Segments at once, and the writing of a Speaker a Segment's menu
-  names, which that menu asks for as `speakers:name` on the window. Either way a new name is
-  offered to the Translation Glossary. The checked bar opens the dialog for the Checked Segments
-  by `segment-changes:speakers`.
+  The Speaker dialog, naming many Segments at once; a new name is offered to the Translation
+  Glossary. The checked bar opens it for the Checked Segments by `segment-changes:speakers`.
 -->
 <script lang="ts">
   import { flushSync, onMount } from "svelte";
 
-  import {
-    type ProjectView,
-    saveTranslationGlossary,
-    type Segment,
-    translationGlossaryTable,
-  } from "../backend/project";
-  import type { Outcome } from "../editor";
+  import type { ProjectView, Segment } from "../backend/project";
   import { t } from "../i18n";
-  import {
-    type Notification,
-    notify,
-    notifyEdit,
-    notifyFailure,
-  } from "../ui/notification.svelte";
   import { speakerNames } from "../ui/speakers";
   import { editingSession, projectFeed } from "./context";
+  import { notifyNamed } from "./speaker-actions";
 
   /** Which Segments the dialog names. */
   type SpeakerScope =
@@ -64,14 +51,7 @@
     const indexes = scopeIndexes();
     const name = newSpeaker.trim();
     dialog.close();
-    notifyNamed(await session.setSpeakers(indexes, name), name);
-  }
-
-  /** Writes the Speaker a Segment's menu names. */
-  async function writeSpeaker({
-    detail: { index, name },
-  }: CustomEvent<{ index: number; name: string }>): Promise<void> {
-    notifyNamed(await session.editText(index, "speaker", name), name);
+    notifyNamed(feed, await session.setSpeakers(indexes, name), name);
   }
 
   /** The positions of the Segments the chosen scope takes in. */
@@ -91,66 +71,11 @@
     );
   }
 
-  /**
-   * Says a Speaker was named, offering the name to the Translation Glossary in a Notification when
-   * it names none such, or why it was not.
-   */
-  function notifyNamed(outcome: Outcome, name: string): void {
-    const offer = speakerOffer(name);
-    if (outcome.kind !== "written" || !offer) {
-      notifyEdit(outcome);
-      return;
-    }
-    notify({ title: t("edit.saved"), kind: "success", ...offer });
-  }
-
-  /** An offer to add the Speaker just named to the Translation Glossary, when it names none such. */
-  function speakerOffer(
-    name: string,
-  ): Pick<Notification, "detail" | "action"> | undefined {
-    const glossarySpeakers = project?.translation_glossary?.speakers ?? [];
-    if (name === "" || glossarySpeakers.includes(name)) return undefined;
-    return {
-      detail: t("edit.newSpeaker", { name }),
-      action: {
-        label: t("edit.addSpeaker"),
-        run: () => void addSpeaker(name),
-      },
-    };
-  }
-
-  /** Marks the term `name` in the Primary Language column as a Speaker, adding the term when the glossary has none. */
-  async function addSpeaker(name: string): Promise<void> {
-    try {
-      const table = await translationGlossaryTable();
-      const column = project ? table.languages.indexOf(project.language) : -1;
-      const term = table.rows.find((row) => row.words[column] === name);
-      const rows = term
-        ? table.rows.map((row) =>
-            row === term ? { ...row, is_speaker: true } : row,
-          )
-        : [
-            ...table.rows,
-            {
-              words: table.languages.map((_, at) =>
-                at === column ? name : "",
-              ),
-              is_speaker: true,
-            },
-          ];
-      await saveTranslationGlossary(rows);
-      notify({ title: t("edit.speakerAdded", { name }), kind: "success" });
-    } catch (error) {
-      notifyFailure(t("edit.speakerNotAdded"), error);
-    }
-  }
-
   onMount(() => feed.follow((next) => (project = next)));
 </script>
 
 <svelte:window
   onsegment-changes:speakers={() => openFor(session.checkedIndexes)}
-  onspeakers:name={writeSpeaker}
 />
 
 <dialog class="modal" bind:this={dialog}>

@@ -17,9 +17,7 @@ import {
   notifications,
 } from "./test-notifications";
 import { pageContext } from "./context";
-import SpeakersDialog from "./SpeakersDialog.svelte";
 import { SAVE_MARK, saveMark } from "../ui/test-save-mark";
-import SpeakersController from "../controllers/speakers-controller";
 import { PlaybackFollowing } from "./playback-following.svelte";
 import SegmentList from "./SegmentList.svelte";
 import { TaskRun } from "./task-run.svelte";
@@ -94,7 +92,7 @@ describe("SegmentList", () => {
     };
     document.body.innerHTML = `
       ${SAVE_MARK}
-      <section data-controller="speakers" data-action="transcript:shown->speakers#follow"></section>
+      <section></section>
     `;
     showNotifications();
     mockIPC(
@@ -108,10 +106,7 @@ describe("SegmentList", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    const assembly = assemble(application, {
-      field: FieldController,
-      speakers: SpeakersController,
-    });
+    const assembly = assemble(application, { field: FieldController });
     run = new TaskRun();
     const context = pageContext(assembly.feed, assembly.session, run);
     segmentList = render(SegmentList, {
@@ -119,8 +114,6 @@ describe("SegmentList", () => {
       props: { following: new PlaybackFollowing() },
       context,
     }).component;
-    // Writes the Speaker a Segment's menu names.
-    render(SpeakersDialog, { context });
     await assembly.start();
     await settle();
   });
@@ -392,6 +385,7 @@ describe("SegmentList", () => {
   function openSpeakers(index = 0): HTMLElement {
     const opener = document.querySelectorAll<HTMLElement>(".speaker")[index];
     opener.dispatchEvent(new FocusEvent("focus"));
+    flushSync();
     return opener.parentElement!;
   }
 
@@ -406,7 +400,9 @@ describe("SegmentList", () => {
     const input =
       openSpeakers().querySelector<HTMLInputElement>(".new-speaker")!;
     input.value = name;
-    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
     await settle();
   }
 
@@ -442,6 +438,30 @@ describe("SegmentList", () => {
       field: "speaker",
       value: "co",
     });
+  });
+
+  // @behavior ED-191
+  it("leaves Enter to an input method composing a new Speaker name", async () => {
+    await hold(
+      projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "你好" }] }),
+    );
+    const input =
+      openSpeakers().querySelector<HTMLInputElement>(".new-speaker")!;
+    input.value = "小明";
+
+    const enter = new KeyboardEvent("keydown", {
+      key: "Enter",
+      isComposing: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    input.dispatchEvent(enter);
+    await settle();
+
+    expect([sent("edit_segment"), enter.defaultPrevented]).toEqual([
+      undefined,
+      false,
+    ]);
   });
 
   // @behavior ED-013

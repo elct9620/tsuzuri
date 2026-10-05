@@ -24,9 +24,12 @@
     type TranscriptView,
   } from "../editor";
   import { t } from "../i18n";
+  import { closeMenu } from "../ui/menu";
   import { shortcutById, shortcutText } from "../ui/shortcuts";
+  import { speakerNames } from "../ui/speakers";
   import { formatTime, TIME_FIELD_ACTIONS } from "../ui/time";
-  import { editingSession } from "./context";
+  import { editingSession, projectFeed } from "./context";
+  import { notifyNamed } from "./speaker-actions";
 
   /** What a field hands the session as the user works in it. */
   const FIELD_ACTIONS =
@@ -76,10 +79,14 @@
     isTypingKept: boolean;
   } = $props();
 
+  const feed = projectFeed();
   const session = editingSession();
   let row = $state<HTMLLIElement>();
   let startInput = $state<HTMLInputElement>();
   let endInput = $state<HTMLInputElement>();
+  let newSpeakerInput = $state<HTMLInputElement>();
+  /** The Speakers the Speaker menu offers, read from the Project each time it opens. */
+  let offeredSpeakers = $state<string[]>([]);
   let fieldByKind: Partial<Record<CursorField, HTMLElement>> = {};
 
   const isFree = (kind: FieldKind) =>
@@ -198,6 +205,31 @@
       event.target.closest(".speaker-menu") !== null;
     session.makeCurrent(index, isSpeakerMenu ? "speaker" : undefined);
   }
+
+  /** Lists every Speaker named as the Speaker menu opens, with no new name typed yet. */
+  function listSpeakers(): void {
+    offeredSpeakers = speakerNames(feed.project);
+    if (newSpeakerInput) newSpeakerInput.value = "";
+  }
+
+  /** Writes `name` as the Segment's Speaker, closing the Speaker menu `item` was chosen from; an empty name clears it. */
+  async function writeSpeaker(
+    item: EventTarget | null,
+    name: string,
+  ): Promise<void> {
+    closeMenu(item);
+    notifyNamed(feed, await session.editText(index, "speaker", name), name);
+  }
+
+  /** Names the Segment's Speaker as typed, once Enter is pressed; a key the input method is still composing with stays its own. */
+  function nameSpeaker(event: KeyboardEvent): void {
+    if (event.key !== "Enter" || event.isComposing || event.keyCode === 229)
+      return;
+    event.preventDefault();
+    const input = event.currentTarget as HTMLInputElement;
+    const name = input.value.trim();
+    if (name !== "") void writeSpeaker(input, name);
+  }
 </script>
 
 {#snippet choiceLabel(label: string, shortcutId?: string)}
@@ -258,8 +290,7 @@
           isOtherHeld && "btn-disabled",
         ]}
         data-field="speaker"
-        data-action="focus->speakers#list"
-        data-speakers-index-param={index}
+        onfocus={listSpeakers}
       >
         {speaker || t("edit.speaker")}
       </div>
@@ -273,11 +304,32 @@
           <input
             class="new-speaker input input-xs"
             placeholder={t("edit.newSpeakerName")}
-            data-action="keydown.enter->speakers#name:!composing:prevent"
-            data-speakers-index-param={index}
+            onkeydown={nameSpeaker}
             disabled={isOtherHeld}
+            bind:this={newSpeakerInput}
           />
-          <ul class="speakers menu menu-sm w-full p-0"></ul>
+          <ul class="speakers menu menu-sm w-full p-0">
+            {#each offeredSpeakers as name (name)}
+              <li>
+                <button
+                  type="button"
+                  class={[name === speaker && "menu-active"]}
+                  onclick={({ currentTarget }) =>
+                    writeSpeaker(currentTarget, name)}>{name}</button
+                >
+              </li>
+            {/each}
+            {#if speaker !== ""}
+              <li>
+                <button
+                  type="button"
+                  onclick={({ currentTarget }) =>
+                    writeSpeaker(currentTarget, "")}
+                  >{t("edit.clearSpeaker")}</button
+                >
+              </li>
+            {/if}
+          </ul>
         </div>
       </div>
     </div>

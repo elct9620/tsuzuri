@@ -1,8 +1,7 @@
 /**
  * The window events Svelte Components bind with `<svelte:window>`: Rust events relayed as
  * `rust:<name>` with the payload as `detail` (`backend/events.ts`), the editor's requests to run
- * a task again over the Segments it names, to shift them or to name their Speakers, a Speaker menu's request
- * to write the name chosen, the compare menu's request to choose in the Versions dialog, the
+ * a task again over the Segments it names, to shift them or to name their Speakers, the compare menu's request to choose in the Versions dialog, the
  * Segment list telling it has shown the Segments anew, the session telling the Cursor or the
  * checks moved, and the Preview telling which Segments it plays.
  */
@@ -37,9 +36,6 @@ declare module "svelte/elements" {
     ) => void;
     "onsegment-changes:shift"?: (event: CustomEvent) => void;
     "onsegment-changes:speakers"?: (event: CustomEvent) => void;
-    "onspeakers:name"?: (
-      event: CustomEvent<{ index: number; name: string }>,
-    ) => void;
     "ontranscript:shown"?: (
       event: CustomEvent<{ project: ProjectView | null }>,
     ) => void;

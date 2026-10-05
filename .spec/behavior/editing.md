@@ -9,7 +9,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/components/ExportMenu.test.ts`
 - `src/components/ResourceList.test.ts`
 - `src/controllers/segment-changes-controller.test.ts`
-- `src/controllers/speakers-controller.test.ts`
+- `src/components/SpeakersDialog.test.ts`
 - `src/components/TranslationDialog.test.ts`
 - `src/controllers/field-controller.test.ts`
 - `src/controllers/time-field-controller.test.ts`

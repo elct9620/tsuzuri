@@ -138,6 +138,7 @@ const en = {
     speakersUnnamed: "Segments without a speaker",
     speakersNamedBefore: "Segments said by",
     speakersNamedAfter: "",
+    speakersRenamed: "Speaker to rename",
     speakersTo: "Set to",
     speakersNone: "Leave empty to clear",
     apply: "Apply",

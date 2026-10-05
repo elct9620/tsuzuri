@@ -372,6 +372,23 @@ describe("drawPage", () => {
     page.remove();
   });
 
+  it("opens the Speaker dialog from the editor bar", async () => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    await tick();
+
+    within(page)
+      .getByRole("button", { hidden: true, name: t("edit.speakers") })
+      .click();
+
+    expect(
+      within(page)
+        .getByRole("heading", { hidden: true, name: t("edit.speakersTitle") })
+        .closest("dialog")!.open,
+    ).toBe(true);
+  });
+
   it("opens the Versions dialog from the editor bar", async () => {
     mockPageMount(null, { subtitle_versions: () => [] });
     const page = document.createElement("div");

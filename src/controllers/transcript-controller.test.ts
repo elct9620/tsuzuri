@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { render } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -15,6 +16,8 @@ import {
   notifications,
 } from "../components/test-notifications";
 import type { TaskKind } from "../ui/progress";
+import { pageContext } from "../components/context";
+import SpeakersDialog from "../components/SpeakersDialog.svelte";
 import { SAVE_MARK, saveMark } from "../ui/test-save-mark";
 import SpeakersController from "./speakers-controller";
 import TranscriptController from "./transcript-controller";
@@ -112,11 +115,16 @@ describe("TranscriptController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    await assemble(application, {
+    const assembly = assemble(application, {
       field: FieldController,
       speakers: SpeakersController,
       transcript: TranscriptController,
-    }).start();
+    });
+    // Writes the Speaker a Segment's menu names.
+    render(SpeakersDialog, {
+      context: pageContext(assembly.feed, assembly.session),
+    });
+    await assembly.start();
     await settle();
   });
 

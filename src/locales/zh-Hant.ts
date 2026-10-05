@@ -134,6 +134,7 @@ const zhHant: typeof en = {
     speakersUnnamed: "沒有說話者的段落",
     speakersNamedBefore: "說話者是",
     speakersNamedAfter: "的段落",
+    speakersRenamed: "要改名的說話者",
     speakersTo: "設為",
     speakersNone: "留空則清除",
     apply: "套用",

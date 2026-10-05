@@ -24,6 +24,7 @@
   import RepositoryDialog from "./components/settings/RepositoryDialog.svelte";
   import SettingsDialog from "./components/SettingsDialog.svelte";
   import ShortcutsDialog from "./components/ShortcutsDialog.svelte";
+  import SpeakersDialog from "./components/SpeakersDialog.svelte";
   import StartScreen from "./components/StartScreen.svelte";
   import Toolbar from "./components/Toolbar.svelte";
   import Tooltip from "./components/Tooltip.svelte";
@@ -43,6 +44,7 @@
   let shortcutsDialog: ShortcutsDialog;
   let replacementDialog: ReplacementDialog;
   let versionsDialog: VersionsDialog;
+  let speakersDialog: SpeakersDialog;
   let segmentList: SegmentList;
 
   const openSettings = () => settingsDialog.open();
@@ -72,7 +74,7 @@
 <main
   class="flex h-dvh flex-col"
   data-controller="transcript segment-changes comparison speakers cleanup"
-  data-action="progress:task->transcript#followTask selectionchange@document->transcript#followSelection pointerup@window->transcript#releasePointer editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->segment-changes#followTasks versions:compare-with@window->comparison#compareWith keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow rust:edit-command@window->segment-changes#applyEditCommand"
+  data-action="progress:task->transcript#followTask selectionchange@document->transcript#followSelection pointerup@window->transcript#releasePointer editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow transcript:shown->segment-changes#followTasks versions:compare-with@window->comparison#compareWith keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow rust:edit-command@window->segment-changes#applyEditCommand"
 >
   {#if project === null}
     <StartScreen {recentProjects} {openSettings} />
@@ -108,6 +110,7 @@
           openReplacement={() => replacementDialog.open()}
           openVersions={() => versionsDialog.open()}
           openSearch={() => segmentList.openSearch()}
+          openSpeakers={() => speakersDialog.open()}
         />
         <Preview />
       </div>
@@ -131,6 +134,7 @@
 <GlossaryDialog bind:this={glossaryDialog} />
 <ReplacementDialog bind:this={replacementDialog} />
 <VersionsDialog bind:this={versionsDialog} />
+<SpeakersDialog bind:this={speakersDialog} />
 <ShortcutsDialog bind:this={shortcutsDialog} />
 <UpdatesDialog />
 <Notifications />

@@ -48,6 +48,7 @@ describe("EditorBar", () => {
         openReplacement: () => {},
         openVersions: () => {},
         openSearch: () => {},
+        openSpeakers: () => {},
       },
       context: pageContext(feed, new EditingSession(editingPort)),
     });

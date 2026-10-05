@@ -1,8 +1,9 @@
 /**
  * The window events Svelte Components bind with `<svelte:window>`: Rust events relayed as
  * `rust:<name>` with the payload as `detail` (`backend/events.ts`), the editor's requests to run
- * a task again over the Segments it names, the compare menu's request to choose in the
- * Versions dialog, and the transcript telling it has shown the Segments anew.
+ * a task again over the Segments it names or to name their Speakers, a Speaker menu's request
+ * to write the name chosen, the compare menu's request to choose in the Versions dialog, and the
+ * transcript telling it has shown the Segments anew.
  */
 
 import type { PipelineProgress } from "../backend/progress";
@@ -29,6 +30,10 @@ declare module "svelte/elements" {
     ) => void;
     "onsegment-changes:retranslate"?: (
       event: CustomEvent<{ indexes: number[] }>,
+    ) => void;
+    "onsegment-changes:speakers"?: (event: CustomEvent) => void;
+    "onspeakers:name"?: (
+      event: CustomEvent<{ index: number; name: string }>,
     ) => void;
     "ontranscript:shown"?: (
       event: CustomEvent<{ project: ProjectView | null }>,

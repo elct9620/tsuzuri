@@ -15,9 +15,11 @@
     openReplacement: () => void;
     openVersions: () => void;
     openSearch: () => void;
+    openSpeakers: () => void;
   }
 
-  let { openReplacement, openVersions, openSearch }: Props = $props();
+  let { openReplacement, openVersions, openSearch, openSpeakers }: Props =
+    $props();
 
   const feed = projectFeed();
   let project = $state<ProjectView | null>(null);
@@ -105,7 +107,7 @@
   <button
     type="button"
     class="btn btn-sm"
-    data-action="speakers#open"
+    onclick={openSpeakers}
     data-i18n-label="edit.speakers"
     data-i18n-tooltip="edit.speakers"
   >
@@ -114,81 +116,6 @@
       data-i18n="edit.speakers"
     ></span>
   </button>
-  <dialog class="modal" data-speakers-target="dialog">
-    <div class="modal-box max-w-md">
-      <h3 class="mb-2 text-lg font-bold" data-i18n="edit.speakersTitle"></h3>
-      <fieldset class="fieldset gap-2 text-sm">
-        <legend class="fieldset-legend" data-i18n="edit.speakersScope"></legend>
-        <label
-          class="flex items-center gap-2"
-          data-speakers-target="checkedChoice"
-        >
-          <input
-            type="radio"
-            name="speaker-scope"
-            value="checked-segments"
-            class="radio radio-sm"
-            data-speakers-target="scope"
-          />
-          <span data-speakers-target="checkedCount"></span>
-        </label>
-        <label class="flex items-center gap-2">
-          <input
-            type="radio"
-            name="speaker-scope"
-            value="all-segments"
-            class="radio radio-sm"
-            data-speakers-target="scope"
-          />
-          <span data-i18n="edit.speakersEvery"></span>
-        </label>
-        <label class="flex items-center gap-2">
-          <input
-            type="radio"
-            name="speaker-scope"
-            value="unnamed-segments"
-            class="radio radio-sm"
-            data-speakers-target="scope"
-          />
-          <span data-i18n="edit.speakersUnnamed"></span>
-        </label>
-        <label class="flex items-center gap-2">
-          <input
-            type="radio"
-            name="speaker-scope"
-            value="named-segments"
-            class="radio radio-sm"
-            data-speakers-target="scope"
-          />
-          <span data-i18n="edit.speakersNamedBefore"></span>
-          <select
-            class="select select-xs w-auto"
-            data-speakers-target="renamedSpeaker"
-          ></select>
-          <span data-i18n="edit.speakersNamedAfter"></span>
-        </label>
-      </fieldset>
-      <fieldset class="fieldset gap-2 text-sm">
-        <legend class="fieldset-legend" data-i18n="edit.speakersTo"></legend>
-        <input class="input input-sm" data-speakers-target="newSpeaker" />
-        <div class="flex flex-wrap gap-1" data-speakers-target="names"></div>
-      </fieldset>
-      <div class="modal-action">
-        <form method="dialog">
-          <button class="btn" data-i18n="work.cancel"></button>
-        </form>
-        <button
-          type="button"
-          class="btn btn-primary"
-          data-action="speakers#apply"
-          data-i18n="edit.apply"
-        ></button>
-      </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-      <button>close</button>
-    </form>
-  </dialog>
   <button
     type="button"
     class="btn btn-sm"

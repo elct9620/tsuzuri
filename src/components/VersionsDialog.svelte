@@ -236,7 +236,9 @@
         {/each}
       </select>
     </label>
-    <ul class="list rounded-box border border-base-300 text-sm">
+    <ul
+      class="list max-h-48 overflow-y-auto rounded-box border border-base-300 text-sm"
+    >
       <li class="list-row">{t("versions.now")}</li>
       {#each backups as backup (backup.file)}
         <li class="list-row items-center">

@@ -23,6 +23,7 @@
   import LicensesDialog from "./components/settings/LicensesDialog.svelte";
   import RepositoryDialog from "./components/settings/RepositoryDialog.svelte";
   import SettingsDialog from "./components/SettingsDialog.svelte";
+  import ShiftDialog from "./components/ShiftDialog.svelte";
   import ShortcutsDialog from "./components/ShortcutsDialog.svelte";
   import SpeakersDialog from "./components/SpeakersDialog.svelte";
   import StartScreen from "./components/StartScreen.svelte";
@@ -135,6 +136,7 @@
 <ReplacementDialog bind:this={replacementDialog} />
 <VersionsDialog bind:this={versionsDialog} />
 <SpeakersDialog bind:this={speakersDialog} />
+<ShiftDialog />
 <ShortcutsDialog bind:this={shortcutsDialog} />
 <UpdatesDialog />
 <Notifications />

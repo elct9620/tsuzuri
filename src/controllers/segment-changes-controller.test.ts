@@ -95,10 +95,7 @@ describe("SegmentChangesController", () => {
           <button id="open-shift" data-action="segment-changes#openShift">平移</button>
           <button id="delete-checked" data-action="segment-changes#deleteChecked">刪除</button>
         </div>
-        <dialog data-segment-changes-target="shiftDialog">
-          <input type="number" data-segment-changes-target="offset" />
-          <button id="shift" data-action="segment-changes#shift">平移</button>
-        </dialog>
+        <dialog><button>平移</button></dialog>
         <ol data-transcript-target="list"></ol>
       </section>
     `;
@@ -311,60 +308,6 @@ describe("SegmentChangesController", () => {
     await settle();
 
     expect(changes).toEqual([{ kind: "merge", first: 0, last: 1 }]);
-  });
-
-  // @behavior ED-019
-  it("asks to shift the Checked Segments", async () => {
-    await hold(threeSegments);
-    await check(1, 2);
-    document.querySelector<HTMLButtonElement>("#open-shift")!.click();
-    document.querySelector<HTMLInputElement>(
-      '[data-segment-changes-target="offset"]',
-    )!.value = "500";
-
-    document.querySelector<HTMLButtonElement>("#shift")!.click();
-    await settle();
-
-    expect(changes).toEqual([
-      { kind: "shift", first: 1, last: 2, offset_ms: 500 },
-    ]);
-  });
-
-  // @behavior ED-113
-  it("shifts nothing while the offset is empty", async () => {
-    await hold(threeSegments);
-    await check(1, 2);
-    document.querySelector<HTMLButtonElement>("#open-shift")!.click();
-    document.querySelector<HTMLInputElement>(
-      '[data-segment-changes-target="offset"]',
-    )!.value = "";
-
-    document.querySelector<HTMLButtonElement>("#shift")!.click();
-    await settle();
-
-    expect([
-      changes,
-      document.querySelector<HTMLDialogElement>("dialog")!.open,
-    ]).toEqual([[], true]);
-  });
-
-  // @behavior ED-114
-  it("shifts nothing once no Segment is checked", async () => {
-    await hold(threeSegments);
-    await check(1);
-    document.querySelector<HTMLButtonElement>("#open-shift")!.click();
-    document.querySelector<HTMLInputElement>(
-      '[data-segment-changes-target="offset"]',
-    )!.value = "500";
-    const checkbox = row(1).querySelector<HTMLInputElement>("input.check")!;
-    checkbox.checked = false;
-    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-    await settle();
-
-    document.querySelector<HTMLButtonElement>("#shift")!.click();
-    await settle();
-
-    expect(changes).toEqual([]);
   });
 
   // @behavior ED-020
@@ -1062,9 +1005,7 @@ describe("SegmentChangesController", () => {
     it("deletes nothing while a dialog is open", async () => {
       await hold(threeSegments);
       row(1).click();
-      const dialog = document.querySelector<HTMLDialogElement>(
-        '[data-segment-changes-target="shiftDialog"]',
-      )!;
+      const dialog = document.querySelector<HTMLDialogElement>("dialog")!;
       dialog.setAttribute("open", "");
 
       press(dialog.querySelector("button")!);
@@ -1255,9 +1196,7 @@ describe("SegmentChangesController", () => {
     it("merges nothing while a dialog is open", async () => {
       await hold(threeSegments);
       row(1).click();
-      const dialog = document.querySelector<HTMLDialogElement>(
-        '[data-segment-changes-target="shiftDialog"]',
-      )!;
+      const dialog = document.querySelector<HTMLDialogElement>("dialog")!;
       dialog.setAttribute("open", "");
 
       press(dialog.querySelector("button")!, "ArrowUp");

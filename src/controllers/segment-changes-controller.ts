@@ -85,8 +85,6 @@ export default class SegmentChangesController extends Controller {
     "mergeButton",
     "retranslateButton",
     "retranscribeButton",
-    "shiftDialog",
-    "offset",
   ];
 
   declare readonly feed: ProjectFeed;
@@ -99,9 +97,6 @@ export default class SegmentChangesController extends Controller {
   declare readonly retranslateButtonTarget: HTMLButtonElement;
   /** Offered only for a Resource with a media file to transcribe. */
   declare readonly retranscribeButtonTarget: HTMLButtonElement;
-  declare readonly shiftDialogTarget: HTMLDialogElement;
-  /** Milliseconds to shift by, negative for earlier. */
-  declare readonly offsetTarget: HTMLInputElement;
   /** A change by key is being sent. */
   private isChangingByKey = false;
 
@@ -267,26 +262,9 @@ export default class SegmentChangesController extends Controller {
     });
   }
 
+  /** Hands the Checked Segments to the shift dialog. */
   openShift(): void {
-    this.offsetTarget.value = "0";
-    this.shiftDialogTarget.showModal();
-  }
-
-  async shift(): Promise<void> {
-    const indexes = this.session.checkedIndexes;
-    const offset = this.offsetTarget.valueAsNumber;
-    if (Number.isNaN(offset)) {
-      this.offsetTarget.reportValidity();
-      return;
-    }
-    this.shiftDialogTarget.close();
-    if (indexes.length === 0) return;
-    await this.change({
-      kind: "shift",
-      first: indexes[0],
-      last: indexes[indexes.length - 1],
-      offset_ms: Math.round(offset),
-    });
+    this.dispatch("shift");
   }
 
   /** Offers translating and transcribing the Checked Segments again only where each can run; bound to `transcript:shown`. */

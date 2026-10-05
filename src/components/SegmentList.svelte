@@ -78,35 +78,6 @@
     ></button>
   </div>
 </div>
-<dialog class="modal" data-segment-changes-target="shiftDialog">
-  <div class="modal-box max-w-sm">
-    <h3 class="mb-2 text-lg font-bold" data-i18n="edit.shiftTitle"></h3>
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend" data-i18n="edit.offset"></legend>
-      <input
-        type="number"
-        step="100"
-        required
-        class="input validator w-full"
-        data-segment-changes-target="offset"
-      />
-    </fieldset>
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn" data-i18n="work.cancel"></button>
-      </form>
-      <button
-        type="button"
-        class="btn btn-primary"
-        data-action="segment-changes#shift"
-        data-i18n="edit.shiftStart"
-      ></button>
-    </div>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
 <ol
   class="list @container text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_.field::highlight(search-match)]:bg-warning/30 [&_.field::highlight(search-current)]:bg-warning/70 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
   data-transcript-target="list"

@@ -9,6 +9,7 @@ import { assemble } from "./assembly";
 import { editingPort } from "./backend/editing";
 import { ProjectFeed, type ProjectView } from "./backend/project";
 import ComparisonController from "./controllers/comparison-controller";
+import SegmentChangesController from "./controllers/segment-changes-controller";
 import TranscriptController from "./controllers/transcript-controller";
 import { EditingSession } from "./editor";
 import { setInterfaceLanguage, t } from "./i18n";
@@ -541,6 +542,21 @@ describe("Page", () => {
       ["字幕已在其他程式修改過並重新讀取"],
       "Tsuzuri 原本的內容已留作備份，可在「版本」比較或還原",
     ]);
+  });
+
+  it("opens the shift dialog from the checked bar", async () => {
+    await start({
+      transcript: TranscriptController,
+      "segment-changes": SegmentChangesController,
+    });
+
+    screen.getByRole("button", { hidden: true, name: t("edit.shift") }).click();
+
+    expect(
+      screen
+        .getByRole("heading", { hidden: true, name: t("edit.shiftTitle") })
+        .closest("dialog")!.open,
+    ).toBe(true);
   });
 
   // @behavior VR-059

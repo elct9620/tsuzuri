@@ -14,9 +14,10 @@
   interface Props {
     openReplacement: () => void;
     openVersions: () => void;
+    openSearch: () => void;
   }
 
-  let { openReplacement, openVersions }: Props = $props();
+  let { openReplacement, openVersions, openSearch }: Props = $props();
 
   const feed = projectFeed();
   let project = $state<ProjectView | null>(null);
@@ -204,7 +205,7 @@
   <button
     type="button"
     class="btn btn-sm"
-    data-action="search#open"
+    onclick={openSearch}
     data-i18n-label="search.open"
     data-i18n-tooltip="search.open"
     data-shortcut="search"

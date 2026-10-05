@@ -8,7 +8,6 @@ import FieldController, {
   composingOption,
 } from "./controllers/field-controller";
 import PreviewController from "./controllers/preview-controller";
-import SearchController from "./controllers/search-controller";
 import SegmentChangesController, {
   typingOption,
 } from "./controllers/segment-changes-controller";
@@ -37,7 +36,6 @@ async function start(): Promise<void> {
     field: FieldController,
     preview: PreviewController,
     cleanup: CleanupController,
-    search: SearchController,
     "segment-changes": SegmentChangesController,
     speakers: SpeakersController,
     "time-field": TimeFieldController,

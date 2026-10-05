@@ -1,87 +1,21 @@
+<script lang="ts">
+  import SearchBar from "./SearchBar.svelte";
+
+  let searchBar: SearchBar;
+
+  /** Opens the search bar above the Segments. */
+  export function openSearch(): void {
+    searchBar.open();
+  }
+</script>
+
 <p
   class="text-base-content/60"
   data-transcript-target="emptyHint"
   data-i18n="edit.empty"
 ></p>
 <div class="sticky -top-4 z-10 mb-2 flex flex-col gap-2">
-  <div
-    class="flex flex-wrap items-center gap-2 rounded-box bg-base-200 px-3 py-1.5 text-sm"
-    data-search-target="bar"
-    hidden
-  >
-    <div class="join">
-      <label class="input input-sm join-item">
-        <i data-lucide="search" class="size-4 opacity-50"></i>
-        <input
-          type="search"
-          class="grow"
-          data-search-target="pattern"
-          data-i18n-label="search.pattern"
-          data-action="input->search#search keydown.enter->search#next:!composing:prevent keydown.shift+enter->search#previous:!composing:prevent keydown.esc->search#close:!composing:prevent"
-        />
-        <span
-          class="text-xs text-base-content/60 tabular-nums"
-          data-search-target="count"
-        ></span>
-      </label>
-      <button
-        type="button"
-        class="btn btn-sm btn-square join-item"
-        data-action="search#previous"
-        data-i18n-label="search.previous"
-        data-shortcut="searchPrevious"
-      >
-        <i data-lucide="chevron-up" class="size-4"></i>
-      </button>
-      <button
-        type="button"
-        class="btn btn-sm btn-square join-item"
-        data-action="search#next"
-        data-i18n-label="search.next"
-        data-shortcut="searchNext"
-      >
-        <i data-lucide="chevron-down" class="size-4"></i>
-      </button>
-    </div>
-    <div class="join">
-      <input
-        type="radio"
-        name="search-field"
-        value="text"
-        class="btn btn-sm join-item"
-        data-search-target="field"
-        data-i18n-label="replace.original"
-        data-action="search#search"
-        checked
-      />
-      <input
-        type="radio"
-        name="search-field"
-        value="translation"
-        class="btn btn-sm join-item"
-        data-search-target="field"
-        data-i18n-label="replace.translation"
-        data-action="search#search"
-      />
-    </div>
-    <label class="label">
-      <input
-        type="checkbox"
-        class="checkbox checkbox-xs"
-        data-search-target="regexToggle"
-        data-action="search#search"
-      />
-      <span data-i18n="replace.regex"></span>
-    </label>
-    <button
-      type="button"
-      class="btn btn-ghost btn-sm btn-square ms-auto"
-      data-action="search#close"
-      data-i18n-label="search.close"
-    >
-      <i data-lucide="x" class="size-4"></i>
-    </button>
-  </div>
+  <SearchBar bind:this={searchBar} />
   <div
     class="flex items-center gap-2 rounded-box bg-base-200 px-3 py-1.5 text-sm"
     data-segment-changes-target="checkedBar"

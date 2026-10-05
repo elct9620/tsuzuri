@@ -1,23 +1,31 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
+import FieldController, {
+  composingOption,
+} from "../controllers/field-controller";
+import TranscriptController from "../controllers/transcript-controller";
+import { setInterfaceLanguage } from "../i18n";
 import { projectOf } from "../test-project";
-import FieldController, { composingOption } from "./field-controller";
-import SearchController from "./search-controller";
-import TranscriptController from "./transcript-controller";
+import { pageContext } from "./context";
+import SearchBar from "./SearchBar.svelte";
 
-describe("SearchController", () => {
+describe("SearchBar", () => {
   let application: Application;
   let project: ProjectView | null;
   let highlights: Map<string, { ranges: Range[] }>;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const target = <T extends HTMLElement>(name: string) =>
-    document.querySelector<T>(`[data-search-target="${name}"]`)!;
+  const patternBox = () =>
+    screen.queryByRole<HTMLInputElement>("searchbox", { name: "搜尋文字" });
+  const isOpen = () => patternBox() !== null;
+  const count = () => screen.getByRole("status").textContent;
 
   const commaProject = projectOf({
     segments: [
@@ -37,15 +45,16 @@ describe("SearchController", () => {
   function matchesIn(pattern: string) {
     return (project?.segments ?? []).flatMap((segment, index) => {
       const characters = [...segment.text];
-      const found = [];
+      const matches = [];
       for (let at = 0; at < characters.length; at++)
         if (characters.slice(at, at + 1).join("") === pattern)
-          found.push({ index, start: at, end: at + 1 });
-      return found;
+          matches.push({ index, start: at, end: at + 1 });
+      return matches;
     });
   }
 
   beforeEach(async () => {
+    await setInterfaceLanguage("zh-TW");
     project = null;
     highlights = new Map();
     vi.stubGlobal("CSS", { highlights });
@@ -59,19 +68,9 @@ describe("SearchController", () => {
       },
     );
     document.body.innerHTML = `
-      <section data-controller="transcript search"
-        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor keydown@window->search#openByShortcut keydown@window->search#moveByShortcut transcript:shown->search#follow">
-        <h2 data-transcript-target="heading"></h2>
-        <select data-transcript-target="translationLanguage"></select>
+      <section data-controller="transcript"
+        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor">
         <p data-transcript-target="emptyHint"></p>
-        <div data-search-target="bar" hidden>
-          <input data-search-target="pattern"
-            data-action="input->search#search keydown.enter->search#next:!composing:prevent keydown.shift+enter->search#previous:!composing:prevent keydown.esc->search#close:!composing:prevent" />
-          <span data-search-target="count"></span>
-          <input type="radio" name="search-field" value="text" data-search-target="field" checked />
-          <input type="radio" name="search-field" value="translation" data-search-target="field" />
-          <input type="checkbox" data-search-target="regexToggle" />
-        </div>
         <ol data-transcript-target="list"></ol>
       </section>
     `;
@@ -94,11 +93,14 @@ describe("SearchController", () => {
     );
     application = Application.start();
     application.registerActionOption("composing", composingOption);
-    await assemble(application, {
+    const assembly = assemble(application, {
       field: FieldController,
       transcript: TranscriptController,
-      search: SearchController,
-    }).start();
+    });
+    render(SearchBar, {
+      context: pageContext(assembly.feed, assembly.session),
+    });
+    await assembly.start();
     await settle();
   });
 
@@ -134,15 +136,20 @@ describe("SearchController", () => {
     return text;
   }
 
+  /** Types `pattern` into the open bar, as the user does. */
+  async function type(pattern: string): Promise<void> {
+    patternBox()!.value = pattern;
+    patternBox()!.dispatchEvent(new Event("input", { bubbles: true }));
+    await settle();
+  }
+
   /** Opens the bar by the platform's shortcut and finds `pattern`. */
   async function openFinding(pattern: string): Promise<void> {
     const isMac =
       (window as { __TAURI_OS_PLUGIN_INTERNALS__?: { platform: string } })
         .__TAURI_OS_PLUGIN_INTERNALS__?.platform === "macos";
     press({ key: "f", code: "KeyF", ctrlKey: !isMac, metaKey: isMac });
-    target<HTMLInputElement>("pattern").value = pattern;
-    target("pattern").dispatchEvent(new Event("input"));
-    await settle();
+    await type(pattern);
   }
 
   function markedTexts(name: string): string[] | undefined {
@@ -164,12 +171,11 @@ describe("SearchController", () => {
     await settle();
 
     expect([
-      target("bar").hidden,
-      target<HTMLInputElement>("pattern").value,
-      document.activeElement === target("pattern"),
+      patternBox()?.value,
+      document.activeElement === patternBox(),
       markedTexts("search-match"),
-      target("count").textContent,
-    ]).toEqual([false, "，", true, ["，", "，"], "1/2"]);
+      count(),
+    ]).toEqual(["，", true, ["，", "，"], "1/2"]);
   });
 
   // @behavior ED-184
@@ -184,10 +190,7 @@ describe("SearchController", () => {
 
     window.dispatchEvent(event);
 
-    expect([target("bar").hidden, event.defaultPrevented]).toEqual([
-      true,
-      false,
-    ]);
+    expect([isOpen(), event.defaultPrevented]).toEqual([false, false]);
   });
 
   // @behavior ED-138
@@ -198,10 +201,10 @@ describe("SearchController", () => {
     await hold(commaProject);
 
     press({ key: "f", code: "KeyF", ctrlKey: true });
-    const isOpenByCtrlF = !target("bar").hidden;
+    const isOpenByCtrlF = isOpen();
     press({ key: "f", code: "KeyF", metaKey: true });
 
-    expect([isOpenByCtrlF, target("bar").hidden]).toEqual([false, false]);
+    expect([isOpenByCtrlF, isOpen()]).toEqual([false, true]);
   });
 
   // @behavior ED-138
@@ -209,10 +212,10 @@ describe("SearchController", () => {
     await hold(commaProject);
 
     press({ key: "f", code: "KeyU", ctrlKey: true });
-    const isOpenByTypedF = !target("bar").hidden;
+    const isOpenByTypedF = isOpen();
     press({ key: "ㄑ", code: "KeyF", ctrlKey: true });
 
-    expect([isOpenByTypedF, target("bar").hidden]).toEqual([false, false]);
+    expect([isOpenByTypedF, isOpen()]).toEqual([false, true]);
   });
 
   // @behavior ED-138
@@ -223,7 +226,7 @@ describe("SearchController", () => {
 
       press({ key: "f", code: "KeyF", ctrlKey: true, ...modifier });
 
-      expect(target("bar").hidden).toBe(true);
+      expect(isOpen()).toBe(false);
     },
   );
 
@@ -232,11 +235,13 @@ describe("SearchController", () => {
     await hold(commaProject);
     await openFinding("，");
 
-    press({ key: "Enter" }, target("pattern"));
-    const matchByEnter = [target("count").textContent, currentRow()];
+    press({ key: "Enter" }, patternBox()!);
+    await settle();
+    const matchByEnter = [count(), currentRow()];
     press({ key: "F3" });
+    await settle();
 
-    expect([matchByEnter, target("count").textContent, currentRow()]).toEqual([
+    expect([matchByEnter, count(), currentRow()]).toEqual([
       ["2/2", 2],
       "1/2",
       0,
@@ -252,22 +257,21 @@ describe("SearchController", () => {
     await openFinding("，");
 
     press({ key: "g", code: "KeyG", metaKey: true });
+    await settle();
 
-    expect(target("count").textContent).toBe("2/2");
+    expect(count()).toBe("2/2");
   });
 
   // @behavior ED-140
   it("goes round from the last match to the first", async () => {
     await hold(commaProject);
     await openFinding("，");
-    press({ key: "Enter" }, target("pattern"));
+    press({ key: "Enter" }, patternBox()!);
 
-    press({ key: "Enter" }, target("pattern"));
+    press({ key: "Enter" }, patternBox()!);
+    await settle();
 
-    expect([
-      target("count").textContent,
-      markedTexts("search-current"),
-    ]).toEqual(["1/2", ["，"]]);
+    expect([count(), markedTexts("search-current")]).toEqual(["1/2", ["，"]]);
   });
 
   // @behavior ED-141
@@ -275,14 +279,13 @@ describe("SearchController", () => {
     await hold(commaProject);
     await openFinding("，");
 
-    press({ key: "Enter", shiftKey: true }, target("pattern"));
-    const countByShiftEnter = target("count").textContent;
+    press({ key: "Enter", shiftKey: true }, patternBox()!);
+    await settle();
+    const countByShiftEnter = count();
     press({ key: "F3", shiftKey: true });
+    await settle();
 
-    expect([countByShiftEnter, target("count").textContent]).toEqual([
-      "2/2",
-      "1/2",
-    ]);
+    expect([countByShiftEnter, count()]).toEqual(["2/2", "1/2"]);
   });
 
   // @behavior ED-141
@@ -294,10 +297,12 @@ describe("SearchController", () => {
     await openFinding("，");
 
     press({ key: "F3" });
-    const countAfterF3 = target("count").textContent;
+    await settle();
+    const countAfterF3 = count();
     press({ key: "G", code: "KeyG", metaKey: true, shiftKey: true });
+    await settle();
 
-    expect([countAfterF3, target("count").textContent]).toEqual(["1/2", "2/2"]);
+    expect([countAfterF3, count()]).toEqual(["1/2", "2/2"]);
   });
 
   // @behavior ED-139
@@ -308,8 +313,9 @@ describe("SearchController", () => {
       await openFinding("，");
 
       press({ key: "F3", ...modifier });
+      await settle();
 
-      expect(target("count").textContent).toBe("1/2");
+      expect(count()).toBe("1/2");
     },
   );
 
@@ -318,8 +324,9 @@ describe("SearchController", () => {
     await hold(commaProject);
 
     press({ key: "F3" });
+    await settle();
 
-    expect([target("count").textContent, currentRow()]).toEqual(["", -1]);
+    expect([isOpen(), currentRow()]).toEqual([false, -1]);
   });
 
   // @behavior ED-142
@@ -337,7 +344,7 @@ describe("SearchController", () => {
     );
     await settle();
 
-    expect(target("count").textContent).toBe("1/1");
+    expect(count()).toBe("1/1");
   });
 
   // @behavior ED-143
@@ -345,25 +352,25 @@ describe("SearchController", () => {
     await hold(commaProject);
     await openFinding("，");
 
-    press({ key: "Escape" }, target("pattern"));
+    press({ key: "Escape" }, patternBox()!);
+    await settle();
 
-    expect([target("bar").hidden, markedTexts("search-match")]).toEqual([
-      true,
-      undefined,
-    ]);
+    expect([isOpen(), markedTexts("search-match")]).toEqual([false, undefined]);
   });
 
   // @behavior ED-144
   it("says a regular expression cannot be read, marking nothing", async () => {
     await hold(commaProject);
     await openFinding("，");
-    target<HTMLInputElement>("regexToggle").checked = true;
+    const regexToggle = screen.getByRole<HTMLInputElement>("checkbox", {
+      name: "正規表示式",
+    });
+    regexToggle.checked = true;
+    regexToggle.dispatchEvent(new Event("change", { bubbles: true }));
 
-    target<HTMLInputElement>("pattern").value = "(";
-    target("pattern").dispatchEvent(new Event("input"));
-    await settle();
+    await type("(");
 
-    expect([markedTexts("search-match"), target("count").textContent]).toEqual([
+    expect([markedTexts("search-match"), count()]).toEqual([
       undefined,
       expect.stringContaining("unclosed group"),
     ]);

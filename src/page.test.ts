@@ -352,6 +352,26 @@ describe("drawPage", () => {
     ).toBe(true);
   });
 
+  it("opens the search bar from the editor bar", async () => {
+    const page = document.createElement("div");
+    document.body.append(page);
+    await setInterfaceLanguage("zh-TW");
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    await tick();
+
+    within(page)
+      .getByRole("button", { hidden: true, name: t("search.open") })
+      .click();
+
+    expect(document.activeElement).toBe(
+      within(page).getByRole("searchbox", {
+        hidden: true,
+        name: t("search.pattern"),
+      }),
+    );
+    page.remove();
+  });
+
   it("opens the Versions dialog from the editor bar", async () => {
     mockPageMount(null, { subtitle_versions: () => [] });
     const page = document.createElement("div");

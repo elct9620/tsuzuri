@@ -44,7 +44,11 @@ describe("EditorBar", () => {
   async function show(next: ProjectView): Promise<void> {
     project = next;
     render(EditorBar, {
-      props: { openReplacement: () => {}, openVersions: () => {} },
+      props: {
+        openReplacement: () => {},
+        openVersions: () => {},
+        openSearch: () => {},
+      },
       context: pageContext(feed, new EditingSession(editingPort)),
     });
     await emit("project-changed");

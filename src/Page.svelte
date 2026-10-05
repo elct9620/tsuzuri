@@ -43,6 +43,7 @@
   let shortcutsDialog: ShortcutsDialog;
   let replacementDialog: ReplacementDialog;
   let versionsDialog: VersionsDialog;
+  let segmentList: SegmentList;
 
   const openSettings = () => settingsDialog.open();
   const dock = new ResourceDock();
@@ -70,8 +71,8 @@
 
 <main
   class="flex h-dvh flex-col"
-  data-controller="transcript segment-changes comparison speakers cleanup search"
-  data-action="progress:task->transcript#followTask selectionchange@document->transcript#followSelection pointerup@window->transcript#releasePointer editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->segment-changes#followTasks versions:compare-with@window->comparison#compareWith keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown@window->search#openByShortcut keydown@window->search#moveByShortcut transcript:shown->search#follow keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow rust:edit-command@window->segment-changes#applyEditCommand"
+  data-controller="transcript segment-changes comparison speakers cleanup"
+  data-action="progress:task->transcript#followTask selectionchange@document->transcript#followSelection pointerup@window->transcript#releasePointer editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut preview:playing->transcript#markPlaying project:select->transcript#showLoading transcript:shown->comparison#mark transcript:shown->speakers#follow segment-changes:speakers->speakers#openForChecked transcript:shown->segment-changes#followTasks versions:compare-with@window->comparison#compareWith keydown.ctrl+l@window->transcript#toggleFollowing:prevent keydown.meta+l@window->transcript#toggleFollowing:prevent keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow rust:edit-command@window->segment-changes#applyEditCommand"
 >
   {#if project === null}
     <StartScreen {recentProjects} {openSettings} />
@@ -106,11 +107,12 @@
         <EditorBar
           openReplacement={() => replacementDialog.open()}
           openVersions={() => versionsDialog.open()}
+          openSearch={() => segmentList.openSearch()}
         />
         <Preview />
       </div>
       <div class="flex-1 overflow-y-auto p-4">
-        <SegmentList />
+        <SegmentList bind:this={segmentList} />
       </div>
     </div>
     <ResourceList {dock} openGlossary={() => glossaryDialog.open()} />

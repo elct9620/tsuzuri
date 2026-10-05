@@ -411,6 +411,24 @@ Chromium reports a selection change for each time field drawn, so a change keeps
 | When | the first Segment is split |
 | Then | the two rows drawn before stay in the list, and one row is added after them |
 
+## `ED-189` Keeping a text being typed as the Project is shown anew
+
+A value typed and not yet written is newer than the Project read, so a change elsewhere leaves it in its field while the Segments keep their number.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with two Segments, `你好` typed into the first Segment's text and not yet written |
+| When | the Project is shown anew with the second Segment's text changed |
+| Then | the first Segment's text field still reads `你好` |
+
+## `ED-190` Keeping a time being typed as the Project is shown anew
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with two Segments, `00:00:00.300` typed into the first Segment's start and not yet written |
+| When | the Project is shown anew with the second Segment's text changed |
+| Then | the first Segment's start field still reads `00:00:00.300` |
+
 ## `ED-119` Showing the first half's text in the text left by a split
 
 | Step | Statement |

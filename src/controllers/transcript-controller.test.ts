@@ -167,6 +167,39 @@ describe("TranscriptController", () => {
     ]).toEqual([3, true, true]);
   });
 
+  /** Two Segments, the second reading `text`, so a change to it leaves their number alone. */
+  const projectWithSecondText = (text: string) =>
+    projectOf({
+      segments: [
+        { start_ms: 0, end_ms: 1000, text: "大家" },
+        { start_ms: 1000, end_ms: 2000, text },
+      ],
+    });
+
+  // @behavior ED-189
+  it("keeps a text being typed as the Project is shown anew", async () => {
+    await hold(projectWithSecondText("今天"));
+    const field = document.querySelector<HTMLElement>(".field.text")!;
+    field.focus();
+    field.textContent = "你好";
+
+    await hold(projectWithSecondText("明天"));
+
+    expect(fieldValue(field)).toBe("你好");
+  });
+
+  // @behavior ED-190
+  it("keeps a time being typed as the Project is shown anew", async () => {
+    await hold(projectWithSecondText("今天"));
+    const start = document.querySelector<HTMLInputElement>("input.start")!;
+    start.focus();
+    start.value = "00:00:00.300";
+
+    await hold(projectWithSecondText("明天"));
+
+    expect(start.value).toBe("00:00:00.300");
+  });
+
   // @behavior TX-006
   it("lists each segment of the Project with its start and end time", async () => {
     await hold(

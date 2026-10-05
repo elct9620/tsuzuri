@@ -579,7 +579,7 @@ body
 | controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
 | `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
 | `page.ts` | `Page.svelte`、`components/context.ts`、i18n、`ui/` | controller |
-| `components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/`、`editor/index.ts` | controller |
+| `Page.svelte`、`components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/`、`editor/index.ts` | controller |
 | `main.ts` | 全部 | — |
 
 Controller 之間只 import outlet 的型別，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。

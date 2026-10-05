@@ -607,8 +607,7 @@ main.ts -> drawPage(feed, session)                  page.ts
   +-- mount(Page, context) -> translatePage -> showIcons
 main.ts -> application.start() -> assembly.start()
   |-- relayEvents: a Rust event -> window: rust:<event name>
-  |-- light or dark theme -> window: system:color-scheme
-  +-- the screen turns -> window: system:orientation
+  +-- light or dark theme -> window: system:color-scheme
 ```
 
 | 模式 | 何時用 | 範例 |
@@ -651,13 +650,12 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 | Controller | 畫面區域 |
 |---|---|
-| `project`、`transcript`、`segment-changes` | 工具列、資源清單、字幕編輯 |
+| `project`、`transcript`、`segment-changes` | 工具列的名稱、字幕編輯 |
 | `recent-projects` | 起始畫面與開啟選單的最近專案 |
 | `speakers` | 說話者選單與設定 modal |
 | `cleanup` | 清理簡體的選單、工具列與快速鍵 |
 | `search` | 搜尋列與符合處標記 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
-| `resource-list` | 資源清單的固定與收起 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
 | `versions` | 版本 modal |
@@ -669,8 +667,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 事件或 outlet | 送出者 | 接收者與用途 |
 |---|---|---|
 | `progress:task` | `TaskProgress` | 字幕編輯顯示 skeleton |
-| `project:select` | `project` | 字幕編輯顯示 skeleton |
-| `project:select` | `project` | `resource-list` 收回蓋上的清單 |
+| `project:select` | `ResourceList` | 字幕編輯顯示 skeleton |
 | `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
 | `transcript:shown` | 字幕編輯 | `segment-changes` 顯示入口 |
 | `transcript:selection` | 字幕編輯 | 焦點欄位跟上選取 |
@@ -686,7 +683,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `rust:srt-requested` | Rust，經 `relayEvents` | `project` 開啟系統要開的 SRT |
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `ModelSlot` 顯示下載進度 |
 | `system:color-scheme` | 系統，經 `assembly.ts` | `timeline` 重畫波形 |
-| `system:orientation` | 系統，經 `assembly.ts` | `resource-list` 換成該方向的選擇 |
 | `preferences:saved` | `Preferences` | `timeline` 重讀換段的偏好 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
@@ -713,7 +709,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `Project` 與專案的 `Transcription`、`Models` | 專案頁的設定與模型 |
 | `Models`、`ModelSlot` | 整體的模型來源與下載 |
 | `RepositoryDialog` | Hugging Face 的檔案清單 |
-| `Toolbar` | 三個任務按鈕 |
+| `Toolbar` | 任務按鈕、清單的固定與蓋上鈕 |
+| `ResourceList` | 資源列、詞彙表入口、選取與 ⌘/Ctrl+B |
 | `TranscriptionDialog`、`TranslationDialog` | 任務 modal，含重做 |
 | `TranslationOptions` | 兩個任務 modal 共用的翻譯選項 |
 | `DiarizationDialog` | 辨識說話者的 modal |
@@ -723,6 +720,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `Notifications`、`NotificationCard` | 通知的堆疊、倒數、暫停與按鈕 |
 | `Tooltip` | 全頁共用的 tooltip |
 | `Undo` | 全頁的復原與重做，不畫任何東西 |
+
+資源清單固定與否、是否蓋上，由 Page 建立的 `ResourceDock` 保存，交給工具列與清單。哪顆按鈕出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。
 
 ### 4.7 backend
 
@@ -740,7 +739,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `bindings.ts` | 生成的指令、事件、型別與常數 |
 | `events.ts` | 把 Rust 事件轉到 window |
 | `failure.ts` | `Failure` 型別 |
-| `dialog.ts`、`system.ts` | 系統對話方塊、語系與平台 |
+| `dialog.ts`、`system.ts` | 選檔對話方塊、語系與平台 |
 | `video_window.ts` | 影片視窗的全螢幕與關閉 |
 | `context_menu.ts` | 右鍵時的系統選單 |
 

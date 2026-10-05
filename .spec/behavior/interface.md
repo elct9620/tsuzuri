@@ -125,7 +125,7 @@ The keyboard reaches the same explanation the pointer does, moving focus to each
 
 | Step | Statement |
 | --- | --- |
-| Given | an element whose tooltip names the text `settings.primaryLanguageHelp` |
+| Given | the help beside the Primary Language setting, naming the text `settings.primaryLanguageHelp` |
 | When | the page is written in Traditional Chinese |
 | Then | its tooltip reads that text in Traditional Chinese |
 
@@ -138,6 +138,16 @@ Each setting says what it is for and how to use it, since its name alone rarely 
 | Given | the settings dialog |
 | When | its rows are read in either Interface Language |
 | Then | every row carries a tooltip that explains it |
+
+## `IF-054` Naming every button in the Interface Language
+
+A button drawn as an icon alone is known only by its name, which a screen reader reads and a translation can leave out.
+
+| Step | Statement |
+| --- | --- |
+| Given | the page written in Traditional Chinese |
+| When | its buttons are read |
+| Then | each has a name, and none is the key of a text |
 
 ## `IF-014` Letting a Notification go on its own
 

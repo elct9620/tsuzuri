@@ -204,20 +204,19 @@
       type="button"
       class="btn btn-sm btn-ghost"
       onclick={openSettings}
-      data-i18n-label="toolbar.settings"
-      data-i18n-tooltip="toolbar.settings"
+      aria-label={t("toolbar.settings")}
+      data-tooltip={t("toolbar.settings")}
     >
       <Settings class="size-4" aria-hidden="true" /><span
-        class="hidden @5xl:inline"
-        data-i18n="toolbar.settings"
-      ></span>
+        class="hidden @5xl:inline">{t("toolbar.settings")}</span
+      >
     </button>
     <button
       type="button"
       class="btn btn-square btn-sm btn-ghost"
       onclick={openShortcuts}
-      data-i18n-label="shortcuts.title"
-      data-i18n-tooltip="shortcuts.title"
+      aria-label={t("shortcuts.title")}
+      data-tooltip={t("shortcuts.title")}
       data-shortcut="list"
     >
       <Keyboard class="size-4" aria-hidden="true" />

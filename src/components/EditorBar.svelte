@@ -93,13 +93,12 @@
       tabindex="0"
       role="button"
       class="btn btn-sm"
-      data-i18n-label="compare.label"
-      data-i18n-tooltip="compare.label"
+      aria-label={t("compare.label")}
+      data-tooltip={t("compare.label")}
     >
       <GitCompare class="size-4" aria-hidden="true" /><span
-        class="hidden @5xl:inline"
-        data-i18n="compare.label"
-      ></span>
+        class="hidden @5xl:inline">{t("compare.label")}</span
+      >
       <ChevronDown class="size-4" aria-hidden="true" />
     </div>
     <div
@@ -113,51 +112,47 @@
     type="button"
     class="btn btn-sm"
     onclick={() => openVersions()}
-    data-i18n-label="versions.open"
-    data-i18n-tooltip="versions.open"
+    aria-label={t("versions.open")}
+    data-tooltip={t("versions.open")}
   >
     <History class="size-4" aria-hidden="true" /><span
-      class="hidden @5xl:inline"
-      data-i18n="versions.open"
-    ></span>
+      class="hidden @5xl:inline">{t("versions.open")}</span
+    >
   </button>
   <button
     type="button"
     class="btn btn-sm"
     onclick={openSpeakers}
-    data-i18n-label="edit.speakers"
-    data-i18n-tooltip="edit.speakers"
+    aria-label={t("edit.speakers")}
+    data-tooltip={t("edit.speakers")}
   >
-    <Users class="size-4" aria-hidden="true" /><span
-      class="hidden @5xl:inline"
-      data-i18n="edit.speakers"
-    ></span>
+    <Users class="size-4" aria-hidden="true" /><span class="hidden @5xl:inline"
+      >{t("edit.speakers")}</span
+    >
   </button>
   <button
     type="button"
     class="btn btn-sm"
     onclick={openReplacement}
-    data-i18n-label="replace.open"
-    data-i18n-tooltip="replace.open"
+    aria-label={t("replace.open")}
+    data-tooltip={t("replace.open")}
     data-shortcut="replace"
   >
     <Replace class="size-4" aria-hidden="true" /><span
-      class="hidden @5xl:inline"
-      data-i18n="replace.open"
-    ></span>
+      class="hidden @5xl:inline">{t("replace.open")}</span
+    >
   </button>
   <button
     type="button"
     class="btn btn-sm"
     onclick={openSearch}
-    data-i18n-label="search.open"
-    data-i18n-tooltip="search.open"
+    aria-label={t("search.open")}
+    data-tooltip={t("search.open")}
     data-shortcut="search"
   >
-    <Search class="size-4" aria-hidden="true" /><span
-      class="hidden @5xl:inline"
-      data-i18n="search.open"
-    ></span>
+    <Search class="size-4" aria-hidden="true" /><span class="hidden @5xl:inline"
+      >{t("search.open")}</span
+    >
   </button>
   <TaskProgress />
   {#if hasPreview}

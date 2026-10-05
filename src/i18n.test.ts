@@ -1,17 +1,13 @@
 // @vitest-environment happy-dom
-import { within } from "@testing-library/svelte";
+import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { tick } from "svelte";
 import { afterEach, describe, expect, it } from "vitest";
 import { editingPort } from "./backend/editing";
 import { ProjectFeed } from "./backend/project";
 import { EditingSession } from "./editor";
-import {
-  interfaceLanguageCode,
-  setInterfaceLanguage,
-  t,
-  translatePage,
-} from "./i18n";
+import HelpButton from "./components/settings/HelpButton.svelte";
+import { interfaceLanguageCode, setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
 import { mockPageMount } from "./test-page";
 import { projectOf } from "./test-project";
@@ -21,11 +17,10 @@ describe("interface language", () => {
     clearMocks();
   });
 
+  /** Starts the interface with the system's `locale`, answering how it names the settings. */
   async function startWith(locale: string | null): Promise<string> {
-    document.body.innerHTML = `<button data-i18n="toolbar.settings"></button>`;
     await setInterfaceLanguage(locale);
-    translatePage();
-    return document.querySelector("button")!.textContent!;
+    return t("toolbar.settings");
   }
 
   // @behavior IF-001
@@ -64,12 +59,11 @@ describe("interface language", () => {
 
   // @behavior IF-012
   it("writes a tooltip in the interface language", async () => {
-    document.body.innerHTML = `<span data-i18n-tooltip="settings.primaryLanguageHelp"></span>`;
     await setInterfaceLanguage("zh-TW");
 
-    translatePage();
+    render(HelpButton, { props: { tip: "settings.primaryLanguageHelp" } });
 
-    expect(document.querySelector("span")!.dataset.tooltip).toMatch(
+    expect(screen.getByRole("button").dataset.tooltip).toMatch(
       /^影音裡說的語言/,
     );
   });
@@ -100,5 +94,27 @@ describe("interface language", () => {
       return !help || /^[a-z]+\.[\w.]+$/i.test(help.dataset.tooltip ?? "");
     });
     expect([rows.length > 0, rowsWithoutHelp.length]).toEqual([true, 0]);
+  });
+
+  // @behavior IF-054
+  it("names every button in the Interface Language", async () => {
+    // In the document, so a name given by `aria-labelledby` finds the element it names
+    const page = document.createElement("div");
+    document.body.append(page);
+    await setInterfaceLanguage("zh-TW");
+    mockPageMount(projectOf());
+
+    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    await tick();
+
+    // i18next answers a key it has no text for with the key itself
+    const unnamedButtons = within(page)
+      .queryAllByRole("button", {
+        hidden: true,
+        name: (name) => name.trim() === "" || /^[a-z]+\.[\w.]+$/i.test(name),
+      })
+      .map((button) => button.outerHTML.slice(0, 80));
+    page.remove();
+    expect(unnamedButtons).toEqual([]);
   });
 });

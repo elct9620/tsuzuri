@@ -367,9 +367,9 @@ A key the list shows and nothing answers to is a promise the interface does not 
 
 | Step | Statement |
 | --- | --- |
-| Given | the shortcut list, the actions the page and its controllers bind, and the Shortcuts the controllers read from the list |
+| Given | the shortcut list, and the Shortcuts the page's Svelte Components and modules match a key against |
 | When | each key the list names for either platform is looked for among them |
-| Then | every one is bound by an action or belongs to a Shortcut a controller reads |
+| Then | every one belongs to a Shortcut something matches a key against |
 
 ## `IF-044` Listing every key the app menu takes
 

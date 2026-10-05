@@ -1,7 +1,3 @@
-/** The actions a time field binds; a paste or cut never reaches the text as the browser would apply it. */
-export const TIME_FIELD_ACTIONS =
-  "keydown->time-field#typeKey:!composing paste->time-field#pasteTime:prevent cut->time-field#copySelection:prevent compositionstart->time-field#keepTime compositionend->time-field#restoreTime";
-
 export const MS_PER_SECOND = 1000;
 export const MS_PER_MINUTE = 60 * MS_PER_SECOND;
 export const MS_PER_HOUR = 60 * MS_PER_MINUTE;

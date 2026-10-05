@@ -6,7 +6,6 @@ import FieldController, {
   composingOption,
 } from "./controllers/field-controller";
 import PreviewController from "./controllers/preview-controller";
-import TimeFieldController from "./controllers/time-field-controller";
 import TimelineController, {
   controlOption,
 } from "./controllers/timeline-controller";
@@ -26,7 +25,6 @@ async function start(): Promise<void> {
   const assembly = assemble(application, {
     field: FieldController,
     preview: PreviewController,
-    "time-field": TimeFieldController,
     timeline: TimelineController,
   });
   drawPage(assembly.feed, assembly.session);

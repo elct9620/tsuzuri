@@ -1,17 +1,14 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
+import { render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { composingOption } from "./field-controller";
-import TimeFieldController from "./time-field-controller";
-import { TIME_FIELD_ACTIONS } from "../ui/time";
 
-describe("TimeFieldController", () => {
-  let application: Application;
+import TimeField from "./TimeField.svelte";
+
+describe("TimeField", () => {
   let execCommand: typeof document.execCommand;
   let isDefaultPrevented: boolean;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const input = () => document.querySelector<HTMLInputElement>("input")!;
+  const input = () => screen.getByRole<HTMLInputElement>("textbox");
   const selection = () =>
     input().value.slice(input().selectionStart!, input().selectionEnd!);
 
@@ -46,10 +43,8 @@ describe("TimeFieldController", () => {
     return clipboardData.getData("text/plain");
   }
 
-  beforeEach(async () => {
-    document.body.innerHTML = `
-      <input value="00:00:32.360" data-controller="time-field" data-action="${TIME_FIELD_ACTIONS}">
-    `;
+  beforeEach(() => {
+    render(TimeField, { value: "00:00:32.360" });
     // happy-dom leaves the browser's editing out; this types as it does, over the selection
     execCommand = document.execCommand;
     document.execCommand = (_command, _showUi, text = "") => {
@@ -60,14 +55,9 @@ describe("TimeFieldController", () => {
       );
       return true;
     };
-    application = Application.start();
-    application.registerActionOption("composing", composingOption);
-    application.register("time-field", TimeFieldController);
-    await settle();
   });
 
   afterEach(() => {
-    application.stop();
     document.execCommand = execCommand;
   });
 

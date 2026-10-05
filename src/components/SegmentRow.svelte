@@ -30,7 +30,7 @@
   import { notify } from "../ui/notification.svelte";
   import { isComposingKey, shortcutById, shortcutText } from "../ui/shortcuts";
   import { speakerNames } from "../ui/speakers";
-  import { formatTime, parseTime, TIME_FIELD_ACTIONS } from "../ui/time";
+  import { formatTime, parseTime } from "../ui/time";
   import ComparisonMarks from "./ComparisonMarks.svelte";
   import { editingSession, projectFeed, segmentDialogs } from "./context";
   import EarlierText from "./EarlierText.svelte";
@@ -43,6 +43,7 @@
     segmentChoices,
   } from "./segment-changes";
   import { notifyNamed } from "./speaker-actions";
+  import TimeField from "./TimeField.svelte";
 
   /** What a field hands the session as the user works in it. */
   const FIELD_ACTIONS =
@@ -312,23 +313,19 @@
     disabled={isOtherHeld}
   />
   <div class="flex flex-col gap-1 @max-4xl:flex-row @max-4xl:items-center">
-    <input
+    <TimeField
       class="start input input-xs w-28 font-mono"
       data-edge="start"
-      data-controller="time-field"
-      data-action={TIME_FIELD_ACTIONS}
       disabled={isOtherHeld}
       onchange={() => changeTimes("start")}
-      bind:this={startInput}
+      bind:input={startInput}
     />
-    <input
+    <TimeField
       class="end input input-xs w-28 font-mono"
       data-edge="end"
-      data-controller="time-field"
-      data-action={TIME_FIELD_ACTIONS}
       disabled={isOtherHeld}
       onchange={() => changeTimes("end")}
-      bind:this={endInput}
+      bind:input={endInput}
     />
     <div class="speaker-menu dropdown">
       <div

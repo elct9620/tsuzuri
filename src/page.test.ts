@@ -37,7 +37,6 @@ describe("drawPage", () => {
     ["editor bar", '[data-controller="versions"]'],
     ["preview", '[data-preview-target="panel"]'],
     ["Segment list", '[data-transcript-target="list"]'],
-    ["resource list", ".drawer-side"],
     ["notification stack", "[data-notifications]"],
     ["tooltip bubble", ".tooltip[popover]"],
   ])("writes the %s", (_part, selector) => {
@@ -46,6 +45,20 @@ describe("drawPage", () => {
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
     expect(page.querySelector(selector)).not.toBeNull();
+  });
+
+  it("writes the resource list", async () => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
+
+    expect(
+      within(page).queryByRole("list", {
+        hidden: true,
+        name: t("resources.title"),
+      }),
+    ).not.toBeNull();
   });
 
   // A general setting whose Svelte Component reads for itself is found by the name of its group

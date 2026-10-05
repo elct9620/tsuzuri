@@ -904,7 +904,7 @@ whisper 的切段常需手動修正，調整時間戳與段落是校對重點。
 | 標記不寫進內容 | CSS Custom Highlight 著色，欄位值仍是原文 |
 | 游標在失焦後可見 | 自己畫 Cursor，隱藏原生游標 |
 | 不支援 Highlight | 只顯示備份的文字，不標在欄位裡 |
-| 與 Stimulus 搭配 | 由 controller 接上 |
+| 與 Svelte 搭配 | 範本畫出欄位，內容由欄位模組寫入 |
 | 打錯想重來 | Esc 換回進入時的文字 |
 
 textarea 不能在文字裡標記，後續的詞彙標記與選取都需要。ProseMirror、CodeMirror 為文件或程式碼設計，與逐段的字幕差太多，所以從原生元素做起。欄位本身是不綁定框架的模組。Esc 不寫入也不留復原，沿用清單裡直接編輯的慣例。
@@ -1160,9 +1160,9 @@ Chromium 把 Web Audio 的延遲當成 0，聲音會晚於畫面。使用者回�
 |---|---|
 | 樣式工具 | TailwindCSS，隨前端一起由 Vite 建置 |
 | 元件樣式 | daisyUI，以 Tailwind 外掛提供元件 class 與主題色 |
-| 與 Stimulus 的分工 | Stimulus 管互動，Tailwind 的 class 寫在 HTML 上 |
+| 與 Svelte 的分工 | Svelte 元件管互動，class 寫在範本上 |
 
-畫面變多之後，手寫 CSS 難以維持一致。樣式跟著 HTML 走，controller 不需要知道樣式。元件與顏色取自 daisyUI，各畫面共用同一套外觀。
+畫面變多之後，手寫 CSS 難以維持一致。樣式跟著範本走，元件的程式不需要知道樣式。元件與顏色取自 daisyUI，各畫面共用同一套外觀。
 
 ### 11.5 快速鍵
 

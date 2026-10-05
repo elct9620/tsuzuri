@@ -69,7 +69,6 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 
 | 來源 | 名稱 |
 |---|---|
-| Stimulus | `connect`、`disconnect`、`static targets`、`*Target`、`*Targets`、action option 的 `value` |
 | Svelte | Svelte 元件以 `UpperCamelCase` 命名，例如 `Page.svelte` |
 | BCP 47 | 語言檔以語言標籤命名，例如 `zh-Hant.ts` |
 | Rust trait | `fmt`、`from`、`drop`、`enabled`、`log`、`flush` |
@@ -84,14 +83,13 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 
 ### 1.5 加入名稱之前
 
-先照同模組同類名稱遵守的規則取名，規則不一致就先修正模組。兩個東西同名，只在同一個檔案相遇時才區分。Stimulus 為 target 產生 `xTarget`、`xTargets` 與 `hasXTarget`，會蓋掉同名的成員。
+先照同模組同類名稱遵守的規則取名，規則不一致就先修正模組。兩個東西同名，只在同一個檔案相遇時才區分。
 
 | 情境 | 做法 |
 |---|---|
 | 加入新名稱 | 照同模組的同類名稱 |
 | 規則不一致 | 先統一模組 |
 | 兩個東西同名 | 同檔才區分，否則依角色 |
-| Stimulus target | 不與產生的成員同名 |
 
 ### 1.6 依據
 

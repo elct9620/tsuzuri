@@ -595,15 +595,14 @@ Svelte 元件之間以 prop、context 或共用的狀態溝通，不經 window �
 ### 4.3 組裝
 
 ```
-main.ts -> assemble(application, controllers)      assembly.ts
+main.ts -> assemble()                              assembly.ts
   |-- feed = new ProjectFeed()        reads current_project on each change
   |-- session = new EditingSession(editingPort)
   |-- feed -> session.follow -> each follower -> session.announce
-  |-- session.onChange -> window: editor:cursor, editor:choice, editor:checks
-  +-- application.register(name, class extends X { session, feed })
+  +-- session.onChange -> window: editor:cursor, editor:choice, editor:checks
 main.ts -> drawPage(feed, session)                  page.ts
   +-- mount(Page, context) -> translatePage -> showIcons
-main.ts -> application.start() -> assembly.start()
+main.ts -> assembly.start()
   |-- relayEvents: a Rust event -> window: rust:<event name>
   +-- light or dark theme -> window: system:color-scheme
 ```
@@ -611,11 +610,10 @@ main.ts -> application.start() -> assembly.start()
 | 模式 | 何時用 | 範例 |
 |---|---|---|
 | Composition Root | 組裝 app 範圍物件 | `assembly.ts` |
-| 註冊時注入 | controller 取得依賴 | `class extends` |
 | context 注入 | Svelte 元件取得共用的物件 | `projectFeed()`、`segmentDialogs()` |
 | 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
-feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`TaskRun`、`AppUpdates` 與 `EditorComparison` 也經 context 共用。頁面寫好後 Stimulus 才啟動，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。controller 與 Svelte 元件都不自己向 Rust 讀專案。
+feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`TaskRun`、`AppUpdates`、`EditorComparison` 與 `SavedPreferences` 也經 context 共用。頁面寫好後才讀專案。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。Svelte 元件不自己向 Rust 讀專案。
 
 ### 4.4 先後順序
 

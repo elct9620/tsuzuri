@@ -7,7 +7,7 @@ import { ProjectFeed } from "../backend/project";
 import { EditingSession } from "../editor";
 import { drawPage } from "../page";
 import { mockPageMount } from "../test-page";
-import { iconElement, showIcons } from "./icons";
+import { showIcons } from "./icons";
 
 describe("icons", () => {
   afterEach(() => {
@@ -25,15 +25,6 @@ describe("icons", () => {
       svg?.getAttribute("aria-hidden"),
       document.querySelector("i"),
     ]).toEqual([true, "true", null]);
-  });
-
-  it("makes one icon for code to place", () => {
-    const svg = iconElement("RotateCcw");
-
-    expect([svg.tagName.toLowerCase(), svg.getAttribute("class")]).toEqual([
-      "svg",
-      "size-4",
-    ]);
   });
 
   // @behavior IF-028

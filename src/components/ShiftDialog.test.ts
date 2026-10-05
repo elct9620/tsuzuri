@@ -75,6 +75,8 @@ describe("ShiftDialog", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
+        // The Segment list compares each Project shown with its Backups, of which there are none
+        if (command === "subtitle_versions") return [];
         if (command === "change_segments")
           changes.push((args as { change: unknown }).change);
       },

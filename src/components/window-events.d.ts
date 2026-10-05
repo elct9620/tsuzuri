@@ -1,8 +1,8 @@
 /**
  * The window events Svelte Components bind with `<svelte:window>`: Rust events relayed as
- * `rust:<name>` with the payload as `detail` (`backend/events.ts`), the compare menu's request to
- * choose in the Versions dialog, the Segment list telling it has shown the Segments anew, the
- * session telling the Cursor or the checks moved, and the Preview telling which Segments it plays.
+ * `rust:<name>` with the payload as `detail` (`backend/events.ts`), the Segment list telling it
+ * has shown the Segments anew, the session telling the Cursor or the checks moved, and the Preview
+ * telling which Segments it plays.
  */
 
 import type { PipelineProgress } from "../backend/progress";
@@ -12,9 +12,6 @@ import type { UpdateProgress } from "../backend/updates";
 
 declare module "svelte/elements" {
   export interface SvelteWindowAttributes {
-    "oncomparison:choose-in-versions"?: (
-      event: CustomEvent<{ language: string | null }>,
-    ) => void;
     "oneditor:checks"?: (event: CustomEvent) => void;
     "oneditor:cursor"?: (event: CustomEvent) => void;
     "onpreview:playing"?: (event: CustomEvent<{ indexes: number[] }>) => void;

@@ -1,8 +1,7 @@
 <!--
   @component
   The Versions of the Current Resource's subtitles: their Backups, a comparison of two, and
-  restoring one. A Backup set as the comparison goes to the editor as `versions:compare-with` on
-  the window, and the compare menu opens the dialog at a subtitle by `comparison:choose-in-versions`.
+  restoring one. A Backup set as the comparison is what the editor compares with from then on.
 -->
 <script lang="ts">
   import ArrowLeftRight from "@lucide/svelte/icons/arrow-left-right";
@@ -24,7 +23,9 @@
   import { t } from "../i18n";
   import { notifyFailure, notifyRestoration } from "../ui/notification.svelte";
   import { formatTime, localTime } from "../ui/time";
+  import { editorComparison } from "./context";
 
+  const comparison = editorComparison();
   let dialog: HTMLDialogElement;
   let rowList = $state<HTMLTableSectionElement>();
   /** What Rust listed when the dialog opened; shown until it closes. */
@@ -91,13 +92,9 @@
     closeComparison();
   }
 
-  /** Hands the editor a Backup to compare with, as `versions:compare-with`, and closes. */
+  /** Hands the editor a Backup to compare with, and closes. */
   function setComparison(file: string): void {
-    window.dispatchEvent(
-      new CustomEvent("versions:compare-with", {
-        detail: { language: shownLanguage(), file },
-      }),
-    );
+    void comparison.compareWith(shownLanguage(), file);
     dialog.close();
   }
 
@@ -192,10 +189,6 @@
     );
   }
 </script>
-
-<svelte:window
-  oncomparison:choose-in-versions={(event) => open(event.detail.language)}
-/>
 
 {#snippet versionChoices()}
   <option value="">{t("versions.now")}</option>

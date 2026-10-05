@@ -2,7 +2,6 @@ import { Application } from "@hotwired/stimulus";
 
 import { assemble } from "./assembly";
 import { locale } from "./backend/system";
-import ComparisonController from "./controllers/comparison-controller";
 import FieldController, {
   composingOption,
 } from "./controllers/field-controller";
@@ -25,7 +24,6 @@ async function start(): Promise<void> {
   application.registerActionOption("composing", composingOption);
   application.registerActionOption("control", controlOption);
   const assembly = assemble(application, {
-    comparison: ComparisonController,
     field: FieldController,
     preview: PreviewController,
     "time-field": TimeFieldController,

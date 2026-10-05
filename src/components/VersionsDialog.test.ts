@@ -1,14 +1,19 @@
 // @vitest-environment happy-dom
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ComparedRow } from "../backend/project";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { editingPort } from "../backend/editing";
+import { type ComparedRow, ProjectFeed } from "../backend/project";
+import { EditingSession } from "../editor";
 import { setInterfaceLanguage, t } from "../i18n";
+import { pageContext } from "./context";
+import { EditorComparison } from "./editor-comparison.svelte";
 import { notifications, showNotifications } from "./test-notifications";
 import VersionsDialog from "./VersionsDialog.svelte";
 
 describe("VersionsDialog", () => {
   let versionsDialog: VersionsDialog;
+  let comparison: EditorComparison;
   let restoreArgs: unknown;
   let revertArgs: unknown;
   let rows: ComparedRow[];
@@ -104,7 +109,16 @@ describe("VersionsDialog", () => {
         return { unmatched_count: 0 };
       }
     });
-    versionsDialog = render(VersionsDialog).component;
+    comparison = new EditorComparison();
+    versionsDialog = render(VersionsDialog, {
+      context: pageContext(
+        new ProjectFeed(),
+        new EditingSession(editingPort),
+        undefined,
+        undefined,
+        comparison,
+      ),
+    }).component;
     await versionsDialog.open();
   });
 
@@ -114,17 +128,13 @@ describe("VersionsDialog", () => {
 
   // @behavior VR-043
   it("hands the editor a Backup set as the comparison, and closes", async () => {
-    const compareWithDetails: unknown[] = [];
-    const takeDetail = (event: Event) =>
-      compareWithDetails.push((event as CustomEvent).detail);
-    window.addEventListener("versions:compare-with", takeDetail);
+    const compareWith = vi.spyOn(comparison, "compareWith");
     await chooseSubtitle("en");
 
     await click(buttons(t("versions.setComparison"))[0]);
 
-    window.removeEventListener("versions:compare-with", takeDetail);
-    expect([compareWithDetails, dialog().open]).toEqual([
-      [{ language: "en", file: "ep01.en.20260925T030000Z.srt" }],
+    expect([compareWith.mock.calls, dialog().open]).toEqual([
+      [["en", "ep01.en.20260925T030000Z.srt"]],
       false,
     ]);
   });

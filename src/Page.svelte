@@ -82,11 +82,7 @@
   onrust:srt-requested={openRequestedSrt}
 />
 
-<main
-  class="flex h-dvh flex-col"
-  data-controller="comparison"
-  data-action="transcript:shown->comparison#mark versions:compare-with@window->comparison#compareWith"
->
+<main class="flex h-dvh flex-col">
   {#if project === null}
     <StartScreen {recentProjects} {openSettings} />
   {/if}
@@ -119,7 +115,7 @@
       >
         <EditorBar
           openReplacement={() => replacementDialog.open()}
-          openVersions={() => versionsDialog.open()}
+          openVersions={(subtitle) => versionsDialog.open(subtitle)}
           openSearch={() => segmentList.openSearch()}
           openSpeakers={() => speakersDialog.open()}
         />

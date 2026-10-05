@@ -3,7 +3,8 @@
   The rows of the Current Resource's Segments, refreshed in place as each Project is read, since
   Chromium reports a selection change for each time field drawn; rows are drawn anew only when the
   translation is shown or hidden. Placeholders stand in while Segments are being made or read. It
-  marks the Current Segment and the rows being played, draws the Cursor, and tells the page as
+  marks the Current Segment and the rows being played, draws the Cursor, lays the editor's
+  comparison over the rows with each removed cue in its place, and tells the page as
   `transcript:shown` once the Segments are shown anew.
 -->
 <script lang="ts">
@@ -11,24 +12,48 @@
 
   import type { ProjectView } from "../backend/project";
   import { isMacOS } from "../backend/system";
+  import type { ComparedRow } from "../backend/project";
   import {
+    type CursorField,
     drawCursor,
+    fieldValue,
     isField,
+    markRanges,
     placeSelection,
+    textRange,
     type TranscriptView,
   } from "../editor";
   import { t } from "../i18n";
   import { isShortcut } from "../ui/shortcuts";
-  import { editingSession, projectFeed, taskRun } from "./context";
+  import {
+    editingSession,
+    editorComparison,
+    projectFeed,
+    taskRun,
+  } from "./context";
+  import { comparisonLayout, type Side } from "./editor-comparison.svelte";
   import type { PlaybackFollowing } from "./playback-following.svelte";
   import { resourceOffers } from "./segment-changes";
+  import RemovalRow from "./RemovalRow.svelte";
   import SegmentRow from "./SegmentRow.svelte";
+
+  /** The highlight marking the characters a text gained since the Backup compared. */
+  const ADDED_HIGHLIGHT = "compare-addition";
+
+  /** The field each side's comparison marks. */
+  const FIELD_BY_SIDE: Record<Side, CursorField> = {
+    original: "text",
+    translation: "translation",
+  };
 
   let {
     following,
+    onshown,
     children,
   }: {
     following: PlaybackFollowing;
+    /** Hears each Project once its Segments are shown. */
+    onshown?: (project: ProjectView | null) => void;
     /** What stands between the empty hint and the rows, as the search and checked bars do. */
     children?: Snippet;
   } = $props();
@@ -36,6 +61,7 @@
   const feed = projectFeed();
   const session = editingSession();
   const run = taskRun();
+  const comparison = editorComparison();
   let list = $state<HTMLOListElement>();
   const rows: SegmentRow[] = $state([]);
   let project = $state.raw<ProjectView | null>(null);
@@ -54,6 +80,13 @@
 
   const segments = $derived(project?.segments ?? []);
   const offers = $derived(resourceOffers(project));
+  const layout = $derived(
+    comparisonLayout(
+      segments,
+      comparison.rowsBySide,
+      comparison.cuesByLanguage,
+    ),
+  );
   const isTranscribing = $derived(run.task === "transcription");
   const isAwaitingSegments = $derived(segments.length === 0 && isTranscribing);
   const placeholderCount = $derived(
@@ -85,6 +118,7 @@
     checkedIndexes = new Set(session.checkedIndexes);
     flushSync();
     drawSessionCursor();
+    onshown?.(next);
     list?.dispatchEvent(
       new CustomEvent("transcript:shown", {
         bubbles: true,
@@ -94,6 +128,36 @@
   }
 
   onMount(() => feed.follow(show));
+
+  /** The ranges of `field` holding the characters a row's text gained, while the field still reads that text. */
+  function addedRanges(field: HTMLElement, row: ComparedRow): Range[] {
+    const keptSpans = row.text_spans.filter((span) => span.kind !== "removal");
+    if (keptSpans.map((span) => span.text).join("") !== fieldValue(field))
+      return [];
+    const ranges: Range[] = [];
+    let offset = 0;
+    for (const span of keptSpans) {
+      const end = offset + span.text.length;
+      const range =
+        span.kind === "addition" ? textRange(field, offset, end) : null;
+      if (range) ranges.push(range);
+      offset = end;
+    }
+    return ranges;
+  }
+
+  // Marks the characters each compared text gained, in the fields as they now read
+  $effect(() => {
+    const ranges = layout.bySegment.flatMap(({ rowsBySide }, index) =>
+      Object.values(rowsBySide)
+        .flat()
+        .flatMap(({ side, row }) => {
+          const field = rows[index]?.field(FIELD_BY_SIDE[side]);
+          return field ? addedRanges(field, row) : [];
+        }),
+    );
+    markRanges(ADDED_HIGHLIGHT, ranges);
+  });
 
   /**
    * Marks the Current Segment and draws the Cursor in it, bringing its row into view as it becomes
@@ -186,6 +250,9 @@
   {#if !isLoading}
     {#key offers.isTranslationShown}
       {#each segments as segment, index (index)}
+        {#each layout.removalsBefore[index] as sideRow (`${sideRow.side} ${sideRow.index}`)}
+          <RemovalRow {sideRow} />
+        {/each}
         <SegmentRow
           bind:this={rows[index]}
           {segment}
@@ -198,7 +265,11 @@
           isCurrent={currentIndex === index}
           isPlaying={playingIndexes.includes(index)}
           {isTypingKept}
+          comparison={layout.bySegment[index]}
         />
+      {/each}
+      {#each layout.removalsBefore[segments.length] as sideRow (`${sideRow.side} ${sideRow.index}`)}
+        <RemovalRow {sideRow} />
       {/each}
     {/key}
   {/if}

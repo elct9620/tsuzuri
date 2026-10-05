@@ -8,12 +8,14 @@
   } from "../backend/project";
   import { t } from "../i18n";
   import { notifyFailure } from "../ui/notification.svelte";
+  import CompareMenu from "./CompareMenu.svelte";
   import { projectFeed } from "./context";
   import TaskProgress from "./TaskProgress.svelte";
 
   interface Props {
     openReplacement: () => void;
-    openVersions: () => void;
+    /** Opens the Versions dialog at the subtitle in a Language, or at the original for none. */
+    openVersions: (subtitle?: string | null) => void;
     openSearch: () => void;
     openSpeakers: () => void;
   }
@@ -89,13 +91,14 @@
     <div
       tabindex="-1"
       class="dropdown-content z-20 w-64 rounded-box bg-base-100 shadow-md"
-      data-comparison-target="menu"
-    ></div>
+    >
+      <CompareMenu {openVersions} />
+    </div>
   </div>
   <button
     type="button"
     class="btn btn-sm"
-    onclick={openVersions}
+    onclick={() => openVersions()}
     data-i18n-label="versions.open"
     data-i18n-tooltip="versions.open"
   >

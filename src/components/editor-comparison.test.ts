@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { render, screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,17 +10,19 @@ import type {
   ProjectView,
   SubtitleVersions,
 } from "../backend/project";
+import { t } from "../i18n";
 import { projectOf, resourceOf } from "../test-project";
-import {
-  showNotifications,
-  notifications,
-} from "../components/test-notifications";
-import ComparisonController from "./comparison-controller";
-import { pageContext } from "../components/context";
-import { drawSegmentRows } from "../components/test-segment-rows";
+import CompareMenu from "./CompareMenu.svelte";
+import { pageContext } from "./context";
+import { EditorComparison } from "./editor-comparison.svelte";
+import { notifications, showNotifications } from "./test-notifications";
+import { drawSegmentRows } from "./test-segment-rows";
 
-describe("ComparisonController", () => {
+describe("EditorComparison", () => {
   let application: Application;
+  let comparison: EditorComparison;
+  /** The subtitles the compare menu opened the Versions dialog at. */
+  let openedSubtitles: (string | null)[];
   let project: ProjectView;
   let versions: SubtitleVersions[];
   let rows: ComparedRow[];
@@ -57,13 +60,26 @@ describe("ComparisonController", () => {
       [...item.querySelectorAll("[data-mark]")].map((mark) => mark.textContent),
     );
 
-  /** Checks the menu choice `selector` names, as the user does. */
-  async function check(selector: string): Promise<void> {
-    const choice = document.querySelector<HTMLInputElement>(selector)!;
+  /** Checks `choice` in the menu, as the user does. */
+  async function check(choice: HTMLInputElement): Promise<void> {
     choice.checked = true;
-    choice.dispatchEvent(new Event("change"));
+    choice.dispatchEvent(new Event("change", { bubbles: true }));
     await settle();
   }
+
+  /** The menu's choice of a side's Backup `file`, or of nothing for "". */
+  const backupChoice = (side: string, file: string) =>
+    document.querySelector<HTMLInputElement>(
+      `input[name="compare-${side}"][value="${file}"]`,
+    )!;
+
+  const compareMenu = () => document.querySelector<HTMLElement>("ul.menu")!;
+
+  /** The menu's choice to read the translation in `language` beneath the cues. */
+  const referenceChoice = (language: string) =>
+    within(compareMenu()).getByRole<HTMLInputElement>("checkbox", {
+      name: t(`languages.${language}`),
+    });
 
   /** Each row's translations read beside it, as their Language and cue. */
   const references = () =>
@@ -150,13 +166,9 @@ describe("ComparisonController", () => {
         text_spans: [],
       },
     ];
-    document.body.innerHTML = `
-      <main data-controller="comparison"
-        data-action="transcript:shown->comparison#mark versions:compare-with@window->comparison#compareWith">
-        <div data-comparison-target="menu"></div>
-      </main>
-    `;
+    document.body.innerHTML = `<main></main>`;
     showNotifications();
+    openedSubtitles = [];
     unmatchedCount = 0;
     takeRows = () => rows;
     takeVersions = () => versions;
@@ -177,12 +189,25 @@ describe("ComparisonController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    const assembly = assemble(application, {
-      comparison: ComparisonController,
+    const assembly = assemble(application, {});
+    comparison = new EditorComparison();
+    const context = pageContext(
+      assembly.feed,
+      assembly.session,
+      undefined,
+      undefined,
+      comparison,
+    );
+    render(CompareMenu, {
+      target: document.querySelector("main")!,
+      props: { openVersions: (subtitle) => openedSubtitles.push(subtitle) },
+      context,
     });
+    // As the Segment list compares each Project shown
     drawSegmentRows(
       document.querySelector("main")!,
-      pageContext(assembly.feed, assembly.session),
+      context,
+      (next) => void comparison.show(next),
     );
     await assembly.start();
     await settle();
@@ -362,7 +387,7 @@ describe("ComparisonController", () => {
   it("compares with nothing", async () => {
     await show();
 
-    await check('input[name="compare-original"][value=""]');
+    await check(backupChoice("original", ""));
 
     expect([marks(), document.querySelectorAll("[data-ghost]").length]).toEqual(
       [[[], []], 0],
@@ -389,7 +414,7 @@ describe("ComparisonController", () => {
   // @behavior VR-049
   it("keeps comparing with nothing once an edit is written", async () => {
     await show();
-    await check('input[name="compare-original"][value=""]');
+    await check(backupChoice("original", ""));
     const comparedCount = argsByCommand("compare_versions").length;
 
     await show();
@@ -406,7 +431,7 @@ describe("ComparisonController", () => {
   // @behavior VR-049
   it("keeps comparing with nothing once a newer Output is kept", async () => {
     await show();
-    await check('input[name="compare-original"][value=""]');
+    await check(backupChoice("original", ""));
     const comparedCount = argsByCommand("compare_versions").length;
     versions[0].backups.unshift({
       file: "ep01.20260925T040000Z.output.srt",
@@ -456,10 +481,10 @@ describe("ComparisonController", () => {
     await show();
 
     expect(
-      [
-        ...document.querySelectorAll<HTMLInputElement>("input[data-reference]"),
-      ].map((choice) => choice.value),
-    ).toEqual(["ja"]);
+      within(compareMenu())
+        .getAllByRole("checkbox")
+        .map((choice) => choice.closest("label")?.textContent?.trim()),
+    ).toEqual([t("languages.ja")]);
   });
 
   // @behavior VR-039
@@ -470,7 +495,7 @@ describe("ComparisonController", () => {
     };
     await show();
 
-    await check('input[data-reference][value="ja"]');
+    await check(referenceChoice("ja"));
 
     expect(references()).toEqual([[["ja", "こんにちは"]], []]);
   });
@@ -487,7 +512,7 @@ describe("ComparisonController", () => {
     });
     await show();
 
-    await check('input[data-reference][value="en"]');
+    await check(referenceChoice("en"));
 
     expect(references()).toEqual([[["en", "Hello"]], [["en", "Yeah"]]]);
   });
@@ -499,14 +524,12 @@ describe("ComparisonController", () => {
     translationRows = [pair(cue(0, 1000, "Hi"), cue(0, 1000, "Hello"))];
     await show();
 
-    await check(
-      'input[name="compare-translation"][value="ep01.en.output.srt"]',
-    );
+    await check(backupChoice("translation", "ep01.en.output.srt"));
 
     const first = document.querySelector("ol > li")!;
     const markedField = (side: string) =>
       first.querySelector(`[data-marks="${side}"]`)?.nextElementSibling
-        ?.classList;
+        ?.firstElementChild?.classList;
     expect([
       markedField("original")?.contains("text"),
       markedField("translation")?.contains("translation"),
@@ -522,8 +545,8 @@ describe("ComparisonController", () => {
     cuesByLanguage.en = [cue(0, 1000, "Hello")];
     await show();
 
-    await check('input[data-reference][value="ja"]');
-    await check('input[data-reference][value="en"]');
+    await check(referenceChoice("ja"));
+    await check(referenceChoice("en"));
 
     expect(references()[0]).toEqual([
       ["ja", "こんにちは"],
@@ -554,20 +577,15 @@ describe("ComparisonController", () => {
           'input[name="compare-original"]',
         ),
       ].map((choice) => choice.value),
-      document.querySelector('[data-action="comparison#chooseInVersions"]')
-        ?.textContent,
-    ]).toEqual([["ep01.20260925T023000Z.output.srt", ""], "從版本選……"]);
+      screen.getAllByRole("button", { name: "從版本選……" }).length,
+    ]).toEqual([["ep01.20260925T023000Z.output.srt", ""], 1]);
   });
 
   // @behavior VR-043
   it("compares with the Backup the Versions dialog sets", async () => {
     await show();
 
-    window.dispatchEvent(
-      new CustomEvent("versions:compare-with", {
-        detail: { language: null, file: "ep01.20260925T030000Z.srt" },
-      }),
-    );
+    await comparison.compareWith(null, "ep01.20260925T030000Z.srt");
     await settle();
 
     expect([
@@ -585,9 +603,7 @@ describe("ComparisonController", () => {
   it("compares the translation with nothing once another is shown", async () => {
     project = translatedProject();
     await show();
-    await check(
-      'input[name="compare-translation"][value="ep01.en.output.srt"]',
-    );
+    await check(backupChoice("translation", "ep01.en.output.srt"));
 
     project = { ...project, shown_translation: "ja" };
     await show();
@@ -649,9 +665,7 @@ describe("ComparisonController", () => {
     ];
     await show();
 
-    await check(
-      'input[name="compare-translation"][value="ep01.en.output.srt"]',
-    );
+    await check(backupChoice("translation", "ep01.en.output.srt"));
 
     expect(
       document.querySelector('[data-ghost="translation"]')?.textContent,

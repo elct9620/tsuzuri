@@ -2,7 +2,8 @@
   @component
   One Segment's row: its check, its times and Speaker, the text, and the translation when one is
   shown, even before it is made, with the menu of the Segment Changes it offers, also opened by a
-  right-click. The fields are made by the editor and written here only while the user is not typing
+  right-click. The editor's comparison marks each field it compares and reads other translations
+  beneath them. The fields are made by the editor and written here only while the user is not typing
   in them; a press in the row tells the session where it chose the Segment from.
 -->
 <script lang="ts">
@@ -30,7 +31,10 @@
   import { shortcutById, shortcutText } from "../ui/shortcuts";
   import { speakerNames } from "../ui/speakers";
   import { formatTime, parseTime, TIME_FIELD_ACTIONS } from "../ui/time";
+  import ComparisonMarks from "./ComparisonMarks.svelte";
   import { editingSession, projectFeed, segmentDialogs } from "./context";
+  import EarlierText from "./EarlierText.svelte";
+  import type { SegmentComparison, Side } from "./editor-comparison.svelte";
   import {
     change,
     checkedChoices,
@@ -48,6 +52,12 @@
   const SPLIT_SHORTCUTS =
     "keydown.ctrl+alt+enter->field#split:!composing:prevent keydown.meta+alt+enter->field#split:!composing:prevent";
 
+  /** The side of the comparison each field shows the marks of. */
+  const SIDE_BY_FIELD: Record<CursorField, Side> = {
+    text: "original",
+    translation: "translation",
+  };
+
   let {
     segment,
     index,
@@ -59,6 +69,7 @@
     isCurrent,
     isPlaying,
     isTypingKept,
+    comparison,
   }: {
     segment: Segment;
     index: number;
@@ -75,6 +86,8 @@
     isPlaying: boolean;
     /** Whether a field being typed in keeps its value, as the Segments keep their number. */
     isTypingKept: boolean;
+    /** What the editor's comparison shows on this row. */
+    comparison: SegmentComparison;
   } = $props();
 
   const feed = projectFeed();
@@ -87,6 +100,10 @@
   /** The Speakers the Speaker menu offers, read from the Project each time it opens. */
   let offeredSpeakers = $state<string[]>([]);
   let fieldByKind: Partial<Record<CursorField, HTMLElement>> = {};
+  /** The fields the row has, drawn anew only as the translation is shown or hidden. */
+  const kinds: CursorField[] = untrack(() =>
+    offers.isTranslationShown ? ["text", "translation"] : ["text"],
+  );
 
   const isFree = (kind: FieldKind) =>
     view === null || !isHeld(kind, view, index);
@@ -122,12 +139,12 @@
     write();
   }
 
-  /** Makes the row's fields once and keeps them showing the Segment, held while a Mode writes it. */
-  const fields: Attachment<HTMLElement> = (editors) => {
-    const kinds: CursorField[] = untrack(() =>
-      offers.isTranslationShown ? ["text", "translation"] : ["text"],
-    );
-    for (const kind of kinds) {
+  /**
+   * Makes the row's field of `kind` once in its own host, where the Cursor's caret is drawn beside
+   * it, and keeps it showing the Segment, held while a Mode writes it.
+   */
+  function attachField(kind: CursorField): Attachment<HTMLElement> {
+    return (host) => {
       const element = createField(
         "",
         kind === "translation" ? t("edit.untranslated") : "",
@@ -139,25 +156,21 @@
       element.dataset.action =
         kind === "text" ? `${FIELD_ACTIONS} ${SPLIT_SHORTCUTS}` : FIELD_ACTIONS;
       fieldByKind[kind] = element;
-      editors.append(element);
-    }
-    $effect(() => {
-      const value: Record<CursorField, string> = {
-        text: segment.text,
-        translation: segment.translation ?? "",
-      };
-      for (const kind of kinds) {
-        const element = fieldByKind[kind]!;
-        writeUnlessTyping(element, () => setFieldValue(element, value[kind]));
+      host.append(element);
+      $effect(() => {
+        const value =
+          kind === "text" ? segment.text : (segment.translation ?? "");
+        writeUnlessTyping(element, () => setFieldValue(element, value));
         setFieldHeld(element, !isFree(kind));
-      }
-      fieldByKind.translation?.classList.toggle("skeleton", isPending);
-    });
-    return () => {
-      for (const element of Object.values(fieldByKind)) element.remove();
-      fieldByKind = {};
+        if (kind === "translation")
+          element.classList.toggle("skeleton", isPending);
+      });
+      return () => {
+        element.remove();
+        delete fieldByKind[kind];
+      };
     };
-  };
+  }
 
   $effect(() => {
     const timeByInput: [HTMLInputElement | undefined, number][] = [
@@ -372,11 +385,32 @@
       </div>
     </div>
   </div>
-  <!-- The Cursor's caret is drawn within, beside the character it stands after -->
   <div
-    class="list-col-grow relative @max-4xl:col-start-2 @max-4xl:col-end-4 @max-4xl:row-start-2"
-    {@attach fields}
-  ></div>
+    class="list-col-grow @max-4xl:col-start-2 @max-4xl:col-end-4 @max-4xl:row-start-2"
+  >
+    {#each kinds as kind (kind)}
+      {@const sideRows = comparison.rowsBySide[SIDE_BY_FIELD[kind]]}
+      {#each sideRows as sideRow (sideRow.index)}
+        <ComparisonMarks {sideRow} />
+      {/each}
+      <!-- The Cursor's caret is drawn within, beside the character it stands after -->
+      <div class="relative" {@attach attachField(kind)}></div>
+      {#each sideRows as { row, index } (index)}
+        {#if row.kind !== "pair" || row.is_text_changed}
+          <EarlierText {row} />
+        {/if}
+      {/each}
+    {/each}
+    {#each comparison.references as { language, text } (language)}
+      <p
+        class="flex items-baseline gap-2 px-1.5 text-sm text-base-content/70"
+        data-reference={language}
+      >
+        <span class="badge badge-ghost badge-xs">{language}</span>
+        <span data-cue>{text}</span>
+      </p>
+    {/each}
+  </div>
   <div class="dropdown dropdown-left">
     <div
       tabindex={isOtherHeld ? -1 : 0}

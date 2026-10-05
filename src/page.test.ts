@@ -8,7 +8,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "./assembly";
 import { editingPort } from "./backend/editing";
 import { ProjectFeed, type ProjectView } from "./backend/project";
-import ComparisonController from "./controllers/comparison-controller";
 import { EditingSession } from "./editor";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
@@ -42,7 +41,6 @@ describe("drawPage", () => {
   // Each part is found by what its controller, module or Svelte Component reads, so a Svelte
   // Component left out of the page leaves nothing for them to read.
   it.each([
-    ["editor bar", '[data-comparison-target="menu"]'],
     ["preview", '[data-preview-target="panel"]'],
     ["notification stack", "[data-notifications]"],
     ["tooltip bubble", ".tooltip[popover]"],
@@ -618,9 +616,7 @@ describe("Page", () => {
 
   // @behavior VR-059
   it("opens the Versions dialog at the translation its compare group chooses in", async () => {
-    await start({
-      comparison: ComparisonController,
-    });
+    await start();
     await hold(
       projectOf({
         resources: [resourceOf({ translation_languages: ["en"] })],
@@ -647,9 +643,7 @@ describe("Page", () => {
 
   // @behavior VR-043
   it("compares the editor with the Backup set as the comparison in the Versions dialog", async () => {
-    await start({
-      comparison: ComparisonController,
-    });
+    await start();
     await hold(projectOf());
     screen
       .getAllByRole("button", {

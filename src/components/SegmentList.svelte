@@ -1,8 +1,9 @@
 <!--
   @component
-  The Segments of the Current Resource with the search and checked bars above them, and the keys
-  and Edit menu commands that reach them: checking every Segment, deleting, merging with a
-  neighbour, and cleaning Simplified Chinese out of what is marked.
+  The Segments of the Current Resource with the search and checked bars above them, compared as
+  each Project is shown, and the keys and Edit menu commands that reach them: checking every
+  Segment, deleting, merging with a neighbour, and cleaning Simplified Chinese out of what is
+  marked.
 -->
 <script lang="ts">
   import type { EditCommand } from "../backend/project";
@@ -18,13 +19,14 @@
   import { isShortcut } from "../ui/shortcuts";
   import CheckedBar from "./CheckedBar.svelte";
   import { cleanMarked } from "./cleanup-actions";
-  import { editingSession } from "./context";
+  import { editingSession, editorComparison } from "./context";
   import type { PlaybackFollowing } from "./playback-following.svelte";
   import SearchBar from "./SearchBar.svelte";
   import SegmentRows from "./SegmentRows.svelte";
 
   let { following }: { following: PlaybackFollowing } = $props();
   const session = editingSession();
+  const comparison = editorComparison();
   let searchBar: SearchBar;
   let segmentRows: SegmentRows;
   /** A change by key is being sent. */
@@ -162,7 +164,11 @@
 
 <svelte:window onkeydown={followKeys} onrust:edit-command={applyEditCommand} />
 
-<SegmentRows {following} bind:this={segmentRows}>
+<SegmentRows
+  {following}
+  onshown={(project) => void comparison.show(project)}
+  bind:this={segmentRows}
+>
   <div class="sticky -top-4 z-10 mb-2 flex flex-col gap-2">
     <SearchBar bind:this={searchBar} />
     <CheckedBar />

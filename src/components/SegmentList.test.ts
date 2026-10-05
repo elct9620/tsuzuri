@@ -99,6 +99,8 @@ describe("SegmentList", () => {
       (command, args) => {
         calls.push({ command, args });
         if (command === "current_project") return project;
+        // The Segment list compares each Project shown with its Backups, of which there are none
+        if (command === "subtitle_versions") return [];
         if (command === "translation_glossary_table") return glossaryTable;
         if (command === "edit_segment" && editFailure !== undefined)
           return Promise.reject(editFailure);

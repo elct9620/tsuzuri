@@ -9,6 +9,7 @@ import type { ProjectFeed } from "../backend/project";
 import type { TranscriptionScope } from "../backend/transcription";
 import type { EditingSession } from "../editor";
 import { AppUpdates } from "./app-updates.svelte";
+import { EditorComparison } from "./editor-comparison.svelte";
 import { TaskRun } from "./task-run.svelte";
 
 const FEED = Symbol("feed");
@@ -16,6 +17,7 @@ const TASK_RUN = Symbol("task run");
 const APP_UPDATES = Symbol("app updates");
 const SESSION = Symbol("editing session");
 const SEGMENT_DIALOGS = Symbol("segment dialogs");
+const COMPARISON = Symbol("editor comparison");
 
 /** The dialogs beside the page's main element that a Segment's menu and the checked bar open. */
 export interface SegmentDialogs {
@@ -31,19 +33,21 @@ export interface SegmentDialogs {
 
 /**
  * The context the page is mounted with, holding the Project feed, the editing session, the task
- * run and the App Updates every Svelte Component shares.
+ * run, the App Updates and the editor's comparison every Svelte Component shares.
  */
 export function pageContext(
   feed: ProjectFeed,
   session: EditingSession,
   run: TaskRun = new TaskRun(),
   updates: AppUpdates = new AppUpdates(),
+  comparison: EditorComparison = new EditorComparison(),
 ): Map<symbol, unknown> {
   return new Map<symbol, unknown>([
     [FEED, feed],
     [SESSION, session],
     [TASK_RUN, run],
     [APP_UPDATES, updates],
+    [COMPARISON, comparison],
   ]);
 }
 
@@ -65,6 +69,11 @@ export function taskRun(): TaskRun {
 /** The App Updates the page was mounted with; called while a Svelte Component initialises. */
 export function appUpdates(): AppUpdates {
   return getContext<AppUpdates>(APP_UPDATES);
+}
+
+/** The editor's comparison the page was mounted with; called while a Svelte Component initialises. */
+export function editorComparison(): EditorComparison {
+  return getContext<EditorComparison>(COMPARISON);
 }
 
 /** Hands the Svelte Components below the dialogs Page holds; called while Page initialises. */

@@ -737,7 +737,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 清理簡體與通知 | `cleanup-actions.ts` | 段落列、勾選工具列、快速鍵 |
 | Segment Changes 的選項 | `segment-changes.ts` | 段落選單、勾選工具列、右鍵 |
 
-資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。段落清單每畫好一份專案，就交給 `EditorComparison` 比較，並讓搜尋列重新搜尋。
+資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。Page 每讀到一份專案就交給 `EditorComparison` 比較；段落清單畫好列之後，讓搜尋列重新搜尋。
 
 ### 4.7 backend
 

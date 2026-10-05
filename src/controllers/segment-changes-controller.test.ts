@@ -87,8 +87,7 @@ describe("SegmentChangesController", () => {
     popupCount = 0;
     document.body.innerHTML = `
       <section data-controller="transcript segment-changes" data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut rust:edit-command@window->segment-changes#applyEditCommand">
-        <h2 data-transcript-target="heading"></h2>
-        <select data-transcript-target="translationLanguage"></select>
+        <select aria-label="譯文"></select>
         <p data-transcript-target="emptyHint"></p>
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>

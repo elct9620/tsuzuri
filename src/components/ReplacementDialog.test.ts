@@ -60,8 +60,6 @@ describe("ReplacementDialog", () => {
     document.body.innerHTML = `
       <section data-controller="transcript"
         data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor">
-        <h2 data-transcript-target="heading"></h2>
-        <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="emptyHint"></p>
         <ol data-transcript-target="list"></ol>
       </section>

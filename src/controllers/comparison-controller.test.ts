@@ -152,8 +152,6 @@ describe("ComparisonController", () => {
     document.body.innerHTML = `
       <main data-controller="transcript comparison"
         data-action="selectionchange@document->transcript#followSelection transcript:shown->comparison#mark versions:compare-with@window->comparison#compareWith">
-        <h2 data-transcript-target="heading"></h2>
-        <select data-transcript-target="translationLanguage"></select>
         <div data-comparison-target="menu"></div>
         <p data-transcript-target="emptyHint"></p>
         <ol data-transcript-target="list" data-comparison-target="list"></ol>

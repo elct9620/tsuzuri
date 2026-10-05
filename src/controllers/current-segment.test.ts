@@ -239,8 +239,6 @@ describe("Current Segment", () => {
           <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-preview-target="timeline"><div data-timeline-target="waveform"></div></div>
           </div>
         </div>
-        <h2 data-transcript-target="heading"></h2>
-        <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="emptyHint"></p>
         <ol data-transcript-target="list"></ol>
       </main>

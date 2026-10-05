@@ -172,6 +172,24 @@ describe("SearchController", () => {
     ]).toEqual([false, "，", true, ["，", "，"], "1/2"]);
   });
 
+  // @behavior ED-184
+  it("stays closed without a Project, leaving the key to the page", () => {
+    const event = new KeyboardEvent("keydown", {
+      key: "f",
+      code: "KeyF",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+
+    window.dispatchEvent(event);
+
+    expect([target("bar").hidden, event.defaultPrevented]).toEqual([
+      true,
+      false,
+    ]);
+  });
+
   // @behavior ED-138
   it("opens by ⌘F on macOS, leaving Ctrl+F to the text", async () => {
     Object.assign(window, {

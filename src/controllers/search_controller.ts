@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
 import { findText, type TextMatch } from "../backend/editing";
+import type { ProjectFeed } from "../backend/project";
 import { isMacOS } from "../backend/system";
 import {
   markRanges,
@@ -37,6 +38,7 @@ function matchStep(event: KeyboardEvent): number {
 export default class SearchController extends Controller {
   static targets = ["bar", "pattern", "field", "regexToggle", "count"];
 
+  declare readonly feed: ProjectFeed;
   declare readonly session: EditingSession;
   declare readonly barTarget: HTMLElement;
   declare readonly patternTarget: HTMLInputElement;
@@ -55,9 +57,10 @@ export default class SearchController extends Controller {
     this.unmark();
   }
 
-  /** Opens the bar; bound to `keydown@window`, it acts only on the search shortcuts. */
+  /** Opens the bar while a Project is open; bound to `keydown@window`, it acts only on the search shortcuts. */
   openByShortcut(event: KeyboardEvent): void {
-    if (!isShortcut(event, "search", isMacOS())) return;
+    if (!isShortcut(event, "search", isMacOS()) || this.feed.project === null)
+      return;
     event.preventDefault();
     this.open();
   }

@@ -5,9 +5,8 @@
   keeps what was typed, so the same replacement is one Enter away the next time.
 -->
 <script lang="ts">
-  import { flushSync, onMount } from "svelte";
+  import { flushSync } from "svelte";
 
-  import type { ProjectView } from "../backend/project";
   import { isMacOS } from "../backend/system";
   import type { CursorField } from "../editor";
   import { t } from "../i18n";
@@ -20,7 +19,6 @@
   const session = editingSession();
   let dialog: HTMLDialogElement;
   let patternInput: HTMLInputElement;
-  let project = $state<ProjectView | null>(null);
   let pattern = $state("");
   let substitute = $state("");
   let field = $state<CursorField>("text");
@@ -28,14 +26,12 @@
   /** Whether a translation is shown to replace in, as of opening. */
   let hasTranslation = $state(false);
 
-  onMount(() => feed.follow((next) => (project = next)));
-
   /** Opens the dialog by the replace shortcut while a Project is open. */
   function openByShortcut(event: KeyboardEvent): void {
     if (
       !isShortcut(event, "replace", isMacOS()) ||
       dialog.open ||
-      project === null
+      feed.project === null
     )
       return;
     event.preventDefault();

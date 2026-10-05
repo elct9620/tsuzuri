@@ -1488,6 +1488,14 @@ What is typed to find is read as a replacement reads it: as written, or as a reg
 | When | Ctrl+F, or ⌘F on macOS, is pressed |
 | Then | the search bar opens with `，` to find and focus, every match is marked, and it counts `1/2` |
 
+## `ED-184` Not opening the search bar without a Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Project open |
+| When | Ctrl+F, or ⌘F on macOS, is pressed |
+| Then | the search bar stays closed and the key goes on to the page |
+
 ## `ED-139` Moving to the next match
 
 Moving to a match makes its Segment current, so the list scrolls to it and the Preview follows as a click would.

@@ -11,7 +11,7 @@
   import { t } from "../i18n";
   import { notifyTranslation } from "../ui/notification.svelte";
   import { projectFeed, taskRun } from "./context";
-  import { TranslationChoices } from "./translation_choices.svelte";
+  import { TranslationChoices } from "./translation-choices.svelte";
   import TranslationOptions from "./TranslationOptions.svelte";
 
   const feed = projectFeed();

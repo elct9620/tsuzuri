@@ -28,7 +28,7 @@
   } from "../ui/notification.svelte";
   import { formatTime } from "../ui/time";
   import { projectFeed, taskRun } from "./context";
-  import { TranslationChoices } from "./translation_choices.svelte";
+  import { TranslationChoices } from "./translation-choices.svelte";
   import TranslationOptions from "./TranslationOptions.svelte";
 
   const feed = projectFeed();

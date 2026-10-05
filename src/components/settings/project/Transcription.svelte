@@ -5,7 +5,7 @@
   } from "../../../backend/project";
   import { t } from "../../../i18n";
   import HelpButton from "../HelpButton.svelte";
-  import { saveOptions } from "./project_options";
+  import { saveOptions } from "./project-options";
 
   interface Props {
     project: ProjectView;

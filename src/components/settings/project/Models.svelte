@@ -7,7 +7,7 @@
   import { t } from "../../../i18n";
   import { sourceName, type HubFile } from "../../../ui/models";
   import ModelSlot from "../ModelSlot.svelte";
-  import { saveOptions } from "./project_options";
+  import { saveOptions } from "./project-options";
 
   interface Props {
     project: ProjectView;

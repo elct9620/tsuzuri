@@ -7,8 +7,8 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
 - `src-tauri/src/project/current/tests/versions_behavior.rs`
-- `src/controllers/versions_controller.test.ts`
-- `src/controllers/comparison_controller.test.ts`
+- `src/controllers/versions-controller.test.ts`
+- `src/controllers/comparison-controller.test.ts`
 
 ## `VR-001` Listing a subtitle's Backups newest first
 

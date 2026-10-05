@@ -4,7 +4,7 @@
   import Notifications from "./components/Notifications.svelte";
   import Preview from "./components/Preview.svelte";
   import ReplacementDialog from "./components/ReplacementDialog.svelte";
-  import { ResourceDock } from "./components/resource_dock.svelte";
+  import { ResourceDock } from "./components/resource-dock.svelte";
   import ResourceList from "./components/ResourceList.svelte";
   import SegmentList from "./components/SegmentList.svelte";
   import DiarizationDialog from "./components/DiarizationDialog.svelte";

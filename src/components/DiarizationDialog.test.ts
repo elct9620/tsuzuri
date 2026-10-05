@@ -6,16 +6,16 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
 import { EditingSession } from "../editor";
-import { projectOf, resourceOf } from "../test_project";
+import { projectOf, resourceOf } from "../test-project";
 import {
   showNotifications,
   notificationItems,
   notifications,
-} from "./test_notifications";
+} from "./test-notifications";
 import { pageContext } from "./context";
 import DiarizationDialog from "./DiarizationDialog.svelte";
-import { renderWithToolbar } from "./test_toolbar";
-import { TaskRun } from "./task_run.svelte";
+import { renderWithToolbar } from "./test-toolbar";
+import { TaskRun } from "./task-run.svelte";
 
 describe("DiarizationDialog", () => {
   let feed: ProjectFeed;

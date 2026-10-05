@@ -8,7 +8,7 @@
   import { notifyFailure } from "../ui/notification.svelte";
   import { isShortcut } from "../ui/shortcuts";
   import { projectFeed } from "./context";
-  import type { ResourceDock } from "./resource_dock.svelte";
+  import type { ResourceDock } from "./resource-dock.svelte";
 
   interface Props {
     dock: ResourceDock;

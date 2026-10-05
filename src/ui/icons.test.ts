@@ -6,7 +6,7 @@ import { editingPort } from "../backend/editing";
 import { ProjectFeed } from "../backend/project";
 import { EditingSession } from "../editor";
 import { drawPage } from "../page";
-import { mockPageMount } from "../test_page";
+import { mockPageMount } from "../test-page";
 import { iconElement, showIcons } from "./icons";
 
 describe("icons", () => {

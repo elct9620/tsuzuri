@@ -6,8 +6,8 @@ import { getContext } from "svelte";
 
 import type { ProjectFeed } from "../backend/project";
 import type { EditingSession } from "../editor";
-import { AppUpdates } from "./app_updates.svelte";
-import { TaskRun } from "./task_run.svelte";
+import { AppUpdates } from "./app-updates.svelte";
+import { TaskRun } from "./task-run.svelte";
 
 const FEED = Symbol("feed");
 const TASK_RUN = Symbol("task run");

@@ -8,23 +8,23 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
-import SegmentChangesController from "../controllers/segment_changes_controller";
-import TranscriptController from "../controllers/transcript_controller";
+import SegmentChangesController from "../controllers/segment-changes-controller";
+import TranscriptController from "../controllers/transcript-controller";
 import { EditingSession } from "../editor";
-import { projectOf, resourceOf } from "../test_project";
+import { projectOf, resourceOf } from "../test-project";
 import {
   showNotifications,
   notificationDetail,
   notificationItems,
   notifications,
-} from "./test_notifications";
+} from "./test-notifications";
 import { pageContext } from "./context";
-import { TaskRun } from "./task_run.svelte";
+import { TaskRun } from "./task-run.svelte";
 import TaskProgress from "./TaskProgress.svelte";
-import { progressSteps } from "./test_task_progress";
-import { optionCheckbox, setSummaryWords } from "./test_translation_options";
+import { progressSteps } from "./test-task-progress";
+import { optionCheckbox, setSummaryWords } from "./test-translation-options";
 import TranscriptionDialog from "./TranscriptionDialog.svelte";
-import { renderWithToolbar } from "./test_toolbar";
+import { renderWithToolbar } from "./test-toolbar";
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 

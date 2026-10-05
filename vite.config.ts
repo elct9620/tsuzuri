@@ -16,7 +16,7 @@ export default defineConfig(() => ({
     svelteTesting(),
   ],
   test: {
-    setupFiles: ["src/test_setup.ts"],
+    setupFiles: ["src/test-setup.ts"],
     // Times show in the local time zone, so tests pin one to read the same on every machine.
     env: { TZ: "Asia/Taipei" },
   },

@@ -5,10 +5,10 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
-import { projectOf } from "../test_project";
-import FieldController, { composingOption } from "./field_controller";
-import SearchController from "./search_controller";
-import TranscriptController from "./transcript_controller";
+import { projectOf } from "../test-project";
+import FieldController, { composingOption } from "./field-controller";
+import SearchController from "./search-controller";
+import TranscriptController from "./transcript-controller";
 
 describe("SearchController", () => {
   let application: Application;

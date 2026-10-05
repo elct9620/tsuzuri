@@ -5,19 +5,19 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { GlossaryTable, ProjectView } from "../backend/project";
-import { projectOf, resourceOf } from "../test_project";
+import { projectOf, resourceOf } from "../test-project";
 import { fieldValue, isFieldHeld } from "../editor";
-import FieldController from "./field_controller";
+import FieldController from "./field-controller";
 import {
   showNotifications,
   notificationAction,
   notificationDetail,
   notifications,
-} from "../components/test_notifications";
+} from "../components/test-notifications";
 import type { TaskKind } from "../ui/progress";
-import { SAVE_MARK, saveMark } from "../ui/test_save_mark";
-import SpeakersController from "./speakers_controller";
-import TranscriptController from "./transcript_controller";
+import { SAVE_MARK, saveMark } from "../ui/test-save-mark";
+import SpeakersController from "./speakers-controller";
+import TranscriptController from "./transcript-controller";
 
 describe("TranscriptController", () => {
   let application: Application;

@@ -44,7 +44,7 @@ import {
   type DragReach,
   type Landing,
   type Span,
-} from "../ui/timeline_spans";
+} from "../ui/timeline-spans";
 
 const INITIAL_PX_PER_SEC = 100;
 /** The time scale's height, which the page leaves free beneath the waveform. */

@@ -16,7 +16,7 @@ import {
   notificationCountdown,
   notificationItems,
   notifications,
-} from "./test_notifications";
+} from "./test-notifications";
 
 describe("Notifications", () => {
   /** Shows `notification` and draws it, so its countdown has started. */

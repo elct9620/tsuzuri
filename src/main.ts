@@ -2,25 +2,25 @@ import { Application } from "@hotwired/stimulus";
 
 import { assemble } from "./assembly";
 import { locale } from "./backend/system";
-import CleanupController from "./controllers/cleanup_controller";
-import ComparisonController from "./controllers/comparison_controller";
+import CleanupController from "./controllers/cleanup-controller";
+import ComparisonController from "./controllers/comparison-controller";
 import FieldController, {
   composingOption,
-} from "./controllers/field_controller";
-import PreviewController from "./controllers/preview_controller";
-import ProjectController from "./controllers/project_controller";
-import RecentProjectsController from "./controllers/recent_projects_controller";
-import SearchController from "./controllers/search_controller";
+} from "./controllers/field-controller";
+import PreviewController from "./controllers/preview-controller";
+import ProjectController from "./controllers/project-controller";
+import RecentProjectsController from "./controllers/recent-projects-controller";
+import SearchController from "./controllers/search-controller";
 import SegmentChangesController, {
   typingOption,
-} from "./controllers/segment_changes_controller";
-import SpeakersController from "./controllers/speakers_controller";
-import TimeFieldController from "./controllers/time_field_controller";
+} from "./controllers/segment-changes-controller";
+import SpeakersController from "./controllers/speakers-controller";
+import TimeFieldController from "./controllers/time-field-controller";
 import TimelineController, {
   controlOption,
-} from "./controllers/timeline_controller";
-import TranscriptController from "./controllers/transcript_controller";
-import VersionsController from "./controllers/versions_controller";
+} from "./controllers/timeline-controller";
+import TranscriptController from "./controllers/transcript-controller";
+import VersionsController from "./controllers/versions-controller";
 import { setInterfaceLanguage } from "./i18n";
 import { drawPage } from "./page";
 

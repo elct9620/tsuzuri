@@ -14,15 +14,15 @@ import {
 import type { ProjectView, Segment } from "../backend/project";
 import type { EditingSession } from "../editor";
 import type { Waveform } from "../backend/waveform";
-import { layOutTimeline } from "../test_layout";
-import { projectOf } from "../test_project";
-import FieldController, { composingOption } from "./field_controller";
-import PreviewController from "./preview_controller";
+import { layOutTimeline } from "../test-layout";
+import { projectOf } from "../test-project";
+import FieldController, { composingOption } from "./field-controller";
+import PreviewController from "./preview-controller";
 import TimelineController, {
   controlOption,
   regionColor,
-} from "./timeline_controller";
-import TranscriptController from "./transcript_controller";
+} from "./timeline-controller";
+import TranscriptController from "./transcript-controller";
 
 describe("Current Segment", () => {
   let application: Application;

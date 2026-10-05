@@ -13,8 +13,8 @@ import {
   translatePage,
 } from "./i18n";
 import { drawPage } from "./page";
-import { mockPageMount } from "./test_page";
-import { projectOf } from "./test_project";
+import { mockPageMount } from "./test-page";
+import { projectOf } from "./test-project";
 
 describe("interface language", () => {
   afterEach(() => {

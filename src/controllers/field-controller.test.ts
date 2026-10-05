@@ -3,9 +3,9 @@ import { Application } from "@hotwired/stimulus";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { assemble } from "../assembly";
-import { projectOf } from "../test_project";
+import { projectOf } from "../test-project";
 import type { EditingSession } from "../editor";
-import FieldController, { composingOption } from "./field_controller";
+import FieldController, { composingOption } from "./field-controller";
 
 describe("FieldController", () => {
   let application: Application;

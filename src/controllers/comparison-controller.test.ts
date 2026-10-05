@@ -9,13 +9,13 @@ import type {
   ProjectView,
   SubtitleVersions,
 } from "../backend/project";
-import { projectOf, resourceOf } from "../test_project";
+import { projectOf, resourceOf } from "../test-project";
 import {
   showNotifications,
   notifications,
-} from "../components/test_notifications";
-import ComparisonController from "./comparison_controller";
-import TranscriptController from "./transcript_controller";
+} from "../components/test-notifications";
+import ComparisonController from "./comparison-controller";
+import TranscriptController from "./transcript-controller";
 
 describe("ComparisonController", () => {
   let application: Application;

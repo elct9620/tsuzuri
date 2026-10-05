@@ -8,11 +8,11 @@ import { editingPort } from "../backend/editing";
 import type { PipelineProgress } from "../backend/progress";
 import { ProjectFeed } from "../backend/project";
 import { EditingSession } from "../editor";
-import { showNotifications, notifications } from "./test_notifications";
+import { showNotifications, notifications } from "./test-notifications";
 import { pageContext } from "./context";
-import { TaskRun } from "./task_run.svelte";
+import { TaskRun } from "./task-run.svelte";
 import TaskProgress from "./TaskProgress.svelte";
-import { progressSteps } from "./test_task_progress";
+import { progressSteps } from "./test-task-progress";
 
 describe("TaskProgress", () => {
   let run: TaskRun;

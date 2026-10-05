@@ -12,7 +12,7 @@ import {
   notificationAction,
   notificationDetail,
   notifications,
-} from "../../test_notifications";
+} from "../../test-notifications";
 import { pageContext } from "../../context";
 import UpdatesDialog from "../../UpdatesDialog.svelte";
 import VersionAndUpdates from "./VersionAndUpdates.svelte";

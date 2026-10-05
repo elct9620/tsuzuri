@@ -11,7 +11,7 @@ Pointing each Model Slot at a Model Source, in the general settings or as a Proj
 - `src/components/settings/RepositoryDialog.test.ts`
 - `src/components/settings/general/Models.test.ts`
 - `src/components/settings/project/Models.test.ts`
-- `src/controllers/project_controller.test.ts`
+- `src/controllers/project-controller.test.ts`
 
 ## `MD-001` Remembering a chosen Model
 

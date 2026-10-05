@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { projectOf } from "../test_project";
+import { projectOf } from "../test-project";
 import { ProjectFeed, type ProjectView } from "./project";
 
 describe("ProjectFeed", () => {

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SAVE_MARK_MS, showSaveMark } from "./save_mark";
-import { SAVE_MARK, saveMark } from "./test_save_mark";
+import { SAVE_MARK_MS, showSaveMark } from "./save-mark";
+import { SAVE_MARK, saveMark } from "./test-save-mark";
 
 describe("showSaveMark", () => {
   beforeEach(() => {

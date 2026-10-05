@@ -1,7 +1,7 @@
 import { render } from "@testing-library/svelte";
 import type { Component } from "svelte";
 
-import { ResourceDock } from "./resource_dock.svelte";
+import { ResourceDock } from "./resource-dock.svelte";
 import Toolbar from "./Toolbar.svelte";
 
 /** The toolbar props each opening the dialog of one task. */

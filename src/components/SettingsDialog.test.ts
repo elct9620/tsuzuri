@@ -5,9 +5,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
 import { EditingSession } from "../editor";
-import { mockPageMount } from "../test_page";
-import { projectOf } from "../test_project";
-import { showNotifications } from "./test_notifications";
+import { mockPageMount } from "../test-page";
+import { projectOf } from "../test-project";
+import { showNotifications } from "./test-notifications";
 import { pageContext } from "./context";
 import SettingsDialog from "./SettingsDialog.svelte";
 

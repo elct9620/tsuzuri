@@ -16,7 +16,7 @@ import {
   chosenTextField,
   offerTextFields,
   selectedText,
-} from "../ui/text_fields";
+} from "../ui/text-fields";
 
 /** The highlight every match is marked under, and the one the current match is. */
 const MATCH_HIGHLIGHT = "search-match";

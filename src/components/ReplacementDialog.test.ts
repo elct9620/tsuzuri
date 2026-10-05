@@ -8,10 +8,10 @@ import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import FieldController, {
   composingOption,
-} from "../controllers/field_controller";
-import TranscriptController from "../controllers/transcript_controller";
-import { projectOf } from "../test_project";
-import { showNotifications, notifications } from "./test_notifications";
+} from "../controllers/field-controller";
+import TranscriptController from "../controllers/transcript-controller";
+import { projectOf } from "../test-project";
+import { showNotifications, notifications } from "./test-notifications";
 import { pageContext } from "./context";
 import ReplacementDialog from "./ReplacementDialog.svelte";
 

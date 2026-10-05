@@ -8,13 +8,13 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/ui/menu.test.ts`
 - `src/components/Tooltip.test.ts`
 - `src/components/Notifications.test.ts`
-- `src/ui/save_mark.test.ts`
+- `src/ui/save-mark.test.ts`
 - `src/ui/icons.test.ts`
 - `src/ui/shortcuts.test.ts`
 - `src/components/ShortcutsDialog.test.ts`
 - `src-tauri/src/window.rs`
 - `src/components/settings/general/About.test.ts`
-- `src/components/resource_dock.test.ts`
+- `src/components/resource-dock.test.ts`
 
 ## `IF-001` Following the system language
 

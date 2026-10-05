@@ -8,9 +8,9 @@ Hearing and watching the Current Resource's media above the editor while its sub
 - `src-tauri/src/waveform.rs`
 - `src-tauri/src/waveform/*.rs`
 - `src-tauri/src/window.rs`
-- `src/controllers/preview_controller.test.ts`
-- `src/controllers/timeline_controller.test.ts`
-- `src/controllers/current_segment.test.ts`
+- `src/controllers/preview-controller.test.ts`
+- `src/controllers/timeline-controller.test.ts`
+- `src/controllers/current-segment.test.ts`
 
 ## `PV-001` Letting the webview read a media file of the Project
 

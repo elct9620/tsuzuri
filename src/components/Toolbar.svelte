@@ -9,7 +9,7 @@
   import { currentResource, type ProjectView } from "../backend/project";
   import { t } from "../i18n";
   import { projectFeed } from "./context";
-  import type { ResourceDock } from "./resource_dock.svelte";
+  import type { ResourceDock } from "./resource-dock.svelte";
 
   interface Props {
     dock: ResourceDock;

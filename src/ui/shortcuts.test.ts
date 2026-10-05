@@ -12,7 +12,7 @@ import {
 } from "./shortcuts";
 
 const controllers = import.meta.glob<string>(
-  ["../controllers/*_controller.ts"],
+  ["../controllers/*-controller.ts"],
   { query: "?raw", import: "default", eager: true },
 );
 

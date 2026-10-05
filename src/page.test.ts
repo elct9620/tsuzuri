@@ -8,8 +8,8 @@ import { ProjectFeed } from "./backend/project";
 import { EditingSession } from "./editor";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
-import { mockPageMount } from "./test_page";
-import { projectOf, resourceOf } from "./test_project";
+import { mockPageMount } from "./test-page";
+import { projectOf, resourceOf } from "./test-project";
 
 describe("drawPage", () => {
   /** The pages each test draws, taken away after it so their Svelte Components stop following. */

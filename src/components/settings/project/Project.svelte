@@ -2,7 +2,7 @@
   import type { ProjectOptions, ProjectView } from "../../../backend/project";
   import { t } from "../../../i18n";
   import HelpButton from "../HelpButton.svelte";
-  import { saveOptions, setLanguage } from "./project_options";
+  import { saveOptions, setLanguage } from "./project-options";
 
   interface Props {
     project: ProjectView;

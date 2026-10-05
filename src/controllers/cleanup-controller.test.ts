@@ -5,16 +5,16 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
-import { projectOf } from "../test_project";
+import { projectOf } from "../test-project";
 import {
   showNotifications,
   notifications,
-} from "../components/test_notifications";
-import CleanupController from "./cleanup_controller";
-import FieldController, { composingOption } from "./field_controller";
-import SegmentChangesController from "./segment_changes_controller";
-import TranscriptController from "./transcript_controller";
-import { typingOption } from "./segment_changes_controller";
+} from "../components/test-notifications";
+import CleanupController from "./cleanup-controller";
+import FieldController, { composingOption } from "./field-controller";
+import SegmentChangesController from "./segment-changes-controller";
+import TranscriptController from "./transcript-controller";
+import { typingOption } from "./segment-changes-controller";
 
 describe("CleanupController", () => {
   let application: Application;

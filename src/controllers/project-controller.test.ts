@@ -5,14 +5,14 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
-import { projectOf } from "../test_project";
+import { projectOf } from "../test-project";
 import {
   showNotifications,
   notificationDetail,
   notifications,
-} from "../components/test_notifications";
-import { composingOption } from "./field_controller";
-import ProjectController from "./project_controller";
+} from "../components/test-notifications";
+import { composingOption } from "./field-controller";
+import ProjectController from "./project-controller";
 
 describe("ProjectController", () => {
   let application: Application;

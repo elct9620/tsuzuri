@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { type MenuChoice, popUpMenu } from "../backend/context_menu";
+import { type MenuChoice, popUpMenu } from "../backend/context-menu";
 import {
   currentResource,
   type EditCommand,

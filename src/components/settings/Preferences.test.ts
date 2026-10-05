@@ -6,7 +6,7 @@ import {
   DEFAULT_PREFERENCES,
   type Preferences as SavedPreferences,
 } from "../../backend/preferences";
-import { showNotifications, notifications } from "../test_notifications";
+import { showNotifications, notifications } from "../test-notifications";
 import Preferences from "./Preferences.svelte";
 
 describe("Preferences", () => {

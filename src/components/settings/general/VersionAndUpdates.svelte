@@ -14,7 +14,7 @@
   } from "../../../backend/updates";
   import { t } from "../../../i18n";
   import { notify, notifyFailure } from "../../../ui/notification.svelte";
-  import { updateFoundMessage } from "../../app_updates.svelte";
+  import { updateFoundMessage } from "../../app-updates.svelte";
   import { appUpdates } from "../../context";
   import HelpButton from "../HelpButton.svelte";
 

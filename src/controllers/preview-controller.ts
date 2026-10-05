@@ -13,7 +13,7 @@ import {
   destroyVideoWindow,
   leaveVideoWindowFullscreen,
   toggleVideoWindowFullscreen,
-} from "../backend/video_window";
+} from "../backend/video-window";
 import type { EditingSession } from "../editor";
 import { t } from "../i18n";
 import {
@@ -33,7 +33,7 @@ import {
 } from "../ui/silence";
 import { isShortcut } from "../ui/shortcuts";
 import { MS_PER_SECOND, formatClock, formatTime } from "../ui/time";
-import { forwardKeys, openVideoWindow } from "../ui/video_window";
+import { forwardKeys, openVideoWindow } from "../ui/video-window";
 import {
   playAtVolume,
   resumeAudioGraph,

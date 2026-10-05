@@ -5,8 +5,8 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { RecentProjectView } from "../backend/project";
-import ProjectController from "./project_controller";
-import RecentProjectsController from "./recent_projects_controller";
+import ProjectController from "./project-controller";
+import RecentProjectsController from "./recent-projects-controller";
 
 const LECTURE: RecentProjectView = {
   directory: "/videos/lecture",

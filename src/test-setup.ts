@@ -1,5 +1,5 @@
 import { setInterfaceLanguage } from "./i18n";
-import { installTopLayer } from "./test_top_layer";
+import { installTopLayer } from "./test-top-layer";
 
 // Controller tests read the interface in Traditional Chinese, whatever language the machine running them uses.
 await setInterfaceLanguage("zh-Hant-TW");

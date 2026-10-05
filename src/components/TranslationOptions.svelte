@@ -6,8 +6,8 @@
 <script lang="ts">
   import type { Language, TranslationGlossaryView } from "../backend/project";
   import { t } from "../i18n";
-  import { fileName } from "../ui/file_name";
-  import type { TranslationChoices } from "./translation_choices.svelte";
+  import { fileName } from "../ui/file-name";
+  import type { TranslationChoices } from "./translation-choices.svelte";
 
   interface Props {
     choices: TranslationChoices;

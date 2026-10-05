@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   showNotifications,
   notifications,
-} from "../components/test_notifications";
+} from "../components/test-notifications";
 import type { ComparedRow } from "../backend/project";
-import VersionsController from "./versions_controller";
+import VersionsController from "./versions-controller";
 
 describe("VersionsController", () => {
   let application: Application;

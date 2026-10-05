@@ -18,7 +18,7 @@ import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
 import { notifyFailure, notifyRestoration } from "../ui/notification.svelte";
 import { formatTime, localTime, parseTime } from "../ui/time";
-import type VersionsController from "./versions_controller";
+import type VersionsController from "./versions-controller";
 
 /** Which subtitle a comparison is of: the original, or the translation shown. */
 type Side = "original" | "translation";

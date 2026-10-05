@@ -11,15 +11,15 @@ import {
   notificationCountdown,
   notificationDetail,
   notifications,
-} from "../components/test_notifications";
+} from "../components/test-notifications";
 import { drawPage } from "../page";
-import { mockPageMount } from "../test_page";
-import { projectOf } from "../test_project";
+import { mockPageMount } from "../test-page";
+import { projectOf } from "../test-project";
 import { EditingSession, fieldValue } from "../editor";
-import FieldController, { composingOption } from "./field_controller";
-import SegmentChangesController from "./segment_changes_controller";
-import TranscriptController from "./transcript_controller";
-import { typingOption } from "./segment_changes_controller";
+import FieldController, { composingOption } from "./field-controller";
+import SegmentChangesController from "./segment-changes-controller";
+import TranscriptController from "./transcript-controller";
+import { typingOption } from "./segment-changes-controller";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
 interface MenuItemSent {

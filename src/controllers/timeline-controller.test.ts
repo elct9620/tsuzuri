@@ -9,17 +9,17 @@ import type { EditingSession } from "../editor";
 import type { SegmentChange } from "../backend/editing";
 import type { ProjectView, Segment } from "../backend/project";
 import type { Waveform } from "../backend/waveform";
-import { layOutTimeline } from "../test_layout";
-import { projectOf } from "../test_project";
+import { layOutTimeline } from "../test-layout";
+import { projectOf } from "../test-project";
 import {
   showNotifications,
   notificationDetail,
   notifications,
-} from "../components/test_notifications";
+} from "../components/test-notifications";
 import TimelineController, {
   controlOption,
   regionColor,
-} from "./timeline_controller";
+} from "./timeline-controller";
 
 describe("TimelineController", () => {
   let application: Application;

@@ -3,12 +3,12 @@ import { render, screen } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "../../../backend/project";
-import { projectOf } from "../../../test_project";
+import { projectOf } from "../../../test-project";
 import {
   notificationDetail,
   notifications,
   showNotifications,
-} from "../../test_notifications";
+} from "../../test-notifications";
 import Project from "./Project.svelte";
 
 describe("Project", () => {

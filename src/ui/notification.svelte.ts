@@ -7,7 +7,7 @@ import type { Outcome } from "../editor";
 import { t } from "../i18n";
 import { failureKind, failureMessage } from "./failure";
 import { factorItems, phaseItems } from "./progress";
-import { showSaveMark } from "./save_mark";
+import { showSaveMark } from "./save-mark";
 
 /** How long a Notification that goes on its own stays, paused while the pointer or focus rests on it. */
 export const NOTIFICATION_MS = 6000;

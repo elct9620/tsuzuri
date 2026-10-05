@@ -3,7 +3,7 @@ import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Logs from "./Logs.svelte";
-import { showNotifications, notifications } from "../../test_notifications";
+import { showNotifications, notifications } from "../../test-notifications";
 
 describe("Logs", () => {
   let calls: { command: string; args: unknown }[];

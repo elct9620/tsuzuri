@@ -5,8 +5,8 @@ import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
-import { projectOf } from "../test_project";
-import PreviewController from "./preview_controller";
+import { projectOf } from "../test-project";
+import PreviewController from "./preview-controller";
 
 describe("PreviewController", () => {
   let application: Application;

@@ -8,7 +8,7 @@ import type {
   ModelSource,
   PresetModel,
 } from "../../../backend/toolchain";
-import { showNotifications, notifications } from "../../test_notifications";
+import { showNotifications, notifications } from "../../test-notifications";
 import RepositoryDialog from "../RepositoryDialog.svelte";
 import Models from "./Models.svelte";
 

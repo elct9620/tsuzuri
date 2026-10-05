@@ -6,7 +6,7 @@ import {
   landingSpan,
   regionLanes,
   snapTime,
-} from "./timeline_spans";
+} from "./timeline-spans";
 
 describe("timeline spans", () => {
   const reach = {

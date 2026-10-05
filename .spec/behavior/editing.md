@@ -4,17 +4,17 @@ Correcting the Project in the transcript panel, where every edit is written to R
 
 ## Includes
 
-- `src/controllers/transcript_controller.test.ts`
+- `src/controllers/transcript-controller.test.ts`
 - `src/components/ResourceList.test.ts`
-- `src/controllers/segment_changes_controller.test.ts`
-- `src/controllers/speakers_controller.test.ts`
+- `src/controllers/segment-changes-controller.test.ts`
+- `src/controllers/speakers-controller.test.ts`
 - `src/components/TranslationDialog.test.ts`
-- `src/controllers/field_controller.test.ts`
-- `src/controllers/time_field_controller.test.ts`
-- `src/controllers/timeline_controller.test.ts`
+- `src/controllers/field-controller.test.ts`
+- `src/controllers/time-field-controller.test.ts`
+- `src/controllers/timeline-controller.test.ts`
 - `src/components/ReplacementDialog.test.ts`
-- `src/controllers/cleanup_controller.test.ts`
-- `src/controllers/search_controller.test.ts`
+- `src/controllers/cleanup-controller.test.ts`
+- `src/controllers/search-controller.test.ts`
 - `src/editor/*.test.ts`
 - `src-tauri/src/replacement.rs`
 - `src-tauri/src/project/current/tests/editing_behavior.rs`

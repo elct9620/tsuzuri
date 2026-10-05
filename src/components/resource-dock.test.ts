@@ -9,8 +9,8 @@ import { ProjectFeed } from "../backend/project";
 import { EditingSession } from "../editor";
 import { setInterfaceLanguage, t } from "../i18n";
 import { drawPage } from "../page";
-import { mockPageMount } from "../test_page";
-import { projectOf, resourceOf } from "../test_project";
+import { mockPageMount } from "../test-page";
+import { projectOf, resourceOf } from "../test-project";
 
 /**
  * Tailwind's rules for the toolbar's two buttons, which the page's stylesheet would give: the one

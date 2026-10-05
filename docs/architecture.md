@@ -740,8 +740,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `events.ts` | 把 Rust 事件轉到 window |
 | `failure.ts` | `Failure` 型別 |
 | `dialog.ts`、`system.ts` | 選檔對話方塊、語系與平台 |
-| `video_window.ts` | 影片視窗的全螢幕與關閉 |
-| `context_menu.ts` | 右鍵時的系統選單 |
+| `video-window.ts` | 影片視窗的全螢幕與關閉 |
+| `context-menu.ts` | 右鍵時的系統選單 |
 
 `backend/` 是 webview 接觸 Tauri 的地方：指令、外掛與系統選單都經過它，controller 不直接呼叫 Tauri。
 
@@ -750,7 +750,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 模組 | 內容 |
 |---|---|
 | `ui/notification.svelte.ts` | 通知的清單，controller 與 Svelte 元件都由此發出 |
-| `ui/save_mark.ts` | 標題列的存檔提示與計時 |
+| `ui/save-mark.ts` | 標題列的存檔提示與計時 |
 | `ui/failure.ts` | 錯誤碼的訊息與通知種類 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式與欄位綁定、關閉選單 |
@@ -759,13 +759,13 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/fold.ts` | 收起時點亮收起鈕 |
 | `ui/volume.ts` | 音量曲線、增益與限幅 |
-| `ui/video_window.ts` | 開啟影片視窗、轉交按鍵 |
+| `ui/video-window.ts` | 開啟影片視窗、轉交按鍵 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
-| `ui/timeline_spans.ts` | 時間軸區段與選段的落點 |
-| `ui/file_name.ts` | 路徑的最後一段 |
+| `ui/timeline-spans.ts` | 時間軸區段與選段的落點 |
+| `ui/file-name.ts` | 路徑的最後一段 |
 | `ui/silence.ts` | 沒有媒體檔時播放的靜音 |
 | `ui/shortcuts.ts` | 各平台的快速鍵、比對與寫法 |
-| `ui/text_fields.ts` | 原文或譯文的選擇、選取的文字 |
+| `ui/text-fields.ts` | 原文或譯文的選擇、選取的文字 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
 圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。快速鍵以 `ui/shortcuts.ts` 為準：controller 與 Svelte 元件自己比對的鍵用 `isShortcut` 讀它，寫在 `data-action` 與 Rust 選單的鍵由測試雙向核對。

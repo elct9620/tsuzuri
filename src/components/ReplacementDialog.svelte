@@ -12,7 +12,7 @@
   import { t } from "../i18n";
   import { notify, notifyFailure } from "../ui/notification.svelte";
   import { isShortcut } from "../ui/shortcuts";
-  import { selectedText } from "../ui/text_fields";
+  import { selectedText } from "../ui/text-fields";
   import { editingSession, projectFeed } from "./context";
 
   const feed = projectFeed();

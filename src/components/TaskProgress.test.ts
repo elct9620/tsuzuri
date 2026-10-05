@@ -4,8 +4,10 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { editingPort } from "../backend/editing";
 import type { PipelineProgress } from "../backend/progress";
 import { ProjectFeed } from "../backend/project";
+import { EditingSession } from "../editor";
 import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
 import { pageContext } from "./context";
 import { TaskRun } from "./task_run.svelte";
@@ -40,7 +42,13 @@ describe("TaskProgress", () => {
       if (command === "cancel_task") isCancelAsked = true;
     });
     run = new TaskRun();
-    render(TaskProgress, { context: pageContext(new ProjectFeed(), run) });
+    render(TaskProgress, {
+      context: pageContext(
+        new ProjectFeed(),
+        new EditingSession(editingPort),
+        run,
+      ),
+    });
   });
 
   afterEach(() => {

@@ -3,7 +3,9 @@ import { within } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { tick } from "svelte";
 import { afterEach, describe, expect, it } from "vitest";
+import { editingPort } from "./backend/editing";
 import { ProjectFeed } from "./backend/project";
+import { EditingSession } from "./editor";
 import {
   interfaceLanguageCode,
   setInterfaceLanguage,
@@ -80,7 +82,7 @@ describe("interface language", () => {
     const feed = new ProjectFeed();
     await feed.refresh();
 
-    drawPage(feed, settings);
+    drawPage(feed, new EditingSession(editingPort), settings);
     await tick();
 
     const settingsDialog = [...settings.querySelectorAll("dialog")].find(

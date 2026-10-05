@@ -1,25 +1,38 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
+import FieldController, {
+  composingOption,
+} from "../controllers/field_controller";
+import TranscriptController from "../controllers/transcript_controller";
 import { projectOf } from "../test_project";
 import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
-import FieldController, { composingOption } from "./field_controller";
-import ReplacementController from "./replacement_controller";
-import TranscriptController from "./transcript_controller";
+import { pageContext } from "./context";
+import ReplacementDialog from "./ReplacementDialog.svelte";
 
-describe("ReplacementController", () => {
+describe("ReplacementDialog", () => {
   let application: Application;
   let project: ProjectView | null;
   let replaceArgs: unknown[];
   let count: number;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const target = <T extends HTMLElement>(name: string) =>
-    document.querySelector<T>(`[data-replacement-target="${name}"]`)!;
+  const dialog = () =>
+    screen.getByRole<HTMLDialogElement>("dialog", { hidden: true });
+  const textbox = (name: string) =>
+    screen.getByRole<HTMLInputElement>("textbox", { hidden: true, name });
+  /** Types `value` into the text box named `name`, as the user would. */
+  function type(name: string, value: string): void {
+    textbox(name).value = value;
+    textbox(name).dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  const fieldChoice = (name: string) =>
+    screen.getByRole<HTMLInputElement>("radio", { hidden: true, name });
 
   async function hold(next: ProjectView): Promise<void> {
     project = next;
@@ -46,19 +59,11 @@ describe("ReplacementController", () => {
     count = 1;
     document.body.innerHTML = `
       ${NOTIFICATION_STACK}
-      <section data-controller="transcript replacement"
-        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor keydown@window->replacement#openByShortcut">
+      <section data-controller="transcript"
+        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <p data-transcript-target="emptyHint"></p>
-        <dialog data-replacement-target="dialog">
-          <input id="pattern" data-replacement-target="pattern" />
-          <input id="substitute" data-replacement-target="substitute"
-            data-action="keydown.enter->replacement#apply:!composing:prevent" />
-          <input type="radio" name="replacement-field" value="text" data-replacement-target="field" checked />
-          <input type="radio" name="replacement-field" value="translation" data-replacement-target="field" />
-          <input type="checkbox" data-replacement-target="regexToggle" />
-        </dialog>
         <ol data-transcript-target="list"></ol>
       </section>
     `;
@@ -74,11 +79,14 @@ describe("ReplacementController", () => {
     );
     application = Application.start();
     application.registerActionOption("composing", composingOption);
-    await assemble(application, {
+    const assembly = assemble(application, {
       field: FieldController,
       transcript: TranscriptController,
-      replacement: ReplacementController,
-    }).start();
+    });
+    render(ReplacementDialog, {
+      context: pageContext(assembly.feed, assembly.session),
+    });
+    await assembly.start();
     await settle();
   });
 
@@ -122,10 +130,26 @@ describe("ReplacementController", () => {
     await settle();
 
     expect([
-      target<HTMLDialogElement>("dialog").open,
-      target<HTMLInputElement>("pattern").value,
-      document.activeElement === target("pattern"),
+      dialog().open,
+      textbox("尋找").value,
+      document.activeElement === textbox("尋找"),
     ]).toEqual([true, "，", true]);
+  });
+
+  // @behavior ED-183
+  it("stays closed without a Project, leaving the key to the page", async () => {
+    const event = new KeyboardEvent("keydown", {
+      key: "h",
+      code: "KeyH",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+
+    window.dispatchEvent(event);
+    await settle();
+
+    expect([dialog().open, event.defaultPrevented]).toEqual([false, false]);
   });
 
   it("opens by ⌘+Option+F on macOS, whose key Option changes, leaving Ctrl+H to the text", async () => {
@@ -136,14 +160,11 @@ describe("ReplacementController", () => {
 
     press({ key: "h", code: "KeyH", ctrlKey: true });
     await settle();
-    const isOpenByCtrlH = target<HTMLDialogElement>("dialog").open;
+    const isOpenByCtrlH = dialog().open;
     press({ key: "ƒ", code: "KeyF", metaKey: true, altKey: true });
     await settle();
 
-    expect([isOpenByCtrlH, target<HTMLDialogElement>("dialog").open]).toEqual([
-      false,
-      true,
-    ]);
+    expect([isOpenByCtrlH, dialog().open]).toEqual([false, true]);
   });
 
   it("opens by ⌘+Option+F on macOS with Shift held too", async () => {
@@ -160,20 +181,17 @@ describe("ReplacementController", () => {
       shiftKey: true,
     });
 
-    expect(target<HTMLDialogElement>("dialog").open).toBe(true);
+    expect(dialog().open).toBe(true);
   });
 
   it("opens by the key that types H, wherever it is", async () => {
     await hold(translatedProject);
 
     press({ key: "d", code: "KeyH", ctrlKey: true });
-    const isOpenByPlace = target<HTMLDialogElement>("dialog").open;
+    const isOpenByPlace = dialog().open;
     press({ key: "h", code: "KeyJ", ctrlKey: true });
 
-    expect([isOpenByPlace, target<HTMLDialogElement>("dialog").open]).toEqual([
-      false,
-      true,
-    ]);
+    expect([isOpenByPlace, dialog().open]).toEqual([false, true]);
   });
 
   it.each([{ shiftKey: true }, { altKey: true }, { metaKey: true }])(
@@ -183,7 +201,7 @@ describe("ReplacementController", () => {
 
       press({ key: "h", code: "KeyH", ctrlKey: true, ...modifier });
 
-      expect(target<HTMLDialogElement>("dialog").open).toBe(false);
+      expect(dialog().open).toBe(false);
     },
   );
 
@@ -192,20 +210,15 @@ describe("ReplacementController", () => {
     await hold(translatedProject);
     count = 2;
     press({ key: "h", code: "KeyH", ctrlKey: true });
-    target<HTMLInputElement>("pattern").value = "，";
-    target<HTMLInputElement>("substitute").value = " ";
-    document.querySelector<HTMLInputElement>('[value="translation"]')!.checked =
-      true;
-    target<HTMLInputElement>("regexToggle").checked = true;
+    type("尋找", "，");
+    type("取代為", " ");
+    fieldChoice("譯文").click();
+    screen.getByRole("checkbox", { hidden: true, name: /正規表示式/ }).click();
 
-    press({ key: "Enter" }, target("substitute"));
+    press({ key: "Enter" }, textbox("取代為"));
     await settle();
 
-    expect([
-      replaceArgs,
-      target<HTMLDialogElement>("dialog").open,
-      notifications(),
-    ]).toEqual([
+    expect([replaceArgs, dialog().open, notifications()]).toEqual([
       [
         {
           field: "translation",
@@ -222,28 +235,26 @@ describe("ReplacementController", () => {
     await hold(translatedProject);
     count = 0;
     press({ key: "h", code: "KeyH", ctrlKey: true });
-    target<HTMLInputElement>("pattern").value = "。";
+    type("尋找", "。");
 
-    press({ key: "Enter" }, target("substitute"));
+    press({ key: "Enter" }, textbox("取代為"));
     await settle();
 
-    expect([target<HTMLDialogElement>("dialog").open, notifications()]).toEqual(
-      [true, ["沒有符合的文字"]],
-    );
+    expect([dialog().open, notifications()]).toEqual([
+      true,
+      ["沒有符合的文字"],
+    ]);
   });
 
   it("replaces only in the original while no translation is shown", async () => {
     await hold(projectOf({ segments: translatedProject.segments }));
-    document.querySelector<HTMLInputElement>('[value="translation"]')!.checked =
-      true;
+    fieldChoice("譯文").click();
 
     press({ key: "h", code: "KeyH", ctrlKey: true });
     await settle();
 
-    expect([
-      document.querySelector<HTMLInputElement>('[value="translation"]')!
-        .disabled,
-      document.querySelector<HTMLInputElement>('[value="text"]')!.checked,
-    ]).toEqual([true, true]);
+    expect([fieldChoice("譯文").disabled, fieldChoice("原文").checked]).toEqual(
+      [true, true],
+    );
   });
 });

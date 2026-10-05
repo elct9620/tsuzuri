@@ -6,9 +6,11 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { assemble } from "../assembly";
+import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
 import SegmentChangesController from "../controllers/segment_changes_controller";
 import TranscriptController from "../controllers/transcript_controller";
+import { EditingSession } from "../editor";
 import { projectOf, resourceOf } from "../test_project";
 import {
   NOTIFICATION_STACK,
@@ -109,7 +111,7 @@ describe("TranscriptionDialog", () => {
     });
     feed = new ProjectFeed();
     run = new TaskRun();
-    const context = pageContext(feed, run);
+    const context = pageContext(feed, new EditingSession(editingPort), run);
     renderWithToolbar(TranscriptionDialog, "openTranscription", context);
     render(TaskProgress, { context });
   });
@@ -528,7 +530,7 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
     renderWithToolbar(
       TranscriptionDialog,
       "openTranscription",
-      pageContext(assembly.feed),
+      pageContext(assembly.feed, assembly.session),
     );
     await assembly.start();
     await settle();

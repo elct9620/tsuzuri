@@ -2,7 +2,9 @@
 import { render, screen } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { afterEach, describe, expect, it } from "vitest";
+import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
+import { EditingSession } from "../editor";
 import { mockPageMount } from "../test_page";
 import { projectOf } from "../test_project";
 import { NOTIFICATION_STACK } from "../ui/test_notification";
@@ -22,7 +24,7 @@ describe("SettingsDialog", () => {
     feed = new ProjectFeed();
     await feed.refresh();
     render(SettingsDialog, {
-      context: pageContext(feed),
+      context: pageContext(feed, new EditingSession(editingPort)),
       props: { pick: async () => null, openLicenses: () => {} },
     });
   }

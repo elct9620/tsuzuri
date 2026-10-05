@@ -4,6 +4,7 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
+import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
 import {
   NOTIFICATION_STACK,
@@ -14,7 +15,7 @@ import {
 import { drawPage } from "../page";
 import { mockPageMount } from "../test_page";
 import { projectOf } from "../test_project";
-import { fieldValue } from "../editor";
+import { EditingSession, fieldValue } from "../editor";
 import FieldController, { composingOption } from "./field_controller";
 import SegmentChangesController from "./segment_changes_controller";
 import TranscriptController from "./transcript_controller";
@@ -716,7 +717,7 @@ describe("SegmentChangesController", () => {
 
       const page = document.createElement("div");
       mockPageMount();
-      drawPage(new ProjectFeed(), page);
+      drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
       const list = page.querySelector(
         '[data-transcript-target="list"]',
       )!.className;

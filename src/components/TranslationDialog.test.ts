@@ -6,9 +6,11 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { assemble } from "../assembly";
+import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
 import SegmentChangesController from "../controllers/segment_changes_controller";
 import TranscriptController from "../controllers/transcript_controller";
+import { EditingSession } from "../editor";
 import { projectOf, resourceOf } from "../test_project";
 import {
   NOTIFICATION_STACK,
@@ -90,7 +92,11 @@ describe("TranslationDialog", () => {
       }
     });
     feed = new ProjectFeed();
-    renderWithToolbar(TranslationDialog, "openTranslation", pageContext(feed));
+    renderWithToolbar(
+      TranslationDialog,
+      "openTranslation",
+      pageContext(feed, new EditingSession(editingPort)),
+    );
   });
 
   afterEach(() => {
@@ -291,7 +297,7 @@ describe("TranslationDialog", () => {
     renderWithToolbar(
       TranslationDialog,
       "openTranslation",
-      pageContext(feed, run),
+      pageContext(feed, new EditingSession(editingPort), run),
     );
     await hold(projectOf());
     run.begin("transcription");
@@ -370,7 +376,7 @@ describe("TranslationDialog, translating chosen Segments again", () => {
       transcript: TranscriptController,
       "segment-changes": SegmentChangesController,
     });
-    const context = pageContext(assembly.feed, new TaskRun());
+    const context = pageContext(assembly.feed, assembly.session, new TaskRun());
     render(TranslationDialog, { context });
     render(TaskProgress, { context });
     await assembly.start();

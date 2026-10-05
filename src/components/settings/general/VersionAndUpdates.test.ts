@@ -4,9 +4,11 @@ import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { editingPort } from "../../../backend/editing";
 import { ProjectFeed } from "../../../backend/project";
 import NotificationController from "../../../controllers/notification_controller";
 import type { AppUpdate } from "../../../backend/updates";
+import { EditingSession } from "../../../editor";
 import {
   NOTIFICATION_STACK,
   notificationAction,
@@ -52,7 +54,10 @@ describe("VersionAndUpdates", () => {
    * beside the window an App Update installs behind.
    */
   async function openSettings(): Promise<void> {
-    const context = pageContext(new ProjectFeed());
+    const context = pageContext(
+      new ProjectFeed(),
+      new EditingSession(editingPort),
+    );
     render(VersionAndUpdates, { context });
     render(UpdatesDialog, { context });
     await settle();

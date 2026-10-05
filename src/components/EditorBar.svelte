@@ -1,5 +1,11 @@
 <script lang="ts">
   import TaskProgress from "./TaskProgress.svelte";
+
+  interface Props {
+    openReplacement: () => void;
+  }
+
+  let { openReplacement }: Props = $props();
 </script>
 
 <div class="flex items-center gap-2 border-b border-base-300 px-4 py-2">
@@ -220,7 +226,7 @@
   <button
     type="button"
     class="btn btn-sm"
-    data-action="replacement#open"
+    onclick={openReplacement}
     data-i18n-label="replace.open"
     data-i18n-tooltip="replace.open"
     data-shortcut="replace"
@@ -243,76 +249,6 @@
       data-i18n="search.open"
     ></span>
   </button>
-  <dialog class="modal" data-replacement-target="dialog">
-    <div class="modal-box max-w-md">
-      <h3 class="mb-2 text-lg font-bold" data-i18n="replace.title"></h3>
-      <fieldset class="fieldset gap-2 text-sm">
-        <label class="flex items-center gap-2">
-          <span class="w-16" data-i18n="replace.pattern"></span>
-          <input
-            class="input input-sm grow"
-            data-replacement-target="pattern"
-            data-action="keydown.enter->replacement#apply:!composing:prevent"
-          />
-        </label>
-        <label class="flex items-center gap-2">
-          <span class="w-16" data-i18n="replace.substitute"></span>
-          <input
-            class="input input-sm grow"
-            data-replacement-target="substitute"
-            data-action="keydown.enter->replacement#apply:!composing:prevent"
-          />
-        </label>
-        <div class="flex items-center gap-4">
-          <span class="w-16" data-i18n="replace.field"></span>
-          <label class="flex items-center gap-2">
-            <input
-              type="radio"
-              name="replacement-field"
-              value="text"
-              class="radio radio-sm"
-              data-replacement-target="field"
-              checked
-            />
-            <span data-i18n="replace.original"></span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input
-              type="radio"
-              name="replacement-field"
-              value="translation"
-              class="radio radio-sm"
-              data-replacement-target="field"
-            />
-            <span data-i18n="replace.translation"></span>
-          </label>
-        </div>
-        <label class="flex items-center gap-2">
-          <input
-            type="checkbox"
-            class="checkbox checkbox-sm"
-            data-replacement-target="regexToggle"
-          />
-          <span data-i18n="replace.regex"></span>
-          <span class="text-base-content/60" data-i18n="replace.groups"></span>
-        </label>
-      </fieldset>
-      <div class="modal-action">
-        <form method="dialog">
-          <button class="btn" data-i18n="work.cancel"></button>
-        </form>
-        <button
-          type="button"
-          class="btn btn-primary"
-          data-action="replacement#apply"
-          data-i18n="replace.apply"
-        ></button>
-      </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-      <button>close</button>
-    </form>
-  </dialog>
   <TaskProgress />
   <button
     type="button"

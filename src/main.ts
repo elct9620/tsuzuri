@@ -11,7 +11,6 @@ import NotificationController from "./controllers/notification_controller";
 import PreviewController from "./controllers/preview_controller";
 import ProjectController from "./controllers/project_controller";
 import RecentProjectsController from "./controllers/recent_projects_controller";
-import ReplacementController from "./controllers/replacement_controller";
 import ResourceListController from "./controllers/resource_list_controller";
 import SearchController from "./controllers/search_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
@@ -45,7 +44,6 @@ async function start(): Promise<void> {
     preview: PreviewController,
     project: ProjectController,
     "recent-projects": RecentProjectsController,
-    replacement: ReplacementController,
     "resource-list": ResourceListController,
     cleanup: CleanupController,
     search: SearchController,
@@ -58,7 +56,7 @@ async function start(): Promise<void> {
     undo: UndoController,
     versions: VersionsController,
   });
-  drawPage(assembly.feed);
+  drawPage(assembly.feed, assembly.session);
   await application.start();
   await assembly.start();
 }

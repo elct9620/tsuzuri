@@ -12,7 +12,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/field_controller.test.ts`
 - `src/controllers/time_field_controller.test.ts`
 - `src/controllers/timeline_controller.test.ts`
-- `src/controllers/replacement_controller.test.ts`
+- `src/components/ReplacementDialog.test.ts`
 - `src/controllers/cleanup_controller.test.ts`
 - `src/controllers/search_controller.test.ts`
 - `src/editor/*.test.ts`
@@ -1289,6 +1289,14 @@ Subtitle editors open replacing with Ctrl+H; macOS keeps ⌘+H to hide the app, 
 | Given | the first Segment's text entered reading `你好，世界` with `，` selected |
 | When | Ctrl+H is pressed |
 | Then | the replace dialog opens with `，` as the text to find, and the text to find has focus |
+
+## `ED-183` Not opening the replace dialog without a Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Project open |
+| When | Ctrl+H, or ⌘⌥F on macOS, is pressed |
+| Then | the replace dialog stays closed and the key goes on to the page |
 
 ## `ED-088` Replacing from the dialog with Enter
 

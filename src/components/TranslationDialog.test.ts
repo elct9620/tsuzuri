@@ -8,7 +8,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
-import SegmentChangesController from "../controllers/segment-changes-controller";
 import { EditingSession } from "../editor";
 import { projectOf, resourceOf } from "../test-project";
 import {
@@ -28,7 +27,12 @@ import {
 } from "./test-translation-options";
 import TranslationDialog from "./TranslationDialog.svelte";
 import { renderWithToolbar } from "./test-toolbar";
-import { drawSegmentRows, rowList } from "./test-segment-rows";
+import {
+  checkedBarButton,
+  drawSegmentList,
+  rowList,
+  segmentDialogsOf,
+} from "./test-segment-rows";
 
 describe("TranslationDialog", () => {
   let feed: ProjectFeed;
@@ -344,16 +348,7 @@ describe("TranslationDialog, translating chosen Segments again", () => {
     project = null;
     retranslateArgs = undefined;
     document.body.innerHTML = `
-      <section data-controller="segment-changes"
-        data-action="transcript:shown->segment-changes#followTasks editor:checks@window->segment-changes#showChecked">
-        <div data-segment-changes-target="checkedBar" hidden>
-          <span data-segment-changes-target="checkedCount"></span>
-          <button data-segment-changes-target="mergeButton"></button>
-          <button id="retranslate-checked" data-segment-changes-target="retranslateButton"
-            data-action="segment-changes#retranslate">重新翻譯</button>
-          <button data-segment-changes-target="retranscribeButton"></button>
-        </div>
-      </section>
+      <section></section>
     `;
     showNotifications();
     mockIPC(
@@ -367,12 +362,14 @@ describe("TranslationDialog, translating chosen Segments again", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    const assembly = assemble(application, {
-      "segment-changes": SegmentChangesController,
-    });
+    const assembly = assemble(application, {});
     const context = pageContext(assembly.feed, assembly.session, new TaskRun());
-    drawSegmentRows(document.querySelector("section")!, context);
-    render(TranslationDialog, { context });
+    const translation = render(TranslationDialog, { context }).component;
+    drawSegmentList(
+      document.querySelector("section")!,
+      context,
+      segmentDialogsOf({ translation }),
+    );
     render(TaskProgress, { context });
     await assembly.start();
     await settle();
@@ -413,8 +410,9 @@ describe("TranslationDialog, translating chosen Segments again", () => {
       checkbox.checked = true;
       checkbox.dispatchEvent(new Event("change", { bubbles: true }));
     }
+    await settle();
 
-    document.querySelector<HTMLButtonElement>("#retranslate-checked")!.click();
+    checkedBarButton("重新翻譯")!.click();
     await settle();
     await startFromDialog();
 
@@ -437,8 +435,8 @@ describe("TranslationDialog, translating chosen Segments again", () => {
 
     expect([
       rows()[0].querySelector("button.retranslate"),
-      document.querySelector<HTMLButtonElement>("#retranslate-checked")!.hidden,
-    ]).toEqual([null, true]);
+      checkedBarButton("重新翻譯"),
+    ]).toEqual([null, null]);
   });
 
   // @behavior TL-093

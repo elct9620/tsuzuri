@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
-import { render, screen } from "@testing-library/svelte";
+import { screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -11,13 +11,12 @@ import { showNotifications, notifications } from "./test-notifications";
 import FieldController, {
   composingOption,
 } from "../controllers/field-controller";
-import SegmentChangesController, {
-  typingOption,
-} from "../controllers/segment-changes-controller";
 import { pageContext } from "./context";
-import { PlaybackFollowing } from "./playback-following.svelte";
-import SegmentList from "./SegmentList.svelte";
-import { segmentRows } from "./test-segment-rows";
+import {
+  drawSegmentList,
+  segmentDialogsOf,
+  segmentRows,
+} from "./test-segment-rows";
 
 describe("cleanup", () => {
   let application: Application;
@@ -46,9 +45,7 @@ describe("cleanup", () => {
     sentCalls = [];
     count = 2;
     document.body.innerHTML = `
-      <section data-controller="segment-changes"
-        data-action="editor:checks@window->segment-changes#showChecked transcript:shown->segment-changes#followTasks">
-      </section>
+      <section></section>
       <dialog id="other-dialog"><input id="other-input" /></dialog>
     `;
     showNotifications();
@@ -64,16 +61,14 @@ describe("cleanup", () => {
     );
     application = Application.start();
     application.registerActionOption("composing", composingOption);
-    application.registerActionOption("typing", typingOption);
     const assembly = assemble(application, {
       field: FieldController,
-      "segment-changes": SegmentChangesController,
     });
-    render(SegmentList, {
-      target: document.querySelector("section")!,
-      props: { following: new PlaybackFollowing() },
-      context: pageContext(assembly.feed, assembly.session),
-    });
+    drawSegmentList(
+      document.querySelector("section")!,
+      pageContext(assembly.feed, assembly.session),
+      segmentDialogsOf({}),
+    );
     await assembly.start();
     await settle();
   });
@@ -83,12 +78,11 @@ describe("cleanup", () => {
     clearMocks();
   });
 
-  function check(index: number): void {
-    const box = document.querySelector<HTMLInputElement>(
-      `.check[data-index="${index}"]`,
-    )!;
+  async function check(index: number): Promise<void> {
+    const box = segmentRows()[index].querySelector<HTMLInputElement>(".check")!;
     box.checked = true;
     box.dispatchEvent(new Event("change", { bubbles: true }));
+    await settle();
   }
 
   function pressCleanup(on: EventTarget = window): void {
@@ -123,8 +117,8 @@ describe("cleanup", () => {
   // @behavior ED-128
   it("cleans the Checked Segments by shortcut and tells how many characters", async () => {
     await hold(projectInTraditionalChinese);
-    check(0);
-    check(2);
+    await check(0);
+    await check(2);
 
     pressCleanup();
     await settle();
@@ -179,7 +173,7 @@ describe("cleanup", () => {
   // @behavior ED-135
   it("cleans what is marked when chosen from the Edit menu", async () => {
     await hold(projectInTraditionalChinese);
-    check(1);
+    await check(1);
 
     await emit("edit-command", "clean-simplified");
     await settle();
@@ -190,7 +184,7 @@ describe("cleanup", () => {
   // @behavior ED-136
   it("cleans nothing by shortcut while a dialog holds focus", async () => {
     await hold(projectInTraditionalChinese);
-    check(0);
+    await check(0);
     const dialog = document.querySelector<HTMLDialogElement>("#other-dialog")!;
     dialog.setAttribute("open", "");
     const input = document.querySelector<HTMLInputElement>("#other-input")!;
@@ -215,8 +209,8 @@ describe("cleanup", () => {
   // @behavior ED-132
   it("cleans the Checked Segments from their bar", async () => {
     await hold(projectInTraditionalChinese);
-    check(0);
-    check(1);
+    await check(0);
+    await check(1);
 
     checkedBarCleanup()!.click();
     await settle();
@@ -232,7 +226,7 @@ describe("cleanup", () => {
         segments: projectInTraditionalChinese.segments,
       }),
     );
-    check(0);
+    await check(0);
 
     expect([segmentMenuCleanup(0), checkedBarCleanup()]).toEqual([
       undefined,

@@ -11,11 +11,11 @@ type TaskOpener = "openTranscription" | "openTranslation" | "openDiarization";
  * Writes `Dialog` beside the toolbar whose `opener` button opens it, as the page composes them,
  * both reading `context`.
  */
-export function renderWithToolbar(
-  Dialog: Component<Record<string, never>, { open: () => unknown }>,
+export function renderWithToolbar<Exports extends { open: () => unknown }>(
+  Dialog: Component<Record<string, never>, Exports>,
   opener: TaskOpener,
   context: Map<symbol, unknown>,
-): void {
+): Exports {
   const { component } = render(Dialog, { context });
   const ignore = () => {};
   render(Toolbar, {
@@ -31,4 +31,5 @@ export function renderWithToolbar(
       [opener]: () => component.open(),
     },
   });
+  return component;
 }

@@ -1,15 +1,13 @@
 /**
  * The window events Svelte Components bind with `<svelte:window>`: Rust events relayed as
- * `rust:<name>` with the payload as `detail` (`backend/events.ts`), the editor's requests to run
- * a task again over the Segments it names, to shift them or to name their Speakers, the compare menu's request to choose in the Versions dialog, the
- * Segment list telling it has shown the Segments anew, the session telling the Cursor or the
- * checks moved, and the Preview telling which Segments it plays.
+ * `rust:<name>` with the payload as `detail` (`backend/events.ts`), the compare menu's request to
+ * choose in the Versions dialog, the Segment list telling it has shown the Segments anew, the
+ * session telling the Cursor or the checks moved, and the Preview telling which Segments it plays.
  */
 
 import type { PipelineProgress } from "../backend/progress";
 import type { EditCommand, ProjectView } from "../backend/project";
 import type { DownloadProgress } from "../backend/toolchain";
-import type { TranscriptionScope } from "../backend/transcription";
 import type { UpdateProgress } from "../backend/updates";
 
 declare module "svelte/elements" {
@@ -28,14 +26,6 @@ declare module "svelte/elements" {
     "onrust:pipeline-progress"?: (event: CustomEvent<PipelineProgress>) => void;
     "onrust:srt-requested"?: (event: CustomEvent) => void;
     "onrust:update-progress"?: (event: CustomEvent<UpdateProgress>) => void;
-    "onsegment-changes:retranscribe"?: (
-      event: CustomEvent<{ scope: TranscriptionScope }>,
-    ) => void;
-    "onsegment-changes:retranslate"?: (
-      event: CustomEvent<{ indexes: number[] }>,
-    ) => void;
-    "onsegment-changes:shift"?: (event: CustomEvent) => void;
-    "onsegment-changes:speakers"?: (event: CustomEvent) => void;
     "ontranscript:shown"?: (
       event: CustomEvent<{ project: ProjectView | null }>,
     ) => void;

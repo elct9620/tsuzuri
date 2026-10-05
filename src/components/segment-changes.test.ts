@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,16 +12,17 @@ import {
   notificationCountdown,
   notificationDetail,
   notifications,
-} from "../components/test-notifications";
+} from "./test-notifications";
 import { drawPage } from "../page";
 import { mockPageMount } from "../test-page";
 import { projectOf } from "../test-project";
 import { EditingSession, fieldValue } from "../editor";
-import FieldController, { composingOption } from "./field-controller";
-import SegmentChangesController from "./segment-changes-controller";
-import { typingOption } from "./segment-changes-controller";
-import { pageContext } from "../components/context";
-import { drawSegmentRows } from "../components/test-segment-rows";
+import FieldController, {
+  composingOption,
+} from "../controllers/field-controller";
+import { pageContext, withSegmentDialogs } from "./context";
+import { PlaybackFollowing } from "./playback-following.svelte";
+import SegmentList from "./SegmentList.svelte";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
 interface MenuItemSent {
@@ -32,7 +34,7 @@ interface MenuItemSent {
   handler?: { onmessage: (id: string) => void };
 }
 
-describe("SegmentChangesController", () => {
+describe("Segment Changes", () => {
   let application: Application;
   let project: ProjectView | null;
   let changes: unknown[];
@@ -43,6 +45,8 @@ describe("SegmentChangesController", () => {
   /** The items of each menu of the system made, in the order they were made. */
   let menus: MenuItemSent[][];
   let popupCount: number;
+  /** Each dialog a choice opened, with what it was opened for. */
+  let openedDialogs: unknown[][];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -55,6 +59,13 @@ describe("SegmentChangesController", () => {
   function row(index: number): HTMLLIElement {
     return document.querySelectorAll<HTMLLIElement>("ol > li")[index];
   }
+
+  /** The checked bar's button named `name`, drawn only while Segments are checked. */
+  const barButton = (name: string) =>
+    screen.queryByRole<HTMLButtonElement>("button", { name });
+
+  /** Whether the checked bar shows. */
+  const isBarShown = () => screen.queryByText(/^已勾選 \d+ 段$/) !== null;
 
   async function choose(index: number, action: string): Promise<void> {
     row(index).querySelector<HTMLButtonElement>(`button.${action}`)!.click();
@@ -86,17 +97,11 @@ describe("SegmentChangesController", () => {
     refusal = null;
     menus = [];
     popupCount = 0;
+    openedDialogs = [];
     document.body.innerHTML = `
-      <section data-controller="segment-changes" data-action="editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut rust:edit-command@window->segment-changes#applyEditCommand">
-        <select aria-label="譯文"></select>
-        <div data-segment-changes-target="checkedBar" hidden>
-          <span data-segment-changes-target="checkedCount"></span>
-          <button id="merge" data-segment-changes-target="mergeButton" data-action="segment-changes#merge">合併</button>
-          <button id="open-shift" data-action="segment-changes#openShift">平移</button>
-          <button id="delete-checked" data-action="segment-changes#deleteChecked">刪除</button>
-        </div>
-        <dialog><button>平移</button></dialog>
-      </section>
+      <select aria-label="譯文"></select>
+      <section></section>
+      <dialog><button>平移</button></dialog>
     `;
     showNotifications();
     mockIPC(
@@ -119,15 +124,22 @@ describe("SegmentChangesController", () => {
     );
     application = Application.start();
     application.registerActionOption("composing", composingOption);
-    application.registerActionOption("typing", typingOption);
-    const assembly = assemble(application, {
-      field: FieldController,
-      "segment-changes": SegmentChangesController,
+    const assembly = assemble(application, { field: FieldController });
+    render(SegmentList, {
+      target: document.querySelector("section")!,
+      props: { following: new PlaybackFollowing() },
+      context: withSegmentDialogs(
+        pageContext(assembly.feed, assembly.session),
+        {
+          openRetranslation: (indexes) =>
+            openedDialogs.push(["retranslation", indexes]),
+          openRetranscription: (scope) =>
+            openedDialogs.push(["retranscription", scope]),
+          openShift: () => openedDialogs.push(["shift"]),
+          openSpeakers: (indexes) => openedDialogs.push(["speakers", indexes]),
+        },
+      ),
     });
-    drawSegmentRows(
-      document.querySelector("section")!,
-      pageContext(assembly.feed, assembly.session),
-    );
     await assembly.start();
     await settle();
   });
@@ -144,7 +156,7 @@ describe("SegmentChangesController", () => {
     const start = row(0).querySelector<HTMLInputElement>("input.start")!;
 
     start.value = "00:00:00.500";
-    start.dispatchEvent(new Event("change"));
+    start.dispatchEvent(new Event("change", { bubbles: true }));
     await settle();
 
     expect(changes).toEqual([
@@ -158,7 +170,7 @@ describe("SegmentChangesController", () => {
     const start = row(0).querySelector<HTMLInputElement>("input.start")!;
 
     start.value = "abc";
-    start.dispatchEvent(new Event("change"));
+    start.dispatchEvent(new Event("change", { bubbles: true }));
     await settle();
 
     expect([
@@ -175,7 +187,7 @@ describe("SegmentChangesController", () => {
     const end = row(0).querySelector<HTMLInputElement>("input.end")!;
 
     end.value = "00:00:75.000";
-    end.dispatchEvent(new Event("change"));
+    end.dispatchEvent(new Event("change", { bubbles: true }));
     await settle();
 
     expect(changes).toEqual([
@@ -189,7 +201,7 @@ describe("SegmentChangesController", () => {
     const end = row(0).querySelector<HTMLInputElement>("input.end")!;
 
     end.value = "99:99:99.999";
-    end.dispatchEvent(new Event("change"));
+    end.dispatchEvent(new Event("change", { bubbles: true }));
     await settle();
 
     expect(changes).toEqual([
@@ -205,7 +217,7 @@ describe("SegmentChangesController", () => {
     const start = row(0).querySelector<HTMLInputElement>("input.start")!;
 
     start.value = "00:00:03.000";
-    start.dispatchEvent(new Event("change"));
+    start.dispatchEvent(new Event("change", { bubbles: true }));
     await settle();
 
     expect(changes).toEqual([
@@ -221,7 +233,7 @@ describe("SegmentChangesController", () => {
     const end = row(0).querySelector<HTMLInputElement>("input.end")!;
 
     end.value = "00:00:00.500";
-    end.dispatchEvent(new Event("change"));
+    end.dispatchEvent(new Event("change", { bubbles: true }));
     await settle();
 
     expect(changes).toEqual([
@@ -243,7 +255,7 @@ describe("SegmentChangesController", () => {
     const start = row(1).querySelector<HTMLInputElement>("input.start")!;
 
     start.value = "00:00:00.500";
-    start.dispatchEvent(new Event("change"));
+    start.dispatchEvent(new Event("change", { bubbles: true }));
     await settle();
 
     expect(notificationDetail(0)).toBe(
@@ -307,7 +319,7 @@ describe("SegmentChangesController", () => {
     await hold(threeSegments);
     await check(0, 1);
 
-    document.querySelector<HTMLButtonElement>("#merge")!.click();
+    barButton("合併")!.click();
     await settle();
 
     expect(changes).toEqual([{ kind: "merge", first: 0, last: 1 }]);
@@ -319,9 +331,7 @@ describe("SegmentChangesController", () => {
 
     await check(0, 2);
 
-    expect(document.querySelector<HTMLButtonElement>("#merge")!.disabled).toBe(
-      true,
-    );
+    expect(barButton("合併")?.disabled).toBe(true);
   });
 
   // @behavior ED-021
@@ -334,10 +344,8 @@ describe("SegmentChangesController", () => {
 
     expect([
       document.querySelectorAll("input.check:checked").length,
-      document.querySelector<HTMLElement>(
-        '[data-segment-changes-target="checkedBar"]',
-      )!.hidden,
-    ]).toEqual([0, true]);
+      isBarShown(),
+    ]).toEqual([0, false]);
   });
 
   // @behavior ED-065
@@ -345,7 +353,7 @@ describe("SegmentChangesController", () => {
     await hold(threeSegments);
     await check(0, 2);
 
-    document.querySelector<HTMLButtonElement>("#delete-checked")!.click();
+    barButton("刪除")!.click();
     await settle();
 
     expect(changes).toEqual([{ kind: "deletion", indexes: [0, 2] }]);
@@ -354,10 +362,6 @@ describe("SegmentChangesController", () => {
   describe("checking every Segment", () => {
     const checkedCount = () =>
       document.querySelectorAll("input.check:checked").length;
-    const isBarHidden = () =>
-      document.querySelector<HTMLElement>(
-        '[data-segment-changes-target="checkedBar"]',
-      )!.hidden;
     const textOf = (index: number) =>
       row(index).querySelector<HTMLElement>(".field.text")!;
 
@@ -379,7 +383,7 @@ describe("SegmentChangesController", () => {
       pressCtrlA(document.body);
       await settle();
 
-      expect([checkedCount(), isBarHidden()]).toEqual([3, false]);
+      expect([checkedCount(), isBarShown()]).toEqual([3, true]);
     });
 
     // @behavior ED-067
@@ -794,7 +798,7 @@ describe("SegmentChangesController", () => {
       await check(1, 2);
       row(1).click();
 
-      document.querySelector<HTMLButtonElement>("#delete-checked")!.click();
+      barButton("刪除")!.click();
       await settle();
       await hold(texts("一", "四"));
 
@@ -807,7 +811,7 @@ describe("SegmentChangesController", () => {
       await check(1, 2);
       row(2).click();
 
-      document.querySelector<HTMLButtonElement>("#merge")!.click();
+      barButton("合併")!.click();
       await settle();
       await hold(texts("你好世界", "今天天氣很好"));
 
@@ -820,7 +824,7 @@ describe("SegmentChangesController", () => {
       await check(0, 1);
       row(3).click();
 
-      document.querySelector<HTMLButtonElement>("#merge")!.click();
+      barButton("合併")!.click();
       await settle();
       await hold(texts("一二", "三", "四"));
 
@@ -1238,7 +1242,7 @@ describe("SegmentChangesController", () => {
 
   describe("merging from a Segment's menu", () => {
     const isChoiceHidden = (index: number, action: string) =>
-      row(index).querySelector(`button.${action}`)!.closest("li")!.hidden;
+      row(index).querySelector(`button.${action}`) === null;
 
     // @behavior ED-178
     it("merges a Segment with the one before", async () => {
@@ -1346,7 +1350,8 @@ describe("SegmentChangesController", () => {
 
       await rightClick(row(2));
 
-      expect(texts(lastMenu())).toEqual(["合併", "平移", "刪除"]);
+      const bar = screen.getByText(/^已勾選 \d+ 段$/).parentElement!;
+      expect(texts(lastMenu())).toEqual(buttonTexts(bar));
     });
 
     // @behavior ED-168

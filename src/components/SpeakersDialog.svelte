@@ -1,7 +1,7 @@
 <!--
   @component
   The Speaker dialog, naming many Segments at once; a new name is offered to the Translation
-  Glossary. The checked bar opens it for the Checked Segments by `segment-changes:speakers`.
+  Glossary. The checked bar opens it for the Checked Segments.
 -->
 <script lang="ts">
   import { flushSync, onMount } from "svelte";
@@ -37,7 +37,7 @@
   }
 
   /** Opens the dialog, offering the Checked Segments `indexes` when there are any. */
-  function openFor(indexes: number[]): void {
+  export function openFor(indexes: number[]): void {
     checkedIndexes = indexes;
     scope = indexes.length > 0 ? "checked-segments" : "all-segments";
     renamedSpeaker = speakers[0] ?? "";
@@ -73,10 +73,6 @@
 
   onMount(() => feed.follow((next) => (project = next)));
 </script>
-
-<svelte:window
-  onsegment-changes:speakers={() => openFor(session.checkedIndexes)}
-/>
 
 <dialog class="modal" bind:this={dialog}>
   <div class="modal-box max-w-md">

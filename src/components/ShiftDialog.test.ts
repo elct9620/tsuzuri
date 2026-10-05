@@ -7,13 +7,16 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
-import SegmentChangesController from "../controllers/segment-changes-controller";
 import { setInterfaceLanguage } from "../i18n";
 import { projectOf } from "../test-project";
 import { pageContext } from "./context";
 import ShiftDialog from "./ShiftDialog.svelte";
 import { showNotifications } from "./test-notifications";
-import { drawSegmentRows } from "./test-segment-rows";
+import {
+  checkedBarButton,
+  drawSegmentList,
+  segmentDialogsOf,
+} from "./test-segment-rows";
 
 describe("ShiftDialog", () => {
   let application: Application;
@@ -49,7 +52,7 @@ describe("ShiftDialog", () => {
 
   /** Opens the dialog from the checked bar and types `offset` as the milliseconds to shift by. */
   function openShiftBy(offset: string): void {
-    document.querySelector<HTMLButtonElement>("#open-shift")!.click();
+    checkedBarButton("平移……")!.click();
     screen.getByRole<HTMLInputElement>("spinbutton", {
       hidden: true,
       name: /^毫秒/,
@@ -66,14 +69,7 @@ describe("ShiftDialog", () => {
     project = null;
     changes = [];
     document.body.innerHTML = `
-      <section data-controller="segment-changes"
-        data-action="editor:checks@window->segment-changes#showChecked">
-        <div data-segment-changes-target="checkedBar" hidden>
-          <span data-segment-changes-target="checkedCount"></span>
-          <button data-segment-changes-target="mergeButton"></button>
-          <button id="open-shift" data-action="segment-changes#openShift">平移……</button>
-        </div>
-      </section>
+      <section></section>
     `;
     showNotifications();
     mockIPC(
@@ -85,12 +81,14 @@ describe("ShiftDialog", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    const assembly = assemble(application, {
-      "segment-changes": SegmentChangesController,
-    });
+    const assembly = assemble(application, {});
     const context = pageContext(assembly.feed, assembly.session);
-    drawSegmentRows(document.querySelector("section")!, context);
-    render(ShiftDialog, { context });
+    const shift = render(ShiftDialog, { context }).component;
+    drawSegmentList(
+      document.querySelector("section")!,
+      context,
+      segmentDialogsOf({ shift }),
+    );
     await assembly.start();
     await settle();
   });

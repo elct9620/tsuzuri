@@ -95,11 +95,11 @@
     await showDialog();
   }
 
-  /** Opens the dialog to transcribe within the scope the editor asks for. */
-  async function openForScope({
-    detail,
-  }: CustomEvent<{ scope: TranscriptionScope }>): Promise<void> {
-    scope = detail.scope;
+  /** Opens the dialog to transcribe within `chosenScope`. */
+  export async function openForScope(
+    chosenScope: TranscriptionScope,
+  ): Promise<void> {
+    scope = chosenScope;
     await showDialog();
   }
 
@@ -159,8 +159,6 @@
     );
   }
 </script>
-
-<svelte:window onsegment-changes:retranscribe={openForScope} />
 
 <dialog class="modal" bind:this={dialog}>
   <div class="modal-box">

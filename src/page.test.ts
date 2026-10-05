@@ -9,10 +9,10 @@ import { assemble } from "./assembly";
 import { editingPort } from "./backend/editing";
 import { ProjectFeed, type ProjectView } from "./backend/project";
 import ComparisonController from "./controllers/comparison-controller";
-import SegmentChangesController from "./controllers/segment-changes-controller";
 import { EditingSession } from "./editor";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
+import { checkedBarButton } from "./components/test-segment-rows";
 import { mockPageMount } from "./test-page";
 import { projectOf, resourceOf } from "./test-project";
 import {
@@ -462,6 +462,8 @@ describe("Page", () => {
         return takenSrt;
       },
       open_srt: (args) => (sentSrt = args),
+      // The transcribe dialog names the model it will use as it opens
+      model_settings: () => null,
       subtitle_versions: () => [
         {
           language: null,
@@ -583,16 +585,33 @@ describe("Page", () => {
     expect(button.getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("opens the shift dialog from the checked bar", async () => {
-    await start({
-      "segment-changes": SegmentChangesController,
-    });
+  it.each([
+    ["edit.shift", "edit.shiftTitle"],
+    ["edit.speakersOfChecked", "edit.speakersTitle"],
+    ["edit.retranslate", "translate.again"],
+    ["edit.retranscribe", "transcribe.again"],
+  ])("opens the dialog of the checked bar's %s", async (button, heading) => {
+    await start();
+    await hold(
+      projectOf({
+        resources: [
+          resourceOf({ has_media: true, translation_languages: ["en"] }),
+        ],
+        shown_translation: "en",
+        segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
+      }),
+    );
+    const check = document.querySelector<HTMLInputElement>("input.check")!;
+    check.checked = true;
+    check.dispatchEvent(new Event("change", { bubbles: true }));
+    await settle();
 
-    screen.getByRole("button", { hidden: true, name: t("edit.shift") }).click();
+    checkedBarButton(t(button))!.click();
+    await settle();
 
     expect(
       screen
-        .getByRole("heading", { hidden: true, name: t("edit.shiftTitle") })
+        .getByRole("heading", { hidden: true, name: t(heading) })
         .closest("dialog")!.open,
     ).toBe(true);
   });

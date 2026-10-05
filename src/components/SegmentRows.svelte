@@ -9,11 +9,7 @@
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
 
-  import {
-    currentResource,
-    hasTraditionalChinese,
-    type ProjectView,
-  } from "../backend/project";
+  import type { ProjectView } from "../backend/project";
   import { isMacOS } from "../backend/system";
   import {
     drawCursor,
@@ -25,6 +21,7 @@
   import { isShortcut } from "../ui/shortcuts";
   import { editingSession, projectFeed, taskRun } from "./context";
   import type { PlaybackFollowing } from "./playback-following.svelte";
+  import { resourceOffers } from "./segment-changes";
   import SegmentRow from "./SegmentRow.svelte";
 
   let {
@@ -56,11 +53,7 @@
   let shownCurrentIndex: number | null = null;
 
   const segments = $derived(project?.segments ?? []);
-  const isTranslationShown = $derived(
-    (project?.shown_translation ?? null) !== null,
-  );
-  const hasMedia = $derived(currentResource(project)?.has_media ?? false);
-  const isCleanupOffered = $derived(hasTraditionalChinese(project));
+  const offers = $derived(resourceOffers(project));
   const isTranscribing = $derived(run.task === "transcription");
   const isAwaitingSegments = $derived(segments.length === 0 && isTranscribing);
   const placeholderCount = $derived(
@@ -191,7 +184,7 @@
   bind:this={list}
 >
   {#if !isLoading}
-    {#key isTranslationShown}
+    {#key offers.isTranslationShown}
       {#each segments as segment, index (index)}
         <SegmentRow
           bind:this={rows[index]}
@@ -199,14 +192,12 @@
           {index}
           count={segments.length}
           {view}
-          {isTranslationShown}
+          {offers}
           isPending={isPendingAt(index)}
-          {hasMedia}
           isChecked={checkedIndexes.has(index)}
           isCurrent={currentIndex === index}
           isPlaying={playingIndexes.includes(index)}
           {isTypingKept}
-          {isCleanupOffered}
         />
       {/each}
     {/key}

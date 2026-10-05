@@ -642,7 +642,7 @@ describe("SegmentList", () => {
 
   // @behavior ED-181
   it("shows the merge shortcuts beside merging in a Segment's menu", async () => {
-    await hold(translatedProject);
+    await hold(projectWithSecondText("今天"));
 
     expect(
       [".mergeWithPrevious", ".mergeWithNext"].map(

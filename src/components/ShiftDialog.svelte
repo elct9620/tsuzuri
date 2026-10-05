@@ -1,7 +1,7 @@
 <!--
   @component
   The shift dialog: moves the Checked Segments earlier or later by the milliseconds typed, as one
-  change. The checked bar opens it by `segment-changes:shift` on the window.
+  change.
 -->
 <script lang="ts">
   import { t } from "../i18n";
@@ -13,7 +13,7 @@
   /** Milliseconds to shift by, negative for earlier. */
   let offsetInput: HTMLInputElement;
 
-  function open(): void {
+  export function open(): void {
     offsetInput.value = "0";
     dialog.showModal();
   }
@@ -38,8 +38,6 @@
     );
   }
 </script>
-
-<svelte:window onsegment-changes:shift={open} />
 
 <dialog class="modal" bind:this={dialog}>
   <div class="modal-box max-w-sm">

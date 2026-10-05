@@ -8,7 +8,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
-import SegmentChangesController from "../controllers/segment-changes-controller";
 import { EditingSession } from "../editor";
 import { projectOf, resourceOf } from "../test-project";
 import {
@@ -24,7 +23,12 @@ import { progressSteps } from "./test-task-progress";
 import { optionCheckbox, setSummaryWords } from "./test-translation-options";
 import TranscriptionDialog from "./TranscriptionDialog.svelte";
 import { renderWithToolbar } from "./test-toolbar";
-import { drawSegmentRows, rowList } from "./test-segment-rows";
+import {
+  checkedBarButton,
+  drawSegmentList,
+  rowList,
+  segmentDialogsOf,
+} from "./test-segment-rows";
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -487,16 +491,7 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
     retranslateArgs = undefined;
     commandsSent = [];
     document.body.innerHTML = `
-      <section data-controller="segment-changes"
-        data-action="transcript:shown->segment-changes#followTasks editor:checks@window->segment-changes#showChecked">
-        <div data-segment-changes-target="checkedBar" hidden>
-          <span data-segment-changes-target="checkedCount"></span>
-          <button data-segment-changes-target="mergeButton"></button>
-          <button data-segment-changes-target="retranslateButton"></button>
-          <button id="retranscribe-checked" data-segment-changes-target="retranscribeButton"
-            data-action="segment-changes#retranscribe">重新轉錄</button>
-        </div>
-      </section>
+      <section></section>
     `;
     showNotifications();
     mockIPC(
@@ -517,12 +512,18 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    const assembly = assemble(application, {
-      "segment-changes": SegmentChangesController,
-    });
+    const assembly = assemble(application, {});
     const context = pageContext(assembly.feed, assembly.session);
-    drawSegmentRows(document.querySelector("section")!, context);
-    renderWithToolbar(TranscriptionDialog, "openTranscription", context);
+    const transcriptionDialog = renderWithToolbar(
+      TranscriptionDialog,
+      "openTranscription",
+      context,
+    );
+    drawSegmentList(
+      document.querySelector("section")!,
+      context,
+      segmentDialogsOf({ transcription: transcriptionDialog }),
+    );
     await assembly.start();
     await settle();
   });
@@ -553,8 +554,9 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
   it("transcribes the Checked Segments again", async () => {
     await hold(projectWithMedia());
     checkRows(0, 2);
+    await settle();
 
-    document.querySelector<HTMLButtonElement>("#retranscribe-checked")!.click();
+    checkedBarButton("重新轉錄")!.click();
     await settle();
     await startFromDialog();
 
@@ -592,10 +594,9 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
     await settle();
 
     expect([
-      rows()[0].querySelector("button.retranscribe")!.closest("li")!.hidden,
-      document.querySelector<HTMLButtonElement>("#retranscribe-checked")!
-        .hidden,
-    ]).toEqual([true, true]);
+      rows()[0].querySelector("button.retranscribe"),
+      checkedBarButton("重新轉錄"),
+    ]).toEqual([null, null]);
   });
 
   // @behavior TX-052

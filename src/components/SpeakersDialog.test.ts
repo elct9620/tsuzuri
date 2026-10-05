@@ -6,13 +6,16 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
-import SegmentChangesController from "../controllers/segment-changes-controller";
 import { setInterfaceLanguage } from "../i18n";
 import { projectOf } from "../test-project";
 import { pageContext } from "./context";
 import SpeakersDialog from "./SpeakersDialog.svelte";
 import { showNotifications } from "./test-notifications";
-import { drawSegmentRows } from "./test-segment-rows";
+import {
+  checkedBarButton,
+  drawSegmentList,
+  segmentDialogsOf,
+} from "./test-segment-rows";
 
 describe("SpeakersDialog", () => {
   let speakersDialog: SpeakersDialog;
@@ -85,14 +88,7 @@ describe("SpeakersDialog", () => {
     project = null;
     setSpeakersArgs = undefined;
     document.body.innerHTML = `
-      <section data-controller="segment-changes"
-        data-action="editor:checks@window->segment-changes#showChecked">
-        <div data-segment-changes-target="checkedBar" hidden>
-          <span data-segment-changes-target="checkedCount"></span>
-          <button data-segment-changes-target="mergeButton"></button>
-          <button id="speakers-of-checked" data-action="segment-changes#openSpeakers">說話者</button>
-        </div>
-      </section>
+      <section></section>
     `;
     showNotifications();
     mockIPC(
@@ -103,12 +99,14 @@ describe("SpeakersDialog", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    const assembly = assemble(application, {
-      "segment-changes": SegmentChangesController,
-    });
+    const assembly = assemble(application, {});
     const context = pageContext(assembly.feed, assembly.session);
-    drawSegmentRows(document.querySelector("section")!, context);
     speakersDialog = render(SpeakersDialog, { context }).component;
+    drawSegmentList(
+      document.querySelector("section")!,
+      context,
+      segmentDialogsOf({ speakers: speakersDialog }),
+    );
     await assembly.start();
     await settle();
   });
@@ -122,7 +120,7 @@ describe("SpeakersDialog", () => {
   it("sets the Speaker of the Checked Segments", async () => {
     await hold(saidBy("", "", ""));
     await check(0, 2);
-    document.querySelector<HTMLButtonElement>("#speakers-of-checked")!.click();
+    checkedBarButton("說話者……")!.click();
     await settle();
 
     await apply("已勾選 2 段", "co");

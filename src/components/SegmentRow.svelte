@@ -1,9 +1,9 @@
 <!--
   @component
   One Segment's row: its check, its times and Speaker, the text, and the translation when one is
-  shown, even before it is made, with the menu of the Segment Changes it offers. The fields are made
-  by the editor and written here only while the user is not typing in them; a press in the row tells
-  the session where it chose the Segment from.
+  shown, even before it is made, with the menu of the Segment Changes it offers, also opened by a
+  right-click. The fields are made by the editor and written here only while the user is not typing
+  in them; a press in the row tells the session where it chose the Segment from.
 -->
 <script lang="ts">
   import EllipsisVertical from "@lucide/svelte/icons/ellipsis-vertical";
@@ -18,18 +18,26 @@
     type CursorField,
     type FieldKind,
     isHeld,
-    runWithNeighbour,
+    orderedTimes,
     setFieldHeld,
     setFieldValue,
+    type TimeEdge,
     type TranscriptView,
   } from "../editor";
   import { t } from "../i18n";
   import { closeMenu } from "../ui/menu";
+  import { notify } from "../ui/notification.svelte";
   import { shortcutById, shortcutText } from "../ui/shortcuts";
   import { speakerNames } from "../ui/speakers";
-  import { formatTime, TIME_FIELD_ACTIONS } from "../ui/time";
-  import { cleanSegments } from "./cleanup-actions";
-  import { editingSession, projectFeed } from "./context";
+  import { formatTime, parseTime, TIME_FIELD_ACTIONS } from "../ui/time";
+  import { editingSession, projectFeed, segmentDialogs } from "./context";
+  import {
+    change,
+    checkedChoices,
+    popUpChoices,
+    type ResourceOffers,
+    segmentChoices,
+  } from "./segment-changes";
   import { notifyNamed } from "./speaker-actions";
 
   /** What a field hands the session as the user works in it. */
@@ -40,29 +48,17 @@
   const SPLIT_SHORTCUTS =
     "keydown.ctrl+alt+enter->field#split:!composing:prevent keydown.meta+alt+enter->field#split:!composing:prevent";
 
-  /** The Segment Changes of the row's menu: the action each runs, its label and its shortcut. */
-  const CHANGE_CHOICES: [string, string, string?][] = [
-    ["insertBefore", "edit.insertAbove"],
-    ["insertAfter", "edit.insertBelow"],
-    ["split", "edit.split", "split"],
-    ["mergeWithPrevious", "edit.mergeWithPrevious", "mergeWithPrevious"],
-    ["mergeWithNext", "edit.mergeWithNext", "mergeWithNext"],
-    ["delete", "edit.delete", "delete"],
-  ];
-
   let {
     segment,
     index,
     count,
     view,
-    isTranslationShown,
+    offers,
     isPending,
-    hasMedia,
     isChecked,
     isCurrent,
     isPlaying,
     isTypingKept,
-    isCleanupOffered,
   }: {
     segment: Segment;
     index: number;
@@ -70,21 +66,20 @@
     count: number;
     /** The transcript as the session reads it, whose running Mode holds fields. */
     view: TranscriptView | null;
-    isTranslationShown: boolean;
+    /** What the Current Resource offers besides the Segment Changes, its translation shown among them. */
+    offers: ResourceOffers;
     /** Whether the translation is of the Batch being translated, where the next ones land. */
     isPending: boolean;
-    hasMedia: boolean;
     isChecked: boolean;
     isCurrent: boolean;
     isPlaying: boolean;
     /** Whether a field being typed in keeps its value, as the Segments keep their number. */
     isTypingKept: boolean;
-    /** Whether a text in `zh-TW` is shown, whose Simplified Chinese can be cleaned. */
-    isCleanupOffered: boolean;
   } = $props();
 
   const feed = projectFeed();
   const session = editingSession();
+  const dialogs = segmentDialogs();
   let row = $state<HTMLLIElement>();
   let startInput = $state<HTMLInputElement>();
   let endInput = $state<HTMLInputElement>();
@@ -96,6 +91,14 @@
   const isFree = (kind: FieldKind) =>
     view === null || !isHeld(kind, view, index);
   const isOtherHeld = $derived(!isFree("other"));
+  const choices = $derived(
+    segmentChoices(
+      session,
+      dialogs,
+      { index, count, isHeld: isOtherHeld },
+      offers,
+    ),
+  );
   const speaker = $derived(segment.speaker ?? "");
   const isMac = isMacOS();
 
@@ -122,7 +125,7 @@
   /** Makes the row's fields once and keeps them showing the Segment, held while a Mode writes it. */
   const fields: Attachment<HTMLElement> = (editors) => {
     const kinds: CursorField[] = untrack(() =>
-      isTranslationShown ? ["text", "translation"] : ["text"],
+      offers.isTranslationShown ? ["text", "translation"] : ["text"],
     );
     for (const kind of kinds) {
       const element = createField(
@@ -210,6 +213,38 @@
     session.makeCurrent(index, isSpeakerMenu ? "speaker" : undefined);
   }
 
+  /** Asks for the times typed, `edge` the one just changed; a time that cannot be read is put back. */
+  async function changeTimes(edge: TimeEdge): Promise<void> {
+    const startMs = parseTime(startInput?.value ?? "");
+    const endMs = parseTime(endInput?.value ?? "");
+    if (startMs === null || endMs === null) {
+      notify({ title: t("edit.unreadableTime"), kind: "warning" });
+      await feed.refresh();
+      return;
+    }
+    await change(session, {
+      kind: "times",
+      index,
+      ...orderedTimes(edge, startMs, endMs),
+    });
+  }
+
+  /**
+   * Opens what the row's menu offers, or what the checked bar offers while some Segments are
+   * checked, as a menu of the system beside the pointer.
+   */
+  async function openMenu(event: MouseEvent): Promise<void> {
+    makeCurrent(event);
+    event.preventDefault();
+    const indexes = session.checkedIndexes;
+    await popUpChoices(
+      indexes.length > 0
+        ? checkedChoices(session, dialogs, indexes, offers)
+        : choices,
+      event.target,
+    );
+  }
+
   /** Lists every Speaker named as the Speaker menu opens, with no new name typed yet. */
   function listSpeakers(): void {
     offeredSpeakers = speakerNames(feed.project);
@@ -238,7 +273,7 @@
 
 {#snippet choiceLabel(label: string, shortcutId?: string)}
   {@const shortcut = shortcutById(shortcutId ?? "")}
-  {t(label)}{#if shortcut}<kbd class="kbd kbd-xs ms-auto"
+  {label}{#if shortcut}<kbd class="kbd kbd-xs ms-auto"
       >{shortcutText(shortcut, isMac)}</kbd
     >{/if}
 {/snippet}
@@ -249,39 +284,38 @@
   class="@max-4xl:grid-cols-[auto_1fr_auto]"
   aria-current={isCurrent ? "true" : undefined}
   data-is-playing={isPlaying ? "" : undefined}
-  data-action="contextmenu->segment-changes#openMenu:prevent"
   onpointerdown={(event) => session.pointAt(pressedSource(event))}
   onmousedown={checkThrough}
   onclick={makeCurrent}
   onfocusin={makeCurrent}
-  oncontextmenu={makeCurrent}
+  oncontextmenu={openMenu}
   bind:this={row}
 >
   <input
     type="checkbox"
     class="check checkbox checkbox-xs mt-1.5"
-    data-index={index}
-    data-action="change->segment-changes#check"
     checked={isChecked}
+    onchange={({ currentTarget }) =>
+      session.check(index, currentTarget.checked)}
     disabled={isOtherHeld}
   />
   <div class="flex flex-col gap-1 @max-4xl:flex-row @max-4xl:items-center">
     <input
       class="start input input-xs w-28 font-mono"
-      data-index={index}
       data-edge="start"
       data-controller="time-field"
-      data-action="change->segment-changes#changeTimes {TIME_FIELD_ACTIONS}"
+      data-action={TIME_FIELD_ACTIONS}
       disabled={isOtherHeld}
+      onchange={() => changeTimes("start")}
       bind:this={startInput}
     />
     <input
       class="end input input-xs w-28 font-mono"
-      data-index={index}
       data-edge="end"
       data-controller="time-field"
-      data-action="change->segment-changes#changeTimes {TIME_FIELD_ACTIONS}"
+      data-action={TIME_FIELD_ACTIONS}
       disabled={isOtherHeld}
+      onchange={() => changeTimes("end")}
       bind:this={endInput}
     />
     <div class="speaker-menu dropdown">
@@ -356,65 +390,22 @@
       tabindex="-1"
       class="change-menu menu dropdown-content z-10 w-60 rounded-box bg-base-100 shadow-md"
     >
-      {#each CHANGE_CHOICES as [action, label, shortcutId] (action)}
-        <li
-          hidden={(action === "mergeWithPrevious" &&
-            runWithNeighbour(index, "previous", count) === null) ||
-            (action === "mergeWithNext" &&
-              runWithNeighbour(index, "next", count) === null)}
-        >
+      {#each choices as choice (choice.id)}
+        <li>
           <button
             type="button"
-            class={action}
-            data-index={index}
-            data-action="segment-changes#{action}"
-            data-shortcut={shortcutId}
-            disabled={isOtherHeld}
+            class={choice.id}
+            data-shortcut={choice.shortcut}
+            disabled={!choice.isEnabled}
+            onclick={({ currentTarget }) => {
+              closeMenu(currentTarget);
+              void choice.run();
+            }}
           >
-            {@render choiceLabel(label, shortcutId)}
+            {@render choiceLabel(choice.label, choice.shortcut)}
           </button>
         </li>
       {/each}
-      {#if isTranslationShown}
-        <li>
-          <button
-            type="button"
-            class="retranslate"
-            data-index={index}
-            data-action="segment-changes#retranslateSegment"
-            disabled={isOtherHeld}
-          >
-            {t("edit.retranslate")}
-          </button>
-        </li>
-      {/if}
-      <li hidden={!hasMedia}>
-        <button
-          type="button"
-          class="retranscribe"
-          data-index={index}
-          data-action="segment-changes#retranscribeRest"
-          disabled={isOtherHeld}
-        >
-          {t("edit.retranscribeRest")}
-        </button>
-      </li>
-      {#if isCleanupOffered}
-        <li>
-          <button
-            type="button"
-            class="cleanup"
-            data-shortcut="cleanup"
-            disabled={isOtherHeld}
-            onclick={({ currentTarget }) => {
-              closeMenu(currentTarget);
-              void cleanSegments(session, [index]);
-            }}
-          >
-            {@render choiceLabel("cleanup.action", "cleanup")}
-          </button>
-        </li>
-      {/if}
     </ul>
   </div>
 </li>

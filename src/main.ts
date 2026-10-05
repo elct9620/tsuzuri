@@ -7,9 +7,6 @@ import FieldController, {
   composingOption,
 } from "./controllers/field-controller";
 import PreviewController from "./controllers/preview-controller";
-import SegmentChangesController, {
-  typingOption,
-} from "./controllers/segment-changes-controller";
 import TimeFieldController from "./controllers/time-field-controller";
 import TimelineController, {
   controlOption,
@@ -27,12 +24,10 @@ async function start(): Promise<void> {
   const application = new Application();
   application.registerActionOption("composing", composingOption);
   application.registerActionOption("control", controlOption);
-  application.registerActionOption("typing", typingOption);
   const assembly = assemble(application, {
     comparison: ComparisonController,
     field: FieldController,
     preview: PreviewController,
-    "segment-changes": SegmentChangesController,
     "time-field": TimeFieldController,
     timeline: TimelineController,
   });

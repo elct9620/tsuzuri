@@ -46,11 +46,9 @@
     showDialog();
   }
 
-  /** Opens the dialog to translate the Segments at `indexes` again, as the editor asks. */
-  function openForSegments({
-    detail,
-  }: CustomEvent<{ indexes: number[] }>): void {
-    chosenIndexes = detail.indexes;
+  /** Opens the dialog to translate the Segments at `indexes` again. */
+  export function openForSegments(indexes: number[]): void {
+    chosenIndexes = indexes;
     showDialog();
   }
 
@@ -81,8 +79,6 @@
     }
   }
 </script>
-
-<svelte:window onsegment-changes:retranslate={openForSegments} />
 
 <dialog class="modal" bind:this={dialog}>
   <div class="modal-box">

@@ -6,7 +6,7 @@
     recentProjects as readRecentProjects,
     type RecentProjectView,
   } from "./backend/project";
-  import { projectFeed } from "./components/context";
+  import { projectFeed, setSegmentDialogs } from "./components/context";
   import DiarizationDialog from "./components/DiarizationDialog.svelte";
   import EditorBar from "./components/EditorBar.svelte";
   import GlossaryDialog from "./components/GlossaryDialog.svelte";
@@ -47,12 +47,20 @@
   let replacementDialog: ReplacementDialog;
   let versionsDialog: VersionsDialog;
   let speakersDialog: SpeakersDialog;
+  let shiftDialog: ShiftDialog;
   let segmentList: SegmentList;
 
   const openSettings = () => settingsDialog.open();
   const dock = new ResourceDock();
   const following = new PlaybackFollowing();
   const feed = projectFeed();
+  setSegmentDialogs({
+    openRetranslation: (indexes) => translationDialog.openForSegments(indexes),
+    openRetranscription: (scope) =>
+      void transcriptionDialog.openForScope(scope),
+    openShift: () => shiftDialog.open(),
+    openSpeakers: (indexes) => speakersDialog.openFor(indexes),
+  });
   let project = $state<ProjectView | null>(null);
   let recentProjects = $state<RecentProjectView[]>([]);
 
@@ -76,8 +84,8 @@
 
 <main
   class="flex h-dvh flex-col"
-  data-controller="segment-changes comparison"
-  data-action="editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut transcript:shown->comparison#mark transcript:shown->segment-changes#followTasks versions:compare-with@window->comparison#compareWith rust:edit-command@window->segment-changes#applyEditCommand"
+  data-controller="comparison"
+  data-action="transcript:shown->comparison#mark versions:compare-with@window->comparison#compareWith"
 >
   {#if project === null}
     <StartScreen {recentProjects} {openSettings} />
@@ -142,7 +150,7 @@
 <ReplacementDialog bind:this={replacementDialog} />
 <VersionsDialog bind:this={versionsDialog} />
 <SpeakersDialog bind:this={speakersDialog} />
-<ShiftDialog />
+<ShiftDialog bind:this={shiftDialog} />
 <ShortcutsDialog bind:this={shortcutsDialog} />
 <UpdatesDialog />
 <Notifications />

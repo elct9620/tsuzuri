@@ -568,7 +568,7 @@ body
   +-- Tooltip               popover, shown again over each modal
 ```
 
-祖先沒有畫出來時，modal 開了也看不到，所以不放進其他 modal 或會隱藏的區域。開啟函式由 `Page.svelte` 以 prop 往下交。說話者、平移兩個 modal 仍是 hub controller 的 target，隨 hub 組移出。
+祖先沒有畫出來時，modal 開了也看不到，所以不放進其他 modal 或會隱藏的區域。開啟函式由 `Page.svelte` 以 prop 往下交；hub controller 要開 modal 時，在 window 送事件。
 
 ### 4.2 相依規則
 
@@ -653,9 +653,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | Controller | 畫面區域 |
 |---|---|
 | `transcript`、`segment-changes` | 字幕編輯 |
-| `speakers` | 說話者選單與設定 modal |
+| `speakers` | 每段的說話者選單 |
 | `cleanup` | 清理簡體的選單、工具列與快速鍵 |
-| `search` | 搜尋列與符合處標記 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
@@ -669,7 +668,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `progress:task` | `TaskProgress` | 字幕編輯顯示 skeleton |
 | `project:select` | `ResourceList` | 字幕編輯顯示 skeleton |
 | `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
-| `transcript:shown` | 字幕編輯 | `segment-changes` 顯示入口 |
+| `transcript:shown` | 字幕編輯 | `segment-changes` 顯示入口；`SearchBar` 重新搜尋 |
 | `transcript:selection` | 字幕編輯 | 焦點欄位跟上選取 |
 | `comparison:choose-in-versions` | `comparison` | `VersionsDialog` 開在該字幕 |
 | `versions:compare-with` | `VersionsDialog` | `comparison` 換對照 |
@@ -685,7 +684,9 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `system:color-scheme` | 系統，經 `assembly.ts` | `timeline` 重畫波形 |
 | `preferences:saved` | `Preferences` | `timeline` 重讀換段的偏好 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
-| `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
+| `segment-changes:speakers` | `segment-changes` | `SpeakersDialog` 為 Checked Segments 開啟 |
+| `segment-changes:shift` | `segment-changes` | `ShiftDialog` 開啟平移 |
+| `speakers:name` | `speakers` | `SpeakersDialog` 寫入選定的說話者 |
 | `segment-changes:retranslate` | `segment-changes` | `TranslationDialog` 開啟重新翻譯 |
 | `segment-changes:retranscribe` | `segment-changes` | `TranscriptionDialog` 開啟重新轉錄 |
 
@@ -712,6 +713,9 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `Models`、`ModelSlot` | 整體的模型來源與下載 |
 | `RepositoryDialog` | Hugging Face 的檔案清單 |
 | `Toolbar` | 名稱、開啟選單、任務與清單按鈕 |
+| `ExportMenu` | 匯出選單與純文字的兩個開關 |
+| `EditorBar` | 資源名稱與譯文選單 |
+| `SearchBar` | 搜尋列與符合處標記 |
 | `ResourceList` | 資源列、詞彙表、重新載入、⌘/Ctrl+B |
 | `TranscriptionDialog`、`TranslationDialog` | 任務 modal，含重做 |
 | `TranslationOptions` | 兩個任務 modal 共用的翻譯選項 |
@@ -720,6 +724,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ShortcutsDialog` | 快速鍵一覽 |
 | `ReplacementDialog` | 取代 modal |
 | `VersionsDialog` | 版本 modal：備份、比較、還原 |
+| `SpeakersDialog` | 說話者 modal，也寫入選單選定的說話者 |
+| `ShiftDialog` | 平移 modal |
 | `Notifications`、`NotificationCard` | 通知的堆疊、倒數、暫停與按鈕 |
 | `Tooltip` | 全頁共用的 tooltip |
 | `Undo` | 全頁的復原與重做，不畫任何東西 |
@@ -778,7 +784,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ui/file-name.ts` | 路徑的最後一段 |
 | `ui/silence.ts` | 沒有媒體檔時播放的靜音 |
 | `ui/shortcuts.ts` | 各平台的快速鍵、比對與寫法 |
-| `ui/text-fields.ts` | 原文或譯文的選擇、選取的文字 |
+| `ui/text-fields.ts` | 選取的文字 |
+| `ui/speakers.ts` | 段落與詞彙表的說話者名單 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
 圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。快速鍵以 `ui/shortcuts.ts` 為準：controller 與 Svelte 元件自己比對的鍵用 `isShortcut` 讀它，寫在 `data-action` 與 Rust 選單的鍵由測試雙向核對。

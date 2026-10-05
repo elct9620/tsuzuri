@@ -2,10 +2,12 @@
   import AudioLines from "@lucide/svelte/icons/audio-lines";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import FolderOpen from "@lucide/svelte/icons/folder-open";
+  import Keyboard from "@lucide/svelte/icons/keyboard";
   import Languages from "@lucide/svelte/icons/languages";
   import Menu from "@lucide/svelte/icons/menu";
   import PanelLeft from "@lucide/svelte/icons/panel-left";
   import Pencil from "@lucide/svelte/icons/pencil";
+  import Settings from "@lucide/svelte/icons/settings";
   import Users from "@lucide/svelte/icons/users";
   import { onMount } from "svelte";
 
@@ -204,7 +206,7 @@
       data-i18n-label="toolbar.settings"
       data-i18n-tooltip="toolbar.settings"
     >
-      <i data-lucide="settings" class="size-4"></i><span
+      <Settings class="size-4" aria-hidden="true" /><span
         class="hidden @5xl:inline"
         data-i18n="toolbar.settings"
       ></span>
@@ -217,7 +219,7 @@
       data-i18n-tooltip="shortcuts.title"
       data-shortcut="list"
     >
-      <i data-lucide="keyboard" class="size-4"></i>
+      <Keyboard class="size-4" aria-hidden="true" />
     </button>
   </div>
 </header>

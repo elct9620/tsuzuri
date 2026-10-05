@@ -1,4 +1,13 @@
 <script lang="ts">
+  import AudioWaveform from "@lucide/svelte/icons/audio-waveform";
+  import Check from "@lucide/svelte/icons/check";
+  import ChevronDown from "@lucide/svelte/icons/chevron-down";
+  import GitCompare from "@lucide/svelte/icons/git-compare";
+  import History from "@lucide/svelte/icons/history";
+  import Replace from "@lucide/svelte/icons/replace";
+  import Search from "@lucide/svelte/icons/search";
+  import SquarePlay from "@lucide/svelte/icons/square-play";
+  import Users from "@lucide/svelte/icons/users";
   import { onMount } from "svelte";
 
   import {
@@ -53,7 +62,7 @@
       class="flex shrink-0 items-center gap-1 text-sm text-base-content/70 opacity-0 transition-opacity duration-200 ease-out data-is-shown:opacity-100 motion-reduce:transition-none"
       role="status"
       data-save-mark
-      ><i data-lucide="check" class="size-4 text-success"></i><span
+      ><Check class="size-4 text-success" aria-hidden="true" /><span
         data-save-mark-label
       ></span></span
     >
@@ -82,11 +91,11 @@
       data-i18n-label="compare.label"
       data-i18n-tooltip="compare.label"
     >
-      <i data-lucide="git-compare" class="size-4"></i><span
+      <GitCompare class="size-4" aria-hidden="true" /><span
         class="hidden @5xl:inline"
         data-i18n="compare.label"
       ></span>
-      <i data-lucide="chevron-down" class="size-4"></i>
+      <ChevronDown class="size-4" aria-hidden="true" />
     </div>
     <div
       tabindex="-1"
@@ -102,7 +111,7 @@
     data-i18n-label="versions.open"
     data-i18n-tooltip="versions.open"
   >
-    <i data-lucide="history" class="size-4"></i><span
+    <History class="size-4" aria-hidden="true" /><span
       class="hidden @5xl:inline"
       data-i18n="versions.open"
     ></span>
@@ -114,7 +123,7 @@
     data-i18n-label="edit.speakers"
     data-i18n-tooltip="edit.speakers"
   >
-    <i data-lucide="users" class="size-4"></i><span
+    <Users class="size-4" aria-hidden="true" /><span
       class="hidden @5xl:inline"
       data-i18n="edit.speakers"
     ></span>
@@ -127,7 +136,7 @@
     data-i18n-tooltip="replace.open"
     data-shortcut="replace"
   >
-    <i data-lucide="replace" class="size-4"></i><span
+    <Replace class="size-4" aria-hidden="true" /><span
       class="hidden @5xl:inline"
       data-i18n="replace.open"
     ></span>
@@ -140,7 +149,7 @@
     data-i18n-tooltip="search.open"
     data-shortcut="search"
   >
-    <i data-lucide="search" class="size-4"></i><span
+    <Search class="size-4" aria-hidden="true" /><span
       class="hidden @5xl:inline"
       data-i18n="search.open"
     ></span>
@@ -155,7 +164,7 @@
     data-i18n-tooltip="preview.foldPlayer"
     hidden
   >
-    <i data-lucide="square-play" class="size-4"></i>
+    <SquarePlay class="size-4" aria-hidden="true" />
   </button>
   <button
     type="button"
@@ -166,6 +175,6 @@
     data-i18n-tooltip="preview.foldTimeline"
     hidden
   >
-    <i data-lucide="audio-waveform" class="size-4"></i>
+    <AudioWaveform class="size-4" aria-hidden="true" />
   </button>
 </div>

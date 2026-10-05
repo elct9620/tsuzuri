@@ -547,9 +547,9 @@ backend/editing.ts            gateway: the one caller of editing commands
 | 選擇 | 原因 |
 |---|---|
 | markup 寫成 Svelte 元件 | 畫面能依區域拆開 |
-| 不改成 custom element | 翻譯與圖示靠靜態掃描 |
+| 不改成 custom element | 靜態翻譯靠掃描 |
 | 有條件的內容用 `{#if}` | `t()` 與 `@lucide/svelte` 重畫時照寫 |
-| 靜態 markup 不放進重畫的區塊 | i18n 與 `data-lucide` 只掃描一次 |
+| 靜態 markup 不放進重畫的區塊 | i18n 只掃描一次 |
 
 `Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。
 
@@ -601,7 +601,7 @@ main.ts -> assemble()                              assembly.ts
   |-- feed -> session.follow -> each follower -> session.announce
   +-- session.onChange -> window: editor:cursor, editor:choice, editor:checks
 main.ts -> drawPage(feed, session)                  page.ts
-  +-- mount(Page, context) -> translatePage -> showIcons
+  +-- mount(Page, context) -> translatePage
 main.ts -> assembly.start()
   |-- relayEvents: a Rust event -> window: rust:<event name>
   +-- light or dark theme -> window: system:color-scheme
@@ -776,7 +776,6 @@ feed -> Preview.show    sets the player's source: media or silence
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/volume.ts` | 音量曲線、增益與限幅 |
 | `ui/video-window.ts` | 開啟影片視窗、轉交按鍵 |
-| `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
 | `ui/timeline-spans.ts` | 時間軸區段與選段的落點 |
 | `ui/file-name.ts` | 路徑的最後一段 |
 | `ui/silence.ts` | 沒有媒體檔時播放的靜音 |

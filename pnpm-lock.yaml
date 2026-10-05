@@ -23,9 +23,6 @@ importers:
       i18next:
         specifier: ^26.4.2
         version: 26.4.2(typescript@6.0.3)
-      lucide:
-        specifier: ^1.48.0
-        version: 1.48.0
       svelte:
         specifier: ^5.57.1
         version: 5.57.1
@@ -753,9 +750,6 @@ packages:
   locate-character@3.0.0:
     resolution: {integrity: sha512-SW13ws7BjaeJ6p7Q6CO2nchbYEc3X3J6WrmTTDto7yMPqVSZTUyY5Tjbid+Ab8gLnATtygYtiDIJGQRRn2ZOiA==}
 
-  lucide@1.48.0:
-    resolution: {integrity: sha512-8FglIlGkcIItJjJfLUiqAufUCdbtnTOsdG02/fxXd4oIt+NrcrEVH8t0ZcKAfawxHckorO5qJ9XDfnJbdf0TOg==}
-
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
@@ -1474,8 +1468,6 @@ snapshots:
       lightningcss-win32-x64-msvc: 1.33.0
 
   locate-character@3.0.0: {}
-
-  lucide@1.48.0: {}
 
   lz-string@1.5.0: {}
 

@@ -9,7 +9,6 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/components/Tooltip.test.ts`
 - `src/components/Notifications.test.ts`
 - `src/ui/save-mark.test.ts`
-- `src/ui/icons.test.ts`
 - `src/ui/shortcuts.test.ts`
 - `src/components/ShortcutsDialog.test.ts`
 - `src-tauri/src/window.rs`
@@ -281,14 +280,6 @@ A scrolling list does not tell its page it scrolled, so the tooltip would stay w
 | Given | a tooltip shown beside an element in a list |
 | When | the list scrolls |
 | Then | no tooltip is shown |
-
-## `IF-028` Drawing every icon the page names
-
-| Step | Statement |
-| --- | --- |
-| Given | the page as `index.html` and its Svelte components write it |
-| When | its icons are drawn |
-| Then | no element naming an icon is left undrawn |
 
 ## `IF-029` Keeping a tooltip on screen near the right edge
 

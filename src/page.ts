@@ -9,13 +9,11 @@ import type { EditingSession } from "./editor";
 import { pageContext } from "./components/context";
 import Page from "./Page.svelte";
 import { translatePage } from "./i18n";
-import { showIcons } from "./ui/icons";
 
 /**
  * Writes the page into `target`, its Svelte Components following `feed` and editing through
- * `session`, then its text in the
- * Interface Language and its icons: both are read from the markup once, so they come after it is
- * written. Returns the page Svelte Component, for `unmount` to take away.
+ * `session`, then its text in the Interface Language, which is read from the markup once, so it
+ * comes after the markup is written. Returns the page Svelte Component, for `unmount` to take away.
  */
 export function drawPage(
   feed: ProjectFeed,
@@ -24,6 +22,5 @@ export function drawPage(
 ): Record<string, unknown> {
   const page = mount(Page, { target, context: pageContext(feed, session) });
   translatePage(target);
-  showIcons(target);
   return page;
 }

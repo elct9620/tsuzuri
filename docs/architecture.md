@@ -653,7 +653,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | Controller | 畫面區域 |
 |---|---|
 | `segment-changes` | 段落的改動與勾選工具列 |
-| `cleanup` | 清理簡體的選單、工具列與快速鍵 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
@@ -674,7 +673,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `TaskProgress` 顯示 Phase |
 | `rust:update-progress` | Rust，經 `relayEvents` | `UpdatesDialog` 顯示下載進度 |
-| `rust:edit-command` | Rust，經 `relayEvents` | `Undo` 與 `segment-changes` |
+| `rust:edit-command` | Rust，經 `relayEvents` | `Undo`、`SegmentList`、`segment-changes` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `Page` 顯示通知 |
 | `rust:srt-requested` | Rust，經 `relayEvents` | `Page` 開啟系統要開的 SRT |
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `ModelSlot` 顯示下載進度 |
@@ -712,6 +711,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ExportMenu` | 匯出選單與純文字的兩個開關 |
 | `EditorBar` | 資源名稱與譯文選單 |
 | `SearchBar` | 搜尋列與符合處標記 |
+| `SegmentList` | 清理簡體的快速鍵與編輯選單 |
+| `CheckedBar` | 勾選工具列的清理簡體 |
 | `SegmentRows`、`SegmentRow` | 段落列、Placeholder、說話者選單、Cursor、追蹤播放 |
 | `ResourceList` | 資源列、詞彙表、重新載入、⌘/Ctrl+B |
 | `TranscriptionDialog`、`TranslationDialog` | 任務 modal，含重做 |
@@ -739,6 +740,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `PlaybackFollowing` | Page 建立 | 預覽的追蹤鈕、段落列 |
 | 開啟、重新載入、命名 | `project-actions.ts` | 起始畫面、工具列、資源清單 |
 | 寫入說話者後的通知 | `speaker-actions.ts` | 說話者 modal、段落列 |
+| 清理簡體與通知 | `cleanup-actions.ts` | 段落列、勾選工具列、快速鍵 |
 
 資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。
 

@@ -16,6 +16,7 @@
   } from "../backend/project";
   import { t } from "../i18n";
   import { projectFeed } from "./context";
+  import ExportMenu from "./ExportMenu.svelte";
   import {
     openDirectory,
     openRecent,
@@ -194,115 +195,7 @@
       </button>
     {/each}
 
-    <div class="dropdown dropdown-end">
-      <div
-        tabindex="0"
-        role="button"
-        class="btn btn-sm"
-        data-i18n-label="toolbar.export"
-        data-i18n-tooltip="toolbar.export"
-      >
-        <i data-lucide="download" class="size-4"></i><span
-          class="hidden @5xl:inline"
-          data-i18n="toolbar.export"
-        ></span>
-        <i data-lucide="chevron-down" class="size-4"></i>
-      </div>
-      <ul
-        tabindex="-1"
-        class="menu dropdown-content z-10 w-52 rounded-box bg-base-100 shadow-md"
-      >
-        <li>
-          <button
-            type="button"
-            data-transcript-target="exportButton"
-            data-action="transcript#save"
-            data-transcript-content-param="bilingual"
-            data-transcript-format-param="srt"
-            disabled
-            data-i18n="toolbar.bilingual"
-          ></button>
-        </li>
-        <li>
-          <button
-            type="button"
-            data-transcript-target="exportButton"
-            data-action="transcript#save"
-            data-transcript-content-param="original"
-            data-transcript-format-param="srt"
-            disabled
-            data-i18n="toolbar.original"
-          ></button>
-        </li>
-        <li>
-          <button
-            type="button"
-            data-transcript-target="exportButton"
-            data-action="transcript#save"
-            data-transcript-content-param="translation"
-            data-transcript-format-param="srt"
-            disabled
-            data-i18n="toolbar.translation"
-          ></button>
-        </li>
-        <li></li>
-        <li>
-          <button
-            type="button"
-            data-transcript-target="exportButton"
-            data-action="transcript#save"
-            data-transcript-content-param="bilingual"
-            data-transcript-format-param="plain_text"
-            disabled
-            data-i18n="toolbar.bilingualText"
-          ></button>
-        </li>
-        <li>
-          <button
-            type="button"
-            data-transcript-target="exportButton"
-            data-action="transcript#save"
-            data-transcript-content-param="original"
-            data-transcript-format-param="plain_text"
-            disabled
-            data-i18n="toolbar.originalText"
-          ></button>
-        </li>
-        <li>
-          <button
-            type="button"
-            data-transcript-target="exportButton"
-            data-action="transcript#save"
-            data-transcript-content-param="translation"
-            data-transcript-format-param="plain_text"
-            disabled
-            data-i18n="toolbar.translationText"
-          ></button>
-        </li>
-        <li>
-          <label class="justify-between">
-            <span data-i18n="toolbar.textSpeakers"></span>
-            <input
-              type="checkbox"
-              class="toggle toggle-sm"
-              data-transcript-target="textSpeakerToggle"
-              data-action="transcript#rememberTextSpeakers"
-            />
-          </label>
-        </li>
-        <li>
-          <label class="justify-between">
-            <span data-i18n="toolbar.textBlankLines"></span>
-            <input
-              type="checkbox"
-              class="toggle toggle-sm"
-              data-transcript-target="textBlankLineToggle"
-              data-action="transcript#rememberTextBlankLines"
-            />
-          </label>
-        </li>
-      </ul>
-    </div>
+    <ExportMenu />
 
     <button
       type="button"

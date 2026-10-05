@@ -5,6 +5,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 ## Includes
 
 - `src/controllers/transcript-controller.test.ts`
+- `src/components/ExportMenu.test.ts`
 - `src/components/ResourceList.test.ts`
 - `src/controllers/segment-changes-controller.test.ts`
 - `src/controllers/speakers-controller.test.ts`
@@ -82,6 +83,22 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | Given | blank lines turned off for Plain Text |
 | When | the app opens again |
 | Then | the export menu still has blank lines turned off for Plain Text |
+
+## `ED-185` Offering no export for a Project without Segments
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with no Segments |
+| When | the export menu is opened |
+| Then | every export is disabled |
+
+## `ED-186` Offering only the original's exports before a translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose Segments have no translation |
+| When | the export menu is opened |
+| Then | only the original's SRT and Plain Text are enabled |
 
 ## `ED-004` Showing another translation in the editor
 

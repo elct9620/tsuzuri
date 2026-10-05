@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/svelte";
+import { screen, within } from "@testing-library/svelte";
 
 /** The Language the translation options translate into. */
 export function languageSelect(): HTMLSelectElement {
@@ -15,9 +15,14 @@ export function chooseLanguage(language: string): void {
   select.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-/** The translation option checked by the box named `name`, or none while it is not offered. */
+/**
+ * The translation option checked by the box named `name` in the dialog open, or none while it is
+ * not offered; a menu elsewhere on the page may name a box alike.
+ */
 export function optionCheckbox(name: string | RegExp): HTMLInputElement | null {
-  return screen.queryByRole<HTMLInputElement>("checkbox", {
+  return within(
+    document.querySelector<HTMLElement>("dialog[open]")!,
+  ).queryByRole<HTMLInputElement>("checkbox", {
     hidden: true,
     name,
   });

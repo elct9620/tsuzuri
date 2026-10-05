@@ -102,15 +102,6 @@ describe("TranscriptController", () => {
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage" data-action="change->transcript#showTranslation"></select>
         <p data-transcript-target="emptyHint">尚無內容</p>
-        <div class="dropdown">
-          <div tabindex="0" role="button">匯出</div>
-          <button id="save-original" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="original" data-transcript-format-param="srt" disabled>原文</button>
-          <button id="save-translation" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="translation" data-transcript-format-param="srt" disabled>譯文</button>
-          <button id="save-bilingual" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="bilingual" data-transcript-format-param="srt" disabled>雙語</button>
-          <button id="save-translation-text" data-transcript-target="exportButton" data-action="transcript#save" data-transcript-content-param="translation" data-transcript-format-param="plain_text" disabled>譯文純文字</button>
-          <input id="text-speakers" type="checkbox" data-transcript-target="textSpeakerToggle" data-action="transcript#rememberTextSpeakers">
-          <input id="text-blank-lines" type="checkbox" data-transcript-target="textBlankLineToggle" data-action="transcript#rememberTextBlankLines">
-        </div>
         <ol data-transcript-target="list"></ol>
       </section>
     `;
@@ -121,14 +112,9 @@ describe("TranscriptController", () => {
         if (command === failingCommand)
           return Promise.reject({ code: "io", detail: "denied" });
         if (command === "current_project") return project;
-        if (command === "export_path")
-          return (args as { format: string }).format === "plain_text"
-            ? "/talks/lecture.en.txt"
-            : "/talks/lecture.en.srt";
         if (command === "translation_glossary_table") return glossaryTable;
         if (command === "edit_segment" && editFailure !== undefined)
           return Promise.reject(editFailure);
-        if (command === "plugin:dialog|save") return "/subtitles/out.srt";
       },
       { shouldMockEvents: true },
     );
@@ -269,134 +255,6 @@ describe("TranscriptController", () => {
     });
   });
 
-  // @behavior ED-003
-  it("exports the Project as a bilingual SRT", async () => {
-    await hold(translatedProject);
-
-    document.querySelector<HTMLButtonElement>("#save-bilingual")!.click();
-    await settle();
-
-    expect(sent("save_srt")).toEqual({
-      path: "/subtitles/out.srt",
-      content: "bilingual",
-    });
-  });
-
-  // @behavior PJ-014
-  it("opens the save dialog at the default path of the export", async () => {
-    await hold(translatedProject);
-
-    document.querySelector<HTMLButtonElement>("#save-translation")!.click();
-    await settle();
-
-    expect(sent("export_path")).toEqual({
-      content: "translation",
-      format: "srt",
-    });
-    expect(sent("plugin:dialog|save")).toMatchObject({
-      options: { defaultPath: "/talks/lecture.en.srt" },
-    });
-  });
-
-  const textSpeakerToggle = () =>
-    document.querySelector<HTMLInputElement>("#text-speakers")!;
-
-  function turnOffTextSpeakers(): void {
-    textSpeakerToggle().checked = false;
-    textSpeakerToggle().dispatchEvent(new Event("input", { bubbles: true }));
-  }
-
-  const textBlankLineToggle = () =>
-    document.querySelector<HTMLInputElement>("#text-blank-lines")!;
-
-  function turnOffTextBlankLines(): void {
-    textBlankLineToggle().checked = false;
-    textBlankLineToggle().dispatchEvent(new Event("input", { bubbles: true }));
-  }
-
-  // @behavior ED-155
-  it("exports the translation as Plain Text with its Speakers and blank lines", async () => {
-    await hold(translatedProject);
-
-    document
-      .querySelector<HTMLButtonElement>("#save-translation-text")!
-      .click();
-    await settle();
-
-    expect([sent("plugin:dialog|save"), sent("save_text")]).toMatchObject([
-      {
-        options: {
-          defaultPath: "/talks/lecture.en.txt",
-          filters: [{ extensions: ["txt"] }],
-        },
-      },
-      {
-        path: "/subtitles/out.srt",
-        content: "translation",
-        hasSpeakers: true,
-        hasBlankLines: true,
-      },
-    ]);
-  });
-
-  // @behavior ED-156
-  it("exports Plain Text without its Speakers once they are turned off", async () => {
-    await hold(translatedProject);
-    turnOffTextSpeakers();
-
-    document
-      .querySelector<HTMLButtonElement>("#save-translation-text")!
-      .click();
-    await settle();
-
-    expect(sent("save_text")).toMatchObject({ hasSpeakers: false });
-  });
-
-  // @behavior ED-157
-  it("keeps the Speakers turned off for Plain Text the next time the app opens", async () => {
-    turnOffTextSpeakers();
-    application.stop();
-    textSpeakerToggle().checked = true;
-    application = Application.start();
-    await assemble(application, {
-      field: FieldController,
-      speakers: SpeakersController,
-      transcript: TranscriptController,
-    }).start();
-    await settle();
-
-    expect(textSpeakerToggle().checked).toBe(false);
-  });
-
-  // @behavior ED-162
-  it("exports Plain Text without blank lines once they are turned off", async () => {
-    await hold(translatedProject);
-    turnOffTextBlankLines();
-
-    document
-      .querySelector<HTMLButtonElement>("#save-translation-text")!
-      .click();
-    await settle();
-
-    expect(sent("save_text")).toMatchObject({ hasBlankLines: false });
-  });
-
-  // @behavior ED-163
-  it("keeps the blank lines turned off for Plain Text the next time the app opens", async () => {
-    turnOffTextBlankLines();
-    application.stop();
-    textBlankLineToggle().checked = true;
-    application = Application.start();
-    await assemble(application, {
-      field: FieldController,
-      speakers: SpeakersController,
-      transcript: TranscriptController,
-    }).start();
-    await settle();
-
-    expect(textBlankLineToggle().checked).toBe(false);
-  });
-
   // @behavior ED-004
   it("shows the translation chosen for the Current Resource", async () => {
     await hold(translatedProject);
@@ -409,17 +267,6 @@ describe("TranscriptController", () => {
     await settle();
 
     expect(sent("show_translation")).toEqual({ language: "ja" });
-  });
-
-  // @behavior PJ-149
-  it("says an export was not written when writing it fails", async () => {
-    await hold(translatedProject);
-    failingCommand = "save_srt";
-
-    document.querySelector<HTMLButtonElement>("#save-original")!.click();
-    await settle();
-
-    expect(notifications()).toEqual(["沒有匯出"]);
   });
 
   // @behavior TL-096

@@ -1,18 +1,12 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { save, SRT_FILTERS, TEXT_FILTERS } from "../backend/dialog";
 import { isMacOS } from "../backend/system";
 import {
   currentResource,
-  exportPath,
-  saveSrt,
-  saveText,
   showTranslation,
-  type ExportFormat,
   type ProjectFeed,
   type ProjectView,
   type Segment,
-  type WrittenText,
 } from "../backend/project";
 import {
   createField,
@@ -30,7 +24,6 @@ import {
   type TimeEdge,
 } from "../editor";
 import { t } from "../i18n";
-import { closeMenu } from "../ui/menu";
 import { notifyFailure } from "../ui/notification.svelte";
 import { iconElement } from "../ui/icons";
 import { rememberedFlag, rememberFlag } from "../ui/choices";
@@ -41,12 +34,6 @@ import { menuOption } from "../ui/options";
 
 /** Where the webview remembers whether the editor follows playback. */
 const FOLLOWING_KEY = "tsuzuri.transcript-following";
-
-/** Where the webview remembers whether a Plain Text export names its Speakers. */
-const TEXT_SPEAKERS_KEY = "tsuzuri.plain-text-speakers";
-
-/** Where the webview remembers whether a Plain Text export leaves a blank line between blocks. */
-const TEXT_BLANK_LINES_KEY = "tsuzuri.plain-text-blank-lines";
 
 /** Ctrl+Alt+Enter, or ⌘+Option+Enter, splits a Segment at the Cursor in its text, as subtitle editors bind splitting to a modified line break. */
 const SPLIT_SHORTCUTS = [
@@ -322,9 +309,6 @@ export default class TranscriptController extends Controller {
   static targets = [
     "list",
     "emptyHint",
-    "exportButton",
-    "textSpeakerToggle",
-    "textBlankLineToggle",
     "heading",
     "translationLanguage",
     "followButton",
@@ -336,8 +320,6 @@ export default class TranscriptController extends Controller {
   declare readonly headingTarget: HTMLElement;
   /** Which of the Current Resource's translations the editor shows, or none. */
   declare readonly translationLanguageTarget: HTMLSelectElement;
-  /** Each export, enabled once the Project has the text it writes. */
-  declare readonly exportButtonTargets: HTMLButtonElement[];
   /** Whether the editor scrolls to the row being played, pressed to turn it on or off. */
   declare readonly followButtonTarget: HTMLButtonElement;
   declare readonly hasFollowButtonTarget: boolean;
@@ -350,10 +332,6 @@ export default class TranscriptController extends Controller {
   private runningTask: TaskKind | null = null;
   /** The Project shown now. */
   private project: ProjectView | null = null;
-  /** Whether a Plain Text export names its Speakers, unless turned off on this machine. */
-  private hasTextSpeakers = rememberedFlag(TEXT_SPEAKERS_KEY, true);
-  /** Whether a Plain Text export leaves a blank line between blocks, unless turned off on this machine. */
-  private hasTextBlankLines = rememberedFlag(TEXT_BLANK_LINES_KEY, true);
   /** The position of the Current Segment as its row was last brought into view. */
   private shownCurrentIndex: number | null = null;
   /** The position of the Segment the Preview is playing. */
@@ -555,53 +533,6 @@ export default class TranscriptController extends Controller {
     }
   }
 
-  async save({
-    currentTarget,
-    params,
-  }: {
-    currentTarget: EventTarget | null;
-    params: { content: WrittenText; format: ExportFormat };
-  }): Promise<void> {
-    closeMenu(currentTarget);
-    const { content, format } = params;
-    const isPlainText = format === "plain_text";
-    try {
-      const path = await save({
-        defaultPath: await exportPath(content, format),
-        filters: isPlainText ? TEXT_FILTERS : SRT_FILTERS,
-      });
-      if (path === null) return;
-      if (isPlainText)
-        await saveText(
-          path,
-          content,
-          this.hasTextSpeakers,
-          this.hasTextBlankLines,
-        );
-      else await saveSrt(path, content);
-    } catch (error) {
-      notifyFailure(t("toolbar.notExported"), error);
-    }
-  }
-
-  textSpeakerToggleTargetConnected(toggle: HTMLInputElement): void {
-    toggle.checked = this.hasTextSpeakers;
-  }
-
-  rememberTextSpeakers({ currentTarget }: Event): void {
-    this.hasTextSpeakers = (currentTarget as HTMLInputElement).checked;
-    rememberFlag(TEXT_SPEAKERS_KEY, this.hasTextSpeakers);
-  }
-
-  textBlankLineToggleTargetConnected(toggle: HTMLInputElement): void {
-    toggle.checked = this.hasTextBlankLines;
-  }
-
-  rememberTextBlankLines({ currentTarget }: Event): void {
-    this.hasTextBlankLines = (currentTarget as HTMLInputElement).checked;
-    rememberFlag(TEXT_BLANK_LINES_KEY, this.hasTextBlankLines);
-  }
-
   private show(project: ProjectView | null): void {
     this.project = project;
     const segments = project?.segments ?? [];
@@ -621,16 +552,7 @@ export default class TranscriptController extends Controller {
     const isAwaitingSegments =
       segments.length === 0 && this.runningTask === "transcription";
     if (isAwaitingSegments) this.showLoading();
-    const hasTranslation = segments.some(
-      (segment) => segment.translation !== undefined,
-    );
     this.emptyHintTarget.hidden = segments.length > 0 || isAwaitingSegments;
-    for (const target of this.exportButtonTargets) {
-      const needsTranslation =
-        target.dataset.transcriptContentParam !== "original";
-      target.disabled =
-        segments.length === 0 || (needsTranslation && !hasTranslation);
-    }
     this.dispatch("shown", { detail: { project } });
   }
 

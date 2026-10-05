@@ -568,7 +568,7 @@ body
   +-- Tooltip               popover, shown again over each modal
 ```
 
-祖先沒有畫出來時，modal 開了也看不到，所以不放進其他 modal 或會隱藏的區域。開啟函式由 `Page.svelte` 以 prop 往下交。版本、說話者、平移三個 modal 仍是 hub controller 的 target，隨 hub 組移出。
+祖先沒有畫出來時，modal 開了也看不到，所以不放進其他 modal 或會隱藏的區域。開啟函式由 `Page.svelte` 以 prop 往下交。說話者、平移兩個 modal 仍是 hub controller 的 target，隨 hub 組移出。
 
 ### 4.2 相依規則
 
@@ -582,11 +582,13 @@ body
 | `Page.svelte`、`components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/`、`editor/index.ts` | controller |
 | `main.ts` | 全部 | — |
 
-Controller 之間只 import outlet 的型別，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
+Controller 之間不互相 import，以事件溝通，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
 
 #### 4.2.1 事件的接法
 
 事件交給框架接上與解除，所以不自己訂閱 Rust 或 window 的事件；只有影片視窗例外。下表是各處的接法。
+
+Modal 在 `<main>` 旁，送給 hub 的事件不會冒泡經過它，所以在 window 上送，例如 `versions:compare-with`。
 
 | 誰 | 接法 | 解除 |
 |---|---|---|
@@ -657,21 +659,20 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `comparison` | 對照備份、參照譯文、單句還原 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
-| `versions` | 版本 modal |
 | `field` | 每個編輯欄位接上 session |
 | `time-field` | 時間欄覆寫輸入 |
 
 畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`，沒有媒體檔時由 `ui/silence.ts` 決定同一段靜音。追蹤播放鈕在預覽卡片，屬於捲動清單的 `transcript`。
 
-| 事件或 outlet | 送出者 | 接收者與用途 |
+| 事件 | 送出者 | 接收者與用途 |
 |---|---|---|
 | `progress:task` | `TaskProgress` | 字幕編輯顯示 skeleton |
 | `project:select` | `ResourceList` | 字幕編輯顯示 skeleton |
 | `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
 | `transcript:shown` | 字幕編輯 | `segment-changes` 顯示入口 |
 | `transcript:selection` | 字幕編輯 | 焦點欄位跟上選取 |
-| `versions` outlet | `comparison` | 開啟版本 dialog |
-| `versions:compare-with` | `versions` | `comparison` 換對照 |
+| `comparison:choose-in-versions` | `comparison` | `VersionsDialog` 開在該字幕 |
+| `versions:compare-with` | `VersionsDialog` | `comparison` 換對照 |
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
 | `editor:choice` | session，經 `assembly.ts` | `timeline` 依來源移動媒體 |
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
@@ -718,6 +719,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `TaskProgress` | 標題列的任務進度徽章 |
 | `ShortcutsDialog` | 快速鍵一覽 |
 | `ReplacementDialog` | 取代 modal |
+| `VersionsDialog` | 版本 modal：備份、比較、還原 |
 | `Notifications`、`NotificationCard` | 通知的堆疊、倒數、暫停與按鈕 |
 | `Tooltip` | 全頁共用的 tooltip |
 | `Undo` | 全頁的復原與重做，不畫任何東西 |

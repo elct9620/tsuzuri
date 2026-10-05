@@ -40,7 +40,7 @@ describe("Current Segment", () => {
   const rows = segmentRows;
   const regions = () => [
     ...screen
-      .getByRole("application", { name: t("preview.waveform") })
+      .getByRole("slider", { name: t("preview.waveform") })
       .firstElementChild!.shadowRoot!.querySelectorAll<HTMLElement>(
         '[part~="region"]',
       ),

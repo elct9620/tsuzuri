@@ -139,6 +139,9 @@
   /** The times a dragged region or a drawn range will be written with, shown only while there is one. */
   let shownSpan = $state.raw<Span | null>(null);
   let isDragging = $state(false);
+  /** Where the media is and how long the Waveform runs, in seconds, which the waveform reads out as a slider. */
+  let mediaTime = $state(0);
+  let mediaLength = $state(0);
   /** The modifier keys held as the pointer last moved, which a region's own events do not carry. */
   let modifiers = { shiftKey: false, altKey: false };
   /** The element the focus last reached by keyboard, or none once a pointer took it. */
@@ -420,6 +423,8 @@
     const scroll = surfer?.getScroll() ?? 0;
     surfer?.destroy();
     surfer = undefined;
+    mediaTime = 0;
+    mediaLength = 0;
     regions = undefined;
     waveformRequest = undefined;
     isTakingWaveform = false;
@@ -492,10 +497,14 @@
       ],
     });
     surfer.on("ready", () => {
+      mediaLength = surfer?.getDuration() ?? 0;
       markSegments();
       surfer?.setScroll(scroll);
     });
-    surfer.on("timeupdate", (time) => pauseAtCurrentEnd(time));
+    surfer.on("timeupdate", (time) => {
+      mediaTime = time;
+      pauseAtCurrentEnd(time);
+    });
     surfer.on("seeking", () => (lastTime = null));
     surfer.on("interaction", () => dropRange());
     drawnRegions.enableDragSelection(RANGE_LOOK);
@@ -979,7 +988,11 @@
       "h-full [--segment-even:color-mix(in_oklab,var(--color-base-content)_6%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-base-content)_12%,transparent)] [--segment-current:color-mix(in_oklab,var(--color-primary)_25%,transparent)] [--segment-range:color-mix(in_oklab,var(--color-secondary)_25%,transparent)]",
       isTakingWaveform && "skeleton",
     ]}
-    role="application"
+    role="slider"
+    aria-valuemin={0}
+    aria-valuemax={mediaLength}
+    aria-valuenow={mediaTime}
+    aria-valuetext={formatSeconds(mediaTime)}
     aria-label={t("preview.waveform")}
     tabindex="0"
     hidden={source === null}

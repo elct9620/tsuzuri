@@ -1490,6 +1490,16 @@ A time set where the media is lands only as closely as the media can be put, so 
 | When | → is pressed |
 | Then | the media is at 1.1 s |
 
+## `PV-208` Reading where the media is on the waveform
+
+The arrow keys move the media along the waveform, so a screen reader reads the waveform as a slider over the media's length.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline over 2 s of media |
+| When | the media plays to 1.5 s |
+| Then | the waveform reads 1.5 of 2 s, as `00:00:01.500` |
+
 ## `PV-162` Keeping the media within its length when it is moved with an arrow key
 
 | Step | Statement |

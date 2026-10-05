@@ -46,7 +46,7 @@ describe("Timeline", () => {
   let frame: () => HTMLElement;
   /** The element wavesurfer.js draws the Waveform in, found while it is hidden too. */
   const waveformOf = () =>
-    frame().querySelector<HTMLElement>('[role="application"]')!;
+    frame().querySelector<HTMLElement>('[role="slider"]')!;
   const host = () => waveformOf().firstElementChild!.shadowRoot!;
   const wrapper = () => host().querySelector<HTMLElement>(".wrapper")!;
   const regions = () => [
@@ -1015,6 +1015,22 @@ describe("Timeline", () => {
       await pressOnWaveform(1, "ArrowRight");
 
       expect(media().currentTime).toBe(1.1);
+    });
+
+    // @behavior PV-208
+    it("reads where the media is on the waveform", async () => {
+      await show(projectWithMedia());
+
+      media().currentTime = 1.5;
+      media().dispatchEvent(new Event("timeupdate"));
+      flushSync();
+
+      const waveform = waveformOf();
+      expect(
+        ["aria-valuenow", "aria-valuemax", "aria-valuetext"].map((name) =>
+          waveform.getAttribute(name),
+        ),
+      ).toEqual(["1.5", "2", "00:00:01.500"]);
     });
 
     // @behavior PV-162

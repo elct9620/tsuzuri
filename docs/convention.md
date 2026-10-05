@@ -24,6 +24,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 |---|---|---|
 | 函式、變數、欄位 | `snake_case` | `camelCase` |
 | 型別、介面 | `UpperCamelCase` | `UpperCamelCase` |
+| 檔名 | `snake_case.rs` | `kebab-case.ts` |
 | 依鍵尋找 | `path_by_name` | `statusByName` |
 | 問句 | `is_file`、`is_empty` | `isRunning`、`hasTranslation` |
 | 問號結尾 | 不用 | 不用 |
@@ -70,6 +71,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 |---|---|
 | Stimulus | `connect`、`disconnect`、`static targets`、`*Target`、`*Targets`、action option 的 `value` |
 | Svelte | Svelte 元件以 `UpperCamelCase` 命名，例如 `Page.svelte` |
+| BCP 47 | 語言檔以語言標籤命名，例如 `zh-Hant.ts` |
 | Rust trait | `fmt`、`from`、`drop`、`enabled`、`log`、`flush` |
 | i18next、Vitest | `t`、`describe`、`it` |
 | DOM、Rust 標準函式庫 | `Event` 的 `composed`、`PoisonError` 的 `poisoned` |
@@ -93,7 +95,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 
 ### 1.6 依據
 
-這些規則以 Rust 與 JavaScript 標準函式庫的慣例為依據。Google TypeScript Style Guide 允許 `getFoo`，本專案不採用，以免查詢與 Rust 那一側的寫法不同。
+這些規則以 Rust 與 JavaScript 標準函式庫的慣例為依據。Google TypeScript Style Guide 允許 `getFoo`，本專案不採用，以免查詢與 Rust 那一側的寫法不同；它的 `snake_case` 檔名也不採用，TS 檔名跟著 Svelte。
 
 | 來源 | 佐證的規則 |
 |---|---|
@@ -103,6 +105,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | JavaScript 標準函式庫 | 問句用 `Array.isArray`、`Number.isNaN` |
 | JavaScript 標準函式庫 | 轉換用 `Array.from`、`toISOString` |
 | Godot API | 依鍵尋找用 `_by_`，不用 `_named` |
+| Svelte 原始碼 | TS 檔名用 `media-query.js` 的 kebab-case |
 
 ## 2 文件
 

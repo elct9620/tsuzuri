@@ -2,7 +2,7 @@
   @component
   The search bar: finds what is typed in the Current Resource's original or the translation it
   shows, as Rust reads it, marks every match and moves from one to the next, making its Segment
-  current. It searches again whenever the transcript shows the Segments anew while it is open.
+  current. It searches again whenever the Segment rows are shown anew while it is open.
 -->
 <script lang="ts">
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
@@ -105,7 +105,7 @@
     event.preventDefault();
   }
 
-  /** Searches again while open, as the transcript shows the Segments anew. */
+  /** Searches again while open, as the Segment rows are shown anew. */
   function follow(): void {
     if (isOpen) void findMatches();
   }

@@ -173,7 +173,7 @@ export default class ComparisonController extends Controller {
 
   /** The compare menu's choices, drawn from the Backups there are. */
   declare readonly menuTarget: HTMLElement;
-  /** The editor's rows, which the transcript draws. */
+  /** The editor's rows, which SegmentRows draws. */
   declare readonly listTarget: HTMLOListElement;
 
   /** The Current Resource the choices were made for, so a new one is compared afresh. */

@@ -76,7 +76,7 @@ function choiceOf(button: HTMLButtonElement): MenuChoice {
 
 /**
  * Changes the Segments themselves - their times, their number, which of them are one - from the
- * rows the transcript controller draws, and checks the rows a merge or a shift works on.
+ * rows SegmentRows draws, and checks the rows a merge or a shift works on.
  */
 export default class SegmentChangesController extends Controller {
   static targets = [

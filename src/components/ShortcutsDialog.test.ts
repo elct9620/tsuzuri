@@ -1,26 +1,29 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
+import { render, screen, within } from "@testing-library/svelte";
+import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { setInterfaceLanguage } from "../i18n";
-import ShortcutsController from "./shortcuts_controller";
+import ShortcutsDialog from "./ShortcutsDialog.svelte";
 
-describe("ShortcutsController", () => {
-  let application: Application;
+describe("ShortcutsDialog", () => {
+  let shortcutsDialog: ShortcutsDialog;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const dialog = () =>
-    document.querySelector<HTMLDialogElement>(
-      '[data-shortcuts-target="dialog"]',
-    )!;
-  const rows = () =>
-    [...document.querySelectorAll<HTMLElement>("[data-shortcut-id]")].map(
-      (row) => ({
-        id: row.dataset.shortcutId,
+    screen.getByRole<HTMLDialogElement>("dialog", { hidden: true });
+  /** Each shortcut listed, read once the list has been written. */
+  function rows() {
+    flushSync();
+    return within(dialog())
+      .queryAllByRole("listitem", { hidden: true })
+      .map((row) => ({
+        name: row.firstElementChild?.textContent,
         text: row.textContent,
         tip: row.dataset.tooltip,
         keys: [...row.querySelectorAll("kbd")].map((key) => key.textContent),
-      }),
-    );
+      }));
+  }
+  const keysOf = (name: string) =>
+    rows().find((row) => row.name === name)?.keys;
 
   function press(selector: string, init: KeyboardEventInit): KeyboardEvent {
     const event = new KeyboardEvent("keydown", {
@@ -36,23 +39,12 @@ describe("ShortcutsController", () => {
     Object.assign(window, { __TAURI_OS_PLUGIN_INTERNALS__: { platform } });
   }
 
-  beforeEach(async () => {
-    document.body.innerHTML = `
-      <div data-controller="shortcuts" data-action="keydown@window->shortcuts#openByShortcut">
-        <input id="typing" />
-        <button id="elsewhere" data-action="shortcuts#open"></button>
-        <dialog data-shortcuts-target="dialog">
-          <div data-shortcuts-target="list"></div>
-        </dialog>
-      </div>
-    `;
-    application = Application.start();
-    application.register("shortcuts", ShortcutsController);
-    await settle();
+  beforeEach(() => {
+    document.body.innerHTML = `<input id="typing" /><button id="elsewhere"></button>`;
+    shortcutsDialog = render(ShortcutsDialog).component;
   });
 
   afterEach(async () => {
-    application.stop();
     usePlatform("linux");
     await setInterfaceLanguage("zh-Hant-TW");
   });
@@ -120,29 +112,23 @@ describe("ShortcutsController", () => {
 
     press("#elsewhere", { key: "?", code: "Slash", shiftKey: true });
 
-    const shortcuts = rows();
     expect([
-      shortcuts.find((row) => row.id === "replace")?.keys,
-      shortcuts.some((row) => row.keys.includes("Ctrl")),
+      keysOf("取代"),
+      rows().some((row) => row.keys.includes("Ctrl")),
     ]).toEqual([["⌘", "⌥", "F"], false]);
   });
 
   it("lists the keys of Linux on Linux", () => {
     press("#elsewhere", { key: "?", code: "Slash", shiftKey: true });
 
-    expect(rows().find((row) => row.id === "replace")?.keys).toEqual([
-      "Ctrl",
-      "H",
-    ]);
+    expect(keysOf("取代")).toEqual(["Ctrl", "H"]);
   });
 
   // @behavior IF-045
   it("lists Esc beside the double click for the Video Window's full screen", () => {
     press("#elsewhere", { key: "?", code: "Slash", shiftKey: true });
 
-    expect(
-      rows().find((row) => row.id === "videoWindowFullscreen")?.keys,
-    ).toEqual(["點兩下", "Esc"]);
+    expect(keysOf("影片視窗全螢幕")).toEqual(["點兩下", "Esc"]);
   });
 
   // @behavior IF-034
@@ -151,7 +137,7 @@ describe("ShortcutsController", () => {
     async (language) => {
       await setInterfaceLanguage(language);
 
-      document.querySelector<HTMLElement>("#elsewhere")!.click();
+      shortcutsDialog.open();
 
       const rowsWithoutTip = rows().filter(
         (row) => !row.tip || row.tip.startsWith("shortcuts."),

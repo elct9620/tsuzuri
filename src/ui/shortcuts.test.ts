@@ -73,10 +73,8 @@ describe("shortcuts", () => {
 
   // @behavior IF-043
   it("names no key that nothing binds", () => {
-    const sources = Object.values(controllers);
-    const boundChordSet = new Set(
-      [...pageSources, ...sources].flatMap(boundChords),
-    );
+    const sources = [...pageSources, ...Object.values(controllers)];
+    const boundChordSet = new Set(sources.flatMap(boundChords));
     const shortcutIdSet = new Set(sources.flatMap(shortcutIds));
 
     const unboundChords = SHORTCUTS.filter(

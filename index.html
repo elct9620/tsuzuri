@@ -10,7 +10,7 @@
 
   <body
     class="text-[15px]"
-    data-controller="tooltip undo shortcuts"
-    data-action="keydown@window->shortcuts#openByShortcut pointerover->tooltip#show focusin->tooltip#show pointerout->tooltip#hide focusout->tooltip#hide scroll->tooltip#hide:capture keydown.ctrl+z@window->undo#undoInProject:!typing:prevent keydown.meta+z@window->undo#undoInProject:!typing:prevent keydown.ctrl+shift+z@window->undo#redoInProject:!typing:prevent keydown.meta+shift+z@window->undo#redoInProject:!typing:prevent keydown.ctrl+y@window->undo#redoInProject:!typing:prevent keydown.meta+y@window->undo#redoInProject:!typing:prevent rust:edit-command@window->undo#applyEditCommand"
+    data-controller="tooltip undo"
+    data-action="pointerover->tooltip#show focusin->tooltip#show pointerout->tooltip#hide focusout->tooltip#hide scroll->tooltip#hide:capture keydown.ctrl+z@window->undo#undoInProject:!typing:prevent keydown.meta+z@window->undo#undoInProject:!typing:prevent keydown.ctrl+shift+z@window->undo#redoInProject:!typing:prevent keydown.meta+shift+z@window->undo#redoInProject:!typing:prevent keydown.ctrl+y@window->undo#redoInProject:!typing:prevent keydown.meta+y@window->undo#redoInProject:!typing:prevent rust:edit-command@window->undo#applyEditCommand"
   ></body>
 </html>

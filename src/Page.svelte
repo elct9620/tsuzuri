@@ -23,6 +23,7 @@
   let translationDialog: TranslationDialog;
   let diarizationDialog: DiarizationDialog;
   let glossaryDialog: GlossaryDialog;
+  let shortcutsDialog: ShortcutsDialog;
 
   const openSettings = () => settingsDialog.open();
 </script>
@@ -51,6 +52,7 @@
     <div class="drawer-content @container flex h-dvh min-w-0 flex-col">
       <Toolbar
         {openSettings}
+        openShortcuts={() => shortcutsDialog.open()}
         openTranscription={() => transcriptionDialog.open()}
         openTranslation={() => translationDialog.open()}
         openDiarization={() => diarizationDialog.open()}
@@ -81,6 +83,6 @@
 <TranslationDialog bind:this={translationDialog} />
 <DiarizationDialog bind:this={diarizationDialog} />
 <GlossaryDialog bind:this={glossaryDialog} />
-<ShortcutsDialog />
+<ShortcutsDialog bind:this={shortcutsDialog} />
 <UpdatesDialog />
 <Notifications />

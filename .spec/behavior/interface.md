@@ -11,7 +11,7 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/ui/save_mark.test.ts`
 - `src/ui/icons.test.ts`
 - `src/ui/shortcuts.test.ts`
-- `src/controllers/shortcuts_controller.test.ts`
+- `src/components/ShortcutsDialog.test.ts`
 - `src-tauri/src/window.rs`
 - `src/components/settings/general/About.test.ts`
 - `src/controllers/resource_list_controller.test.ts`

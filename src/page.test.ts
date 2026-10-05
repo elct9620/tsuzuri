@@ -28,7 +28,6 @@ describe("drawPage", () => {
     ["Segment list", '[data-transcript-target="list"]'],
     ["resource list", '[data-project-target="resources"]'],
     ["glossary entry", '[data-project-target="glossary"]'],
-    ["shortcuts dialog", '[data-shortcuts-target="dialog"]'],
     ["notification stack", "[data-notifications]"],
     ["tooltip bubble", '[data-tooltip-target="bubble"]'],
   ])("writes the %s", (_part, selector) => {
@@ -249,6 +248,23 @@ describe("drawPage", () => {
     expect(
       within(page)
         .getByRole("heading", { hidden: true, name: t("translate.glossary") })
+        .closest("dialog")!.open,
+    ).toBe(true);
+  });
+
+  it("opens the shortcut list from the toolbar", async () => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+    drawPage(new ProjectFeed(), page);
+    await tick();
+
+    within(page.querySelector<HTMLElement>("header")!)
+      .getByRole("button", { hidden: true, name: t("shortcuts.title") })
+      .click();
+
+    expect(
+      within(page)
+        .getByRole("heading", { hidden: true, name: t("shortcuts.title") })
         .closest("dialog")!.open,
     ).toBe(true);
   });

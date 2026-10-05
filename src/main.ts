@@ -15,7 +15,6 @@ import ReplacementController from "./controllers/replacement_controller";
 import ResourceListController from "./controllers/resource_list_controller";
 import SearchController from "./controllers/search_controller";
 import SegmentChangesController from "./controllers/segment_changes_controller";
-import ShortcutsController from "./controllers/shortcuts_controller";
 import SpeakersController from "./controllers/speakers_controller";
 import TimeFieldController from "./controllers/time_field_controller";
 import TimelineController, {
@@ -51,7 +50,6 @@ async function start(): Promise<void> {
     cleanup: CleanupController,
     search: SearchController,
     "segment-changes": SegmentChangesController,
-    shortcuts: ShortcutsController,
     speakers: SpeakersController,
     "time-field": TimeFieldController,
     timeline: TimelineController,

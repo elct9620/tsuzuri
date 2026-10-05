@@ -21,6 +21,7 @@ export function renderWithToolbar(
     context,
     props: {
       openSettings: ignore,
+      openShortcuts: ignore,
       openTranscription: ignore,
       openTranslation: ignore,
       openDiarization: ignore,

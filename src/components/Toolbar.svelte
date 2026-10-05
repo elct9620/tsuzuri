@@ -10,6 +10,7 @@
 
   interface Props {
     openSettings: () => void;
+    openShortcuts: () => void;
     openTranscription: () => void;
     openTranslation: () => void;
     openDiarization: () => void;
@@ -17,6 +18,7 @@
 
   let {
     openSettings,
+    openShortcuts,
     openTranscription,
     openTranslation,
     openDiarization,
@@ -273,7 +275,7 @@
     <button
       type="button"
       class="btn btn-square btn-sm btn-ghost"
-      data-action="shortcuts#open"
+      onclick={openShortcuts}
       data-i18n-label="shortcuts.title"
       data-i18n-tooltip="shortcuts.title"
       data-shortcut="list"

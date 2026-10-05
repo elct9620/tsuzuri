@@ -68,7 +68,6 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 │  ├─ Page.svelte         composes the page's regions (4.1)
 │  ├─ components/         Svelte Components and their tests (4.1)
 │  ├─ backend/            the only way to Rust
-│  ├─ controllers/        Stimulus controllers and their tests
 │  ├─ editor/             editing core, depends on nothing outside (4.5)
 │  ├─ ui/                 shared screen modules
 │  └─ locales/            en, zh-Hant
@@ -119,7 +118,7 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 ### 2.2 指令（Webview ↔ Rust）
 
 ```
-controller ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/commands.rs ─▶ 用例／CurrentProject
+Svelte 元件 ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/commands.rs ─▶ 用例／CurrentProject
     │    ▲                                                             │
     │    └─────────────── 回答，或 Failure ◀──────────────────────────┘
     └─▶ editor/ session ─▶ backend/editing.ts ─▶ bindings.ts        編輯只走這條
@@ -173,7 +172,7 @@ controller ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/command
 
 ```
 open_project／open_srt ─▶ asset_protocol_scope().allow_directory(專案目錄)
-controller ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> 直接讀檔
+Svelte 元件 ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> 直接讀檔
 ```
 
 | 規則 | 做法 |
@@ -526,9 +525,9 @@ command ── begin_mode ──▶ ModeRun: turn, ports, keep   + Phases
 ### 4.1 分層
 
 ```
-index.html, Page.svelte       data-controller, data-action
+index.html, Page.svelte       markup
     |
-components/, controllers/ --> ui/, backend/ (editing aside)
+components/   ------------> ui/, backend/ (editing aside)
     |                         interface: DOM events to use cases, changes to the page
     v
 editor/  session.ts           application: Cursor, Checked Segments, use cases, port
@@ -549,11 +548,10 @@ backend/editing.ts            gateway: the one caller of editing commands
 |---|---|
 | markup 寫成 Svelte 元件 | 畫面能依區域拆開 |
 | 不改成 custom element | 翻譯與圖示靠靜態掃描 |
-| 多 controller 的外框留在 `Page.svelte` | target 必須是後代 |
 | 有條件的內容用 `{#if}` | `t()` 與 `@lucide/svelte` 重畫時照寫 |
 | 靜態 markup 不放進重畫的區塊 | i18n 與 `data-lucide` 只掃描一次 |
 
-`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
+`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。
 
 #### 4.1.2 Modal 層
 
@@ -575,26 +573,24 @@ body
 | 層 | 可以依賴 | 不可以依賴 |
 |---|---|---|
 | `editor/` | DOM | `editor/` 以外的模組 |
-| `backend/` | Tauri、`editor/` 的 port | controller |
-| controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
-| `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
-| `page.ts` | `Page.svelte`、`components/context.ts`、i18n、`ui/`、`editor/` 與 `backend/` 的型別 | controller |
-| `Page.svelte`、`components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/`、`editor/index.ts` | controller |
+| `backend/` | Tauri、`editor/` 的 port | Svelte 元件 |
+| `ui/` | i18n、`editor/` 與 `backend/` 的型別 | Svelte 元件 |
+| `page.ts` | `Page.svelte`、`components/context.ts`、i18n、`ui/`、`editor/` 與 `backend/` 的型別 | `editor/` 的模組 |
+| `Page.svelte`、`components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/`、`editor/index.ts` | 編輯指令 |
 | `main.ts` | 全部 | — |
 
-`architecture.test.ts` 依這張表檢查每個 import。Controller 之間不互相 import，以事件溝通，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
+`architecture.test.ts` 依這張表檢查每個 import。編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
 
 #### 4.2.1 事件的接法
 
 事件交給框架接上與解除，所以不自己訂閱 Rust 或 window 的事件；只有影片視窗例外。下表是各處的接法。
 
-Svelte 元件之間以 prop、context 或共用的狀態溝通，不經 window 事件。window 事件只來自 Rust、session 與 controller，或送給 controller。
+Svelte 元件之間以 prop、context 或共用的狀態溝通，不經 window 事件。window 事件只來自 Rust、session 與系統。
 
 | 誰 | 接法 | 解除 |
 |---|---|---|
-| controller | `data-action` | 隨元素，由 Stimulus |
 | Svelte 元件 | 事件屬性、`<svelte:window>`、`<svelte:document>` | 隨元件，由 Svelte |
-| 影片視窗 | `preview` 自己綁定 | 例外，見 4.9 |
+| 影片視窗 | `Preview` 自己綁定 | 例外，見 4.9 |
 
 ### 4.3 組裝
 
@@ -628,7 +624,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 1 | 改段數的改動先記下待套用 |
 | 2 | 讀到的專案比上一份舊就丟掉 |
 | 3 | session 換算並套用待套用 |
-| 4 | 各 controller 依專案重畫，出錯的不擋後面 |
+| 4 | 各 Svelte 元件重畫，出錯不擋後面 |
 | 5 | 送出 `editor:cursor`，移動焦點 |
 
 `project-changed` 可能比指令的回答先到，所以待套用在送出前就記下，被拒絕時清掉。只有改變段數的改動會移動 Cursor，才記成待套用；段數不變的改動寫入後就清掉勾選。焦點與 Cursor 等列畫完才動，才不會落在即將被取代的舊列上；重畫出錯以 `reportError` 回報。
@@ -648,19 +644,14 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 `editor/` 是能抽成獨立套件的編輯核心：Current Segment、Cursor、Checked Segments 與改動段落的用例都在這裡。用例回傳結果而不發通知，由介面轉成文字。
 
-### 4.6 Controller
+### 4.6 Svelte 元件
 
-| Controller | 畫面區域 |
-|---|---|
-| `preview` | 播放器、疊字、收起、影片視窗 |
-| `timeline` | 波形、段落區段、縮放 |
-
-畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`，沒有媒體檔時由 `ui/silence.ts` 決定同一段靜音。
+畫面配置見 `docs/ui.md`。Svelte 元件不保存編輯狀態，互動與勾選都經過 session。下表是它們接的 window 事件。
 
 | 事件 | 送出者 | 接收者與用途 |
 |---|---|---|
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
-| `editor:choice` | session，經 `assembly.ts` | `timeline` 依來源移動媒體 |
+| `editor:choice` | session，經 `assembly.ts` | `Timeline` 依來源移動媒體 |
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `TaskProgress` 顯示 Phase |
 | `rust:update-progress` | Rust，經 `relayEvents` | `UpdatesDialog` 顯示下載進度 |
@@ -668,13 +659,12 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `Page` 顯示通知 |
 | `rust:srt-requested` | Rust，經 `relayEvents` | `Page` 開啟系統要開的 SRT |
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `ModelSlot` 顯示下載進度 |
-| `system:color-scheme` | 系統，經 `assembly.ts` | `timeline` 重畫波形 |
-| `preferences:saved` | `Preferences` | `timeline` 重讀換段的偏好 |
-| `preview:playing` | `preview` | `SegmentRows` 標出播放中，追蹤時捲動 |
+| `rust:video-window-closing` | Rust，經 `relayEvents` | `Preview` 移回影片 |
+| `system:color-scheme` | 系統，經 `assembly.ts` | `Timeline` 重畫波形 |
 
 #### 4.6.1 帶行為的 Svelte 元件
 
-下列區域的行為已由 Svelte 元件負責，不再經過 controller。
+各區域的行為由下列 Svelte 元件負責。
 
 | Svelte 元件 | 畫面區域 |
 |---|---|
@@ -719,6 +709,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `Notifications`、`NotificationCard` | 通知的堆疊、倒數、暫停與按鈕 |
 | `Tooltip` | 全頁共用的 tooltip |
 | `Undo` | 全頁的復原與重做，不畫任何東西 |
+| `Preview` | 播放器、疊字、目前段落卡、影片視窗 |
+| `Timeline` | 波形、段落區段、縮放、選段 |
 
 #### 4.6.2 共用的狀態與動作
 
@@ -729,7 +721,9 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 目前的專案 | Page 讀取 | 起始畫面、工作區、視窗標題 |
 | 最近專案 | Page 讀取 | 起始畫面、工具列 |
 | `ResourceDock` | Page 建立 | 工具列、資源清單 |
-| `PlaybackFollowing` | Page 建立 | 預覽的追蹤鈕、段落列 |
+| `Playback` | Page 建立 | 預覽、時間軸、段落列 |
+| `PreviewFold` | Page 建立 | 編輯列的收起鈕、預覽 |
+| `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
 | 開啟、重新載入、命名 | `project-actions.ts` | 起始畫面、工具列、資源清單 |
 | 寫入說話者後的通知 | `speaker-actions.ts` | 說話者 modal、段落列 |
@@ -737,6 +731,17 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | Segment Changes 的選項 | `segment-changes.ts` | 段落選單、勾選工具列、右鍵 |
 
 資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。Page 每讀到一份專案就交給 `EditorComparison` 比較；段落清單畫好列之後，讓搜尋列重新搜尋。
+
+#### 4.6.3 播放器
+
+`Playback` 持有唯一的播放器，`Preview` 放進來源，`Timeline` 在上面畫波形。
+
+```
+feed -> Preview.show    sets the player's source: media or silence
+     -> Timeline.show   wavesurfer.js draws over that source
+```
+
+`Preview` 在初始化時就跟上專案，早於子元件 `Timeline` 的 `onMount`。wavesurfer.js 建立時會換掉不同的來源，所以這個順序要固定。沒有媒體檔時，兩者由 `ui/silence.ts` 決定同一段靜音。
 
 ### 4.7 backend
 
@@ -758,20 +763,19 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `video-window.ts` | 影片視窗的全螢幕與關閉 |
 | `context-menu.ts` | 右鍵時的系統選單 |
 
-`backend/` 是 webview 接觸 Tauri 的地方：指令、外掛與系統選單都經過它，controller 不直接呼叫 Tauri。
+`backend/` 是 webview 接觸 Tauri 的地方：指令、外掛與系統選單都經過它，Svelte 元件不直接呼叫 Tauri。
 
 ### 4.8 共用模組
 
 | 模組 | 內容 |
 |---|---|
-| `ui/notification.svelte.ts` | 通知的清單，controller 與 Svelte 元件都由此發出 |
+| `ui/notification.svelte.ts` | 通知的清單，Svelte 元件都由此發出 |
 | `ui/save-mark.ts` | 標題列的存檔提示與計時 |
 | `ui/failure.ts` | 錯誤碼的訊息與通知種類 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式與欄位綁定、關閉選單 |
 | `ui/models.ts` | Model Source 的名稱與大小 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
-| `ui/fold.ts` | 收起時點亮收起鈕 |
 | `ui/volume.ts` | 音量曲線、增益與限幅 |
 | `ui/video-window.ts` | 開啟影片視窗、轉交按鍵 |
 | `ui/icons.ts` | 只打包列出的 Lucide 圖示 |
@@ -783,13 +787,13 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ui/speakers.ts` | 段落與詞彙表的說話者名單 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
-預覽仍以 `data-lucide` 標出圖示，要先在 `ui/icons.ts` 列出才會畫出來；其餘 Svelte 元件以 `@lucide/svelte` 畫出。快速鍵以 `ui/shortcuts.ts` 為準：controller 與 Svelte 元件自己比對的鍵用 `isShortcut` 讀它，寫在 `data-action` 與 Rust 選單的鍵由測試雙向核對。
+Svelte 元件以 `@lucide/svelte` 畫出圖示。快速鍵以 `ui/shortcuts.ts` 為準：Svelte 元件比對的鍵用 `isShortcut` 讀它，這些鍵與 Rust 選單的鍵由測試雙向核對。
 
 ### 4.9 影片視窗
 
 ```
- 主視窗（Stimulus、IPC）                     影片視窗（label video，沒有 capability）
-  preview ─ window.open("about:blank") ─▶ on_new_window：只准一個空白頁
+ 主視窗（Svelte、IPC）                       影片視窗（label video，沒有 capability）
+  Preview ─ window.open("about:blank") ─▶ on_new_window：只准一個空白頁
      │ 複製樣式表，把 screen（<video>、疊字）移過去 ─▶ 同一份 JS，同一個播放器
      │ ◀─ keydown 轉給主視窗的 window；雙擊、Esc 切換全螢幕
  關閉 ─▶ CloseRequested 被擋下 ─▶ video-window-closing ─▶ 移回預覽 ─▶ destroy
@@ -799,9 +803,9 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 規則 | 做法 |
 |---|---|
 | 播放器 | 只有一個，移動不複製 |
-| 移出去的元素 | connect 時留下參照 |
-| 播放器的事件 | `preview` 自己綁在元素上 |
-| 影片視窗的事件 | `preview` 開窗時綁定 |
+| 移出去的元素 | 由 `preview-screen.ts` 建立 |
+| 播放器的事件 | `Preview` 自己綁在元素上 |
+| 影片視窗的事件 | `Preview` 開窗時綁定 |
 | 每格畫面 | 用影片所在視窗的 rAF |
 | 移動會暫停或重載 | 設回時間再播 |
 | 呼叫 Rust | 只從主視窗 |
@@ -810,4 +814,4 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 位置與大小 | 建立時放回上次 |
 | 視窗標籤 | Rust 定義，bindings 帶出 |
 
-元素離開主視窗的 document 後，Stimulus 找不到 target，也解除 `data-action`，所以參照在 connect 時留下，播放器的事件由 `preview` 自己綁定。關閉前先移回，播放器才不隨影片視窗結束。
+Svelte 預期它畫出的節點留在原處。所以會移走的播放器與疊字由腳本建立，`Preview` 只把它們放進預覽列；播放器的事件由 `Preview` 自己綁定。關閉前先移回，播放器才不隨影片視窗結束。

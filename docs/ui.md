@@ -56,13 +56,13 @@
 | 規則 | 做法 |
 |---|---|
 | 共用一個 | 移上元素時才定位 |
-| 放在哪裡 | 頁面，或開著的 modal |
+| 放在哪裡 | top layer，蓋在開著的 modal 上 |
 | 說明文字 | 元素以 `data-tooltip` 寫出 |
 | 方向 | 在右半邊時往左開 |
 | 鍵盤 | 焦點移到元素時顯示 |
 | ⓘ | 按鈕，以說明文字命名 |
 
-全頁只有一個 `tooltip tooltip-open`，放在元素所在的最外層。
+全頁只有一個 `tooltip tooltip-open`，以 popover 顯示在 top layer。
 
 側欄與 modal 會裁切超出的內容，daisyUI 的 tooltip 又畫在元素之內，所以不在每個元素各放一個。
 

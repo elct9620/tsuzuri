@@ -13,6 +13,7 @@
   import ShortcutsDialog from "./components/ShortcutsDialog.svelte";
   import StartScreen from "./components/StartScreen.svelte";
   import Toolbar from "./components/Toolbar.svelte";
+  import Tooltip from "./components/Tooltip.svelte";
   import TranscriptionDialog from "./components/TranscriptionDialog.svelte";
   import TranslationDialog from "./components/TranslationDialog.svelte";
   import UpdatesDialog from "./components/UpdatesDialog.svelte";
@@ -89,3 +90,4 @@
 <ShortcutsDialog bind:this={shortcutsDialog} />
 <UpdatesDialog />
 <Notifications />
+<Tooltip />

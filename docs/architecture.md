@@ -564,7 +564,8 @@ body
   |-- main                  buttons get openers as props
   |-- SettingsDialog        Page holds each modal (bind:this)
   |-- RepositoryDialog ...  opens over the settings
-  +-- Notifications
+  |-- Notifications
+  +-- Tooltip               popover, shown again over each modal
 ```
 
 祖先沒有畫出來時，modal 開了也看不到，所以不放進其他 modal 或會隱藏的區域。開啟函式由 `Page.svelte` 以 prop 往下交。版本、說話者、平移三個 modal 仍是 hub controller 的 target，隨 hub 組移出。
@@ -660,7 +661,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
 | `versions` | 版本 modal |
-| `tooltip` | 全頁共用的 tooltip |
 | `undo` | 全頁的復原與重做 |
 | `field` | 每個編輯欄位接上 session |
 | `time-field` | 時間欄覆寫輸入 |
@@ -722,6 +722,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ShortcutsDialog` | 快速鍵一覽 |
 | `ReplacementDialog` | 取代 modal |
 | `Notifications`、`NotificationCard` | 通知的堆疊、倒數、暫停與按鈕 |
+| `Tooltip` | 全頁共用的 tooltip |
 
 ### 4.7 backend
 

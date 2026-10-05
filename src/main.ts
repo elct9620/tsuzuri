@@ -18,7 +18,6 @@ import TimeFieldController from "./controllers/time_field_controller";
 import TimelineController, {
   controlOption,
 } from "./controllers/timeline_controller";
-import TooltipController from "./controllers/tooltip_controller";
 import TranscriptController from "./controllers/transcript_controller";
 import UndoController, { typingOption } from "./controllers/undo_controller";
 import VersionsController from "./controllers/versions_controller";
@@ -49,7 +48,6 @@ async function start(): Promise<void> {
     speakers: SpeakersController,
     "time-field": TimeFieldController,
     timeline: TimelineController,
-    tooltip: TooltipController,
     transcript: TranscriptController,
     undo: UndoController,
     versions: VersionsController,

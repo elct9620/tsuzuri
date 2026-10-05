@@ -13,8 +13,3 @@
     <NotificationCard {shownNotification} />
   {/each}
 </div>
-<div
-  class="tooltip tooltip-open tooltip-right pointer-events-none fixed z-50"
-  data-tooltip-target="bubble"
-  hidden
-></div>

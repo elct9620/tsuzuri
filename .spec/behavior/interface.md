@@ -6,7 +6,7 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 
 - `src/i18n.test.ts`
 - `src/ui/menu.test.ts`
-- `src/controllers/tooltip_controller.test.ts`
+- `src/components/Tooltip.test.ts`
 - `src/components/Notifications.test.ts`
 - `src/ui/save_mark.test.ts`
 - `src/ui/icons.test.ts`
@@ -104,13 +104,13 @@ The tooltip is drawn outside the element that holds it, so a list that scrolls o
 
 ## `IF-011` Showing a tooltip over an open dialog
 
-A dialog is drawn above the whole page, so the tooltip of an element inside it is drawn inside the dialog too.
+A dialog is drawn above the whole page, so the tooltip is drawn in the layer above it, laid over the dialog as each tooltip shows.
 
 | Step | Statement |
 | --- | --- |
 | Given | an element with a tooltip in an open dialog |
 | When | the pointer moves onto it |
-| Then | the tooltip is shown inside that dialog |
+| Then | the tooltip is shown above that dialog |
 
 ## `IF-053` Showing a tooltip once focus reaches an element
 

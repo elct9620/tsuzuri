@@ -29,8 +29,8 @@ describe("drawPage", () => {
     clearMocks();
   });
 
-  // Each part is found by what its controller or module reads, so a Svelte Component left out of
-  // the page leaves nothing for them to read.
+  // Each part is found by what its controller, module or Svelte Component reads, so a Svelte
+  // Component left out of the page leaves nothing for them to read.
   it.each([
     ["start screen", '[data-project-target="startScreen"]'],
     ["toolbar", '[data-project-target="name"]'],
@@ -40,7 +40,7 @@ describe("drawPage", () => {
     ["resource list", '[data-project-target="resources"]'],
     ["glossary entry", '[data-project-target="glossary"]'],
     ["notification stack", "[data-notifications]"],
-    ["tooltip bubble", '[data-tooltip-target="bubble"]'],
+    ["tooltip bubble", ".tooltip[popover]"],
   ])("writes the %s", (_part, selector) => {
     const page = document.createElement("div");
 

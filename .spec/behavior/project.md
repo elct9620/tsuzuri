@@ -12,6 +12,7 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src-tauri/src/transcription/*.rs`
 - `src-tauri/src/translation.rs`
 - `src/backend/project.test.ts`
+- `src/components/ResourceList.test.ts`
 - `src/components/SettingsDialog.test.ts`
 - `src/components/settings/project/Project.test.ts`
 - `src/controllers/project_controller.test.ts`
@@ -745,6 +746,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | Given | the Resource list laid over the editor of a narrow window |
 | When | the Resource `ep02` is chosen |
 | Then | `ep02` is selected and the Resource list is put away |
+
+## `PJ-191` Saying why a Resource was not selected
+
+| Step | Statement |
+| --- | --- |
+| Given | the Resource list of `lecture` |
+| When | the Resource `ep02` is chosen and cannot be selected |
+| Then | a Notification says the Resource was not selected and why |
 
 ## `PJ-184` Showing a Project to every view when one of them fails
 

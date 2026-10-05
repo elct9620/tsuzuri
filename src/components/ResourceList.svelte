@@ -1,44 +1,112 @@
 <script lang="ts">
+  import RefreshCw from "@lucide/svelte/icons/refresh-cw";
+  import { onMount } from "svelte";
+
+  import { selectResource, type ProjectView } from "../backend/project";
+  import { t } from "../i18n";
+  import { notifyFailure } from "../ui/notification.svelte";
+  import { projectFeed } from "./context";
+
   interface Props {
     openGlossary: () => void;
   }
 
   let { openGlossary }: Props = $props();
+
+  const feed = projectFeed();
+  let project = $state<ProjectView | null>(null);
+
+  const glossaryLabel = $derived.by(() => {
+    const glossary = project?.translation_glossary ?? null;
+    return glossary === null
+      ? t("resources.createGlossary")
+      : t("resources.glossary", { count: glossary.term_count });
+  });
+
+  /**
+   * Selects the Resource named `name`, telling the page from `row` as `project:select` that one is
+   * being read.
+   */
+  async function select(row: HTMLElement, name: string): Promise<void> {
+    row.dispatchEvent(new CustomEvent("project:select", { bubbles: true }));
+    try {
+      await selectResource(name);
+    } catch (error) {
+      notifyFailure(t("resources.notSelected"), error);
+      // Rust announces nothing when it could not select, so the editor is told to read what it holds.
+      await feed.refresh();
+    }
+  }
+
+  onMount(() => feed.follow((next) => (project = next)));
 </script>
 
 <div class="drawer-side">
   <label
     for="resources-drawer"
     class="drawer-overlay"
-    data-i18n-label="resources.close"
+    aria-label={t("resources.close")}
   ></label>
   <div class="flex min-h-full w-56 flex-col bg-base-300">
     <ul class="menu w-full pb-0">
       <li class="menu-title flex flex-row items-center justify-between">
-        <span data-i18n="resources.title"></span>
+        <span>{t("resources.title")}</span>
         <button
           type="button"
           class="btn btn-ghost btn-square btn-xs"
           data-action="project#reload"
-          data-i18n-label="resources.reload"
-          data-i18n-tooltip="resources.reloadHint"
+          aria-label={t("resources.reload")}
+          data-tooltip={t("resources.reloadHint")}
           data-shortcut="reload"
         >
-          <i data-lucide="refresh-cw" class="size-3.5"></i>
+          <RefreshCw class="size-3.5" />
         </button>
       </li>
     </ul>
     <ul
       class="menu w-full grow gap-1 [&_button]:flex"
-      data-project-target="resources"
-    ></ul>
+      aria-label={t("resources.title")}
+    >
+      {#each project?.resources ?? [] as resource (resource.name)}
+        <li>
+          <button
+            type="button"
+            class={[
+              "flex-col items-start gap-1",
+              resource.name === project?.current_resource && "menu-active",
+            ]}
+            data-tooltip={resource.name}
+            onclick={({ currentTarget }) =>
+              select(currentTarget, resource.name)}
+          >
+            <span class="line-clamp-2 break-all">{resource.name}</span>
+            {#if !resource.has_media || !resource.has_subtitle || resource.translation_languages.length > 0}
+              <span class="flex items-center gap-1">
+                {#if !resource.has_media}
+                  <span
+                    class="badge badge-sm badge-outline"
+                    data-tooltip={t("resources.subtitleOnlyHint")}
+                    >{t("resources.subtitleOnly")}</span
+                  >
+                {/if}
+                {#if !resource.has_subtitle}
+                  <span
+                    class="status status-warning"
+                    data-tooltip={t("resources.noSubtitle")}
+                  ></span>
+                {/if}
+                {#each resource.translation_languages as code (code)}
+                  <span class="badge badge-sm">{code}</span>
+                {/each}
+              </span>
+            {/if}
+          </button>
+        </li>
+      {/each}
+    </ul>
     <ul class="menu w-full text-base-content/70">
       <li>
-        <button
-          type="button"
-          data-project-target="glossary"
-          onclick={openGlossary}
-        ></button>
+        <button type="button" onclick={openGlossary}>{glossaryLabel}</button>
       </li>
     </ul>
   </div>

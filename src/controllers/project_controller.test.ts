@@ -5,7 +5,7 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
-import { projectOf, resourceOf } from "../test_project";
+import { projectOf } from "../test_project";
 import {
   showNotifications,
   notificationDetail,
@@ -13,7 +13,6 @@ import {
 } from "../components/test_notifications";
 import { composingOption } from "./field_controller";
 import ProjectController from "./project_controller";
-import ResourceListController from "./resource_list_controller";
 
 describe("ProjectController", () => {
   let application: Application;
@@ -21,7 +20,6 @@ describe("ProjectController", () => {
   let calls: { command: string; args: unknown }[];
   let openSrt: () => unknown;
   let openProject: () => unknown;
-  let selectFailure: unknown;
   let reloadProject: () => unknown;
   let chosenFile: string;
   let requestedSrt: string | null;
@@ -51,7 +49,6 @@ describe("ProjectController", () => {
     application.registerActionOption("composing", composingOption);
     await assemble(application, {
       project: ProjectController,
-      "resource-list": ResourceListController,
     }).start();
     await settle();
   }
@@ -62,7 +59,6 @@ describe("ProjectController", () => {
     calls = [];
     openSrt = () => null;
     openProject = () => null;
-    selectFailure = undefined;
     reloadProject = () => null;
     chosenFile = "/subtitles/lecture.srt";
     document.body.innerHTML = `
@@ -71,7 +67,7 @@ describe("ProjectController", () => {
         data-action="keydown.ctrl+r@window->project#reload:prevent keydown.meta+r@window->project#reload:prevent rust:changed-elsewhere-kept@window->project#notifyChangedElsewhereKept rust:srt-requested@window->project#openRequestedSrt"
       >
         <section data-project-target="startScreen"></section>
-        <div data-project-target="workspace" data-controller="resource-list" data-action="project:select@window->resource-list#putAway" hidden>
+        <div data-project-target="workspace" hidden>
           <input data-project-target="name" data-action="change->project#rename keydown.enter->project#leaveName:!composing keydown.esc->project#discardName:!composing" />
           <div class="dropdown">
             <div tabindex="0" role="button">開啟</div>
@@ -79,11 +75,6 @@ describe("ProjectController", () => {
             <button id="open-srt" data-action="project#openSrt">開啟 SRT</button>
           </div>
           <button id="reload" data-action="project#reload">重新載入</button>
-          <input id="resources-toggle" type="checkbox" data-resource-list-target="toggle" />
-          <label data-resource-list-target="overlayButton"></label>
-          <button data-resource-list-target="dockButton"></button>
-          <ul data-project-target="resources"></ul>
-          <p data-project-target="glossary"></p>
         </div>
       </main>
     `;
@@ -103,8 +94,6 @@ describe("ProjectController", () => {
           requestedSrt = null;
           return takenSrt;
         }
-        if (command === "select_resource" && selectFailure !== undefined)
-          return Promise.reject(selectFailure);
       },
       { shouldMockEvents: true },
     );
@@ -194,135 +183,6 @@ describe("ProjectController", () => {
     expect(sent("open_project")).toEqual({ path: "/talks", language: "zh-TW" });
   });
 
-  // @behavior PJ-034
-  it("lists each Resource with its translations and whether it has a subtitle", async () => {
-    await hold(
-      projectOf({
-        resources: [
-          resourceOf({ has_media: true, translation_languages: ["en"] }),
-          resourceOf({ name: "ep02", has_media: true, has_subtitle: false }),
-        ],
-      }),
-    );
-
-    const items = [...target("resources").querySelectorAll("button")].map(
-      (button) => ({
-        name: button.dataset.name,
-        badges: [...button.querySelectorAll(".badge")].map(
-          (badge) => badge.textContent,
-        ),
-        hasNoSubtitle: button.querySelector(".status") !== null,
-        isCurrent: button.classList.contains("menu-active"),
-      }),
-    );
-    expect(items).toEqual([
-      { name: "ep01", badges: ["en"], hasNoSubtitle: false, isCurrent: true },
-      { name: "ep02", badges: [], hasNoSubtitle: true, isCurrent: false },
-    ]);
-  });
-
-  // @behavior PJ-117
-  it("marks a Resource of subtitles alone", async () => {
-    await hold(
-      projectOf({
-        resources: [
-          resourceOf({ has_media: true }),
-          resourceOf({ name: "notes", has_media: false }),
-        ],
-      }),
-    );
-
-    const markedNames = [
-      ...target("resources").querySelectorAll('[data-kind="subtitle"]'),
-    ].map((badge) => badge.closest("button")?.dataset.name);
-    expect(markedNames).toEqual(["notes"]);
-  });
-
-  // @behavior PJ-038
-  it("names a Resource in full in its tooltip", async () => {
-    await hold(
-      projectOf({
-        resources: [resourceOf({ name: "[SHANA]C0220260514.zh-TW.mix" })],
-      }),
-    );
-
-    const button = target("resources").querySelector("button");
-    expect(button?.dataset.tooltip).toBe("[SHANA]C0220260514.zh-TW.mix");
-  });
-
-  // @behavior GL-006
-  it("offers to create a Translation Glossary when the Project has none", async () => {
-    await hold(projectOf({ translation_glossary: null }));
-
-    expect(target("glossary").textContent).toBe("建立詞彙表");
-  });
-
-  // @behavior PJ-035
-  it("selects the Resource clicked in the list", async () => {
-    await hold(
-      projectOf({
-        resources: [resourceOf(), resourceOf({ name: "ep02" })],
-      }),
-    );
-
-    await click('[data-name="ep02"]');
-
-    expect(sent("select_resource")).toEqual({ name: "ep02" });
-  });
-
-  // @behavior PJ-183
-  it("puts the Resource list away once a Resource is chosen", async () => {
-    await hold(
-      projectOf({
-        resources: [resourceOf(), resourceOf({ name: "ep02" })],
-      }),
-    );
-    const toggle =
-      document.querySelector<HTMLInputElement>("#resources-toggle")!;
-    toggle.checked = true;
-
-    await click('[data-name="ep02"]');
-
-    expect([sent("select_resource"), toggle.checked]).toEqual([
-      { name: "ep02" },
-      false,
-    ]);
-  });
-
-  // @behavior ED-011
-  it("reads the Project again when a Resource cannot be selected", async () => {
-    await hold(
-      projectOf({
-        resources: [resourceOf(), resourceOf({ name: "ep02" })],
-      }),
-    );
-    selectFailure = { code: "malformed-srt", cue: 2 };
-    const currentProjectReads = calls.filter(
-      (call) => call.command === "current_project",
-    ).length;
-
-    await click('[data-name="ep02"]');
-
-    expect(
-      calls.filter((call) => call.command === "current_project").length,
-    ).toBeGreaterThan(currentProjectReads);
-  });
-
-  // @behavior ED-010
-  it("tells the editor a Resource is being read once one is selected", async () => {
-    await hold(
-      projectOf({
-        resources: [resourceOf(), resourceOf({ name: "ep02" })],
-      }),
-    );
-    let isAnnounced = false;
-    document.addEventListener("project:select", () => (isAnnounced = true));
-
-    await click('[data-name="ep02"]');
-
-    expect(isAnnounced).toBe(true);
-  });
-
   // @behavior PJ-116
   it("reloads the Project from the button above the Resource list or its shortcut", async () => {
     await hold(projectOf());
@@ -344,7 +204,7 @@ describe("ProjectController", () => {
     field.tabIndex = 0;
     const order: string[] = [];
     field.addEventListener("blur", () => order.push("leave"));
-    target("resources").append(field);
+    target("workspace").append(field);
     field.focus();
     reloadProject = () => order.push("reload");
 

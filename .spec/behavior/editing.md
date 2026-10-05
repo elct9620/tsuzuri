@@ -5,7 +5,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 ## Includes
 
 - `src/controllers/transcript_controller.test.ts`
-- `src/controllers/project_controller.test.ts`
+- `src/components/ResourceList.test.ts`
 - `src/controllers/segment_changes_controller.test.ts`
 - `src/controllers/speakers_controller.test.ts`
 - `src/components/TranslationDialog.test.ts`

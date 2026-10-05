@@ -5,73 +5,18 @@ import {
   openProject,
   type OpenCommand,
   reloadProject,
-  selectResource,
   setProjectOptions,
   takeRequestedSrt,
   type ProjectView,
-  type ResourceView,
   type ProjectFeed,
 } from "../backend/project";
 import { interfaceLanguageCode, t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { notify, notifyFailure } from "../ui/notification.svelte";
 
-function resourceItem(
-  resource: ResourceView,
-  isCurrent: boolean,
-): HTMLLIElement {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.dataset.action = "project#select";
-  button.dataset.name = resource.name;
-  button.dataset.tooltip = resource.name;
-  button.className = "flex-col items-start gap-1";
-  button.classList.toggle("menu-active", isCurrent);
-  const name = document.createElement("span");
-  name.className = "line-clamp-2 break-all";
-  name.textContent = resource.name;
-  button.append(name);
-  const marks: HTMLElement[] = [];
-  if (!resource.has_media) {
-    const kind = document.createElement("span");
-    kind.className = "badge badge-sm badge-outline";
-    kind.dataset.kind = "subtitle";
-    kind.textContent = t("resources.subtitleOnly");
-    kind.dataset.tooltip = t("resources.subtitleOnlyHint");
-    marks.push(kind);
-  }
-  if (!resource.has_subtitle) {
-    const status = document.createElement("span");
-    status.className = "status status-warning";
-    status.dataset.tooltip = t("resources.noSubtitle");
-    marks.push(status);
-  }
-  for (const code of resource.translation_languages) {
-    const badge = document.createElement("span");
-    badge.className = "badge badge-sm";
-    badge.textContent = code;
-    marks.push(badge);
-  }
-  if (marks.length > 0) {
-    const row = document.createElement("span");
-    row.className = "flex items-center gap-1";
-    row.append(...marks);
-    button.append(row);
-  }
-  const item = document.createElement("li");
-  item.append(button);
-  return item;
-}
-
-/** The Project's actions and the Resource list; what they make lives in Rust. */
+/** The Project's actions and the toolbar's name; what they make lives in Rust. */
 export default class ProjectController extends Controller {
-  static targets = [
-    "startScreen",
-    "workspace",
-    "name",
-    "resources",
-    "glossary",
-  ];
+  static targets = ["startScreen", "workspace", "name"];
 
   /** Shown while no Project is open. */
   declare readonly startScreenTarget: HTMLElement;
@@ -79,8 +24,6 @@ export default class ProjectController extends Controller {
   declare readonly workspaceTarget: HTMLElement;
   /** The Project Name in the toolbar, typed over to rename the Project; its default value is the name shown. */
   declare readonly nameTarget: HTMLInputElement;
-  declare readonly resourcesTarget: HTMLUListElement;
-  declare readonly glossaryTarget: HTMLElement;
 
   declare readonly feed: ProjectFeed;
 
@@ -141,16 +84,6 @@ export default class ProjectController extends Controller {
     if (!isOpened) await this.feed.refresh();
   }
 
-  async select({ currentTarget }: Event): Promise<void> {
-    const name = (currentTarget as HTMLElement).dataset.name!;
-    this.dispatch("select");
-    const isSelected = await this.report("resources.notSelected", () =>
-      selectResource(name),
-    );
-    // Rust announces nothing when it could not select, so the editor is told to read what it holds.
-    if (!isSelected) await this.feed.refresh();
-  }
-
   /**
    * Reads the Project's directory again, for files added or changed elsewhere. The field being
    * typed in is left first, so its text is sent to be written before the directory is read.
@@ -209,15 +142,5 @@ export default class ProjectController extends Controller {
     document.title = project === null ? "Tsuzuri" : `${project.name} - Tsuzuri`;
     if (project === null) return;
     this.nameTarget.value = this.nameTarget.defaultValue = project.name;
-    this.resourcesTarget.replaceChildren(
-      ...project.resources.map((resource) =>
-        resourceItem(resource, resource.name === project.current_resource),
-      ),
-    );
-    const glossary = project.translation_glossary;
-    this.glossaryTarget.textContent =
-      glossary === null
-        ? t("resources.createGlossary")
-        : t("resources.glossary", { count: glossary.term_count });
   }
 }

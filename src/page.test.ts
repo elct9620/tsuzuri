@@ -37,8 +37,7 @@ describe("drawPage", () => {
     ["editor bar", '[data-controller="versions"]'],
     ["preview", '[data-preview-target="panel"]'],
     ["Segment list", '[data-transcript-target="list"]'],
-    ["resource list", '[data-project-target="resources"]'],
-    ["glossary entry", '[data-project-target="glossary"]'],
+    ["resource list", ".drawer-side"],
     ["notification stack", "[data-notifications]"],
     ["tooltip bubble", ".tooltip[popover]"],
   ])("writes the %s", (_part, selector) => {
@@ -251,8 +250,11 @@ describe("drawPage", () => {
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
-    page
-      .querySelector<HTMLElement>('[data-project-target="glossary"]')!
+    within(page)
+      .getByRole("button", {
+        hidden: true,
+        name: t("resources.createGlossary"),
+      })
       .click();
     await new Promise((resolve) => setTimeout(resolve, 0));
 

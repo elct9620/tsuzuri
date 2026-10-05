@@ -4,7 +4,6 @@
   from a Segment onward or over a span of them.
 -->
 <script lang="ts">
-  import AudioLines from "@lucide/svelte/icons/audio-lines";
   import { onMount } from "svelte";
 
   import { diarize } from "../backend/diarization";
@@ -90,7 +89,8 @@
 
   onMount(() => feed.follow((next) => (project = next)));
 
-  async function open(): Promise<void> {
+  /** Opens the dialog to transcribe the whole Current Resource. */
+  export async function open(): Promise<void> {
     scope = { kind: "whole" };
     await showDialog();
   }
@@ -162,18 +162,6 @@
 
 <svelte:window onsegment-changes:retranscribe={openForScope} />
 
-<button
-  type="button"
-  class="btn btn-sm"
-  aria-label={t("toolbar.transcribe")}
-  data-tooltip={t("toolbar.transcribe")}
-  disabled={!(currentResource(project)?.has_media ?? false)}
-  onclick={open}
->
-  <AudioLines class="size-4" /><span class="hidden @5xl:inline"
-    >{t("toolbar.transcribe")}</span
-  >
-</button>
 <dialog class="modal" bind:this={dialog}>
   <div class="modal-box">
     <h3 class="text-lg font-bold">

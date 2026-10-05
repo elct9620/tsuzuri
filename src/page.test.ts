@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { within } from "@testing-library/svelte";
-import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { clearMocks } from "@tauri-apps/api/mocks";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ProjectFeed } from "./backend/project";
@@ -82,20 +82,31 @@ describe("drawPage", () => {
     ).not.toBeNull();
   });
 
-  // A task's toolbar button and dialog are found by the name the button carries.
+  // A task's toolbar button is found by the name it carries, and its dialog by its heading.
   it.each([
-    ["transcribe", "toolbar.transcribe"],
-    ["translate", "toolbar.translate"],
-    ["diarize", "toolbar.diarize"],
-  ])("writes the %s button in the toolbar", async (_part, name) => {
+    ["transcribe", "toolbar.transcribe", "toolbar.transcribe"],
+    ["translate", "toolbar.translate", "toolbar.translate"],
+    ["diarize", "toolbar.diarize", "diarize.title"],
+  ])("opens the %s dialog from the toolbar", async (_part, name, heading) => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
+    mockPageMount(projectOf({ resources: [resourceOf({ has_media: true })] }), {
+      model_settings: () => null,
+    });
+    const feed = new ProjectFeed();
+    await feed.refresh();
+    drawPage(feed, page);
+    await tick();
 
-    drawPage(new ProjectFeed(), page);
+    within(page)
+      .getByRole("button", { hidden: true, name: t(name) })
+      .click();
 
-    expect(
-      within(page).queryByRole("button", { hidden: true, name: t(name) }),
-    ).not.toBeNull();
+    const dialogs = [...page.querySelectorAll("dialog")].filter(
+      (dialog) =>
+        dialog.querySelector("h3")?.textContent?.trim() === t(heading),
+    );
+    expect(dialogs.map((dialog) => dialog.open)).toEqual([true]);
   });
 
   it("writes the translation options in the translate dialog", async () => {
@@ -115,14 +126,9 @@ describe("drawPage", () => {
   it("writes the progress a task started from the toolbar reports to", async () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
-    mockIPC((command) => {
-      if (command === "app_build")
-        return { release_name: "v0.2.0", commit: "7649ca4" };
-      if (command === "current_project")
-        return projectOf({ resources: [resourceOf({ has_media: true })] });
-      if (command === "model_settings") return null;
-      if (command === "diarize") return new Promise(() => {});
-      return Promise.reject({ code: "io", detail: "not asked here" });
+    mockPageMount(projectOf({ resources: [resourceOf({ has_media: true })] }), {
+      model_settings: () => null,
+      diarize: () => new Promise(() => {}),
     });
     const feed = new ProjectFeed();
     await feed.refresh();

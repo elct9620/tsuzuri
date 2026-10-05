@@ -4,10 +4,9 @@
   chosen Segments again into the translation shown.
 -->
 <script lang="ts">
-  import Languages from "@lucide/svelte/icons/languages";
   import { onMount } from "svelte";
 
-  import { currentResource, type ProjectView } from "../backend/project";
+  import type { ProjectView } from "../backend/project";
   import { translateSegments } from "../backend/translation";
   import { t } from "../i18n";
   import { notifyTranslation } from "../ui/notification";
@@ -41,7 +40,8 @@
 
   onMount(() => feed.follow((next) => (project = next)));
 
-  function open(): void {
+  /** Opens the dialog to translate the whole original subtitle. */
+  export function open(): void {
     chosenIndexes = null;
     showDialog();
   }
@@ -84,18 +84,6 @@
 
 <svelte:window onsegment-changes:retranslate={openForSegments} />
 
-<button
-  type="button"
-  class="btn btn-sm"
-  aria-label={t("toolbar.translate")}
-  data-tooltip={t("toolbar.translate")}
-  disabled={!(currentResource(project)?.has_subtitle ?? false)}
-  onclick={open}
->
-  <Languages class="size-4" /><span class="hidden @5xl:inline"
-    >{t("toolbar.translate")}</span
-  >
-</button>
 <dialog class="modal" bind:this={dialog}>
   <div class="modal-box">
     <h3 class="text-lg font-bold">

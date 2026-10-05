@@ -21,7 +21,8 @@ import { TaskRun } from "./task_run.svelte";
 import TaskProgress from "./TaskProgress.svelte";
 import { progressSteps } from "./test_task_progress";
 import { optionCheckbox, setSummaryWords } from "./test_translation_options";
-import Transcription from "./Transcription.svelte";
+import TranscriptionDialog from "./TranscriptionDialog.svelte";
+import { renderWithToolbar } from "./test_toolbar";
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -43,7 +44,7 @@ async function startFromDialog(): Promise<void> {
   await settle();
 }
 
-describe("Transcription", () => {
+describe("TranscriptionDialog", () => {
   let feed: ProjectFeed;
   let run: TaskRun;
   let project: ProjectView | null;
@@ -109,7 +110,7 @@ describe("Transcription", () => {
     feed = new ProjectFeed();
     run = new TaskRun();
     const context = pageContext(feed, run);
-    render(Transcription, { context });
+    renderWithToolbar(TranscriptionDialog, "openTranscription", context);
     render(TaskProgress, { context });
   });
 
@@ -426,7 +427,7 @@ describe("Transcription", () => {
   });
 });
 
-describe("Transcription, transcribing again from the editor", () => {
+describe("TranscriptionDialog, transcribing again from the editor", () => {
   let application: Application;
   let project: ProjectView | null;
   let transcription: () => Promise<unknown>;
@@ -524,7 +525,11 @@ describe("Transcription, transcribing again from the editor", () => {
       transcript: TranscriptController,
       "segment-changes": SegmentChangesController,
     });
-    render(Transcription, { context: pageContext(assembly.feed) });
+    renderWithToolbar(
+      TranscriptionDialog,
+      "openTranscription",
+      pageContext(assembly.feed),
+    );
     await assembly.start();
     await settle();
   });

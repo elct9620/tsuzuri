@@ -4,17 +4,23 @@
   import Preview from "./components/Preview.svelte";
   import ResourceList from "./components/ResourceList.svelte";
   import SegmentList from "./components/SegmentList.svelte";
+  import DiarizationDialog from "./components/DiarizationDialog.svelte";
   import LicensesDialog from "./components/settings/LicensesDialog.svelte";
   import RepositoryDialog from "./components/settings/RepositoryDialog.svelte";
   import SettingsDialog from "./components/SettingsDialog.svelte";
   import ShortcutsDialog from "./components/ShortcutsDialog.svelte";
   import StartScreen from "./components/StartScreen.svelte";
   import Toolbar from "./components/Toolbar.svelte";
+  import TranscriptionDialog from "./components/TranscriptionDialog.svelte";
+  import TranslationDialog from "./components/TranslationDialog.svelte";
   import UpdatesDialog from "./components/UpdatesDialog.svelte";
 
   let settingsDialog: SettingsDialog;
   let repositoryDialog: RepositoryDialog;
   let licensesDialog: LicensesDialog;
+  let transcriptionDialog: TranscriptionDialog;
+  let translationDialog: TranslationDialog;
+  let diarizationDialog: DiarizationDialog;
 
   const openSettings = () => settingsDialog.open();
 </script>
@@ -41,7 +47,12 @@
       data-resource-list-target="toggle"
     />
     <div class="drawer-content @container flex h-dvh min-w-0 flex-col">
-      <Toolbar {openSettings} />
+      <Toolbar
+        {openSettings}
+        openTranscription={() => transcriptionDialog.open()}
+        openTranslation={() => translationDialog.open()}
+        openDiarization={() => diarizationDialog.open()}
+      />
       <div
         class="contents"
         data-controller="preview timeline"
@@ -64,6 +75,9 @@
 />
 <RepositoryDialog bind:this={repositoryDialog} />
 <LicensesDialog bind:this={licensesDialog} />
+<TranscriptionDialog bind:this={transcriptionDialog} />
+<TranslationDialog bind:this={translationDialog} />
+<DiarizationDialog bind:this={diarizationDialog} />
 <ShortcutsDialog />
 <UpdatesDialog />
 <Notifications />

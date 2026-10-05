@@ -1,9 +1,8 @@
 <script lang="ts">
-  import Users from "@lucide/svelte/icons/users";
   import { onMount } from "svelte";
 
   import { diarize } from "../backend/diarization";
-  import { currentResource, type ProjectView } from "../backend/project";
+  import type { ProjectView } from "../backend/project";
   import { modelSettings } from "../backend/toolchain";
   import { t } from "../i18n";
   import { sourceFileName } from "../ui/models";
@@ -19,15 +18,9 @@
   /** Whether the Segments carry Speakers the diarization replaces, as of opening. */
   let hasSpeakers = $state(false);
 
-  /** Usable only for a Current Resource with a media file and a subtitle. */
-  const isOffered = $derived.by(() => {
-    const resource = currentResource(project);
-    return (resource?.has_media ?? false) && (resource?.has_subtitle ?? false);
-  });
-
   onMount(() => feed.follow((next) => (project = next)));
 
-  async function open(): Promise<void> {
+  export async function open(): Promise<void> {
     hasSpeakers = (project?.segments ?? []).some(
       (segment) => (segment.speaker ?? null) !== null,
     );
@@ -49,18 +42,6 @@
   }
 </script>
 
-<button
-  type="button"
-  class="btn btn-sm"
-  aria-label={t("toolbar.diarize")}
-  data-tooltip={t("toolbar.diarize")}
-  disabled={!isOffered}
-  onclick={open}
->
-  <Users class="size-4" /><span class="hidden @5xl:inline"
-    >{t("toolbar.diarize")}</span
-  >
-</button>
 <dialog class="modal" bind:this={dialog}>
   <div class="modal-box">
     <h3 class="text-lg font-bold">{t("diarize.title")}</h3>

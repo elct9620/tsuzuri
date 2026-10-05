@@ -25,9 +25,10 @@ import {
   optionCheckbox,
   setSummaryWords,
 } from "./test_translation_options";
-import Translation from "./Translation.svelte";
+import TranslationDialog from "./TranslationDialog.svelte";
+import { renderWithToolbar } from "./test_toolbar";
 
-describe("Translation", () => {
+describe("TranslationDialog", () => {
   let feed: ProjectFeed;
   let translateArgs: unknown;
   let translation: () => Promise<unknown>;
@@ -89,7 +90,7 @@ describe("Translation", () => {
       }
     });
     feed = new ProjectFeed();
-    render(Translation, { context: pageContext(feed) });
+    renderWithToolbar(TranslationDialog, "openTranslation", pageContext(feed));
   });
 
   afterEach(() => {
@@ -287,7 +288,11 @@ describe("Translation", () => {
   it("starts no translation while another task runs", async () => {
     const run = new TaskRun();
     document.body.innerHTML = NOTIFICATION_STACK;
-    render(Translation, { context: pageContext(feed, run) });
+    renderWithToolbar(
+      TranslationDialog,
+      "openTranslation",
+      pageContext(feed, run),
+    );
     await hold(projectOf());
     run.begin("transcription");
 
@@ -297,7 +302,7 @@ describe("Translation", () => {
   });
 });
 
-describe("Translation, translating chosen Segments again", () => {
+describe("TranslationDialog, translating chosen Segments again", () => {
   let application: Application;
   let project: ProjectView | null;
   let retranslateArgs: unknown;
@@ -366,7 +371,7 @@ describe("Translation, translating chosen Segments again", () => {
       "segment-changes": SegmentChangesController,
     });
     const context = pageContext(assembly.feed, new TaskRun());
-    render(Translation, { context });
+    render(TranslationDialog, { context });
     render(TaskProgress, { context });
     await assembly.start();
     await settle();

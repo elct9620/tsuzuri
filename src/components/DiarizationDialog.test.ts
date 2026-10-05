@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { render, screen } from "@testing-library/svelte";
+import { screen } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -11,10 +11,11 @@ import {
   notifications,
 } from "../ui/test_notification";
 import { pageContext } from "./context";
-import Diarization from "./Diarization.svelte";
+import DiarizationDialog from "./DiarizationDialog.svelte";
+import { renderWithToolbar } from "./test_toolbar";
 import { TaskRun } from "./task_run.svelte";
 
-describe("Diarization", () => {
+describe("DiarizationDialog", () => {
   let feed: ProjectFeed;
   let run: TaskRun;
   let commandsSent: string[];
@@ -81,7 +82,11 @@ describe("Diarization", () => {
     });
     feed = new ProjectFeed();
     run = new TaskRun();
-    render(Diarization, { context: pageContext(feed, run) });
+    renderWithToolbar(
+      DiarizationDialog,
+      "openDiarization",
+      pageContext(feed, run),
+    );
   });
 
   afterEach(() => {

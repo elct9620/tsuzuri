@@ -7,9 +7,9 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 - `src-tauri/src/translation.rs`
 - `src-tauri/src/translation/*.rs`
 - `src-tauri/src/project/glossary.rs`
-- `src/components/Translation.test.ts`
+- `src/components/TranslationDialog.test.ts`
 - `src/components/TaskProgress.test.ts`
-- `src/components/Transcription.test.ts`
+- `src/components/TranscriptionDialog.test.ts`
 - `src/components/settings/general/Translation.test.ts`
 - `src/controllers/transcript_controller.test.ts`
 

@@ -1,13 +1,58 @@
 <script lang="ts">
-  import Diarization from "./Diarization.svelte";
-  import Transcription from "./Transcription.svelte";
-  import Translation from "./Translation.svelte";
+  import AudioLines from "@lucide/svelte/icons/audio-lines";
+  import Languages from "@lucide/svelte/icons/languages";
+  import Users from "@lucide/svelte/icons/users";
+  import { onMount } from "svelte";
+
+  import { currentResource, type ProjectView } from "../backend/project";
+  import { t } from "../i18n";
+  import { projectFeed } from "./context";
 
   interface Props {
     openSettings: () => void;
+    openTranscription: () => void;
+    openTranslation: () => void;
+    openDiarization: () => void;
   }
 
-  let { openSettings }: Props = $props();
+  let {
+    openSettings,
+    openTranscription,
+    openTranslation,
+    openDiarization,
+  }: Props = $props();
+
+  const feed = projectFeed();
+  let project = $state<ProjectView | null>(null);
+
+  /** The task buttons, each usable only for a Current Resource holding what its task reads. */
+  const taskButtons = $derived.by(() => {
+    const resource = currentResource(project);
+    const hasMedia = resource?.has_media ?? false;
+    const hasSubtitle = resource?.has_subtitle ?? false;
+    return [
+      {
+        Icon: AudioLines,
+        label: t("toolbar.transcribe"),
+        isOffered: hasMedia,
+        open: openTranscription,
+      },
+      {
+        Icon: Languages,
+        label: t("toolbar.translate"),
+        isOffered: hasSubtitle,
+        open: openTranslation,
+      },
+      {
+        Icon: Users,
+        label: t("toolbar.diarize"),
+        isOffered: hasMedia && hasSubtitle,
+        open: openDiarization,
+      },
+    ];
+  });
+
+  onMount(() => feed.follow((next) => (project = next)));
 </script>
 
 <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
@@ -90,11 +135,18 @@
       </ul>
     </div>
 
-    <Transcription />
-
-    <Translation />
-
-    <Diarization />
+    {#each taskButtons as { Icon, label, isOffered, open } (label)}
+      <button
+        type="button"
+        class="btn btn-sm"
+        aria-label={label}
+        data-tooltip={label}
+        disabled={!isOffered}
+        onclick={open}
+      >
+        <Icon class="size-4" /><span class="hidden @5xl:inline">{label}</span>
+      </button>
+    {/each}
 
     <div class="dropdown dropdown-end">
       <div

@@ -148,8 +148,8 @@ controller ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/command
 | `project-changed` | 改變專案的指令 | `ProjectFeed` |
 | `pipeline-progress` | 用例經 `Progress` | `TaskProgress` |
 | `edit-command` | macOS 編輯選單 | `Undo`、`segment-changes` |
-| `changed-elsewhere-kept` | 重新載入 | `project` |
-| `srt-requested` | 第二次啟動、macOS 開檔 | `project` |
+| `changed-elsewhere-kept` | 重新載入 | `Page` |
+| `srt-requested` | 第二次啟動、macOS 開檔 | `Page` |
 | `video-window-closing` | 關閉影片視窗 | `preview` |
 | `update-progress` | `install_update` | `UpdatesDialog` |
 | `model-download-progress` | `download_model` | 設定頁 |
@@ -650,8 +650,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 | Controller | 畫面區域 |
 |---|---|
-| `project`、`transcript`、`segment-changes` | 工具列的名稱、字幕編輯 |
-| `recent-projects` | 起始畫面與開啟選單的最近專案 |
+| `transcript`、`segment-changes` | 字幕編輯 |
 | `speakers` | 說話者選單與設定 modal |
 | `cleanup` | 清理簡體的選單、工具列與快速鍵 |
 | `search` | 搜尋列與符合處標記 |
@@ -679,8 +678,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `TaskProgress` 顯示 Phase |
 | `rust:update-progress` | Rust，經 `relayEvents` | `UpdatesDialog` 顯示下載進度 |
 | `rust:edit-command` | Rust，經 `relayEvents` | `Undo` 與 `segment-changes` |
-| `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
-| `rust:srt-requested` | Rust，經 `relayEvents` | `project` 開啟系統要開的 SRT |
+| `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `Page` 顯示通知 |
+| `rust:srt-requested` | Rust，經 `relayEvents` | `Page` 開啟系統要開的 SRT |
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `ModelSlot` 顯示下載進度 |
 | `system:color-scheme` | 系統，經 `assembly.ts` | `timeline` 重畫波形 |
 | `preferences:saved` | `Preferences` | `timeline` 重讀換段的偏好 |
@@ -695,6 +694,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 | Svelte 元件 | 畫面區域 |
 |---|---|
+| `Page` | 起始畫面與工作區的切換、視窗標題 |
+| `StartScreen` | 起始畫面與最近專案 |
 | `HelpButton` | 設定名稱旁的 ⓘ |
 | `VersionAndUpdates` | 版本列、更新檢查與設定 |
 | `UpdatesDialog` | 安裝更新的 modal |
@@ -709,8 +710,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `Project` 與專案的 `Transcription`、`Models` | 專案頁的設定與模型 |
 | `Models`、`ModelSlot` | 整體的模型來源與下載 |
 | `RepositoryDialog` | Hugging Face 的檔案清單 |
-| `Toolbar` | 任務按鈕、清單的固定與蓋上鈕 |
-| `ResourceList` | 資源列、詞彙表入口、選取與 ⌘/Ctrl+B |
+| `Toolbar` | 名稱、開啟選單、任務與清單按鈕 |
+| `ResourceList` | 資源列、詞彙表、重新載入、⌘/Ctrl+B |
 | `TranscriptionDialog`、`TranslationDialog` | 任務 modal，含重做 |
 | `TranslationOptions` | 兩個任務 modal 共用的翻譯選項 |
 | `DiarizationDialog` | 辨識說話者的 modal |
@@ -721,7 +722,18 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `Tooltip` | 全頁共用的 tooltip |
 | `Undo` | 全頁的復原與重做，不畫任何東西 |
 
-資源清單固定與否、是否蓋上，由 Page 建立的 `ResourceDock` 保存，交給工具列與清單。哪顆按鈕出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。
+#### 4.6.2 共用的狀態與動作
+
+共用的狀態由 Page 保存，自己使用或以 prop 交下；共用的動作寫成模組。
+
+| 共用 | 位置 | 使用者 |
+|---|---|---|
+| 目前的專案 | Page 讀取 | 起始畫面、工作區、視窗標題 |
+| 最近專案 | Page 讀取 | 起始畫面、工具列 |
+| `ResourceDock` | Page 建立 | 工具列、資源清單 |
+| 開啟、重新載入、命名 | `project-actions.ts` | 起始畫面、工具列、資源清單 |
+
+資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。
 
 ### 4.7 backend
 

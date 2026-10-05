@@ -53,9 +53,6 @@ describe("CleanupController", () => {
           <button data-segment-changes-target="retranscribeButton"></button>
           <button id="clean-checked" data-cleanup-target="checkedButton" data-action="cleanup#cleanChecked"></button>
         </div>
-        <dialog data-segment-changes-target="shiftDialog">
-          <input data-segment-changes-target="offset" />
-        </dialog>
         <dialog id="other-dialog"><input id="other-input" /></dialog>
         <ol data-transcript-target="list"></ol>
       </section>

@@ -60,6 +60,8 @@ describe("drawPage", () => {
   it.each([
     ["start screen", "region", "Tsuzuri"],
     ["toolbar", "textbox", "toolbar.projectName"],
+    ["export menu", "button", "toolbar.export"],
+    ["editor bar's translation choice", "combobox", "edit.translation"],
   ])("writes the %s", async (_part, role, name) => {
     // In the document, so a name given by `aria-labelledby` finds the element it names.
     const page = document.createElement("div");

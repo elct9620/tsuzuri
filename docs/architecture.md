@@ -578,11 +578,11 @@ body
 | `backend/` | Tauri、`editor/` 的 port | controller |
 | controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
 | `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
-| `page.ts` | `Page.svelte`、`components/context.ts`、i18n、`ui/` | controller |
+| `page.ts` | `Page.svelte`、`components/context.ts`、i18n、`ui/`、`editor/` 與 `backend/` 的型別 | controller |
 | `Page.svelte`、`components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/`、`editor/index.ts` | controller |
 | `main.ts` | 全部 | — |
 
-Controller 之間不互相 import，以事件溝通，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
+`architecture.test.ts` 依這張表檢查每個 import。Controller 之間不互相 import，以事件溝通，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
 
 #### 4.2.1 事件的接法
 

@@ -146,12 +146,12 @@ controller ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/command
 | 事件 | 送出者 | 接收者 |
 |---|---|---|
 | `project-changed` | 改變專案的指令 | `ProjectFeed` |
-| `pipeline-progress` | 用例經 `Progress` | `progress` |
+| `pipeline-progress` | 用例經 `Progress` | `TaskProgress` |
 | `edit-command` | macOS 編輯選單 | `undo`、`segment-changes` |
 | `changed-elsewhere-kept` | 重新載入 | `project` |
 | `srt-requested` | 第二次啟動、macOS 開檔 | `project` |
 | `video-window-closing` | 關閉影片視窗 | `preview` |
-| `update-progress` | `install_update` | `updates` |
+| `update-progress` | `install_update` | `UpdatesDialog` |
 | `model-download-progress` | `download_model` | 設定頁 |
 
 事件只說有變化或到哪一步，內容再用指令取得。每個事件是 Rust 的一個型別，名稱寫在型別上，`bindings.ts` 的 `events` 依此列出；`project-changed` 以外的七者由 `relayEvents` 轉成 window 的 `rust:` 事件。
@@ -555,6 +555,20 @@ backend/editing.ts            gateway: the one caller of editing commands
 
 `Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。轉換期間 Stimulus 照常接上 Svelte 寫出的元素。
 
+#### 4.1.2 Modal 層
+
+Modal 都放在 `<main>` 旁，彼此同層。開啟時進入 top layer，後開的疊在上面，各自帶遮罩。
+
+```
+body
+  |-- main                  buttons get openers as props
+  |-- SettingsDialog        Page holds each modal (bind:this)
+  |-- RepositoryDialog ...  opens over the settings
+  +-- Notifications
+```
+
+祖先沒有畫出來時，modal 開了也看不到，所以不放進其他 modal 或會隱藏的區域。開啟函式由 `Page.svelte` 以 prop 往下交。版本、說話者、平移三個 modal 仍是 hub controller 的 target，隨 hub 組移出。
+
 ### 4.2 相依規則
 
 | 層 | 可以依賴 | 不可以依賴 |
@@ -564,7 +578,7 @@ backend/editing.ts            gateway: the one caller of editing commands
 | controller | `editor/index.ts`、`ui/`、`backend/` | 編輯指令、其他 controller |
 | `ui/` | i18n、`editor/` 與 `backend/` 的型別 | controller |
 | `page.ts` | `Page.svelte`、`components/context.ts`、i18n、`ui/` | controller |
-| `components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/` | controller |
+| `components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/`、`editor/index.ts` | controller |
 | `main.ts` | 全部 | — |
 
 Controller 之間只 import outlet 的型別，編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
@@ -588,7 +602,7 @@ main.ts -> assemble(application, controllers)      assembly.ts
   |-- feed -> session.follow -> each follower -> session.announce
   |-- session.onChange -> window: editor:cursor, editor:choice, editor:checks
   +-- application.register(name, class extends X { session, feed })
-main.ts -> drawPage(feed)                           page.ts
+main.ts -> drawPage(feed, session)                  page.ts
   +-- mount(Page, context) -> translatePage -> showIcons
 main.ts -> application.start() -> assembly.start()
   |-- relayEvents: a Rust event -> window: rust:<event name>
@@ -600,10 +614,10 @@ main.ts -> application.start() -> assembly.start()
 |---|---|---|
 | Composition Root | 組裝 app 範圍物件 | `assembly.ts` |
 | 註冊時注入 | controller 取得依賴 | `class extends` |
-| context 注入 | Svelte 元件取得 feed 與 `TaskRun` | `projectFeed()`、`taskRun()` |
+| context 注入 | Svelte 元件取得共用的物件 | `projectFeed()`、`editingSession()` |
 | 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
-feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 feed。`TaskRun` 也經 context 共用。頁面寫好後 Stimulus 才啟動，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。controller 與 Svelte 元件都不自己向 Rust 讀專案。
+feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`TaskRun` 與 `AppUpdates` 也經 context 共用。頁面寫好後 Stimulus 才啟動，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。controller 與 Svelte 元件都不自己向 Rust 讀專案。
 
 ### 4.4 先後順序
 
@@ -636,10 +650,9 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 
 | Controller | 畫面區域 |
 |---|---|
-| `project`、`transcript`、`segment-changes`、`dialog` | 工具列、資源清單、字幕編輯、設定 |
+| `project`、`transcript`、`segment-changes` | 工具列、資源清單、字幕編輯 |
 | `recent-projects` | 起始畫面與開啟選單的最近專案 |
 | `speakers` | 說話者選單與設定 modal |
-| `replacement` | 搜尋取代 modal |
 | `cleanup` | 清理簡體的選單、工具列與快速鍵 |
 | `search` | 搜尋列與符合處標記 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
@@ -647,9 +660,7 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
 | `versions` | 版本 modal |
-| `updates` | 更新檢查、安裝視窗 |
 | `tooltip` | 全頁共用的 tooltip |
-| `shortcuts` | 快速鍵一覽 |
 | `notification` | 每則通知的倒數、暫停與按鈕 |
 | `undo` | 全頁的復原與重做 |
 | `field` | 每個編輯欄位接上 session |
@@ -671,6 +682,7 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 | `editor:choice` | session，經 `assembly.ts` | `timeline` 依來源移動媒體 |
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `TaskProgress` 顯示 Phase |
+| `rust:update-progress` | Rust，經 `relayEvents` | `UpdatesDialog` 顯示下載進度 |
 | `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
 | `rust:srt-requested` | Rust，經 `relayEvents` | `project` 開啟系統要開的 SRT |
@@ -680,8 +692,8 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 | `preferences:saved` | `Preferences` | `timeline` 重讀換段的偏好 |
 | `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
 | `segment-changes:speakers` | `segment-changes` | `speakers` 為 Checked Segments 開設定 |
-| `segment-changes:retranslate` | `segment-changes` | `Translation` 開啟重新翻譯 |
-| `segment-changes:retranscribe` | `segment-changes` | `Transcription` 開啟重新轉錄 |
+| `segment-changes:retranslate` | `segment-changes` | `TranslationDialog` 開啟重新翻譯 |
+| `segment-changes:retranscribe` | `segment-changes` | `TranscriptionDialog` 開啟重新轉錄 |
 
 #### 4.6.1 帶行為的 Svelte 元件
 
@@ -690,21 +702,26 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 | Svelte 元件 | 畫面區域 |
 |---|---|
 | `HelpButton` | 設定名稱旁的 ⓘ |
-| `VersionAndUpdates` | 版本列與複製 |
-| `About` | 授權頁、原始程式碼、贊助 |
+| `VersionAndUpdates` | 版本列、更新檢查與設定 |
+| `UpdatesDialog` | 安裝更新的 modal |
+| `About` | 授權、原始程式碼、贊助 |
+| `LicensesDialog` | 完整授權的 modal |
 | 整體的 `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
 | `Components` | 元件的狀態、指定與還原 |
 | `Logs` | log 目錄與除錯紀錄 |
 | `Preferences` | 偏好頁的換段設定 |
 | `GlossaryDialog` | 詞彙表 modal |
-| `Settings` | 設定的分頁，專案頁只在開啟時出現 |
+| `SettingsDialog` | 設定的分頁，專案頁只在開啟時出現 |
 | `Project` 與專案的 `Transcription`、`Models` | 專案頁的設定與模型 |
 | `Models`、`ModelSlot` | 整體的模型來源與下載 |
 | `RepositoryDialog` | Hugging Face 的檔案清單 |
-| 工具列的 `Transcription`、`Translation` | 任務 modal，含重做 |
+| `Toolbar` | 三個任務按鈕 |
+| `TranscriptionDialog`、`TranslationDialog` | 任務 modal，含重做 |
 | `TranslationOptions` | 兩個任務 modal 共用的翻譯選項 |
-| `Diarization` | 辨識說話者的 modal |
+| `DiarizationDialog` | 辨識說話者的 modal |
 | `TaskProgress` | 標題列的任務進度徽章 |
+| `ShortcutsDialog` | 快速鍵一覽 |
+| `ReplacementDialog` | 取代 modal |
 
 ### 4.7 backend
 
@@ -751,7 +768,7 @@ feed 先建立，session 先跟上，頁面才以 `mount` 的 context 拿到 fee
 | `ui/text_fields.ts` | 原文或譯文的選擇、選取的文字 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
-圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。快速鍵以 `ui/shortcuts.ts` 為準：controller 自己比對的鍵用 `isShortcut` 讀它，寫在 `data-action` 與 Rust 選單的鍵由測試雙向核對。
+圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。快速鍵以 `ui/shortcuts.ts` 為準：controller 與 Svelte 元件自己比對的鍵用 `isShortcut` 讀它，寫在 `data-action` 與 Rust 選單的鍵由測試雙向核對。
 
 ### 4.9 影片視窗
 

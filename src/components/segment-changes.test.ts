@@ -107,8 +107,6 @@ describe("Segment Changes", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
-        // The Segment list compares each Project shown with its Backups, of which there are none
-        if (command === "subtitle_versions") return [];
         if (command === "plugin:menu|new") {
           const { options } = args as { options?: { items?: MenuItemSent[] } };
           if (options?.items) menus.push(options.items);

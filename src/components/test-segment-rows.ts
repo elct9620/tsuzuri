@@ -5,7 +5,6 @@
 
 import { render, screen, within } from "@testing-library/svelte";
 
-import type { ProjectView } from "../backend/project";
 import { type SegmentDialogs, withSegmentDialogs } from "./context";
 import { PlaybackFollowing } from "./playback-following.svelte";
 import type ShiftDialog from "./ShiftDialog.svelte";
@@ -22,19 +21,15 @@ export interface DrawnSegmentRows {
   unmount: () => void;
 }
 
-/**
- * Draws the rows at the end of `target`, reading the feed, session and task run of `context`, and
- * telling `onshown` each Project once its Segments are shown.
- */
+/** Draws the rows at the end of `target`, reading the feed, session and task run of `context`. */
 export function drawSegmentRows(
   target: HTMLElement,
   context: Map<symbol, unknown>,
-  onshown?: (project: ProjectView | null) => void,
 ): DrawnSegmentRows {
   const following = new PlaybackFollowing();
   const { component, unmount } = render(SegmentRows, {
     target,
-    props: { following, onshown },
+    props: { following },
     context,
   });
   return { rows: component, following, unmount };

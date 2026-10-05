@@ -94,8 +94,6 @@ describe("SpeakersDialog", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
-        // The Segment list compares each Project shown with its Backups, of which there are none
-        if (command === "subtitle_versions") return [];
         if (command === "set_speakers") setSpeakersArgs = args;
       },
       { shouldMockEvents: true },

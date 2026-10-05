@@ -203,12 +203,9 @@ describe("EditorComparison", () => {
       props: { openVersions: (subtitle) => openedSubtitles.push(subtitle) },
       context,
     });
-    // As the Segment list compares each Project shown
-    drawSegmentRows(
-      document.querySelector("main")!,
-      context,
-      (next) => void comparison.show(next),
-    );
+    drawSegmentRows(document.querySelector("main")!, context);
+    // As Page compares each Project read
+    assembly.feed.follow((next) => void comparison.show(next));
     await assembly.start();
     await settle();
   });

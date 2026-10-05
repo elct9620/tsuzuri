@@ -6,7 +6,11 @@
     recentProjects as readRecentProjects,
     type RecentProjectView,
   } from "./backend/project";
-  import { projectFeed, setSegmentDialogs } from "./components/context";
+  import {
+    editorComparison,
+    projectFeed,
+    setSegmentDialogs,
+  } from "./components/context";
   import DiarizationDialog from "./components/DiarizationDialog.svelte";
   import EditorBar from "./components/EditorBar.svelte";
   import GlossaryDialog from "./components/GlossaryDialog.svelte";
@@ -54,6 +58,7 @@
   const dock = new ResourceDock();
   const following = new PlaybackFollowing();
   const feed = projectFeed();
+  const comparison = editorComparison();
   setSegmentDialogs({
     openRetranslation: (indexes) => translationDialog.openForSegments(indexes),
     openRetranscription: (scope) =>
@@ -71,6 +76,7 @@
   onMount(() =>
     feed.follow(async (next) => {
       project = next;
+      void comparison.show(next);
       // A list that cannot be read is shown as none: the start screen still opens a directory.
       recentProjects = await readRecentProjects().catch(() => []);
     }),

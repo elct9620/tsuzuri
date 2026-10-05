@@ -354,8 +354,6 @@ describe("TranslationDialog, translating chosen Segments again", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
-        // The Segment list compares each Project shown with its Backups, of which there are none
-        if (command === "subtitle_versions") return [];
         if (command === "retranslate") {
           retranslateArgs = args;
           return new Promise(() => {});

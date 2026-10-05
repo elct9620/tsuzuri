@@ -498,8 +498,6 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
       (command, args) => {
         commandsSent.push(command);
         if (command === "current_project") return project;
-        // The Segment list compares each Project shown with its Backups, of which there are none
-        if (command === "subtitle_versions") return [];
         if (command === "model_settings")
           return { transcription: { path: "/models/breeze.bin" } };
         if (command === "transcribe") {

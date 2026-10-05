@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
+import { Application, type ControllerConstructor } from "@hotwired/stimulus";
 import { screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks } from "@tauri-apps/api/mocks";
@@ -8,6 +8,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "./assembly";
 import { editingPort } from "./backend/editing";
 import { ProjectFeed, type ProjectView } from "./backend/project";
+import ComparisonController from "./controllers/comparison-controller";
+import TranscriptController from "./controllers/transcript-controller";
+import VersionsController from "./controllers/versions-controller";
 import { EditingSession } from "./editor";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
@@ -357,16 +360,22 @@ describe("Page", () => {
   let sentSrt: unknown;
   let page: Record<string, unknown>;
   let stop: () => void;
+  let application: Application;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
   /**
-   * Starts the page as `main.ts` does, relaying Rust events and reading the Project, and clears the
-   * Notifications its Svelte Components show for the reads this test leaves unanswered.
+   * Starts the page as `main.ts` does, relaying Rust events and reading the Project, with only the
+   * `controllers` a test names registered, and clears the Notifications its Svelte Components show
+   * for the reads this test leaves unanswered.
    */
-  async function start(): Promise<void> {
-    const assembly = assemble(new Application(), {});
+  async function start(
+    controllers: Record<string, ControllerConstructor> = {},
+  ): Promise<void> {
+    application = new Application();
+    const assembly = assemble(application, controllers);
     page = drawPage(assembly.feed, assembly.session);
+    await application.start();
     stop = await assembly.start();
     await settle();
     notificationStack.clear();
@@ -393,11 +402,16 @@ describe("Page", () => {
         return takenSrt;
       },
       open_srt: (args) => (sentSrt = args),
+      subtitle_versions: () => [
+        { language: null, backups: [] },
+        { language: "en", backups: [] },
+      ],
     });
   });
 
   afterEach(() => {
     stop();
+    application.stop();
     unmount(page);
     clearMocks();
   });
@@ -455,6 +469,37 @@ describe("Page", () => {
     expect([notifications(), notificationDetail(0)]).toEqual([
       ["字幕已在其他程式修改過並重新讀取"],
       "Tsuzuri 原本的內容已留作備份，可在「版本」比較或還原",
+    ]);
+  });
+
+  // @behavior VR-059
+  it("opens the Versions dialog at the translation its compare group chooses in", async () => {
+    await start({
+      comparison: ComparisonController,
+      transcript: TranscriptController,
+      versions: VersionsController,
+    });
+    await hold(
+      projectOf({
+        resources: [resourceOf({ translation_languages: ["en"] })],
+        shown_translation: "en",
+      }),
+    );
+
+    const [, translationChoice] = screen.getAllByRole("button", {
+      hidden: true,
+      name: t("compare.chooseInVersions"),
+    });
+    translationChoice.click();
+    await settle();
+
+    const subtitle = screen.getByRole<HTMLSelectElement>("combobox", {
+      hidden: true,
+      name: t("versions.subtitle"),
+    });
+    expect([subtitle.closest("dialog")!.open, subtitle.value]).toEqual([
+      true,
+      "en",
     ]);
   });
 });

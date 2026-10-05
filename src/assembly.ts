@@ -2,9 +2,8 @@
  * The webview's Composition Root: one Project feed and one editing session, handed to each controller
  * as it is registered. The session reads each Project before any controller does and tells of the
  * Cursor only after all of them have drawn it, as the page's `editor:cursor`, `editor:choice` and
- * `editor:checks`; the other Rust events reach the page as `rust:<name>`, the system turning
- * to a light or dark theme as `system:color-scheme`, and the screen turning between landscape and
- * portrait as `system:orientation`.
+ * `editor:checks`; the other Rust events reach the page as `rust:<name>`, and the system turning
+ * to a light or dark theme as `system:color-scheme`.
  */
 
 import type { Application, ControllerConstructor } from "@hotwired/stimulus";
@@ -63,15 +62,10 @@ export function assemble(
       "(prefers-color-scheme: dark)",
       "color-scheme",
     );
-    const unrelayOrientation = relaySystemChange(
-      "(orientation: portrait)",
-      "orientation",
-    );
     const unfollow = await feed.start();
     return () => {
       unfollow();
       unrelayScheme();
-      unrelayOrientation();
       unrelay();
     };
   };

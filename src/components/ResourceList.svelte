@@ -3,15 +3,19 @@
   import { onMount } from "svelte";
 
   import { selectResource, type ProjectView } from "../backend/project";
+  import { isMacOS } from "../backend/system";
   import { t } from "../i18n";
   import { notifyFailure } from "../ui/notification.svelte";
+  import { isShortcut } from "../ui/shortcuts";
   import { projectFeed } from "./context";
+  import type { ResourceDock } from "./resource_dock.svelte";
 
   interface Props {
+    dock: ResourceDock;
     openGlossary: () => void;
   }
 
-  let { openGlossary }: Props = $props();
+  let { dock, openGlossary }: Props = $props();
 
   const feed = projectFeed();
   let project = $state<ProjectView | null>(null);
@@ -24,10 +28,11 @@
   });
 
   /**
-   * Selects the Resource named `name`, telling the page from `row` as `project:select` that one is
-   * being read.
+   * Selects the Resource named `name`, putting the list away and telling the page from `row` as
+   * `project:select` that one is being read.
    */
   async function select(row: HTMLElement, name: string): Promise<void> {
+    dock.putAway();
     row.dispatchEvent(new CustomEvent("project:select", { bubbles: true }));
     try {
       await selectResource(name);
@@ -38,8 +43,17 @@
     }
   }
 
+  /** Docks or undocks the list, or lays it over a narrow window's editor, as its button does. */
+  function toggleByShortcut(event: KeyboardEvent): void {
+    if (!isShortcut(event, "resourceList", isMacOS())) return;
+    event.preventDefault();
+    dock.toggle();
+  }
+
   onMount(() => feed.follow((next) => (project = next)));
 </script>
+
+<svelte:window onkeydown={toggleByShortcut} />
 
 <div class="drawer-side">
   <label

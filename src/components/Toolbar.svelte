@@ -1,14 +1,18 @@
 <script lang="ts">
   import AudioLines from "@lucide/svelte/icons/audio-lines";
   import Languages from "@lucide/svelte/icons/languages";
+  import Menu from "@lucide/svelte/icons/menu";
+  import PanelLeft from "@lucide/svelte/icons/panel-left";
   import Users from "@lucide/svelte/icons/users";
   import { onMount } from "svelte";
 
   import { currentResource, type ProjectView } from "../backend/project";
   import { t } from "../i18n";
   import { projectFeed } from "./context";
+  import type { ResourceDock } from "./resource_dock.svelte";
 
   interface Props {
+    dock: ResourceDock;
     openSettings: () => void;
     openShortcuts: () => void;
     openTranscription: () => void;
@@ -17,6 +21,7 @@
   }
 
   let {
+    dock,
     openSettings,
     openShortcuts,
     openTranscription,
@@ -61,23 +66,27 @@
   <label
     for="resources-drawer"
     class="btn btn-square btn-sm btn-ghost drawer-button lg:hidden"
-    data-resource-list-target="overlayButton"
-    data-i18n-label="resources.open"
-    data-i18n-tooltip="resources.open"
+    bind:this={dock.overlayButton}
+    aria-label={t("resources.open")}
+    data-tooltip={t("resources.open")}
     data-shortcut="resourceList"
   >
-    <i data-lucide="menu" class="size-4"></i>
+    <Menu class="size-4" />
   </label>
+  <!-- Lit while the list is folded away, as the Preview's fold buttons are. -->
   <button
     type="button"
-    class="btn btn-square btn-sm btn-ghost hidden lg:inline-flex"
-    data-resource-list-target="dockButton"
-    data-action="resource-list#toggleDocked"
-    data-i18n-label="resources.dock"
-    data-i18n-tooltip="resources.dock"
+    class={[
+      "btn btn-square btn-sm btn-ghost hidden lg:inline-flex",
+      !dock.isDocked && "btn-primary",
+    ]}
+    aria-pressed={!dock.isDocked}
+    onclick={() => dock.toggleDocked()}
+    aria-label={t("resources.dock")}
+    data-tooltip={t("resources.dock")}
     data-shortcut="resourceList"
   >
-    <i data-lucide="panel-left" class="size-4"></i>
+    <PanelLeft class="size-4" />
   </button>
   <h1 class="navbar-start w-auto min-w-0 flex-1">
     <label

@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render, screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -7,10 +6,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
-import ResourceListController from "../controllers/resource_list_controller";
 import { EditingSession } from "../editor";
 import { projectOf, resourceOf } from "../test_project";
 import { pageContext } from "./context";
+import { ResourceDock } from "./resource_dock.svelte";
 import ResourceList from "./ResourceList.svelte";
 import {
   notificationDetail,
@@ -36,7 +35,7 @@ describe("ResourceList", () => {
   async function show(next: ProjectView): Promise<void> {
     project = next;
     render(ResourceList, {
-      props: { openGlossary: () => {} },
+      props: { dock: new ResourceDock(), openGlossary: () => {} },
       context: pageContext(feed, new EditingSession(editingPort)),
     });
     await emit("project-changed");
@@ -143,30 +142,6 @@ describe("ResourceList", () => {
     await choose("ep02");
 
     expect(sent("select_resource")).toEqual({ name: "ep02" });
-  });
-
-  // @behavior PJ-183
-  it("puts the Resource list away once a Resource is chosen", async () => {
-    document.body.innerHTML = `
-      <div data-controller="resource-list" data-action="project:select@window->resource-list#putAway">
-        <input id="resources-drawer" type="checkbox" checked data-resource-list-target="toggle" />
-        <label data-resource-list-target="overlayButton"></label>
-        <button data-resource-list-target="dockButton"></button>
-      </div>
-    `;
-    const application = Application.start();
-    application.register("resource-list", ResourceListController);
-    await show(
-      projectOf({ resources: [resourceOf(), resourceOf({ name: "ep02" })] }),
-    );
-
-    await choose("ep02");
-
-    expect([
-      sent("select_resource"),
-      document.querySelector<HTMLInputElement>("#resources-drawer")!.checked,
-    ]).toEqual([{ name: "ep02" }, false]);
-    application.stop();
   });
 
   // @behavior PJ-191

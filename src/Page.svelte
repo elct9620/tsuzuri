@@ -4,6 +4,7 @@
   import Notifications from "./components/Notifications.svelte";
   import Preview from "./components/Preview.svelte";
   import ReplacementDialog from "./components/ReplacementDialog.svelte";
+  import { ResourceDock } from "./components/resource_dock.svelte";
   import ResourceList from "./components/ResourceList.svelte";
   import SegmentList from "./components/SegmentList.svelte";
   import DiarizationDialog from "./components/DiarizationDialog.svelte";
@@ -30,6 +31,7 @@
   let replacementDialog: ReplacementDialog;
 
   const openSettings = () => settingsDialog.open();
+  const dock = new ResourceDock();
 </script>
 
 <main
@@ -43,18 +45,18 @@
   <div
     class="drawer h-dvh lg:data-is-docked:drawer-open"
     data-project-target="workspace"
-    data-controller="resource-list"
-    data-action="system:orientation@window->resource-list#follow keydown@window->resource-list#toggleByShortcut project:select@window->resource-list#putAway"
+    data-is-docked={dock.isDocked ? "" : undefined}
     hidden
   >
     <input
       id="resources-drawer"
       type="checkbox"
       class="drawer-toggle"
-      data-resource-list-target="toggle"
+      bind:checked={dock.isOverlaid}
     />
     <div class="drawer-content @container flex h-dvh min-w-0 flex-col">
       <Toolbar
+        {dock}
         {openSettings}
         openShortcuts={() => shortcutsDialog.open()}
         openTranscription={() => transcriptionDialog.open()}
@@ -73,7 +75,7 @@
         <SegmentList />
       </div>
     </div>
-    <ResourceList openGlossary={() => glossaryDialog.open()} />
+    <ResourceList {dock} openGlossary={() => glossaryDialog.open()} />
   </div>
 </main>
 <SettingsDialog

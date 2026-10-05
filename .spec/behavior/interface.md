@@ -14,7 +14,7 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/components/ShortcutsDialog.test.ts`
 - `src-tauri/src/window.rs`
 - `src/components/settings/general/About.test.ts`
-- `src/controllers/resource_list_controller.test.ts`
+- `src/components/resource_dock.test.ts`
 
 ## `IF-001` Following the system language
 

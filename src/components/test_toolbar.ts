@@ -1,6 +1,7 @@
 import { render } from "@testing-library/svelte";
 import type { Component } from "svelte";
 
+import { ResourceDock } from "./resource_dock.svelte";
 import Toolbar from "./Toolbar.svelte";
 
 /** The toolbar props each opening the dialog of one task. */
@@ -20,6 +21,7 @@ export function renderWithToolbar(
   render(Toolbar, {
     context,
     props: {
+      dock: new ResourceDock(),
       openSettings: ignore,
       openShortcuts: ignore,
       openTranscription: ignore,

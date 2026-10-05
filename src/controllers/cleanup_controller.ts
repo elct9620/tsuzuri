@@ -12,7 +12,7 @@ import {
 } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
-import { notify, notifyFailure } from "../ui/notification";
+import { notify, notifyFailure } from "../ui/notification.svelte";
 
 /** Tells how a cleanup ended: how many characters were cleaned, or why none were. */
 function notifyCleanup(outcome: CleanupOutcome): void {

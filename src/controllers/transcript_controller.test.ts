@@ -8,13 +8,12 @@ import type { GlossaryTable, ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import { fieldValue, isFieldHeld } from "../editor";
 import FieldController from "./field_controller";
-import NotificationController from "./notification_controller";
 import {
-  NOTIFICATION_STACK,
+  showNotifications,
   notificationAction,
   notificationDetail,
   notifications,
-} from "../ui/test_notification";
+} from "../components/test_notifications";
 import type { TaskKind } from "../ui/progress";
 import { SAVE_MARK, saveMark } from "../ui/test_save_mark";
 import SpeakersController from "./speakers_controller";
@@ -97,7 +96,6 @@ describe("TranscriptController", () => {
       has_source_target_header: false,
     };
     document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
       ${SAVE_MARK}
       <section data-controller="transcript speakers"
         data-action="selectionchange@document->transcript#followSelection progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->speakers#follow">
@@ -116,6 +114,7 @@ describe("TranscriptController", () => {
         <ol data-transcript-target="list"></ol>
       </section>
     `;
+    showNotifications();
     mockIPC(
       (command, args) => {
         calls.push({ command, args });
@@ -136,7 +135,6 @@ describe("TranscriptController", () => {
     application = Application.start();
     await assemble(application, {
       field: FieldController,
-      notification: NotificationController,
       speakers: SpeakersController,
       transcript: TranscriptController,
     }).start();
@@ -362,7 +360,6 @@ describe("TranscriptController", () => {
     application = Application.start();
     await assemble(application, {
       field: FieldController,
-      notification: NotificationController,
       speakers: SpeakersController,
       transcript: TranscriptController,
     }).start();
@@ -392,7 +389,6 @@ describe("TranscriptController", () => {
     application = Application.start();
     await assemble(application, {
       field: FieldController,
-      notification: NotificationController,
       speakers: SpeakersController,
       transcript: TranscriptController,
     }).start();

@@ -8,7 +8,7 @@ import {
   type CursorField,
   type EditingSession,
 } from "../editor";
-import { notifyEdit } from "../ui/notification";
+import { notifyEdit } from "../ui/notification.svelte";
 
 /**
  * Routes a key event by whether an input method is still composing text: `:composing` routes only

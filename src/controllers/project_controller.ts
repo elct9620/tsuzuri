@@ -15,7 +15,7 @@ import {
 import { interfaceLanguageCode, t } from "../i18n";
 import { failureKind, failureMessage } from "../ui/failure";
 import { closeMenu } from "../ui/menu";
-import { notify } from "../ui/notification";
+import { notify } from "../ui/notification.svelte";
 
 function resourceItem(
   resource: ResourceView,

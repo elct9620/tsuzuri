@@ -11,7 +11,7 @@
   } from "../../backend/preferences";
   import type { ChoiceSource } from "../../editor";
   import { t } from "../../i18n";
-  import { notifyFailure } from "../../ui/notification";
+  import { notifyFailure } from "../../ui/notification.svelte";
   import HelpButton from "./HelpButton.svelte";
 
   /** Each Choice Source, in the order the Preferences tab lists them. */

@@ -12,10 +12,10 @@ import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test_layout";
 import { projectOf } from "../test_project";
 import {
-  NOTIFICATION_STACK,
+  showNotifications,
   notificationDetail,
   notifications,
-} from "../ui/test_notification";
+} from "../components/test_notifications";
 import TimelineController, {
   controlOption,
   regionColor,
@@ -107,7 +107,6 @@ describe("TimelineController", () => {
       { shouldMockEvents: true },
     );
     document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
       <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor system:color-scheme@window->timeline#repaintWaveform keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange focusin@window->timeline#followFocus pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture pointermove@window->timeline#extendDrawing pointerup@window->timeline#finishDrawing">
         <video data-timeline-target="media"></video>
         <input id="typing" />
@@ -119,6 +118,7 @@ describe("TimelineController", () => {
         <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" tabindex="0" data-action="wheel->timeline#scrollOrZoom:prevent pointerdown->timeline#drawOver:capture click->timeline#ignoreClickOver:capture keydown.left->timeline#stepBack:prevent keydown.right->timeline#stepForward:prevent" hidden></div>
       </div>
     `;
+    showNotifications();
     application = Application.start();
     application.registerActionOption("control", controlOption);
     const assembly = assemble(application, {

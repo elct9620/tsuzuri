@@ -13,7 +13,7 @@ import {
   type TextSpan,
 } from "../backend/project";
 import { t } from "../i18n";
-import { notifyFailure, notifyRestoration } from "../ui/notification";
+import { notifyFailure, notifyRestoration } from "../ui/notification.svelte";
 import { iconElement } from "../ui/icons";
 import { formatTime, localTime } from "../ui/time";
 import { menuOption } from "../ui/options";

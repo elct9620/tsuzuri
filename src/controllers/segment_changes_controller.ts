@@ -23,7 +23,7 @@ import {
 } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
-import { notify, notifyEdit } from "../ui/notification";
+import { notify, notifyEdit } from "../ui/notification.svelte";
 import { accelerator, isShortcut } from "../ui/shortcuts";
 import { parseTime } from "../ui/time";
 

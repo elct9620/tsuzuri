@@ -10,7 +10,7 @@
     type Origin,
   } from "../../../backend/toolchain";
   import { t } from "../../../i18n";
-  import { notifyFailure } from "../../../ui/notification";
+  import { notifyFailure } from "../../../ui/notification.svelte";
   import HelpButton from "../HelpButton.svelte";
 
   /** Each Component's row: its name as Rust knows it, as people know it, and its ⓘ. */

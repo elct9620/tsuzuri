@@ -1,6 +1,6 @@
 import type { Failure } from "../backend/failure";
 import { t } from "../i18n";
-import type { NotificationKind } from "./notification";
+import type { NotificationKind } from "./notification.svelte";
 
 /**
  * The kind of Notification each code comes as: a refusal, which asking again differently or later

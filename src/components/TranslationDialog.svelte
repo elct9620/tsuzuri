@@ -9,7 +9,7 @@
   import type { ProjectView } from "../backend/project";
   import { translateSegments } from "../backend/translation";
   import { t } from "../i18n";
-  import { notifyTranslation } from "../ui/notification";
+  import { notifyTranslation } from "../ui/notification.svelte";
   import { projectFeed, taskRun } from "./context";
   import { TranslationChoices } from "./translation_choices.svelte";
   import TranslationOptions from "./TranslationOptions.svelte";

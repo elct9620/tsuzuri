@@ -14,7 +14,7 @@ import {
   notifyEdit,
   notifyFailure,
   type Notification,
-} from "../ui/notification";
+} from "../ui/notification.svelte";
 
 /** One choice of a Speaker menu, `speaker` for Segment `index`; an empty one clears it. */
 function speakerChoice(

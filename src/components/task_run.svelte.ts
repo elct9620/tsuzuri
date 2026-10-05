@@ -10,7 +10,7 @@ import {
 } from "../backend/progress";
 import { t } from "../i18n";
 import { failureCode } from "../ui/failure";
-import { notify, notifyFailure } from "../ui/notification";
+import { notify, notifyFailure } from "../ui/notification.svelte";
 import { progressLine, progressSummary, type TaskKind } from "../ui/progress";
 
 /** Where each task's messages are kept: under the dialog that starts it. */

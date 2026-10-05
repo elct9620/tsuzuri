@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
-import { render, screen } from "@testing-library/svelte";
+import { cleanup, render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -13,10 +13,10 @@ import TranscriptController from "../controllers/transcript_controller";
 import { EditingSession } from "../editor";
 import { projectOf, resourceOf } from "../test_project";
 import {
-  NOTIFICATION_STACK,
+  showNotifications,
   notificationItems,
   notifications,
-} from "../ui/test_notification";
+} from "./test_notifications";
 import { pageContext } from "./context";
 import { TaskRun } from "./task_run.svelte";
 import TaskProgress from "./TaskProgress.svelte";
@@ -81,7 +81,7 @@ describe("TranslationDialog", () => {
       ],
       unmatched_count: 0,
     });
-    document.body.innerHTML = NOTIFICATION_STACK;
+    showNotifications();
     mockIPC((command, args) => {
       if (command === "current_project") return project;
       if (command === "translation_settings")
@@ -293,7 +293,8 @@ describe("TranslationDialog", () => {
   // @behavior TL-103
   it("starts no translation while another task runs", async () => {
     const run = new TaskRun();
-    document.body.innerHTML = NOTIFICATION_STACK;
+    cleanup();
+    showNotifications();
     renderWithToolbar(
       TranslationDialog,
       "openTranslation",
@@ -359,8 +360,8 @@ describe("TranslationDialog, translating chosen Segments again", () => {
         </div>
         <ol id="list" data-transcript-target="list"></ol>
       </section>
-      ${NOTIFICATION_STACK}
     `;
+    showNotifications();
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;

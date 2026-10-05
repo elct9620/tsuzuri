@@ -13,11 +13,11 @@ import TranscriptController from "../controllers/transcript_controller";
 import { EditingSession } from "../editor";
 import { projectOf, resourceOf } from "../test_project";
 import {
-  NOTIFICATION_STACK,
+  showNotifications,
   notificationDetail,
   notificationItems,
   notifications,
-} from "../ui/test_notification";
+} from "./test_notifications";
 import { pageContext } from "./context";
 import { TaskRun } from "./task_run.svelte";
 import TaskProgress from "./TaskProgress.svelte";
@@ -92,7 +92,7 @@ describe("TranscriptionDialog", () => {
     translateArgs = undefined;
     transcribeArgs = undefined;
     commandsSent = [];
-    document.body.innerHTML = NOTIFICATION_STACK;
+    showNotifications();
     mockIPC((command, args) => {
       commandsSent.push(command);
       if (command === "current_project") return project;
@@ -503,8 +503,8 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
         </div>
         <ol id="list" data-transcript-target="list"></ol>
       </section>
-      ${NOTIFICATION_STACK}
     `;
+    showNotifications();
     mockIPC(
       (command, args) => {
         commandsSent.push(command);

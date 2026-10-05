@@ -16,7 +16,7 @@ import { fieldValue, markRanges, textRange, type TimeEdge } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
-import { notifyFailure, notifyRestoration } from "../ui/notification";
+import { notifyFailure, notifyRestoration } from "../ui/notification.svelte";
 import { formatTime, localTime, parseTime } from "../ui/time";
 import type VersionsController from "./versions_controller";
 

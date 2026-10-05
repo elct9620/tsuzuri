@@ -164,7 +164,7 @@ controller ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/command
              │        （failure.rs，應用層）                  │
              │                    ui/failure.ts（依 code 給訊息與種類）◀┘
              │                                                │
-             │                        ui/notification.ts（toast）◀┘
+             │               ui/notification.svelte.ts（toast）◀┘
 ```
 
 `Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤由 `llama.rs`、hf-hub 的錯誤由 `hub.rs` 轉換。通知種類也依錯誤碼決定：拒絕是自動消失的 warning，出錯是留到關閉的 error。
@@ -661,7 +661,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `timeline` | 波形、段落區段、縮放 |
 | `versions` | 版本 modal |
 | `tooltip` | 全頁共用的 tooltip |
-| `notification` | 每則通知的倒數、暫停與按鈕 |
 | `undo` | 全頁的復原與重做 |
 | `field` | 每個編輯欄位接上 session |
 | `time-field` | 時間欄覆寫輸入 |
@@ -722,6 +721,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `TaskProgress` | 標題列的任務進度徽章 |
 | `ShortcutsDialog` | 快速鍵一覽 |
 | `ReplacementDialog` | 取代 modal |
+| `Notifications`、`NotificationCard` | 通知的堆疊、倒數、暫停與按鈕 |
 
 ### 4.7 backend
 
@@ -749,7 +749,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 | 模組 | 內容 |
 |---|---|
-| `ui/notification.ts` | 產生 toast 通知，互動交給 `notification` |
+| `ui/notification.svelte.ts` | 通知的清單，controller 與 Svelte 元件都由此發出 |
 | `ui/save_mark.ts` | 標題列的存檔提示與計時 |
 | `ui/failure.ts` | 錯誤碼的訊息與通知種類 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |

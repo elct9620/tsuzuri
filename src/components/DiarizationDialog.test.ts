@@ -8,10 +8,10 @@ import { ProjectFeed, type ProjectView } from "../backend/project";
 import { EditingSession } from "../editor";
 import { projectOf, resourceOf } from "../test_project";
 import {
-  NOTIFICATION_STACK,
+  showNotifications,
   notificationItems,
   notifications,
-} from "../ui/test_notification";
+} from "./test_notifications";
 import { pageContext } from "./context";
 import DiarizationDialog from "./DiarizationDialog.svelte";
 import { renderWithToolbar } from "./test_toolbar";
@@ -57,7 +57,7 @@ describe("DiarizationDialog", () => {
   beforeEach(() => {
     project = null;
     commandsSent = [];
-    document.body.innerHTML = NOTIFICATION_STACK;
+    showNotifications();
     mockIPC((command) => {
       commandsSent.push(command);
       if (command === "current_project") return project;

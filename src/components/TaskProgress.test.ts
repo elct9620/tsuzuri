@@ -8,7 +8,7 @@ import { editingPort } from "../backend/editing";
 import type { PipelineProgress } from "../backend/progress";
 import { ProjectFeed } from "../backend/project";
 import { EditingSession } from "../editor";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import { showNotifications, notifications } from "./test_notifications";
 import { pageContext } from "./context";
 import { TaskRun } from "./task_run.svelte";
 import TaskProgress from "./TaskProgress.svelte";
@@ -36,7 +36,7 @@ describe("TaskProgress", () => {
     screen.queryByRole("button", { name: /轉錄|翻譯|準備/ });
 
   beforeEach(() => {
-    document.body.innerHTML = NOTIFICATION_STACK;
+    showNotifications();
     isCancelAsked = false;
     mockIPC((command) => {
       if (command === "cancel_task") isCancelAsked = true;

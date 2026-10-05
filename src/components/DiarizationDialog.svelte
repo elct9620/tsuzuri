@@ -6,7 +6,7 @@
   import { modelSettings } from "../backend/toolchain";
   import { t } from "../i18n";
   import { sourceFileName } from "../ui/models";
-  import { notifyDiarization } from "../ui/notification";
+  import { notifyDiarization } from "../ui/notification.svelte";
   import { projectFeed, taskRun } from "./context";
 
   const feed = projectFeed();

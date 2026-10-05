@@ -8,10 +8,7 @@ import type {
   ModelSource,
   PresetModel,
 } from "../../../backend/toolchain";
-import {
-  NOTIFICATION_STACK,
-  notifications,
-} from "../../../ui/test_notification";
+import { showNotifications, notifications } from "../../test_notifications";
 import RepositoryDialog from "../RepositoryDialog.svelte";
 import Models from "./Models.svelte";
 
@@ -135,7 +132,7 @@ describe("Models", () => {
     calls = [];
     handlers = {};
     settings = () => viewWith(null);
-    document.body.innerHTML = NOTIFICATION_STACK;
+    showNotifications();
     mockIPC((command, args) => {
       calls.push({ command, args });
       if (command in handlers) return handlers[command](args);

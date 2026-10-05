@@ -1,20 +1,18 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { editingPort } from "../../../backend/editing";
 import { ProjectFeed } from "../../../backend/project";
-import NotificationController from "../../../controllers/notification_controller";
 import type { AppUpdate } from "../../../backend/updates";
 import { EditingSession } from "../../../editor";
 import {
-  NOTIFICATION_STACK,
+  showNotifications,
   notificationAction,
   notificationDetail,
   notifications,
-} from "../../../ui/test_notification";
+} from "../../test_notifications";
 import { pageContext } from "../../context";
 import UpdatesDialog from "../../UpdatesDialog.svelte";
 import VersionAndUpdates from "./VersionAndUpdates.svelte";
@@ -91,7 +89,7 @@ describe("VersionAndUpdates", () => {
     channel = "stable";
     stableRelease = null;
     installRefusal = null;
-    document.body.innerHTML = NOTIFICATION_STACK;
+    showNotifications();
     mockIPC((command, args) => {
       calls.push({ command, args });
       const settings = () => ({ has_launch_check: hasLaunchCheck, channel });
@@ -222,13 +220,10 @@ describe("VersionAndUpdates", () => {
   // @behavior UP-016
   it("shows the percentage downloaded in a window that stays open", async () => {
     updateAtLaunch = STABLE_RELEASE;
-    const application = Application.start();
-    application.register("notification", NotificationController);
     await openSettings();
     await settle();
     notificationAction(0)!.click();
     await settle();
-    application.stop();
 
     window.dispatchEvent(
       new CustomEvent("rust:update-progress", {

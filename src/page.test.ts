@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { within } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
-import { tick } from "svelte";
+import { tick, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { editingPort } from "./backend/editing";
 import { ProjectFeed } from "./backend/project";
@@ -12,11 +12,20 @@ import { mockPageMount } from "./test_page";
 import { projectOf, resourceOf } from "./test_project";
 
 describe("drawPage", () => {
+  /** The pages each test draws, taken away after it so their Svelte Components stop following. */
+  const drawnPages: Record<string, unknown>[] = [];
+
+  /** Draws the page into `target` as `drawPage` does, to be taken away after the test. */
+  function drawTestPage(...args: Parameters<typeof drawPage>): void {
+    drawnPages.push(drawPage(...args));
+  }
+
   beforeEach(() => {
     mockPageMount();
   });
 
   afterEach(() => {
+    drawnPages.splice(0).forEach((page) => unmount(page));
     clearMocks();
   });
 
@@ -35,7 +44,7 @@ describe("drawPage", () => {
   ])("writes the %s", (_part, selector) => {
     const page = document.createElement("div");
 
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
     expect(page.querySelector(selector)).not.toBeNull();
   });
@@ -54,7 +63,7 @@ describe("drawPage", () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
 
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
     const generalTab = within(page).getByRole("radio", {
       hidden: true,
@@ -69,7 +78,7 @@ describe("drawPage", () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
 
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
     const preferencesTab = within(page).getByRole("radio", {
       hidden: true,
@@ -96,7 +105,7 @@ describe("drawPage", () => {
     });
     const feed = new ProjectFeed();
     await feed.refresh();
-    drawPage(feed, new EditingSession(editingPort), page);
+    drawTestPage(feed, new EditingSession(editingPort), page);
     await tick();
 
     within(page)
@@ -114,7 +123,7 @@ describe("drawPage", () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
 
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
     expect(
       within(page).queryByRole("combobox", {
@@ -133,7 +142,7 @@ describe("drawPage", () => {
     });
     const feed = new ProjectFeed();
     await feed.refresh();
-    drawPage(feed, new EditingSession(editingPort), page);
+    drawTestPage(feed, new EditingSession(editingPort), page);
     await tick();
 
     within(page)
@@ -166,7 +175,7 @@ describe("drawPage", () => {
       const feed = new ProjectFeed();
       await feed.refresh();
 
-      drawPage(feed, new EditingSession(editingPort), page);
+      drawTestPage(feed, new EditingSession(editingPort), page);
       await tick();
 
       const projectTab = within(page).getByRole("radio", {
@@ -186,7 +195,7 @@ describe("drawPage", () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
 
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
     expect(
       within(page).queryByRole("button", {
@@ -200,7 +209,7 @@ describe("drawPage", () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
 
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
     expect(
       within(page).queryByText(t("settings.updateRestartHint")),
@@ -214,7 +223,7 @@ describe("drawPage", () => {
     const page = document.createElement("div");
     document.body.append(page);
     await setInterfaceLanguage("zh-TW");
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
     within(page.querySelector<HTMLElement>(selector)!)
@@ -239,7 +248,7 @@ describe("drawPage", () => {
         has_source_target_header: false,
       }),
     });
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
     page
@@ -257,7 +266,7 @@ describe("drawPage", () => {
   it("opens the shortcut list from the toolbar", async () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
     within(page.querySelector<HTMLElement>("header")!)
@@ -274,7 +283,7 @@ describe("drawPage", () => {
   it("opens the replace dialog from the editor bar", async () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
     within(page)

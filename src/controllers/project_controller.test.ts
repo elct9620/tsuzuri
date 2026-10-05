@@ -7,10 +7,10 @@ import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
 import {
-  NOTIFICATION_STACK,
+  showNotifications,
   notificationDetail,
   notifications,
-} from "../ui/test_notification";
+} from "../components/test_notifications";
 import { composingOption } from "./field_controller";
 import ProjectController from "./project_controller";
 import ResourceListController from "./resource_list_controller";
@@ -421,7 +421,7 @@ describe("ProjectController", () => {
 
   // @behavior PJ-134
   it("tells the user a version changed elsewhere was kept", async () => {
-    document.body.insertAdjacentHTML("beforeend", NOTIFICATION_STACK);
+    showNotifications();
     await hold(projectOf());
 
     await emit("changed-elsewhere-kept");

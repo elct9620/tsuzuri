@@ -10,7 +10,7 @@
   } from "../../../backend/toolchain";
   import { t } from "../../../i18n";
   import { sourceName, type HubFile } from "../../../ui/models";
-  import { notifyFailure } from "../../../ui/notification";
+  import { notifyFailure } from "../../../ui/notification.svelte";
   import ModelSlot from "../ModelSlot.svelte";
 
   interface Props {

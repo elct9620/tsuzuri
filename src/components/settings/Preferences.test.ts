@@ -6,7 +6,7 @@ import {
   DEFAULT_PREFERENCES,
   type Preferences as SavedPreferences,
 } from "../../backend/preferences";
-import { NOTIFICATION_STACK, notifications } from "../../ui/test_notification";
+import { showNotifications, notifications } from "../test_notifications";
 import Preferences from "./Preferences.svelte";
 
 describe("Preferences", () => {
@@ -36,7 +36,7 @@ describe("Preferences", () => {
     savedArgs = [];
     isSavingRefused = false;
     savedEvents = 0;
-    document.body.innerHTML = NOTIFICATION_STACK;
+    showNotifications();
     listening = new AbortController();
     window.addEventListener("preferences:saved", () => savedEvents++, {
       signal: listening.signal,

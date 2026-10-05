@@ -12,7 +12,7 @@
     type LogDirectory,
   } from "../../../backend/logs";
   import { t } from "../../../i18n";
-  import { notifyFailure } from "../../../ui/notification";
+  import { notifyFailure } from "../../../ui/notification.svelte";
   import HelpButton from "../HelpButton.svelte";
 
   /** Where the log is written in this launch and where after a restart, once read. */

@@ -7,7 +7,7 @@ import { ProjectFeed, type ProjectView } from "../backend/project";
 import { EditingSession } from "../editor";
 import { mockPageMount } from "../test_page";
 import { projectOf } from "../test_project";
-import { NOTIFICATION_STACK } from "../ui/test_notification";
+import { showNotifications } from "./test_notifications";
 import { pageContext } from "./context";
 import SettingsDialog from "./SettingsDialog.svelte";
 
@@ -19,7 +19,7 @@ describe("SettingsDialog", () => {
 
   /** Opens the settings while `project` is open, or none. */
   async function openSettings(project: ProjectView | null): Promise<void> {
-    document.body.innerHTML = NOTIFICATION_STACK;
+    showNotifications();
     mockPageMount(project);
     feed = new ProjectFeed();
     await feed.refresh();

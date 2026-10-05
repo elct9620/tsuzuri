@@ -7,7 +7,7 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/i18n.test.ts`
 - `src/ui/menu.test.ts`
 - `src/controllers/tooltip_controller.test.ts`
-- `src/ui/notification.test.ts`
+- `src/components/Notifications.test.ts`
 - `src/ui/save_mark.test.ts`
 - `src/ui/icons.test.ts`
 - `src/ui/shortcuts.test.ts`

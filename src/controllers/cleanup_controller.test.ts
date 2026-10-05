@@ -6,7 +6,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf } from "../test_project";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import {
+  showNotifications,
+  notifications,
+} from "../components/test_notifications";
 import CleanupController from "./cleanup_controller";
 import FieldController, { composingOption } from "./field_controller";
 import SegmentChangesController from "./segment_changes_controller";
@@ -40,7 +43,6 @@ describe("CleanupController", () => {
     sentCalls = [];
     count = 2;
     document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes cleanup"
         data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow transcript:shown->segment-changes#followTasks">
         <h2 data-transcript-target="heading"></h2>
@@ -60,6 +62,7 @@ describe("CleanupController", () => {
         <ol data-transcript-target="list"></ol>
       </section>
     `;
+    showNotifications();
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;

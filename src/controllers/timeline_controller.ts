@@ -22,7 +22,7 @@ import {
 } from "../editor";
 import { t } from "../i18n";
 import { rememberedFlag, rememberFlag } from "../ui/choices";
-import { notifyEdit, notifyFailure } from "../ui/notification";
+import { notifyEdit, notifyFailure } from "../ui/notification.svelte";
 import {
   type PlayedSource,
   SILENT_PEAKS,

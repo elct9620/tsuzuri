@@ -2,7 +2,10 @@
 import { Application } from "@hotwired/stimulus";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import {
+  showNotifications,
+  notifications,
+} from "../components/test_notifications";
 import type { ComparedRow } from "../backend/project";
 import VersionsController from "./versions_controller";
 
@@ -57,7 +60,6 @@ describe("VersionsController", () => {
       },
     ];
     document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
       <div data-controller="versions">
         <button id="open" data-action="versions#open">版本</button>
         <dialog data-versions-target="dialog">
@@ -74,6 +76,7 @@ describe("VersionsController", () => {
         </dialog>
       </div>
     `;
+    showNotifications();
     mockIPC((command, args) => {
       if (command === "subtitle_versions")
         return [

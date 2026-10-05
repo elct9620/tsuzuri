@@ -7,7 +7,7 @@
     type TranslationSettings,
   } from "../../../backend/translation";
   import { t } from "../../../i18n";
-  import { notifyFailure } from "../../../ui/notification";
+  import { notifyFailure } from "../../../ui/notification.svelte";
   import HelpButton from "../HelpButton.svelte";
 
   /** The general translation settings as the fields stand; a number field left empty is null. */

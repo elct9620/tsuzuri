@@ -10,7 +10,7 @@
   import { isMacOS } from "../backend/system";
   import type { CursorField } from "../editor";
   import { t } from "../i18n";
-  import { notify, notifyFailure } from "../ui/notification";
+  import { notify, notifyFailure } from "../ui/notification.svelte";
   import { isShortcut } from "../ui/shortcuts";
   import { selectedText } from "../ui/text_fields";
   import { editingSession, projectFeed } from "./context";

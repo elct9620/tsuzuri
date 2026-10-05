@@ -7,7 +7,6 @@ import ComparisonController from "./controllers/comparison_controller";
 import FieldController, {
   composingOption,
 } from "./controllers/field_controller";
-import NotificationController from "./controllers/notification_controller";
 import PreviewController from "./controllers/preview_controller";
 import ProjectController from "./controllers/project_controller";
 import RecentProjectsController from "./controllers/recent_projects_controller";
@@ -40,7 +39,6 @@ async function start(): Promise<void> {
   const assembly = assemble(application, {
     comparison: ComparisonController,
     field: FieldController,
-    notification: NotificationController,
     preview: PreviewController,
     project: ProjectController,
     "recent-projects": RecentProjectsController,

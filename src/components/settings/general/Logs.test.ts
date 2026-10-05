@@ -3,10 +3,7 @@ import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Logs from "./Logs.svelte";
-import {
-  NOTIFICATION_STACK,
-  notifications,
-} from "../../../ui/test_notification";
+import { showNotifications, notifications } from "../../test_notifications";
 
 describe("Logs", () => {
   let calls: { command: string; args: unknown }[];
@@ -53,7 +50,7 @@ describe("Logs", () => {
     debugLogInUse = false;
     hasDebugLogChosen = false;
     failingCommand = null;
-    document.body.innerHTML = NOTIFICATION_STACK;
+    showNotifications();
     mockIPC((command, args) => {
       calls.push({ command, args });
       if (command === failingCommand)

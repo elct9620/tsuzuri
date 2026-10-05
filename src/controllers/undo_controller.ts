@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 import type { EditCommand } from "../backend/project";
 import { isTextField, type EditingSession } from "../editor";
-import { notifyEdit } from "../ui/notification";
+import { notifyEdit } from "../ui/notification.svelte";
 
 /**
  * Routes a key event by whether it was typed in a text field: `:typing` routes only those,

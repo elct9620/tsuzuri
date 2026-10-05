@@ -3,7 +3,7 @@
 
   import { openReleases, openSponsorship } from "../../../backend/about";
   import { t } from "../../../i18n";
-  import { notifyFailure } from "../../../ui/notification";
+  import { notifyFailure } from "../../../ui/notification.svelte";
 
   interface Props {
     /** Opens the full License Notice. */

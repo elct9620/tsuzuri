@@ -31,7 +31,7 @@ import {
 } from "../editor";
 import { t } from "../i18n";
 import { closeMenu } from "../ui/menu";
-import { notifyFailure } from "../ui/notification";
+import { notifyFailure } from "../ui/notification.svelte";
 import { iconElement } from "../ui/icons";
 import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { shortcutById, shortcutText } from "../ui/shortcuts";

@@ -7,7 +7,7 @@
     type TranscriptionSettings,
   } from "../../../backend/transcription";
   import { t } from "../../../i18n";
-  import { notifyFailure } from "../../../ui/notification";
+  import { notifyFailure } from "../../../ui/notification.svelte";
   import HelpButton from "../HelpButton.svelte";
 
   /** The general Transcription Settings, the default of every Project, as the switches stand. */

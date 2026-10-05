@@ -25,7 +25,7 @@
     notifyDiarization,
     notifyTranscription,
     notifyTranslation,
-  } from "../ui/notification";
+  } from "../ui/notification.svelte";
   import { formatTime } from "../ui/time";
   import { projectFeed, taskRun } from "./context";
   import { TranslationChoices } from "./translation_choices.svelte";

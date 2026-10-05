@@ -10,7 +10,10 @@ import type {
   SubtitleVersions,
 } from "../backend/project";
 import { projectOf, resourceOf } from "../test_project";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import {
+  showNotifications,
+  notifications,
+} from "../components/test_notifications";
 import ComparisonController from "./comparison_controller";
 import TranscriptController from "./transcript_controller";
 
@@ -155,8 +158,8 @@ describe("ComparisonController", () => {
         <p data-transcript-target="emptyHint"></p>
         <ol data-transcript-target="list" data-comparison-target="list"></ol>
       </main>
-      ${NOTIFICATION_STACK}
     `;
+    showNotifications();
     unmatchedCount = 0;
     takeRows = () => rows;
     takeVersions = () => versions;

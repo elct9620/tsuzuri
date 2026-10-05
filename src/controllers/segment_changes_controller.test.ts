@@ -7,11 +7,11 @@ import { assemble } from "../assembly";
 import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
 import {
-  NOTIFICATION_STACK,
+  showNotifications,
   notificationCountdown,
   notificationDetail,
   notifications,
-} from "../ui/test_notification";
+} from "../components/test_notifications";
 import { drawPage } from "../page";
 import { mockPageMount } from "../test_page";
 import { projectOf } from "../test_project";
@@ -86,7 +86,6 @@ describe("SegmentChangesController", () => {
     menus = [];
     popupCount = 0;
     document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes" data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut rust:edit-command@window->segment-changes#applyEditCommand">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
@@ -104,6 +103,7 @@ describe("SegmentChangesController", () => {
         <ol data-transcript-target="list"></ol>
       </section>
     `;
+    showNotifications();
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
@@ -802,7 +802,7 @@ describe("SegmentChangesController", () => {
       await hold(threeSegments);
       await enter(0, 2);
       await openMenu(0);
-      refusal = { code: "segment", detail: "refused" };
+      refusal = { code: "no-row", row: 0 };
 
       await choose(0, "split");
       await hold(threeSegments);

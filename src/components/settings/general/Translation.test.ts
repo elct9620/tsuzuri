@@ -3,10 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Translation from "./Translation.svelte";
-import {
-  NOTIFICATION_STACK,
-  notifications,
-} from "../../../ui/test_notification";
+import { showNotifications, notifications } from "../../test_notifications";
 
 describe("Translation", () => {
   let savedArgs: unknown;
@@ -28,7 +25,7 @@ describe("Translation", () => {
   beforeEach(() => {
     savedArgs = undefined;
     failingCommand = null;
-    document.body.innerHTML = NOTIFICATION_STACK;
+    showNotifications();
     mockIPC((command, args) => {
       if (command === failingCommand)
         return Promise.reject({ code: "io", detail: "denied" });

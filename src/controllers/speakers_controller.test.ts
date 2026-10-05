@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf } from "../test_project";
-import { NOTIFICATION_STACK } from "../ui/test_notification";
+import { showNotifications } from "../components/test_notifications";
 import SegmentChangesController from "./segment_changes_controller";
 import SpeakersController from "./speakers_controller";
 import TranscriptController from "./transcript_controller";
@@ -73,7 +73,6 @@ describe("SpeakersController", () => {
     project = null;
     setSpeakersArgs = undefined;
     document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
       <section data-controller="transcript segment-changes speakers"
         data-action="selectionchange@document->transcript#followSelection transcript:shown->speakers#follow editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked segment-changes:speakers->speakers#openForChecked">
         <h2 data-transcript-target="heading"></h2>
@@ -101,6 +100,7 @@ describe("SpeakersController", () => {
         <ol data-transcript-target="list"></ol>
       </section>
     `;
+    showNotifications();
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;

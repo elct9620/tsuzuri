@@ -11,7 +11,7 @@ import FieldController, {
 } from "../controllers/field_controller";
 import TranscriptController from "../controllers/transcript_controller";
 import { projectOf } from "../test_project";
-import { NOTIFICATION_STACK, notifications } from "../ui/test_notification";
+import { showNotifications, notifications } from "./test_notifications";
 import { pageContext } from "./context";
 import ReplacementDialog from "./ReplacementDialog.svelte";
 
@@ -58,7 +58,6 @@ describe("ReplacementDialog", () => {
     replaceArgs = [];
     count = 1;
     document.body.innerHTML = `
-      ${NOTIFICATION_STACK}
       <section data-controller="transcript"
         data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor">
         <h2 data-transcript-target="heading"></h2>
@@ -67,6 +66,7 @@ describe("ReplacementDialog", () => {
         <ol data-transcript-target="list"></ol>
       </section>
     `;
+    showNotifications();
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;

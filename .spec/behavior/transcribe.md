@@ -10,7 +10,6 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 - `src/components/TaskProgress.test.ts`
 - `src/controllers/transcript-controller.test.ts`
 - `src/components/settings/general/Transcription.test.ts`
-- `src/controllers/project-controller.test.ts`
 - `src/components/settings/project/Transcription.test.ts`
 
 ## `TX-001` Transcribing a media file

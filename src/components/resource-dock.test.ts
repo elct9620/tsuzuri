@@ -33,8 +33,7 @@ describe("ResourceDock", () => {
   let feed: ProjectFeed;
   let selectedNames: string[];
 
-  const drawer = () =>
-    document.querySelector<HTMLElement>('[data-project-target="workspace"]')!;
+  const drawer = () => document.querySelector<HTMLElement>(".drawer")!;
   const isDocked = () => drawer().hasAttribute("data-is-docked");
   const isOverlaid = () =>
     document.querySelector<HTMLInputElement>(".drawer-toggle")!.checked;

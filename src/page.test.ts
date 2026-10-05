@@ -1,15 +1,23 @@
 // @vitest-environment happy-dom
-import { within } from "@testing-library/svelte";
+import { Application } from "@hotwired/stimulus";
+import { screen, within } from "@testing-library/svelte";
+import { emit } from "@tauri-apps/api/event";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { tick, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { assemble } from "./assembly";
 import { editingPort } from "./backend/editing";
-import { ProjectFeed } from "./backend/project";
+import { ProjectFeed, type ProjectView } from "./backend/project";
 import { EditingSession } from "./editor";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
 import { mockPageMount } from "./test-page";
 import { projectOf, resourceOf } from "./test-project";
+import {
+  notificationDetail,
+  notifications,
+} from "./components/test-notifications";
+import { notificationStack } from "./ui/notification.svelte";
 
 describe("drawPage", () => {
   /** The pages each test draws, taken away after it so their Svelte Components stop following. */
@@ -32,8 +40,6 @@ describe("drawPage", () => {
   // Each part is found by what its controller, module or Svelte Component reads, so a Svelte
   // Component left out of the page leaves nothing for them to read.
   it.each([
-    ["start screen", '[data-project-target="startScreen"]'],
-    ["toolbar", '[data-project-target="name"]'],
     ["editor bar", '[data-controller="versions"]'],
     ["preview", '[data-preview-target="panel"]'],
     ["Segment list", '[data-transcript-target="list"]'],
@@ -45,6 +51,24 @@ describe("drawPage", () => {
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
     expect(page.querySelector(selector)).not.toBeNull();
+  });
+
+  // A converted part is found by its accessible name, which only its Svelte Component writes.
+  it.each([
+    ["start screen", "region", "Tsuzuri"],
+    ["toolbar", "textbox", "toolbar.projectName"],
+  ])("writes the %s", async (_part, role, name) => {
+    // In the document, so a name given by `aria-labelledby` finds the element it names.
+    const page = document.createElement("div");
+    document.body.append(page);
+    await setInterfaceLanguage("zh-TW");
+
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
+
+    expect(
+      within(page).queryByRole(role, { hidden: true, name: t(name) }),
+    ).not.toBeNull();
+    page.remove();
   });
 
   it("writes the resource list", async () => {
@@ -229,7 +253,7 @@ describe("drawPage", () => {
   });
 
   it.each([
-    ["start screen", '[data-project-target="startScreen"]'],
+    ["start screen", "section"],
     ["toolbar", "header"],
   ])("opens the settings from the %s", async (_place, selector) => {
     const page = document.createElement("div");
@@ -324,5 +348,113 @@ describe("drawPage", () => {
         .getByRole("heading", { hidden: true, name: t("replace.title") })
         .closest("dialog")!.open,
     ).toBe(true);
+  });
+});
+
+describe("Page", () => {
+  let project: ProjectView | null;
+  let requestedSrt: string | null;
+  let sentSrt: unknown;
+  let page: Record<string, unknown>;
+  let stop: () => void;
+
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  /**
+   * Starts the page as `main.ts` does, relaying Rust events and reading the Project, and clears the
+   * Notifications its Svelte Components show for the reads this test leaves unanswered.
+   */
+  async function start(): Promise<void> {
+    const assembly = assemble(new Application(), {});
+    page = drawPage(assembly.feed, assembly.session);
+    stop = await assembly.start();
+    await settle();
+    notificationStack.clear();
+  }
+
+  /** Holds `next` as the Project, clearing the Notifications of the reads it leaves unanswered. */
+  async function hold(next: ProjectView | null): Promise<void> {
+    project = next;
+    await emit("project-changed");
+    await settle();
+    notificationStack.clear();
+  }
+
+  beforeEach(() => {
+    project = null;
+    requestedSrt = null;
+    sentSrt = undefined;
+    mockPageMount(null, {
+      current_project: () => project,
+      recent_projects: () => [],
+      take_requested_srt: () => {
+        const takenSrt = requestedSrt;
+        requestedSrt = null;
+        return takenSrt;
+      },
+      open_srt: (args) => (sentSrt = args),
+    });
+  });
+
+  afterEach(() => {
+    stop();
+    unmount(page);
+    clearMocks();
+  });
+
+  // @behavior PJ-036
+  it("shows only the start screen without a Project", async () => {
+    await start();
+
+    expect([
+      screen.queryByRole("region", { name: "Tsuzuri" }) !== null,
+      document.querySelector<HTMLElement>(".drawer")!.hidden,
+    ]).toEqual([true, true]);
+  });
+
+  it("puts the start screen away once a Project is open", async () => {
+    await start();
+
+    await hold(projectOf());
+
+    expect([
+      screen.queryByRole("region", { name: "Tsuzuri" }),
+      document.querySelector<HTMLElement>(".drawer")!.hidden,
+    ]).toEqual([null, false]);
+  });
+
+  // @behavior PJ-171
+  it("opens the Requested SRT as the page starts", async () => {
+    requestedSrt = "/talks/ep02.srt";
+
+    await start();
+
+    expect(sentSrt).toEqual({ path: "/talks/ep02.srt", language: "zh-TW" });
+  });
+
+  // @behavior PJ-172
+  it("opens an SRT file requested while the page runs", async () => {
+    await start();
+    await hold(projectOf({ directory: "/videos/lecture" }));
+    requestedSrt = "/talks/ep02.srt";
+
+    await emit("srt-requested");
+    await settle();
+
+    expect(sentSrt).toEqual({ path: "/talks/ep02.srt", language: "zh-TW" });
+  });
+
+  // @behavior PJ-134
+  it("tells the user a version changed elsewhere was kept", async () => {
+    await start();
+    await hold(projectOf());
+
+    await emit("changed-elsewhere-kept");
+    await settle();
+
+    expect([notifications(), notificationDetail(0)]).toEqual([
+      ["字幕已在其他程式修改過並重新讀取"],
+      "Tsuzuri 原本的內容已留作備份，可在「版本」比較或還原",
+    ]);
   });
 });

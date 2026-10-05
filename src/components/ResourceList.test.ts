@@ -22,6 +22,7 @@ describe("ResourceList", () => {
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
   let selectFailure: unknown;
+  let reloadProject: () => unknown;
   let unfollow: () => void;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -51,12 +52,14 @@ describe("ResourceList", () => {
     project = null;
     calls = [];
     selectFailure = undefined;
+    reloadProject = () => null;
     mockIPC(
       (command, args) => {
         calls.push({ command, args });
         if (command === "current_project") return project;
         if (command === "select_resource" && selectFailure !== undefined)
           return Promise.reject(selectFailure);
+        if (command === "reload_project") return reloadProject();
       },
       { shouldMockEvents: true },
     );
@@ -65,6 +68,9 @@ describe("ResourceList", () => {
   });
 
   afterEach(() => {
+    Object.assign(window, {
+      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
+    });
     unfollow();
     clearMocks();
   });
@@ -188,5 +194,69 @@ describe("ResourceList", () => {
     await choose("ep02");
 
     expect(isAnnounced).toBe(true);
+  });
+
+  // @behavior PJ-116
+  it("reloads the Project from the button above the Resource list or its shortcut", async () => {
+    await show(projectOf());
+
+    screen.getByRole("button", { name: "重新載入" }).click();
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "r", ctrlKey: true }),
+    );
+    await settle();
+
+    expect(
+      calls.filter((call) => call.command === "reload_project").length,
+    ).toBe(2);
+  });
+
+  // @behavior PJ-116
+  it("reloads the Project with ⌘R on macOS", async () => {
+    Object.assign(window, {
+      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
+    });
+    await show(projectOf());
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "r", metaKey: true }),
+    );
+    await settle();
+
+    expect(sent("reload_project")).not.toBeUndefined();
+  });
+
+  // @behavior PJ-120
+  it("leaves the field being typed in before reloading", async () => {
+    await show(projectOf());
+    const field = document.createElement("div");
+    field.tabIndex = 0;
+    document.body.append(field);
+    const order: string[] = [];
+    field.addEventListener("blur", () => order.push("leave"));
+    field.focus();
+    reloadProject = () => order.push("reload");
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "r", ctrlKey: true }),
+    );
+    await settle();
+    field.remove();
+
+    expect(order).toEqual(["leave", "reload"]);
+  });
+
+  it("reloads nothing without a Project", async () => {
+    render(ResourceList, {
+      props: { dock: new ResourceDock(), openGlossary: () => {} },
+      context: pageContext(feed, new EditingSession(editingPort)),
+    });
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "r", ctrlKey: true }),
+    );
+    await settle();
+
+    expect(sent("reload_project")).toBeUndefined();
   });
 });

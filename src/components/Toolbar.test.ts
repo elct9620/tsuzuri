@@ -5,10 +5,15 @@ import { unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { editingPort } from "../backend/editing";
-import { ProjectFeed, type RecentProjectView } from "../backend/project";
+import {
+  ProjectFeed,
+  type ProjectView,
+  type RecentProjectView,
+} from "../backend/project";
 import { EditingSession } from "../editor";
 import { drawPage } from "../page";
 import { mockPageMount } from "../test-page";
+import { projectOf } from "../test-project";
 
 const LECTURE: RecentProjectView = {
   directory: "/videos/lecture",
@@ -18,10 +23,14 @@ const LECTURE: RecentProjectView = {
 
 describe("Toolbar", () => {
   let recent: RecentProjectView[];
+  let project: ProjectView | null;
+  let sentOptions: unknown;
   let page: Record<string, unknown>;
   let unfollow: () => void;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const nameField = () =>
+    screen.getByRole<HTMLInputElement>("textbox", { name: "專案名稱" });
 
   /** Draws the page as the app starts; the toolbar stays drawn while no Project is open. */
   async function showPage(): Promise<void> {
@@ -33,7 +42,13 @@ describe("Toolbar", () => {
 
   beforeEach(() => {
     recent = [LECTURE];
-    mockPageMount(null, { recent_projects: () => recent });
+    project = null;
+    sentOptions = undefined;
+    mockPageMount(null, {
+      current_project: () => project,
+      recent_projects: () => recent,
+      set_project_options: (args) => (sentOptions = args),
+    });
   });
 
   afterEach(() => {
@@ -59,5 +74,54 @@ describe("Toolbar", () => {
     expect(
       screen.queryByRole("button", { hidden: true, name: "週會錄影" }),
     ).not.toBeNull();
+  });
+
+  // @behavior PJ-175
+  it("shows the Project Name in the toolbar and the window title", async () => {
+    project = projectOf({ name: "週會錄影" });
+
+    await showPage();
+
+    expect([nameField().value, document.title]).toEqual([
+      "週會錄影",
+      "週會錄影 - Tsuzuri",
+    ]);
+  });
+
+  // @behavior PJ-181
+  it("sets the Project Name typed over the toolbar's", async () => {
+    project = projectOf({ name: "lecture" });
+    await showPage();
+
+    nameField().value = "週會錄影";
+    nameField().dispatchEvent(new Event("change", { bubbles: true }));
+    await settle();
+
+    expect(sentOptions).toEqual({
+      options: { ...projectOf().options, name: "週會錄影" },
+    });
+  });
+
+  // @behavior PJ-182
+  it("puts back the toolbar's Project Name when Esc is pressed", async () => {
+    project = projectOf({
+      name: "週會錄影",
+      options: { ...projectOf().options, name: "週會錄影" },
+    });
+    await showPage();
+    const name = nameField();
+    name.focus();
+
+    name.value = "lecture";
+    name.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    await settle();
+
+    expect([name.value, document.activeElement === name, sentOptions]).toEqual([
+      "週會錄影",
+      false,
+      undefined,
+    ]);
   });
 });

@@ -1,8 +1,11 @@
 <script lang="ts">
   import AudioLines from "@lucide/svelte/icons/audio-lines";
+  import ChevronDown from "@lucide/svelte/icons/chevron-down";
+  import FolderOpen from "@lucide/svelte/icons/folder-open";
   import Languages from "@lucide/svelte/icons/languages";
   import Menu from "@lucide/svelte/icons/menu";
   import PanelLeft from "@lucide/svelte/icons/panel-left";
+  import Pencil from "@lucide/svelte/icons/pencil";
   import Users from "@lucide/svelte/icons/users";
   import { onMount } from "svelte";
 
@@ -13,7 +16,12 @@
   } from "../backend/project";
   import { t } from "../i18n";
   import { projectFeed } from "./context";
-  import { openRecent } from "./project-actions";
+  import {
+    openDirectory,
+    openRecent,
+    openSrt,
+    rename,
+  } from "./project-actions";
   import type { ResourceDock } from "./resource-dock.svelte";
 
   interface Props {
@@ -66,6 +74,18 @@
     ];
   });
 
+  /**
+   * Leaves the name field: Enter writes the name typed there as the field loses focus, and Esc
+   * puts back the name shown first. A key the input method is still composing with stays its own.
+   */
+  function leaveName(event: KeyboardEvent): void {
+    if (event.isComposing || event.keyCode === 229) return;
+    const field = event.currentTarget as HTMLInputElement;
+    if (event.key === "Escape") field.value = project?.name ?? "";
+    else if (event.key !== "Enter") return;
+    field.blur();
+  }
+
   onMount(() => feed.follow((next) => (project = next)));
 </script>
 
@@ -98,17 +118,17 @@
   <h1 class="navbar-start w-auto min-w-0 flex-1">
     <label
       class="group input input-ghost input-sm w-full max-w-md hover:border-base-300"
-      data-i18n-tooltip="toolbar.rename"
+      data-tooltip={t("toolbar.rename")}
     >
       <input
         type="text"
         class="truncate text-base font-semibold"
-        data-project-target="name"
-        data-i18n-label="toolbar.projectName"
-        data-action="change->project#rename keydown.enter->project#leaveName:!composing keydown.esc->project#discardName:!composing"
+        aria-label={t("toolbar.projectName")}
+        value={project?.name ?? ""}
+        onchange={({ currentTarget }) => rename(feed, currentTarget.value)}
+        onkeydown={leaveName}
       />
-      <i data-lucide="pencil" class="size-4 opacity-0 group-hover:opacity-60"
-      ></i>
+      <Pencil class="size-4 opacity-0 group-hover:opacity-60" />
     </label>
   </h1>
   <div class="navbar-end w-auto shrink-0 gap-2">
@@ -117,14 +137,13 @@
         tabindex="0"
         role="button"
         class="btn btn-sm"
-        data-i18n-label="toolbar.open"
-        data-i18n-tooltip="toolbar.open"
+        aria-label={t("toolbar.open")}
+        data-tooltip={t("toolbar.open")}
       >
-        <i data-lucide="folder-open" class="size-4"></i><span
-          class="hidden @5xl:inline"
-          data-i18n="toolbar.open"
-        ></span>
-        <i data-lucide="chevron-down" class="size-4"></i>
+        <FolderOpen class="size-4" /><span class="hidden @5xl:inline"
+          >{t("toolbar.open")}</span
+        >
+        <ChevronDown class="size-4" />
       </div>
       <ul
         tabindex="-1"
@@ -133,28 +152,28 @@
         <li>
           <button
             type="button"
-            data-action="project#openDirectory"
-            data-i18n="toolbar.openDirectory"
-          ></button>
+            onclick={({ currentTarget }) => openDirectory(currentTarget)}
+            >{t("toolbar.openDirectory")}</button
+          >
         </li>
         <li>
           <button
             type="button"
-            data-action="project#openSrt"
-            data-i18n="toolbar.openSrt"
-          ></button>
+            onclick={({ currentTarget }) => openSrt(currentTarget)}
+            >{t("toolbar.openSrt")}</button
+          >
         </li>
         {#if recentProjects.length > 0}
           <li class="menu-title">{t("start.recentProjects")}</li>
-          {#each recentProjects as project (project.directory)}
+          {#each recentProjects as recentProject (recentProject.directory)}
             <li>
               <button
                 type="button"
-                data-tooltip={project.directory}
+                data-tooltip={recentProject.directory}
                 onclick={({ currentTarget }) =>
-                  openRecent(feed, project.directory, currentTarget)}
+                  openRecent(feed, recentProject.directory, currentTarget)}
               >
-                <span class="min-w-0 truncate">{project.name}</span>
+                <span class="min-w-0 truncate">{recentProject.name}</span>
               </button>
             </li>
           {/each}

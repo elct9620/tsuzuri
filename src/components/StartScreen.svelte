@@ -2,7 +2,7 @@
   import type { RecentProjectView } from "../backend/project";
   import { interfaceLanguageCode, t } from "../i18n";
   import { projectFeed } from "./context";
-  import { openRecent } from "./project-actions";
+  import { openDirectory, openRecent, openSrt } from "./project-actions";
 
   interface Props {
     recentProjects: RecentProjectView[];
@@ -11,35 +11,33 @@
 
   let { recentProjects, openSettings }: Props = $props();
 
+  const id = $props.id();
   const feed = projectFeed();
   const dateFormat = new Intl.DateTimeFormat(interfaceLanguageCode(), {
     dateStyle: "medium",
   });
 </script>
 
-<section class="hero flex-1" data-project-target="startScreen">
+<section class="hero flex-1" aria-labelledby="{id}-title">
   <div class="hero-content flex-col text-center">
-    <h1 class="text-2xl font-semibold">Tsuzuri</h1>
-    <p class="text-base-content/70" data-i18n="start.title"></p>
+    <h1 id="{id}-title" class="text-2xl font-semibold">Tsuzuri</h1>
+    <p class="text-base-content/70">{t("start.title")}</p>
     <div class="flex gap-2">
       <button
         type="button"
         class="btn btn-primary"
-        data-action="project#openDirectory"
-        data-i18n="toolbar.openDirectory"
-      ></button>
+        onclick={({ currentTarget }) => openDirectory(currentTarget)}
+        >{t("toolbar.openDirectory")}</button
+      >
       <button
         type="button"
         class="btn"
-        data-action="project#openSrt"
-        data-i18n="toolbar.openSrt"
-      ></button>
-      <button
-        type="button"
-        class="btn btn-ghost"
-        onclick={openSettings}
-        data-i18n="toolbar.settings"
-      ></button>
+        onclick={({ currentTarget }) => openSrt(currentTarget)}
+        >{t("toolbar.openSrt")}</button
+      >
+      <button type="button" class="btn btn-ghost" onclick={openSettings}
+        >{t("toolbar.settings")}</button
+      >
     </div>
     {#if recentProjects.length > 0}
       <ul
@@ -49,22 +47,24 @@
         <li class="p-4 pb-2 text-xs tracking-wide opacity-60">
           {t("start.recentProjects")}
         </li>
-        {#each recentProjects as project (project.directory)}
+        {#each recentProjects as recentProject (recentProject.directory)}
           <li class="list-row relative items-center hover:bg-base-200">
             <!-- The button's ::after covers the row, so the whole row opens the Project. -->
             <button
               type="button"
               class="list-col-grow min-w-0 cursor-pointer text-left after:absolute after:inset-0"
               onclick={({ currentTarget }) =>
-                openRecent(feed, project.directory, currentTarget)}
+                openRecent(feed, recentProject.directory, currentTarget)}
             >
-              <div class="truncate">{project.name}</div>
-              <div class="truncate text-xs opacity-60">{project.directory}</div>
+              <div class="truncate">{recentProject.name}</div>
+              <div class="truncate text-xs opacity-60">
+                {recentProject.directory}
+              </div>
             </button>
             <time
               class="text-xs tabular-nums opacity-60"
-              datetime={new Date(project.opened_at_ms).toISOString()}
-              >{dateFormat.format(project.opened_at_ms)}</time
+              datetime={new Date(recentProject.opened_at_ms).toISOString()}
+              >{dateFormat.format(recentProject.opened_at_ms)}</time
             >
           </li>
         {/each}

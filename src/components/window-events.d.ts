@@ -12,11 +12,13 @@ import type { UpdateProgress } from "../backend/updates";
 
 declare module "svelte/elements" {
   export interface SvelteWindowAttributes {
+    "onrust:changed-elsewhere-kept"?: (event: CustomEvent) => void;
     "onrust:edit-command"?: (event: CustomEvent<EditCommand>) => void;
     "onrust:model-download-progress"?: (
       event: CustomEvent<DownloadProgress>,
     ) => void;
     "onrust:pipeline-progress"?: (event: CustomEvent<PipelineProgress>) => void;
+    "onrust:srt-requested"?: (event: CustomEvent) => void;
     "onrust:update-progress"?: (event: CustomEvent<UpdateProgress>) => void;
     "onsegment-changes:retranscribe"?: (
       event: CustomEvent<{ scope: TranscriptionScope }>,

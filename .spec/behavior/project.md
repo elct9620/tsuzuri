@@ -18,8 +18,8 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src/components/StartScreen.test.ts`
 - `src/components/Toolbar.test.ts`
 - `src/components/settings/project/Project.test.ts`
-- `src/controllers/project-controller.test.ts`
 - `src/controllers/transcript-controller.test.ts`
+- `src/page.test.ts`
 
 ## `PJ-001` Opening a directory as the Project
 
@@ -286,14 +286,14 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | Step | Statement |
 | --- | --- |
 | Given | Tsuzuri launched to open `/talks/ep02.srt` |
-| When | the toolbar starts |
+| When | the webview starts |
 | Then | `/talks/ep02.srt` is opened as an SRT file in the Interface Language |
 
 ## `PJ-172` Opening an SRT file requested while Tsuzuri runs
 
 | Step | Statement |
 | --- | --- |
-| Given | the toolbar, with `lecture` open |
+| Given | the webview, with `lecture` open |
 | When | `/talks/ep02.srt` is requested |
 | Then | it is opened as an SRT file in the Interface Language |
 
@@ -582,7 +582,7 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | Step | Statement |
 | --- | --- |
 | Given | a Segment's text being typed in and not yet written |
-| When | ⌘R or Ctrl+R is pressed |
+| When | ⌘R on macOS or Ctrl+R elsewhere is pressed |
 | Then | the text is written before the Project is reloaded |
 
 ## `PJ-117` Marking a Resource of subtitles alone
@@ -1282,7 +1282,7 @@ A translation lines up with its original by time alone, so one written after the
 | Step | Statement |
 | --- | --- |
 | Given | an open Project |
-| When | the reload button above the Resource list is clicked, or ⌘R or Ctrl+R is pressed |
+| When | the reload button above the Resource list is clicked, or ⌘R on macOS or Ctrl+R elsewhere is pressed |
 | Then | the Project is reloaded |
 
 ## `PJ-042` Writing edit after edit

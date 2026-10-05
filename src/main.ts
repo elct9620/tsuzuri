@@ -8,7 +8,6 @@ import FieldController, {
   composingOption,
 } from "./controllers/field-controller";
 import PreviewController from "./controllers/preview-controller";
-import ProjectController from "./controllers/project-controller";
 import SearchController from "./controllers/search-controller";
 import SegmentChangesController, {
   typingOption,
@@ -38,7 +37,6 @@ async function start(): Promise<void> {
     comparison: ComparisonController,
     field: FieldController,
     preview: PreviewController,
-    project: ProjectController,
     cleanup: CleanupController,
     search: SearchController,
     "segment-changes": SegmentChangesController,

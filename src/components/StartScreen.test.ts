@@ -8,8 +8,10 @@ import { editingPort } from "../backend/editing";
 import { ProjectFeed, type RecentProjectView } from "../backend/project";
 import { EditingSession } from "../editor";
 import { t } from "../i18n";
+import { notificationStack } from "../ui/notification.svelte";
 import { drawPage } from "../page";
 import { mockPageMount } from "../test-page";
+import { notificationDetail, notifications } from "./test-notifications";
 
 const LECTURE: RecentProjectView = {
   directory: "/videos/lecture",
@@ -19,7 +21,9 @@ const LECTURE: RecentProjectView = {
 
 describe("StartScreen", () => {
   let recent: RecentProjectView[];
-  let opened: unknown[];
+  let sent: Record<string, unknown>;
+  let openProject: () => unknown;
+  let openSrt: () => unknown;
   let page: Record<string, unknown>;
   let unfollow: () => void;
 
@@ -27,27 +31,57 @@ describe("StartScreen", () => {
   const recentList = () =>
     screen.queryByRole("list", { name: t("start.recentProjects") });
   const rowButtons = () => within(recentList()!).getAllByRole("button");
+  const startScreen = () =>
+    within(screen.getByRole("region", { name: "Tsuzuri" }));
 
-  /** Draws the page with no Project open, as the app starts. */
+  async function click(name: string): Promise<void> {
+    startScreen()
+      .getByRole("button", { name: t(name) })
+      .click();
+    await settle();
+  }
+
+  /** Makes opening a Recent Project fail as Rust drops one whose directory is gone. */
+  function loseRecentDirectory(): void {
+    openProject = () => {
+      recent = [];
+      return Promise.reject({
+        code: "directory-not-found",
+        directory: "/videos/lecture",
+      });
+    };
+  }
+
+  /**
+   * Draws the page with no Project open, as the app starts, and clears the Notifications its other
+   * Svelte Components show for the reads this test leaves unanswered.
+   */
   async function showStartScreen(): Promise<void> {
     const feed = new ProjectFeed();
     page = drawPage(feed, new EditingSession(editingPort));
     unfollow = await feed.start();
     await settle();
+    notificationStack.clear();
   }
 
   beforeEach(() => {
     recent = [LECTURE];
-    opened = [];
+    sent = {};
+    openProject = () => null;
+    openSrt = () => null;
     mockPageMount(null, {
       recent_projects: () => recent,
+      "plugin:dialog|open": (args) =>
+        (args as { options: { directory: boolean } }).options.directory
+          ? "/talks"
+          : "/subtitles/lecture.srt",
       open_project: (args) => {
-        opened.push(args);
-        recent = [];
-        return Promise.reject({
-          code: "directory-not-found",
-          directory: "/videos/lecture",
-        });
+        sent.open_project = args;
+        return openProject();
+      },
+      open_srt: (args) => {
+        sent.open_srt = args;
+        return openSrt();
       },
     });
   });
@@ -76,7 +110,10 @@ describe("StartScreen", () => {
     rowButtons()[0].click();
     await settle();
 
-    expect(opened).toEqual([{ path: "/videos/lecture", language: "zh-TW" }]);
+    expect(sent.open_project).toEqual({
+      path: "/videos/lecture",
+      language: "zh-TW",
+    });
   });
 
   // @behavior PJ-163
@@ -100,6 +137,7 @@ describe("StartScreen", () => {
 
   // @behavior PJ-165
   it("reads the Recent Projects again once one could not be opened", async () => {
+    loseRecentDirectory();
     await showStartScreen();
 
     rowButtons()[0].click();
@@ -107,5 +145,53 @@ describe("StartScreen", () => {
     await settle();
 
     expect(recentList()).toBeNull();
+  });
+
+  // @behavior PJ-033
+  it("opens the chosen directory as the Project", async () => {
+    await showStartScreen();
+
+    await click("toolbar.openDirectory");
+
+    expect(sent.open_project).toEqual({ path: "/talks", language: "zh-TW" });
+  });
+
+  // @behavior PJ-007
+  it("opens the chosen SRT file with the Interface Language", async () => {
+    await showStartScreen();
+
+    await click("toolbar.openSrt");
+
+    expect(sent.open_srt).toEqual({
+      path: "/subtitles/lecture.srt",
+      language: "zh-TW",
+    });
+  });
+
+  // @behavior PJ-008
+  it("says which cue kept the SRT file from being opened", async () => {
+    openSrt = () => Promise.reject({ code: "malformed-srt", cue: 2 });
+    await showStartScreen();
+
+    await click("toolbar.openSrt");
+
+    expect([notifications(), notificationDetail(0)]).toEqual([
+      ["沒有開啟"],
+      expect.stringContaining("SRT 第 2 段無法讀取"),
+    ]);
+  });
+
+  // @behavior PJ-167
+  it("warns that another Project cannot open while a task runs", async () => {
+    openProject = () => Promise.reject({ code: "opening-during-mode" });
+    await showStartScreen();
+
+    await click("toolbar.openDirectory");
+
+    expect([
+      notificationDetail(0),
+      document.querySelector<SVGElement>("[data-notifications] svg")!.dataset
+        .kind,
+    ]).toEqual(["任務執行中無法開啟其他專案，請等任務結束或先取消", "warning"]);
   });
 });

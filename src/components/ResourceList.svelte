@@ -8,6 +8,7 @@
   import { notifyFailure } from "../ui/notification.svelte";
   import { isShortcut } from "../ui/shortcuts";
   import { projectFeed } from "./context";
+  import { reload } from "./project-actions";
   import type { ResourceDock } from "./resource-dock.svelte";
 
   interface Props {
@@ -43,17 +44,25 @@
     }
   }
 
-  /** Docks or undocks the list, or lays it over a narrow window's editor, as its button does. */
-  function toggleByShortcut(event: KeyboardEvent): void {
-    if (!isShortcut(event, "resourceList", isMacOS())) return;
-    event.preventDefault();
-    dock.toggle();
+  /**
+   * Docks or undocks the list, or lays it over a narrow window's editor, or reloads the Project,
+   * as the list's buttons do.
+   */
+  function actByShortcut(event: KeyboardEvent): void {
+    const isMac = isMacOS();
+    if (isShortcut(event, "resourceList", isMac)) {
+      event.preventDefault();
+      dock.toggle();
+    } else if (isShortcut(event, "reload", isMac)) {
+      event.preventDefault();
+      void reload(feed);
+    }
   }
 
   onMount(() => feed.follow((next) => (project = next)));
 </script>
 
-<svelte:window onkeydown={toggleByShortcut} />
+<svelte:window onkeydown={actByShortcut} />
 
 <div class="drawer-side">
   <label
@@ -68,7 +77,7 @@
         <button
           type="button"
           class="btn btn-ghost btn-square btn-xs"
-          data-action="project#reload"
+          onclick={() => reload(feed)}
           aria-label={t("resources.reload")}
           data-tooltip={t("resources.reloadHint")}
           data-shortcut="reload"

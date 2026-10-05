@@ -11,6 +11,7 @@ import { setInterfaceLanguage } from "../i18n";
 import { projectOf, resourceOf } from "../test-project";
 import { pageContext } from "./context";
 import EditorBar from "./EditorBar.svelte";
+import { PreviewFold } from "./preview-fold.svelte";
 import { notifications, showNotifications } from "./test-notifications";
 
 describe("EditorBar", () => {
@@ -49,6 +50,7 @@ describe("EditorBar", () => {
         openVersions: () => {},
         openSearch: () => {},
         openSpeakers: () => {},
+        fold: new PreviewFold(),
       },
       context: pageContext(feed, new EditingSession(editingPort)),
     });

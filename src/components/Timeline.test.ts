@@ -1,28 +1,34 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { cleanup, render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WaveSurfer from "wavesurfer.js";
 import { assemble } from "../assembly";
+import { DEFAULT_PREFERENCES } from "../backend/preferences";
 import type { EditingSession } from "../editor";
 import type { SegmentChange } from "../backend/editing";
 import type { ProjectView, Segment } from "../backend/project";
 import type { Waveform } from "../backend/waveform";
+import { setInterfaceLanguage, t } from "../i18n";
 import { layOutTimeline } from "../test-layout";
 import { projectOf } from "../test-project";
+import { pageContext } from "./context";
+import { Playback } from "./playback.svelte";
 import {
   showNotifications,
   notificationDetail,
   notifications,
-} from "../components/test-notifications";
-import TimelineController, {
-  controlOption,
-  regionColor,
-} from "./timeline-controller";
+} from "./test-notifications";
+import Timeline, { regionColor } from "./Timeline.svelte";
 
-describe("TimelineController", () => {
+describe("Timeline", () => {
   let application: Application;
+  /** What the timeline plays, shared with the Preview. */
+  let playback: Playback;
+  const media = () => playback.media;
   let session: EditingSession;
   let project: ProjectView | null;
   let waveform: Waveform;
@@ -38,9 +44,12 @@ describe("TimelineController", () => {
    * that ended it does not click; its draggable lifts the guard on a 10 ms timer.
    */
   const CLICK_GUARD_MS = 10;
-  const host = () =>
-    document.querySelector<HTMLElement>('[data-timeline-target="waveform"]')!
-      .firstElementChild!.shadowRoot!;
+  /** The timeline's frame, holding its tools and the Waveform. */
+  let frame: () => HTMLElement;
+  /** The element wavesurfer.js draws the Waveform in, found while it is hidden too. */
+  const waveformOf = () =>
+    frame().querySelector<HTMLElement>('[role="application"]')!;
+  const host = () => waveformOf().firstElementChild!.shadowRoot!;
   const wrapper = () => host().querySelector<HTMLElement>(".wrapper")!;
   const regions = () => [
     ...host().querySelectorAll<HTMLElement>('[part~="region"]'),
@@ -63,13 +72,34 @@ describe("TimelineController", () => {
     for (let turn = 0; turn < 3; turn++) await settle();
   }
 
-  function press(action: string): void {
-    document.querySelector<HTMLElement>(`[data-action="${action}"]`)!.click();
+  /** Presses the button labelled by the key `label`. */
+  function press(label: string): void {
+    screen.getByRole("button", { name: t(label) }).click();
+    flushSync();
+  }
+
+  /** The button reading the zoom level, which goes back to where it started when pressed. */
+  const zoomLevel = () => screen.getByRole("button", { name: /^\d+%$/ });
+
+  /** Draws the timeline beside a text field, as the page draws it beside the editor. */
+  async function drawTimeline(): Promise<void> {
+    application = Application.start();
+    const assembly = assemble(application, {});
+    session = assembly.session;
+    playback = new Playback();
+    const { container } = render(Timeline, {
+      props: { playback, hidden: false },
+      context: pageContext(assembly.feed, assembly.session),
+    });
+    frame = () => container.firstElementChild as HTMLElement;
+    await assembly.start();
+    await settle();
   }
 
   let takeLayoutBack: () => void;
 
   beforeEach(async () => {
+    await setInterfaceLanguage("zh-TW");
     takeLayoutBack = layOutTimeline();
     localStorage.clear();
     // The regions measure a drag against their own width: 200 pixels over two seconds of Peaks
@@ -99,6 +129,7 @@ describe("TimelineController", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
+        if (command === "preferences") return DEFAULT_PREFERENCES;
         if (command === "extract_waveform") return takeWaveform();
         if (command === "change_segments")
           changes.push((args as { change: SegmentChange }).change);
@@ -106,30 +137,13 @@ describe("TimelineController", () => {
       },
       { shouldMockEvents: true },
     );
-    document.body.innerHTML = `
-      <div data-controller="timeline" data-action="editor:cursor@window->timeline#showCursor system:color-scheme@window->timeline#repaintWaveform keydown@window->timeline#setTimeAtMedia keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange focusin@window->timeline#followFocus pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture pointermove@window->timeline#extendDrawing pointerup@window->timeline#finishDrawing">
-        <video data-timeline-target="media"></video>
-        <input id="typing" />
-        <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button>
-        <span data-timeline-target="times" hidden></span>
-        <button data-timeline-target="aloneButton"></button><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd>
-        <button data-action="timeline#zoomOut"></button>
-        <button data-action="timeline#zoomIn"></button>
-        <button data-timeline-target="zoomLevel" data-action="timeline#resetZoom"></button><div data-timeline-target="waveform" tabindex="0" data-action="wheel->timeline#scrollOrZoom:prevent pointerdown->timeline#drawOver:capture click->timeline#ignoreClickOver:capture keydown.left->timeline#stepBack:prevent keydown.right->timeline#stepForward:prevent" hidden></div>
-      </div>
-    `;
+    document.body.innerHTML = `<input id="typing" />`;
     showNotifications();
-    application = Application.start();
-    application.registerActionOption("control", controlOption);
-    const assembly = assemble(application, {
-      timeline: TimelineController,
-    });
-    session = assembly.session;
-    await assembly.start();
-    await settle();
+    await drawTimeline();
   });
 
   afterEach(async () => {
+    cleanup();
     application.stop();
     clearMocks();
     vi.restoreAllMocks();
@@ -178,9 +192,7 @@ describe("TimelineController", () => {
 
   // @behavior PV-152
   it("draws the Waveform in the colours of the theme turned to", async () => {
-    const timeline = document.querySelector<HTMLElement>(
-      '[data-controller="timeline"]',
-    )!;
+    const timeline = frame();
     timeline.style.setProperty("--color-base-content", "#111111");
     await show(projectWithMedia());
     const paint = vi.spyOn(WaveSurfer.prototype, "setOptions");
@@ -199,10 +211,7 @@ describe("TimelineController", () => {
 
     await show(projectOf({ media: "/talks/ep02.mp4" }));
 
-    expect(
-      document.querySelector('[data-timeline-target="waveform"]')!
-        .childElementCount,
-    ).toBe(0);
+    expect(waveformOf().childElementCount).toBe(0);
   });
 
   // @behavior PV-141
@@ -217,10 +226,7 @@ describe("TimelineController", () => {
       heldAnswers[index]({ ...waveform, media: `/talks/${media}.mp4` });
     for (let turn = 0; turn < 3; turn++) await settle();
 
-    expect(
-      document.querySelector('[data-timeline-target="waveform"]')!
-        .childElementCount,
-    ).toBe(1);
+    expect(waveformOf().childElementCount).toBe(1);
   });
 
   // @behavior PV-142
@@ -303,7 +309,7 @@ describe("TimelineController", () => {
   // @behavior PV-020
   it("follows an added Segment at the same zoom", async () => {
     await show(projectWithMedia([segmentAt(0, 0.5), segmentAt(0.5, 1)]));
-    press("timeline#zoomIn");
+    press("preview.zoomIn");
 
     await show(
       projectWithMedia([segmentAt(0, 0.5), segmentAt(0.5, 1), segmentAt(1, 2)]),
@@ -331,7 +337,7 @@ describe("TimelineController", () => {
   it("doubles the pixels a second when zooming in", async () => {
     await show(projectWithMedia());
 
-    press("timeline#zoomIn");
+    press("preview.zoomIn");
 
     expect(wrapper().style.width).toBe("400px");
   });
@@ -340,7 +346,7 @@ describe("TimelineController", () => {
   it("halves the pixels a second when zooming out", async () => {
     await show(projectWithMedia());
 
-    press("timeline#zoomOut");
+    press("preview.zoomOut");
 
     expect(wrapper().style.width).toBe("100px");
   });
@@ -350,9 +356,7 @@ describe("TimelineController", () => {
     await show(projectWithMedia());
     const scroller = host().querySelector<HTMLElement>(".scroll")!;
 
-    document
-      .querySelector('[data-timeline-target="waveform"]')!
-      .dispatchEvent(new WheelEvent("wheel", { deltaY: 120 }));
+    waveformOf().dispatchEvent(new WheelEvent("wheel", { deltaY: 120 }));
 
     expect(scroller.scrollLeft).toBe(120);
   });
@@ -364,9 +368,7 @@ describe("TimelineController", () => {
     // happy-dom's WheelEvent is not a MouseEvent, so it keeps no modifier keys.
     Object.defineProperty(pinch, "ctrlKey", { value: true });
 
-    document
-      .querySelector('[data-timeline-target="waveform"]')!
-      .dispatchEvent(pinch);
+    waveformOf().dispatchEvent(pinch);
 
     expect(wrapper().style.width).toBe("400px");
   });
@@ -378,9 +380,7 @@ describe("TimelineController", () => {
     // happy-dom's WheelEvent is not a MouseEvent, so it keeps no modifier keys.
     Object.defineProperty(turn, "altKey", { value: true });
 
-    document
-      .querySelector('[data-timeline-target="waveform"]')!
-      .dispatchEvent(turn);
+    waveformOf().dispatchEvent(turn);
 
     expect(wrapper().style.width).toBe("400px");
   });
@@ -392,9 +392,7 @@ describe("TimelineController", () => {
     // happy-dom's WheelEvent is not a MouseEvent, so it keeps no modifier keys.
     Object.defineProperty(turn, "metaKey", { value: true });
 
-    document
-      .querySelector('[data-timeline-target="waveform"]')!
-      .dispatchEvent(turn);
+    waveformOf().dispatchEvent(turn);
 
     expect(wrapper().style.width).toBe("400px");
   });
@@ -403,26 +401,25 @@ describe("TimelineController", () => {
   it("reads the zoom level as a percentage of where it starts", async () => {
     await show(projectWithMedia());
 
-    press("timeline#zoomIn");
+    press("preview.zoomIn");
 
-    expect(
-      document.querySelector('[data-timeline-target="zoomLevel"]')!.textContent,
-    ).toBe("200%");
+    expect(zoomLevel().textContent).toBe("200%");
   });
 
   // @behavior PV-042
   it("goes back to where it started when the zoom level is pressed", async () => {
     await show(projectWithMedia());
-    press("timeline#zoomIn");
+    press("preview.zoomIn");
 
-    document
-      .querySelector<HTMLElement>('[data-timeline-target="zoomLevel"]')!
-      .click();
+    zoomLevel().click();
 
     expect(wrapper().style.width).toBe("200px");
   });
-  const spanTimes = () =>
-    document.querySelector<HTMLElement>('[data-timeline-target="times"]')!;
+  /** The times a dragged region or a drawn range will be written with, or none while there is neither. */
+  function spanTimes(): string | null {
+    flushSync();
+    return frame().querySelector(".badge")?.textContent ?? null;
+  }
 
   // @behavior PV-071
   it("reads the time under the pointer", async () => {
@@ -438,11 +435,6 @@ describe("TimelineController", () => {
   });
 
   describe("retiming", () => {
-    const media = () =>
-      document.querySelector<HTMLVideoElement>(
-        '[data-timeline-target="media"]',
-      )!;
-
     /** Shows `segments` and makes the one at `current` the Current Segment, as a click on its row does. */
     async function showCurrent(
       segments: Segment[],
@@ -649,7 +641,7 @@ describe("TimelineController", () => {
     // @behavior PV-054
     it("snaps a dragged edge to the next Segment", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
-      press("timeline#toggleSnapping");
+      press("preview.snapping");
 
       await drag(endOf(0)!, 5);
 
@@ -660,7 +652,7 @@ describe("TimelineController", () => {
     it("snaps a dragged edge to where the media is", async () => {
       await showCurrent([segmentAt(0, 0.5)]);
       media().currentTime = 0.8;
-      press("timeline#toggleSnapping");
+      press("preview.snapping");
 
       await drag(endOf(0)!, 25);
 
@@ -670,7 +662,7 @@ describe("TimelineController", () => {
     // @behavior PV-056
     it("does not snap while Shift is held once snapping is turned on", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
-      press("timeline#toggleSnapping");
+      press("preview.snapping");
 
       await drag(endOf(0)!, 5, { shiftKey: true });
 
@@ -680,8 +672,8 @@ describe("TimelineController", () => {
     // @behavior PV-057
     it("does not snap once snapping is turned off", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
-      press("timeline#toggleSnapping");
-      press("timeline#toggleSnapping");
+      press("preview.snapping");
+      press("preview.snapping");
 
       await drag(endOf(0)!, 5);
 
@@ -831,7 +823,7 @@ describe("TimelineController", () => {
 
       await drawOver(regions()[0], 50, 50, { ctrlKey: true });
 
-      expect([spanTimes().textContent, session.cursor.index]).toEqual([
+      expect([spanTimes(), session.cursor.index]).toEqual([
         "00:00:00.500 → 00:00:01.000 (0.500s)",
         null,
       ]);
@@ -843,7 +835,7 @@ describe("TimelineController", () => {
 
       await drawOver(regions()[0], 50, 50, { ctrlKey: true });
 
-      expect([spanTimes().textContent, changes]).toEqual([
+      expect([spanTimes(), changes]).toEqual([
         "00:00:00.500 → 00:00:01.000 (0.500s)",
         [],
       ]);
@@ -855,7 +847,7 @@ describe("TimelineController", () => {
 
       await drawOver(regions()[0], 50, 50);
 
-      expect([spanTimes().hidden, regions().length]).toEqual([true, 1]);
+      expect([spanTimes(), regions().length]).toEqual([null, 1]);
     });
 
     // @behavior PV-140
@@ -874,14 +866,11 @@ describe("TimelineController", () => {
     // @behavior PV-072
     it("reads where a dragged Segment lands before it is let go", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
-      press("timeline#toggleSnapping");
+      press("preview.snapping");
 
       pressAndMove(endOf(0)!, 5);
 
-      expect([spanTimes().hidden, spanTimes().textContent]).toEqual([
-        false,
-        "00:00:00.000 → 00:00:00.600 (0.600s)",
-      ]);
+      expect(spanTimes()).toBe("00:00:00.000 → 00:00:00.600 (0.600s)");
     });
 
     // @behavior PV-073
@@ -896,10 +885,7 @@ describe("TimelineController", () => {
         new PointerEvent("pointermove", { ...at, clientX: 145 }),
       );
 
-      expect([spanTimes().hidden, spanTimes().textContent]).toEqual([
-        false,
-        "00:00:01.000 → 00:00:01.500 (0.500s)",
-      ]);
+      expect(spanTimes()).toBe("00:00:01.000 → 00:00:01.500 (0.500s)");
     });
 
     // @behavior PV-074
@@ -909,7 +895,7 @@ describe("TimelineController", () => {
 
       pressKey("Escape");
 
-      expect([spanTimes().hidden, spanTimes().textContent]).toEqual([true, ""]);
+      expect(spanTimes()).toBeNull();
     });
 
     const range = () => host().querySelector<HTMLElement>('[part~="range"]')!;
@@ -948,7 +934,7 @@ describe("TimelineController", () => {
     // @behavior PV-155
     it("snaps a dragged edge of a drawn range", async () => {
       await show(projectWithMedia([segmentAt(1.8, 2)]));
-      press("timeline#toggleSnapping");
+      press("preview.snapping");
       await draw(100, 45);
 
       await drag(rangeEnd(), 27);
@@ -965,9 +951,7 @@ describe("TimelineController", () => {
 
       pressAndMove(rangeEnd(), 20);
 
-      expect(spanTimes().textContent).toBe(
-        "00:00:01.000 → 00:00:01.700 (0.700s)",
-      );
+      expect(spanTimes()).toBe("00:00:01.000 → 00:00:01.700 (0.700s)");
     });
 
     // @behavior PV-157
@@ -1015,9 +999,7 @@ describe("TimelineController", () => {
 
     /** Focuses the timeline with the media at `at` seconds and presses `key` there. */
     function pressOnTimeline(at: number, key: string): void {
-      const waveform = document.querySelector<HTMLElement>(
-        '[data-timeline-target="waveform"]',
-      )!;
+      const waveform = waveformOf();
       waveform.focus();
       media().currentTime = at;
       waveform.dispatchEvent(
@@ -1107,12 +1089,9 @@ describe("TimelineController", () => {
         Object.assign(window, {
           __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
         });
-        const timeline = document.querySelector(
-          '[data-controller="timeline"]',
-        )!;
-        timeline.remove();
-        document.body.append(timeline);
-        await settle();
+        cleanup();
+        application.stop();
+        await drawTimeline();
       });
 
       afterEach(() => {
@@ -1149,19 +1128,10 @@ describe("TimelineController", () => {
 
         await drawOver(regions()[0], 50, 50, { metaKey: true });
 
-        expect([spanTimes().textContent, session.cursor.index]).toEqual([
+        expect([spanTimes(), session.cursor.index]).toEqual([
           "00:00:00.500 → 00:00:01.000 (0.500s)",
           null,
         ]);
-      });
-
-      // @behavior PV-091
-      it("names F9 and F12 as the keys that set times", () => {
-        const keys = [
-          ...document.querySelectorAll('[data-timeline-target$="Key"]'),
-        ].map((key) => key.textContent);
-
-        expect(keys).toEqual(["F9", "F12"]);
       });
     });
   });

@@ -1,10 +1,12 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { cleanup, render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WaveSurfer from "wavesurfer.js";
+
 import { assemble } from "../assembly";
 import {
   DEFAULT_PREFERENCES,
@@ -13,38 +15,34 @@ import {
   type Preferences,
 } from "../backend/preferences";
 import type { ProjectView, Segment } from "../backend/project";
-import type { EditingSession } from "../editor";
 import type { Waveform } from "../backend/waveform";
+import type { EditingSession } from "../editor";
+import { setInterfaceLanguage, t } from "../i18n";
 import { layOutTimeline } from "../test-layout";
 import { projectOf } from "../test-project";
-import PreviewController from "./preview-controller";
-import TimelineController, {
-  controlOption,
-  regionColor,
-} from "./timeline-controller";
-import { pageContext } from "../components/context";
-import {
-  drawSegmentRows,
-  type DrawnSegmentRows,
-  segmentRows,
-} from "../components/test-segment-rows";
+import { pageContext } from "./context";
+import EditorBar from "./EditorBar.svelte";
+import { Playback } from "./playback.svelte";
+import Preview from "./Preview.svelte";
+import { PreviewFold } from "./preview-fold.svelte";
+import { drawSegmentRows, segmentRows } from "./test-segment-rows";
+import { regionColor } from "./Timeline.svelte";
 
 describe("Current Segment", () => {
   let application: Application;
   let project: ProjectView | null;
   let savedPreferences: Preferences;
   let session: EditingSession;
-  /** The rows drawn, whose following playback the Preview's button turns on or off. */
-  let drawn: DrawnSegmentRows | undefined;
+  /** What the Preview, the timeline and the rows play and follow. */
+  let playback: Playback;
   let takeLayoutBack: () => void;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const media = () =>
-    document.querySelector<HTMLVideoElement>('[data-preview-target="media"]')!;
+  const media = () => playback.media;
   const rows = segmentRows;
   const regions = () => [
-    ...document
-      .querySelector('[data-timeline-target="waveform"]')!
+    ...screen
+      .getByRole("application", { name: t("preview.waveform") })
       .firstElementChild!.shadowRoot!.querySelectorAll<HTMLElement>(
         '[part~="region"]',
       ),
@@ -73,10 +71,26 @@ describe("Current Segment", () => {
       { ...segmentAt(1, 2), speaker: "小明", translation: "Today" },
     ],
   });
-  const currentSpeaker = () =>
-    document.querySelector<HTMLElement>(
-      '[data-preview-target="currentSpeaker"]',
-    )!;
+  /** The Speaker named beside the video, or none. */
+  function currentSpeaker(): string | null {
+    flushSync();
+    return (
+      screen
+        .getByText(t("preview.current"))
+        .parentElement!.querySelector(".badge-neutral")?.textContent ?? null
+    );
+  }
+
+  /** The Current Segment's number, times, text and translation beside the video. */
+  function currentCard(): string[] {
+    flushSync();
+    const heading = screen.getByText(t("preview.current")).parentElement!;
+    const [, number, times] = heading.children;
+    const [text, translation] = heading.parentElement!.querySelectorAll("p");
+    return [number, times, text, translation].map(
+      (element) => element.textContent!,
+    );
+  }
 
   /** Shows `next` and waits for the timeline to draw it: the Waveform loads, then regions are placed a turn later. */
   async function show(next: ProjectView): Promise<void> {
@@ -154,17 +168,13 @@ describe("Current Segment", () => {
   function playTo(at: number): void {
     media().currentTime = at;
     media().dispatchEvent(new Event("timeupdate"));
+    flushSync();
   }
 
-  const aloneButton = () =>
-    document.querySelector<HTMLButtonElement>(
-      '[data-timeline-target="aloneButton"]',
-    )!;
-
-  const snapButton = () =>
-    document.querySelector<HTMLButtonElement>(
-      '[data-timeline-target="snapButton"]',
-    )!;
+  const button = (label: string) =>
+    screen.getByRole<HTMLButtonElement>("button", { name: t(label) });
+  const aloneButton = () => button("preview.playingAlone");
+  const snapButton = () => button("preview.snapping");
 
   /** The rows scrolledRows into view since `watchScrolls` began watching. */
   let scrolledRows: () => HTMLElement[];
@@ -174,24 +184,40 @@ describe("Current Segment", () => {
     scrolledRows = () => scroll.mock.contexts as HTMLElement[];
   }
 
+  /** Draws the editor bar, the Preview with its timeline and the rows, sharing what they play, as the page draws them. */
   async function startApplication(): Promise<void> {
     application = Application.start();
-    application.registerActionOption("control", controlOption);
-    const assembly = assemble(application, {
-      preview: PreviewController,
-      timeline: TimelineController,
-    });
+    const assembly = assemble(application, {});
     session = assembly.session;
-    drawn?.unmount();
-    drawn = drawSegmentRows(
-      document.querySelector("main")!,
-      pageContext(assembly.feed, assembly.session),
-    );
+    const context = pageContext(assembly.feed, assembly.session);
+    playback = new Playback();
+    const fold = new PreviewFold();
+    render(EditorBar, {
+      props: {
+        openReplacement: () => {},
+        openVersions: () => {},
+        openSearch: () => {},
+        openSpeakers: () => {},
+        fold,
+      },
+      context,
+    });
+    render(Preview, { props: { playback, fold }, context });
+    drawSegmentRows(document.querySelector("main")!, context, playback);
     await assembly.start();
     await settle();
   }
 
+  /** Starts the page over, as the next time the app opens. */
+  async function reopen(): Promise<void> {
+    cleanup();
+    application.stop();
+    document.body.innerHTML = "<main></main>";
+    await startApplication();
+  }
+
   beforeEach(async () => {
+    await setInterfaceLanguage("zh-TW");
     takeLayoutBack = layOutTimeline();
     localStorage.clear();
     project = null;
@@ -207,44 +233,20 @@ describe("Current Segment", () => {
         if (command === "current_project") return project;
         if (command === "extract_waveform") return waveform;
         if (command === "preferences") return savedPreferences;
+        if (command === "plugin:window|get_all_windows")
+          return ["main", "video"];
         return null;
       },
       { shouldMockEvents: true },
     );
-    document.body.innerHTML = `
-      <main>
-        <div data-controller="preview timeline"
-          data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice preferences:saved@window->timeline#readPreferences keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
-          <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden></button>
-          <button data-preview-target="timelineFoldButton" hidden></button>
-          <div data-preview-target="panel">
-          <div data-preview-target="screenRow">
-            <div data-preview-target="screen">
-              <video data-preview-target="media" data-timeline-target="media"></video>
-              <p data-preview-target="caption"></p>
-              <div data-preview-target="hint" hidden></div>
-            </div>
-          </div>
-          <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
-          <span data-preview-target="playbackIcon"></span>
-          <button data-timeline-target="aloneButton" data-action="timeline#togglePlayingAlone"></button>
-          <span data-preview-target="time"></span>
-          <input type="range" min="0" max="100" data-preview-target="volume" data-action="input->preview#setVolume"><span data-preview-target="volumeLevel"></span><button id="mute" data-preview-target="muteButton" data-action="preview#toggleMute"><span data-preview-target="muteIcon"></span></button>
-          <div data-preview-target="captionChoice"><input type="radio" value="original" data-preview-target="captionLanguage"><input type="checkbox" data-preview-target="captionSpeaker"></div>
-          <div data-preview-target="currentSection">
-          <p data-preview-target="currentHint"></p>
-          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p><span data-timeline-target="spaceHint"></span><kbd data-timeline-target="startKey"></kbd><kbd data-timeline-target="endKey"></kbd></div></div>
-          <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-preview-target="timeline"><div data-timeline-target="waveform"></div></div>
-          </div>
-        </div>
-      </main>
-    `;
+    document.body.innerHTML = "<main></main>";
     await startApplication();
   });
 
-  afterEach(() => {
-    drawn = undefined;
+  afterEach(async () => {
+    cleanup();
     application.stop();
+    await settle();
     clearMocks();
     vi.restoreAllMocks();
     takeLayoutBack();
@@ -351,7 +353,7 @@ describe("Current Segment", () => {
   // @behavior PV-192
   it("plays with Space while the player and its controls are folded", async () => {
     await show(twoSegments);
-    document.querySelector<HTMLElement>("#fold-player")!.click();
+    button("preview.foldPlayer").click();
 
     pressSpace();
 
@@ -681,18 +683,12 @@ describe("Current Segment", () => {
 
     rows()[1].click();
 
-    expect(
-      [
-        "currentNumber",
-        "currentTimes",
-        "currentText",
-        "currentTranslation",
-      ].map(
-        (name) =>
-          document.querySelector(`[data-preview-target="${name}"]`)!
-            .textContent,
-      ),
-    ).toEqual(["#2", "00:00:01.000 → 00:00:02.000", "1", "Today"]);
+    expect(currentCard()).toEqual([
+      "#2",
+      "00:00:01.000 → 00:00:02.000",
+      "1",
+      "Today",
+    ]);
   });
 
   // @behavior PV-097
@@ -701,10 +697,7 @@ describe("Current Segment", () => {
 
     rows()[1].click();
 
-    expect([currentSpeaker().hidden, currentSpeaker().textContent]).toEqual([
-      false,
-      "小明",
-    ]);
+    expect(currentSpeaker()).toBe("小明");
   });
 
   // @behavior PV-098
@@ -714,7 +707,7 @@ describe("Current Segment", () => {
 
     rows()[0].click();
 
-    expect(currentSpeaker().hidden).toBe(true);
+    expect(currentSpeaker()).toBeNull();
   });
 
   // @behavior PV-037
@@ -727,10 +720,7 @@ describe("Current Segment", () => {
       segments: [segmentAt(0, 1), { ...segmentAt(1, 2), text: "明天" }],
     });
 
-    expect(
-      document.querySelector('[data-preview-target="currentText"]')!
-        .textContent,
-    ).toBe("明天");
+    expect(currentCard()[2]).toBe("明天");
   });
 
   // @behavior PV-038
@@ -740,6 +730,7 @@ describe("Current Segment", () => {
     playTo(1.5);
 
     media().pause();
+    flushSync();
 
     expect(isMarked("data-is-playing")).toEqual([false, false]);
   });
@@ -778,7 +769,7 @@ describe("Current Segment", () => {
   // @behavior PV-081
   it("marks the row being played without scrolling to it while not following playback", async () => {
     await show(twoSegments);
-    drawn!.following.toggle();
+    playback.toggleFollowing();
     await media().play();
     watchScrolls();
 
@@ -801,7 +792,7 @@ describe("Current Segment", () => {
       new KeyboardEvent("keydown", { key: "l", ctrlKey: true, bubbles: true }),
     );
 
-    expect([drawn!.following.isOn, document.activeElement]).toEqual([
+    expect([playback.isFollowing, document.activeElement]).toEqual([
       false,
       field,
     ]);
@@ -810,12 +801,12 @@ describe("Current Segment", () => {
   // @behavior PV-083
   it("scrolls to the row being played as following playback is turned on", async () => {
     await show(twoSegments);
-    drawn!.following.toggle();
+    playback.toggleFollowing();
     await media().play();
     playTo(1.5);
     watchScrolls();
 
-    drawn!.following.toggle();
+    playback.toggleFollowing();
     flushSync();
 
     expect(scrolledRows()).toEqual([rows()[1]]);
@@ -824,13 +815,12 @@ describe("Current Segment", () => {
   // @behavior PV-084
   it("keeps following playback off for the next Resource", async () => {
     await show(twoSegments);
-    drawn!.following.toggle();
-    application.stop();
-    await startApplication();
+    playback.toggleFollowing();
+    await reopen();
 
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
-    expect(drawn!.following.isOn).toBe(false);
+    expect(playback.isFollowing).toBe(false);
   });
 
   // @behavior PV-121
@@ -864,7 +854,7 @@ describe("Current Segment", () => {
     await show(twoSegments);
     rows()[1].click();
     const video = media();
-    document.querySelector<HTMLElement>("#video-window")!.click();
+    button("preview.videoWindow").click();
 
     pressSpace(video);
     await settle();
@@ -940,8 +930,7 @@ describe("Current Segment", () => {
   it("keeps playing alone on for the next Resource", async () => {
     await show(twoSegments);
     aloneButton().click();
-    application.stop();
-    await startApplication();
+    await reopen();
 
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
@@ -952,8 +941,7 @@ describe("Current Segment", () => {
   it("keeps snapping on for the next Resource", async () => {
     await show(twoSegments);
     snapButton().click();
-    application.stop();
-    await startApplication();
+    await reopen();
 
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
@@ -985,9 +973,9 @@ describe("Current Segment", () => {
     }
 
     const volumeSlider = () =>
-      document.querySelector<HTMLInputElement>(
-        '[data-preview-target="volume"]',
-      )!;
+      screen.getByRole<HTMLInputElement>("slider", {
+        name: t("preview.volume"),
+      });
 
     function moveVolumeSlider(position: number): void {
       volumeSlider().value = String(position);

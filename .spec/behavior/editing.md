@@ -14,7 +14,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/components/TranslationDialog.test.ts`
 - `src/components/EditingField.test.ts`
 - `src/components/TimeField.test.ts`
-- `src/controllers/timeline-controller.test.ts`
+- `src/components/Timeline.test.ts`
 - `src/components/ReplacementDialog.test.ts`
 - `src/components/cleanup-actions.test.ts`
 - `src/components/SearchBar.test.ts`

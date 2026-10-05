@@ -12,6 +12,7 @@
   import type { ChoiceSource } from "../../editor";
   import { t } from "../../i18n";
   import { notifyFailure } from "../../ui/notification.svelte";
+  import { savedPreferences } from "../context";
   import HelpButton from "./HelpButton.svelte";
 
   /** Each Choice Source, in the order the Preferences tab lists them. */
@@ -31,6 +32,7 @@
     ["is_from_start", "preferences.fromStart"],
   ] as const satisfies readonly [keyof ChoiceLanding, string][];
 
+  const saved = savedPreferences();
   /** The Choice Landings the switches stand for, the defaults until the saved ones are read. */
   let landings = $state<ChoiceLandings>(
     structuredClone(DEFAULT_PREFERENCES.choice_landings),
@@ -44,17 +46,18 @@
     }
   });
 
-  function show({ choice_landings }: Preferences): void {
-    landings = choice_landings;
+  /** Shows `read` on the switches and hands it to the editor, which follows the Preferences saved. */
+  function show(read: Preferences): void {
+    landings = read.choice_landings;
+    saved.current = read;
   }
 
-  /** Saves the switches as they stand and tells the editor; a refusal shows the Preferences saved before. */
+  /** Saves the switches as they stand; a refusal shows the Preferences saved before. */
   async function save(): Promise<void> {
     try {
       show(
         await savePreferences({ choice_landings: $state.snapshot(landings) }),
       );
-      window.dispatchEvent(new CustomEvent("preferences:saved"));
     } catch (error) {
       notifyFailure(t("settings.notSaved"), error);
       await showSaved();

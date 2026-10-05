@@ -2,10 +2,15 @@
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { editingPort } from "../../backend/editing";
 import {
   DEFAULT_PREFERENCES,
   type Preferences as SavedPreferences,
 } from "../../backend/preferences";
+import { ProjectFeed } from "../../backend/project";
+import { EditingSession } from "../../editor";
+import { pageContext } from "../context";
+import { SavedPreferences as SharedPreferences } from "../saved-preferences.svelte";
 import { showNotifications, notifications } from "../test-notifications";
 import Preferences from "./Preferences.svelte";
 
@@ -13,8 +18,8 @@ describe("Preferences", () => {
   let savedPreferences: SavedPreferences;
   let savedArgs: unknown[];
   let isSavingRefused: boolean;
-  let savedEvents: number;
-  let listening: AbortController;
+  /** The Preferences the editor follows, as the settings hand them over. */
+  let shared: SharedPreferences;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   /** The switch named `name`, as its Choice Source and its column read. */
@@ -27,7 +32,16 @@ describe("Preferences", () => {
   }
 
   async function openSettings(): Promise<void> {
-    render(Preferences);
+    render(Preferences, {
+      context: pageContext(
+        new ProjectFeed(),
+        new EditingSession(editingPort),
+        undefined,
+        undefined,
+        undefined,
+        shared,
+      ),
+    });
     await settle();
   }
 
@@ -35,12 +49,8 @@ describe("Preferences", () => {
     savedPreferences = structuredClone(DEFAULT_PREFERENCES) as SavedPreferences;
     savedArgs = [];
     isSavingRefused = false;
-    savedEvents = 0;
+    shared = new SharedPreferences();
     showNotifications();
-    listening = new AbortController();
-    window.addEventListener("preferences:saved", () => savedEvents++, {
-      signal: listening.signal,
-    });
     mockIPC((command, args) => {
       if (command === "preferences") return savedPreferences;
       if (command === "save_preferences") {
@@ -55,7 +65,6 @@ describe("Preferences", () => {
   });
 
   afterEach(() => {
-    listening.abort();
     clearMocks();
   });
 
@@ -126,7 +135,10 @@ describe("Preferences", () => {
     turn(switchByName("文字或譯文：暫停"));
     await settle();
 
-    expect(savedEvents).toBe(1);
+    expect(shared.current.choice_landings.text).toEqual({
+      is_pausing: false,
+      is_from_start: true,
+    });
   });
 
   // @behavior PF-006
@@ -139,10 +151,10 @@ describe("Preferences", () => {
     await settle();
     await settle();
 
-    expect([pausing.checked, savedEvents, notifications().length]).toEqual([
-      true,
-      0,
-      1,
-    ]);
+    expect([
+      pausing.checked,
+      shared.current.choice_landings.text.is_pausing,
+      notifications().length,
+    ]).toEqual([true, true, 1]);
   });
 });

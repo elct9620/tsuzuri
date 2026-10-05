@@ -31,7 +31,7 @@
     taskRun,
   } from "./context";
   import { comparisonLayout, type Side } from "./editor-comparison.svelte";
-  import type { PlaybackFollowing } from "./playback-following.svelte";
+  import type { Playback } from "./playback.svelte";
   import { resourceOffers } from "./segment-changes";
   import RemovalRow from "./RemovalRow.svelte";
   import SegmentRow from "./SegmentRow.svelte";
@@ -46,11 +46,11 @@
   };
 
   let {
-    following,
+    playback,
     onshown,
     children,
   }: {
-    following: PlaybackFollowing;
+    playback: Playback;
     /** Hears each Project once its Segments are shown. */
     onshown?: (project: ProjectView | null) => void;
     /** What stands between the empty hint and the rows, as the search and checked bars do. */
@@ -72,8 +72,6 @@
   let isTypingKept = $state(true);
   let currentIndex = $state<number | null>(null);
   let checkedIndexes = $state.raw(new Set<number>());
-  /** The positions of the Segments the Preview is playing. */
-  let playingIndexes = $state.raw<number[]>([]);
   /** The position of the Current Segment as its row was last brought into view. */
   let shownCurrentIndex: number | null = null;
 
@@ -193,36 +191,26 @@
       rows[Number(field.dataset.index)]?.followSelection();
   }
 
-  /** Marks the Segments the Preview is playing, keeping the row of the one started last in view while following playback. */
-  function markPlaying({ detail }: CustomEvent<{ indexes: number[] }>): void {
-    playingIndexes = detail.indexes;
-    flushSync();
-    scrollToPlaying();
-  }
-
-  function scrollToPlaying(): void {
-    const index = playingIndexes[playingIndexes.length - 1];
-    if (!following.isOn || index === undefined) return;
-    rows[index]?.bringIntoView();
-  }
-
   /** Turns following playback on or off by its shortcut, wherever the focus is. */
   function followShortcut(event: KeyboardEvent): void {
     if (!isShortcut(event, "following", isMacOS())) return;
     event.preventDefault();
-    following.toggle();
+    playback.toggleFollowing();
   }
 
-  // Catches up with the row being played as following playback comes on
+  // Keeps the row of the Segment started last in view while following playback, and catches up
+  // with it as following playback comes on
   $effect(() => {
-    if (following.isOn) untrack(scrollToPlaying);
+    const indexes = playback.playingIndexes;
+    const index = indexes[indexes.length - 1];
+    if (playback.isFollowing && index !== undefined)
+      untrack(() => rows[index]?.bringIntoView());
   });
 </script>
 
 <svelte:window
   oneditor:cursor={showCursor}
   oneditor:checks={() => (checkedIndexes = new Set(session.checkedIndexes))}
-  onpreview:playing={markPlaying}
   onkeydown={followShortcut}
   onpointerup={() => session.releasePointer()}
 />
@@ -253,7 +241,7 @@
           isPending={isPendingAt(index)}
           isChecked={checkedIndexes.has(index)}
           isCurrent={currentIndex === index}
-          isPlaying={playingIndexes.includes(index)}
+          isPlaying={playback.playingIndexes.includes(index)}
           {isTypingKept}
           comparison={layout.bySegment[index]}
         />

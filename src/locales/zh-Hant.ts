@@ -227,6 +227,7 @@ const zhHant: typeof en = {
       "空白鍵從目前段落的開頭播放，播完就停，方便重聽一句。關掉後空白鍵從目前位置繼續播放。",
     zoomIn: "放大",
     zoomOut: "縮小",
+    waveform: "波形",
     noWaveform: "無法畫出波形",
     play: "播放或停止",
     unplayable: "這個格式無法在這裡預覽，仍可看波形。",

@@ -11,35 +11,27 @@ import {
   shortcutText,
 } from "./shortcuts";
 
-const controllers = import.meta.glob<string>(
-  ["../controllers/*-controller.ts"],
-  { query: "?raw", import: "default", eager: true },
-);
-
-/** The page's markup: `index.html` and the Svelte components written into it. */
+/** The page's markup and every module it runs, tests left out: `index.html`, Svelte Components and TS. */
 const pageSources = [
   indexHtml,
   ...Object.values(
-    import.meta.glob<string>(["../**/*.svelte"], {
-      query: "?raw",
-      import: "default",
-      eager: true,
-    }),
+    import.meta.glob<string>(
+      ["../**/*.svelte", "../**/*.ts", "!../**/*.test.ts", "!../**/test-*.ts"],
+      { query: "?raw", import: "default", eager: true },
+    ),
   ),
 ];
 
-/** The key filters `source` binds in its actions, as `keydown.ctrl+z` names `ctrl+z`. */
-function boundChords(source: string): string[] {
-  return [...source.matchAll(/keydown\.([^\s-]+?)(?:@\w+)?->/g)].map(
-    ([, chord]) => chord,
-  );
-}
-
-/** The Shortcuts `source` reads from the list, as `isShortcut(event, "search", isMac)` reads `search`. */
+/** The Shortcuts `source` matches a key against, as `isShortcut(event, "search", isMac)` reads `search`. */
 function shortcutIds(source: string): string[] {
   return [
     ...source.matchAll(/(?:isShortcut\(\s*\w+,|shortcutById\()\s*"(\w+)"/g),
   ].map(([, id]) => id);
+}
+
+/** The Shortcuts `source` names in a tooltip, as `data-shortcut="search"` names `search`. */
+function tooltipShortcutIds(source: string): string[] {
+  return [...source.matchAll(/data-shortcut="(\w+)"/g)].map(([, id]) => id);
 }
 
 /** The keys `source` gives its menu items on macOS, as `CmdOrCtrl+Shift+Z` is `meta+shift+z` there. */
@@ -57,33 +49,30 @@ function isKeyboardChord(chord: string): boolean {
 
 describe("shortcuts", () => {
   // @behavior IF-036
-  it("lists every key the page and its controllers bind", () => {
-    const listedChords = new Set<string>(
-      SHORTCUTS.flatMap((shortcut) => [...shortcut.mac, ...shortcut.other]),
-    );
-    const usedChords = [...pageSources, ...Object.values(controllers)].flatMap(
-      boundChords,
-    );
+  it("lists every key the page and its modules bind", () => {
+    const listedIds = new Set<string>(SHORTCUTS.map(({ id }) => id));
+    const usedIds = pageSources.flatMap((source) => [
+      ...shortcutIds(source),
+      ...tooltipShortcutIds(source),
+    ]);
 
     expect([
-      usedChords.length > 0,
-      usedChords.filter((chord) => !listedChords.has(chord)),
+      usedIds.length > 0,
+      usedIds.filter((id) => !listedIds.has(id)),
     ]).toEqual([true, []]);
   });
 
   // @behavior IF-043
   it("names no key that nothing binds", () => {
-    const sources = [...pageSources, ...Object.values(controllers)];
-    const boundChordSet = new Set(sources.flatMap(boundChords));
-    const shortcutIdSet = new Set(sources.flatMap(shortcutIds));
+    const boundIds = new Set(pageSources.flatMap(shortcutIds));
 
     const unboundChords = SHORTCUTS.filter(
-      (shortcut) => !shortcutIdSet.has(shortcut.id),
+      (shortcut) => !boundIds.has(shortcut.id),
     )
       .flatMap((shortcut) => [...shortcut.mac, ...shortcut.other])
-      .filter((chord) => isKeyboardChord(chord) && !boundChordSet.has(chord));
+      .filter(isKeyboardChord);
 
-    expect([shortcutIdSet.size > 0, unboundChords]).toEqual([true, []]);
+    expect([boundIds.size > 0, unboundChords]).toEqual([true, []]);
   });
 
   // @behavior IF-044

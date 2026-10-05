@@ -28,7 +28,6 @@ type Layer =
   | "editor"
   | "editor entry"
   | "backend"
-  | "controller"
   | "ui"
   | "page.ts"
   | "Svelte Component"
@@ -39,7 +38,6 @@ function layer(path: string): Layer {
   if (path === "editor/index.ts") return "editor entry";
   if (path.startsWith("editor/")) return "editor";
   if (path.startsWith("backend/")) return "backend";
-  if (path.startsWith("controllers/")) return "controller";
   if (path.startsWith("ui/")) return "ui";
   if (path === "page.ts") return "page.ts";
   if (path === "Page.svelte" || path.startsWith("components/"))
@@ -62,7 +60,6 @@ const RULE_BY_LAYER: Partial<Record<Layer, LayerRule>> = {
   editor: { modules: ["editor", "editor entry"] },
   "editor entry": { modules: ["editor"] },
   backend: { modules: ["backend", "editor entry"] },
-  controller: { modules: ["editor entry", "ui", "backend", "i18n"] },
   ui: { modules: ["ui", "i18n"], types: ["editor entry", "editor", "backend"] },
   "page.ts": {
     modules: ["Svelte Component", "ui", "i18n"],

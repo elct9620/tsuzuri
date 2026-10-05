@@ -10,6 +10,7 @@ import type { TranscriptionScope } from "../backend/transcription";
 import type { EditingSession } from "../editor";
 import { AppUpdates } from "./app-updates.svelte";
 import { EditorComparison } from "./editor-comparison.svelte";
+import { SavedPreferences } from "./saved-preferences.svelte";
 import { TaskRun } from "./task-run.svelte";
 
 const FEED = Symbol("feed");
@@ -18,6 +19,7 @@ const APP_UPDATES = Symbol("app updates");
 const SESSION = Symbol("editing session");
 const SEGMENT_DIALOGS = Symbol("segment dialogs");
 const COMPARISON = Symbol("editor comparison");
+const PREFERENCES = Symbol("saved preferences");
 
 /** The dialogs beside the page's main element that a Segment's menu and the checked bar open. */
 export interface SegmentDialogs {
@@ -33,7 +35,8 @@ export interface SegmentDialogs {
 
 /**
  * The context the page is mounted with, holding the Project feed, the editing session, the task
- * run, the App Updates and the editor's comparison every Svelte Component shares.
+ * run, the App Updates, the editor's comparison and the saved Preferences every Svelte Component
+ * shares.
  */
 export function pageContext(
   feed: ProjectFeed,
@@ -41,6 +44,7 @@ export function pageContext(
   run: TaskRun = new TaskRun(),
   updates: AppUpdates = new AppUpdates(),
   comparison: EditorComparison = new EditorComparison(),
+  saved: SavedPreferences = new SavedPreferences(),
 ): Map<symbol, unknown> {
   return new Map<symbol, unknown>([
     [FEED, feed],
@@ -48,6 +52,7 @@ export function pageContext(
     [TASK_RUN, run],
     [APP_UPDATES, updates],
     [COMPARISON, comparison],
+    [PREFERENCES, saved],
   ]);
 }
 
@@ -74,6 +79,11 @@ export function appUpdates(): AppUpdates {
 /** The editor's comparison the page was mounted with; called while a Svelte Component initialises. */
 export function editorComparison(): EditorComparison {
   return getContext<EditorComparison>(COMPARISON);
+}
+
+/** The saved Preferences the page was mounted with; called while a Svelte Component initialises. */
+export function savedPreferences(): SavedPreferences {
+  return getContext<SavedPreferences>(PREFERENCES);
 }
 
 /** Hands the Svelte Components below the dialogs Page holds; called while Page initialises. */

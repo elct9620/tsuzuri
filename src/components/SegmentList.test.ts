@@ -17,7 +17,7 @@ import {
 } from "./test-notifications";
 import { pageContext } from "./context";
 import { SAVE_MARK, saveMark } from "../ui/test-save-mark";
-import { PlaybackFollowing } from "./playback-following.svelte";
+import { Playback } from "./playback.svelte";
 import SegmentList from "./SegmentList.svelte";
 import { TaskRun } from "./task-run.svelte";
 import { rowList, segmentRows } from "./test-segment-rows";
@@ -119,7 +119,7 @@ describe("SegmentList", () => {
     const context = pageContext(assembly.feed, assembly.session, run);
     segmentList = render(SegmentList, {
       target: document.querySelector("section")!,
-      props: { following: new PlaybackFollowing() },
+      props: { playback: new Playback() },
       context,
     }).component;
     await assembly.start();

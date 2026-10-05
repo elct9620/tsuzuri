@@ -20,7 +20,8 @@
     notifyChangedElsewhereKept,
     openRequestedSrt,
   } from "./components/project-actions";
-  import { PlaybackFollowing } from "./components/playback-following.svelte";
+  import { Playback } from "./components/playback.svelte";
+  import { PreviewFold } from "./components/preview-fold.svelte";
   import ReplacementDialog from "./components/ReplacementDialog.svelte";
   import { ResourceDock } from "./components/resource-dock.svelte";
   import ResourceList from "./components/ResourceList.svelte";
@@ -56,7 +57,8 @@
 
   const openSettings = () => settingsDialog.open();
   const dock = new ResourceDock();
-  const following = new PlaybackFollowing();
+  const playback = new Playback();
+  const fold = new PreviewFold();
   const feed = projectFeed();
   const comparison = editorComparison();
   setSegmentDialogs({
@@ -114,21 +116,16 @@
         openTranslation={() => translationDialog.open()}
         openDiarization={() => diarizationDialog.open()}
       />
-      <div
-        class="contents"
-        data-controller="preview timeline"
-        data-action="editor:cursor@window->timeline#showCursor system:color-scheme@window->timeline#repaintWaveform editor:cursor@window->preview#showCursor rust:video-window-closing@window->preview#closeVideoWindow editor:choice@window->timeline#moveToChoice preferences:saved@window->timeline#readPreferences keydown.space@window->timeline#playOrStop:!control:prevent keydown@window->timeline#setTimeAtMedia:!control keydown.esc@window->timeline#cancel:!control keydown.enter@window->timeline#insertRange:!control focusin@window->timeline#followFocus pointerdown@window->timeline#followModifiers:capture pointermove@window->timeline#followModifiers:capture pointermove@window->timeline#extendDrawing pointerup@window->timeline#finishDrawing"
-      >
-        <EditorBar
-          openReplacement={() => replacementDialog.open()}
-          openVersions={(subtitle) => versionsDialog.open(subtitle)}
-          openSearch={() => segmentList.openSearch()}
-          openSpeakers={() => speakersDialog.open()}
-        />
-        <Preview {following} />
-      </div>
+      <EditorBar
+        openReplacement={() => replacementDialog.open()}
+        openVersions={(subtitle) => versionsDialog.open(subtitle)}
+        openSearch={() => segmentList.openSearch()}
+        openSpeakers={() => speakersDialog.open()}
+        {fold}
+      />
+      <Preview {playback} {fold} />
       <div class="flex-1 overflow-y-auto p-4">
-        <SegmentList {following} bind:this={segmentList} />
+        <SegmentList {playback} bind:this={segmentList} />
       </div>
     </div>
     <ResourceList

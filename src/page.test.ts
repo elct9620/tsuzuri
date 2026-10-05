@@ -38,10 +38,9 @@ describe("drawPage", () => {
     clearMocks();
   });
 
-  // Each part is found by what its controller, module or Svelte Component reads, so a Svelte
-  // Component left out of the page leaves nothing for them to read.
+  // Each part is found by what its module or Svelte Component reads, so a Svelte Component left
+  // out of the page leaves nothing for them to read.
   it.each([
-    ["preview", '[data-preview-target="panel"]'],
     ["notification stack", "[data-notifications]"],
     ["tooltip bubble", ".tooltip[popover]"],
   ])("writes the %s", (_part, selector) => {
@@ -59,6 +58,8 @@ describe("drawPage", () => {
     ["export menu", "button", "toolbar.export"],
     ["editor bar's translation choice", "combobox", "edit.translation"],
     ["Segment list", "list", "edit.segments"],
+    ["Preview", "button", "preview.play"],
+    ["timeline", "button", "preview.zoomIn"],
   ])("writes the %s", async (_part, role, name) => {
     // In the document, so a name given by `aria-labelledby` finds the element it names.
     const page = document.createElement("div");

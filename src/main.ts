@@ -2,10 +2,6 @@ import { Application } from "@hotwired/stimulus";
 
 import { assemble } from "./assembly";
 import { locale } from "./backend/system";
-import PreviewController from "./controllers/preview-controller";
-import TimelineController, {
-  controlOption,
-} from "./controllers/timeline-controller";
 import { setInterfaceLanguage } from "./i18n";
 import { drawPage } from "./page";
 
@@ -17,11 +13,7 @@ import { drawPage } from "./page";
 async function start(): Promise<void> {
   await setInterfaceLanguage(await locale());
   const application = new Application();
-  application.registerActionOption("control", controlOption);
-  const assembly = assemble(application, {
-    preview: PreviewController,
-    timeline: TimelineController,
-  });
+  const assembly = assemble(application, {});
   drawPage(assembly.feed, assembly.session);
   await application.start();
   await assembly.start();

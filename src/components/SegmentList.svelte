@@ -20,11 +20,11 @@
   import CheckedBar from "./CheckedBar.svelte";
   import { cleanMarked } from "./cleanup-actions";
   import { editingSession } from "./context";
-  import type { PlaybackFollowing } from "./playback-following.svelte";
+  import type { Playback } from "./playback.svelte";
   import SearchBar from "./SearchBar.svelte";
   import SegmentRows from "./SegmentRows.svelte";
 
-  let { following }: { following: PlaybackFollowing } = $props();
+  let { playback }: { playback: Playback } = $props();
   const session = editingSession();
   let searchBar: SearchBar;
   let segmentRows: SegmentRows;
@@ -164,7 +164,7 @@
 <svelte:window onkeydown={followKeys} onrust:edit-command={applyEditCommand} />
 
 <SegmentRows
-  {following}
+  {playback}
   onshown={() => searchBar.searchAgain()}
   bind:this={segmentRows}
 >

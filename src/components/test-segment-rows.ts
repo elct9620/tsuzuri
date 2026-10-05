@@ -6,7 +6,7 @@
 import { render, screen, within } from "@testing-library/svelte";
 
 import { type SegmentDialogs, withSegmentDialogs } from "./context";
-import { PlaybackFollowing } from "./playback-following.svelte";
+import { Playback } from "./playback.svelte";
 import type ShiftDialog from "./ShiftDialog.svelte";
 import type SpeakersDialog from "./SpeakersDialog.svelte";
 import SegmentList from "./SegmentList.svelte";
@@ -14,25 +14,28 @@ import SegmentRows from "./SegmentRows.svelte";
 import type TranscriptionDialog from "./TranscriptionDialog.svelte";
 import type TranslationDialog from "./TranslationDialog.svelte";
 
-/** The rows drawn, the following playback they share with the Preview's button, and how to take them away. */
+/** The rows drawn, what they mark as played and follow, and how to take them away. */
 export interface DrawnSegmentRows {
   rows: SegmentRows;
-  following: PlaybackFollowing;
+  playback: Playback;
   unmount: () => void;
 }
 
-/** Draws the rows at the end of `target`, reading the feed, session and task run of `context`. */
+/**
+ * Draws the rows at the end of `target`, reading the feed, session and task run of `context`, and
+ * marking what `playback` plays.
+ */
 export function drawSegmentRows(
   target: HTMLElement,
   context: Map<symbol, unknown>,
+  playback = new Playback(),
 ): DrawnSegmentRows {
-  const following = new PlaybackFollowing();
   const { component, unmount } = render(SegmentRows, {
     target,
-    props: { following },
+    props: { playback },
     context,
   });
-  return { rows: component, following, unmount };
+  return { rows: component, playback, unmount };
 }
 
 /** The list the rows are drawn in. */
@@ -73,7 +76,7 @@ export function drawSegmentList(
 ): SegmentList {
   return render(SegmentList, {
     target,
-    props: { following: new PlaybackFollowing() },
+    props: { playback: new Playback() },
     context: withSegmentDialogs(context, dialogs),
   }).component;
 }

@@ -233,6 +233,7 @@ const en = {
       "Space plays the Current Segment from its start and stops at its end, to hear one line again. Turned off, Space plays on from where the media is.",
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",
+    waveform: "Waveform",
     noWaveform: "Could not draw the waveform",
     play: "Play or stop",
     unplayable:

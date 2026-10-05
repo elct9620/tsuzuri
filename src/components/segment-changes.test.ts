@@ -18,7 +18,7 @@ import { mockPageMount } from "../test-page";
 import { projectOf } from "../test-project";
 import { EditingSession, fieldValue } from "../editor";
 import { pageContext, withSegmentDialogs } from "./context";
-import { PlaybackFollowing } from "./playback-following.svelte";
+import { Playback } from "./playback.svelte";
 import SegmentList from "./SegmentList.svelte";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
@@ -123,7 +123,7 @@ describe("Segment Changes", () => {
     const assembly = assemble(application, {});
     render(SegmentList, {
       target: document.querySelector("section")!,
-      props: { following: new PlaybackFollowing() },
+      props: { playback: new Playback() },
       context: withSegmentDialogs(
         pageContext(assembly.feed, assembly.session),
         {

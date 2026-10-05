@@ -1,27 +1,49 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { cleanup, render, screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
+import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { assemble } from "../assembly";
-import type { ProjectView } from "../backend/project";
-import { projectOf } from "../test-project";
-import PreviewController from "./preview-controller";
 
-describe("PreviewController", () => {
+import { assemble } from "../assembly";
+import { DEFAULT_PREFERENCES } from "../backend/preferences";
+import type { ProjectView } from "../backend/project";
+import type { EditingSession } from "../editor";
+import { setInterfaceLanguage, t } from "../i18n";
+import { projectOf } from "../test-project";
+import { pageContext } from "./context";
+import EditorBar from "./EditorBar.svelte";
+import { Playback } from "./playback.svelte";
+import Preview from "./Preview.svelte";
+import { PreviewFold } from "./preview-fold.svelte";
+
+describe("Preview", () => {
   let application: Application;
+  let session: EditingSession;
   let project: ProjectView | null;
-  /** The player, kept as the Video Window takes it out of the page. */
+  /** The player of the Preview drawn last, kept as the Video Window takes it out of the page. */
   let player: HTMLVideoElement;
   /** The commands asked of Rust's window plugin, with their arguments. */
   let windowCalls: [string, unknown][];
   let isFullscreen: boolean;
+  /** The Preview's root element, holding the player's row and the timeline. */
+  let panel: () => HTMLElement;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const target = (name: string) =>
-    document.querySelector<HTMLElement>(`[data-preview-target="${name}"]`)!;
   const media = () => player;
-  const panel = () => target("panel");
+  /** The screen the media plays on, with the Segment being played over it. */
+  const screenOf = () => player.parentElement!;
+  /** What is shown over the video, wherever the video is. */
+  const caption = () => screenOf().querySelector<HTMLElement>("p > span")!;
+  /** The hint taking the video's place when the media cannot be played. */
+  const hint = () => screenOf().querySelector<HTMLElement>('[role="alert"]')!;
+  const clock = () => screen.getByRole("timer");
+  /** The row the video sits in beside the Current Segment's card. */
+  const screenRow = () => panel().firstElementChild as HTMLElement;
+  const timelineFrame = () => panel().lastElementChild as HTMLElement;
+  const button = (label: string) =>
+    screen.getByRole<HTMLButtonElement>("button", { name: t(label) });
   const projectWithMedia = (changes: Partial<ProjectView> = {}) =>
     projectOf({ media: "/talks/ep01.mp4", ...changes });
 
@@ -31,14 +53,39 @@ describe("PreviewController", () => {
     await settle();
   }
 
+  /** Draws the Preview with the editor bar folding its parts, as the page draws them. */
+  async function draw(): Promise<void> {
+    application = Application.start();
+    const assembly = assemble(application, {});
+    session = assembly.session;
+    const context = pageContext(assembly.feed, assembly.session);
+    const playback = new Playback();
+    const fold = new PreviewFold();
+    player = playback.media;
+    render(EditorBar, {
+      props: {
+        openReplacement: () => {},
+        openVersions: () => {},
+        openSearch: () => {},
+        openSpeakers: () => {},
+        fold,
+      },
+      context,
+    });
+    const { container } = render(Preview, {
+      props: { playback, fold },
+      context,
+    });
+    panel = () => container.firstElementChild as HTMLElement;
+    await assembly.start();
+    await settle();
+  }
+
   /** Starts the Preview over, as the next time the app opens. */
   async function reopen(): Promise<void> {
+    cleanup();
     application.stop();
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
+    await draw();
   }
 
   /** Makes the media report `seconds` long and at `at`, as a loaded player does. */
@@ -49,22 +96,22 @@ describe("PreviewController", () => {
     });
     media().currentTime = at;
     media().dispatchEvent(new Event("timeupdate"));
+    flushSync();
   }
 
+  /** The radio button of the group labelled `group`, labelled by the key `prefix` followed by `value`, as `captionOriginal` is for `original`. */
+  const choice = (group: string, prefix: string, value: string) =>
+    within(
+      screen.getByRole("radiogroup", { name: t(group) }),
+    ).getByRole<HTMLInputElement>("radio", {
+      name: t(`${prefix}${value[0].toUpperCase()}${value.slice(1)}`),
+    });
   const captionLanguage = (value: string) =>
-    document.querySelector<HTMLInputElement>(
-      `[data-preview-target="captionLanguage"][value="${value}"]`,
-    )!;
-
+    choice("preview.captionLanguage", "preview.caption", value);
   const captionBackdrop = (value: string) =>
-    document.querySelector<HTMLInputElement>(
-      `[data-preview-target="captionBackdrop"][value="${value}"]`,
-    )!;
-
+    choice("preview.captionBackdrop", "preview.captionBackdrop", value);
   const dummyVideoColour = (value: string) =>
-    document.querySelector<HTMLInputElement>(
-      `[data-preview-target="dummyVideoColour"][value="${value}"]`,
-    )!;
+    choice("preview.dummyVideo", "preview.dummyVideo", value);
 
   /** A Resource without media whose one Segment ends at `endMs`. */
   const projectEndingAt = (endMs: number) =>
@@ -72,12 +119,12 @@ describe("PreviewController", () => {
 
   /** Keeps each Blob the Preview makes a URL for, naming them `blob:silence-1` onwards. */
   function keepMadeSilence(): Blob[] {
-    const made: Blob[] = [];
+    const silences: Blob[] = [];
     vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
-      made.push(blob as Blob);
-      return `blob:silence-${made.length}`;
+      silences.push(blob as Blob);
+      return `blob:silence-${silences.length}`;
     });
-    return made;
+    return silences;
   }
 
   /** Starts the player over at 0 once its source changes, as a browser does and happy-dom does not. */
@@ -113,6 +160,7 @@ describe("PreviewController", () => {
       configurable: true,
     });
     media().dispatchEvent(new Event("loadedmetadata"));
+    flushSync();
   }
 
   /** `ep01` with media and `今天` from 0 to 1 s, translated `Today` in `en` shown. */
@@ -125,7 +173,10 @@ describe("PreviewController", () => {
       ...changes,
     });
 
-  const captionSpeaker = () => target("captionSpeaker") as HTMLInputElement;
+  const captionSpeaker = () =>
+    screen.getByRole<HTMLInputElement>("checkbox", {
+      name: t("preview.captionSpeaker"),
+    });
 
   /** `ep01` with media and `今天` from 0 to 1 s said by `小明`, translated `Today` in `en` shown, where the Translation Glossary names `小明` as `Xiao Ming`. */
   const projectSpoken = (changes: Partial<ProjectView> = {}) =>
@@ -147,20 +198,21 @@ describe("PreviewController", () => {
   const videoWindow = () =>
     player.ownerDocument === document ? null : player.ownerDocument.defaultView;
 
-  const videoWindowTarget = (name: string) =>
-    player.ownerDocument.querySelector<HTMLElement>(
-      `[data-preview-target="${name}"]`,
-    )!;
-
   function pressVideoWindowButton(): void {
-    document.querySelector<HTMLElement>("#video-window")!.click();
+    button("preview.videoWindow").click();
+    flushSync();
   }
 
   function pressPlay(): void {
-    document.querySelector<HTMLElement>("#play")!.click();
+    button("preview.play").click();
   }
 
+  /** Whether the Current Segment's card, or the hint asking for one, is beside the video. */
+  const isCardShown = () =>
+    screen.queryByText(t("preview.pickSegment")) !== null;
+
   beforeEach(async () => {
+    await setInterfaceLanguage("zh-TW");
     localStorage.clear();
     project = null;
     mockConvertFileSrc("macos");
@@ -169,6 +221,7 @@ describe("PreviewController", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
+        if (command === "preferences") return DEFAULT_PREFERENCES;
         if (command === "plugin:window|get_all_windows")
           return ["main", "video"];
         if (command === "plugin:window|is_fullscreen") return isFullscreen;
@@ -178,52 +231,15 @@ describe("PreviewController", () => {
       },
       { shouldMockEvents: true },
     );
-    document.body.innerHTML = `
-      <div data-controller="preview" data-action="rust:video-window-closing@window->preview#closeVideoWindow">
-        <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden></button>
-        <button id="fold-timeline" data-preview-target="timelineFoldButton" data-action="preview#toggleTimelineFold" hidden></button>
-        <div data-preview-target="panel" hidden>
-        <div data-preview-target="screenRow">
-          <div data-preview-target="screen">
-            <video data-preview-target="media"></video>
-            <p data-preview-target="caption"></p>
-            <div data-preview-target="hint" hidden></div>
-          </div>
-        </div>
-        <div data-preview-target="timeline"></div>
-        <button id="play" data-action="preview#togglePlayback"><span data-preview-target="playbackIcon"></span></button>
-        <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
-        <span data-preview-target="time"></span>
-        <input type="range" min="0" max="100" data-preview-target="volume" data-action="input->preview#setVolume">
-        <span data-preview-target="volumeLevel"></span><button id="mute" data-preview-target="muteButton" data-action="preview#toggleMute"><span data-preview-target="muteIcon"></span></button>
-        <div data-preview-target="captionChoice">
-          <input type="radio" name="caption" value="original" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
-          <input type="radio" name="caption" value="translation" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
-          <input type="radio" name="caption" value="bilingual" data-preview-target="captionLanguage" data-action="preview#chooseCaptionLanguage">
-          <input type="radio" name="backdrop" value="none" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
-          <input type="radio" name="backdrop" value="translucent" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
-          <input type="radio" name="backdrop" value="opaque" data-preview-target="captionBackdrop" data-action="preview#chooseCaptionBackdrop">
-          <input type="checkbox" data-preview-target="captionSpeaker" data-action="preview#toggleCaptionSpeaker">
-          <input type="radio" name="dummy-video" value="black" data-preview-target="dummyVideoColour" data-action="preview#chooseDummyVideoColour">
-          <input type="radio" name="dummy-video" value="white" data-preview-target="dummyVideoColour" data-action="preview#chooseDummyVideoColour">
-        </div>
-          <div data-preview-target="currentSection">
-          <p data-preview-target="currentHint"></p>
-          <div data-preview-target="currentCard" hidden><span data-preview-target="currentNumber"></span><span data-preview-target="currentTimes"></span><span data-preview-target="currentSpeaker" hidden></span><p data-preview-target="currentText"></p><p data-preview-target="currentTranslation"></p></div></div>
-        </div>
-      </div>
-    `;
-    player = document.querySelector("video")!;
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
+    await draw();
   });
 
-  afterEach(() => {
-    application.stop();
+  afterEach(async () => {
     videoWindow()?.close();
+    cleanup();
+    application.stop();
+    // Taking the Preview away closes the Video Window, which asks Rust once the window is found
+    await settle();
     clearMocks();
     vi.restoreAllMocks();
   });
@@ -246,34 +262,36 @@ describe("PreviewController", () => {
 
   // @behavior PV-197
   it("plays silence a minute past the last Segment for a Resource without media", async () => {
-    const made = keepMadeSilence();
+    const silences = keepMadeSilence();
 
     await show(projectEndingAt(10000));
 
     expect([
       media().getAttribute("src"),
-      made[0].type,
-      await silenceSeconds(made[0]),
+      silences[0].type,
+      await silenceSeconds(silences[0]),
     ]).toEqual(["blob:silence-1", "audio/wav", 70]);
   });
 
   it("makes the silence of nothing but silent samples", async () => {
-    const made = keepMadeSilence();
+    const silences = keepMadeSilence();
 
     await show(projectEndingAt(10000));
-    const samples = new Uint8Array(await made[0].arrayBuffer(), 44);
+    const samples = new Uint8Array(await silences[0].arrayBuffer(), 44);
 
     expect(samples.every((sample) => sample === 128)).toBe(true);
   });
 
   // @behavior PV-199
   it("lengthens the silence once a Segment reaches its end", async () => {
-    const made = keepMadeSilence();
+    const silences = keepMadeSilence();
     await show(projectEndingAt(10000));
 
     await show(projectEndingAt(70000));
 
-    expect([made.length, await silenceSeconds(made[1])]).toEqual([2, 130]);
+    expect([silences.length, await silenceSeconds(silences[1])]).toEqual([
+      2, 130,
+    ]);
   });
 
   // @behavior PV-200
@@ -289,22 +307,24 @@ describe("PreviewController", () => {
   });
 
   it("makes silence of its own for another Resource without media", async () => {
-    const made = keepMadeSilence();
+    const silences = keepMadeSilence();
     await show(projectEndingAt(10000));
 
     await show({ ...projectEndingAt(5000), current_resource: "ep02" });
 
-    expect([made.length, await silenceSeconds(made[1])]).toEqual([2, 65]);
+    expect([silences.length, await silenceSeconds(silences[1])]).toEqual([
+      2, 65,
+    ]);
   });
 
   // @behavior PV-201
   it("keeps the silence while the Segments stay within it", async () => {
-    const made = keepMadeSilence();
+    const silences = keepMadeSilence();
     await show(projectEndingAt(10000));
 
     await show(projectEndingAt(30000));
 
-    expect([made.length, media().getAttribute("src")]).toEqual([
+    expect([silences.length, media().getAttribute("src")]).toEqual([
       1,
       "blob:silence-1",
     ]);
@@ -326,7 +346,7 @@ describe("PreviewController", () => {
 
     loadPicture(0, 0);
 
-    expect([target("screen").hidden, panel().hidden]).toEqual([false, false]);
+    expect([screenOf().hidden, panel().hidden]).toEqual([false, false]);
   });
 
   it("sizes the row beside the card by the video's shape", async () => {
@@ -335,8 +355,8 @@ describe("PreviewController", () => {
     loadPicture(1920, 1080);
 
     expect([
-      target("screenRow").hasAttribute("data-has-picture"),
-      target("screenRow").style.getPropertyValue("--picture-ratio"),
+      screenRow().hasAttribute("data-has-picture"),
+      screenRow().style.getPropertyValue("--picture-ratio"),
     ]).toEqual([true, "0.5625"]);
   });
 
@@ -346,8 +366,8 @@ describe("PreviewController", () => {
     loadPicture(0, 0);
 
     expect([
-      target("screenRow").hasAttribute("data-has-picture"),
-      target("screenRow").style.getPropertyValue("--picture-ratio"),
+      screenRow().hasAttribute("data-has-picture"),
+      screenRow().style.getPropertyValue("--picture-ratio"),
     ]).toEqual([true, "0.5625"]);
   });
 
@@ -357,7 +377,7 @@ describe("PreviewController", () => {
 
     media().dispatchEvent(new Event("error"));
 
-    expect([media().hidden, target("hint").hidden]).toEqual([true, false]);
+    expect([media().hidden, hint().hidden]).toEqual([true, false]);
   });
 
   // @behavior PV-012
@@ -385,7 +405,7 @@ describe("PreviewController", () => {
 
     playTo(62, 24 * 60 + 10);
 
-    expect(target("time").textContent).toBe("01:02 / 24:10");
+    expect(clock().textContent).toBe("01:02 / 24:10");
   });
 
   // @behavior PV-014
@@ -394,7 +414,7 @@ describe("PreviewController", () => {
 
     playTo(62, 60 * 60 + 2 * 60 + 5);
 
-    expect(target("time").textContent).toBe("01:02 / 1:02:05");
+    expect(clock().textContent).toBe("01:02 / 1:02:05");
   });
 
   // @behavior PV-015
@@ -410,7 +430,7 @@ describe("PreviewController", () => {
 
     playTo(1.5);
 
-    expect(target("caption").textContent).toBe("今天");
+    expect(caption().textContent).toBe("今天");
   });
 
   describe("with a Segment said over another", () => {
@@ -427,7 +447,7 @@ describe("PreviewController", () => {
 
       playTo(1.2);
 
-      expect(target("caption").textContent).toBe("對啊\n大家好");
+      expect(caption().textContent).toBe("對啊\n大家好");
     });
 
     // @behavior PV-104
@@ -436,7 +456,7 @@ describe("PreviewController", () => {
 
       playTo(1.8);
 
-      expect(target("caption").textContent).toBe("大家好");
+      expect(caption().textContent).toBe("大家好");
     });
 
     // @behavior PV-105
@@ -450,7 +470,7 @@ describe("PreviewController", () => {
 
       playTo(0.5);
 
-      expect(target("caption").textContent).toBe("對啊\n大家好");
+      expect(caption().textContent).toBe("對啊\n大家好");
     });
   });
 
@@ -469,7 +489,7 @@ describe("PreviewController", () => {
     media().currentTime = 1.05;
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
-    expect(target("caption").textContent).toBe("今天");
+    expect(caption().textContent).toBe("今天");
   });
 
   // @behavior PV-016
@@ -482,7 +502,7 @@ describe("PreviewController", () => {
 
     playTo(1.5);
 
-    expect(target("caption").textContent).toBe("");
+    expect(caption().textContent).toBe("");
   });
 
   // @behavior PV-043
@@ -492,7 +512,7 @@ describe("PreviewController", () => {
     captionLanguage("translation").click();
     playTo(0.5);
 
-    expect(target("caption").textContent).toBe("Today");
+    expect(caption().textContent).toBe("Today");
   });
 
   // @behavior PV-044
@@ -502,7 +522,7 @@ describe("PreviewController", () => {
     captionLanguage("bilingual").click();
     playTo(0.5);
 
-    expect(target("caption").textContent).toBe("今天\nToday");
+    expect(caption().textContent).toBe("今天\nToday");
   });
 
   // @behavior PV-045
@@ -519,7 +539,7 @@ describe("PreviewController", () => {
     captionLanguage("bilingual").click();
     playTo(0.5);
 
-    expect(target("caption").textContent).toBe("Today\n今天");
+    expect(caption().textContent).toBe("Today\n今天");
   });
 
   // @behavior PV-046
@@ -534,7 +554,7 @@ describe("PreviewController", () => {
     );
     playTo(0.5);
 
-    expect(target("caption").textContent).toBe("今天");
+    expect(caption().textContent).toBe("今天");
   });
 
   // @behavior PV-047
@@ -565,7 +585,9 @@ describe("PreviewController", () => {
 
     loadPicture(0, 0);
 
-    expect(target("captionChoice").hidden).toBe(false);
+    expect(
+      screen.queryByRole("radiogroup", { name: t("preview.captionLanguage") }),
+    ).not.toBeNull();
   });
 
   // @behavior PV-193
@@ -574,7 +596,7 @@ describe("PreviewController", () => {
 
     loadPicture(0, 0);
 
-    expect(target("screen").dataset.dummyVideo).toBe("black");
+    expect(screenOf().dataset.dummyVideo).toBe("black");
   });
 
   // @behavior PV-194
@@ -584,7 +606,7 @@ describe("PreviewController", () => {
 
     dummyVideoColour("white").click();
 
-    expect(target("screen").dataset.dummyVideo).toBe("white");
+    expect(screenOf().dataset.dummyVideo).toBe("white");
   });
 
   // @behavior PV-195
@@ -592,7 +614,7 @@ describe("PreviewController", () => {
     await show(projectWithMedia());
     loadPicture(0, 0);
     dummyVideoColour("white").click();
-    delete target("screen").dataset.dummyVideo;
+    delete screenOf().dataset.dummyVideo;
     dummyVideoColour("black").checked = true;
     await reopen();
 
@@ -600,7 +622,7 @@ describe("PreviewController", () => {
     loadPicture(0, 0);
 
     expect([
-      target("screen").dataset.dummyVideo,
+      screenOf().dataset.dummyVideo,
       dummyVideoColour("white").checked,
     ]).toEqual(["white", true]);
   });
@@ -612,7 +634,7 @@ describe("PreviewController", () => {
     loadPicture(1920, 1080);
 
     expect([
-      target("screen").dataset.dummyVideo,
+      screenOf().dataset.dummyVideo,
       dummyVideoColour("black").disabled,
       dummyVideoColour("white").disabled,
     ]).toEqual([undefined, true, true]);
@@ -622,7 +644,7 @@ describe("PreviewController", () => {
   it("shows what is over the video on a translucent black by default", async () => {
     await show(projectWithMedia());
 
-    expect(target("caption").dataset.backdrop).toBe("translucent");
+    expect(caption().dataset.backdrop).toBe("translucent");
   });
 
   // @behavior PV-069
@@ -631,7 +653,7 @@ describe("PreviewController", () => {
 
     captionBackdrop("opaque").click();
 
-    expect(target("caption").dataset.backdrop).toBe("opaque");
+    expect(caption().dataset.backdrop).toBe("opaque");
   });
 
   // @behavior PV-070
@@ -643,7 +665,7 @@ describe("PreviewController", () => {
     await show(projectOf({ media: "/talks/ep02.mp4" }));
 
     expect([
-      target("caption").dataset.backdrop,
+      caption().dataset.backdrop,
       captionBackdrop("none").checked,
     ]).toEqual(["none", true]);
   });
@@ -654,7 +676,7 @@ describe("PreviewController", () => {
 
     playTo(0.5);
 
-    expect([target("caption").textContent, captionSpeaker().checked]).toEqual([
+    expect([caption().textContent, captionSpeaker().checked]).toEqual([
       "小明: 今天",
       true,
     ]);
@@ -667,7 +689,7 @@ describe("PreviewController", () => {
     captionLanguage("translation").click();
     playTo(0.5);
 
-    expect(target("caption").textContent).toBe("Xiao Ming: Today");
+    expect(caption().textContent).toBe("Xiao Ming: Today");
   });
 
   it("keeps a Speaker's name the Translation Glossary does not give over the translation", async () => {
@@ -676,7 +698,7 @@ describe("PreviewController", () => {
     captionLanguage("translation").click();
     playTo(0.5);
 
-    expect(target("caption").textContent).toBe("小明: Today");
+    expect(caption().textContent).toBe("小明: Today");
   });
 
   // @behavior PV-094
@@ -686,7 +708,7 @@ describe("PreviewController", () => {
     captionLanguage("bilingual").click();
     playTo(0.5);
 
-    expect(target("caption").textContent).toBe("小明: 今天\nXiao Ming: Today");
+    expect(caption().textContent).toBe("小明: 今天\nXiao Ming: Today");
   });
 
   // @behavior PV-106
@@ -702,7 +724,7 @@ describe("PreviewController", () => {
 
     playTo(1.2);
 
-    expect(target("caption").textContent).toBe("小華: 對啊\n小明: 大家好");
+    expect(caption().textContent).toBe("小華: 對啊\n小明: 大家好");
   });
 
   it("names the Speaker once before a caption of several lines", async () => {
@@ -716,7 +738,7 @@ describe("PreviewController", () => {
 
     playTo(0.5);
 
-    expect(target("caption").textContent).toBe("小明: 今天\n天氣好");
+    expect(caption().textContent).toBe("小明: 今天\n天氣好");
   });
 
   // @behavior PV-095
@@ -726,7 +748,7 @@ describe("PreviewController", () => {
     captionSpeaker().click();
     playTo(0.5);
 
-    expect(target("caption").textContent).toBe("今天");
+    expect(caption().textContent).toBe("今天");
   });
 
   // @behavior PV-096
@@ -738,16 +760,21 @@ describe("PreviewController", () => {
     await show(projectSpoken({ media: "/talks/ep02.mp4" }));
     playTo(0.5);
 
-    expect([target("caption").textContent, captionSpeaker().checked]).toEqual([
+    expect([caption().textContent, captionSpeaker().checked]).toEqual([
       "今天",
       false,
     ]);
   });
 
-  const foldPlayer = () =>
-    document.querySelector<HTMLElement>("#fold-player")!.click();
-  const foldTimeline = () =>
-    document.querySelector<HTMLElement>("#fold-timeline")!.click();
+  function foldPlayer(): void {
+    button("preview.foldPlayer").click();
+    flushSync();
+  }
+
+  function foldTimeline(): void {
+    button("preview.foldTimeline").click();
+    flushSync();
+  }
 
   // @behavior PV-034
   it("hides the player and its controls, keeping the timeline, when their fold button is pressed", async () => {
@@ -756,8 +783,8 @@ describe("PreviewController", () => {
     foldPlayer();
 
     expect([
-      target("screenRow").hidden,
-      target("timeline").hidden,
+      screenRow().hidden,
+      timelineFrame().hidden,
       panel().hidden,
     ]).toEqual([true, false, false]);
   });
@@ -767,14 +794,17 @@ describe("PreviewController", () => {
 
     foldTimeline();
 
-    const isLit = (id: string) => {
-      const button = document.querySelector(id)!;
+    const isLit = (label: string) => {
+      const fold = button(label);
       return [
-        button.classList.contains("btn-primary"),
-        button.getAttribute("aria-pressed"),
+        fold.classList.contains("btn-primary"),
+        fold.getAttribute("aria-pressed"),
       ];
     };
-    expect([isLit("#fold-player"), isLit("#fold-timeline")]).toEqual([
+    expect([
+      isLit("preview.foldPlayer"),
+      isLit("preview.foldTimeline"),
+    ]).toEqual([
       [false, "false"],
       [true, "true"],
     ]);
@@ -788,7 +818,7 @@ describe("PreviewController", () => {
 
     await show(projectOf({ media: "/talks/ep02.mp4" }));
 
-    expect(target("screenRow").hidden).toBe(true);
+    expect(screenRow().hidden).toBe(true);
   });
 
   // @behavior PV-189
@@ -797,10 +827,7 @@ describe("PreviewController", () => {
 
     foldTimeline();
 
-    expect([target("timeline").hidden, target("screenRow").hidden]).toEqual([
-      true,
-      false,
-    ]);
+    expect([timelineFrame().hidden, screenRow().hidden]).toEqual([true, false]);
   });
 
   // @behavior PV-190
@@ -811,7 +838,7 @@ describe("PreviewController", () => {
 
     await show(projectOf({ media: "/talks/ep02.mp4" }));
 
-    expect(target("timeline").hidden).toBe(true);
+    expect(timelineFrame().hidden).toBe(true);
   });
 
   // @behavior PV-191
@@ -825,11 +852,12 @@ describe("PreviewController", () => {
   });
 
   const volumeSlider = () =>
-    document.querySelector<HTMLInputElement>('[data-preview-target="volume"]')!;
+    screen.getByRole<HTMLInputElement>("slider", { name: t("preview.volume") });
 
   function moveVolumeSlider(value: number): void {
     volumeSlider().value = String(value);
     volumeSlider().dispatchEvent(new Event("input", { bubbles: true }));
+    flushSync();
   }
 
   // @behavior PV-164
@@ -848,29 +876,17 @@ describe("PreviewController", () => {
     expect(player.volume).toBe(0.125);
   });
 
-  async function reopenWith(choices: Record<string, string>): Promise<void> {
-    application.stop();
-    player.removeAttribute("crossorigin");
-    player.volume = 1;
-    for (const [key, value] of Object.entries(choices))
-      localStorage.setItem(key, value);
-    application = Application.start();
-    await assemble(application, {
-      preview: PreviewController,
-    }).start();
-    await settle();
-  }
-
   // @behavior PV-166
   it("keeps the volume chosen for the next time the Preview opens", async () => {
+    await show(projectWithMedia());
     moveVolumeSlider(25);
 
-    await reopenWith({});
+    await reopen();
 
     expect([volumeSlider().value, player.volume]).toEqual(["25", 0.125]);
   });
 
-  const pressMute = () => document.querySelector<HTMLElement>("#mute")!.click();
+  const pressMute = () => button("preview.mute").click();
 
   // @behavior PV-179
   it("reads the volume beside its slider", async () => {
@@ -878,10 +894,7 @@ describe("PreviewController", () => {
 
     moveVolumeSlider(30);
 
-    expect(
-      document.querySelector('[data-preview-target="volumeLevel"]')!
-        .textContent,
-    ).toBe("22%");
+    expect(volumeSlider().nextElementSibling!.textContent).toBe("22%");
   });
 
   // @behavior PV-180
@@ -916,23 +929,24 @@ describe("PreviewController", () => {
 
   // @behavior PV-183
   it("plays with sound each time the Preview opens", async () => {
+    await show(projectWithMedia());
     moveVolumeSlider(25);
     pressMute();
 
-    await reopenWith({});
+    await reopen();
 
     expect(player.volume).toBe(0.125);
   });
 
   // @behavior PV-173
   it("reads the media with anonymous CORS", async () => {
-    await reopenWith({});
+    await reopen();
 
     expect(player.crossOrigin).toBe("anonymous");
   });
 
   describe("above full volume", () => {
-    /** The Web Audio contexts made, each with the nodes the player is routed through. */
+    /** The Web Audio contexts silences, each with the nodes the player is routed through. */
     let contexts: FakeAudioContext[];
 
     type FakeNode = {
@@ -1126,7 +1140,7 @@ describe("PreviewController", () => {
 
       pressVideoWindowButton();
 
-      expect(target("currentSection").hidden).toBe(true);
+      expect(isCardShown()).toBe(false);
     });
 
     it("leaves the row beside the card to the card while the video is away", async () => {
@@ -1135,7 +1149,7 @@ describe("PreviewController", () => {
 
       pressVideoWindowButton();
 
-      expect(target("screenRow").hasAttribute("data-has-picture")).toBe(false);
+      expect(screenRow().hasAttribute("data-has-picture")).toBe(false);
     });
 
     it("sizes the row beside the card by the video again as it comes back", async () => {
@@ -1145,7 +1159,7 @@ describe("PreviewController", () => {
 
       pressVideoWindowButton();
 
-      expect(target("screenRow").hasAttribute("data-has-picture")).toBe(true);
+      expect(screenRow().hasAttribute("data-has-picture")).toBe(true);
     });
 
     // @behavior PV-139
@@ -1155,7 +1169,7 @@ describe("PreviewController", () => {
 
       pressVideoWindowButton();
 
-      expect(target("currentSection").hidden).toBe(false);
+      expect(isCardShown()).toBe(true);
     });
 
     // @behavior PV-129
@@ -1169,7 +1183,7 @@ describe("PreviewController", () => {
 
       playTo(0.5);
 
-      expect(videoWindowTarget("caption").textContent).toBe("今天");
+      expect(caption().textContent).toBe("今天");
     });
 
     // @behavior PV-130
@@ -1283,6 +1297,43 @@ describe("PreviewController", () => {
         media().ownerDocument === videoWindow()?.document,
         windowCalls,
       ]).toEqual([true, []]);
+    });
+  });
+
+  describe("on macOS", () => {
+    /** Runs as macOS, drawing the Preview again so it reads the platform as it starts. */
+    beforeEach(async () => {
+      Object.assign(window, {
+        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
+      });
+      cleanup();
+      application.stop();
+      await draw();
+    });
+
+    afterEach(() => {
+      Object.assign(window, {
+        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
+      });
+    });
+
+    // @behavior PV-091
+    it("names F9 and F12 as the keys that set times", async () => {
+      await show(
+        projectWithMedia({
+          segments: [{ start_ms: 0, end_ms: 1000, text: "今天" }],
+        }),
+      );
+
+      session.makeCurrent(0);
+      flushSync();
+
+      const keys = [
+        ...screen
+          .getByText(t("preview.setTimes"))
+          .parentElement!.querySelectorAll("kbd"),
+      ].map((key) => key.textContent);
+      expect(keys).toEqual(["F9", "F12"]);
     });
   });
 });

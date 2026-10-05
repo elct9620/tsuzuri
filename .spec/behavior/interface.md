@@ -356,8 +356,8 @@ A key alone does not say where it works or what it leaves alone, so each shortcu
 
 | Step | Statement |
 | --- | --- |
-| Given | the page as `index.html` and its Svelte components write it, and the actions its controllers bind |
-| When | the keys they bind are read |
+| Given | the page as `index.html` and its Svelte Components write it, and the modules they read |
+| When | the Shortcuts they match a key against or name in a tooltip are read |
 | Then | the shortcut list has each of them |
 
 ## `IF-043` Binding every key the shortcut list names

@@ -17,8 +17,10 @@
   } from "../backend/project";
   import { t } from "../i18n";
   import { notifyFailure } from "../ui/notification.svelte";
+  import { playedSource } from "../ui/silence";
   import CompareMenu from "./CompareMenu.svelte";
   import { projectFeed } from "./context";
+  import type { PreviewFold } from "./preview-fold.svelte";
   import TaskProgress from "./TaskProgress.svelte";
 
   interface Props {
@@ -27,14 +29,17 @@
     openVersions: (subtitle?: string | null) => void;
     openSearch: () => void;
     openSpeakers: () => void;
+    /** The parts of the Preview folded away, which only a Current Resource has to fold. */
+    fold: PreviewFold;
   }
 
-  let { openReplacement, openVersions, openSearch, openSpeakers }: Props =
+  let { openReplacement, openVersions, openSearch, openSpeakers, fold }: Props =
     $props();
 
   const feed = projectFeed();
   let project = $state<ProjectView | null>(null);
 
+  const hasPreview = $derived(playedSource(project, null) !== null);
   const shownLanguage = $derived(project?.shown_translation ?? null);
   /** Each Language the Current Resource has a translation in, or is being translated into. */
   const translationLanguages = $derived.by(() => {
@@ -155,26 +160,27 @@
     ></span>
   </button>
   <TaskProgress />
-  <button
-    type="button"
-    class="btn btn-square btn-sm"
-    data-preview-target="playerFoldButton"
-    data-action="preview#togglePlayerFold"
-    data-i18n-label="preview.foldPlayer"
-    data-i18n-tooltip="preview.foldPlayer"
-    hidden
-  >
-    <SquarePlay class="size-4" aria-hidden="true" />
-  </button>
-  <button
-    type="button"
-    class="btn btn-square btn-sm"
-    data-preview-target="timelineFoldButton"
-    data-action="preview#toggleTimelineFold"
-    data-i18n-label="preview.foldTimeline"
-    data-i18n-tooltip="preview.foldTimeline"
-    hidden
-  >
-    <AudioWaveform class="size-4" aria-hidden="true" />
-  </button>
+  {#if hasPreview}
+    <!-- Each lights while its part is folded away, as a toggle button is lit while it is on -->
+    <button
+      type="button"
+      class={["btn btn-square btn-sm", fold.isPlayerFolded && "btn-primary"]}
+      aria-pressed={fold.isPlayerFolded}
+      aria-label={t("preview.foldPlayer")}
+      data-tooltip={t("preview.foldPlayer")}
+      onclick={() => fold.togglePlayer()}
+    >
+      <SquarePlay class="size-4" aria-hidden="true" />
+    </button>
+    <button
+      type="button"
+      class={["btn btn-square btn-sm", fold.isTimelineFolded && "btn-primary"]}
+      aria-pressed={fold.isTimelineFolded}
+      aria-label={t("preview.foldTimeline")}
+      data-tooltip={t("preview.foldTimeline")}
+      onclick={() => fold.toggleTimeline()}
+    >
+      <AudioWaveform class="size-4" aria-hidden="true" />
+    </button>
+  {/if}
 </div>

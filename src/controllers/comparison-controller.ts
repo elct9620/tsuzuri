@@ -18,7 +18,6 @@ import { closeMenu } from "../ui/menu";
 import { iconElement } from "../ui/icons";
 import { notifyFailure, notifyRestoration } from "../ui/notification.svelte";
 import { formatTime, localTime, parseTime } from "../ui/time";
-import type VersionsController from "./versions-controller";
 
 /** Which subtitle a comparison is of: the original, or the translation shown. */
 type Side = "original" | "translation";
@@ -171,14 +170,11 @@ function menuChoice(input: HTMLInputElement, label: string): HTMLLIElement {
  */
 export default class ComparisonController extends Controller {
   static targets = ["menu", "list"];
-  static outlets = ["versions"];
 
   /** The compare menu's choices, drawn from the Backups there are. */
   declare readonly menuTarget: HTMLElement;
   /** The editor's rows, which the transcript draws. */
   declare readonly listTarget: HTMLOListElement;
-  declare readonly versionsOutlet: VersionsController;
-  declare readonly hasVersionsOutlet: boolean;
 
   /** The Current Resource the choices were made for, so a new one is compared afresh. */
   private resource: string | null = null;
@@ -286,19 +282,20 @@ export default class ComparisonController extends Controller {
     await this.compare();
   }
 
-  /** Opens the Versions dialog at the subtitle a menu group compares, to choose any of its Backups. */
-  async chooseInVersions({
+  /** Asks for the Versions dialog at the subtitle a menu group compares, as `comparison:choose-in-versions`. */
+  chooseInVersions({
     currentTarget,
     params,
   }: {
     currentTarget: EventTarget | null;
     params: { side: Side };
-  }): Promise<void> {
+  }): void {
     closeMenu(currentTarget);
-    if (!this.hasVersionsOutlet) return;
-    await this.versionsOutlet.openAt(
-      params.side === "original" ? null : this.shownTranslation,
-    );
+    this.dispatch("choose-in-versions", {
+      detail: {
+        language: params.side === "original" ? null : this.shownTranslation,
+      },
+    });
   }
 
   /** Takes back the row a menu item belongs to, in the part it names, from its side's Backup. */

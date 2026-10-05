@@ -1,16 +1,14 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
+import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  showNotifications,
-  notifications,
-} from "../components/test-notifications";
 import type { ComparedRow } from "../backend/project";
-import VersionsController from "./versions-controller";
+import { setInterfaceLanguage, t } from "../i18n";
+import { notifications, showNotifications } from "./test-notifications";
+import VersionsDialog from "./VersionsDialog.svelte";
 
-describe("VersionsController", () => {
-  let application: Application;
+describe("VersionsDialog", () => {
+  let versionsDialog: VersionsDialog;
   let restoreArgs: unknown;
   let revertArgs: unknown;
   let rows: ComparedRow[];
@@ -18,26 +16,33 @@ describe("VersionsController", () => {
   let takeRows: () => ComparedRow[] | Promise<ComparedRow[]>;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const target = <T extends HTMLElement>(name: string) =>
-    document.querySelector<T>(`[data-versions-target="${name}"]`)!;
-
-  async function openVersions(): Promise<void> {
-    document.querySelector<HTMLButtonElement>("#open")!.click();
-    await settle();
-  }
+  const dialog = () =>
+    screen.getByRole<HTMLDialogElement>("dialog", { hidden: true });
+  const buttons = (name: string) =>
+    screen.getAllByRole("button", { hidden: true, name });
+  /** The rows of the comparison shown. */
+  const comparedRows = () =>
+    within(
+      screen.getByRole("table", { hidden: true }),
+    ).queryAllByRole<HTMLTableRowElement>("row", { hidden: true });
 
   async function chooseSubtitle(language: string): Promise<void> {
-    target<HTMLSelectElement>("subtitle").value = language;
-    target<HTMLSelectElement>("subtitle").dispatchEvent(new Event("change"));
+    const subtitle = screen.getByRole<HTMLSelectElement>("combobox", {
+      hidden: true,
+      name: t("versions.subtitle"),
+    });
+    subtitle.value = language;
+    subtitle.dispatchEvent(new Event("change", { bubbles: true }));
     await settle();
   }
 
-  async function click(selector: string): Promise<void> {
-    target("backups").querySelector<HTMLButtonElement>(selector)!.click();
+  async function click(button: HTMLElement): Promise<void> {
+    button.click();
     await settle();
   }
 
   beforeEach(async () => {
+    await setInterfaceLanguage("zh-TW");
     restoreArgs = undefined;
     revertArgs = undefined;
     takeRows = () => rows;
@@ -59,23 +64,6 @@ describe("VersionsController", () => {
         text_spans: [],
       },
     ];
-    document.body.innerHTML = `
-      <div data-controller="versions">
-        <button id="open" data-action="versions#open">版本</button>
-        <dialog data-versions-target="dialog">
-          <select data-versions-target="subtitle" data-action="change->versions#showBackups"></select>
-          <ul data-versions-target="backups"></ul>
-          <section data-versions-target="comparison" hidden>
-            <select data-versions-target="leftVersion"></select>
-            <select data-versions-target="rightVersion"></select>
-            <input type="checkbox" data-versions-target="differenceFilter"
-              data-action="change->versions#showOnlyDifferences">
-            <button id="next" data-action="versions#moveToNextDifference">↓</button>
-            <table><tbody data-versions-target="rows"></tbody></table>
-          </section>
-        </dialog>
-      </div>
-    `;
     showNotifications();
     mockIPC((command, args) => {
       if (command === "subtitle_versions")
@@ -116,60 +104,47 @@ describe("VersionsController", () => {
         return { unmatched_count: 0 };
       }
     });
-    application = Application.start();
-    application.register("versions", VersionsController);
-    await settle();
+    versionsDialog = render(VersionsDialog).component;
+    await versionsDialog.open();
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 
   // @behavior VR-043
   it("hands the editor a Backup set as the comparison, and closes", async () => {
     const compareWithDetails: unknown[] = [];
-    document
-      .querySelector("[data-controller=versions]")!
-      .addEventListener("versions:compare-with", (event) =>
-        compareWithDetails.push((event as CustomEvent).detail),
-      );
-    await openVersions();
+    const takeDetail = (event: Event) =>
+      compareWithDetails.push((event as CustomEvent).detail);
+    window.addEventListener("versions:compare-with", takeDetail);
     await chooseSubtitle("en");
 
-    await click(".set-comparison");
+    await click(buttons(t("versions.setComparison"))[0]);
 
-    expect([
-      compareWithDetails,
-      target<HTMLDialogElement>("dialog").open,
-    ]).toEqual([
+    window.removeEventListener("versions:compare-with", takeDetail);
+    expect([compareWithDetails, dialog().open]).toEqual([
       [{ language: "en", file: "ep01.en.20260925T030000Z.srt" }],
       false,
     ]);
   });
 
   // @behavior VR-007
-  it("lists the Backups of the original by their local time", async () => {
-    await openVersions();
+  it("lists the Backups of the original by their local time", () => {
+    const backupTexts = within(dialog())
+      .getAllByRole("listitem", { hidden: true })
+      .map((item) => item.textContent);
 
-    const backupTexts = [...target("backups").querySelectorAll("li")].map(
-      (li) => li.textContent,
-    );
     expect(backupTexts[1]).toContain("2026-09-25 10:30");
   });
 
   // @behavior VR-008
   it("marks the rows that differ once a Backup is compared", async () => {
-    await openVersions();
+    await click(buttons(t("versions.compare"))[0]);
 
-    await click("button.compare");
-
-    expect([
-      target("comparison").hidden,
-      [...target("rows").querySelectorAll("tr")].map((tr) =>
-        tr.classList.contains("changed"),
-      ),
-    ]).toEqual([false, [true, false]]);
+    expect(
+      comparedRows().map((row) => row.hasAttribute("data-is-different")),
+    ).toEqual([true, false]);
   });
 
   // @behavior VR-055
@@ -179,59 +154,52 @@ describe("VersionsController", () => {
       new Promise((resolve) => {
         answerEarlier = resolve;
       });
-    await openVersions();
-    await click("button.compare");
+    await click(buttons(t("versions.compare"))[0]);
     takeRows = () => rows;
-    target("backups")
-      .querySelectorAll<HTMLButtonElement>("button.compare")[1]
-      .click();
-    await settle();
+    await click(buttons(t("versions.compare"))[1]);
 
     answerEarlier([rows[1]]);
     await settle();
 
     expect(
-      [...target("rows").querySelectorAll("tr")].map((tr) =>
-        tr.classList.contains("changed"),
-      ),
+      comparedRows().map((row) => row.hasAttribute("data-is-different")),
     ).toEqual([true, false]);
   });
 
   // @behavior VR-009
   it("asks to restore a Backup of the translation shown", async () => {
-    await openVersions();
     await chooseSubtitle("en");
 
-    await click("button.restore");
+    await click(buttons(t("versions.restore"))[0]);
 
     expect([restoreArgs, notifications()]).toEqual([
       { language: "en", backup: "ep01.en.20260925T030000Z.srt" },
       ["已還原"],
     ]);
   });
-  const shownRows = () =>
-    [...target("rows").querySelectorAll("tr")].filter((tr) => !tr.hidden);
 
   // @behavior VR-032
-  it("says which kind each Backup is", async () => {
-    await openVersions();
+  it("says which kind each Backup is", () => {
+    const kinds = within(dialog())
+      .getAllByRole("listitem", { hidden: true })
+      .slice(1)
+      .map((item) => item.querySelector(".badge")?.textContent);
 
-    const kinds = [...target("backups").querySelectorAll(".kind")].map(
-      (label) => label.textContent,
-    );
     expect(kinds).toEqual(["覆蓋前", "產出"]);
   });
 
   // @behavior VR-033
   it("shows only the rows that differ", async () => {
-    await openVersions();
-    await click("button.compare");
-    const differenceFilter = target<HTMLInputElement>("differenceFilter");
+    await click(buttons(t("versions.compare"))[0]);
 
-    differenceFilter.checked = true;
-    differenceFilter.dispatchEvent(new Event("change"));
+    await click(
+      screen.getByRole("checkbox", {
+        hidden: true,
+        name: t("versions.onlyDifferences"),
+      }),
+    );
 
-    expect(shownRows().map((tr) => tr.textContent)).toEqual([
+    expect(comparedRows().map((row) => row.textContent)).toEqual([
       expect.stringContaining("您好"),
     ]);
   });
@@ -239,24 +207,20 @@ describe("VersionsController", () => {
   // @behavior VR-034
   it("moves to the next difference", async () => {
     rows.reverse();
-    await openVersions();
-    await click("button.compare");
+    await click(buttons(t("versions.compare"))[0]);
 
-    document.querySelector<HTMLButtonElement>("#next")!.click();
+    await click(buttons(t("versions.nextDifference"))[0]);
 
-    const current = [...target("rows").querySelectorAll("tr")].findIndex((tr) =>
-      tr.hasAttribute("data-is-current"),
-    );
-    expect(current).toBe(1);
+    expect(
+      comparedRows().findIndex((row) => row.hasAttribute("data-is-current")),
+    ).toBe(1);
   });
 
   // @behavior VR-035
   it("takes back a row from the Versions dialog", async () => {
-    await openVersions();
-    await click("button.compare");
+    await click(buttons(t("versions.compare"))[0]);
 
-    target("rows").querySelector<HTMLButtonElement>("button.revert")!.click();
-    await settle();
+    await click(buttons(t("compare.revertWhole"))[0]);
 
     expect([revertArgs, notifications()]).toEqual([
       {
@@ -281,12 +245,11 @@ describe("VersionsController", () => {
         { kind: "common", text: "上傳" },
       ],
     };
-    await openVersions();
-    await click("button.compare");
+
+    await click(buttons(t("versions.compare"))[0]);
 
     const additions = [
-      ...target("rows")
-        .querySelectorAll("tr")[0]
+      ...comparedRows()[0]
         .querySelectorAll("td")[2]
         .querySelectorAll("[data-span=addition]"),
     ].map((span) => span.textContent);

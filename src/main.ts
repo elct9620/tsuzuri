@@ -18,7 +18,6 @@ import TimelineController, {
   controlOption,
 } from "./controllers/timeline-controller";
 import TranscriptController from "./controllers/transcript-controller";
-import VersionsController from "./controllers/versions-controller";
 import { setInterfaceLanguage } from "./i18n";
 import { drawPage } from "./page";
 
@@ -44,7 +43,6 @@ async function start(): Promise<void> {
     "time-field": TimeFieldController,
     timeline: TimelineController,
     transcript: TranscriptController,
-    versions: VersionsController,
   });
   drawPage(assembly.feed, assembly.session);
   await application.start();

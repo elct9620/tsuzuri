@@ -3,9 +3,10 @@
 
   interface Props {
     openReplacement: () => void;
+    openVersions: () => void;
   }
 
-  let { openReplacement }: Props = $props();
+  let { openReplacement, openVersions }: Props = $props();
 </script>
 
 <div class="flex items-center gap-2 border-b border-base-300 px-4 py-2">
@@ -49,93 +50,18 @@
       data-comparison-target="menu"
     ></div>
   </div>
-  <div class="contents" data-controller="versions">
-    <button
-      type="button"
-      class="btn btn-sm"
-      data-action="versions#open"
-      data-i18n-label="versions.open"
-      data-i18n-tooltip="versions.open"
-    >
-      <i data-lucide="history" class="size-4"></i><span
-        class="hidden @5xl:inline"
-        data-i18n="versions.open"
-      ></span>
-    </button>
-    <dialog class="modal" data-versions-target="dialog">
-      <div class="modal-box max-w-4xl">
-        <h3 class="mb-2 text-lg font-bold" data-i18n="versions.title"></h3>
-        <label class="mb-2 flex items-center gap-2 text-sm"
-          ><span data-i18n="versions.subtitle"></span>
-          <select
-            class="select select-sm w-auto"
-            data-versions-target="subtitle"
-            data-action="change->versions#showBackups"
-          ></select>
-        </label>
-        <ul
-          class="list rounded-box border border-base-300 text-sm"
-          data-versions-target="backups"
-        ></ul>
-        <section class="mt-4" data-versions-target="comparison" hidden>
-          <div class="mb-2 flex items-center gap-2">
-            <select
-              class="select select-sm w-auto"
-              data-versions-target="leftVersion"
-              data-action="change->versions#showComparison"
-            ></select>
-            <i
-              data-lucide="arrow-left-right"
-              class="size-4 text-base-content/60"
-            ></i>
-            <select
-              class="select select-sm w-auto"
-              data-versions-target="rightVersion"
-              data-action="change->versions#showComparison"
-            ></select>
-            <label class="ml-auto flex items-center gap-1 text-sm">
-              <input
-                type="checkbox"
-                class="checkbox checkbox-sm"
-                data-versions-target="differenceFilter"
-                data-action="change->versions#showOnlyDifferences"
-              />
-              <span data-i18n="versions.onlyDifferences"></span>
-            </label>
-            <button
-              type="button"
-              class="btn btn-square btn-sm"
-              data-action="versions#moveToPreviousDifference"
-              data-i18n-label="versions.previousDifference"
-            >
-              <i data-lucide="chevron-up" class="size-4"></i>
-            </button>
-            <button
-              type="button"
-              class="btn btn-square btn-sm"
-              data-action="versions#moveToNextDifference"
-              data-i18n-label="versions.nextDifference"
-            >
-              <i data-lucide="chevron-down" class="size-4"></i>
-            </button>
-          </div>
-          <div class="max-h-96 overflow-y-auto">
-            <table class="table table-sm">
-              <tbody data-versions-target="rows"></tbody>
-            </table>
-          </div>
-        </section>
-        <div class="modal-action">
-          <form method="dialog">
-            <button class="btn" data-i18n="work.close"></button>
-          </form>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
-    </dialog>
-  </div>
+  <button
+    type="button"
+    class="btn btn-sm"
+    onclick={openVersions}
+    data-i18n-label="versions.open"
+    data-i18n-tooltip="versions.open"
+  >
+    <i data-lucide="history" class="size-4"></i><span
+      class="hidden @5xl:inline"
+      data-i18n="versions.open"
+    ></span>
+  </button>
   <button
     type="button"
     class="btn btn-sm"

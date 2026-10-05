@@ -10,7 +10,6 @@ import { editingPort } from "./backend/editing";
 import { ProjectFeed, type ProjectView } from "./backend/project";
 import ComparisonController from "./controllers/comparison-controller";
 import TranscriptController from "./controllers/transcript-controller";
-import VersionsController from "./controllers/versions-controller";
 import { EditingSession } from "./editor";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
@@ -43,7 +42,7 @@ describe("drawPage", () => {
   // Each part is found by what its controller, module or Svelte Component reads, so a Svelte
   // Component left out of the page leaves nothing for them to read.
   it.each([
-    ["editor bar", '[data-controller="versions"]'],
+    ["editor bar", '[data-comparison-target="menu"]'],
     ["preview", '[data-preview-target="panel"]'],
     ["Segment list", '[data-transcript-target="list"]'],
     ["notification stack", "[data-notifications]"],
@@ -352,6 +351,25 @@ describe("drawPage", () => {
         .closest("dialog")!.open,
     ).toBe(true);
   });
+
+  it("opens the Versions dialog from the editor bar", async () => {
+    mockPageMount(null, { subtitle_versions: () => [] });
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    await tick();
+
+    within(page)
+      .getByRole("button", { hidden: true, name: t("versions.open") })
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(
+      within(page)
+        .getByRole("heading", { hidden: true, name: t("versions.title") })
+        .closest("dialog")!.open,
+    ).toBe(true);
+  });
 });
 
 describe("Page", () => {
@@ -361,6 +379,8 @@ describe("Page", () => {
   let page: Record<string, unknown>;
   let stop: () => void;
   let application: Application;
+  /** The arguments of each `compare_versions` the page asked for. */
+  let comparedVersions: unknown[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -393,6 +413,7 @@ describe("Page", () => {
     project = null;
     requestedSrt = null;
     sentSrt = undefined;
+    comparedVersions = [];
     mockPageMount(null, {
       current_project: () => project,
       recent_projects: () => [],
@@ -403,9 +424,22 @@ describe("Page", () => {
       },
       open_srt: (args) => (sentSrt = args),
       subtitle_versions: () => [
-        { language: null, backups: [] },
+        {
+          language: null,
+          backups: [
+            {
+              file: "ep01.20260925T030000Z.srt",
+              taken_at: "20260925T030000Z",
+              kind: "overwrite",
+            },
+          ],
+        },
         { language: "en", backups: [] },
       ],
+      compare_versions: (args) => {
+        comparedVersions.push(args);
+        return [];
+      },
     });
   });
 
@@ -477,7 +511,6 @@ describe("Page", () => {
     await start({
       comparison: ComparisonController,
       transcript: TranscriptController,
-      versions: VersionsController,
     });
     await hold(
       projectOf({
@@ -501,5 +534,32 @@ describe("Page", () => {
       true,
       "en",
     ]);
+  });
+
+  // @behavior VR-043
+  it("compares the editor with the Backup set as the comparison in the Versions dialog", async () => {
+    await start({
+      comparison: ComparisonController,
+      transcript: TranscriptController,
+    });
+    await hold(projectOf());
+    screen
+      .getAllByRole("button", {
+        hidden: true,
+        name: t("compare.chooseInVersions"),
+      })[0]
+      .click();
+    await settle();
+
+    screen
+      .getByRole("button", { hidden: true, name: t("versions.setComparison") })
+      .click();
+    await settle();
+
+    expect(comparedVersions.pop()).toEqual({
+      language: null,
+      left: "ep01.20260925T030000Z.srt",
+      right: null,
+    });
   });
 });

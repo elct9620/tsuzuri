@@ -151,7 +151,7 @@ describe("ComparisonController", () => {
     ];
     document.body.innerHTML = `
       <main data-controller="transcript comparison"
-        data-action="selectionchange@document->transcript#followSelection transcript:shown->comparison#mark versions:compare-with->comparison#compareWith">
+        data-action="selectionchange@document->transcript#followSelection transcript:shown->comparison#mark versions:compare-with@window->comparison#compareWith">
         <h2 data-transcript-target="heading"></h2>
         <select data-transcript-target="translationLanguage"></select>
         <div data-comparison-target="menu"></div>
@@ -562,10 +562,9 @@ describe("ComparisonController", () => {
   it("compares with the Backup the Versions dialog sets", async () => {
     await show();
 
-    document.querySelector("ol")!.dispatchEvent(
+    window.dispatchEvent(
       new CustomEvent("versions:compare-with", {
         detail: { language: null, file: "ep01.20260925T030000Z.srt" },
-        bubbles: true,
       }),
     );
     await settle();

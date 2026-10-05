@@ -1,7 +1,8 @@
 /**
  * The window events Svelte Components bind with `<svelte:window>`: Rust events relayed as
- * `rust:<name>` with the payload as `detail` (`backend/events.ts`), and the editor's requests
- * to run a task again over the Segments it names.
+ * `rust:<name>` with the payload as `detail` (`backend/events.ts`), the editor's requests to run
+ * a task again over the Segments it names, and the compare menu's request to choose in the
+ * Versions dialog.
  */
 
 import type { PipelineProgress } from "../backend/progress";
@@ -12,6 +13,9 @@ import type { UpdateProgress } from "../backend/updates";
 
 declare module "svelte/elements" {
   export interface SvelteWindowAttributes {
+    "oncomparison:choose-in-versions"?: (
+      event: CustomEvent<{ language: string | null }>,
+    ) => void;
     "onrust:changed-elsewhere-kept"?: (event: CustomEvent) => void;
     "onrust:edit-command"?: (event: CustomEvent<EditCommand>) => void;
     "onrust:model-download-progress"?: (

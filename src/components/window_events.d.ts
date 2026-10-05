@@ -7,6 +7,7 @@
 import type { PipelineProgress } from "../backend/progress";
 import type { DownloadProgress } from "../backend/toolchain";
 import type { TranscriptionScope } from "../backend/transcription";
+import type { UpdateProgress } from "../backend/updates";
 
 declare module "svelte/elements" {
   export interface SvelteWindowAttributes {
@@ -14,6 +15,7 @@ declare module "svelte/elements" {
       event: CustomEvent<DownloadProgress>,
     ) => void;
     "onrust:pipeline-progress"?: (event: CustomEvent<PipelineProgress>) => void;
+    "onrust:update-progress"?: (event: CustomEvent<UpdateProgress>) => void;
     "onsegment-changes:retranscribe"?: (
       event: CustomEvent<{ scope: TranscriptionScope }>,
     ) => void;

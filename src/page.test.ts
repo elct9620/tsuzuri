@@ -30,7 +30,6 @@ describe("drawPage", () => {
     ["glossary entry", '[data-project-target="glossary"]'],
     ["settings dialog", '[data-dialog-target="dialog"]'],
     ["shortcuts dialog", '[data-shortcuts-target="dialog"]'],
-    ["updates dialog", '[data-updates-target="dialog"]'],
     ["notification stack", "[data-notifications]"],
     ["tooltip bubble", '[data-tooltip-target="bubble"]'],
   ])("writes the %s", (_part, selector) => {
@@ -188,6 +187,17 @@ describe("drawPage", () => {
         hidden: true,
         name: t("repository.list"),
       }),
+    ).not.toBeNull();
+  });
+
+  it("writes the window an App Update installs behind", async () => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+
+    drawPage(new ProjectFeed(), page);
+
+    expect(
+      within(page).queryByText(t("settings.updateRestartHint")),
     ).not.toBeNull();
   });
 });

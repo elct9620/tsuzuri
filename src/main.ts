@@ -25,7 +25,6 @@ import TimelineController, {
 import TooltipController from "./controllers/tooltip_controller";
 import TranscriptController from "./controllers/transcript_controller";
 import UndoController, { typingOption } from "./controllers/undo_controller";
-import UpdatesController from "./controllers/updates_controller";
 import VersionsController from "./controllers/versions_controller";
 import { setInterfaceLanguage } from "./i18n";
 import { drawPage } from "./page";
@@ -61,7 +60,6 @@ async function start(): Promise<void> {
     tooltip: TooltipController,
     transcript: TranscriptController,
     undo: UndoController,
-    updates: UpdatesController,
     versions: VersionsController,
   });
   drawPage(assembly.feed);

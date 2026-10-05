@@ -5,22 +5,26 @@
 import { getContext } from "svelte";
 
 import type { ProjectFeed } from "../backend/project";
+import { AppUpdates } from "./app_updates.svelte";
 import { TaskRun } from "./task_run.svelte";
 
 const FEED = Symbol("feed");
 const TASK_RUN = Symbol("task run");
+const APP_UPDATES = Symbol("app updates");
 
 /**
- * The context the page is mounted with, holding the Project feed and the task run every Svelte
- * Component shares.
+ * The context the page is mounted with, holding the Project feed, the task run and the App
+ * Updates every Svelte Component shares.
  */
 export function pageContext(
   feed: ProjectFeed,
   run: TaskRun = new TaskRun(),
+  updates: AppUpdates = new AppUpdates(),
 ): Map<symbol, unknown> {
   return new Map<symbol, unknown>([
     [FEED, feed],
     [TASK_RUN, run],
+    [APP_UPDATES, updates],
   ]);
 }
 
@@ -32,4 +36,9 @@ export function projectFeed(): ProjectFeed {
 /** The task run the page was mounted with; called while a Svelte Component initialises. */
 export function taskRun(): TaskRun {
   return getContext<TaskRun>(TASK_RUN);
+}
+
+/** The App Updates the page was mounted with; called while a Svelte Component initialises. */
+export function appUpdates(): AppUpdates {
+  return getContext<AppUpdates>(APP_UPDATES);
 }

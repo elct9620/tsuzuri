@@ -2,6 +2,7 @@
 import { Application } from "@hotwired/stimulus";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
+import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WaveSurfer from "wavesurfer.js";
 import { assemble } from "../assembly";
@@ -22,23 +23,26 @@ import TimelineController, {
   controlOption,
   regionColor,
 } from "./timeline-controller";
-import TranscriptController from "./transcript-controller";
+import { pageContext } from "../components/context";
+import {
+  drawSegmentRows,
+  type DrawnSegmentRows,
+  segmentRows,
+} from "../components/test-segment-rows";
 
 describe("Current Segment", () => {
   let application: Application;
   let project: ProjectView | null;
   let savedPreferences: Preferences;
   let session: EditingSession;
+  /** The rows drawn, whose following playback the Preview's button turns on or off. */
+  let drawn: DrawnSegmentRows | undefined;
   let takeLayoutBack: () => void;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const media = () =>
     document.querySelector<HTMLVideoElement>('[data-preview-target="media"]')!;
-  const rows = () => [
-    ...document.querySelectorAll<HTMLLIElement>(
-      '[data-transcript-target="list"] > li',
-    ),
-  ];
+  const rows = segmentRows;
   const regions = () => [
     ...document
       .querySelector('[data-timeline-target="waveform"]')!
@@ -153,11 +157,6 @@ describe("Current Segment", () => {
     media().dispatchEvent(new Event("timeupdate"));
   }
 
-  const followButton = () =>
-    document.querySelector<HTMLButtonElement>(
-      '[data-transcript-target="followButton"]',
-    )!;
-
   const aloneButton = () =>
     document.querySelector<HTMLButtonElement>(
       '[data-timeline-target="aloneButton"]',
@@ -182,11 +181,15 @@ describe("Current Segment", () => {
     application.registerActionOption("composing", composingOption);
     const assembly = assemble(application, {
       field: FieldController,
-      transcript: TranscriptController,
       preview: PreviewController,
       timeline: TimelineController,
     });
     session = assembly.session;
+    drawn?.unmount();
+    drawn = drawSegmentRows(
+      document.querySelector("main")!,
+      pageContext(assembly.feed, assembly.session),
+    );
     await assembly.start();
     await settle();
   }
@@ -212,8 +215,7 @@ describe("Current Segment", () => {
       { shouldMockEvents: true },
     );
     document.body.innerHTML = `
-      <main data-controller="transcript"
-        data-action="selectionchange@document->transcript#followSelection pointerup@window->transcript#releasePointer editor:cursor@window->transcript#showCursor preview:playing->transcript#markPlaying keydown.ctrl+l@window->transcript#toggleFollowing:prevent">
+      <main>
         <div data-controller="preview timeline"
           data-action="editor:cursor@window->timeline#showCursor editor:cursor@window->preview#showCursor editor:choice@window->timeline#moveToChoice preferences:saved@window->timeline#readPreferences keydown.space@window->timeline#playOrStop:!control:prevent focusin@window->timeline#followFocus">
           <button id="fold-player" data-preview-target="playerFoldButton" data-action="preview#togglePlayerFold" hidden></button>
@@ -228,7 +230,6 @@ describe("Current Segment", () => {
           </div>
           <button id="video-window" data-preview-target="videoWindowButton" data-action="preview#toggleVideoWindow"></button>
           <span data-preview-target="playbackIcon"></span>
-          <button data-transcript-target="followButton" data-action="transcript#toggleFollowing"></button>
           <button data-timeline-target="aloneButton" data-action="timeline#togglePlayingAlone"></button>
           <span data-preview-target="time"></span>
           <input type="range" min="0" max="100" data-preview-target="volume" data-action="input->preview#setVolume"><span data-preview-target="volumeLevel"></span><button id="mute" data-preview-target="muteButton" data-action="preview#toggleMute"><span data-preview-target="muteIcon"></span></button>
@@ -239,14 +240,13 @@ describe("Current Segment", () => {
           <button data-timeline-target="snapButton" data-action="timeline#toggleSnapping"></button><span data-timeline-target="times"></span><span data-timeline-target="zoomLevel"></span><div data-preview-target="timeline"><div data-timeline-target="waveform"></div></div>
           </div>
         </div>
-        <p data-transcript-target="emptyHint"></p>
-        <ol data-transcript-target="list"></ol>
       </main>
     `;
     await startApplication();
   });
 
   afterEach(() => {
+    drawn = undefined;
     application.stop();
     clearMocks();
     vi.restoreAllMocks();
@@ -781,7 +781,7 @@ describe("Current Segment", () => {
   // @behavior PV-081
   it("marks the row being played without scrolling to it while not following playback", async () => {
     await show(twoSegments);
-    followButton().click();
+    drawn!.following.toggle();
     await media().play();
     watchScrolls();
 
@@ -804,21 +804,22 @@ describe("Current Segment", () => {
       new KeyboardEvent("keydown", { key: "l", ctrlKey: true, bubbles: true }),
     );
 
-    expect([
-      followButton().getAttribute("aria-pressed"),
-      document.activeElement,
-    ]).toEqual(["false", field]);
+    expect([drawn!.following.isOn, document.activeElement]).toEqual([
+      false,
+      field,
+    ]);
   });
 
   // @behavior PV-083
   it("scrolls to the row being played as following playback is turned on", async () => {
     await show(twoSegments);
-    followButton().click();
+    drawn!.following.toggle();
     await media().play();
     playTo(1.5);
     watchScrolls();
 
-    followButton().click();
+    drawn!.following.toggle();
+    flushSync();
 
     expect(scrolledRows()).toEqual([rows()[1]]);
   });
@@ -826,13 +827,13 @@ describe("Current Segment", () => {
   // @behavior PV-084
   it("keeps following playback off for the next Resource", async () => {
     await show(twoSegments);
-    followButton().click();
+    drawn!.following.toggle();
     application.stop();
     await startApplication();
 
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
-    expect(followButton().getAttribute("aria-pressed")).toBe("false");
+    expect(drawn!.following.isOn).toBe(false);
   });
 
   // @behavior PV-121

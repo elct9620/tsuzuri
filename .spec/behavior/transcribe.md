@@ -8,7 +8,7 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 - `src-tauri/src/transcription/*.rs`
 - `src/components/TranscriptionDialog.test.ts`
 - `src/components/TaskProgress.test.ts`
-- `src/controllers/transcript-controller.test.ts`
+- `src/components/SegmentList.test.ts`
 - `src/components/settings/general/Transcription.test.ts`
 - `src/components/settings/project/Transcription.test.ts`
 

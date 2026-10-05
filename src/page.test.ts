@@ -10,7 +10,6 @@ import { editingPort } from "./backend/editing";
 import { ProjectFeed, type ProjectView } from "./backend/project";
 import ComparisonController from "./controllers/comparison-controller";
 import SegmentChangesController from "./controllers/segment-changes-controller";
-import TranscriptController from "./controllers/transcript-controller";
 import { EditingSession } from "./editor";
 import { setInterfaceLanguage, t } from "./i18n";
 import { drawPage } from "./page";
@@ -45,7 +44,6 @@ describe("drawPage", () => {
   it.each([
     ["editor bar", '[data-comparison-target="menu"]'],
     ["preview", '[data-preview-target="panel"]'],
-    ["Segment list", '[data-transcript-target="list"]'],
     ["notification stack", "[data-notifications]"],
     ["tooltip bubble", ".tooltip[popover]"],
   ])("writes the %s", (_part, selector) => {
@@ -62,6 +60,7 @@ describe("drawPage", () => {
     ["toolbar", "textbox", "toolbar.projectName"],
     ["export menu", "button", "toolbar.export"],
     ["editor bar's translation choice", "combobox", "edit.translation"],
+    ["Segment list", "list", "edit.segments"],
   ])("writes the %s", async (_part, role, name) => {
     // In the document, so a name given by `aria-labelledby` finds the element it names.
     const page = document.createElement("div");
@@ -546,9 +545,46 @@ describe("Page", () => {
     ]);
   });
 
+  // @behavior ED-010
+  it("shows Placeholder rows while the Resource selected in the list is read", async () => {
+    await start();
+    await hold(
+      projectOf({
+        resources: [resourceOf(), resourceOf({ name: "ep02" })],
+        segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
+      }),
+    );
+
+    within(
+      screen.getByRole("list", { hidden: true, name: t("resources.title") }),
+    )
+      .getByRole("button", { hidden: true, name: /ep02/ })
+      .click();
+    await tick();
+
+    expect(
+      screen
+        .getByRole("list", { hidden: true, name: t("edit.segments") })
+        .querySelectorAll("[data-placeholder]").length,
+    ).toBeGreaterThan(0);
+  });
+
+  // @behavior PV-081
+  it("stops following playback from the Preview's button", async () => {
+    await start();
+
+    const button = screen.getByRole("button", {
+      hidden: true,
+      name: t("preview.following"),
+    });
+    button.click();
+    await tick();
+
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+  });
+
   it("opens the shift dialog from the checked bar", async () => {
     await start({
-      transcript: TranscriptController,
       "segment-changes": SegmentChangesController,
     });
 
@@ -565,7 +601,6 @@ describe("Page", () => {
   it("opens the Versions dialog at the translation its compare group chooses in", async () => {
     await start({
       comparison: ComparisonController,
-      transcript: TranscriptController,
     });
     await hold(
       projectOf({
@@ -595,7 +630,6 @@ describe("Page", () => {
   it("compares the editor with the Backup set as the comparison in the Versions dialog", async () => {
     await start({
       comparison: ComparisonController,
-      transcript: TranscriptController,
     });
     await hold(projectOf());
     screen

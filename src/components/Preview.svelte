@@ -1,3 +1,9 @@
+<script lang="ts">
+  import type { PlaybackFollowing } from "./playback-following.svelte";
+
+  let { following }: { following: PlaybackFollowing } = $props();
+</script>
+
 <div
   class="@container flex flex-col gap-3 border-b border-base-300 p-3"
   data-preview-target="panel"
@@ -51,9 +57,9 @@
           </button>
           <button
             type="button"
-            class="btn btn-square btn-sm"
-            data-transcript-target="followButton"
-            data-action="transcript#toggleFollowing"
+            class={["btn btn-square btn-sm", following.isOn && "btn-primary"]}
+            aria-pressed={following.isOn}
+            onclick={() => following.toggle()}
             data-i18n-label="preview.following"
             data-i18n-tooltip="preview.followingHint"
             data-shortcut="following"

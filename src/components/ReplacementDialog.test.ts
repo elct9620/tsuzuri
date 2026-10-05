@@ -9,11 +9,11 @@ import type { ProjectView } from "../backend/project";
 import FieldController, {
   composingOption,
 } from "../controllers/field-controller";
-import TranscriptController from "../controllers/transcript-controller";
 import { projectOf } from "../test-project";
 import { showNotifications, notifications } from "./test-notifications";
 import { pageContext } from "./context";
 import ReplacementDialog from "./ReplacementDialog.svelte";
+import { drawSegmentRows } from "./test-segment-rows";
 
 describe("ReplacementDialog", () => {
   let application: Application;
@@ -58,10 +58,7 @@ describe("ReplacementDialog", () => {
     replaceArgs = [];
     count = 1;
     document.body.innerHTML = `
-      <section data-controller="transcript"
-        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor">
-        <p data-transcript-target="emptyHint"></p>
-        <ol data-transcript-target="list"></ol>
+      <section>
       </section>
     `;
     showNotifications();
@@ -79,11 +76,10 @@ describe("ReplacementDialog", () => {
     application.registerActionOption("composing", composingOption);
     const assembly = assemble(application, {
       field: FieldController,
-      transcript: TranscriptController,
     });
-    render(ReplacementDialog, {
-      context: pageContext(assembly.feed, assembly.session),
-    });
+    const context = pageContext(assembly.feed, assembly.session);
+    drawSegmentRows(document.querySelector("section")!, context);
+    render(ReplacementDialog, { context });
     await assembly.start();
     await settle();
   });

@@ -19,7 +19,7 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src/components/StartScreen.test.ts`
 - `src/components/Toolbar.test.ts`
 - `src/components/settings/project/Project.test.ts`
-- `src/controllers/transcript-controller.test.ts`
+- `src/components/SegmentList.test.ts`
 - `src/page.test.ts`
 
 ## `PJ-001` Opening a directory as the Project

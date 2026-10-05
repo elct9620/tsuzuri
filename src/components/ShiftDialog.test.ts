@@ -8,12 +8,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import SegmentChangesController from "../controllers/segment-changes-controller";
-import TranscriptController from "../controllers/transcript-controller";
 import { setInterfaceLanguage } from "../i18n";
 import { projectOf } from "../test-project";
 import { pageContext } from "./context";
 import ShiftDialog from "./ShiftDialog.svelte";
 import { showNotifications } from "./test-notifications";
+import { drawSegmentRows } from "./test-segment-rows";
 
 describe("ShiftDialog", () => {
   let application: Application;
@@ -66,15 +66,13 @@ describe("ShiftDialog", () => {
     project = null;
     changes = [];
     document.body.innerHTML = `
-      <section data-controller="transcript segment-changes"
-        data-action="selectionchange@document->transcript#followSelection editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
-        <p data-transcript-target="emptyHint"></p>
+      <section data-controller="segment-changes"
+        data-action="editor:checks@window->segment-changes#showChecked">
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
           <button data-segment-changes-target="mergeButton"></button>
           <button id="open-shift" data-action="segment-changes#openShift">平移……</button>
         </div>
-        <ol data-transcript-target="list"></ol>
       </section>
     `;
     showNotifications();
@@ -88,12 +86,11 @@ describe("ShiftDialog", () => {
     );
     application = Application.start();
     const assembly = assemble(application, {
-      transcript: TranscriptController,
       "segment-changes": SegmentChangesController,
     });
-    render(ShiftDialog, {
-      context: pageContext(assembly.feed, assembly.session),
-    });
+    const context = pageContext(assembly.feed, assembly.session);
+    drawSegmentRows(document.querySelector("section")!, context);
+    render(ShiftDialog, { context });
     await assembly.start();
     await settle();
   });

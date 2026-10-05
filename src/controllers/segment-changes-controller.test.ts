@@ -18,8 +18,9 @@ import { projectOf } from "../test-project";
 import { EditingSession, fieldValue } from "../editor";
 import FieldController, { composingOption } from "./field-controller";
 import SegmentChangesController from "./segment-changes-controller";
-import TranscriptController from "./transcript-controller";
 import { typingOption } from "./segment-changes-controller";
+import { pageContext } from "../components/context";
+import { drawSegmentRows } from "../components/test-segment-rows";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
 interface MenuItemSent {
@@ -86,9 +87,8 @@ describe("SegmentChangesController", () => {
     menus = [];
     popupCount = 0;
     document.body.innerHTML = `
-      <section data-controller="transcript segment-changes" data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut rust:edit-command@window->segment-changes#applyEditCommand">
+      <section data-controller="segment-changes" data-action="editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut rust:edit-command@window->segment-changes#applyEditCommand">
         <select aria-label="譯文"></select>
-        <p data-transcript-target="emptyHint"></p>
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
           <button id="merge" data-segment-changes-target="mergeButton" data-action="segment-changes#merge">合併</button>
@@ -96,7 +96,6 @@ describe("SegmentChangesController", () => {
           <button id="delete-checked" data-action="segment-changes#deleteChecked">刪除</button>
         </div>
         <dialog><button>平移</button></dialog>
-        <ol data-transcript-target="list"></ol>
       </section>
     `;
     showNotifications();
@@ -121,11 +120,15 @@ describe("SegmentChangesController", () => {
     application = Application.start();
     application.registerActionOption("composing", composingOption);
     application.registerActionOption("typing", typingOption);
-    await assemble(application, {
+    const assembly = assemble(application, {
       field: FieldController,
-      transcript: TranscriptController,
       "segment-changes": SegmentChangesController,
-    }).start();
+    });
+    drawSegmentRows(
+      document.querySelector("section")!,
+      pageContext(assembly.feed, assembly.session),
+    );
+    await assembly.start();
     await settle();
   });
 
@@ -660,9 +663,7 @@ describe("SegmentChangesController", () => {
       const page = document.createElement("div");
       mockPageMount();
       drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
-      const list = page.querySelector(
-        '[data-transcript-target="list"]',
-      )!.className;
+      const list = page.querySelector('ol[aria-label="段落"]')!.className;
       expect([
         field(0).dataset.cursor,
         caretMark(0)?.classList.contains("animate-blink"),

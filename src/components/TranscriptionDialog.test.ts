@@ -9,7 +9,6 @@ import { assemble } from "../assembly";
 import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
 import SegmentChangesController from "../controllers/segment-changes-controller";
-import TranscriptController from "../controllers/transcript-controller";
 import { EditingSession } from "../editor";
 import { projectOf, resourceOf } from "../test-project";
 import {
@@ -25,6 +24,7 @@ import { progressSteps } from "./test-task-progress";
 import { optionCheckbox, setSummaryWords } from "./test-translation-options";
 import TranscriptionDialog from "./TranscriptionDialog.svelte";
 import { renderWithToolbar } from "./test-toolbar";
+import { drawSegmentRows, rowList } from "./test-segment-rows";
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -437,9 +437,7 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
   let retranslateArgs: unknown;
   let commandsSent: string[];
 
-  const rows = () => [
-    ...document.querySelectorAll<HTMLLIElement>("#list > li"),
-  ];
+  const rows = () => [...rowList().children];
 
   async function hold(next: ProjectView): Promise<void> {
     project = next;
@@ -489,9 +487,8 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
     retranslateArgs = undefined;
     commandsSent = [];
     document.body.innerHTML = `
-      <section data-controller="transcript segment-changes"
-        data-action="selectionchange@document->transcript#followSelection transcript:shown->segment-changes#followTasks editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
-        <p data-transcript-target="emptyHint"></p>
+      <section data-controller="segment-changes"
+        data-action="transcript:shown->segment-changes#followTasks editor:checks@window->segment-changes#showChecked">
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
           <button data-segment-changes-target="mergeButton"></button>
@@ -499,7 +496,6 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
           <button id="retranscribe-checked" data-segment-changes-target="retranscribeButton"
             data-action="segment-changes#retranscribe">重新轉錄</button>
         </div>
-        <ol id="list" data-transcript-target="list"></ol>
       </section>
     `;
     showNotifications();
@@ -522,14 +518,11 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
     );
     application = Application.start();
     const assembly = assemble(application, {
-      transcript: TranscriptController,
       "segment-changes": SegmentChangesController,
     });
-    renderWithToolbar(
-      TranscriptionDialog,
-      "openTranscription",
-      pageContext(assembly.feed, assembly.session),
-    );
+    const context = pageContext(assembly.feed, assembly.session);
+    drawSegmentRows(document.querySelector("section")!, context);
+    renderWithToolbar(TranscriptionDialog, "openTranscription", context);
     await assembly.start();
     await settle();
   });

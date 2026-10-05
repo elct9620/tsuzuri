@@ -10,11 +10,11 @@ import type { ProjectView } from "../backend/project";
 import FieldController, {
   composingOption,
 } from "../controllers/field-controller";
-import TranscriptController from "../controllers/transcript-controller";
 import { setInterfaceLanguage } from "../i18n";
 import { projectOf } from "../test-project";
 import { pageContext } from "./context";
 import SearchBar from "./SearchBar.svelte";
+import { drawSegmentRows, segmentRows } from "./test-segment-rows";
 
 describe("SearchBar", () => {
   let application: Application;
@@ -68,10 +68,7 @@ describe("SearchBar", () => {
       },
     );
     document.body.innerHTML = `
-      <section data-controller="transcript"
-        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor">
-        <p data-transcript-target="emptyHint"></p>
-        <ol data-transcript-target="list"></ol>
+      <section>
       </section>
     `;
     mockIPC(
@@ -95,11 +92,10 @@ describe("SearchBar", () => {
     application.registerActionOption("composing", composingOption);
     const assembly = assemble(application, {
       field: FieldController,
-      transcript: TranscriptController,
     });
-    render(SearchBar, {
-      context: pageContext(assembly.feed, assembly.session),
-    });
+    const context = pageContext(assembly.feed, assembly.session);
+    drawSegmentRows(document.querySelector("section")!, context);
+    render(SearchBar, { context });
     await assembly.start();
     await settle();
   });
@@ -157,9 +153,7 @@ describe("SearchBar", () => {
   }
 
   function currentRow(): number {
-    return [
-      ...document.querySelectorAll("[data-transcript-target='list'] > li"),
-    ].findIndex((row) => row.hasAttribute("aria-current"));
+    return segmentRows().findIndex((row) => row.hasAttribute("aria-current"));
   }
 
   // @behavior ED-138

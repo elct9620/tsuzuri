@@ -15,7 +15,8 @@ import {
   notifications,
 } from "../components/test-notifications";
 import ComparisonController from "./comparison-controller";
-import TranscriptController from "./transcript-controller";
+import { pageContext } from "../components/context";
+import { drawSegmentRows } from "../components/test-segment-rows";
 
 describe("ComparisonController", () => {
   let application: Application;
@@ -150,11 +151,9 @@ describe("ComparisonController", () => {
       },
     ];
     document.body.innerHTML = `
-      <main data-controller="transcript comparison"
-        data-action="selectionchange@document->transcript#followSelection transcript:shown->comparison#mark versions:compare-with@window->comparison#compareWith">
+      <main data-controller="comparison"
+        data-action="transcript:shown->comparison#mark versions:compare-with@window->comparison#compareWith">
         <div data-comparison-target="menu"></div>
-        <p data-transcript-target="emptyHint"></p>
-        <ol data-transcript-target="list" data-comparison-target="list"></ol>
       </main>
     `;
     showNotifications();
@@ -178,10 +177,14 @@ describe("ComparisonController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    await assemble(application, {
-      transcript: TranscriptController,
+    const assembly = assemble(application, {
       comparison: ComparisonController,
-    }).start();
+    });
+    drawSegmentRows(
+      document.querySelector("main")!,
+      pageContext(assembly.feed, assembly.session),
+    );
+    await assembly.start();
     await settle();
   });
 

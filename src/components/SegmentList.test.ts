@@ -1,28 +1,31 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
-import { render } from "@testing-library/svelte";
+import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { GlossaryTable, ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test-project";
 import { fieldValue, isFieldHeld } from "../editor";
-import FieldController from "./field-controller";
+import FieldController from "../controllers/field-controller";
 import {
   showNotifications,
   notificationAction,
   notificationDetail,
   notifications,
-} from "../components/test-notifications";
-import type { TaskKind } from "../ui/progress";
-import { pageContext } from "../components/context";
-import SpeakersDialog from "../components/SpeakersDialog.svelte";
+} from "./test-notifications";
+import { pageContext } from "./context";
+import SpeakersDialog from "./SpeakersDialog.svelte";
 import { SAVE_MARK, saveMark } from "../ui/test-save-mark";
-import SpeakersController from "./speakers-controller";
-import TranscriptController from "./transcript-controller";
+import SpeakersController from "../controllers/speakers-controller";
+import { PlaybackFollowing } from "./playback-following.svelte";
+import SegmentList from "./SegmentList.svelte";
+import { TaskRun } from "./task-run.svelte";
+import { rowList, segmentRows } from "./test-segment-rows";
 
-describe("TranscriptController", () => {
+describe("SegmentList", () => {
   let application: Application;
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
@@ -56,14 +59,8 @@ describe("TranscriptController", () => {
     field.dispatchEvent(new FocusEvent("blur"));
   }
 
-  /** Tells the editor `task` began, as the progress above it does. */
-  function beginTask(task: TaskKind): void {
-    document
-      .querySelector("[data-controller~=transcript]")!
-      .dispatchEvent(
-        new CustomEvent("progress:task", { bubbles: true, detail: { task } }),
-      );
-  }
+  let run: TaskRun;
+  let segmentList: SegmentList;
 
   const placeholders = () =>
     document.querySelectorAll("[data-placeholder]").length;
@@ -97,11 +94,7 @@ describe("TranscriptController", () => {
     };
     document.body.innerHTML = `
       ${SAVE_MARK}
-      <section data-controller="transcript speakers"
-        data-action="selectionchange@document->transcript#followSelection progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->speakers#follow">
-        <p data-transcript-target="emptyHint">尚無內容</p>
-        <ol data-transcript-target="list"></ol>
-      </section>
+      <section data-controller="speakers" data-action="transcript:shown->speakers#follow"></section>
     `;
     showNotifications();
     mockIPC(
@@ -118,12 +111,16 @@ describe("TranscriptController", () => {
     const assembly = assemble(application, {
       field: FieldController,
       speakers: SpeakersController,
-      transcript: TranscriptController,
     });
+    run = new TaskRun();
+    const context = pageContext(assembly.feed, assembly.session, run);
+    segmentList = render(SegmentList, {
+      target: document.querySelector("section")!,
+      props: { following: new PlaybackFollowing() },
+      context,
+    }).component;
     // Writes the Speaker a Segment's menu names.
-    render(SpeakersDialog, {
-      context: pageContext(assembly.feed, assembly.session),
-    });
+    render(SpeakersDialog, { context });
     await assembly.start();
     await settle();
   });
@@ -143,9 +140,7 @@ describe("TranscriptController", () => {
         ],
       }),
     );
-    const drawnRows = [
-      ...document.querySelectorAll("[data-transcript-target=list] > li"),
-    ];
+    const drawnRows = segmentRows();
 
     await hold(
       projectOf({
@@ -157,9 +152,7 @@ describe("TranscriptController", () => {
       }),
     );
 
-    const rows = [
-      ...document.querySelectorAll("[data-transcript-target=list] > li"),
-    ];
+    const rows = segmentRows();
     expect([
       rows.length,
       rows[0] === drawnRows[0],
@@ -308,14 +301,12 @@ describe("TranscriptController", () => {
   it("shows Placeholder rows until a transcription writes a Segment", async () => {
     await hold(projectOf({ segments: [] }));
 
-    beginTask("transcription");
+    run.begin("transcription");
     await settle();
 
     expect([
       placeholders() > 0,
-      document.querySelector<HTMLElement>(
-        '[data-transcript-target="emptyHint"]',
-      )!.hidden,
+      screen.queryByText("尚無內容") === null,
     ]).toEqual([true, true]);
   });
 
@@ -347,12 +338,10 @@ describe("TranscriptController", () => {
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }] }),
     );
 
-    beginTask("transcription");
+    run.begin("transcription");
     await settle();
 
-    const rows = [
-      ...document.querySelectorAll("[data-transcript-target=list] > li"),
-    ];
+    const rows = [...rowList().children];
     expect(rows.map((row) => row.hasAttribute("data-placeholder"))).toEqual([
       false,
       true,
@@ -373,7 +362,7 @@ describe("TranscriptController", () => {
           ...(at < translatedCount ? { translation: `line ${at}` } : {}),
         })),
       });
-    beginTask("translation");
+    run.begin("translation");
     await hold(translatedUpTo(0));
 
     await hold(translatedUpTo(6));
@@ -393,9 +382,8 @@ describe("TranscriptController", () => {
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }] }),
     );
 
-    document
-      .querySelector("ol")!
-      .dispatchEvent(new CustomEvent("project:select", { bubbles: true }));
+    segmentList.showLoading();
+    flushSync();
 
     expect([placeholders() > 0, fields()]).toEqual([true, []]);
   });
@@ -563,6 +551,7 @@ describe("TranscriptController", () => {
   });
   // @behavior ED-026
   it("holds every field while the Current Resource is transcribed", async () => {
+    await hold(translatedProject);
     await hold({
       ...translatedProject,
       running_mode: { mode: "transcription" },

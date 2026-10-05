@@ -9,7 +9,6 @@ import { assemble } from "../assembly";
 import { editingPort } from "../backend/editing";
 import { ProjectFeed, type ProjectView } from "../backend/project";
 import SegmentChangesController from "../controllers/segment-changes-controller";
-import TranscriptController from "../controllers/transcript-controller";
 import { EditingSession } from "../editor";
 import { projectOf, resourceOf } from "../test-project";
 import {
@@ -29,6 +28,7 @@ import {
 } from "./test-translation-options";
 import TranslationDialog from "./TranslationDialog.svelte";
 import { renderWithToolbar } from "./test-toolbar";
+import { drawSegmentRows, rowList } from "./test-segment-rows";
 
 describe("TranslationDialog", () => {
   let feed: ProjectFeed;
@@ -315,9 +315,7 @@ describe("TranslationDialog, translating chosen Segments again", () => {
   let retranslateArgs: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const rows = () => [
-    ...document.querySelectorAll<HTMLLIElement>("#list > li"),
-  ];
+  const rows = () => [...rowList().children];
   const isProgressShown = () => progressSteps().length > 0;
 
   async function hold(next: ProjectView): Promise<void> {
@@ -346,9 +344,8 @@ describe("TranslationDialog, translating chosen Segments again", () => {
     project = null;
     retranslateArgs = undefined;
     document.body.innerHTML = `
-      <section data-controller="transcript segment-changes"
-        data-action="selectionchange@document->transcript#followSelection transcript:shown->segment-changes#followTasks editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
-        <p data-transcript-target="emptyHint"></p>
+      <section data-controller="segment-changes"
+        data-action="transcript:shown->segment-changes#followTasks editor:checks@window->segment-changes#showChecked">
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
           <button data-segment-changes-target="mergeButton"></button>
@@ -356,7 +353,6 @@ describe("TranslationDialog, translating chosen Segments again", () => {
             data-action="segment-changes#retranslate">重新翻譯</button>
           <button data-segment-changes-target="retranscribeButton"></button>
         </div>
-        <ol id="list" data-transcript-target="list"></ol>
       </section>
     `;
     showNotifications();
@@ -372,10 +368,10 @@ describe("TranslationDialog, translating chosen Segments again", () => {
     );
     application = Application.start();
     const assembly = assemble(application, {
-      transcript: TranscriptController,
       "segment-changes": SegmentChangesController,
     });
     const context = pageContext(assembly.feed, assembly.session, new TaskRun());
+    drawSegmentRows(document.querySelector("section")!, context);
     render(TranslationDialog, { context });
     render(TaskProgress, { context });
     await assembly.start();

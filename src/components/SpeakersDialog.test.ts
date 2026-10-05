@@ -7,12 +7,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import SegmentChangesController from "../controllers/segment-changes-controller";
-import TranscriptController from "../controllers/transcript-controller";
 import { setInterfaceLanguage } from "../i18n";
 import { projectOf } from "../test-project";
 import { pageContext } from "./context";
 import SpeakersDialog from "./SpeakersDialog.svelte";
 import { showNotifications } from "./test-notifications";
+import { drawSegmentRows } from "./test-segment-rows";
 
 describe("SpeakersDialog", () => {
   let speakersDialog: SpeakersDialog;
@@ -85,15 +85,13 @@ describe("SpeakersDialog", () => {
     project = null;
     setSpeakersArgs = undefined;
     document.body.innerHTML = `
-      <section data-controller="transcript segment-changes"
-        data-action="selectionchange@document->transcript#followSelection editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked">
-        <p data-transcript-target="emptyHint"></p>
+      <section data-controller="segment-changes"
+        data-action="editor:checks@window->segment-changes#showChecked">
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
           <button data-segment-changes-target="mergeButton"></button>
           <button id="speakers-of-checked" data-action="segment-changes#openSpeakers">說話者</button>
         </div>
-        <ol data-transcript-target="list"></ol>
       </section>
     `;
     showNotifications();
@@ -106,12 +104,11 @@ describe("SpeakersDialog", () => {
     );
     application = Application.start();
     const assembly = assemble(application, {
-      transcript: TranscriptController,
       "segment-changes": SegmentChangesController,
     });
-    speakersDialog = render(SpeakersDialog, {
-      context: pageContext(assembly.feed, assembly.session),
-    }).component;
+    const context = pageContext(assembly.feed, assembly.session);
+    drawSegmentRows(document.querySelector("section")!, context);
+    speakersDialog = render(SpeakersDialog, { context }).component;
     await assembly.start();
     await settle();
   });

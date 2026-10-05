@@ -139,17 +139,4 @@ describe("TaskProgress", () => {
 
     expect(progressButton()).toBeNull();
   });
-
-  it("tells the page of each task as it begins and once the run ends", () => {
-    const tasks: unknown[] = [];
-    document.body.addEventListener("progress:task", (event) =>
-      tasks.push((event as CustomEvent).detail.task),
-    );
-
-    run.begin("transcription");
-    run.begin("translation");
-    run.finish();
-
-    expect(tasks).toEqual(["transcription", "translation", null]);
-  });
 });

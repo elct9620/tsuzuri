@@ -24,6 +24,7 @@ describe("ResourceList", () => {
   let selectFailure: unknown;
   let reloadProject: () => unknown;
   let unfollow: () => void;
+  let loadingShown: number;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const sent = (command: string) =>
@@ -36,7 +37,11 @@ describe("ResourceList", () => {
   async function show(next: ProjectView): Promise<void> {
     project = next;
     render(ResourceList, {
-      props: { dock: new ResourceDock(), openGlossary: () => {} },
+      props: {
+        dock: new ResourceDock(),
+        openGlossary: () => {},
+        showLoading: () => loadingShown++,
+      },
       context: pageContext(feed, new EditingSession(editingPort)),
     });
     await emit("project-changed");
@@ -50,6 +55,7 @@ describe("ResourceList", () => {
 
   beforeEach(async () => {
     project = null;
+    loadingShown = 0;
     calls = [];
     selectFailure = undefined;
     reloadProject = () => null;
@@ -188,12 +194,10 @@ describe("ResourceList", () => {
     await show(
       projectOf({ resources: [resourceOf(), resourceOf({ name: "ep02" })] }),
     );
-    let isAnnounced = false;
-    document.addEventListener("project:select", () => (isAnnounced = true));
 
     await choose("ep02");
 
-    expect(isAnnounced).toBe(true);
+    expect(loadingShown).toBe(1);
   });
 
   // @behavior PJ-116
@@ -248,7 +252,11 @@ describe("ResourceList", () => {
 
   it("reloads nothing without a Project", async () => {
     render(ResourceList, {
-      props: { dock: new ResourceDock(), openGlossary: () => {} },
+      props: {
+        dock: new ResourceDock(),
+        openGlossary: () => {},
+        showLoading: () => {},
+      },
       context: pageContext(feed, new EditingSession(editingPort)),
     });
 

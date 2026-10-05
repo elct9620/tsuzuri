@@ -11,6 +11,7 @@ Hearing and watching the Current Resource's media above the editor while its sub
 - `src/controllers/preview-controller.test.ts`
 - `src/controllers/timeline-controller.test.ts`
 - `src/controllers/current-segment.test.ts`
+- `src/page.test.ts`
 
 ## `PV-001` Letting the webview read a media file of the Project
 

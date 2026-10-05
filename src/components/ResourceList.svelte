@@ -14,9 +14,11 @@
   interface Props {
     dock: ResourceDock;
     openGlossary: () => void;
+    /** Stands Placeholders in for the Segments of the Resource being read. */
+    showLoading: () => void;
   }
 
-  let { dock, openGlossary }: Props = $props();
+  let { dock, openGlossary, showLoading }: Props = $props();
 
   const feed = projectFeed();
   let project = $state<ProjectView | null>(null);
@@ -28,13 +30,10 @@
       : t("resources.glossary", { count: glossary.term_count });
   });
 
-  /**
-   * Selects the Resource named `name`, putting the list away and telling the page from `row` as
-   * `project:select` that one is being read.
-   */
-  async function select(row: HTMLElement, name: string): Promise<void> {
+  /** Selects the Resource named `name`, putting the list away while its Segments are read. */
+  async function select(name: string): Promise<void> {
     dock.putAway();
-    row.dispatchEvent(new CustomEvent("project:select", { bubbles: true }));
+    showLoading();
     try {
       await selectResource(name);
     } catch (error) {
@@ -99,8 +98,7 @@
               resource.name === project?.current_resource && "menu-active",
             ]}
             data-tooltip={resource.name}
-            onclick={({ currentTarget }) =>
-              select(currentTarget, resource.name)}
+            onclick={() => select(resource.name)}
           >
             <span class="line-clamp-2 break-all">{resource.name}</span>
             {#if !resource.has_media || !resource.has_subtitle || resource.translation_languages.length > 0}

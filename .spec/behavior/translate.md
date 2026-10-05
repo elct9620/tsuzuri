@@ -12,7 +12,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 - `src/components/TaskProgress.test.ts`
 - `src/components/TranscriptionDialog.test.ts`
 - `src/components/settings/general/Translation.test.ts`
-- `src/controllers/transcript-controller.test.ts`
+- `src/components/SegmentList.test.ts`
 
 ## `TL-001` Translating each Segment
 

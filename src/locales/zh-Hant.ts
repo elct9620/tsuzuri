@@ -115,6 +115,7 @@ const zhHant: typeof en = {
   },
   edit: {
     empty: "尚無內容",
+    segments: "段落",
     translation: "譯文",
     noTranslation: "無",
     untranslated: "尚未翻譯",

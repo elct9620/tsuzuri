@@ -119,6 +119,7 @@ const en = {
   },
   edit: {
     empty: "Nothing yet",
+    segments: "Segments",
     translation: "Translation",
     noTranslation: "None",
     untranslated: "Not translated yet",

@@ -4,7 +4,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 
 ## Includes
 
-- `src/controllers/transcript-controller.test.ts`
+- `src/components/SegmentList.test.ts`
 - `src/components/EditorBar.test.ts`
 - `src/components/ExportMenu.test.ts`
 - `src/components/ResourceList.test.ts`
@@ -21,6 +21,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/editor/*.test.ts`
 - `src-tauri/src/replacement.rs`
 - `src-tauri/src/project/current/tests/editing_behavior.rs`
+- `src/page.test.ts`
 
 ## `ED-001` Writing an edited text to the Project
 

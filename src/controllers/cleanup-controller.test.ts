@@ -13,8 +13,9 @@ import {
 import CleanupController from "./cleanup-controller";
 import FieldController, { composingOption } from "./field-controller";
 import SegmentChangesController from "./segment-changes-controller";
-import TranscriptController from "./transcript-controller";
 import { typingOption } from "./segment-changes-controller";
+import { pageContext } from "../components/context";
+import { drawSegmentRows, segmentRows } from "../components/test-segment-rows";
 
 describe("CleanupController", () => {
   let application: Application;
@@ -43,9 +44,8 @@ describe("CleanupController", () => {
     sentCalls = [];
     count = 2;
     document.body.innerHTML = `
-      <section data-controller="transcript segment-changes cleanup"
-        data-action="selectionchange@document->transcript#followSelection editor:cursor@window->transcript#showCursor editor:checks@window->transcript#showChecked editor:checks@window->segment-changes#showChecked keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow transcript:shown->segment-changes#followTasks">
-        <p data-transcript-target="emptyHint"></p>
+      <section data-controller="segment-changes cleanup"
+        data-action="editor:checks@window->segment-changes#showChecked keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow transcript:shown->segment-changes#followTasks">
         <div data-segment-changes-target="checkedBar" hidden>
           <span data-segment-changes-target="checkedCount"></span>
           <button data-segment-changes-target="mergeButton"></button>
@@ -54,7 +54,6 @@ describe("CleanupController", () => {
           <button id="clean-checked" data-cleanup-target="checkedButton" data-action="cleanup#cleanChecked"></button>
         </div>
         <dialog id="other-dialog"><input id="other-input" /></dialog>
-        <ol data-transcript-target="list"></ol>
       </section>
     `;
     showNotifications();
@@ -71,12 +70,16 @@ describe("CleanupController", () => {
     application = Application.start();
     application.registerActionOption("composing", composingOption);
     application.registerActionOption("typing", typingOption);
-    await assemble(application, {
+    const assembly = assemble(application, {
       field: FieldController,
-      transcript: TranscriptController,
       "segment-changes": SegmentChangesController,
       cleanup: CleanupController,
-    }).start();
+    });
+    drawSegmentRows(
+      document.querySelector("section")!,
+      pageContext(assembly.feed, assembly.session),
+    );
+    await assembly.start();
     await settle();
   });
 
@@ -166,9 +169,7 @@ describe("CleanupController", () => {
   // @behavior ED-130
   it("cleans the Current Segment by shortcut when nothing is marked", async () => {
     await hold(projectInTraditionalChinese);
-    document
-      .querySelectorAll<HTMLElement>("[data-transcript-target='list'] > li")[1]
-      .click();
+    segmentRows()[1].click();
 
     pressCleanup();
     await settle();

@@ -35,8 +35,6 @@ export class TaskRun {
   /** Whether a Phase has been reported since the run began, so a bar has something to show. */
   hasBar = $state(false);
 
-  #listeners = new Set<(task: TaskKind | null) => void>();
-
   /** Whether a task is running, so no second one starts. */
   get isBusy(): boolean {
     return this.task !== null;
@@ -48,7 +46,6 @@ export class TaskRun {
     this.status = t("work.preparing");
     this.summary = t("work.preparing");
     this.reachedPhase = null;
-    this.#tell(task);
   }
 
   finish(): void {
@@ -79,19 +76,8 @@ export class TaskRun {
     this.hasBar = true;
   }
 
-  /** Calls `listener` with the task each time one begins or the run ends, until the returned function is called. */
-  onTask(listener: (task: TaskKind | null) => void): () => void {
-    this.#listeners.add(listener);
-    return () => this.#listeners.delete(listener);
-  }
-
   #end(): void {
     this.task = null;
     this.hasBar = false;
-    this.#tell(null);
-  }
-
-  #tell(task: TaskKind | null): void {
-    for (const listener of this.#listeners) listener(task);
   }
 }

@@ -1,7 +1,6 @@
 <script lang="ts">
   import Check from "@lucide/svelte/icons/check";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
-  import { onMount } from "svelte";
 
   import type { Phase, PipelineProgress } from "../backend/progress";
   import { t } from "../i18n";
@@ -17,17 +16,6 @@
 
   const run = taskRun();
 
-  /** Always written, so the editor hears of each task as it begins, before anything is redrawn. */
-  let root: HTMLElement;
-
-  onMount(() =>
-    run.onTask((task) =>
-      root.dispatchEvent(
-        new CustomEvent("progress:task", { bubbles: true, detail: { task } }),
-      ),
-    ),
-  );
-
   /** Where a step stands from the Phase running: before it negative, at it zero, after it positive. */
   function offsetFromRunning(phases: Phase[], index: number): number {
     if (run.reachedPhase === null) return 1;
@@ -41,7 +29,7 @@
 
 <svelte:window onrust:pipeline-progress={show} />
 
-<div class="contents" bind:this={root}>
+<div class="contents">
   {#if run.task !== null}
     {@const phases = PHASES_BY_TASK[run.task]}
     <div class="dropdown dropdown-end">

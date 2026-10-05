@@ -140,6 +140,8 @@
   }
 </script>
 
+<!-- Being editable makes the field focusable, so a held field leaves the tab order as a disabled control does -->
+<!-- svelte-ignore a11y_interactive_supports_focus -->
 <div
   bind:this={element}
   class={["field", kind, isPending && "skeleton"]}

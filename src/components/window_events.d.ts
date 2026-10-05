@@ -5,12 +5,14 @@
  */
 
 import type { PipelineProgress } from "../backend/progress";
+import type { EditCommand } from "../backend/project";
 import type { DownloadProgress } from "../backend/toolchain";
 import type { TranscriptionScope } from "../backend/transcription";
 import type { UpdateProgress } from "../backend/updates";
 
 declare module "svelte/elements" {
   export interface SvelteWindowAttributes {
+    "onrust:edit-command"?: (event: CustomEvent<EditCommand>) => void;
     "onrust:model-download-progress"?: (
       event: CustomEvent<DownloadProgress>,
     ) => void;

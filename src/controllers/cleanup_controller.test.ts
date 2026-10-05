@@ -14,7 +14,7 @@ import CleanupController from "./cleanup_controller";
 import FieldController, { composingOption } from "./field_controller";
 import SegmentChangesController from "./segment_changes_controller";
 import TranscriptController from "./transcript_controller";
-import { typingOption } from "./undo_controller";
+import { typingOption } from "./segment_changes_controller";
 
 describe("CleanupController", () => {
   let application: Application;

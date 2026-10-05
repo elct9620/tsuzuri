@@ -16,6 +16,7 @@
   import Tooltip from "./components/Tooltip.svelte";
   import TranscriptionDialog from "./components/TranscriptionDialog.svelte";
   import TranslationDialog from "./components/TranslationDialog.svelte";
+  import Undo from "./components/Undo.svelte";
   import UpdatesDialog from "./components/UpdatesDialog.svelte";
 
   let settingsDialog: SettingsDialog;
@@ -91,3 +92,4 @@
 <UpdatesDialog />
 <Notifications />
 <Tooltip />
+<Undo />

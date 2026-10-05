@@ -12,14 +12,15 @@ import ProjectController from "./controllers/project_controller";
 import RecentProjectsController from "./controllers/recent_projects_controller";
 import ResourceListController from "./controllers/resource_list_controller";
 import SearchController from "./controllers/search_controller";
-import SegmentChangesController from "./controllers/segment_changes_controller";
+import SegmentChangesController, {
+  typingOption,
+} from "./controllers/segment_changes_controller";
 import SpeakersController from "./controllers/speakers_controller";
 import TimeFieldController from "./controllers/time_field_controller";
 import TimelineController, {
   controlOption,
 } from "./controllers/timeline_controller";
 import TranscriptController from "./controllers/transcript_controller";
-import UndoController, { typingOption } from "./controllers/undo_controller";
 import VersionsController from "./controllers/versions_controller";
 import { setInterfaceLanguage } from "./i18n";
 import { drawPage } from "./page";
@@ -49,7 +50,6 @@ async function start(): Promise<void> {
     "time-field": TimeFieldController,
     timeline: TimelineController,
     transcript: TranscriptController,
-    undo: UndoController,
     versions: VersionsController,
   });
   drawPage(assembly.feed, assembly.session);

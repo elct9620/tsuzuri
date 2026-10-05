@@ -27,6 +27,20 @@ import { notify, notifyEdit } from "../ui/notification.svelte";
 import { accelerator, isShortcut } from "../ui/shortcuts";
 import { parseTime } from "../ui/time";
 
+/**
+ * Routes a key event by whether it was typed in a text field: `:typing` routes only those,
+ * `:!typing` only the others, so a shortcut typed in a field stays the field's own.
+ */
+export function typingOption({
+  event,
+  value,
+}: {
+  event: Event;
+  value: boolean;
+}): boolean {
+  return isTextField(event.target) === value;
+}
+
 function indexOf(element: EventTarget | null): number {
   return Number((element as HTMLElement).dataset.index);
 }

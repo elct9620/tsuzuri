@@ -1,12 +1,14 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { render } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
-import UndoController, { typingOption } from "./undo_controller";
+import { pageContext } from "./context";
+import Undo from "./Undo.svelte";
 
-describe("UndoController", () => {
+describe("Undo", () => {
   let application: Application;
   let commands: string[];
 
@@ -26,10 +28,8 @@ describe("UndoController", () => {
   beforeEach(async () => {
     commands = [];
     document.body.innerHTML = `
-      <main data-controller="undo" data-action="keydown.ctrl+z@window->undo#undoInProject:!typing:prevent keydown.meta+z@window->undo#undoInProject:!typing:prevent keydown.ctrl+shift+z@window->undo#redoInProject:!typing:prevent keydown.meta+shift+z@window->undo#redoInProject:!typing:prevent keydown.ctrl+y@window->undo#redoInProject:!typing:prevent keydown.meta+y@window->undo#redoInProject:!typing:prevent rust:edit-command@window->undo#applyEditCommand">
-        <div class="field text" contenteditable="plaintext-only" role="textbox" aria-multiline="true" tabindex="0"></div>
-        <button type="button">⋮</button>
-      </main>
+      <div class="field text" contenteditable="plaintext-only" role="textbox" aria-multiline="true" tabindex="0"></div>
+      <button type="button">⋮</button>
     `;
     mockIPC(
       (command) => {
@@ -38,10 +38,9 @@ describe("UndoController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.registerActionOption("typing", typingOption);
-    await assemble(application, {
-      undo: UndoController,
-    }).start();
+    const assembly = assemble(application, {});
+    render(Undo, { context: pageContext(assembly.feed, assembly.session) });
+    await assembly.start();
     await settle();
   });
 
@@ -72,6 +71,19 @@ describe("UndoController", () => {
     await settle();
 
     expect(projectCommands()).toEqual(["undo"]);
+  });
+
+  it("keeps an undo it sends to the Project from the page", () => {
+    const undo = new KeyboardEvent("keydown", {
+      key: "z",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+
+    button().dispatchEvent(undo);
+
+    expect(undo.defaultPrevented).toBe(true);
   });
 
   // @behavior UD-015

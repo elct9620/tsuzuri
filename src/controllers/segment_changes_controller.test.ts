@@ -19,7 +19,7 @@ import { EditingSession, fieldValue } from "../editor";
 import FieldController, { composingOption } from "./field_controller";
 import SegmentChangesController from "./segment_changes_controller";
 import TranscriptController from "./transcript_controller";
-import { typingOption } from "./undo_controller";
+import { typingOption } from "./segment_changes_controller";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
 interface MenuItemSent {

@@ -263,6 +263,20 @@ describe("drawPage", () => {
     ).toBe(true);
   });
 
+  it("sends an undo by its keys to the Project", async () => {
+    let undoCount = 0;
+    mockPageMount(null, { undo: () => (undoCount += 1) });
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort));
+    await tick();
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "z", ctrlKey: true }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(undoCount).toBe(1);
+  });
+
   it("opens the shortcut list from the toolbar", async () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");

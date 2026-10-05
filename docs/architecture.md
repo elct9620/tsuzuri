@@ -147,7 +147,7 @@ controller ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/command
 |---|---|---|
 | `project-changed` | 改變專案的指令 | `ProjectFeed` |
 | `pipeline-progress` | 用例經 `Progress` | `TaskProgress` |
-| `edit-command` | macOS 編輯選單 | `undo`、`segment-changes` |
+| `edit-command` | macOS 編輯選單 | `Undo`、`segment-changes` |
 | `changed-elsewhere-kept` | 重新載入 | `project` |
 | `srt-requested` | 第二次啟動、macOS 開檔 | `project` |
 | `video-window-closing` | 關閉影片視窗 | `preview` |
@@ -543,7 +543,7 @@ backend/editing.ts            gateway: the one caller of editing commands
 
 #### 4.1.1 頁面 markup
 
-`index.html` 只留 `<body>` 與掛在上面的 controller，其餘 markup 由 Svelte 元件寫出。
+`index.html` 只留空的 `<body>`，markup 都由 Svelte 元件寫出。
 
 | 選擇 | 原因 |
 |---|---|
@@ -661,7 +661,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
 | `versions` | 版本 modal |
-| `undo` | 全頁的復原與重做 |
 | `field` | 每個編輯欄位接上 session |
 | `time-field` | 時間欄覆寫輸入 |
 
@@ -682,7 +681,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `TaskProgress` 顯示 Phase |
 | `rust:update-progress` | Rust，經 `relayEvents` | `UpdatesDialog` 顯示下載進度 |
-| `rust:edit-command` | Rust，經 `relayEvents` | `undo` 與 `segment-changes` |
+| `rust:edit-command` | Rust，經 `relayEvents` | `Undo` 與 `segment-changes` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `project` 顯示通知 |
 | `rust:srt-requested` | Rust，經 `relayEvents` | `project` 開啟系統要開的 SRT |
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `ModelSlot` 顯示下載進度 |
@@ -723,6 +722,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ReplacementDialog` | 取代 modal |
 | `Notifications`、`NotificationCard` | 通知的堆疊、倒數、暫停與按鈕 |
 | `Tooltip` | 全頁共用的 tooltip |
+| `Undo` | 全頁的復原與重做，不畫任何東西 |
 
 ### 4.7 backend
 

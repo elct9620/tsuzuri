@@ -2,9 +2,6 @@ import { Application } from "@hotwired/stimulus";
 
 import { assemble } from "./assembly";
 import { locale } from "./backend/system";
-import FieldController, {
-  composingOption,
-} from "./controllers/field-controller";
 import PreviewController from "./controllers/preview-controller";
 import TimelineController, {
   controlOption,
@@ -20,10 +17,8 @@ import { drawPage } from "./page";
 async function start(): Promise<void> {
   await setInterfaceLanguage(await locale());
   const application = new Application();
-  application.registerActionOption("composing", composingOption);
   application.registerActionOption("control", controlOption);
   const assembly = assemble(application, {
-    field: FieldController,
     preview: PreviewController,
     timeline: TimelineController,
   });

@@ -184,15 +184,13 @@
   }
 
   /**
-   * Hands a selection change to the text that has focus; bound once on the document, as each
+   * Hands a selection change to the row whose field has focus; bound once on the document, as each
    * change reaches every listener there and a row drawn with its time fields reports one each.
    */
   function followSelection(): void {
     const field = document.activeElement;
     if (isField(field) && list?.contains(field))
-      field.dispatchEvent(
-        new CustomEvent("transcript:selection", { cancelable: true }),
-      );
+      rows[Number(field.dataset.index)]?.followSelection();
   }
 
   /** Marks the Segments the Preview is playing, keeping the row of the one started last in view while following playback. */

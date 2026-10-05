@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from "vitest";
-import { createField } from "./field";
 import { textRange } from "./highlight";
+import { fieldOf } from "./test-field";
 
 describe("highlight", () => {
   afterEach(() => {
@@ -9,7 +9,7 @@ describe("highlight", () => {
   });
 
   it("covers the characters asked for, across the field's text nodes", () => {
-    const field = createField("資料不");
+    const field = fieldOf("資料不");
     field.append(document.createTextNode("會上傳"));
     document.body.append(field);
 

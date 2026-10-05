@@ -17,7 +17,6 @@ import type { EditingSession } from "../editor";
 import type { Waveform } from "../backend/waveform";
 import { layOutTimeline } from "../test-layout";
 import { projectOf } from "../test-project";
-import FieldController, { composingOption } from "./field-controller";
 import PreviewController from "./preview-controller";
 import TimelineController, {
   controlOption,
@@ -178,9 +177,7 @@ describe("Current Segment", () => {
   async function startApplication(): Promise<void> {
     application = Application.start();
     application.registerActionOption("control", controlOption);
-    application.registerActionOption("composing", composingOption);
     const assembly = assemble(application, {
-      field: FieldController,
       preview: PreviewController,
       timeline: TimelineController,
     });

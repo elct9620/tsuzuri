@@ -7,9 +7,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
-import FieldController, {
-  composingOption,
-} from "../controllers/field-controller";
 import { setInterfaceLanguage } from "../i18n";
 import { projectOf } from "../test-project";
 import { pageContext } from "./context";
@@ -89,10 +86,7 @@ describe("SearchBar", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.registerActionOption("composing", composingOption);
-    const assembly = assemble(application, {
-      field: FieldController,
-    });
+    const assembly = assemble(application, {});
     const context = pageContext(assembly.feed, assembly.session);
     drawSegmentRows(document.querySelector("section")!, context);
     render(SearchBar, { context });

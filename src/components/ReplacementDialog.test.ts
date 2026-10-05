@@ -6,9 +6,6 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
-import FieldController, {
-  composingOption,
-} from "../controllers/field-controller";
 import { projectOf } from "../test-project";
 import { showNotifications, notifications } from "./test-notifications";
 import { pageContext } from "./context";
@@ -73,10 +70,7 @@ describe("ReplacementDialog", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.registerActionOption("composing", composingOption);
-    const assembly = assemble(application, {
-      field: FieldController,
-    });
+    const assembly = assemble(application, {});
     const context = pageContext(assembly.feed, assembly.session);
     drawSegmentRows(document.querySelector("section")!, context);
     render(ReplacementDialog, { context });

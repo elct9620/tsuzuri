@@ -3,25 +3,21 @@
   One Segment's row: its check, its times and Speaker, the text, and the translation when one is
   shown, even before it is made, with the menu of the Segment Changes it offers, also opened by a
   right-click. The editor's comparison marks each field it compares and reads other translations
-  beneath them. The fields are made by the editor and written here only while the user is not typing
-  in them; a press in the row tells the session where it chose the Segment from.
+  beneath them. Its times and fields are written only while the user is not typing in them; a press
+  in the row tells the session where it chose the Segment from.
 -->
 <script lang="ts">
   import EllipsisVertical from "@lucide/svelte/icons/ellipsis-vertical";
   import { untrack } from "svelte";
-  import type { Attachment } from "svelte/attachments";
 
   import type { Segment } from "../backend/project";
   import { isMacOS } from "../backend/system";
   import {
     type ChoiceSource,
-    createField,
     type CursorField,
     type FieldKind,
     isHeld,
     orderedTimes,
-    setFieldHeld,
-    setFieldValue,
     type TimeEdge,
     type TranscriptView,
   } from "../editor";
@@ -34,6 +30,7 @@
   import ComparisonMarks from "./ComparisonMarks.svelte";
   import { editingSession, projectFeed, segmentDialogs } from "./context";
   import EarlierText from "./EarlierText.svelte";
+  import EditingField from "./EditingField.svelte";
   import type { SegmentComparison, Side } from "./editor-comparison.svelte";
   import {
     change,
@@ -44,14 +41,6 @@
   } from "./segment-changes";
   import { notifyNamed } from "./speaker-actions";
   import TimeField from "./TimeField.svelte";
-
-  /** What a field hands the session as the user works in it. */
-  const FIELD_ACTIONS =
-    "focus->field#enter transcript:selection->field#select compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#enterNext:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent keydown.esc->field#revert:!composing:prevent blur->field#leave";
-
-  /** Ctrl+Alt+Enter, or ⌘+Option+Enter, splits a Segment at the Cursor in its text, as subtitle editors bind splitting to a modified line break. */
-  const SPLIT_SHORTCUTS =
-    "keydown.ctrl+alt+enter->field#split:!composing:prevent keydown.meta+alt+enter->field#split:!composing:prevent";
 
   /** The side of the comparison each field shows the marks of. */
   const SIDE_BY_FIELD: Record<CursorField, Side> = {
@@ -100,7 +89,10 @@
   let newSpeakerInput = $state<HTMLInputElement>();
   /** The Speakers the Speaker menu offers, read from the Project each time it opens. */
   let offeredSpeakers = $state<string[]>([]);
-  let fieldByKind: Partial<Record<CursorField, HTMLElement>> = {};
+  let fieldByKind = $state<Partial<Record<CursorField, HTMLElement>>>({});
+  let editingFieldByKind = $state<Partial<Record<CursorField, EditingField>>>(
+    {},
+  );
   /** The fields the row has, drawn anew only as the translation is shown or hidden. */
   const kinds: CursorField[] = untrack(() =>
     offers.isTranslationShown ? ["text", "translation"] : ["text"],
@@ -130,6 +122,12 @@
     return fieldByKind[kind] ?? null;
   }
 
+  /** Hands a selection change to the field that has focus, if one of the row's has it. */
+  export function followSelection(): void {
+    for (const editingField of Object.values(editingFieldByKind))
+      editingField?.select();
+  }
+
   /** Writes `value` into `editor` unless the user is typing in it and it keeps what is typed. */
   function writeUnlessTyping(
     editor: HTMLElement | undefined,
@@ -138,39 +136,6 @@
     if (!editor) return;
     if (isTypingKept && editor === document.activeElement) return;
     write();
-  }
-
-  /**
-   * Makes the row's field of `kind` once in its own host, where the Cursor's caret is drawn beside
-   * it, and keeps it showing the Segment, held while a Mode writes it.
-   */
-  function attachField(kind: CursorField): Attachment<HTMLElement> {
-    return (host) => {
-      const element = createField(
-        "",
-        kind === "translation" ? t("edit.untranslated") : "",
-      );
-      element.className = `field ${kind}`;
-      element.dataset.index = String(index);
-      element.dataset.field = kind;
-      element.dataset.controller = "field";
-      element.dataset.action =
-        kind === "text" ? `${FIELD_ACTIONS} ${SPLIT_SHORTCUTS}` : FIELD_ACTIONS;
-      fieldByKind[kind] = element;
-      host.append(element);
-      $effect(() => {
-        const value =
-          kind === "text" ? segment.text : (segment.translation ?? "");
-        writeUnlessTyping(element, () => setFieldValue(element, value));
-        setFieldHeld(element, !isFree(kind));
-        if (kind === "translation")
-          element.classList.toggle("skeleton", isPending);
-      });
-      return () => {
-        element.remove();
-        delete fieldByKind[kind];
-      };
-    };
   }
 
   $effect(() => {
@@ -390,7 +355,21 @@
         <ComparisonMarks {sideRow} />
       {/each}
       <!-- The Cursor's caret is drawn within, beside the character it stands after -->
-      <div class="relative" {@attach attachField(kind)}></div>
+      <div class="relative">
+        <EditingField
+          {index}
+          {kind}
+          value={kind === "text" ? segment.text : (segment.translation ?? "")}
+          placeholder={kind === "translation"
+            ? t("edit.untranslated")
+            : undefined}
+          isHeld={!isFree(kind)}
+          isPending={kind === "translation" && isPending}
+          {isTypingKept}
+          bind:element={fieldByKind[kind]}
+          bind:this={editingFieldByKind[kind]}
+        />
+      </div>
       {#each sideRows as { row, index } (index)}
         {#if row.kind !== "pair" || row.is_text_changed}
           <EarlierText {row} />

@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { KeptCaret, LiveCaret } from "./cursor";
-import { createField } from "./field";
 import { drawCursor } from "./marks";
+import { fieldOf } from "./test-field";
 
 function fieldInHost(text: string): HTMLElement {
   const host = document.createElement("div");
-  const field = createField(text);
+  const field = fieldOf(text);
   host.append(field);
   document.body.append(host);
   return field;

@@ -1,20 +1,24 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
-import { projectOf } from "../test-project";
 import type { EditingSession } from "../editor";
-import FieldController, { composingOption } from "./field-controller";
+import { projectOf } from "../test-project";
+import { pageContext } from "./context";
+import { type DrawnSegmentRows, drawSegmentRows } from "./test-segment-rows";
 
-describe("FieldController", () => {
+describe("EditingField", () => {
   let application: Application;
+  let drawn: DrawnSegmentRows;
   let edits: unknown[];
   let session: EditingSession;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const fieldAt = (index: number) =>
-    document.querySelectorAll<HTMLElement>("[data-controller]")[index];
+    document.querySelector<HTMLElement>(
+      `.field[data-index="${index}"][data-field="text"]`,
+    )!;
   const field = () => fieldAt(0);
 
   /** Whether `edit_segment` is refused, as while a Mode writes the Current Resource. */
@@ -23,16 +27,6 @@ describe("FieldController", () => {
   beforeEach(async () => {
     edits = [];
     isEditRefused = false;
-    const actions =
-      "focus->field#enter blur->field#leave compositionstart->field#startComposing compositionend->field#endComposing keydown.enter->field#enterNext:!composing:prevent keydown.shift+enter->field#breakLine:!composing:prevent keydown.esc->field#revert:!composing:prevent";
-    document.body.innerHTML = `
-      <div id="editor">
-        <div class="field text" contenteditable="plaintext-only" data-controller="field" data-index="0" data-field="text"
-          data-action="${actions}">大家好</div>
-        <div class="field text" contenteditable="plaintext-only" data-controller="field" data-index="1" data-field="text"
-          data-action="${actions}">今天天氣</div>
-      </div>
-    `;
     mockIPC(
       (command, args) => {
         if (command === "current_project")
@@ -50,16 +44,18 @@ describe("FieldController", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.registerActionOption("composing", composingOption);
-    const assembly = assemble(application, {
-      field: FieldController,
-    });
+    const assembly = assemble(application, {});
     session = assembly.session;
+    drawn = drawSegmentRows(
+      document.body,
+      pageContext(assembly.feed, assembly.session),
+    );
     await assembly.start();
     await settle();
   });
 
   afterEach(() => {
+    drawn.unmount();
     application.stop();
     clearMocks();
   });
@@ -89,6 +85,7 @@ describe("FieldController", () => {
   ): boolean {
     const enter = new KeyboardEvent("keydown", {
       key: "Enter",
+      bubbles: true,
       cancelable: true,
       ...init,
     });
@@ -171,6 +168,7 @@ describe("FieldController", () => {
   function isEscTaken(init: KeyboardEventInit = {}): boolean {
     const esc = new KeyboardEvent("keydown", {
       key: "Escape",
+      bubbles: true,
       cancelable: true,
       ...init,
     });

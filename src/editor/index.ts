@@ -12,7 +12,6 @@ export {
   type TextRange,
 } from "./cursor";
 export {
-  createField,
   fieldSelection,
   fieldValue,
   insertLineBreak,

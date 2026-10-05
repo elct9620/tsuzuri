@@ -12,7 +12,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/components/SpeakersDialog.test.ts`
 - `src/components/ShiftDialog.test.ts`
 - `src/components/TranslationDialog.test.ts`
-- `src/controllers/field-controller.test.ts`
+- `src/components/EditingField.test.ts`
 - `src/components/TimeField.test.ts`
 - `src/controllers/timeline-controller.test.ts`
 - `src/components/ReplacementDialog.test.ts`

@@ -17,9 +17,6 @@ import { drawPage } from "../page";
 import { mockPageMount } from "../test-page";
 import { projectOf } from "../test-project";
 import { EditingSession, fieldValue } from "../editor";
-import FieldController, {
-  composingOption,
-} from "../controllers/field-controller";
 import { pageContext, withSegmentDialogs } from "./context";
 import { PlaybackFollowing } from "./playback-following.svelte";
 import SegmentList from "./SegmentList.svelte";
@@ -123,8 +120,7 @@ describe("Segment Changes", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.registerActionOption("composing", composingOption);
-    const assembly = assemble(application, { field: FieldController });
+    const assembly = assemble(application, {});
     render(SegmentList, {
       target: document.querySelector("section")!,
       props: { following: new PlaybackFollowing() },

@@ -8,9 +8,6 @@ import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf } from "../test-project";
 import { showNotifications, notifications } from "./test-notifications";
-import FieldController, {
-  composingOption,
-} from "../controllers/field-controller";
 import { pageContext } from "./context";
 import {
   drawSegmentList,
@@ -60,10 +57,7 @@ describe("cleanup", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    application.registerActionOption("composing", composingOption);
-    const assembly = assemble(application, {
-      field: FieldController,
-    });
+    const assembly = assemble(application, {});
     drawSegmentList(
       document.querySelector("section")!,
       pageContext(assembly.feed, assembly.session),

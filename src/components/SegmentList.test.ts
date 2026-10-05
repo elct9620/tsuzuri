@@ -9,7 +9,6 @@ import { assemble } from "../assembly";
 import type { GlossaryTable, ProjectView } from "../backend/project";
 import { projectOf, resourceOf } from "../test-project";
 import { fieldValue, isFieldHeld } from "../editor";
-import FieldController from "../controllers/field-controller";
 import {
   showNotifications,
   notificationAction,
@@ -115,7 +114,7 @@ describe("SegmentList", () => {
       { shouldMockEvents: true },
     );
     application = Application.start();
-    const assembly = assemble(application, { field: FieldController });
+    const assembly = assemble(application, {});
     run = new TaskRun();
     const context = pageContext(assembly.feed, assembly.session, run);
     segmentList = render(SegmentList, {

@@ -41,7 +41,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | 依鍵尋找 | 名詞＋`by`＋鍵 | `path_by_name` | `statusByName` |
 | 問句 | `is`／`has`＋形容詞或名詞 | `is_file` | `isHidden`、`isFailure` |
 | 新值或轉換 | 建構或轉換的字首，或動詞＋名詞 | `from_srt`、`to_srt`、`parse_timestamp` | `formatTime` |
-| 動作（有副作用） | 動詞開頭，後面可接狀態 | `write_translations`、`probe`、`kill_all` | `notifyFailure`、`translatePage` |
+| 動作（有副作用） | 動詞開頭，後面可接狀態 | `write_translations`、`probe`、`kill_all` | `notifyFailure`、`drawPage` |
 | 建構錯誤或訊息 | 所建構之物的名詞 | — | `failureMessage`、`phasesSummary` |
 | 畫面元素（target） | 元素的名詞，不用動作 | — | `startButton`、`emptyHint` |
 | 標記元素的 data 屬性 | 狀態用問句，身分用名詞 | — | `data-is-playing`、`data-ghost` |

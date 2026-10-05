@@ -24,12 +24,15 @@ import EditorBar from "./EditorBar.svelte";
 import { Playback } from "./playback.svelte";
 import Preview from "./Preview.svelte";
 import { PreviewFold } from "./preview-fold.svelte";
+import { SavedPreferences } from "./saved-preferences.svelte";
 import { drawSegmentRows, segmentRows } from "./test-segment-rows";
 import { regionColor } from "./Timeline.svelte";
 
 describe("Current Segment", () => {
   let project: ProjectView | null;
   let savedPreferences: Preferences;
+  /** The Preferences the timeline follows, as the settings hand them over once saved. */
+  let shared: SavedPreferences;
   let session: EditingSession;
   /** What the Preview, the timeline and the rows play and follow. */
   let playback: Playback;
@@ -186,7 +189,15 @@ describe("Current Segment", () => {
   async function drawEditor(): Promise<void> {
     const assembly = assemble();
     session = assembly.session;
-    const context = pageContext(assembly.feed, assembly.session);
+    shared = new SavedPreferences();
+    const context = pageContext(
+      assembly.feed,
+      assembly.session,
+      undefined,
+      undefined,
+      undefined,
+      shared,
+    );
     playback = new Playback();
     const fold = new PreviewFold();
     render(EditorBar, {
@@ -484,13 +495,16 @@ describe("Current Segment", () => {
     });
   });
 
-  /** Saves the Preferences with `landing` for `source`, as the settings do, and waits for them to be read. */
+  /** Saves the Preferences with `landing` for `source`, handing them over as the settings do once saved. */
   async function prefer(
     source: keyof ChoiceLandings,
     landing: ChoiceLanding,
   ): Promise<void> {
-    savedPreferences.choice_landings[source] = landing;
-    window.dispatchEvent(new CustomEvent("preferences:saved"));
+    const current = shared.current;
+    shared.current = {
+      ...current,
+      choice_landings: { ...current.choice_landings, [source]: landing },
+    };
     await settle();
   }
 

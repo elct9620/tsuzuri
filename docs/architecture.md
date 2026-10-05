@@ -588,7 +588,7 @@ body
 
 事件交給框架接上與解除，所以不自己訂閱 Rust 或 window 的事件；只有影片視窗例外。下表是各處的接法。
 
-Modal 在 `<main>` 旁，送給 hub 的事件不會冒泡經過它，所以在 window 上送，例如 `versions:compare-with`。
+Svelte 元件之間以 prop、context 或共用的狀態溝通，不經 window 事件。window 事件只來自 Rust、session 與 controller，或送給 controller。
 
 | 誰 | 接法 | 解除 |
 |---|---|---|
@@ -619,7 +619,7 @@ main.ts -> application.start() -> assembly.start()
 | context 注入 | Svelte 元件取得共用的物件 | `projectFeed()`、`segmentDialogs()` |
 | 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
-feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`TaskRun` 與 `AppUpdates` 也經 context 共用。頁面寫好後 Stimulus 才啟動，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。controller 與 Svelte 元件都不自己向 Rust 讀專案。
+feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`TaskRun`、`AppUpdates` 與 `EditorComparison` 也經 context 共用。頁面寫好後 Stimulus 才啟動，controller 才連上。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。Stimulus 自己建立 controller，所以依賴放在註冊的子類別上。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。controller 與 Svelte 元件都不自己向 Rust 讀專案。
 
 ### 4.4 先後順序
 
@@ -652,7 +652,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 | Controller | 畫面區域 |
 |---|---|
-| `comparison` | 對照備份、參照譯文、單句還原 |
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
 | `field` | 每個編輯欄位接上 session |
@@ -662,11 +661,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 | 事件 | 送出者 | 接收者與用途 |
 |---|---|---|
-| `transcript:shown` | `SegmentRows` | `comparison` 重新標記 |
-| `transcript:shown` | `SegmentRows` | `SearchBar` 重新搜尋 |
 | `transcript:selection` | `SegmentRows` | 焦點欄位跟上選取 |
-| `comparison:choose-in-versions` | `comparison` | `VersionsDialog` 開在該字幕 |
-| `versions:compare-with` | `VersionsDialog` | `comparison` 換對照 |
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
 | `editor:choice` | session，經 `assembly.ts` | `timeline` 依來源移動媒體 |
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
@@ -705,10 +700,13 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `Toolbar` | 名稱、開啟選單、任務與清單按鈕 |
 | `ExportMenu` | 匯出選單與純文字的兩個開關 |
 | `EditorBar` | 資源名稱與譯文選單 |
+| `CompareMenu` | 比較的備份與參照譯文 |
 | `SearchBar` | 搜尋列與符合處標記 |
 | `SegmentList` | 段落的快速鍵與編輯選單 |
 | `CheckedBar` | 勾選工具列 |
 | `SegmentRows`、`SegmentRow` | 段落列與選單、Placeholder、Cursor、追蹤播放 |
+| `ComparisonMarks`、`EarlierText` | 列上的比較標記與舊文字 |
+| `RemovalRow`、`RevertMenu` | 已刪除的字幕、單句還原 |
 | `ResourceList` | 資源列、詞彙表、重新載入、⌘/Ctrl+B |
 | `TranscriptionDialog`、`TranslationDialog` | 任務 modal，含重做 |
 | `TranslationOptions` | 兩個任務 modal 共用的翻譯選項 |
@@ -733,12 +731,13 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 最近專案 | Page 讀取 | 起始畫面、工具列 |
 | `ResourceDock` | Page 建立 | 工具列、資源清單 |
 | `PlaybackFollowing` | Page 建立 | 預覽的追蹤鈕、段落列 |
+| `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
 | 開啟、重新載入、命名 | `project-actions.ts` | 起始畫面、工具列、資源清單 |
 | 寫入說話者後的通知 | `speaker-actions.ts` | 說話者 modal、段落列 |
 | 清理簡體與通知 | `cleanup-actions.ts` | 段落列、勾選工具列、快速鍵 |
 | Segment Changes 的選項 | `segment-changes.ts` | 段落選單、勾選工具列、右鍵 |
 
-資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。
+資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。段落清單每畫好一份專案，就交給 `EditorComparison` 比較，並讓搜尋列重新搜尋。
 
 ### 4.7 backend
 
@@ -785,7 +784,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ui/speakers.ts` | 段落與詞彙表的說話者名單 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
-圖示要先在 `ui/icons.ts` 列出才會畫出來：markup 以 `data-lucide` 標出，程式以 `iconElement` 建立。快速鍵以 `ui/shortcuts.ts` 為準：controller 與 Svelte 元件自己比對的鍵用 `isShortcut` 讀它，寫在 `data-action` 與 Rust 選單的鍵由測試雙向核對。
+預覽仍以 `data-lucide` 標出圖示，要先在 `ui/icons.ts` 列出才會畫出來；其餘 Svelte 元件以 `@lucide/svelte` 畫出。快速鍵以 `ui/shortcuts.ts` 為準：controller 與 Svelte 元件自己比對的鍵用 `isShortcut` 讀它，寫在 `data-action` 與 Rust 選單的鍵由測試雙向核對。
 
 ### 4.9 影片視窗
 

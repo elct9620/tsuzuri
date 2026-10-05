@@ -1,5 +1,6 @@
 <script lang="ts">
   import EditorBar from "./components/EditorBar.svelte";
+  import GlossaryDialog from "./components/GlossaryDialog.svelte";
   import Notifications from "./components/Notifications.svelte";
   import Preview from "./components/Preview.svelte";
   import ResourceList from "./components/ResourceList.svelte";
@@ -21,6 +22,7 @@
   let transcriptionDialog: TranscriptionDialog;
   let translationDialog: TranslationDialog;
   let diarizationDialog: DiarizationDialog;
+  let glossaryDialog: GlossaryDialog;
 
   const openSettings = () => settingsDialog.open();
 </script>
@@ -65,7 +67,7 @@
         <SegmentList />
       </div>
     </div>
-    <ResourceList />
+    <ResourceList openGlossary={() => glossaryDialog.open()} />
   </div>
 </main>
 <SettingsDialog
@@ -78,6 +80,7 @@
 <TranscriptionDialog bind:this={transcriptionDialog} />
 <TranslationDialog bind:this={translationDialog} />
 <DiarizationDialog bind:this={diarizationDialog} />
+<GlossaryDialog bind:this={glossaryDialog} />
 <ShortcutsDialog />
 <UpdatesDialog />
 <Notifications />

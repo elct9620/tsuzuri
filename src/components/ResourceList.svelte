@@ -1,7 +1,9 @@
 <script lang="ts">
-  import GlossaryDialog from "./GlossaryDialog.svelte";
+  interface Props {
+    openGlossary: () => void;
+  }
 
-  let glossaryDialog: GlossaryDialog;
+  let { openGlossary }: Props = $props();
 </script>
 
 <div class="drawer-side">
@@ -35,10 +37,9 @@
         <button
           type="button"
           data-project-target="glossary"
-          onclick={() => glossaryDialog.open()}
+          onclick={openGlossary}
         ></button>
       </li>
     </ul>
-    <GlossaryDialog bind:this={glossaryDialog} />
   </div>
 </div>

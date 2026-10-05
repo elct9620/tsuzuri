@@ -227,4 +227,29 @@ describe("drawPage", () => {
     expect(settingsHeading.closest("dialog")?.open).toBe(true);
     page.remove();
   });
+
+  it("opens the glossary dialog from the resource list", async () => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+    mockPageMount(null, {
+      translation_glossary_table: () => ({
+        languages: ["zh-TW"],
+        rows: [],
+        has_source_target_header: false,
+      }),
+    });
+    drawPage(new ProjectFeed(), page);
+    await tick();
+
+    page
+      .querySelector<HTMLElement>('[data-project-target="glossary"]')!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(
+      within(page)
+        .getByRole("heading", { hidden: true, name: t("translate.glossary") })
+        .closest("dialog")!.open,
+    ).toBe(true);
+  });
 });

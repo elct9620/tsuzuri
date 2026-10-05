@@ -4,7 +4,6 @@ import { assemble } from "./assembly";
 import { locale } from "./backend/system";
 import CleanupController from "./controllers/cleanup_controller";
 import ComparisonController from "./controllers/comparison_controller";
-import DialogController from "./controllers/dialog_controller";
 import FieldController, {
   composingOption,
 } from "./controllers/field_controller";
@@ -42,7 +41,6 @@ async function start(): Promise<void> {
   application.registerActionOption("typing", typingOption);
   const assembly = assemble(application, {
     comparison: ComparisonController,
-    dialog: DialogController,
     field: FieldController,
     notification: NotificationController,
     preview: PreviewController,

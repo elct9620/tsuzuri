@@ -28,7 +28,6 @@ describe("drawPage", () => {
     ["Segment list", '[data-transcript-target="list"]'],
     ["resource list", '[data-project-target="resources"]'],
     ["glossary entry", '[data-project-target="glossary"]'],
-    ["settings dialog", '[data-dialog-target="dialog"]'],
     ["shortcuts dialog", '[data-shortcuts-target="dialog"]'],
     ["notification stack", "[data-notifications]"],
     ["tooltip bubble", '[data-tooltip-target="bubble"]'],
@@ -199,5 +198,27 @@ describe("drawPage", () => {
     expect(
       within(page).queryByText(t("settings.updateRestartHint")),
     ).not.toBeNull();
+  });
+
+  it.each([
+    ["start screen", '[data-project-target="startScreen"]'],
+    ["toolbar", "header"],
+  ])("opens the settings from the %s", async (_place, selector) => {
+    const page = document.createElement("div");
+    document.body.append(page);
+    await setInterfaceLanguage("zh-TW");
+    drawPage(new ProjectFeed(), page);
+    await tick();
+
+    within(page.querySelector<HTMLElement>(selector)!)
+      .getAllByRole("button", { hidden: true, name: t("toolbar.settings") })[0]
+      .click();
+
+    const settingsHeading = within(page).getByRole("heading", {
+      hidden: true,
+      name: t("toolbar.settings"),
+    });
+    expect(settingsHeading.closest("dialog")?.open).toBe(true);
+    page.remove();
   });
 });

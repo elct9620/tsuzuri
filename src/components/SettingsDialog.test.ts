@@ -7,9 +7,9 @@ import { mockPageMount } from "../test_page";
 import { projectOf } from "../test_project";
 import { NOTIFICATION_STACK } from "../ui/test_notification";
 import { pageContext } from "./context";
-import Settings from "./Settings.svelte";
+import SettingsDialog from "./SettingsDialog.svelte";
 
-describe("Settings", () => {
+describe("SettingsDialog", () => {
   let feed: ProjectFeed;
 
   const tab = (name: string) =>
@@ -21,7 +21,10 @@ describe("Settings", () => {
     mockPageMount(project);
     feed = new ProjectFeed();
     await feed.refresh();
-    render(Settings, { context: pageContext(feed) });
+    render(SettingsDialog, {
+      context: pageContext(feed),
+      props: { pick: async () => null, openLicenses: () => {} },
+    });
   }
 
   async function open(project: ProjectView | null): Promise<void> {

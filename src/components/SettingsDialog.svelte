@@ -4,6 +4,7 @@
   import type { ProjectView } from "../backend/project";
   import type { ModelSlot } from "../backend/toolchain";
   import { t } from "../i18n";
+  import type { HubFile } from "../ui/models";
   import { projectFeed } from "./context";
   import About from "./settings/general/About.svelte";
   import Components from "./settings/general/Components.svelte";
@@ -14,12 +15,20 @@
   import Project from "./settings/project/Project.svelte";
   import ProjectModels from "./settings/project/Models.svelte";
   import ProjectTranscription from "./settings/project/Transcription.svelte";
-  import RepositoryDialog from "./settings/RepositoryDialog.svelte";
   import Translation from "./settings/general/Translation.svelte";
   import VersionAndUpdates from "./settings/general/VersionAndUpdates.svelte";
 
+  interface Props {
+    /** Opens the Repository dialog for a slot, answering the file picked, or none. */
+    pick: (slot: ModelSlot) => Promise<HubFile | null>;
+    /** Opens the full License Notice. */
+    openLicenses: () => void;
+  }
+
+  let { pick, openLicenses }: Props = $props();
+
   const feed = projectFeed();
-  let repositoryDialog: RepositoryDialog;
+  let dialog: HTMLDialogElement;
   /** The open Project, whose own settings are offered only while it is open. */
   let project = $state<ProjectView | null>(null);
   let tab = $state<"project" | "general" | "preferences">("general");
@@ -33,10 +42,12 @@
     }),
   );
 
-  const pick = (slot: ModelSlot) => repositoryDialog.pick(slot);
+  export function open(): void {
+    dialog.showModal();
+  }
 </script>
 
-<dialog class="modal" data-dialog-target="dialog">
+<dialog class="modal" bind:this={dialog}>
   <div class="modal-box max-w-3xl">
     <h3 class="mb-2 text-lg font-bold">{t("toolbar.settings")}</h3>
     <div role="tablist" class="tabs tabs-border">
@@ -76,11 +87,10 @@
           <GeneralTranscription />
 
           <GeneralModels {pick} />
-          <RepositoryDialog bind:this={repositoryDialog} />
 
           <Logs />
 
-          <About />
+          <About {openLicenses} />
         </div>
       </div>
       <input

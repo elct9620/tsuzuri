@@ -2,6 +2,7 @@
 import { render, screen } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import LicensesDialog from "../LicensesDialog.svelte";
 import About from "./About.svelte";
 
 describe("About", () => {
@@ -33,7 +34,8 @@ describe("About", () => {
     mockIPC((command) => {
       commands.push(command);
     });
-    render(About);
+    const { component: licensesDialog } = render(LicensesDialog);
+    render(About, { props: { openLicenses: () => licensesDialog.open() } });
   });
 
   afterEach(() => {

@@ -7,6 +7,7 @@ import { ProjectFeed } from "./backend/project";
 import {
   interfaceLanguageCode,
   setInterfaceLanguage,
+  t,
   translatePage,
 } from "./i18n";
 import { drawPage } from "./page";
@@ -82,9 +83,11 @@ describe("interface language", () => {
     drawPage(feed, settings);
     await tick();
 
-    const rows = [
-      ...settings.querySelectorAll('[data-dialog-target="dialog"] .list-row'),
-    ];
+    const settingsDialog = [...settings.querySelectorAll("dialog")].find(
+      (dialog) =>
+        dialog.querySelector("h3")?.textContent === t("toolbar.settings"),
+    );
+    const rows = [...(settingsDialog?.querySelectorAll(".list-row") ?? [])];
     const rowsWithoutHelp = rows.filter((row) => {
       const help = within(row as HTMLElement).queryByRole("button", {
         hidden: true,

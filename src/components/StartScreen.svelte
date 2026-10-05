@@ -1,3 +1,11 @@
+<script lang="ts">
+  interface Props {
+    openSettings: () => void;
+  }
+
+  let { openSettings }: Props = $props();
+</script>
+
 <section class="hero flex-1" data-project-target="startScreen">
   <div class="hero-content flex-col text-center">
     <h1 class="text-2xl font-semibold">Tsuzuri</h1>
@@ -18,7 +26,7 @@
       <button
         type="button"
         class="btn btn-ghost"
-        data-action="dialog#open"
+        onclick={openSettings}
         data-i18n="toolbar.settings"
       ></button>
     </div>

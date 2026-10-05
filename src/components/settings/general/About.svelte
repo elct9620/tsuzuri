@@ -1,33 +1,16 @@
 <script lang="ts">
+  import Heart from "@lucide/svelte/icons/heart";
+
   import { openReleases, openSponsorship } from "../../../backend/about";
   import { t } from "../../../i18n";
   import { notifyFailure } from "../../../ui/notification";
 
-  let dialog: HTMLDialogElement;
-  /** The License Notice, read the first time the dialog opens; null for a build without one. */
-  let notice = $state<string | null>();
-
-  async function showLicenses(): Promise<void> {
-    dialog.showModal();
-    if (notice !== undefined) return;
-    notice = await licenseNotice();
+  interface Props {
+    /** Opens the full License Notice. */
+    openLicenses: () => void;
   }
 
-  /**
-   * The License Notice CI writes into the interface, or null for a build without one,
-   * where the page answered in its place is not the notice.
-   */
-  async function licenseNotice(): Promise<string | null> {
-    try {
-      const response = await fetch("LICENSE.html");
-      if (!response.ok) return null;
-      const text = await response.text();
-      const page = new DOMParser().parseFromString(text, "text/html");
-      return page.querySelector("section#tsuzuri") ? text : null;
-    } catch {
-      return null;
-    }
-  }
+  let { openLicenses }: Props = $props();
 
   async function openSource(): Promise<void> {
     try {
@@ -63,40 +46,15 @@
     </p>
   </div>
   <div class="flex gap-2">
-    <button type="button" class="btn btn-sm" onclick={showLicenses}>
+    <button type="button" class="btn btn-sm" onclick={openLicenses}>
       {t("settings.fullLicenses")}
     </button>
     <button type="button" class="btn btn-sm" onclick={openSource}>
       {t("settings.sourceCode")}
     </button>
     <button type="button" class="btn btn-sm" onclick={openSponsorshipPage}>
-      <i data-lucide="heart" class="size-4"></i>
+      <Heart class="size-4" />
       <span>{t("settings.sponsor")}</span>
     </button>
   </div>
-  <dialog class="modal" bind:this={dialog}>
-    <div class="modal-box w-11/12 max-w-4xl">
-      <h3 class="text-lg font-bold">{t("settings.licenses")}</h3>
-      {#if notice}
-        <iframe
-          class="mt-4 h-[60vh] w-full rounded-box border border-base-300"
-          title="LICENSE.html"
-          sandbox=""
-          srcdoc={notice}
-        ></iframe>
-      {:else if notice === null}
-        <div role="alert" class="alert alert-info mt-4 text-sm">
-          {t("settings.licensesMissing")}
-        </div>
-      {/if}
-      <div class="modal-action">
-        <form method="dialog">
-          <button class="btn">{t("work.close")}</button>
-        </form>
-      </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-      <button>close</button>
-    </form>
-  </dialog>
 </fieldset>

@@ -2,6 +2,12 @@
   import Diarization from "./Diarization.svelte";
   import Transcription from "./Transcription.svelte";
   import Translation from "./Translation.svelte";
+
+  interface Props {
+    openSettings: () => void;
+  }
+
+  let { openSettings }: Props = $props();
 </script>
 
 <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
@@ -203,7 +209,7 @@
     <button
       type="button"
       class="btn btn-sm btn-ghost"
-      data-action="dialog#open"
+      onclick={openSettings}
       data-i18n-label="toolbar.settings"
       data-i18n-tooltip="toolbar.settings"
     >

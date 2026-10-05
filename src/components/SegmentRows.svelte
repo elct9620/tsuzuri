@@ -3,9 +3,8 @@
   The rows of the Current Resource's Segments, refreshed in place as each Project is read, since
   Chromium reports a selection change for each time field drawn; rows are drawn anew only when the
   translation is shown or hidden. Placeholders stand in while Segments are being made or read. It
-  marks the Current Segment and the rows being played, draws the Cursor, lays the editor's
-  comparison over the rows with each removed cue in its place, and tells the page as
-  `transcript:shown` once the Segments are shown anew.
+  marks the Current Segment and the rows being played, draws the Cursor, and lays the editor's
+  comparison over the rows with each removed cue in its place.
 -->
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
@@ -119,12 +118,6 @@
     flushSync();
     drawSessionCursor();
     onshown?.(next);
-    list?.dispatchEvent(
-      new CustomEvent("transcript:shown", {
-        bubbles: true,
-        detail: { project: next },
-      }),
-    );
   }
 
   onMount(() => feed.follow(show));

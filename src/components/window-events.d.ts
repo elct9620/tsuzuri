@@ -1,12 +1,11 @@
 /**
  * The window events Svelte Components bind with `<svelte:window>`: Rust events relayed as
- * `rust:<name>` with the payload as `detail` (`backend/events.ts`), the Segment list telling it
- * has shown the Segments anew, the session telling the Cursor or the checks moved, and the Preview
- * telling which Segments it plays.
+ * `rust:<name>` with the payload as `detail` (`backend/events.ts`), the session telling the Cursor
+ * or the checks moved, and the Preview telling which Segments it plays.
  */
 
 import type { PipelineProgress } from "../backend/progress";
-import type { EditCommand, ProjectView } from "../backend/project";
+import type { EditCommand } from "../backend/project";
 import type { DownloadProgress } from "../backend/toolchain";
 import type { UpdateProgress } from "../backend/updates";
 
@@ -23,9 +22,6 @@ declare module "svelte/elements" {
     "onrust:pipeline-progress"?: (event: CustomEvent<PipelineProgress>) => void;
     "onrust:srt-requested"?: (event: CustomEvent) => void;
     "onrust:update-progress"?: (event: CustomEvent<UpdateProgress>) => void;
-    "ontranscript:shown"?: (
-      event: CustomEvent<{ project: ProjectView | null }>,
-    ) => void;
   }
 }
 

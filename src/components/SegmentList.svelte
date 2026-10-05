@@ -1,12 +1,12 @@
 <!--
   @component
-  The Segments of the Current Resource with the search and checked bars above them, compared as
-  each Project is shown, and the keys and Edit menu commands that reach them: checking every
-  Segment, deleting, merging with a neighbour, and cleaning Simplified Chinese out of what is
-  marked.
+  The Segments of the Current Resource with the search and checked bars above them, compared and
+  searched again as each Project is shown, and the keys and Edit menu commands that reach them:
+  checking every Segment, deleting, merging with a neighbour, and cleaning Simplified Chinese out
+  of what is marked.
 -->
 <script lang="ts">
-  import type { EditCommand } from "../backend/project";
+  import type { EditCommand, ProjectView } from "../backend/project";
   import { isMacOS } from "../backend/system";
   import {
     isHeld,
@@ -151,6 +151,12 @@
     else session.checkAll();
   }
 
+  /** Compares the Segments just shown and searches them again. */
+  function followShown(project: ProjectView | null): void {
+    void comparison.show(project);
+    searchBar.searchAgain();
+  }
+
   /** Opens the search bar above the Segments. */
   export function openSearch(): void {
     searchBar.open();
@@ -164,11 +170,7 @@
 
 <svelte:window onkeydown={followKeys} onrust:edit-command={applyEditCommand} />
 
-<SegmentRows
-  {following}
-  onshown={(project) => void comparison.show(project)}
-  bind:this={segmentRows}
->
+<SegmentRows {following} onshown={followShown} bind:this={segmentRows}>
   <div class="sticky -top-4 z-10 mb-2 flex flex-col gap-2">
     <SearchBar bind:this={searchBar} />
     <CheckedBar />

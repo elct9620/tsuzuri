@@ -323,24 +323,6 @@ describe("SearchBar", () => {
     expect([isOpen(), currentRow()]).toEqual([false, -1]);
   });
 
-  // @behavior ED-142
-  it("searches again as the Segments change", async () => {
-    await hold(commaProject);
-    await openFinding("，");
-
-    await hold(
-      projectOf({
-        segments: [
-          { start_ms: 0, end_ms: 1000, text: "你好世界" },
-          ...commaProject.segments.slice(1),
-        ],
-      }),
-    );
-    await settle();
-
-    expect(count()).toBe("1/1");
-  });
-
   // @behavior ED-143
   it("closes with Esc, leaving nothing marked", async () => {
     await hold(commaProject);

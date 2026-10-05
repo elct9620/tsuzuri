@@ -102,6 +102,15 @@ describe("SegmentList", () => {
         // The Segment list compares each Project shown with its Backups, of which there are none
         if (command === "subtitle_versions") return [];
         if (command === "translation_glossary_table") return glossaryTable;
+        if (command === "find_text") {
+          const { pattern } = (args as { search: { pattern: string } }).search;
+          return (project?.segments ?? []).flatMap((segment, index) => {
+            const start = segment.text.indexOf(pattern);
+            return start === -1
+              ? []
+              : [{ index, start, end: start + pattern.length }];
+          });
+        }
         if (command === "edit_segment" && editFailure !== undefined)
           return Promise.reject(editFailure);
       },
@@ -123,6 +132,35 @@ describe("SegmentList", () => {
   afterEach(() => {
     application.stop();
     clearMocks();
+  });
+
+  // @behavior ED-142
+  it("searches again as the Segments change", async () => {
+    const commaSegments = [
+      { start_ms: 0, end_ms: 1000, text: "你好，世界" },
+      { start_ms: 1000, end_ms: 2000, text: "好，走吧" },
+    ];
+    await hold(projectOf({ segments: commaSegments }));
+    segmentList.openSearch();
+    flushSync();
+    const patternBox = screen.getByRole<HTMLInputElement>("searchbox", {
+      name: "搜尋文字",
+    });
+    patternBox.value = "，";
+    patternBox.dispatchEvent(new Event("input", { bubbles: true }));
+    await settle();
+
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "你好世界" },
+          commaSegments[1],
+        ],
+      }),
+    );
+    await settle();
+
+    expect(screen.getByRole("status").textContent).toBe("1/1");
   });
 
   // @behavior ED-118

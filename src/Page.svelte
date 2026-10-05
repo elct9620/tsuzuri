@@ -76,8 +76,8 @@
 
 <main
   class="flex h-dvh flex-col"
-  data-controller="segment-changes comparison cleanup"
-  data-action="editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut transcript:shown->comparison#mark transcript:shown->segment-changes#followTasks versions:compare-with@window->comparison#compareWith keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow rust:edit-command@window->segment-changes#applyEditCommand"
+  data-controller="segment-changes comparison"
+  data-action="editor:checks@window->segment-changes#showChecked keydown.ctrl+a@window->segment-changes#checkAll:!typing:prevent keydown.meta+a@window->segment-changes#checkAll:!typing:prevent keydown@window->segment-changes#deleteByShortcut:!typing keydown@window->segment-changes#mergeByShortcut transcript:shown->comparison#mark transcript:shown->segment-changes#followTasks versions:compare-with@window->comparison#compareWith rust:edit-command@window->segment-changes#applyEditCommand"
 >
   {#if project === null}
     <StartScreen {recentProjects} {openSettings} />

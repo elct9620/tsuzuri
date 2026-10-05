@@ -9,7 +9,11 @@
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
 
-  import { currentResource, type ProjectView } from "../backend/project";
+  import {
+    currentResource,
+    hasTraditionalChinese,
+    type ProjectView,
+  } from "../backend/project";
   import { isMacOS } from "../backend/system";
   import {
     drawCursor,
@@ -56,6 +60,7 @@
     (project?.shown_translation ?? null) !== null,
   );
   const hasMedia = $derived(currentResource(project)?.has_media ?? false);
+  const isCleanupOffered = $derived(hasTraditionalChinese(project));
   const isTranscribing = $derived(run.task === "transcription");
   const isAwaitingSegments = $derived(segments.length === 0 && isTranscribing);
   const placeholderCount = $derived(
@@ -201,6 +206,7 @@
           isCurrent={currentIndex === index}
           isPlaying={playingIndexes.includes(index)}
           {isTypingKept}
+          {isCleanupOffered}
         />
       {/each}
     {/key}

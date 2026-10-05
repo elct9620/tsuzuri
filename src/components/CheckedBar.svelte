@@ -1,7 +1,23 @@
 <!--
   @component
   The bar that shows while Segments are checked: how many, and what can be done to them at once.
+  A cleanup is offered only where the Current Resource shows a text in `zh-TW`.
 -->
+<script lang="ts">
+  import { onMount } from "svelte";
+
+  import { hasTraditionalChinese, type ProjectView } from "../backend/project";
+  import { t } from "../i18n";
+  import { cleanSegments } from "./cleanup-actions";
+  import { editingSession, projectFeed } from "./context";
+
+  const feed = projectFeed();
+  const session = editingSession();
+  let project = $state.raw<ProjectView | null>(null);
+
+  onMount(() => feed.follow((next) => (project = next)));
+</script>
+
 <div
   class="flex items-center gap-2 rounded-box bg-base-200 px-3 py-1.5 text-sm"
   data-segment-changes-target="checkedBar"
@@ -41,14 +57,15 @@
     data-action="segment-changes#retranscribe"
     data-i18n="edit.retranscribe"
   ></button>
-  <button
-    type="button"
-    class="btn btn-xs"
-    data-cleanup-target="checkedButton"
-    data-action="cleanup#cleanChecked"
-    data-i18n="cleanup.action"
-    data-shortcut="cleanup"
-  ></button>
+  {#if hasTraditionalChinese(project)}
+    <button
+      type="button"
+      class="btn btn-xs"
+      data-shortcut="cleanup"
+      onclick={() => cleanSegments(session, session.checkedIndexes)}
+      >{t("cleanup.action")}</button
+    >
+  {/if}
   <button
     type="button"
     class="btn btn-xs"

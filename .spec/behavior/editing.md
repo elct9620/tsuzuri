@@ -16,7 +16,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/controllers/time-field-controller.test.ts`
 - `src/controllers/timeline-controller.test.ts`
 - `src/components/ReplacementDialog.test.ts`
-- `src/controllers/cleanup-controller.test.ts`
+- `src/components/cleanup-actions.test.ts`
 - `src/components/SearchBar.test.ts`
 - `src/editor/*.test.ts`
 - `src-tauri/src/replacement.rs`

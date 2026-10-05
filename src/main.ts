@@ -2,7 +2,6 @@ import { Application } from "@hotwired/stimulus";
 
 import { assemble } from "./assembly";
 import { locale } from "./backend/system";
-import CleanupController from "./controllers/cleanup-controller";
 import ComparisonController from "./controllers/comparison-controller";
 import FieldController, {
   composingOption,
@@ -33,7 +32,6 @@ async function start(): Promise<void> {
     comparison: ComparisonController,
     field: FieldController,
     preview: PreviewController,
-    cleanup: CleanupController,
     "segment-changes": SegmentChangesController,
     "time-field": TimeFieldController,
     timeline: TimelineController,

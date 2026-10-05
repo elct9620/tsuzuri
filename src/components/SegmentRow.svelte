@@ -28,6 +28,7 @@
   import { shortcutById, shortcutText } from "../ui/shortcuts";
   import { speakerNames } from "../ui/speakers";
   import { formatTime, TIME_FIELD_ACTIONS } from "../ui/time";
+  import { cleanSegments } from "./cleanup-actions";
   import { editingSession, projectFeed } from "./context";
   import { notifyNamed } from "./speaker-actions";
 
@@ -61,6 +62,7 @@
     isCurrent,
     isPlaying,
     isTypingKept,
+    isCleanupOffered,
   }: {
     segment: Segment;
     index: number;
@@ -77,6 +79,8 @@
     isPlaying: boolean;
     /** Whether a field being typed in keeps its value, as the Segments keep their number. */
     isTypingKept: boolean;
+    /** Whether a text in `zh-TW` is shown, whose Simplified Chinese can be cleaned. */
+    isCleanupOffered: boolean;
   } = $props();
 
   const feed = projectFeed();
@@ -395,18 +399,22 @@
           {t("edit.retranscribeRest")}
         </button>
       </li>
-      <li data-cleanup-target="segmentChoice">
-        <button
-          type="button"
-          class="cleanup"
-          data-action="cleanup#cleanSegment"
-          data-cleanup-index-param={index}
-          data-shortcut="cleanup"
-          disabled={isOtherHeld}
-        >
-          {@render choiceLabel("cleanup.action", "cleanup")}
-        </button>
-      </li>
+      {#if isCleanupOffered}
+        <li>
+          <button
+            type="button"
+            class="cleanup"
+            data-shortcut="cleanup"
+            disabled={isOtherHeld}
+            onclick={({ currentTarget }) => {
+              closeMenu(currentTarget);
+              void cleanSegments(session, [index]);
+            }}
+          >
+            {@render choiceLabel("cleanup.action", "cleanup")}
+          </button>
+        </li>
+      {/if}
     </ul>
   </div>
 </li>

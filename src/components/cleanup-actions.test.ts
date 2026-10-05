@@ -1,23 +1,25 @@
 // @vitest-environment happy-dom
 import { Application } from "@hotwired/stimulus";
+import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "../assembly";
 import type { ProjectView } from "../backend/project";
 import { projectOf } from "../test-project";
-import {
-  showNotifications,
-  notifications,
-} from "../components/test-notifications";
-import CleanupController from "./cleanup-controller";
-import FieldController, { composingOption } from "./field-controller";
-import SegmentChangesController from "./segment-changes-controller";
-import { typingOption } from "./segment-changes-controller";
-import { pageContext } from "../components/context";
-import { drawSegmentRows, segmentRows } from "../components/test-segment-rows";
+import { showNotifications, notifications } from "./test-notifications";
+import FieldController, {
+  composingOption,
+} from "../controllers/field-controller";
+import SegmentChangesController, {
+  typingOption,
+} from "../controllers/segment-changes-controller";
+import { pageContext } from "./context";
+import { PlaybackFollowing } from "./playback-following.svelte";
+import SegmentList from "./SegmentList.svelte";
+import { segmentRows } from "./test-segment-rows";
 
-describe("CleanupController", () => {
+describe("cleanup", () => {
   let application: Application;
   let project: ProjectView | null;
   let sentCalls: [string, unknown][];
@@ -44,17 +46,10 @@ describe("CleanupController", () => {
     sentCalls = [];
     count = 2;
     document.body.innerHTML = `
-      <section data-controller="segment-changes cleanup"
-        data-action="editor:checks@window->segment-changes#showChecked keydown.ctrl+shift+t@window->cleanup#cleanByShortcut:prevent keydown.meta+shift+t@window->cleanup#cleanByShortcut:prevent rust:edit-command@window->cleanup#applyEditCommand transcript:shown->cleanup#follow transcript:shown->segment-changes#followTasks">
-        <div data-segment-changes-target="checkedBar" hidden>
-          <span data-segment-changes-target="checkedCount"></span>
-          <button data-segment-changes-target="mergeButton"></button>
-          <button data-segment-changes-target="retranslateButton"></button>
-          <button data-segment-changes-target="retranscribeButton"></button>
-          <button id="clean-checked" data-cleanup-target="checkedButton" data-action="cleanup#cleanChecked"></button>
-        </div>
-        <dialog id="other-dialog"><input id="other-input" /></dialog>
+      <section data-controller="segment-changes"
+        data-action="editor:checks@window->segment-changes#showChecked transcript:shown->segment-changes#followTasks">
       </section>
+      <dialog id="other-dialog"><input id="other-input" /></dialog>
     `;
     showNotifications();
     mockIPC(
@@ -73,12 +68,12 @@ describe("CleanupController", () => {
     const assembly = assemble(application, {
       field: FieldController,
       "segment-changes": SegmentChangesController,
-      cleanup: CleanupController,
     });
-    drawSegmentRows(
-      document.querySelector("section")!,
-      pageContext(assembly.feed, assembly.session),
-    );
+    render(SegmentList, {
+      target: document.querySelector("section")!,
+      props: { following: new PlaybackFollowing() },
+      context: pageContext(assembly.feed, assembly.session),
+    });
     await assembly.start();
     await settle();
   });
@@ -114,6 +109,10 @@ describe("CleanupController", () => {
       .filter(([command]) => command === "clean_simplified")
       .map(([, args]) => (args as { scope: unknown }).scope);
   }
+
+  /** The checked bar's cleanup, the only one named by its label alone, as a menu's shows its keys. */
+  const checkedBarCleanup = () =>
+    screen.queryByRole("button", { name: "清理簡體", hidden: true });
 
   function segmentMenuCleanup(index: number): HTMLButtonElement {
     return document.querySelectorAll<HTMLButtonElement>("button.cleanup")[
@@ -219,7 +218,7 @@ describe("CleanupController", () => {
     check(0);
     check(1);
 
-    document.querySelector<HTMLButtonElement>("#clean-checked")!.click();
+    checkedBarCleanup()!.click();
     await settle();
 
     expect(cleanups()).toEqual([{ kind: "segments", indexes: [0, 1] }]);
@@ -235,10 +234,10 @@ describe("CleanupController", () => {
     );
     check(0);
 
-    expect([
-      segmentMenuCleanup(0).closest("li")!.hidden,
-      document.querySelector<HTMLButtonElement>("#clean-checked")!.hidden,
-    ]).toEqual([true, true]);
+    expect([segmentMenuCleanup(0), checkedBarCleanup()]).toEqual([
+      undefined,
+      null,
+    ]);
   });
 
   // @behavior ED-133
@@ -251,7 +250,7 @@ describe("CleanupController", () => {
       }),
     );
 
-    expect(segmentMenuCleanup(0).closest("li")!.hidden).toBe(false);
+    expect(segmentMenuCleanup(0)).toBeDefined();
   });
 
   // @behavior ED-134

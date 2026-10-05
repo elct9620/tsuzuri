@@ -646,7 +646,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `marks.ts` | DOM | 畫出 Cursor |
 | `highlight.ts` | DOM | CSS Custom Highlight |
 
-`editor/` 是能抽成獨立套件的編輯核心：Current Segment、Cursor、Checked Segments 與改動段落的用例都在這裡。用例回傳結果而不發通知，controller 再轉成介面文字。
+`editor/` 是能抽成獨立套件的編輯核心：Current Segment、Cursor、Checked Segments 與改動段落的用例都在這裡。用例回傳結果而不發通知，由介面轉成文字。
 
 ### 4.6 Controller
 
@@ -654,14 +654,11 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 |---|---|
 | `preview` | 播放器、疊字、收起、影片視窗 |
 | `timeline` | 波形、段落區段、縮放 |
-| `field` | 每個編輯欄位接上 session |
-| `time-field` | 時間欄覆寫輸入 |
 
 畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`，沒有媒體檔時由 `ui/silence.ts` 決定同一段靜音。
 
 | 事件 | 送出者 | 接收者與用途 |
 |---|---|---|
-| `transcript:selection` | `SegmentRows` | 焦點欄位跟上選取 |
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
 | `editor:choice` | session，經 `assembly.ts` | `timeline` 依來源移動媒體 |
 | `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
@@ -705,6 +702,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `SegmentList` | 段落的快速鍵與編輯選單 |
 | `CheckedBar` | 勾選工具列 |
 | `SegmentRows`、`SegmentRow` | 段落列與選單、Placeholder、Cursor、追蹤播放 |
+| `EditingField` | 文字與譯文欄位接上 session |
+| `TimeField` | 時間欄覆寫輸入 |
 | `ComparisonMarks`、`EarlierText` | 列上的比較標記與舊文字 |
 | `RemovalRow`、`RevertMenu` | 已刪除的字幕、單句還原 |
 | `ResourceList` | 資源列、詞彙表、重新載入、⌘/Ctrl+B |

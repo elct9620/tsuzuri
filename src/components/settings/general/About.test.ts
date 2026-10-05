@@ -60,9 +60,7 @@ describe("About", () => {
 
   // @behavior LC-008
   it("says a development build carries no License Notice", async () => {
-    servePage(
-      `<!DOCTYPE html><body><main data-controller="project"></main></body>`,
-    );
+    servePage(`<!DOCTYPE html><body><main></main></body>`);
 
     await choose("完整授權");
 

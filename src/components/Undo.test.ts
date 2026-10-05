@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -9,7 +8,6 @@ import { pageContext } from "./context";
 import Undo from "./Undo.svelte";
 
 describe("Undo", () => {
-  let application: Application;
   let commands: string[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -37,15 +35,13 @@ describe("Undo", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     render(Undo, { context: pageContext(assembly.feed, assembly.session) });
     await assembly.start();
     await settle();
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
     vi.restoreAllMocks();
   });

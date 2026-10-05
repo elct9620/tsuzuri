@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application, type ControllerConstructor } from "@hotwired/stimulus";
 import { screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks } from "@tauri-apps/api/mocks";
@@ -416,24 +415,18 @@ describe("Page", () => {
   let sentSrt: unknown;
   let page: Record<string, unknown>;
   let stop: () => void;
-  let application: Application;
   /** The arguments of each `compare_versions` the page asked for. */
   let comparedVersions: unknown[];
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
   /**
-   * Starts the page as `main.ts` does, relaying Rust events and reading the Project, with only the
-   * `controllers` a test names registered, and clears the Notifications its Svelte Components show
-   * for the reads this test leaves unanswered.
+   * Starts the page as `main.ts` does, relaying Rust events and reading the Project, and clears
+   * the Notifications its Svelte Components show for the reads this test leaves unanswered.
    */
-  async function start(
-    controllers: Record<string, ControllerConstructor> = {},
-  ): Promise<void> {
-    application = new Application();
-    const assembly = assemble(application, controllers);
+  async function start(): Promise<void> {
+    const assembly = assemble();
     page = drawPage(assembly.feed, assembly.session);
-    await application.start();
     stop = await assembly.start();
     await settle();
     notificationStack.clear();
@@ -485,7 +478,6 @@ describe("Page", () => {
 
   afterEach(() => {
     stop();
-    application.stop();
     unmount(page);
     clearMocks();
   });

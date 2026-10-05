@@ -137,13 +137,13 @@ describe("the webview's layers", () => {
 
   it("finds the relative imports a source makes, over several lines too", () => {
     const modules = importedModules(
-      "controllers/x-controller.ts",
+      "components/x.ts",
       'import { mount } from "svelte";\nimport {\n  type A,\n  type B,\n} from "../editor";\nimport { c } from "./y";',
     );
 
     expect(modules).toEqual([
       { path: "editor/index.ts", isTypeOnly: true },
-      { path: "controllers/y", isTypeOnly: false },
+      { path: "components/y", isTypeOnly: false },
     ]);
   });
 

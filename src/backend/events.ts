@@ -1,8 +1,7 @@
 /**
  * The Rust events the page hears, relayed to the window as `rust:<name>` with the payload as
- * `detail`, so a controller binds one with a Stimulus action and a Svelte Component with
- * `<svelte:window>`, and each framework takes it away with what bound it. `projectChanged` is read
- * by `ProjectFeed` instead.
+ * `detail`, so a Svelte Component binds one with `<svelte:window>` and Svelte takes it away with
+ * the Svelte Component. `projectChanged` is read by `ProjectFeed` instead.
  */
 
 import type { UnlistenFn } from "@tauri-apps/api/event";

@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -14,7 +13,6 @@ import SearchBar from "./SearchBar.svelte";
 import { drawSegmentRows, segmentRows } from "./test-segment-rows";
 
 describe("SearchBar", () => {
-  let application: Application;
   let project: ProjectView | null;
   let highlights: Map<string, { ranges: Range[] }>;
 
@@ -85,8 +83,7 @@ describe("SearchBar", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     const context = pageContext(assembly.feed, assembly.session);
     drawSegmentRows(document.querySelector("section")!, context);
     render(SearchBar, { context });
@@ -95,7 +92,6 @@ describe("SearchBar", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
     vi.unstubAllGlobals();
     Object.assign(window, {

@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -32,7 +31,6 @@ interface MenuItemSent {
 }
 
 describe("Segment Changes", () => {
-  let application: Application;
   let project: ProjectView | null;
   let changes: unknown[];
   /** The names of the edit and change commands sent, in the order they were sent. */
@@ -119,8 +117,7 @@ describe("Segment Changes", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     render(SegmentList, {
       target: document.querySelector("section")!,
       props: { playback: new Playback() },
@@ -141,7 +138,6 @@ describe("Segment Changes", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
     vi.restoreAllMocks();
   });

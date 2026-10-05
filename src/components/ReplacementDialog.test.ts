@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -13,7 +12,6 @@ import ReplacementDialog from "./ReplacementDialog.svelte";
 import { drawSegmentRows } from "./test-segment-rows";
 
 describe("ReplacementDialog", () => {
-  let application: Application;
   let project: ProjectView | null;
   let replaceArgs: unknown[];
   let count: number;
@@ -69,8 +67,7 @@ describe("ReplacementDialog", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     const context = pageContext(assembly.feed, assembly.session);
     drawSegmentRows(document.querySelector("section")!, context);
     render(ReplacementDialog, { context });
@@ -79,7 +76,6 @@ describe("ReplacementDialog", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
     Object.assign(window, {
       __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },

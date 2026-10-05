@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { cleanup, render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -25,7 +24,6 @@ import {
 import Timeline, { regionColor } from "./Timeline.svelte";
 
 describe("Timeline", () => {
-  let application: Application;
   /** What the timeline plays, shared with the Preview. */
   let playback: Playback;
   const media = () => playback.media;
@@ -83,8 +81,7 @@ describe("Timeline", () => {
 
   /** Draws the timeline beside a text field, as the page draws it beside the editor. */
   async function drawTimeline(): Promise<void> {
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     session = assembly.session;
     playback = new Playback();
     const { container } = render(Timeline, {
@@ -144,7 +141,6 @@ describe("Timeline", () => {
 
   afterEach(async () => {
     cleanup();
-    application.stop();
     clearMocks();
     vi.restoreAllMocks();
     takeLayoutBack();
@@ -1090,7 +1086,6 @@ describe("Timeline", () => {
           __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
         });
         cleanup();
-        application.stop();
         await drawTimeline();
       });
 

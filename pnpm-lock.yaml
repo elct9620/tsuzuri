@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@hotwired/stimulus':
-        specifier: ^3.2.2
-        version: 3.2.2
       '@lucide/svelte':
         specifier: ^1.48.0
         version: 1.48.0(svelte@5.57.1)
@@ -92,9 +89,6 @@ packages:
   '@babel/runtime@7.29.7':
     resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
     engines: {node: '>=6.9.0'}
-
-  '@hotwired/stimulus@3.2.2':
-    resolution: {integrity: sha512-eGeIqNOQpXoPAIP7tC1+1Yc1yl1xnwYqg+3mzqxyrbE5pg5YFBZcA6YoTiByJB6DKAEsiWtl6tjTJS4IYtbB7A==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -1013,8 +1007,6 @@ snapshots:
   '@babel/helper-validator-identifier@7.29.7': {}
 
   '@babel/runtime@7.29.7': {}
-
-  '@hotwired/stimulus@3.2.2': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:

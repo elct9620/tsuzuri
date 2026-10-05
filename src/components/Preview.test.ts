@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { cleanup, render, screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
@@ -19,7 +18,6 @@ import Preview from "./Preview.svelte";
 import { PreviewFold } from "./preview-fold.svelte";
 
 describe("Preview", () => {
-  let application: Application;
   let session: EditingSession;
   let project: ProjectView | null;
   /** The player of the Preview drawn last, kept as the Video Window takes it out of the page. */
@@ -55,8 +53,7 @@ describe("Preview", () => {
 
   /** Draws the Preview with the editor bar folding its parts, as the page draws them. */
   async function draw(): Promise<void> {
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     session = assembly.session;
     const context = pageContext(assembly.feed, assembly.session);
     const playback = new Playback();
@@ -84,7 +81,6 @@ describe("Preview", () => {
   /** Starts the Preview over, as the next time the app opens. */
   async function reopen(): Promise<void> {
     cleanup();
-    application.stop();
     await draw();
   }
 
@@ -237,7 +233,6 @@ describe("Preview", () => {
   afterEach(async () => {
     videoWindow()?.close();
     cleanup();
-    application.stop();
     // Taking the Preview away closes the Video Window, which asks Rust once the window is found
     await settle();
     clearMocks();
@@ -1307,7 +1302,6 @@ describe("Preview", () => {
         __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
       });
       cleanup();
-      application.stop();
       await draw();
     });
 

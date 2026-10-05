@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -19,7 +18,6 @@ import {
 
 describe("SpeakersDialog", () => {
   let speakersDialog: SpeakersDialog;
-  let application: Application;
   let project: ProjectView | null;
   let setSpeakersArgs: unknown;
 
@@ -98,8 +96,7 @@ describe("SpeakersDialog", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     const context = pageContext(assembly.feed, assembly.session);
     speakersDialog = render(SpeakersDialog, { context }).component;
     drawSegmentList(
@@ -112,7 +109,6 @@ describe("SpeakersDialog", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 

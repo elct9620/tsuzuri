@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -434,7 +433,6 @@ describe("TranscriptionDialog", () => {
 });
 
 describe("TranscriptionDialog, transcribing again from the editor", () => {
-  let application: Application;
   let project: ProjectView | null;
   let transcription: () => Promise<unknown>;
   let transcribeArgs: unknown;
@@ -511,8 +509,7 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     const context = pageContext(assembly.feed, assembly.session);
     const transcriptionDialog = renderWithToolbar(
       TranscriptionDialog,
@@ -529,7 +526,6 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 

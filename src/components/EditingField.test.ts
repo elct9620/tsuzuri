@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "../assembly";
@@ -9,7 +8,6 @@ import { pageContext } from "./context";
 import { type DrawnSegmentRows, drawSegmentRows } from "./test-segment-rows";
 
 describe("EditingField", () => {
-  let application: Application;
   let drawn: DrawnSegmentRows;
   let edits: unknown[];
   let session: EditingSession;
@@ -43,8 +41,7 @@ describe("EditingField", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     session = assembly.session;
     drawn = drawSegmentRows(
       document.body,
@@ -56,7 +53,6 @@ describe("EditingField", () => {
 
   afterEach(() => {
     drawn.unmount();
-    application.stop();
     clearMocks();
   });
 

@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { cleanup, render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -314,7 +313,6 @@ describe("TranslationDialog", () => {
 });
 
 describe("TranslationDialog, translating chosen Segments again", () => {
-  let application: Application;
   let project: ProjectView | null;
   let retranslateArgs: unknown;
 
@@ -361,8 +359,7 @@ describe("TranslationDialog, translating chosen Segments again", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     const context = pageContext(assembly.feed, assembly.session, new TaskRun());
     const translation = render(TranslationDialog, { context }).component;
     drawSegmentList(
@@ -376,7 +373,6 @@ describe("TranslationDialog, translating chosen Segments again", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 

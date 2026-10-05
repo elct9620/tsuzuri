@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render, screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -19,7 +18,6 @@ import { notifications, showNotifications } from "./test-notifications";
 import { drawSegmentRows } from "./test-segment-rows";
 
 describe("EditorComparison", () => {
-  let application: Application;
   let comparison: EditorComparison;
   /** The subtitles the compare menu opened the Versions dialog at. */
   let openedSubtitles: (string | null)[];
@@ -188,8 +186,7 @@ describe("EditorComparison", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     comparison = new EditorComparison();
     const context = pageContext(
       assembly.feed,
@@ -211,7 +208,6 @@ describe("EditorComparison", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
     vi.unstubAllGlobals();
   });

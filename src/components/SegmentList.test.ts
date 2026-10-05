@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -23,7 +22,6 @@ import { TaskRun } from "./task-run.svelte";
 import { rowList, segmentRows } from "./test-segment-rows";
 
 describe("SegmentList", () => {
-  let application: Application;
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
   let editFailure: unknown;
@@ -113,8 +111,7 @@ describe("SegmentList", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     run = new TaskRun();
     const context = pageContext(assembly.feed, assembly.session, run);
     segmentList = render(SegmentList, {
@@ -127,7 +124,6 @@ describe("SegmentList", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 

@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -19,7 +18,6 @@ import {
 } from "./test-segment-rows";
 
 describe("ShiftDialog", () => {
-  let application: Application;
   let project: ProjectView | null;
   let changes: unknown[];
 
@@ -80,8 +78,7 @@ describe("ShiftDialog", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     const context = pageContext(assembly.feed, assembly.session);
     const shift = render(ShiftDialog, { context }).component;
     drawSegmentList(
@@ -94,7 +91,6 @@ describe("ShiftDialog", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 

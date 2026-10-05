@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { cleanup, render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
@@ -29,7 +28,6 @@ import { drawSegmentRows, segmentRows } from "./test-segment-rows";
 import { regionColor } from "./Timeline.svelte";
 
 describe("Current Segment", () => {
-  let application: Application;
   let project: ProjectView | null;
   let savedPreferences: Preferences;
   let session: EditingSession;
@@ -185,9 +183,8 @@ describe("Current Segment", () => {
   }
 
   /** Draws the editor bar, the Preview with its timeline and the rows, sharing what they play, as the page draws them. */
-  async function startApplication(): Promise<void> {
-    application = Application.start();
-    const assembly = assemble(application, {});
+  async function drawEditor(): Promise<void> {
+    const assembly = assemble();
     session = assembly.session;
     const context = pageContext(assembly.feed, assembly.session);
     playback = new Playback();
@@ -211,9 +208,8 @@ describe("Current Segment", () => {
   /** Starts the page over, as the next time the app opens. */
   async function reopen(): Promise<void> {
     cleanup();
-    application.stop();
     document.body.innerHTML = "<main></main>";
-    await startApplication();
+    await drawEditor();
   }
 
   beforeEach(async () => {
@@ -240,12 +236,11 @@ describe("Current Segment", () => {
       { shouldMockEvents: true },
     );
     document.body.innerHTML = "<main></main>";
-    await startApplication();
+    await drawEditor();
   });
 
   afterEach(async () => {
     cleanup();
-    application.stop();
     await settle();
     clearMocks();
     vi.restoreAllMocks();

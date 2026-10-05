@@ -12,8 +12,8 @@ export type ShortcutGroup = (typeof SHORTCUT_GROUPS)[number];
 
 /**
  * A key the interface binds, or a mouse action with the keys held, as each platform presses it. A
- * chord is written as a Stimulus key filter, `ctrl+alt+enter`; `click`, `dblclick`, `drag` and
- * `wheel` stand for the mouse.
+ * chord names its keys joined by `+`, modifiers first, `ctrl+alt+enter`; `click`, `dblclick`, `drag`
+ * and `wheel` stand for the mouse.
  */
 export interface Shortcut {
   id: string;
@@ -27,8 +27,8 @@ export interface Shortcut {
 }
 
 /**
- * Every shortcut, in the order the list shows them. A controller that matches a key itself reads it
- * from here with `isShortcut`; a key bound in a `data-action` is written there as well.
+ * Every shortcut, in the order the list shows them. A Svelte Component matches a key against one of
+ * them with `isShortcut`.
  */
 export const SHORTCUTS = [
   // Some keyboards type / with Shift, and ? takes it on most
@@ -262,8 +262,7 @@ function isChord(
 
 /**
  * Whether `event` presses the Shortcut `id` names on this platform. A key is read as it is typed
- * and with exactly the modifiers its chord names, as a Stimulus key filter reads one, unless the
- * Shortcut says otherwise.
+ * and with exactly the modifiers its chord names, unless the Shortcut says otherwise.
  */
 export function isShortcut(
   event: KeyboardEvent,

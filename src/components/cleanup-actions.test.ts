@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-import { Application } from "@hotwired/stimulus";
 import { screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
@@ -16,7 +15,6 @@ import {
 } from "./test-segment-rows";
 
 describe("cleanup", () => {
-  let application: Application;
   let project: ProjectView | null;
   let sentCalls: [string, unknown][];
   let count: number;
@@ -56,8 +54,7 @@ describe("cleanup", () => {
       },
       { shouldMockEvents: true },
     );
-    application = Application.start();
-    const assembly = assemble(application, {});
+    const assembly = assemble();
     drawSegmentList(
       document.querySelector("section")!,
       pageContext(assembly.feed, assembly.session),
@@ -68,7 +65,6 @@ describe("cleanup", () => {
   });
 
   afterEach(() => {
-    application.stop();
     clearMocks();
   });
 

@@ -72,19 +72,6 @@ export default class ProjectController extends Controller {
   }
 
   /**
-   * Opens the Recent Project whose directory the row or menu item names. Rust drops one whose
-   * directory is gone and announces nothing, so the Recent Projects are told to read again.
-   */
-  async openRecent({
-    currentTarget,
-    params,
-  }: Event & { params: { directory: string } }): Promise<void> {
-    closeMenu(currentTarget);
-    const isOpened = await this.run("openProject", params.directory);
-    if (!isOpened) await this.feed.refresh();
-  }
-
-  /**
    * Reads the Project's directory again, for files added or changed elsewhere. The field being
    * typed in is left first, so its text is sent to be written before the directory is read.
    */

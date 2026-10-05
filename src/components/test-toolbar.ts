@@ -22,6 +22,7 @@ export function renderWithToolbar(
     context,
     props: {
       dock: new ResourceDock(),
+      recentProjects: [],
       openSettings: ignore,
       openShortcuts: ignore,
       openTranscription: ignore,

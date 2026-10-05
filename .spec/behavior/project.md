@@ -15,9 +15,10 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src/components/ResourceList.test.ts`
 - `src/components/resource-dock.test.ts`
 - `src/components/SettingsDialog.test.ts`
+- `src/components/StartScreen.test.ts`
+- `src/components/Toolbar.test.ts`
 - `src/components/settings/project/Project.test.ts`
 - `src/controllers/project-controller.test.ts`
-- `src/controllers/recent-projects-controller.test.ts`
 - `src/controllers/transcript-controller.test.ts`
 
 ## `PJ-001` Opening a directory as the Project

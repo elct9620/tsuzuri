@@ -9,7 +9,6 @@ import FieldController, {
 } from "./controllers/field-controller";
 import PreviewController from "./controllers/preview-controller";
 import ProjectController from "./controllers/project-controller";
-import RecentProjectsController from "./controllers/recent-projects-controller";
 import SearchController from "./controllers/search-controller";
 import SegmentChangesController, {
   typingOption,
@@ -40,7 +39,6 @@ async function start(): Promise<void> {
     field: FieldController,
     preview: PreviewController,
     project: ProjectController,
-    "recent-projects": RecentProjectsController,
     cleanup: CleanupController,
     search: SearchController,
     "segment-changes": SegmentChangesController,

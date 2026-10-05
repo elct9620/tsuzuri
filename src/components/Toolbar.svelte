@@ -6,13 +6,19 @@
   import Users from "@lucide/svelte/icons/users";
   import { onMount } from "svelte";
 
-  import { currentResource, type ProjectView } from "../backend/project";
+  import {
+    currentResource,
+    type ProjectView,
+    type RecentProjectView,
+  } from "../backend/project";
   import { t } from "../i18n";
   import { projectFeed } from "./context";
+  import { openRecent } from "./project-actions";
   import type { ResourceDock } from "./resource-dock.svelte";
 
   interface Props {
     dock: ResourceDock;
+    recentProjects: RecentProjectView[];
     openSettings: () => void;
     openShortcuts: () => void;
     openTranscription: () => void;
@@ -22,6 +28,7 @@
 
   let {
     dock,
+    recentProjects,
     openSettings,
     openShortcuts,
     openTranscription,
@@ -137,12 +144,21 @@
             data-i18n="toolbar.openSrt"
           ></button>
         </li>
-        <li
-          class="menu-title"
-          data-recent-projects-target="menuTitle"
-          data-i18n="start.recentProjects"
-          hidden
-        ></li>
+        {#if recentProjects.length > 0}
+          <li class="menu-title">{t("start.recentProjects")}</li>
+          {#each recentProjects as project (project.directory)}
+            <li>
+              <button
+                type="button"
+                data-tooltip={project.directory}
+                onclick={({ currentTarget }) =>
+                  openRecent(feed, project.directory, currentTarget)}
+              >
+                <span class="min-w-0 truncate">{project.name}</span>
+              </button>
+            </li>
+          {/each}
+        {/if}
       </ul>
     </div>
 

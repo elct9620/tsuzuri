@@ -11,7 +11,7 @@
   import type { CursorField } from "../editor";
   import { t } from "../i18n";
   import { notify, notifyFailure } from "../ui/notification.svelte";
-  import { isShortcut } from "../ui/shortcuts";
+  import { isComposingKey, isShortcut } from "../ui/shortcuts";
   import { selectedText } from "../ui/text-fields";
   import { editingSession, projectFeed } from "./context";
 
@@ -52,8 +52,7 @@
 
   /** Replaces on Enter, unless the key ends a composition. */
   function applyByEnter(event: KeyboardEvent): void {
-    if (event.key !== "Enter" || event.isComposing || event.keyCode === 229)
-      return;
+    if (event.key !== "Enter" || isComposingKey(event)) return;
     event.preventDefault();
     void apply();
   }

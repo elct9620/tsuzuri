@@ -28,7 +28,7 @@
   import { t } from "../i18n";
   import { closeMenu } from "../ui/menu";
   import { notify } from "../ui/notification.svelte";
-  import { shortcutById, shortcutText } from "../ui/shortcuts";
+  import { isComposingKey, shortcutById, shortcutText } from "../ui/shortcuts";
   import { speakerNames } from "../ui/speakers";
   import { formatTime, parseTime, TIME_FIELD_ACTIONS } from "../ui/time";
   import ComparisonMarks from "./ComparisonMarks.svelte";
@@ -275,8 +275,7 @@
 
   /** Names the Segment's Speaker as typed, once Enter is pressed; a key the input method is still composing with stays its own. */
   function nameSpeaker(event: KeyboardEvent): void {
-    if (event.key !== "Enter" || event.isComposing || event.keyCode === 229)
-      return;
+    if (event.key !== "Enter" || isComposingKey(event)) return;
     event.preventDefault();
     const input = event.currentTarget as HTMLInputElement;
     const name = input.value.trim();

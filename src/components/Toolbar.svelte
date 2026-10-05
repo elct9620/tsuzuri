@@ -17,6 +17,7 @@
     type RecentProjectView,
   } from "../backend/project";
   import { t } from "../i18n";
+  import { isComposingKey } from "../ui/shortcuts";
   import { projectFeed } from "./context";
   import ExportMenu from "./ExportMenu.svelte";
   import {
@@ -82,7 +83,7 @@
    * puts back the name shown first. A key the input method is still composing with stays its own.
    */
   function leaveName(event: KeyboardEvent): void {
-    if (event.isComposing || event.keyCode === 229) return;
+    if (isComposingKey(event)) return;
     const field = event.currentTarget as HTMLInputElement;
     if (event.key === "Escape") field.value = project?.name ?? "";
     else if (event.key !== "Enter") return;

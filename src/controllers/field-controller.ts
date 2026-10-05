@@ -9,12 +9,12 @@ import {
   type EditingSession,
 } from "../editor";
 import { notifyEdit } from "../ui/notification.svelte";
+import { isComposingKey } from "../ui/shortcuts";
 
 /**
  * Routes a key event by whether an input method is still composing text: `:composing` routes only
- * those, `:!composing` only the others, so an Enter that picks a candidate stays the input method's.
- * A key the input method is still processing reports `keyCode` 229, and WebKit ends a composition
- * before the key that ends it arrives (WebKit bug 165004), which the field's own state covers.
+ * those, `:!composing` only the others. WebKit ends a composition before the key that ends it
+ * arrives (WebKit bug 165004), which the field's own state covers.
  */
 export function composingOption({
   event,
@@ -26,8 +26,7 @@ export function composingOption({
   controller: Controller;
 }): boolean {
   const isComposing =
-    (event instanceof KeyboardEvent &&
-      (event.isComposing || event.keyCode === 229)) ||
+    (event instanceof KeyboardEvent && isComposingKey(event)) ||
     (controller instanceof FieldController && controller.isComposing);
   return isComposing === value;
 }

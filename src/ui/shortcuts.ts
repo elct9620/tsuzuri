@@ -276,6 +276,14 @@ export function isShortcut(
   );
 }
 
+/**
+ * Whether `event` is a key an input method is still composing with, so an Enter that picks a
+ * candidate stays the input method's. A key it is still processing reports `keyCode` 229.
+ */
+export function isComposingKey(event: KeyboardEvent): boolean {
+  return event.isComposing || event.keyCode === 229;
+}
+
 /** Each key of `chord` as the keyboard shows it: `⌘` `⌥` `F` on macOS, `Ctrl` `H` elsewhere. */
 export function keyLabels(chord: string, isMac: boolean): string[] {
   const labels = isMac ? MAC_LABELS : OTHER_LABELS;

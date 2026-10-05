@@ -16,7 +16,7 @@
   import { type CursorField, markRanges, rangeOf } from "../editor";
   import { t } from "../i18n";
   import { failureMessage } from "../ui/failure";
-  import { isShortcut } from "../ui/shortcuts";
+  import { isComposingKey, isShortcut } from "../ui/shortcuts";
   import { selectedText } from "../ui/text-fields";
   import { editingSession, projectFeed } from "./context";
 
@@ -97,7 +97,7 @@
 
   /** Moves by Enter or back by Shift+Enter, and closes by Esc, unless the key ends a composition. */
   function followPatternKey(event: KeyboardEvent): void {
-    if (event.isComposing || event.keyCode === 229) return;
+    if (isComposingKey(event)) return;
     if (event.ctrlKey || event.altKey || event.metaKey) return;
     if (event.key === "Enter") moveBy(event.shiftKey ? -1 : 1);
     else if (event.key === "Escape") close();

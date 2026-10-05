@@ -132,11 +132,14 @@ describe("ProjectController", () => {
       throw { code: "malformed-srt", cue: 2 };
     };
 
+    showNotifications();
+
     await click("#open-srt");
 
-    expect(JSON.stringify(sent("plugin:dialog|message"))).toContain(
-      "SRT 第 2 段無法讀取",
-    );
+    expect([notifications(), notificationDetail(0)]).toEqual([
+      ["沒有開啟"],
+      expect.stringContaining("SRT 第 2 段無法讀取"),
+    ]);
   });
 
   // @behavior PJ-167
@@ -145,12 +148,15 @@ describe("ProjectController", () => {
       throw { code: "opening-during-mode" };
     };
 
+    showNotifications();
+
     await click("#open-directory");
 
-    expect(sent("plugin:dialog|message")).toMatchObject({
-      message: "任務執行中無法開啟其他專案，請等任務結束或先取消",
-      kind: "warning",
-    });
+    expect([
+      notificationDetail(0),
+      document.querySelector<SVGElement>("[data-notifications] svg")!.dataset
+        .kind,
+    ]).toEqual(["任務執行中無法開啟其他專案，請等任務結束或先取消", "warning"]);
   });
 
   // @behavior PJ-171

@@ -309,7 +309,7 @@ Why a command did not finish, sent to the webview as a `code` with the data it n
 
 ### Notification
 
-A short message in a corner of the window about something that has just happened: a task finished or failed, an edit was not written, or an edit was saved with something offered to do about it. Its title says what happened, marked by the icon and colour of its kind; below the title it may say why in a sentence, or list items with their values, such as how long each Phase took. Each thing that happened has a Notification of its own. It goes away on its own after a moment, except one saying a fault happened, which stays until it is closed so it cannot be missed; any of them can be closed sooner.
+A short message in a corner of the window about something that has just happened: a task finished or failed, something asked of the Project was refused or failed, an edit was not written, or an edit was saved with something offered to do about it. Its title says what happened, marked by the icon and colour of its kind; below the title it may say why in a sentence, or list items with their values, such as how long each Phase took. Each thing that happened has a Notification of its own. It goes away on its own after a moment, except one saying a fault happened, which stays until it is closed so it cannot be missed; any of them can be closed sooner.
 
 ### Save Mark
 

@@ -1,15 +1,15 @@
 /**
- * Writes what the Project's own settings change, saying in a system dialog why Rust refused it.
+ * Writes what the Project's own settings change, saying in a Notification why Rust refused it.
  */
 
-import { message } from "../../../backend/dialog";
 import {
   setPrimaryLanguage,
   setProjectOptions,
   type ProjectOptions,
   type ProjectView,
 } from "../../../backend/project";
-import { failureKind, failureMessage } from "../../../ui/failure";
+import { t } from "../../../i18n";
+import { notifyFailure } from "../../../ui/notification.svelte";
 
 /** Sets the Project Options as `project` holds them, with `changes` in their place. */
 export async function saveOptions(
@@ -28,7 +28,6 @@ async function report(action: () => Promise<unknown>): Promise<void> {
   try {
     await action();
   } catch (error) {
-    const kind = failureKind(error) === "warning" ? "warning" : "error";
-    await message(failureMessage(error), { kind });
+    notifyFailure(t("settings.notSaved"), error);
   }
 }

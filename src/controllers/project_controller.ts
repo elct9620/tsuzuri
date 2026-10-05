@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-import { message, open, SRT_FILTERS } from "../backend/dialog";
+import { open, SRT_FILTERS } from "../backend/dialog";
 import {
   openProject,
   type OpenCommand,
@@ -13,9 +13,8 @@ import {
   type ProjectFeed,
 } from "../backend/project";
 import { interfaceLanguageCode, t } from "../i18n";
-import { failureKind, failureMessage } from "../ui/failure";
 import { closeMenu } from "../ui/menu";
-import { notify } from "../ui/notification.svelte";
+import { notify, notifyFailure } from "../ui/notification.svelte";
 
 function resourceItem(
   resource: ResourceView,
@@ -145,7 +144,9 @@ export default class ProjectController extends Controller {
   async select({ currentTarget }: Event): Promise<void> {
     const name = (currentTarget as HTMLElement).dataset.name!;
     this.dispatch("select");
-    const isSelected = await this.report(() => selectResource(name));
+    const isSelected = await this.report("resources.notSelected", () =>
+      selectResource(name),
+    );
     // Rust announces nothing when it could not select, so the editor is told to read what it holds.
     if (!isSelected) await this.feed.refresh();
   }
@@ -158,14 +159,16 @@ export default class ProjectController extends Controller {
     if (this.feed.project === null) return;
     if (document.activeElement instanceof HTMLElement)
       document.activeElement.blur();
-    await this.report(() => reloadProject());
+    await this.report("resources.notReloaded", () => reloadProject());
   }
 
   async rename(): Promise<void> {
     const project = this.feed.project;
     if (project === null) return;
     const name = this.nameTarget.value || null;
-    await this.report(() => setProjectOptions({ ...project.options, name }));
+    await this.report("toolbar.notRenamed", () =>
+      setProjectOptions({ ...project.options, name }),
+    );
   }
 
   /** Leaves the toolbar's name field, which writes a name typed there. */
@@ -181,19 +184,21 @@ export default class ProjectController extends Controller {
 
   /** Opens `path` with the Interface Language for a directory that records none, answering whether it opened. */
   private run(command: OpenCommand, path: string): Promise<boolean> {
-    return this.report(() =>
+    return this.report("toolbar.notOpened", () =>
       openProject(command, path, interfaceLanguageCode()),
     );
   }
 
-  /** Runs `action`, showing why it failed, and answers whether it succeeded. */
-  private async report(action: () => Promise<unknown>): Promise<boolean> {
+  /** Runs `action`, saying under `title` why it failed, and answers whether it succeeded. */
+  private async report(
+    title: string,
+    action: () => Promise<unknown>,
+  ): Promise<boolean> {
     try {
       await action();
       return true;
     } catch (error) {
-      const kind = failureKind(error) === "warning" ? "warning" : "error";
-      await message(failureMessage(error), { kind });
+      notifyFailure(t(title), error);
       return false;
     }
   }

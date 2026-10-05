@@ -4,10 +4,16 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "../../../backend/project";
 import { projectOf } from "../../../test_project";
+import {
+  notificationDetail,
+  notifications,
+  showNotifications,
+} from "../../test_notifications";
 import Project from "./Project.svelte";
 
 describe("Project", () => {
   let calls: { command: string; args: unknown }[];
+  let optionsFailure: unknown;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const sent = (command: string) =>
@@ -33,8 +39,11 @@ describe("Project", () => {
 
   beforeEach(() => {
     calls = [];
+    optionsFailure = undefined;
     mockIPC((command, args) => {
       calls.push({ command, args });
+      if (command === "set_project_options" && optionsFailure !== undefined)
+        return Promise.reject(optionsFailure);
     });
   });
 
@@ -67,6 +76,22 @@ describe("Project", () => {
         bilingual_order: "translation-first",
       },
     });
+  });
+
+  // @behavior PJ-190
+  it("says why the Project's settings were not saved", async () => {
+    showNotifications();
+    optionsFailure = { code: "io", detail: "denied" };
+    openSettings();
+    const order = field<HTMLSelectElement>("雙語順序");
+
+    order.value = "translation-first";
+    await change(order);
+
+    expect([notifications(), notificationDetail(0)]).toEqual([
+      ["設定沒有儲存"],
+      expect.stringContaining("denied"),
+    ]);
   });
 
   // @behavior PJ-176

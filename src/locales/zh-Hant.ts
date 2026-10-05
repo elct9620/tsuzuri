@@ -21,6 +21,8 @@ const zhHant: typeof en = {
     textSpeakers: "純文字含說話者",
     textBlankLines: "段落之間加入空行",
     notExported: "沒有匯出",
+    notOpened: "沒有開啟",
+    notRenamed: "沒有改名",
   },
   start: {
     title: "開啟放著影片或字幕的目錄開始工作",
@@ -43,6 +45,8 @@ const zhHant: typeof en = {
     noSubtitle: "還沒有字幕，可以轉錄產生",
     glossary: "詞彙表 {{count}} 筆",
     createGlossary: "建立詞彙表",
+    notSelected: "沒有切換資源",
+    notReloaded: "沒有重新載入",
   },
   glossary: {
     addRow: "新增一列",

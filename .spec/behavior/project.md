@@ -228,7 +228,7 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | --- | --- |
 | Given | the toolbar |
 | When | an SRT file whose second cue is malformed is chosen to open |
-| Then | a message says the file could not be read at its second cue |
+| Then | a Notification says the file could not be read at its second cue |
 
 ## `PJ-166` Refusing to open a Project while a Mode runs
 
@@ -244,7 +244,7 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | --- | --- |
 | Given | the toolbar, a Mode running |
 | When | a directory is chosen to open |
-| Then | a warning asks to wait for the task to finish or cancel it first |
+| Then | a warning Notification asks to wait for the task to finish or cancel it first |
 
 ## `PJ-168` Taking the SRT file among the launch arguments
 
@@ -681,6 +681,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | Given | the Project `lecture` |
 | When | its Project Options are set with the name ` 週會錄影 ` |
 | Then | the Project is named `週會錄影` and its Project Config records that name |
+
+## `PJ-190` Saying why the Project's settings were not saved
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project's settings |
+| When | a setting is changed and its Project Options cannot be written |
+| Then | a Notification says the settings were not saved and why |
 
 ## `PJ-174` Naming a Project after its directory without a name of its own
 

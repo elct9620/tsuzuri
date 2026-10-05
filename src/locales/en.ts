@@ -20,6 +20,8 @@ const en = {
     textSpeakers: "Speakers in plain text",
     textBlankLines: "Blank lines between segments",
     notExported: "Not exported",
+    notOpened: "Not opened",
+    notRenamed: "Not renamed",
   },
   start: {
     title: "Open a folder of videos or subtitles to begin",
@@ -42,6 +44,8 @@ const en = {
     noSubtitle: "No subtitle yet; transcribe it to make one",
     glossary: "Glossary: {{count}} terms",
     createGlossary: "Create a glossary",
+    notSelected: "Resource not selected",
+    notReloaded: "Not reloaded",
   },
   glossary: {
     addRow: "Add a row",

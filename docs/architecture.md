@@ -593,7 +593,7 @@ Modal 在 `<main>` 旁，送給 hub 的事件不會冒泡經過它，所以在 w
 | 誰 | 接法 | 解除 |
 |---|---|---|
 | controller | `data-action` | 隨元素，由 Stimulus |
-| Svelte 元件 | 事件屬性、`<svelte:window>` | 隨元件，由 Svelte |
+| Svelte 元件 | 事件屬性、`<svelte:window>`、`<svelte:document>` | 隨元件，由 Svelte |
 | 影片視窗 | `preview` 自己綁定 | 例外，見 4.9 |
 
 ### 4.3 組裝
@@ -652,7 +652,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 | Controller | 畫面區域 |
 |---|---|
-| `transcript`、`segment-changes` | 字幕編輯 |
+| `segment-changes` | 段落的改動與勾選工具列 |
 | `speakers` | 每段的說話者選單 |
 | `cleanup` | 清理簡體的選單、工具列與快速鍵 |
 | `comparison` | 對照備份、參照譯文、單句還原 |
@@ -661,15 +661,13 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `field` | 每個編輯欄位接上 session |
 | `time-field` | 時間欄覆寫輸入 |
 
-畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`，沒有媒體檔時由 `ui/silence.ts` 決定同一段靜音。追蹤播放鈕在預覽卡片，屬於捲動清單的 `transcript`。
+畫面配置見 `docs/ui.md`。controller 不保存編輯狀態，互動與勾選都經過 session。`preview` 與 `timeline` 掛在同一個元素，共用 `<video>`，沒有媒體檔時由 `ui/silence.ts` 決定同一段靜音。
 
 | 事件 | 送出者 | 接收者與用途 |
 |---|---|---|
-| `progress:task` | `TaskProgress` | 字幕編輯顯示 skeleton |
-| `project:select` | `ResourceList` | 字幕編輯顯示 skeleton |
-| `transcript:shown` | 字幕編輯 | `comparison` 重新標記；`speakers` 取得名稱 |
-| `transcript:shown` | 字幕編輯 | `segment-changes` 顯示入口；`SearchBar` 重新搜尋 |
-| `transcript:selection` | 字幕編輯 | 焦點欄位跟上選取 |
+| `transcript:shown` | `SegmentRows` | `comparison` 重新標記；`speakers` 取得名稱 |
+| `transcript:shown` | `SegmentRows` | `segment-changes` 顯示入口；`SearchBar` 重新搜尋 |
+| `transcript:selection` | `SegmentRows` | 焦點欄位跟上選取 |
 | `comparison:choose-in-versions` | `comparison` | `VersionsDialog` 開在該字幕 |
 | `versions:compare-with` | `VersionsDialog` | `comparison` 換對照 |
 | `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
@@ -683,7 +681,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `ModelSlot` 顯示下載進度 |
 | `system:color-scheme` | 系統，經 `assembly.ts` | `timeline` 重畫波形 |
 | `preferences:saved` | `Preferences` | `timeline` 重讀換段的偏好 |
-| `preview:playing` | `preview` | 字幕編輯標出播放中，追蹤時捲動 |
+| `preview:playing` | `preview` | `SegmentRows` 標出播放中，追蹤時捲動 |
 | `segment-changes:speakers` | `segment-changes` | `SpeakersDialog` 為 Checked Segments 開啟 |
 | `segment-changes:shift` | `segment-changes` | `ShiftDialog` 開啟平移 |
 | `speakers:name` | `speakers` | `SpeakersDialog` 寫入選定的說話者 |
@@ -716,6 +714,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ExportMenu` | 匯出選單與純文字的兩個開關 |
 | `EditorBar` | 資源名稱與譯文選單 |
 | `SearchBar` | 搜尋列與符合處標記 |
+| `SegmentRows`、`SegmentRow` | 段落列、Placeholder、Cursor、追蹤播放 |
 | `ResourceList` | 資源列、詞彙表、重新載入、⌘/Ctrl+B |
 | `TranscriptionDialog`、`TranslationDialog` | 任務 modal，含重做 |
 | `TranslationOptions` | 兩個任務 modal 共用的翻譯選項 |
@@ -739,6 +738,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 目前的專案 | Page 讀取 | 起始畫面、工作區、視窗標題 |
 | 最近專案 | Page 讀取 | 起始畫面、工具列 |
 | `ResourceDock` | Page 建立 | 工具列、資源清單 |
+| `PlaybackFollowing` | Page 建立 | 預覽的追蹤鈕、段落列 |
 | 開啟、重新載入、命名 | `project-actions.ts` | 起始畫面、工具列、資源清單 |
 
 資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。

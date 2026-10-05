@@ -24,8 +24,6 @@ describe("TranscriptController", () => {
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
   let editFailure: unknown;
-  /** The command that answers with a failure, if any. */
-  let failingCommand: string | null;
   let glossaryTable: GlossaryTable;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -88,7 +86,6 @@ describe("TranscriptController", () => {
     project = null;
     calls = [];
     editFailure = undefined;
-    failingCommand = null;
     localStorage.clear();
     glossaryTable = {
       languages: ["zh-TW", "en", "ja"],
@@ -99,8 +96,6 @@ describe("TranscriptController", () => {
       ${SAVE_MARK}
       <section data-controller="transcript speakers"
         data-action="selectionchange@document->transcript#followSelection progress:task->transcript#followTask project:select->transcript#showLoading transcript:shown->speakers#follow">
-        <h2 data-transcript-target="heading"></h2>
-        <select data-transcript-target="translationLanguage" data-action="change->transcript#showTranslation"></select>
         <p data-transcript-target="emptyHint">尚無內容</p>
         <ol data-transcript-target="list"></ol>
       </section>
@@ -109,8 +104,6 @@ describe("TranscriptController", () => {
     mockIPC(
       (command, args) => {
         calls.push({ command, args });
-        if (command === failingCommand)
-          return Promise.reject({ code: "io", detail: "denied" });
         if (command === "current_project") return project;
         if (command === "translation_glossary_table") return glossaryTable;
         if (command === "edit_segment" && editFailure !== undefined)
@@ -253,35 +246,6 @@ describe("TranscriptController", () => {
       field: "translation",
       value: "Hi all",
     });
-  });
-
-  // @behavior ED-004
-  it("shows the translation chosen for the Current Resource", async () => {
-    await hold(translatedProject);
-    const choice = document.querySelector<HTMLSelectElement>(
-      '[data-transcript-target="translationLanguage"]',
-    )!;
-
-    choice.value = "ja";
-    choice.dispatchEvent(new Event("change"));
-    await settle();
-
-    expect(sent("show_translation")).toEqual({ language: "ja" });
-  });
-
-  // @behavior TL-096
-  it("says a translation was not shown when showing it is refused", async () => {
-    await hold(translatedProject);
-    failingCommand = "show_translation";
-    const choice = document.querySelector<HTMLSelectElement>(
-      '[data-transcript-target="translationLanguage"]',
-    )!;
-
-    choice.value = "ja";
-    choice.dispatchEvent(new Event("change"));
-    await settle();
-
-    expect(notifications()).toEqual(["沒有顯示譯文"]);
   });
 
   // @behavior ED-005
@@ -605,20 +569,6 @@ describe("TranscriptController", () => {
       ...document.querySelectorAll<HTMLElement>("li .field.translation"),
     ];
     expect(translations.map(isFieldHeld)).toEqual([false, true]);
-  });
-
-  // @behavior ED-093
-  it("holds the choice of translation while a Mode runs", async () => {
-    await hold({
-      ...translatedProject,
-      running_mode: { mode: "translation", language: "en", indexes: null },
-    });
-
-    expect(
-      document.querySelector<HTMLSelectElement>(
-        '[data-transcript-target="translationLanguage"]',
-      )!.disabled,
-    ).toBe(true);
   });
 
   it("names the icon that opens a Segment's changes", async () => {

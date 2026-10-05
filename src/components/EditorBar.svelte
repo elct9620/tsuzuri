@@ -1,4 +1,14 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+
+  import {
+    currentResource,
+    type ProjectView,
+    showTranslation,
+  } from "../backend/project";
+  import { t } from "../i18n";
+  import { notifyFailure } from "../ui/notification.svelte";
+  import { projectFeed } from "./context";
   import TaskProgress from "./TaskProgress.svelte";
 
   interface Props {
@@ -7,11 +17,33 @@
   }
 
   let { openReplacement, openVersions }: Props = $props();
+
+  const feed = projectFeed();
+  let project = $state<ProjectView | null>(null);
+
+  const shownLanguage = $derived(project?.shown_translation ?? null);
+  /** Each Language the Current Resource has a translation in, or is being translated into. */
+  const translationLanguages = $derived.by(() => {
+    const codes = [...(currentResource(project)?.translation_languages ?? [])];
+    if (shownLanguage !== null && !codes.includes(shownLanguage))
+      codes.push(shownLanguage);
+    return codes;
+  });
+
+  async function chooseTranslation(language: string): Promise<void> {
+    try {
+      await showTranslation(language || null);
+    } catch (error) {
+      notifyFailure(t("translate.notShown"), error);
+    }
+  }
+
+  onMount(() => feed.follow((next) => (project = next)));
 </script>
 
 <div class="flex items-center gap-2 border-b border-base-300 px-4 py-2">
   <div class="flex min-w-0 grow items-center gap-2">
-    <h2 class="truncate font-semibold" data-transcript-target="heading"></h2>
+    <h2 class="truncate font-semibold">{project?.current_resource ?? ""}</h2>
     <span
       class="flex shrink-0 items-center gap-1 text-sm text-base-content/70 opacity-0 transition-opacity duration-200 ease-out data-is-shown:opacity-100 motion-reduce:transition-none"
       role="status"
@@ -22,13 +54,20 @@
     >
   </div>
   <label class="flex items-center gap-2 text-sm"
-    ><span class="hidden @5xl:inline" data-i18n="edit.translation"></span>
+    ><span class="hidden @5xl:inline">{t("edit.translation")}</span>
+    <!-- What a running Mode shows is its own until it ends. -->
     <select
       class="select select-sm w-auto"
-      data-i18n-label="edit.translation"
-      data-transcript-target="translationLanguage"
-      data-action="change->transcript#showTranslation"
-    ></select>
+      aria-label={t("edit.translation")}
+      value={shownLanguage ?? ""}
+      disabled={(project?.running_mode ?? null) !== null}
+      onchange={({ currentTarget }) => chooseTranslation(currentTarget.value)}
+    >
+      <option value="">{t("edit.noTranslation")}</option>
+      {#each translationLanguages as code (code)}
+        <option value={code}>{t(`languages.${code}`)}</option>
+      {/each}
+    </select>
   </label>
   <div class="dropdown dropdown-end">
     <div

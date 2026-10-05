@@ -769,7 +769,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式與欄位綁定、關閉選單 |
 | `ui/models.ts` | Model Source 的名稱與大小 |
-| `ui/options.ts` | 選單的選項 |
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/fold.ts` | 收起時點亮收起鈕 |
 | `ui/volume.ts` | 音量曲線、增益與限幅 |

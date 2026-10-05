@@ -5,6 +5,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 ## Includes
 
 - `src/controllers/transcript-controller.test.ts`
+- `src/components/EditorBar.test.ts`
 - `src/components/ExportMenu.test.ts`
 - `src/components/ResourceList.test.ts`
 - `src/controllers/segment-changes-controller.test.ts`
@@ -904,6 +905,22 @@ Registering a Speaker gives it a name in every Language and lets the editor offe
 | Given | a Project whose second Segment is being translated again into the Language it shows |
 | When | the panel shows its Segments |
 | Then | the second translation field is disabled and the first is not |
+
+## `ED-187` Naming the Current Resource above the editor
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Current Resource is `ep01` |
+| When | the panel shows its Segments |
+| Then | the editor's heading reads `ep01` |
+
+## `ED-188` Offering each translation of the Current Resource to show
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with an `en` translation, being translated into `ja` |
+| When | the panel shows its Segments |
+| Then | the choice of translation offers none, `en` and `ja`, with `ja` chosen |
 
 ## `ED-093` Holding the choice of translation while a Mode runs
 

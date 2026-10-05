@@ -3,7 +3,6 @@ import { Controller } from "@hotwired/stimulus";
 import { isMacOS } from "../backend/system";
 import {
   currentResource,
-  showTranslation,
   type ProjectFeed,
   type ProjectView,
   type Segment,
@@ -24,13 +23,11 @@ import {
   type TimeEdge,
 } from "../editor";
 import { t } from "../i18n";
-import { notifyFailure } from "../ui/notification.svelte";
 import { iconElement } from "../ui/icons";
 import { rememberedFlag, rememberFlag } from "../ui/choices";
 import { shortcutById, shortcutText } from "../ui/shortcuts";
 import type { TaskKind } from "../ui/progress";
 import { formatTime, TIME_FIELD_ACTIONS } from "../ui/time";
-import { menuOption } from "../ui/options";
 
 /** Where the webview remembers whether the editor follows playback. */
 const FOLLOWING_KEY = "tsuzuri.transcript-following";
@@ -306,20 +303,10 @@ function refreshRow(
 }
 
 export default class TranscriptController extends Controller {
-  static targets = [
-    "list",
-    "emptyHint",
-    "heading",
-    "translationLanguage",
-    "followButton",
-  ];
+  static targets = ["list", "emptyHint", "followButton"];
 
   declare readonly listTarget: HTMLOListElement;
   declare readonly emptyHintTarget: HTMLElement;
-  /** Names the Current Resource. */
-  declare readonly headingTarget: HTMLElement;
-  /** Which of the Current Resource's translations the editor shows, or none. */
-  declare readonly translationLanguageTarget: HTMLSelectElement;
   /** Whether the editor scrolls to the row being played, pressed to turn it on or off. */
   declare readonly followButtonTarget: HTMLButtonElement;
   declare readonly hasFollowButtonTarget: boolean;
@@ -525,20 +512,10 @@ export default class TranscriptController extends Controller {
     );
   }
 
-  async showTranslation(): Promise<void> {
-    try {
-      await showTranslation(this.translationLanguageTarget.value || null);
-    } catch (error) {
-      notifyFailure(t("translate.notShown"), error);
-    }
-  }
-
   private show(project: ProjectView | null): void {
     this.project = project;
     const segments = project?.segments ?? [];
     const isTranslationShown = (project?.shown_translation ?? null) !== null;
-    this.headingTarget.textContent = project?.current_resource ?? "";
-    this.showLanguages(project);
     this.showSegments(segments, isTranslationShown);
     const hasMedia = currentResource(project)?.has_media ?? false;
     for (const button of this.listTarget.querySelectorAll(
@@ -554,22 +531,6 @@ export default class TranscriptController extends Controller {
     if (isAwaitingSegments) this.showLoading();
     this.emptyHintTarget.hidden = segments.length > 0 || isAwaitingSegments;
     this.dispatch("shown", { detail: { project } });
-  }
-
-  /** Offers no translation and each Language the Current Resource has, or is being translated into. */
-  private showLanguages(project: ProjectView | null): void {
-    const shownLanguage = project?.shown_translation ?? null;
-    const codes = [...(currentResource(project)?.translation_languages ?? [])];
-    if (shownLanguage !== null && !codes.includes(shownLanguage))
-      codes.push(shownLanguage);
-    this.translationLanguageTarget.replaceChildren(
-      menuOption("", t("edit.noTranslation")),
-      ...codes.map((code) => menuOption(code, t(`languages.${code}`))),
-    );
-    this.translationLanguageTarget.value = shownLanguage ?? "";
-    // What a running Mode shows is its own until it ends.
-    this.translationLanguageTarget.disabled =
-      (project?.running_mode ?? null) !== null;
   }
 
   /**

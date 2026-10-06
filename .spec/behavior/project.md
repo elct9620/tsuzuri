@@ -1070,6 +1070,14 @@ Without the Project Option a Mode keeps what it writes over as any first change 
 | When | a Project is opened |
 | Then | the settings show the Project's own |
 
+## `PJ-194` Keeping the settings' tab as the Project changes
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings showing the general settings while a Project is open |
+| When | the Project changes, as an edit is written |
+| Then | the settings still show the general settings |
+
 ## `PJ-039` Keeping an edit off a subtitle changed elsewhere
 
 A subtitle is often corrected in a dedicated subtitle editor, and writing an edit back would overwrite that correction.

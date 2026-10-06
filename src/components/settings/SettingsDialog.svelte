@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import Modal from "#/components/Modal.svelte";
 
   import type { ProjectView } from "#/ipc/project.ts";
   import type { ModelSlot } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import type { HubFile } from "#/ui/models.ts";
-  import { projectFeed } from "#/state/context.ts";
   import About from "#/components/settings/general/About.svelte";
   import Components from "#/components/settings/general/Components.svelte";
   import GeneralModels from "#/components/settings/general/Models.svelte";
@@ -20,27 +18,20 @@
   import VersionAndUpdates from "#/components/settings/general/VersionAndUpdates.svelte";
 
   interface Props {
+    project: ProjectView | null;
     /** Opens the Repository dialog for a slot, answering the file picked, or none. */
     pick: (slot: ModelSlot) => Promise<HubFile | null>;
     /** Opens the full License Notice. */
     openLicenses: () => void;
   }
 
-  let { pick, openLicenses }: Props = $props();
+  let { project, pick, openLicenses }: Props = $props();
 
-  const feed = projectFeed();
   let dialog: Modal;
-  /** The open Project, whose own settings are offered only while it is open. */
-  let project = $state<ProjectView | null>(null);
-  let tab = $state<"project" | "general" | "preferences">("general");
-
-  /** Shows the Project's own settings while one is open, at their tab once it has just opened. */
-  onMount(() =>
-    feed.follow((next) => {
-      if (next === null) tab = "general";
-      else if (project === null) tab = "project";
-      project = next;
-    }),
+  const isProjectOpen = $derived(project !== null);
+  /** The tab shown, the Project's own settings once one has just opened, until another is chosen. */
+  let tab = $derived<"project" | "general" | "preferences">(
+    isProjectOpen ? "project" : "general",
   );
 
   export function open(): void {

@@ -158,6 +158,7 @@
   </div>
 </main>
 <SettingsDialog
+  {project}
   bind:this={settingsDialog}
   pick={(slot) => repositoryDialog.pick(slot)}
   openLicenses={() => licensesDialog.open()}

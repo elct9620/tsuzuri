@@ -594,6 +594,8 @@ Svelte 元件之間以 prop、context 或共用的狀態溝通，不經 window �
 | 誰 | 接法 | 解除 |
 |---|---|---|
 | Svelte 元件 | 事件屬性、`<svelte:window>`、`<svelte:document>` | 隨元件，由 Svelte |
+| 跟上 feed 的元件 | `onMount` 裡 `feed.follow` | `onMount` 回傳 |
+| `EditingState` | `session.onChange` | 與頁面同時結束 |
 | 影片視窗 | `Preview` 自己綁定 | 例外，見 4.9 |
 
 #### 4.2.2 import 的寫法

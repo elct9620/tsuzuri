@@ -49,78 +49,82 @@
   </div>
   <div
     tabindex="-1"
-    class="dropdown-content z-20 max-h-[70vh] w-72 overflow-y-auto rounded-box bg-base-100 p-3 shadow-md"
+    class="dropdown-content z-20 grid max-h-[70vh] w-[34rem] grid-cols-2 gap-x-6 overflow-y-auto rounded-box bg-base-100 p-3 shadow-md"
   >
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">{t("view.playback")}</legend>
-      <label
-        class="label justify-between"
-        data-tooltip={t("preview.followingHint")}
-        data-shortcut="following"
-      >
-        <span>{t("preview.following")}</span>
-        <input
-          type="checkbox"
-          class="toggle toggle-sm"
-          checked={playback.isFollowing}
-          onchange={() => playback.toggleFollowing()}
-        />
-      </label>
-      <label
-        class="label justify-between"
-        data-tooltip={t("preview.playingAloneHint")}
-      >
-        <span>{t("preview.playingAlone")}</span>
-        <input
-          type="checkbox"
-          class="toggle toggle-sm"
-          checked={playback.isPlayingAlone}
-          onchange={() => playback.togglePlayingAlone()}
-        />
-      </label>
-    </fieldset>
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">{t("view.captions")}</legend>
-      <CaptionControls
-        choices={captionChoices}
-        {hasTranslation}
-        hasPicture={playback.hasPicture}
-      />
-    </fieldset>
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">{t("view.timeline")}</legend>
-      <label
-        class="label justify-between"
-        data-tooltip={t("preview.snappingHint")}
-      >
-        <span>{t("preview.snapping")}</span>
-        <input
-          type="checkbox"
-          class="toggle toggle-sm"
-          checked={viewChoices.isSnapping}
-          onchange={() => viewChoices.toggleSnapping()}
-        />
-      </label>
-    </fieldset>
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">{t("view.segments")}</legend>
-      <label class="label justify-between">
-        <span>{t("view.speakerColumn")}</span>
-        <input
-          type="checkbox"
-          class="toggle toggle-sm"
-          checked={viewChoices.isSpeakerColumnShown}
-          onchange={() => viewChoices.toggleSpeakerColumn()}
-        />
-      </label>
-      <details class="collapse-arrow collapse">
-        <summary class="collapse-title min-h-0 px-0 py-1"
-          >{t("compare.label")}</summary
+    <div>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">{t("view.playback")}</legend>
+        <label
+          class="label justify-between"
+          data-tooltip={t("preview.followingHint")}
+          data-shortcut="following"
         >
-        <div class="collapse-content px-0">
-          <CompareMenu {openVersions} />
-        </div>
-      </details>
-    </fieldset>
+          <span>{t("preview.following")}</span>
+          <input
+            type="checkbox"
+            class="toggle toggle-sm"
+            checked={playback.isFollowing}
+            onchange={() => playback.toggleFollowing()}
+          />
+        </label>
+        <label
+          class="label justify-between"
+          data-tooltip={t("preview.playingAloneHint")}
+        >
+          <span>{t("preview.playingAlone")}</span>
+          <input
+            type="checkbox"
+            class="toggle toggle-sm"
+            checked={playback.isPlayingAlone}
+            onchange={() => playback.togglePlayingAlone()}
+          />
+        </label>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">{t("view.timeline")}</legend>
+        <label
+          class="label justify-between"
+          data-tooltip={t("preview.snappingHint")}
+        >
+          <span>{t("preview.snapping")}</span>
+          <input
+            type="checkbox"
+            class="toggle toggle-sm"
+            checked={viewChoices.isSnapping}
+            onchange={() => viewChoices.toggleSnapping()}
+          />
+        </label>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">{t("view.segments")}</legend>
+        <label class="label justify-between">
+          <span>{t("view.speakerColumn")}</span>
+          <input
+            type="checkbox"
+            class="toggle toggle-sm"
+            checked={viewChoices.isSpeakerColumnShown}
+            onchange={() => viewChoices.toggleSpeakerColumn()}
+          />
+        </label>
+        <details class="collapse-arrow collapse">
+          <summary class="collapse-title min-h-0 px-0 py-1"
+            >{t("compare.label")}</summary
+          >
+          <div class="collapse-content px-0">
+            <CompareMenu {openVersions} />
+          </div>
+        </details>
+      </fieldset>
+    </div>
+    <div>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">{t("view.captions")}</legend>
+        <CaptionControls
+          choices={captionChoices}
+          {hasTranslation}
+          hasPicture={playback.hasPicture}
+        />
+      </fieldset>
+    </div>
   </div>
 </div>

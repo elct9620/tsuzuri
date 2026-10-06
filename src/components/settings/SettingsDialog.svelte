@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import Modal from "#/components/Modal.svelte";
 
   import type { ProjectView } from "#/ipc/project.ts";
   import type { ModelSlot } from "#/ipc/toolchain.ts";
@@ -28,7 +29,7 @@
   let { pick, openLicenses }: Props = $props();
 
   const feed = projectFeed();
-  let dialog: HTMLDialogElement;
+  let dialog: Modal;
   /** The open Project, whose own settings are offered only while it is open. */
   let project = $state<ProjectView | null>(null);
   let tab = $state<"project" | "general" | "preferences">("general");
@@ -47,71 +48,65 @@
   }
 </script>
 
-<dialog class="modal" bind:this={dialog}>
-  <div class="modal-box max-w-3xl">
-    <h3 class="mb-2 text-lg font-bold">{t("toolbar.settings")}</h3>
-    <div role="tablist" class="tabs tabs-border">
-      {#if project !== null}
-        <input
-          type="radio"
-          name="settings-tabs"
-          class="tab"
-          aria-label={t("settings.project")}
-          checked={tab === "project"}
-          onchange={() => (tab = "project")}
-        />
-        <div class="tab-content pt-4">
-          <div class="flex flex-col gap-4">
-            <Project {project} />
-            <ProjectTranscription {project} />
-            <ProjectModels {project} {pick} />
-          </div>
-        </div>
-      {/if}
+<Modal
+  bind:this={dialog}
+  title={t("toolbar.settings")}
+  boxClass="max-w-3xl"
+  dismissLabel={t("work.close")}
+>
+  <div role="tablist" class="tabs tabs-border">
+    {#if project !== null}
       <input
         type="radio"
         name="settings-tabs"
         class="tab"
-        aria-label={t("settings.general")}
-        checked={tab === "general"}
-        onchange={() => (tab = "general")}
+        aria-label={t("settings.project")}
+        checked={tab === "project"}
+        onchange={() => (tab = "project")}
       />
       <div class="tab-content pt-4">
         <div class="flex flex-col gap-4">
-          <VersionAndUpdates />
-
-          <Components />
-
-          <Translation />
-
-          <GeneralTranscription />
-
-          <GeneralModels {pick} />
-
-          <Logs />
-
-          <About {openLicenses} />
+          <Project {project} />
+          <ProjectTranscription {project} />
+          <ProjectModels {project} {pick} />
         </div>
       </div>
-      <input
-        type="radio"
-        name="settings-tabs"
-        class="tab"
-        aria-label={t("settings.preferences")}
-        checked={tab === "preferences"}
-        onchange={() => (tab = "preferences")}
-      />
-      <div class="tab-content pt-4">
-        <Preferences />
+    {/if}
+    <input
+      type="radio"
+      name="settings-tabs"
+      class="tab"
+      aria-label={t("settings.general")}
+      checked={tab === "general"}
+      onchange={() => (tab = "general")}
+    />
+    <div class="tab-content pt-4">
+      <div class="flex flex-col gap-4">
+        <VersionAndUpdates />
+
+        <Components />
+
+        <Translation />
+
+        <GeneralTranscription />
+
+        <GeneralModels {pick} />
+
+        <Logs />
+
+        <About {openLicenses} />
       </div>
     </div>
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">{t("work.close")}</button>
-      </form>
+    <input
+      type="radio"
+      name="settings-tabs"
+      class="tab"
+      aria-label={t("settings.preferences")}
+      checked={tab === "preferences"}
+      onchange={() => (tab = "preferences")}
+    />
+    <div class="tab-content pt-4">
+      <Preferences />
     </div>
   </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
+</Modal>

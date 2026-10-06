@@ -7,9 +7,10 @@
   import { t } from "#/i18n.ts";
   import { notifyEdit } from "#/state/notification.svelte.ts";
   import { editingSession } from "#/state/context.ts";
+  import Modal from "#/components/Modal.svelte";
 
   const session = editingSession();
-  let dialog: HTMLDialogElement;
+  let dialog: Modal;
   /** Milliseconds to shift by, negative for earlier. */
   let offsetInput: HTMLInputElement;
 
@@ -39,30 +40,26 @@
   }
 </script>
 
-<dialog class="modal" bind:this={dialog}>
-  <div class="modal-box max-w-sm">
-    <h3 class="mb-2 text-lg font-bold">{t("edit.shiftTitle")}</h3>
-    <fieldset class="fieldset">
-      <legend class="fieldset-legend">{t("edit.offset")}</legend>
-      <input
-        type="number"
-        step="100"
-        required
-        class="input validator w-full"
-        aria-label={t("edit.offset")}
-        bind:this={offsetInput}
-      />
-    </fieldset>
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">{t("work.cancel")}</button>
-      </form>
-      <button type="button" class="btn btn-primary" onclick={shift}
-        >{t("edit.shiftStart")}</button
-      >
-    </div>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
+<Modal
+  bind:this={dialog}
+  title={t("edit.shiftTitle")}
+  boxClass="max-w-sm"
+  dismissLabel={t("work.cancel")}
+>
+  <fieldset class="fieldset">
+    <legend class="fieldset-legend">{t("edit.offset")}</legend>
+    <input
+      type="number"
+      step="100"
+      required
+      class="input validator w-full"
+      aria-label={t("edit.offset")}
+      bind:this={offsetInput}
+    />
+  </fieldset>
+  {#snippet actions()}
+    <button type="button" class="btn btn-primary" onclick={shift}
+      >{t("edit.shiftStart")}</button
+    >
+  {/snippet}
+</Modal>

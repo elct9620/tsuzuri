@@ -49,6 +49,28 @@ describe("ShortcutsDialog", () => {
     await setInterfaceLanguage("zh-Hant-TW");
   });
 
+  // @behavior IF-055
+  it("closes the list by its 關閉 button", () => {
+    shortcutsDialog.open();
+
+    within(dialog())
+      .getByRole("button", { hidden: true, name: "關閉" })
+      .click();
+
+    expect(dialog().open).toBe(false);
+  });
+
+  // @behavior IF-056
+  it("closes the list by clicking outside it", () => {
+    shortcutsDialog.open();
+
+    dialog()
+      .querySelector<HTMLButtonElement>(".modal-backdrop button")!
+      .click();
+
+    expect(dialog().open).toBe(false);
+  });
+
   // @behavior IF-030
   it("opens the list with Ctrl+/ even while a text is typed", () => {
     press("#typing", { key: "/", code: "Slash", ctrlKey: true });

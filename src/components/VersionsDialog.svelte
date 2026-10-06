@@ -9,6 +9,7 @@
   import ChevronUp from "@lucide/svelte/icons/chevron-up";
   import RotateCcw from "@lucide/svelte/icons/rotate-ccw";
   import { flushSync } from "svelte";
+  import Modal from "#/components/Modal.svelte";
 
   import {
     compareVersions,
@@ -29,7 +30,7 @@
   import { editorComparison } from "#/state/context.ts";
 
   const comparison = editorComparison();
-  let dialog: HTMLDialogElement;
+  let dialog: Modal;
   let rowList = $state<HTMLTableSectionElement>();
   /** What Rust listed when the dialog opened; shown until it closes. */
   let versions = $state<SubtitleVersions[]>([]);
@@ -200,147 +201,140 @@
   >
 {/snippet}
 
-<dialog class="modal" bind:this={dialog}>
-  <div class="modal-box max-w-4xl">
-    <h3 class="mb-2 text-lg font-bold">{t("versions.title")}</h3>
-    <label class="mb-2 flex items-center gap-2 text-sm"
-      ><span>{t("versions.subtitle")}</span>
-      <select
-        class="select select-sm w-auto"
-        value={language}
-        onchange={chooseSubtitle}
-      >
-        {#each versions as each (each.language)}
-          <option value={each.language ?? ""}
-            >{each.language
-              ? t(`languages.${each.language}`)
-              : t("versions.original")}</option
-          >
-        {/each}
-      </select>
-    </label>
-    <ul
-      class="list max-h-48 overflow-y-auto rounded-box border border-base-300 text-sm"
+<Modal
+  bind:this={dialog}
+  title={t("versions.title")}
+  boxClass="max-w-4xl"
+  dismissLabel={t("work.close")}
+>
+  <label class="mb-2 flex items-center gap-2 text-sm"
+    ><span>{t("versions.subtitle")}</span>
+    <select
+      class="select select-sm w-auto"
+      value={language}
+      onchange={chooseSubtitle}
     >
-      <li class="list-row">{t("versions.now")}</li>
-      {#each backups as backup (backup.file)}
-        <li class="list-row items-center">
-          <span class="badge badge-sm">{t(`compare.${backup.kind}`)}</span>
-          <span class="list-col-grow">{localTime(backup.taken_at)}</span>
-          <button
-            type="button"
-            class="btn btn-xs"
-            onclick={() => setComparison(backup.file)}
-            >{t("versions.setComparison")}</button
-          >
-          <button
-            type="button"
-            class="btn btn-xs"
-            onclick={() => compare(backup.file)}>{t("versions.compare")}</button
-          >
-          <button
-            type="button"
-            class="btn btn-xs"
-            onclick={() => restore(backup.file)}>{t("versions.restore")}</button
-          >
-        </li>
+      {#each versions as each (each.language)}
+        <option value={each.language ?? ""}
+          >{each.language
+            ? t(`languages.${each.language}`)
+            : t("versions.original")}</option
+        >
       {/each}
-    </ul>
-    {#if rows !== null}
-      <section class="mt-4">
-        <div class="mb-2 flex items-center gap-2">
-          <select
-            class="select select-sm w-auto"
-            value={leftVersion}
-            onchange={(event) => chooseVersion("left", event)}
-          >
-            {@render versionChoices()}
-          </select>
-          <ArrowLeftRight class="size-4 text-base-content/60" />
-          <select
-            class="select select-sm w-auto"
-            value={rightVersion}
-            onchange={(event) => chooseVersion("right", event)}
-          >
-            {@render versionChoices()}
-          </select>
-          <label class="ml-auto flex items-center gap-1 text-sm">
-            <input
-              type="checkbox"
-              class="checkbox checkbox-sm"
-              bind:checked={isFilteredToDifferences}
-            />
-            <span>{t("versions.onlyDifferences")}</span>
-          </label>
-          <button
-            type="button"
-            class="btn btn-square btn-sm"
-            aria-label={t("versions.previousDifference")}
-            onclick={() => moveToDifference(-1)}
-          >
-            <ChevronUp class="size-4" />
-          </button>
-          <button
-            type="button"
-            class="btn btn-square btn-sm"
-            aria-label={t("versions.nextDifference")}
-            onclick={() => moveToDifference(1)}
-          >
-            <ChevronDown class="size-4" />
-          </button>
-        </div>
-        <div class="max-h-96 overflow-y-auto">
-          <table class="table table-sm">
-            <tbody bind:this={rowList}>
-              {#each rows as row, index (index)}
-                {@const isRowDifferent = isDifferent(row)}
-                {#if isRowDifferent || !isFilteredToDifferences}
-                  <tr
-                    class={[
-                      isRowDifferent &&
-                        (currentRow === index ? "bg-info/20" : "bg-warning/15"),
-                    ]}
-                    data-is-different={isRowDifferent || undefined}
-                    data-is-current={currentRow === index || undefined}
+    </select>
+  </label>
+  <ul
+    class="list max-h-48 overflow-y-auto rounded-box border border-base-300 text-sm"
+  >
+    <li class="list-row">{t("versions.now")}</li>
+    {#each backups as backup (backup.file)}
+      <li class="list-row items-center">
+        <span class="badge badge-sm">{t(`compare.${backup.kind}`)}</span>
+        <span class="list-col-grow">{localTime(backup.taken_at)}</span>
+        <button
+          type="button"
+          class="btn btn-xs"
+          onclick={() => setComparison(backup.file)}
+          >{t("versions.setComparison")}</button
+        >
+        <button
+          type="button"
+          class="btn btn-xs"
+          onclick={() => compare(backup.file)}>{t("versions.compare")}</button
+        >
+        <button
+          type="button"
+          class="btn btn-xs"
+          onclick={() => restore(backup.file)}>{t("versions.restore")}</button
+        >
+      </li>
+    {/each}
+  </ul>
+  {#if rows !== null}
+    <section class="mt-4">
+      <div class="mb-2 flex items-center gap-2">
+        <select
+          class="select select-sm w-auto"
+          value={leftVersion}
+          onchange={(event) => chooseVersion("left", event)}
+        >
+          {@render versionChoices()}
+        </select>
+        <ArrowLeftRight class="size-4 text-base-content/60" />
+        <select
+          class="select select-sm w-auto"
+          value={rightVersion}
+          onchange={(event) => chooseVersion("right", event)}
+        >
+          {@render versionChoices()}
+        </select>
+        <label class="ml-auto flex items-center gap-1 text-sm">
+          <input
+            type="checkbox"
+            class="checkbox checkbox-sm"
+            bind:checked={isFilteredToDifferences}
+          />
+          <span>{t("versions.onlyDifferences")}</span>
+        </label>
+        <button
+          type="button"
+          class="btn btn-square btn-sm"
+          aria-label={t("versions.previousDifference")}
+          onclick={() => moveToDifference(-1)}
+        >
+          <ChevronUp class="size-4" />
+        </button>
+        <button
+          type="button"
+          class="btn btn-square btn-sm"
+          aria-label={t("versions.nextDifference")}
+          onclick={() => moveToDifference(1)}
+        >
+          <ChevronDown class="size-4" />
+        </button>
+      </div>
+      <div class="max-h-96 overflow-y-auto">
+        <table class="table table-sm">
+          <tbody bind:this={rowList}>
+            {#each rows as row, index (index)}
+              {@const isRowDifferent = isDifferent(row)}
+              {#if isRowDifferent || !isFilteredToDifferences}
+                <tr
+                  class={[
+                    isRowDifferent &&
+                      (currentRow === index ? "bg-info/20" : "bg-warning/15"),
+                  ]}
+                  data-is-different={isRowDifferent || undefined}
+                  data-is-current={currentRow === index || undefined}
+                >
+                  <td class="whitespace-pre-line">{formatTime(startOf(row))}</td
                   >
-                    <td class="whitespace-pre-line"
-                      >{formatTime(startOf(row))}</td
-                    >
-                    {#if row.text_spans.length > 0}
-                      {@render spansCell(row, "removal")}
-                      {@render spansCell(row, "addition")}
-                    {:else}
-                      <td class="whitespace-pre-line">{texts(row.left)}</td>
-                      <td class="whitespace-pre-line">{texts(row.right)}</td>
+                  {#if row.text_spans.length > 0}
+                    {@render spansCell(row, "removal")}
+                    {@render spansCell(row, "addition")}
+                  {:else}
+                    <td class="whitespace-pre-line">{texts(row.left)}</td>
+                    <td class="whitespace-pre-line">{texts(row.right)}</td>
+                  {/if}
+                  <td>
+                    {#if isRowDifferent && isRevertible}
+                      <button
+                        type="button"
+                        class="btn btn-square btn-ghost btn-xs"
+                        title={t("compare.revertWhole")}
+                        aria-label={t("compare.revertWhole")}
+                        onclick={() => revert(index)}
+                      >
+                        <RotateCcw class="size-4" />
+                      </button>
                     {/if}
-                    <td>
-                      {#if isRowDifferent && isRevertible}
-                        <button
-                          type="button"
-                          class="btn btn-square btn-ghost btn-xs"
-                          title={t("compare.revertWhole")}
-                          aria-label={t("compare.revertWhole")}
-                          onclick={() => revert(index)}
-                        >
-                          <RotateCcw class="size-4" />
-                        </button>
-                      {/if}
-                    </td>
-                  </tr>
-                {/if}
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    {/if}
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">{t("work.close")}</button>
-      </form>
-    </div>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
+                  </td>
+                </tr>
+              {/if}
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {/if}
+</Modal>

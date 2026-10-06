@@ -25,9 +25,10 @@
   import { taskRun } from "#/state/context.ts";
   import { TranslationChoices } from "#/state/translation-choices.svelte.ts";
   import TranslationOptions from "#/components/TranslationOptions.svelte";
+  import Modal from "#/components/Modal.svelte";
 
   const run = taskRun();
-  let dialog: HTMLDialogElement;
+  let dialog: Modal;
   let options = $state<TranslationOptions>();
   const choices = new TranslationChoices();
   let { project }: { project: ProjectView | null } = $props();
@@ -148,79 +149,69 @@
   }
 </script>
 
-<dialog class="modal" bind:this={dialog}>
-  <div class="modal-box">
-    <h3 class="text-lg font-bold">
-      {t(isWhole ? "toolbar.transcribe" : "transcribe.again")}
-    </h3>
-    <fieldset class="fieldset gap-3 text-sm">
-      {#if !isWhole}
-        <p class="flex items-center gap-2">
-          <span>{t("work.scope")}</span>
-          <span>{scopeLabel}</span>
-        </p>
-      {/if}
+<Modal
+  bind:this={dialog}
+  title={t(isWhole ? "toolbar.transcribe" : "transcribe.again")}
+  dismissLabel={t("work.cancel")}
+>
+  <fieldset class="fieldset gap-3 text-sm">
+    {#if !isWhole}
       <p class="flex items-center gap-2">
-        <span>{t("transcribe.language")}</span>
-        <span>{project === null ? "" : t(`languages.${project.language}`)}</span
-        >
+        <span>{t("work.scope")}</span>
+        <span>{scopeLabel}</span>
       </p>
-      <p class="flex items-center gap-2">
-        <span>{t("transcribe.model")}</span>
-        <span class="break-all text-base-content/70">{model}</span>
-      </p>
-      {#if isWhole}
-        <label class="flex items-center gap-2">
-          <input
-            type="checkbox"
-            class="checkbox checkbox-sm"
-            bind:checked={isDiarizedAfter}
-          />
-          <span>{t("transcribe.diarizeAfter")}</span>
-        </label>
-      {/if}
-      {#if isTranslationOffered}
-        <label class="flex items-center gap-2">
-          <input
-            type="checkbox"
-            class="checkbox checkbox-sm"
-            bind:checked={isTranslatedAfter}
-          />
-          <span>{t("transcribe.translateAfter")}</span>
-        </label>
-      {/if}
-      {#if isTranslatedAfter}
-        <fieldset
-          class="fieldset gap-3 rounded-box border border-base-300 px-4 pb-4"
-        >
-          <legend class="fieldset-legend">{t("toolbar.translate")}</legend>
-          <TranslationOptions
-            bind:this={options}
-            {choices}
-            glossary={project?.translation_glossary ?? null}
-          />
-        </fieldset>
-      {/if}
-    </fieldset>
-    {#if warning !== null}
-      <div role="alert" class="alert alert-warning mt-2">
-        <span>{t(warning)}</span>
-      </div>
     {/if}
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">{t("work.cancel")}</button>
-      </form>
-      <button type="button" class="btn btn-primary" onclick={start}
-        >{t(
-          warning === null
-            ? "transcribe.start"
-            : "transcribe.overwriteAndStart",
-        )}</button
+    <p class="flex items-center gap-2">
+      <span>{t("transcribe.language")}</span>
+      <span>{project === null ? "" : t(`languages.${project.language}`)}</span>
+    </p>
+    <p class="flex items-center gap-2">
+      <span>{t("transcribe.model")}</span>
+      <span class="break-all text-base-content/70">{model}</span>
+    </p>
+    {#if isWhole}
+      <label class="flex items-center gap-2">
+        <input
+          type="checkbox"
+          class="checkbox checkbox-sm"
+          bind:checked={isDiarizedAfter}
+        />
+        <span>{t("transcribe.diarizeAfter")}</span>
+      </label>
+    {/if}
+    {#if isTranslationOffered}
+      <label class="flex items-center gap-2">
+        <input
+          type="checkbox"
+          class="checkbox checkbox-sm"
+          bind:checked={isTranslatedAfter}
+        />
+        <span>{t("transcribe.translateAfter")}</span>
+      </label>
+    {/if}
+    {#if isTranslatedAfter}
+      <fieldset
+        class="fieldset gap-3 rounded-box border border-base-300 px-4 pb-4"
       >
+        <legend class="fieldset-legend">{t("toolbar.translate")}</legend>
+        <TranslationOptions
+          bind:this={options}
+          {choices}
+          glossary={project?.translation_glossary ?? null}
+        />
+      </fieldset>
+    {/if}
+  </fieldset>
+  {#if warning !== null}
+    <div role="alert" class="alert alert-warning mt-2">
+      <span>{t(warning)}</span>
     </div>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
+  {/if}
+  {#snippet actions()}
+    <button type="button" class="btn btn-primary" onclick={start}
+      >{t(
+        warning === null ? "transcribe.start" : "transcribe.overwriteAndStart",
+      )}</button
+    >
+  {/snippet}
+</Modal>

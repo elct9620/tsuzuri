@@ -568,7 +568,7 @@ body
   +-- Tooltip               popover, shown again over each modal
 ```
 
-祖先沒有畫出來時，modal 開了也看不到，所以不放進其他 modal 或會隱藏的區域。開啟函式由 `Page.svelte` 以 prop 往下交；段落選單與勾選工具列隔了幾層，改經 context 取得。
+外框一律由 `Modal.svelte` 畫出。祖先沒有畫出來時，modal 開了也看不到，所以不放進其他 modal 或會隱藏的區域。開啟函式由 `Page.svelte` 以 prop 往下交；段落選單與勾選工具列隔了幾層，改經 context 取得。
 
 ### 4.2 相依規則
 

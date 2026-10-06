@@ -325,6 +325,24 @@ Shortcuts grow faster than anyone remembers them, so one more opens the list of 
 | When | ? is pressed |
 | Then | the shortcut list stays closed and the field takes the key |
 
+## `IF-055` Closing a modal by its button
+
+Every modal is drawn the same way, so what holds for the shortcut list holds for each one a user may close.
+
+| Step | Statement |
+| --- | --- |
+| Given | the shortcut list open |
+| When | its 關閉 button is clicked |
+| Then | the shortcut list is closed |
+
+## `IF-056` Closing a modal by clicking outside it
+
+| Step | Statement |
+| --- | --- |
+| Given | the shortcut list open |
+| When | the backdrop around it is clicked |
+| Then | the shortcut list is closed |
+
 ## `IF-033` Listing only this platform's keys
 
 macOS gives some keys to the system, so each platform has keys of its own, and the list shows only the ones that work here.

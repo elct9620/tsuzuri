@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
   import { flushSync } from "svelte";
+  import Modal from "#/components/Modal.svelte";
 
   import { isMacOS } from "#/ipc/system.ts";
   import type { CursorField } from "#/editor/index.ts";
@@ -17,7 +18,7 @@
 
   const feed = projectFeed();
   const session = editingSession();
-  let dialog: HTMLDialogElement;
+  let dialog: Modal;
   let patternInput: HTMLInputElement;
   let pattern = $state("");
   let substitute = $state("");
@@ -30,7 +31,7 @@
   function openByShortcut(event: KeyboardEvent): void {
     if (
       !isShortcut(event, "replace", isMacOS()) ||
-      dialog.open ||
+      dialog.isOpen() ||
       feed.project === null
     )
       return;
@@ -83,74 +84,70 @@
 
 <svelte:window onkeydown={openByShortcut} />
 
-<dialog class="modal" bind:this={dialog}>
-  <div class="modal-box max-w-md">
-    <h3 class="mb-2 text-lg font-bold">{t("replace.title")}</h3>
-    <fieldset class="fieldset gap-2 text-sm">
-      <label class="flex items-center gap-2">
-        <span class="w-16">{t("replace.pattern")}</span>
-        <input
-          class="input input-sm grow"
-          bind:this={patternInput}
-          bind:value={pattern}
-          onkeydown={applyByEnter}
-        />
-      </label>
-      <label class="flex items-center gap-2">
-        <span class="w-16">{t("replace.substitute")}</span>
-        <input
-          class="input input-sm grow"
-          placeholder={t("replace.substituteNone")}
-          bind:value={substitute}
-          onkeydown={applyByEnter}
-        />
-      </label>
-      <div class="flex items-center gap-4">
-        <span class="w-16">{t("replace.field")}</span>
-        <label class="flex items-center gap-2">
-          <input
-            type="radio"
-            name="replacement-field"
-            value="text"
-            class="radio radio-sm"
-            checked={field === "text"}
-            onchange={() => (field = "text")}
-          />
-          <span>{t("replace.original")}</span>
-        </label>
-        <label class="flex items-center gap-2">
-          <input
-            type="radio"
-            name="replacement-field"
-            value="translation"
-            class="radio radio-sm"
-            disabled={!hasTranslation}
-            checked={field === "translation"}
-            onchange={() => (field = "translation")}
-          />
-          <span>{t("replace.translation")}</span>
-        </label>
-      </div>
+<Modal
+  bind:this={dialog}
+  title={t("replace.title")}
+  boxClass="max-w-md"
+  dismissLabel={t("work.cancel")}
+>
+  <fieldset class="fieldset gap-2 text-sm">
+    <label class="flex items-center gap-2">
+      <span class="w-16">{t("replace.pattern")}</span>
+      <input
+        class="input input-sm grow"
+        bind:this={patternInput}
+        bind:value={pattern}
+        onkeydown={applyByEnter}
+      />
+    </label>
+    <label class="flex items-center gap-2">
+      <span class="w-16">{t("replace.substitute")}</span>
+      <input
+        class="input input-sm grow"
+        placeholder={t("replace.substituteNone")}
+        bind:value={substitute}
+        onkeydown={applyByEnter}
+      />
+    </label>
+    <div class="flex items-center gap-4">
+      <span class="w-16">{t("replace.field")}</span>
       <label class="flex items-center gap-2">
         <input
-          type="checkbox"
-          class="checkbox checkbox-sm"
-          bind:checked={isRegex}
+          type="radio"
+          name="replacement-field"
+          value="text"
+          class="radio radio-sm"
+          checked={field === "text"}
+          onchange={() => (field = "text")}
         />
-        <span>{t("replace.regex")}</span>
-        <span class="text-base-content/60">{t("replace.groups")}</span>
+        <span>{t("replace.original")}</span>
       </label>
-    </fieldset>
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">{t("work.cancel")}</button>
-      </form>
-      <button type="button" class="btn btn-primary" onclick={apply}
-        >{t("replace.apply")}</button
-      >
+      <label class="flex items-center gap-2">
+        <input
+          type="radio"
+          name="replacement-field"
+          value="translation"
+          class="radio radio-sm"
+          disabled={!hasTranslation}
+          checked={field === "translation"}
+          onchange={() => (field = "translation")}
+        />
+        <span>{t("replace.translation")}</span>
+      </label>
     </div>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
+    <label class="flex items-center gap-2">
+      <input
+        type="checkbox"
+        class="checkbox checkbox-sm"
+        bind:checked={isRegex}
+      />
+      <span>{t("replace.regex")}</span>
+      <span class="text-base-content/60">{t("replace.groups")}</span>
+    </label>
+  </fieldset>
+  {#snippet actions()}
+    <button type="button" class="btn btn-primary" onclick={apply}
+      >{t("replace.apply")}</button
+    >
+  {/snippet}
+</Modal>

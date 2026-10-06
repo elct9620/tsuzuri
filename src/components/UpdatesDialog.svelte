@@ -2,12 +2,13 @@
   import type { UpdateProgress } from "#/ipc/updates.ts";
   import { t } from "#/i18n.ts";
   import { appUpdates } from "#/state/context.ts";
+  import Modal from "#/components/Modal.svelte";
 
   const BYTES_PER_MEGABYTE = 1024 * 1024;
 
   const updates = appUpdates();
 
-  let dialog: HTMLDialogElement;
+  let dialog: Modal;
   /** What the download reported last, none before it starts. */
   let progress = $state<UpdateProgress | null>(null);
 
@@ -41,32 +42,30 @@
     if (updates.installingUpdate) {
       progress = null;
       dialog.showModal();
-    } else if (dialog.open) dialog.close();
+    } else if (dialog.isOpen()) dialog.close();
   });
 </script>
 
 <svelte:window onrust:update-progress={({ detail }) => (progress = detail)} />
 
-<dialog
-  class="modal"
+<Modal
   bind:this={dialog}
+  title={title || ""}
+  boxClass="max-w-md"
   oncancel={(event) => event.preventDefault()}
 >
-  <div class="modal-box max-w-md">
-    <h3 class="text-lg font-bold">{title}</h3>
-    <p class="mt-4 text-sm">{progressText}</p>
-    {#if percent === null}
-      <progress class="progress progress-primary mt-2 w-full" max="100"
-      ></progress>
-    {:else}
-      <progress
-        class="progress progress-primary mt-2 w-full"
-        max="100"
-        value={percent}
-      ></progress>
-    {/if}
-    <p class="mt-4 text-sm text-base-content/70">
-      {t("settings.updateRestartHint")}
-    </p>
-  </div>
-</dialog>
+  <p class="mt-4 text-sm">{progressText}</p>
+  {#if percent === null}
+    <progress class="progress progress-primary mt-2 w-full" max="100"
+    ></progress>
+  {:else}
+    <progress
+      class="progress progress-primary mt-2 w-full"
+      max="100"
+      value={percent}
+    ></progress>
+  {/if}
+  <p class="mt-4 text-sm text-base-content/70">
+    {t("settings.updateRestartHint")}
+  </p>
+</Modal>

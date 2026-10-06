@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
   import { flushSync } from "svelte";
+  import Modal from "#/components/Modal.svelte";
 
   import type { ProjectView, Segment } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
@@ -18,7 +19,7 @@
 
   const feed = projectFeed();
   const session = editingSession();
-  let dialog: HTMLDialogElement;
+  let dialog: Modal;
   /** The Project the editor shows, whose Segments and Translation Glossary name the Speakers. */
   let { project }: { project: ProjectView | null } = $props();
   /** The Checked Segments when the dialog was opened for them. */
@@ -72,95 +73,89 @@
   }
 </script>
 
-<dialog class="modal" bind:this={dialog}>
-  <div class="modal-box max-w-md">
-    <h3 class="mb-2 text-lg font-bold">{t("edit.speakersTitle")}</h3>
-    <fieldset class="fieldset gap-2 text-sm">
-      <legend class="fieldset-legend">{t("edit.speakersScope")}</legend>
-      {#if checkedIndexes.length > 0}
-        <label class="flex items-center gap-2">
-          <input
-            type="radio"
-            name="speaker-scope"
-            value="checked-segments"
-            class="radio radio-sm"
-            bind:group={scope}
-          />
-          <span>{t("edit.checkedCount", { count: checkedIndexes.length })}</span
-          >
-        </label>
-      {/if}
+<Modal
+  bind:this={dialog}
+  title={t("edit.speakersTitle")}
+  boxClass="max-w-md"
+  dismissLabel={t("work.cancel")}
+>
+  <fieldset class="fieldset gap-2 text-sm">
+    <legend class="fieldset-legend">{t("edit.speakersScope")}</legend>
+    {#if checkedIndexes.length > 0}
       <label class="flex items-center gap-2">
         <input
           type="radio"
           name="speaker-scope"
-          value="all-segments"
+          value="checked-segments"
           class="radio radio-sm"
           bind:group={scope}
         />
-        <span>{t("edit.speakersEvery")}</span>
+        <span>{t("edit.checkedCount", { count: checkedIndexes.length })}</span>
       </label>
-      <label class="flex items-center gap-2">
-        <input
-          type="radio"
-          name="speaker-scope"
-          value="unnamed-segments"
-          class="radio radio-sm"
-          bind:group={scope}
-        />
-        <span>{t("edit.speakersUnnamed")}</span>
-      </label>
-      <label class="flex items-center gap-2">
-        <input
-          type="radio"
-          name="speaker-scope"
-          value="named-segments"
-          class="radio radio-sm"
-          bind:group={scope}
-        />
-        <span>{t("edit.speakersNamedBefore")}</span>
-        <select
-          class="select select-xs w-auto"
-          aria-label={t("edit.speakersRenamed")}
-          value={renamedSpeaker}
-          onchange={({ currentTarget }) =>
-            (renamedSpeaker = currentTarget.value)}
-        >
-          {#each speakers as speaker (speaker)}
-            <option value={speaker}>{speaker}</option>
-          {/each}
-        </select>
-        <span>{t("edit.speakersNamedAfter")}</span>
-      </label>
-    </fieldset>
-    <fieldset class="fieldset gap-2 text-sm">
-      <legend class="fieldset-legend">{t("edit.speakersTo")}</legend>
+    {/if}
+    <label class="flex items-center gap-2">
       <input
-        class="input input-sm"
-        aria-label={t("edit.speakersTo")}
-        placeholder={t("edit.speakersNone")}
-        bind:value={newSpeaker}
+        type="radio"
+        name="speaker-scope"
+        value="all-segments"
+        class="radio radio-sm"
+        bind:group={scope}
       />
-      <div class="flex flex-wrap gap-1">
-        {#each speakers as speaker (speaker)}
-          <button
-            type="button"
-            class="btn btn-xs"
-            onclick={() => (newSpeaker = speaker)}>{speaker}</button
-          >
-        {/each}
-      </div>
-    </fieldset>
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">{t("work.cancel")}</button>
-      </form>
-      <button type="button" class="btn btn-primary" onclick={apply}
-        >{t("edit.apply")}</button
+      <span>{t("edit.speakersEvery")}</span>
+    </label>
+    <label class="flex items-center gap-2">
+      <input
+        type="radio"
+        name="speaker-scope"
+        value="unnamed-segments"
+        class="radio radio-sm"
+        bind:group={scope}
+      />
+      <span>{t("edit.speakersUnnamed")}</span>
+    </label>
+    <label class="flex items-center gap-2">
+      <input
+        type="radio"
+        name="speaker-scope"
+        value="named-segments"
+        class="radio radio-sm"
+        bind:group={scope}
+      />
+      <span>{t("edit.speakersNamedBefore")}</span>
+      <select
+        class="select select-xs w-auto"
+        aria-label={t("edit.speakersRenamed")}
+        value={renamedSpeaker}
+        onchange={({ currentTarget }) => (renamedSpeaker = currentTarget.value)}
       >
+        {#each speakers as speaker (speaker)}
+          <option value={speaker}>{speaker}</option>
+        {/each}
+      </select>
+      <span>{t("edit.speakersNamedAfter")}</span>
+    </label>
+  </fieldset>
+  <fieldset class="fieldset gap-2 text-sm">
+    <legend class="fieldset-legend">{t("edit.speakersTo")}</legend>
+    <input
+      class="input input-sm"
+      aria-label={t("edit.speakersTo")}
+      placeholder={t("edit.speakersNone")}
+      bind:value={newSpeaker}
+    />
+    <div class="flex flex-wrap gap-1">
+      {#each speakers as speaker (speaker)}
+        <button
+          type="button"
+          class="btn btn-xs"
+          onclick={() => (newSpeaker = speaker)}>{speaker}</button
+        >
+      {/each}
     </div>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
+  </fieldset>
+  {#snippet actions()}
+    <button type="button" class="btn btn-primary" onclick={apply}
+      >{t("edit.apply")}</button
+    >
+  {/snippet}
+</Modal>

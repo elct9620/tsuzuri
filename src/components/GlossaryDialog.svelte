@@ -1,5 +1,6 @@
 <script lang="ts">
   import X from "@lucide/svelte/icons/x";
+  import Modal from "#/components/Modal.svelte";
 
   import {
     saveTranslationGlossary,
@@ -10,7 +11,7 @@
   import { t } from "#/i18n.ts";
   import { failureMessage } from "#/ui/failure.ts";
 
-  let dialog: HTMLDialogElement;
+  let dialog: Modal;
   /** The Language of each column. */
   let languages = $state<string[]>([]);
   let rows = $state<GlossaryRow[]>([]);
@@ -59,77 +60,73 @@
   }
 </script>
 
-<dialog class="modal" bind:this={dialog}>
-  <div class="modal-box max-w-5xl">
-    <h3 class="mb-2 text-lg font-bold">{t("translate.glossary")}</h3>
-    {#if hasSourceTargetHeader}
-      <div role="alert" class="alert alert-warning mb-2">
-        <span>{t("glossary.sourceTargetHeader")}</span>
-      </div>
-    {/if}
-    {#if failure !== null}
-      <div role="alert" class="alert alert-error mb-2">{failure}</div>
-    {/if}
-    <div class="max-h-[60vh] overflow-auto">
-      <table class="table table-sm table-pin-rows">
-        <thead>
+<Modal
+  bind:this={dialog}
+  title={t("translate.glossary")}
+  boxClass="max-w-5xl"
+  dismissLabel={t("work.cancel")}
+>
+  {#if hasSourceTargetHeader}
+    <div role="alert" class="alert alert-warning mb-2">
+      <span>{t("glossary.sourceTargetHeader")}</span>
+    </div>
+  {/if}
+  {#if failure !== null}
+    <div role="alert" class="alert alert-error mb-2">{failure}</div>
+  {/if}
+  <div class="max-h-[60vh] overflow-auto">
+    <table class="table table-sm table-pin-rows">
+      <thead>
+        <tr>
+          {#each languages as code (code)}
+            <th>{t(`languages.${code}`)}</th>
+          {/each}
+          <th>{t("glossary.speaker")}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each rows as row, index (row)}
           <tr>
-            {#each languages as code (code)}
-              <th>{t(`languages.${code}`)}</th>
-            {/each}
-            <th>{t("glossary.speaker")}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each rows as row, index (row)}
-            <tr>
-              {#each row.words, column}
-                <td>
-                  <input
-                    type="text"
-                    class="input input-sm w-full min-w-32"
-                    bind:value={row.words[column]}
-                  />
-                </td>
-              {/each}
+            {#each row.words, column}
               <td>
                 <input
-                  type="checkbox"
-                  class="checkbox checkbox-sm"
-                  aria-label={t("glossary.speaker")}
-                  bind:checked={row.is_speaker}
+                  type="text"
+                  class="input input-sm w-full min-w-32"
+                  bind:value={row.words[column]}
                 />
               </td>
-              <td>
-                <button
-                  type="button"
-                  class="btn btn-square btn-ghost btn-sm"
-                  aria-label={t("glossary.removeRow")}
-                  onclick={() => removeRow(index)}><X class="size-4" /></button
-                >
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-    <button type="button" class="btn btn-sm mt-2" onclick={addRow}
-      >{t("glossary.addRow")}</button
-    >
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">{t("work.cancel")}</button>
-      </form>
-      <button
-        type="button"
-        class="btn btn-primary"
-        disabled={!isRead}
-        onclick={save}>{t("glossary.save")}</button
-      >
-    </div>
+            {/each}
+            <td>
+              <input
+                type="checkbox"
+                class="checkbox checkbox-sm"
+                aria-label={t("glossary.speaker")}
+                bind:checked={row.is_speaker}
+              />
+            </td>
+            <td>
+              <button
+                type="button"
+                class="btn btn-square btn-ghost btn-sm"
+                aria-label={t("glossary.removeRow")}
+                onclick={() => removeRow(index)}><X class="size-4" /></button
+              >
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
   </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
+  <button type="button" class="btn btn-sm mt-2" onclick={addRow}
+    >{t("glossary.addRow")}</button
+  >
+  {#snippet actions()}
+    <button
+      type="button"
+      class="btn btn-primary"
+      disabled={!isRead}
+      onclick={save}>{t("glossary.save")}</button
+    >
+  {/snippet}
+</Modal>

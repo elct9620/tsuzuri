@@ -15,8 +15,9 @@
     isShortcut,
     keyLabels,
   } from "#/ui/shortcuts.ts";
+  import Modal from "#/components/Modal.svelte";
 
-  let dialog: HTMLDialogElement;
+  let dialog: Modal;
 
   /** Every shortcut of the platform by group, with its keys as `isMac` writes them. */
   function shortcutGroups(isMac: boolean) {
@@ -45,7 +46,7 @@
   }
 
   function openByShortcut(event: KeyboardEvent): void {
-    if (!isListShortcut(event) || dialog.open) return;
+    if (!isListShortcut(event) || dialog.isOpen()) return;
     event.preventDefault();
     open();
   }
@@ -58,43 +59,37 @@
 
 <svelte:window onkeydown={openByShortcut} />
 
-<dialog class="modal" bind:this={dialog}>
-  <div class="modal-box max-w-md">
-    <h3 class="text-lg font-bold">{t("shortcuts.title")}</h3>
-    {#each groups as { title, rows } (title)}
-      <section>
-        <h4 class="mt-3 mb-1 text-sm font-semibold text-base-content/70">
-          {title}
-        </h4>
-        <ul>
-          {#each rows as { name, tip, chordKeys } (name)}
-            <li
-              class="flex items-center justify-between gap-4 py-1"
-              data-tooltip={tip}
-            >
-              <span>{name}</span>
-              <span class="flex items-center gap-1 text-xs">
-                {#each chordKeys as keys, index (index)}
-                  {#if index > 0}{t("shortcuts.or").trim()}{/if}
-                  <span class="flex gap-0.5">
-                    {#each keys as key, keyIndex (keyIndex)}
-                      <kbd class="kbd kbd-sm">{key}</kbd>
-                    {/each}
-                  </span>
-                {/each}
-              </span>
-            </li>
-          {/each}
-        </ul>
-      </section>
-    {/each}
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">{t("work.close")}</button>
-      </form>
-    </div>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
+<Modal
+  bind:this={dialog}
+  title={t("shortcuts.title")}
+  boxClass="max-w-md"
+  dismissLabel={t("work.close")}
+>
+  {#each groups as { title, rows } (title)}
+    <section>
+      <h4 class="mt-3 mb-1 text-sm font-semibold text-base-content/70">
+        {title}
+      </h4>
+      <ul>
+        {#each rows as { name, tip, chordKeys } (name)}
+          <li
+            class="flex items-center justify-between gap-4 py-1"
+            data-tooltip={tip}
+          >
+            <span>{name}</span>
+            <span class="flex items-center gap-1 text-xs">
+              {#each chordKeys as keys, index (index)}
+                {#if index > 0}{t("shortcuts.or").trim()}{/if}
+                <span class="flex gap-0.5">
+                  {#each keys as key, keyIndex (keyIndex)}
+                    <kbd class="kbd kbd-sm">{key}</kbd>
+                  {/each}
+                </span>
+              {/each}
+            </span>
+          </li>
+        {/each}
+      </ul>
+    </section>
+  {/each}
+</Modal>

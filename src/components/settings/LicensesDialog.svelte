@@ -1,7 +1,8 @@
 <script lang="ts">
   import { t } from "#/i18n.ts";
+  import Modal from "#/components/Modal.svelte";
 
-  let dialog: HTMLDialogElement;
+  let dialog: Modal;
   /** The License Notice, read the first time the dialog opens; null for a build without one. */
   let notice = $state<string | null>();
 
@@ -28,28 +29,22 @@
   }
 </script>
 
-<dialog class="modal" bind:this={dialog}>
-  <div class="modal-box w-11/12 max-w-4xl">
-    <h3 class="text-lg font-bold">{t("settings.licenses")}</h3>
-    {#if notice}
-      <iframe
-        class="mt-4 h-[60vh] w-full rounded-box border border-base-300"
-        title="LICENSE.html"
-        sandbox=""
-        srcdoc={notice}
-      ></iframe>
-    {:else if notice === null}
-      <div role="alert" class="alert alert-info mt-4 text-sm">
-        {t("settings.licensesMissing")}
-      </div>
-    {/if}
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">{t("work.close")}</button>
-      </form>
+<Modal
+  bind:this={dialog}
+  title={t("settings.licenses")}
+  boxClass="w-11/12 max-w-4xl"
+  dismissLabel={t("work.close")}
+>
+  {#if notice}
+    <iframe
+      class="mt-4 h-[60vh] w-full rounded-box border border-base-300"
+      title="LICENSE.html"
+      sandbox=""
+      srcdoc={notice}
+    ></iframe>
+  {:else if notice === null}
+    <div role="alert" class="alert alert-info mt-4 text-sm">
+      {t("settings.licensesMissing")}
     </div>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>
+  {/if}
+</Modal>

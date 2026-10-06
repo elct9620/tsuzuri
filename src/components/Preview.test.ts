@@ -511,6 +511,17 @@ describe("Preview", () => {
     expect(caption().textContent).toBe("Today");
   });
 
+  // @behavior PV-211
+  it("shows the language chosen over the video at once while a Segment is shown", async () => {
+    await show(projectTranslated());
+    playTo(0.5);
+
+    captionLanguage("translation").click();
+    flushSync();
+
+    expect(caption().textContent).toBe("Today");
+  });
+
   // @behavior PV-044
   it("shows both languages over the video with the original first", async () => {
     await show(projectTranslated());
@@ -601,6 +612,7 @@ describe("Preview", () => {
     loadPicture(0, 0);
 
     dummyVideoColour("white").click();
+    flushSync();
 
     expect(screenOf().dataset.dummyVideo).toBe("white");
   });
@@ -648,6 +660,7 @@ describe("Preview", () => {
     await show(projectWithMedia());
 
     captionBackdrop("opaque").click();
+    flushSync();
 
     expect(caption().dataset.backdrop).toBe("opaque");
   });
@@ -743,6 +756,17 @@ describe("Preview", () => {
 
     captionSpeaker().click();
     playTo(0.5);
+
+    expect(caption().textContent).toBe("今天");
+  });
+
+  // @behavior PV-212
+  it("takes the Speaker off what is over the video at once while a Segment is shown", async () => {
+    await show(projectSpoken());
+    playTo(0.5);
+
+    captionSpeaker().click();
+    flushSync();
 
     expect(caption().textContent).toBe("今天");
   });

@@ -888,6 +888,15 @@ The shortcut list names ⌘ on macOS where it names Ctrl elsewhere; the wheel it
 | When | the translation is chosen over the video and the media plays to 0.5 s |
 | Then | `Today` is shown over the video |
 
+## `PV-211` Changing the language over the video while a Segment is shown
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s, translated `Today` in the translation shown |
+| Given | the media at 0.5 s, `今天` shown over the video |
+| When | the translation is chosen over the video |
+| Then | `Today` is shown over the video |
+
 ## `PV-044` Showing both languages over the video in the Bilingual Order
 
 | Step | Statement |
@@ -1175,6 +1184,15 @@ A cue is saved with its Speaker's name before the dialogue, so what is over the 
 | --- | --- |
 | Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明` |
 | When | the Speaker over the video is turned off and the media plays to 0.5 s |
+| Then | `今天` alone is shown over the video |
+
+## `PV-212` Turning the Speaker off while a Segment is shown
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明` |
+| Given | the media at 0.5 s, `小明: 今天` shown over the video |
+| When | the Speaker over the video is turned off |
 | Then | `今天` alone is shown over the video |
 
 ## `PV-096` Keeping the Speaker over the video off for the next Resource

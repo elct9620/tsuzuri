@@ -69,7 +69,7 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 │  ├─ Page.svelte         composes the page's regions (4.1)
 │  ├─ components/         Svelte Components and their tests (4.1)
 │  ├─ state/              shared state and the context (4.6.2)
-│  ├─ actions/            shared actions (4.6.2)
+│  ├─ actions/            shared actions (4.6.3)
 │  ├─ ipc/                the only way to Rust
 │  ├─ editor/             editing core, depends on nothing outside (4.5)
 │  ├─ ui/                 shared screen modules (4.8)
@@ -723,12 +723,13 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `Tooltip` | 全頁共用的 tooltip |
 | `Undo` | 全頁的復原與重做，不畫任何東西 |
 | `Preview` | 播放器、疊字、影片視窗 |
+| `CaptionControls` | 疊字語言與疊字設定 |
 | `CurrentSegmentCard` | 預覽旁的目前段落卡 |
 | `Timeline` | 波形、段落區段、縮放、選段 |
 
-#### 4.6.2 共用的狀態與動作
+#### 4.6.2 共用的狀態
 
-共用的狀態由 Page 保存，自己使用或以 prop、context 交下；類別放在 `state/`。共用的動作寫成 `actions/` 的模組。
+共用的狀態由 Page 保存，只在一個區域裡共用的由該區域建立；以 prop、context 交下，類別放在 `state/`。
 
 | 共用 | 位置 | 使用者 |
 |---|---|---|
@@ -737,6 +738,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `ResourceDock` | Page 建立 | 工具列、資源清單 |
 | `Playback` | Page 建立 | 預覽、時間軸、段落列 |
 | `PreviewFold` | Page 建立 | 編輯列的收起鈕、預覽 |
+| `CaptionChoices` | Preview 建立 | 預覽、疊字控制 |
 | `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
@@ -744,14 +746,21 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 段落列的欄位 | SegmentRows 經 context | 文字欄位、搜尋列 |
 | 通知的清單 | `notification.svelte.ts` | 所有 Svelte 元件 |
 | `SaveMark` | `save-mark.svelte.ts` | 寫入的編輯、編輯列 |
+
+資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。Page 每讀到一份專案就交給 `EditorComparison` 比較；段落清單畫好列之後，讓搜尋列重新搜尋。
+
+#### 4.6.3 共用的動作
+
+幾個區域都會執行的動作寫成 `actions/` 的模組，下表是各模組與用到它的區域。
+
+| 動作 | 模組 | 使用者 |
+|---|---|---|
 | 開啟、重新載入、命名 | `project.ts` | 起始畫面、工具列、資源清單 |
 | 寫入說話者後的通知 | `speaker.ts` | 說話者 modal、段落列 |
 | 清理簡體與通知 | `cleanup.ts` | 段落列、勾選工具列、快速鍵 |
 | Segment Changes 的選項 | `segment-changes.ts` | 段落選單、勾選工具列、右鍵 |
 
-資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。Page 每讀到一份專案就交給 `EditorComparison` 比較；段落清單畫好列之後，讓搜尋列重新搜尋。
-
-#### 4.6.3 播放器
+#### 4.6.4 播放器
 
 `Playback` 持有唯一的播放器，`Preview` 放進來源，`Timeline` 在上面畫波形。
 

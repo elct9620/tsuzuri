@@ -5,52 +5,10 @@
   plays on is a `PreviewScreen`, which the Video Window takes out of the page and gives back.
 -->
 <script module lang="ts">
-  /** Which text of the Segment being played is shown over the video. */
-  type CaptionLanguage = "original" | "translation" | "bilingual";
-
   /** The height of a Dummy Video to its width: 16:9, the shape most videos take. */
   const DUMMY_VIDEO_RATIO = 9 / 16;
-  /** Where the webview remembers the colour of a Dummy Video. */
-  const DUMMY_VIDEO_KEY = "tsuzuri.preview-dummy-video";
-  /** Where the webview remembers what is shown over the video. */
-  const CAPTION_KEY = "tsuzuri.preview-caption";
-  /** Where the webview remembers the backdrop over the video. */
-  const BACKDROP_KEY = "tsuzuri.preview-backdrop";
   /** Where the webview remembers how loud the media plays, as a percentage. */
   const VOLUME_KEY = "tsuzuri.preview-volume";
-  /** Where the webview remembers the Speaker over the video turned off. */
-  const SPEAKER_KEY = "tsuzuri.preview-speaker";
-
-  const CAPTION_LANGUAGES: { value: CaptionLanguage; label: string }[] = [
-    { value: "original", label: "preview.captionOriginal" },
-    { value: "translation", label: "preview.captionTranslation" },
-    { value: "bilingual", label: "preview.captionBilingual" },
-  ];
-  const CAPTION_BACKDROPS: { value: CaptionBackdrop; label: string }[] = [
-    { value: "none", label: "preview.captionBackdropNone" },
-    { value: "translucent", label: "preview.captionBackdropTranslucent" },
-    { value: "opaque", label: "preview.captionBackdropOpaque" },
-  ];
-  const DUMMY_VIDEO_COLOURS: { value: DummyVideoColour; label: string }[] = [
-    { value: "black", label: "preview.dummyVideoBlack" },
-    { value: "white", label: "preview.dummyVideoWhite" },
-  ];
-
-  /** Subtitles are most often watched over a dark picture, so a Dummy Video is black until white is chosen. */
-  function dummyVideoColourOf(value: string | null): DummyVideoColour {
-    return value === "white" ? value : "black";
-  }
-
-  function captionLanguageOf(value: string | null): CaptionLanguage {
-    return value === "translation" || value === "bilingual"
-      ? value
-      : "original";
-  }
-
-  /** A shadow alone is lost on a bright picture, so a caption sits on a backdrop until taken away. */
-  function captionBackdropOf(value: string | null): CaptionBackdrop {
-    return value === "none" || value === "opaque" ? value : "translucent";
-  }
 
   /** `text` after a Speaker Label naming `name`, as a cue names its Speaker; with nothing to say, no one is named. */
   function withSpeakerLabel(text: string, name: string | undefined): string {
@@ -60,7 +18,6 @@
 
 <script lang="ts">
   import ArrowRightToLine from "@lucide/svelte/icons/arrow-right-to-line";
-  import Captions from "@lucide/svelte/icons/captions";
   import LocateFixed from "@lucide/svelte/icons/locate-fixed";
   import Pause from "@lucide/svelte/icons/pause";
   import PictureInPicture2 from "@lucide/svelte/icons/picture-in-picture-2";
@@ -78,12 +35,7 @@
     toggleVideoWindowFullscreen,
   } from "#/ipc/video-window.ts";
   import { t } from "#/i18n.ts";
-  import {
-    rememberChoice,
-    rememberedChoice,
-    rememberedFlag,
-    rememberFlag,
-  } from "#/ui/choices.ts";
+  import { rememberChoice, rememberedChoice } from "#/ui/choices.ts";
   import {
     type PlayedSource,
     type Silence,
@@ -106,11 +58,9 @@
   import { projectFeed } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
-  import {
-    type CaptionBackdrop,
-    type DummyVideoColour,
-    PreviewScreen,
-  } from "#/ui/preview-screen.ts";
+  import { PreviewScreen } from "#/ui/preview-screen.ts";
+  import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
+  import CaptionControls from "#/components/CaptionControls.svelte";
   import CurrentSegmentCard from "#/components/CurrentSegmentCard.svelte";
   import Timeline from "#/components/Timeline.svelte";
 
@@ -125,17 +75,7 @@
   let source = $state.raw<PlayedSource | null>(null);
   /** The object URL of the silence the player reads, released once it reads something else. */
   let silenceUrl: string | null = null;
-  let captionLanguage = $state(
-    captionLanguageOf(rememberedChoice(CAPTION_KEY)),
-  );
-  let captionBackdrop = $state(
-    captionBackdropOf(rememberedChoice(BACKDROP_KEY)),
-  );
-  let dummyVideoColour = $state(
-    dummyVideoColourOf(rememberedChoice(DUMMY_VIDEO_KEY)),
-  );
-  /** A saved cue names its Speaker, so the caption does too until turned off. */
-  let isSpeakerShown = $state(rememberedFlag(SPEAKER_KEY, true));
+  const choices = new CaptionChoices();
   let volume = $state(savedVolume(rememberedChoice(VOLUME_KEY)));
   /** A mute is not remembered, so a Preview opening silent never passes for media with no sound. */
   let isMuted = $state(false);
@@ -163,13 +103,23 @@
   const hasTranslation = $derived(
     (project?.shown_translation ?? null) !== null,
   );
-  /** What is shown over the video: the translation only while one is shown, the choice kept for when one is again. */
-  const shownLanguage = $derived(hasTranslation ? captionLanguage : "original");
+  const shownLanguage = $derived(choices.shownLanguage(hasTranslation));
   const isAway = $derived(videoWindow !== null);
 
-  screen.showBackdrop(untrack(() => captionBackdrop));
-  showDummyVideo();
   applyVolume();
+
+  // Shows the caption again as its language or Speaker is chosen; each Project shows its own
+  $effect(() => {
+    void choices.language;
+    void choices.isSpeakerShown;
+    untrack(showCaptionAtTime);
+  });
+
+  // Draws the backdrop chosen over the video
+  $effect(() => screen.showBackdrop(choices.backdrop));
+
+  // Fills the screen with the colour chosen while no picture is there
+  $effect(showDummyVideo);
 
   /** Plays the media at the volume chosen, or silent while muted. */
   function applyVolume(): void {
@@ -186,30 +136,6 @@
   function toggleMute(): void {
     isMuted = !isMuted;
     applyVolume();
-  }
-
-  function chooseCaptionLanguage(language: CaptionLanguage): void {
-    captionLanguage = language;
-    rememberChoice(CAPTION_KEY, language);
-    showCaptionAtTime();
-  }
-
-  function chooseCaptionBackdrop(backdrop: CaptionBackdrop): void {
-    captionBackdrop = backdrop;
-    rememberChoice(BACKDROP_KEY, backdrop);
-    screen.showBackdrop(backdrop);
-  }
-
-  function chooseDummyVideoColour(colour: DummyVideoColour): void {
-    dummyVideoColour = colour;
-    rememberChoice(DUMMY_VIDEO_KEY, colour);
-    showDummyVideo();
-  }
-
-  function toggleCaptionSpeaker(isShown: boolean): void {
-    isSpeakerShown = isShown;
-    rememberFlag(SPEAKER_KEY, isShown);
-    showCaptionAtTime();
   }
 
   function toggleVideoWindow(): void {
@@ -372,7 +298,7 @@
    * naming the Speaker as that language's subtitle does.
    */
   function caption({ speaker, text, translation }: Segment): string {
-    const name = isSpeakerShown ? speaker : undefined;
+    const name = choices.isSpeakerShown ? speaker : undefined;
     const originalLine = withSpeakerLabel(text, name);
     const translatedLine = withSpeakerLabel(
       translation ?? "",
@@ -387,7 +313,9 @@
 
   /** Fills the screen with the chosen colour while no picture is there, the choice open only then. */
   function showDummyVideo(): void {
-    screen.showDummyVideo(media.videoWidth > 0 ? null : dummyVideoColour);
+    screen.showDummyVideo(
+      media.videoWidth > 0 ? null : choices.dummyVideoColour,
+    );
   }
 
   function show(next: ProjectView | null): void {
@@ -561,91 +489,7 @@
             >
           </div>
           {#if !isUnplayable}
-            <div class="ml-auto flex items-center gap-2">
-              <div
-                role="radiogroup"
-                class="join"
-                aria-label={t("preview.captionLanguage")}
-              >
-                {#each CAPTION_LANGUAGES as { value, label } (value)}
-                  <input
-                    type="radio"
-                    name="preview-caption"
-                    {value}
-                    class="join-item btn btn-xs"
-                    aria-label={t(label)}
-                    checked={shownLanguage === value}
-                    disabled={!hasTranslation && value !== "original"}
-                    onchange={() => chooseCaptionLanguage(value)}
-                  />
-                {/each}
-              </div>
-              <div class="dropdown dropdown-end">
-                <div
-                  tabindex="0"
-                  role="button"
-                  class="btn btn-square btn-xs"
-                  aria-label={t("preview.captionOptions")}
-                  data-tooltip={t("preview.captionOptions")}
-                >
-                  <Captions class="size-4" aria-hidden="true" />
-                </div>
-                <div
-                  tabindex="-1"
-                  class="dropdown-content z-20 mt-1 w-32 bg-base-100 shadow-md"
-                >
-                  <!-- The join sits inside, as its display would keep a closed menu over the buttons beside it -->
-                  <div
-                    role="radiogroup"
-                    class="join join-vertical w-full"
-                    aria-label={t("preview.captionBackdrop")}
-                  >
-                    {#each CAPTION_BACKDROPS as { value, label } (value)}
-                      <input
-                        type="radio"
-                        name="preview-backdrop"
-                        {value}
-                        class="join-item btn btn-sm"
-                        aria-label={t(label)}
-                        checked={captionBackdrop === value}
-                        onchange={() => chooseCaptionBackdrop(value)}
-                      />
-                    {/each}
-                  </div>
-                  <p class="px-3 pt-2 text-sm">{t("preview.dummyVideo")}</p>
-                  <div
-                    role="radiogroup"
-                    class="join w-full pt-1"
-                    aria-label={t("preview.dummyVideo")}
-                  >
-                    {#each DUMMY_VIDEO_COLOURS as { value, label } (value)}
-                      <input
-                        type="radio"
-                        name="preview-dummy-video"
-                        {value}
-                        class="join-item btn flex-1 btn-sm"
-                        aria-label={t(label)}
-                        checked={dummyVideoColour === value}
-                        disabled={hasPicture}
-                        onchange={() => chooseDummyVideoColour(value)}
-                      />
-                    {/each}
-                  </div>
-                  <label
-                    class="flex items-center justify-between gap-2 px-3 py-2 text-sm"
-                  >
-                    <span>{t("preview.captionSpeaker")}</span>
-                    <input
-                      type="checkbox"
-                      class="toggle toggle-sm"
-                      checked={isSpeakerShown}
-                      onchange={(event) =>
-                        toggleCaptionSpeaker(event.currentTarget.checked)}
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
+            <CaptionControls {choices} {hasTranslation} {hasPicture} />
           {/if}
         </div>
         {#if !isAway}

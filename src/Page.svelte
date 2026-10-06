@@ -13,11 +13,10 @@
   } from "#/state/context.ts";
   import DiarizationDialog from "#/components/DiarizationDialog.svelte";
   import EditTools from "#/components/EditTools.svelte";
+  import EditorLayout from "#/components/EditorLayout.svelte";
   import ResourceBar from "#/components/ResourceBar.svelte";
   import GlossaryDialog from "#/components/GlossaryDialog.svelte";
   import Notifications from "#/components/Notifications.svelte";
-  import Preview from "#/components/Preview.svelte";
-  import Timeline from "#/components/Timeline.svelte";
   import {
     notifyChangedElsewhereKept,
     openRequestedSrt,
@@ -30,7 +29,6 @@
   import { ResourceDock } from "#/state/resource-dock.svelte.ts";
   import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import ResourceList from "#/components/ResourceList.svelte";
-  import SegmentList from "#/components/SegmentList.svelte";
   import LicensesDialog from "#/components/settings/LicensesDialog.svelte";
   import RepositoryDialog from "#/components/settings/RepositoryDialog.svelte";
   import SettingsDialog from "#/components/settings/SettingsDialog.svelte";
@@ -58,7 +56,7 @@
   let versionsDialog: VersionsDialog;
   let speakersDialog: SpeakersDialog;
   let shiftDialog: ShiftDialog;
-  let segmentList: SegmentList;
+  let editorLayout: EditorLayout;
 
   const openSettings = () => settingsDialog.open();
   const dock = new ResourceDock();
@@ -133,7 +131,7 @@
           {project}
           openReplacement={() => replacementDialog.open()}
           openVersions={(subtitle) => versionsDialog.open(subtitle)}
-          openSearch={() => segmentList.openSearch()}
+          openSearch={() => editorLayout.openSearch()}
           openSpeakers={() => speakersDialog.open()}
           {fold}
           {playback}
@@ -141,17 +139,16 @@
           {viewChoices}
         />
       </div>
-      <Preview {playback} {fold} choices={captionChoices} />
-      <Timeline {playback} {fold} {viewChoices} />
-      <div class="flex-1 overflow-y-auto p-4">
-        <SegmentList
-          {project}
-          {playback}
-          {placeholders}
-          {viewChoices}
-          bind:this={segmentList}
-        />
-      </div>
+      <EditorLayout
+        {project}
+        layout="v1"
+        {playback}
+        {fold}
+        {captionChoices}
+        {viewChoices}
+        {placeholders}
+        bind:this={editorLayout}
+      />
     </div>
     <ResourceList
       {project}

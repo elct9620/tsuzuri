@@ -724,6 +724,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `Notifications`、`NotificationCard` | 通知的堆疊、倒數、暫停與按鈕 |
 | `Tooltip` | 全頁共用的 tooltip |
 | `Undo` | 全頁的復原與重做，不畫任何東西 |
+| `EditorLayout` | 依版面排列預覽、時間軸、段落清單 |
 | `Preview` | 播放器、疊字、影片視窗 |
 | `PlayerControls` | 播放、時間、音量與靜音 |
 | `CaptionControls` | 檢視選單裡的疊字選擇 |

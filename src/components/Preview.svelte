@@ -103,7 +103,7 @@
     sliderPosition,
     volumeAt,
   } from "#/ui/volume.ts";
-  import { editingSession, projectFeed } from "#/state/context.ts";
+  import { editingState, projectFeed } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
   import {
@@ -116,7 +116,7 @@
   let { playback, fold }: { playback: Playback; fold: PreviewFold } = $props();
 
   const feed = projectFeed();
-  const session = editingSession();
+  const editing = editingState();
   /** The player stays the same for as long as the page does. */
   const media = untrack(() => playback.media);
   const screen = new PreviewScreen(media);
@@ -148,7 +148,7 @@
   let hasPicture = $state(false);
   /** The height the row beside the card takes for its picture at the picture's width, once measured. */
   let pictureRatio = $state<number | null>(null);
-  let currentIndex = $state<number | null>(null);
+  const currentIndex = $derived(editing.cursor.index);
   /** The window the video is in while it is out of the Preview. */
   let videoWindow = $state.raw<Window | null>(null);
   /**
@@ -397,7 +397,6 @@
 
   function show(next: ProjectView | null): void {
     project = next;
-    currentIndex = session.cursor.index;
     const nextSource = playedSource(next, source);
     if (isSameSource(nextSource, source)) {
       showCaptionAtTime();
@@ -467,10 +466,7 @@
   });
 </script>
 
-<svelte:window
-  oneditor:cursor={() => (currentIndex = session.cursor.index)}
-  onrust:video-window-closing={closeVideoWindow}
-/>
+<svelte:window onrust:video-window-closing={closeVideoWindow} />
 
 <div
   class="@container flex flex-col gap-3 border-b border-base-300 p-3"

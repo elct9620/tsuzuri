@@ -13,6 +13,7 @@
   import { isMacOS } from "#/ipc/system.ts";
   import type { ComparedRow } from "#/ipc/project.ts";
   import {
+    type Cursor,
     type CursorField,
     drawCursor,
     fieldValue,
@@ -26,6 +27,7 @@
   import { isShortcut } from "#/ui/shortcuts.ts";
   import {
     editingSession,
+    editingState,
     editorComparison,
     projectFeed,
     setSegmentFields,
@@ -66,6 +68,7 @@
 
   const feed = projectFeed();
   const session = editingSession();
+  const editing = editingState();
   const run = taskRun();
   const comparison = editorComparison();
   let list = $state<HTMLOListElement>();
@@ -76,8 +79,8 @@
   let view = $state.raw<TranscriptView | null>(null);
   /** Whether a field being typed in keeps its value: the Segments kept their number. */
   let isTypingKept = $state(true);
-  let currentIndex = $state<number | null>(null);
-  let checkedIndexes = $state.raw(new Set<number>());
+  const currentIndex = $derived(editing.cursor.index);
+  const checkedIndexes = $derived(new Set(editing.checkedIndexes));
   /** The position of the Current Segment as its row was last brought into view. */
   let shownCurrentIndex: number | null = null;
 
@@ -117,8 +120,6 @@
     project = next;
     view = session.transcript;
     placeholders.hide();
-    currentIndex = session.cursor.index;
-    checkedIndexes = new Set(session.checkedIndexes);
     flushSync();
     drawSessionCursor();
     onshown?.(next);
@@ -161,12 +162,9 @@
    * current, so the Cursor moving within it leaves the list where following playback put it; a live
    * Cursor in a field without focus, as after a split, takes the focus there.
    */
-  function showCursor(): void {
-    const { index, caret } = session.cursor;
+  function showCursor({ index, caret }: Cursor): void {
     const isNewlyCurrent = index !== shownCurrentIndex;
     shownCurrentIndex = index;
-    currentIndex = index;
-    flushSync();
     if (index === null) return;
     if (isNewlyCurrent) rows[index]?.bringIntoView();
     const caretField = caret && field(index, caret.field);
@@ -180,6 +178,12 @@
     }
     drawSessionCursor();
   }
+
+  // Shows each Cursor the session tells of, once the rows it moves into are drawn
+  $effect(() => {
+    const cursor = editing.cursor;
+    untrack(() => showCursor(cursor));
+  });
 
   function drawSessionCursor(): void {
     const { index, caret } = session.cursor;
@@ -217,8 +221,6 @@
 </script>
 
 <svelte:window
-  oneditor:cursor={showCursor}
-  oneditor:checks={() => (checkedIndexes = new Set(session.checkedIndexes))}
   onkeydown={followShortcut}
   onpointerup={() => session.releasePointer()}
 />

@@ -9,6 +9,7 @@ import type { ProjectFeed } from "#/ipc/project.ts";
 import type { TranscriptionScope } from "#/ipc/transcription.ts";
 import type { CursorField, EditingSession } from "#/editor/index.ts";
 import { AppUpdates } from "#/state/app-updates.svelte.ts";
+import { EditingState } from "#/state/editing-state.svelte.ts";
 import { EditorComparison } from "#/state/editor-comparison.svelte.ts";
 import { SavedPreferences } from "#/state/saved-preferences.svelte.ts";
 import { TaskRun } from "#/state/task-run.svelte.ts";
@@ -17,6 +18,7 @@ const FEED = Symbol("feed");
 const TASK_RUN = Symbol("task run");
 const APP_UPDATES = Symbol("app updates");
 const SESSION = Symbol("editing session");
+const EDITING_STATE = Symbol("editing state");
 const SEGMENT_DIALOGS = Symbol("segment dialogs");
 const SEGMENT_FIELDS = Symbol("segment fields");
 const COMPARISON = Symbol("editor comparison");
@@ -35,9 +37,9 @@ export interface SegmentDialogs {
 }
 
 /**
- * The context the page is mounted with, holding the Project feed, the editing session, the task
- * run, the App Updates, the editor's comparison and the saved Preferences every Svelte Component
- * shares.
+ * The context the page is mounted with, holding the Project feed, the editing session and what it
+ * tells of, the task run, the App Updates, the editor's comparison and the saved Preferences every
+ * Svelte Component shares.
  */
 export function pageContext(
   feed: ProjectFeed,
@@ -50,6 +52,7 @@ export function pageContext(
   return new Map<symbol, unknown>([
     [FEED, feed],
     [SESSION, session],
+    [EDITING_STATE, new EditingState(session)],
     [TASK_RUN, run],
     [APP_UPDATES, updates],
     [COMPARISON, comparison],
@@ -65,6 +68,11 @@ export function projectFeed(): ProjectFeed {
 /** The editing session the page was mounted with; called while a Svelte Component initialises. */
 export function editingSession(): EditingSession {
   return getContext<EditingSession>(SESSION);
+}
+
+/** What the editing session the page was mounted with tells of; called while a Svelte Component initialises. */
+export function editingState(): EditingState {
+  return getContext<EditingState>(EDITING_STATE);
 }
 
 /** The task run the page was mounted with; called while a Svelte Component initialises. */

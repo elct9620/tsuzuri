@@ -2,6 +2,7 @@
 import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "#/assembly.ts";
 import { editingPort } from "#/ipc/editing.ts";
@@ -43,6 +44,7 @@ describe("Segment Changes", () => {
   let popupCount: number;
   /** Each dialog a choice opened, with what it was opened for. */
   let openedDialogs: unknown[][];
+  let session: EditingSession;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -119,6 +121,7 @@ describe("Segment Changes", () => {
       { shouldMockEvents: true },
     );
     const assembly = assemble();
+    session = assembly.session;
     render(SegmentList, {
       target: document.querySelector("section")!,
       props: {
@@ -272,6 +275,7 @@ describe("Segment Changes", () => {
   function placeCaret(): HTMLElement {
     const text = row(0).querySelector<HTMLElement>(".field.text")!;
     text.dispatchEvent(new FocusEvent("focus"));
+    flushSync();
     const caret = document.createRange();
     caret.setStart(text.firstChild!, 2);
     caret.collapse(true);
@@ -611,12 +615,13 @@ describe("Segment Changes", () => {
       await hold(threeSegments);
       await enter(0, 2);
       let cursorChanges = 0;
-      const countCursorChange = () => cursorChanges++;
-      window.addEventListener("editor:cursor", countCursorChange);
+      const unlisten = session.onChange((change) => {
+        if (change === "cursor") cursorChanges++;
+      });
 
       document.dispatchEvent(new Event("selectionchange"));
       await settle();
-      window.removeEventListener("editor:cursor", countCursorChange);
+      unlisten();
 
       expect(cursorChanges).toBe(0);
     });

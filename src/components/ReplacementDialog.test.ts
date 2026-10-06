@@ -2,6 +2,7 @@
 import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "#/assembly.ts";
 import type { ProjectView } from "#/ipc/project.ts";
@@ -86,6 +87,7 @@ describe("ReplacementDialog", () => {
   function selectText(start: number, end: number): HTMLElement {
     const text = document.querySelector<HTMLElement>(".field.text")!;
     text.dispatchEvent(new FocusEvent("focus"));
+    flushSync();
     const range = document.createRange();
     range.setStart(text.firstChild!, start);
     range.setEnd(text.firstChild!, end);

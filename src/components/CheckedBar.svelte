@@ -10,6 +10,7 @@
   import { t } from "#/i18n.ts";
   import {
     editingSession,
+    editingState,
     projectFeed,
     segmentDialogs,
   } from "#/state/context.ts";
@@ -17,23 +18,17 @@
 
   const feed = projectFeed();
   const session = editingSession();
+  const editing = editingState();
   const dialogs = segmentDialogs();
   let project = $state.raw<ProjectView | null>(null);
-  let indexes = $state.raw<number[]>([]);
+  const indexes = $derived(editing.checkedIndexes);
 
   const choices = $derived(
     checkedChoices(session, dialogs, indexes, resourceOffers(project)),
   );
 
-  onMount(() =>
-    feed.follow((next) => {
-      project = next;
-      indexes = session.checkedIndexes;
-    }),
-  );
+  onMount(() => feed.follow((next) => (project = next)));
 </script>
-
-<svelte:window oneditor:checks={() => (indexes = session.checkedIndexes)} />
 
 {#if indexes.length > 0}
   <div

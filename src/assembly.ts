@@ -1,9 +1,9 @@
 /**
  * The webview's Composition Root: one Project feed and one editing session, which the page's
  * Svelte Components are handed through its context. The session reads each Project before any of
- * them does and tells of the Cursor only after all of them have drawn it, as the page's
- * `editor:cursor`, `editor:choice` and `editor:checks`; the other Rust events reach the page as
- * `rust:<name>`, and the system turning to a light or dark theme as `system:color-scheme`.
+ * them does and tells of the Cursor only after all of them have drawn it; the Rust events reach
+ * the page as `rust:<name>`, and the system turning to a light or dark theme as
+ * `system:color-scheme`.
  */
 
 import { editingPort, transcriptView } from "#/ipc/editing.ts";
@@ -34,9 +34,6 @@ export function assemble(): Assembly {
   const session = new EditingSession(editingPort);
   feed.follow((project) => session.follow(transcriptView(project)));
   feed.afterEach(() => session.announce());
-  session.onChange((change) =>
-    window.dispatchEvent(new CustomEvent(`editor:${change}`)),
-  );
   const start = async () => {
     const unrelay = await relayEvents();
     // The system may ask to open an SRT file before the relay listens, as a launch to open one does.

@@ -104,9 +104,11 @@
   } from "#/ui/timeline-spans.ts";
   import {
     editingSession,
+    editingState,
     projectFeed,
     savedPreferences,
   } from "#/state/context.ts";
+  import type { Choice } from "#/state/editing-state.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
 
   let { playback, hidden }: { playback: Playback; hidden: boolean } = $props();
@@ -128,6 +130,7 @@
 
   const feed = projectFeed();
   const session = editingSession();
+  const editing = editingState();
   const saved = savedPreferences();
   const isMac = isMacOS();
   /** The player stays the same for as long as the page does. */
@@ -287,9 +290,8 @@
    * Moves the media to the Segment the user chose from a row, its Speaker menu or Enter, as
    * `choiceLanding` tells; a region chosen moves it from `chooseRegion`, which knows where it was clicked.
    */
-  function moveToChoice(): void {
+  function moveToChoice({ source: choiceSource }: Choice): void {
     const segment = currentSegment();
-    const choiceSource = session.choiceSource;
     if (!segment || choiceSource === "region") return;
     land(
       choiceLanding({
@@ -306,8 +308,7 @@
    * Colours the Current Segment's region, the only one that can be dragged, and draws it above the
    * rest; only the regions of the Segment current before and now change.
    */
-  function showCursor(): void {
-    const current = session.cursor.index;
+  function showCursor(current: number | null): void {
     const drawnRegions = segmentRegions();
     const changedIndexes = new Set(
       [drawnCurrentIndex, current].filter((index) => index !== null),
@@ -321,6 +322,18 @@
     }
     drawnCurrentIndex = current;
   }
+
+  // Colours each Current Segment the session tells of
+  $effect(() => {
+    const current = editing.cursor.index;
+    untrack(() => showCursor(current));
+  });
+
+  // Moves the media to each Segment chosen, as the session tells where it was chosen from
+  $effect(() => {
+    const choice = editing.choice;
+    if (choice) untrack(() => moveToChoice(choice));
+  });
 
   /** Sets the Current Segment's `side` where the media is; the time stays within reach as a dragged edge does. */
   function setTimeAtMedia(event: KeyboardEvent, side: UpdateSide): void {
@@ -928,8 +941,6 @@
 </script>
 
 <svelte:window
-  oneditor:cursor={showCursor}
-  oneditor:choice={moveToChoice}
   onsystem:color-scheme={repaintWaveform}
   onkeydown={followKeys}
   onfocusin={followFocus}

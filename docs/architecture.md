@@ -589,7 +589,7 @@ body
 
 事件交給框架接上與解除，所以不自己訂閱 Rust 或 window 的事件；只有影片視窗例外。下表是各處的接法。
 
-Svelte 元件之間以 prop、context 或共用的狀態溝通，不經 window 事件。window 事件只來自 Rust、session 與系統。
+Svelte 元件之間以 prop、context 或共用的狀態溝通，不經 window 事件。window 事件只來自 Rust 與系統。
 
 | 誰 | 接法 | 解除 |
 |---|---|---|
@@ -614,10 +614,10 @@ import 不依賴檔案所在的位置，搬動目錄時只換前綴。下表是�
 main.ts -> assemble()                              assembly.ts
   |-- feed = new ProjectFeed()        reads current_project on each change
   |-- session = new EditingSession(editingPort)
-  |-- feed -> session.follow -> each follower -> session.announce
-  +-- session.onChange -> window: editor:cursor, editor:choice, editor:checks
+  +-- feed -> session.follow -> each follower -> session.announce
 main.ts -> drawPage(feed, session)                  page.ts
   +-- mount(Page, context)
+        +-- session.onChange -> EditingState       state/editing-state.svelte.ts
 main.ts -> assembly.start()
   |-- relayEvents: a Rust event -> window: rust:<event name>
   +-- light or dark theme -> window: system:color-scheme
@@ -629,7 +629,7 @@ main.ts -> assembly.start()
 | context 注入 | Svelte 元件取得共用的物件 | `projectFeed()`、`segmentDialogs()` |
 | 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
-feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`TaskRun`、`AppUpdates`、`EditorComparison` 與 `SavedPreferences` 也經 context 共用。頁面寫好後才讀專案。Svelte 元件直接 import `ipc/`，在 `onMount` 讀取。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。Svelte 元件不自己向 Rust 讀專案。
+feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`EditingState`、`TaskRun`、`AppUpdates`、`EditorComparison` 與 `SavedPreferences` 也經 context 共用。頁面寫好後才讀專案。Svelte 元件直接 import `ipc/`，在 `onMount` 讀取。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。Svelte 元件不自己向 Rust 讀專案。
 
 ### 4.4 先後順序
 
@@ -639,7 +639,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | 2 | 讀到的專案比上一份舊就丟掉 |
 | 3 | session 換算並套用待套用 |
 | 4 | 各 Svelte 元件重畫，出錯不擋後面 |
-| 5 | 送出 `editor:cursor`，移動焦點 |
+| 5 | session 告知 `EditingState`，移動焦點 |
 
 `project-changed` 可能比指令的回答先到，所以待套用在送出前就記下，被拒絕時清掉。只有改變段數的改動會移動 Cursor，才記成待套用；段數不變的改動寫入後就清掉勾選。焦點與 Cursor 等列畫完才動，才不會落在即將被取代的舊列上；重畫出錯以 `reportError` 回報。
 
@@ -664,9 +664,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 | 事件 | 送出者 | 接收者與用途 |
 |---|---|---|
-| `editor:cursor` | session，經 `assembly.ts` | 標出 Current Segment 與 Cursor |
-| `editor:choice` | session，經 `assembly.ts` | `Timeline` 依來源移動媒體 |
-| `editor:checks` | session，經 `assembly.ts` | 顯示勾選工具列 |
 | `rust:pipeline-progress` | Rust，經 `relayEvents` | `TaskProgress` 顯示 Phase |
 | `rust:update-progress` | Rust，經 `relayEvents` | `UpdatesDialog` 顯示下載進度 |
 | `rust:edit-command` | Rust，經 `relayEvents` | `Undo`、`SegmentList` |
@@ -740,6 +737,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
+| `EditingState` | 經 context | 段落列、勾選列、預覽、時間軸 |
 | 段落列的欄位 | SegmentRows 經 context | 文字欄位、搜尋列 |
 | 通知的清單 | `notification.svelte.ts` | 所有 Svelte 元件 |
 | `SaveMark` | `save-mark.svelte.ts` | 寫入的編輯、編輯列 |

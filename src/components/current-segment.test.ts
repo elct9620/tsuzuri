@@ -101,6 +101,12 @@ describe("Current Segment", () => {
     for (let turn = 0; turn < 3; turn++) await settle();
   }
 
+  /** Clicks the row of the Segment at `index`, drawing what the Choice it makes moves. */
+  function chooseRow(index: number): void {
+    rows()[index].click();
+    flushSync();
+  }
+
   const isMarked = (attribute: string) =>
     rows().map((row) => row.hasAttribute(attribute));
 
@@ -135,11 +141,13 @@ describe("Current Segment", () => {
     );
     button.focus();
     button.click();
+    flushSync();
   }
 
   /** Opens the Speaker menu of the Segment at `index`, as focusing its button does. */
   function openSpeakers(index: number): void {
     rows()[index].querySelector<HTMLElement>(".speaker")!.focus();
+    flushSync();
   }
 
   const textField = (index: number) =>
@@ -155,12 +163,13 @@ describe("Current Segment", () => {
     regions()[index].dispatchEvent(
       new MouseEvent("click", { bubbles: true, clientX: at * 100 }),
     );
+    flushSync();
   }
 
   /** Shows `twoSegments` playing the first alone at 0.5 s. */
   async function playFirstAlone(): Promise<void> {
     await show(twoSegments);
-    rows()[0].click();
+    chooseRow(0);
     aloneButton().click();
     await media().play();
     playTo(0.5);
@@ -263,7 +272,7 @@ describe("Current Segment", () => {
   it("marks the clicked row alone as the Current Segment", async () => {
     await show(twoSegments);
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect(isMarked("aria-current")).toEqual([false, true]);
   });
@@ -273,6 +282,7 @@ describe("Current Segment", () => {
     await show(twoSegments);
 
     regions()[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    flushSync();
 
     expect(isMarked("aria-current")).toEqual([false, true]);
   });
@@ -280,9 +290,10 @@ describe("Current Segment", () => {
   // @behavior PV-109
   it("marks the row of a region clicked in an upper Lane as the Current Segment", async () => {
     await show(overlappingSegments);
-    rows()[0].click();
+    chooseRow(0);
 
     regions()[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    flushSync();
 
     expect(isMarked("aria-current")).toEqual([false, true]);
   });
@@ -291,7 +302,7 @@ describe("Current Segment", () => {
   it("draws the Current Segment's region above the others", async () => {
     await show(twoSegments);
 
-    rows()[0].click();
+    chooseRow(0);
 
     expect(regions().map((region) => region.style.zIndex)).toEqual(["1", ""]);
   });
@@ -300,7 +311,7 @@ describe("Current Segment", () => {
   it("colours the Current Segment's region more strongly", async () => {
     await show(twoSegments);
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect(regions().map((region) => region.style.backgroundColor)).toEqual([
       regionColor(0),
@@ -311,9 +322,9 @@ describe("Current Segment", () => {
   // @behavior PV-146
   it("gives the first region back its own look once the second is current", async () => {
     await show(twoSegments);
-    rows()[0].click();
+    chooseRow(0);
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect([
       regions()[0].style.backgroundColor,
@@ -325,7 +336,7 @@ describe("Current Segment", () => {
   it("plays the Current Segment from its start with Space while playing alone", async () => {
     await show(twoSegments);
     aloneButton().click();
-    rows()[1].click();
+    chooseRow(1);
     playTo(1.5);
 
     pressSpace();
@@ -338,7 +349,7 @@ describe("Current Segment", () => {
   it("pauses at the end of the Current Segment while playing alone", async () => {
     await show(twoSegments);
     aloneButton().click();
-    rows()[1].click();
+    chooseRow(1);
     pressSpace();
     await settle();
 
@@ -370,7 +381,7 @@ describe("Current Segment", () => {
   // @behavior PV-031
   it("leaves Space to the field it is pressed in", async () => {
     await show(twoSegments);
-    rows()[1].click();
+    chooseRow(1);
 
     pressSpace(rows()[1].querySelector(".field")!);
     await settle();
@@ -381,7 +392,7 @@ describe("Current Segment", () => {
   // @behavior PV-125
   it("plays with Space after a button is clicked", async () => {
     await show(twoSegments);
-    rows()[1].click();
+    chooseRow(1);
 
     clickWithPointer(aloneButton());
     const isTaken = isSpaceTaken(aloneButton());
@@ -397,7 +408,7 @@ describe("Current Segment", () => {
   // @behavior PV-126
   it("leaves Space to a button reached by keyboard", async () => {
     await show(twoSegments);
-    rows()[1].click();
+    chooseRow(1);
 
     aloneButton().focus();
     const isTaken = isSpaceTaken(aloneButton());
@@ -428,19 +439,16 @@ describe("Current Segment", () => {
 
   describe("telling where another Segment is chosen from", () => {
     let sources: string[];
-    let listening: AbortController;
+    let unlisten: () => void;
 
     beforeEach(() => {
       sources = [];
-      listening = new AbortController();
-      window.addEventListener(
-        "editor:choice",
-        () => sources.push(session.choiceSource),
-        { signal: listening.signal },
-      );
+      unlisten = session.onChange((change) => {
+        if (change === "choice") sources.push(session.choiceSource);
+      });
     });
 
-    afterEach(() => listening.abort());
+    afterEach(() => unlisten());
 
     /** Presses the pointer on `target` with `button`, takes it to focus as Chromium does, and clicks. */
     function press(target: HTMLElement, button = 0): void {
@@ -487,7 +495,7 @@ describe("Current Segment", () => {
 
     it("forgets a press that chose nothing", async () => {
       await show(twoSegments);
-      rows()[1].click();
+      chooseRow(1);
       press(inRow(1, ".field.text"));
 
       textField(0).focus();
@@ -532,7 +540,7 @@ describe("Current Segment", () => {
     await media().play();
     playTo(0.5);
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect([media().paused, media().currentTime]).toEqual([false, 1]);
   });
@@ -566,7 +574,7 @@ describe("Current Segment", () => {
     await playFirstAlone();
     await prefer("row", { is_pausing: true, is_from_start: false });
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect([media().paused, media().currentTime]).toEqual([false, 1]);
   });
@@ -577,7 +585,7 @@ describe("Current Segment", () => {
     await media().play();
     playTo(0.5);
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect([media().paused, media().currentTime]).toEqual([true, 1]);
   });
@@ -587,7 +595,7 @@ describe("Current Segment", () => {
     await show(twoSegments);
     playTo(0.5);
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect([media().paused, media().currentTime]).toEqual([true, 1]);
   });
@@ -620,12 +628,14 @@ describe("Current Segment", () => {
   it("plays on as Enter moves to the next Segment's text", async () => {
     await show(twoSegments);
     textField(0).focus();
+    flushSync();
     await media().play();
     playTo(0.5);
 
     textField(0).dispatchEvent(
       new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
     );
+    flushSync();
 
     expect([session.cursor.index, media().paused, media().currentTime]).toEqual(
       [1, false, 0.5],
@@ -645,7 +655,7 @@ describe("Current Segment", () => {
   it("plays another Segment from its start when its row is chosen while playing alone", async () => {
     await playFirstAlone();
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect([media().paused, media().currentTime]).toEqual([false, 1]);
   });
@@ -662,11 +672,11 @@ describe("Current Segment", () => {
   // @behavior PV-078
   it("plays on when the Current Segment's row is clicked", async () => {
     await show(twoSegments);
-    rows()[1].click();
+    chooseRow(1);
     await media().play();
     playTo(1.5);
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect([media().paused, media().currentTime]).toEqual([false, 1.5]);
   });
@@ -674,7 +684,7 @@ describe("Current Segment", () => {
   // @behavior PV-079
   it("plays on when a Segment Change moves the Current Segment", async () => {
     await show(twoSegments);
-    rows()[0].click();
+    chooseRow(0);
     await media().play();
     playTo(0.5);
 
@@ -691,7 +701,7 @@ describe("Current Segment", () => {
   it("shows the Current Segment's number, times, text and translation beside the video", async () => {
     await show(twoSegments);
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect(currentCard()).toEqual([
       "#2",
@@ -705,7 +715,7 @@ describe("Current Segment", () => {
   it("names the Current Segment's Speaker beside the video", async () => {
     await show(spokenSegments);
 
-    rows()[1].click();
+    chooseRow(1);
 
     expect(currentSpeaker()).toBe("小明");
   });
@@ -713,9 +723,9 @@ describe("Current Segment", () => {
   // @behavior PV-098
   it("names no one beside the video for a Segment without a Speaker", async () => {
     await show(spokenSegments);
-    rows()[1].click();
+    chooseRow(1);
 
-    rows()[0].click();
+    chooseRow(0);
 
     expect(currentSpeaker()).toBeNull();
   });
@@ -723,7 +733,7 @@ describe("Current Segment", () => {
   // @behavior PV-037
   it("follows an edit of the Current Segment beside the video", async () => {
     await show(twoSegments);
-    rows()[1].click();
+    chooseRow(1);
 
     await show({
       ...twoSegments,
@@ -837,11 +847,13 @@ describe("Current Segment", () => {
   it("keeps following playback as the Cursor moves in the Current Segment's field", async () => {
     await show(twoSegments);
     session.enter(0, "text", { start: 0, end: 0 }, "0");
+    flushSync();
     await media().play();
     watchScrolls();
 
     playTo(1.5);
     session.select(0, "text", { start: 2, end: 2 }, "0a");
+    flushSync();
 
     expect(scrolledRows()).toEqual([rows()[1]]);
   });
@@ -849,7 +861,7 @@ describe("Current Segment", () => {
   // @behavior PV-085
   it("plays on from the Current Segment past its end with Space by default", async () => {
     await show(twoSegments);
-    rows()[1].click();
+    chooseRow(1);
     pressSpace();
     await settle();
     const startedAt = media().currentTime;
@@ -862,7 +874,7 @@ describe("Current Segment", () => {
   // @behavior PV-132
   it("plays on from the Current Segment with Space pressed in the Video Window", async () => {
     await show(twoSegments);
-    rows()[1].click();
+    chooseRow(1);
     const video = media();
     button("preview.videoWindow").click();
 
@@ -876,7 +888,7 @@ describe("Current Segment", () => {
   // @behavior PV-122
   it("pauses at the end of the Current Segment once playing alone is turned on while playing", async () => {
     await show(twoSegments);
-    rows()[1].click();
+    chooseRow(1);
     await media().play();
     playTo(1.5);
 
@@ -890,7 +902,7 @@ describe("Current Segment", () => {
   it("plays on past the Current Segment once playing alone is turned off while playing it", async () => {
     await show(twoSegments);
     aloneButton().click();
-    rows()[1].click();
+    chooseRow(1);
     pressSpace();
     await settle();
 
@@ -904,7 +916,7 @@ describe("Current Segment", () => {
   it("pauses at the Current Segment's new end while playing it alone", async () => {
     await show(twoSegments);
     aloneButton().click();
-    rows()[1].click();
+    chooseRow(1);
     pressSpace();
     await settle();
 
@@ -927,7 +939,7 @@ describe("Current Segment", () => {
   // @behavior PV-086
   it("plays on from where the media paused with Space", async () => {
     await show(twoSegments);
-    rows()[1].click();
+    chooseRow(1);
     playTo(1.5);
 
     pressSpace();

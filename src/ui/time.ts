@@ -78,3 +78,8 @@ export function formatClock(ms: number): string {
   const clock = `${padDigits(minutes)}:${padDigits(seconds)}`;
   return hours > 0 ? `${hours}:${clock}` : clock;
 }
+
+/** How long `ms` lasts, in seconds to the millisecond: `3.200s`. */
+export function formatLength(ms: number): string {
+  return `${(ms / MS_PER_SECOND).toFixed(3)}s`;
+}

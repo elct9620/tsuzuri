@@ -6,8 +6,7 @@
 <script lang="ts">
   import type { Segment } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
-  import { MS_PER_SECOND, formatTime } from "#/ui/time.ts";
-  import { formatLength } from "#/ui/timeline-spans.ts";
+  import { formatLength, formatTime } from "#/ui/time.ts";
   import { editingState } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import CurrentSegmentKeys from "#/components/CurrentSegmentKeys.svelte";
@@ -32,10 +31,7 @@
         )}</span
       >
       <span class="badge badge-sm badge-ghost tabular-nums" data-length
-        >{formatLength({
-          start: currentSegment.start_ms / MS_PER_SECOND,
-          end: currentSegment.end_ms / MS_PER_SECOND,
-        })}</span
+        >{formatLength(currentSegment.end_ms - currentSegment.start_ms)}</span
       >
       {#if currentSegment.speaker}
         <span class="badge badge-sm badge-neutral max-w-32 truncate"

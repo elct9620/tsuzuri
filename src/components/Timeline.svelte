@@ -74,7 +74,7 @@
   } from "#/ui/silence.ts";
   import {
     choiceLanding,
-    formatLength,
+    formatSpanLength,
     formatSeconds,
     landingSpan,
     rangeReach,
@@ -906,7 +906,7 @@
     <div class="absolute top-1 right-1 z-10 flex items-center gap-1">
       {#if shownSpan}
         <span class="badge badge-neutral badge-sm tabular-nums"
-          >{formatSeconds(shownSpan.start)} → {formatSeconds(shownSpan.end)} ({formatLength(
+          >{formatSeconds(shownSpan.start)} → {formatSeconds(shownSpan.end)} ({formatSpanLength(
             shownSpan,
           )})</span
         >

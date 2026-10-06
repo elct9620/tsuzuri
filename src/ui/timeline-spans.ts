@@ -1,7 +1,7 @@
 import type { Segment } from "#/ipc/project.ts";
 import type { ChoiceSource } from "#/editor/index.ts";
 import type { ChoiceLandings } from "#/ipc/preferences.ts";
-import { MS_PER_SECOND, formatTime } from "#/ui/time.ts";
+import { MS_PER_SECOND, formatLength, formatTime } from "#/ui/time.ts";
 
 /**
  * Where Segments run on the Preview's timeline, in seconds, where a dragged one lands, and where
@@ -89,8 +89,8 @@ export const formatSeconds = (seconds: number) =>
   formatTime(toMilliseconds(seconds));
 
 /** How long `span` runs, in seconds to the millisecond. */
-export const formatLength = ({ start, end }: Span) =>
-  `${toSeconds(toMilliseconds(end - start)).toFixed(3)}s`;
+export const formatSpanLength = ({ start, end }: Span) =>
+  formatLength(toMilliseconds(end - start));
 
 /**
  * Where `span`, dragged by its `side` or, without one, as a whole, lands: Snapped to the nearest of

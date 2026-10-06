@@ -124,6 +124,38 @@ fn refuses_a_translation_with_none_shown() {
     assert_eq!(result, Err(Failure::NoTranslationShown));
 }
 
+#[test]
+fn refuses_to_search_or_replace_in_the_speakers() {
+    let dir = directory_of("ed-speaker-search", &[("ep01.srt", &cue("你好"))]);
+    let current = project_in(&dir);
+
+    let results = (
+        current
+            .text_matches(
+                SegmentField::Speaker,
+                &Search {
+                    pattern: "你".to_string(),
+                    is_regex: false,
+                },
+            )
+            .err(),
+        current
+            .replace_text(SegmentField::Speaker, &replacement("你", "您", false))
+            .err(),
+    );
+
+    let speaker_not_searched = Failure::Internal {
+        detail: "a Speaker is not searched".to_string(),
+    };
+    assert_eq!(
+        results,
+        (
+            Some(speaker_not_searched.clone()),
+            Some(speaker_not_searched)
+        )
+    );
+}
+
 // @behavior ED-137
 #[test]
 fn finds_every_match_across_the_current_resource() {

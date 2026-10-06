@@ -579,6 +579,25 @@ mod tests {
         assert_eq!(*fixture.steps.stopped_pids.lock().unwrap(), vec![1]);
     }
 
+    #[tokio::test]
+    async fn names_a_request_the_router_answers_with_an_error_as_failed() {
+        let fixture = Fixture::new(
+            "resident-request-failed",
+            Replies {
+                has_unload_failure: true,
+                ..Replies::default()
+            },
+        );
+        fixture.load_model().await.unwrap();
+
+        let result = fixture.resident.unload().await;
+
+        assert!(
+            matches!(result, Err(Failure::LlamaRequest { .. })),
+            "unloading answered {result:?}"
+        );
+    }
+
     // @behavior TL-073
     #[tokio::test]
     async fn starts_again_after_the_router_exited() {

@@ -874,6 +874,14 @@ With no gap to fill, the new Segment runs two seconds from the edge it is insert
 | When | it is split after `你好` |
 | Then | `你好` runs from 0 to 1 second with the translation and `世界` from 1 to 2 seconds without one |
 
+## `PJ-192` Keeping the translation shown through a split
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of one Segment `你好世界`, showing its `en` translation `Hello world` |
+| When | it is split after `你好` |
+| Then | the Current Resource still shows its `en` translation |
+
 ## `PJ-148` Splitting a Segment another is said over
 
 | Step | Statement |

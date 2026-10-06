@@ -815,6 +815,27 @@ fn splits_a_segment_at_a_point_in_its_text() {
     );
 }
 
+// @behavior PJ-192
+#[test]
+fn keeps_the_translation_shown_through_a_split() {
+    let dir = TempDir::new("pj-split-shown");
+    let current = changing_project_in(
+        &dir,
+        &[(0, 2_000, "你好世界")],
+        &[(0, 2_000, "Hello world")],
+    );
+    current.show_translation(Some(Language::English)).unwrap();
+
+    current
+        .change_segments(SegmentChange::Split { index: 0, at: 2 })
+        .unwrap();
+
+    assert_eq!(
+        current.view().unwrap().shown_translation,
+        Some(Language::English)
+    );
+}
+
 // @behavior PJ-062
 #[test]
 fn merges_a_run_of_segments() {

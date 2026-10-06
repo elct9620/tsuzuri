@@ -79,6 +79,14 @@ A quiet recording is stretched to its loudest Peak, so a Peak holds enough of a 
 | When | its Waveform is extracted |
 | Then | the converted audio is removed |
 
+## `PV-214` Leaving no audio behind after a failed Waveform
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media file ffmpeg cannot read |
+| When | its Waveform is extracted |
+| Then | the converted audio is removed |
+
 ## `PV-008` Loading the Current Resource's media into the Preview
 
 | Step | Statement |

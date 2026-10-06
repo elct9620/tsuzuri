@@ -49,6 +49,25 @@ fn undoes_a_segment_change_across_every_subtitle() {
     );
 }
 
+// @behavior UD-019
+#[test]
+fn keeps_the_translation_shown_through_an_undo() {
+    let dir = directory_of(
+        "ud-undo-shown",
+        &[("ep01.srt", &cue("你好")), ("ep01.en.srt", &cue("Hello"))],
+    );
+    let current = project_in(&dir);
+    current.show_translation(Some(Language::English)).unwrap();
+    edit_text(&current, "您好");
+
+    current.undo().unwrap();
+
+    assert_eq!(
+        current.view().unwrap().shown_translation,
+        Some(Language::English)
+    );
+}
+
 // @behavior UD-004
 #[test]
 fn undoes_a_translation_as_one_change() {

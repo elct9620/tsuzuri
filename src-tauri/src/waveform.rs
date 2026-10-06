@@ -233,6 +233,18 @@ mod tests {
         assert!(!fixture.work().exists());
     }
 
+    // @behavior PV-214
+    #[tokio::test]
+    async fn removes_the_converted_audio_after_a_failure() {
+        let fixture = Fixture::new("pv-cleanup-failed");
+        fixture.open_with(&["ep01.mp4"]);
+        let ffmpeg = fixture.write_ffmpeg(FAILING_FFMPEG);
+
+        let _ = fixture.extract(&ffmpeg).await;
+
+        assert!(!fixture.work().exists());
+    }
+
     #[test]
     fn reads_no_samples_from_a_file_without_a_data_chunk() {
         assert!(pcm_samples(b"RIFF\0\0\0\0WAVEfmt ").is_empty());

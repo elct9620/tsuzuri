@@ -1168,6 +1168,22 @@ describe("Segment Changes", () => {
       expect(changes).toEqual([{ kind: "merge", first: 1, last: 2 }]);
     });
 
+    // @behavior ED-197
+    it("leaves the merge shortcut to an input method processing the key", async () => {
+      await hold(threeSegments);
+      textOf(1).focus();
+      await settle();
+
+      const event = press(textOf(1), "ArrowDown", {
+        ctrlKey: true,
+        altKey: true,
+        keyCode: 229,
+      });
+      await settle();
+
+      expect([changes, event.defaultPrevented]).toEqual([[], false]);
+    });
+
     // @behavior ED-182
     it("writes a text still being typed before merging", async () => {
       await hold(threeSegments);

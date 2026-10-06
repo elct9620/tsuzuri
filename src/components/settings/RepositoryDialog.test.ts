@@ -9,13 +9,19 @@ describe("RepositoryDialog", () => {
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-  /** Opens the dialog for the translation slot and lists `repo`. */
-  async function list(repo: string): Promise<void> {
+  /** Opens the dialog for the translation slot with `repo` typed as the Repository name. */
+  function typeName(repo: string): HTMLInputElement {
     const { component } = render(RepositoryDialog);
     void component.pick("translation");
     const field = screen.getByPlaceholderText<HTMLInputElement>("owner/name");
     field.value = repo;
     field.dispatchEvent(new Event("input"));
+    return field;
+  }
+
+  /** Opens the dialog for the translation slot and lists `repo`. */
+  async function list(repo: string): Promise<void> {
+    typeName(repo);
     screen.getByRole("button", { name: "列出檔案" }).click();
     await settle();
   }
@@ -59,6 +65,49 @@ describe("RepositoryDialog", () => {
         ["Qwen3-4B-Instruct-2507-Q8_0.gguf", "4.28 GB"],
       ],
     ]);
+  });
+
+  describe("pressing Enter in the name", () => {
+    let listedArgs: unknown[];
+
+    /** Types `repo` as the Repository name and presses Enter in it as `init` tells. */
+    async function pressEnter(
+      repo: string,
+      init: KeyboardEventInit = {},
+    ): Promise<KeyboardEvent> {
+      const field = typeName(repo);
+      const enter = new KeyboardEvent("keydown", {
+        key: "Enter",
+        bubbles: true,
+        cancelable: true,
+        ...init,
+      });
+      field.dispatchEvent(enter);
+      await settle();
+      return enter;
+    }
+
+    beforeEach(() => {
+      listedArgs = [];
+      repositoryFiles = (args) => {
+        listedArgs.push(args);
+        return [];
+      };
+    });
+
+    // @behavior MD-053
+    it("lists the Repository's files", async () => {
+      await pressEnter("owner/name");
+
+      expect(listedArgs).toEqual([{ repo: "owner/name", slot: "translation" }]);
+    });
+
+    // @behavior MD-054
+    it("leaves Enter to an input method processing the key", async () => {
+      const enter = await pressEnter("owner/name", { keyCode: 229 });
+
+      expect([listedArgs, enter.defaultPrevented]).toEqual([[], false]);
+    });
   });
 
   // @behavior MD-039

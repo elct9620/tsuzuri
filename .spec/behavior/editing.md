@@ -576,6 +576,16 @@ A sentence cut apart by transcription is joined back line by line while proofrea
 | When | ⌘+Option+Down is pressed |
 | Then | the Project is asked to merge the second through the third |
 
+## `ED-197` Leaving the merge shortcut to an input method
+
+An input method still processing a key owns it, as with Enter in a text (`ED-031`).
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux, three Segments, with an input method processing a key in the second Segment's text |
+| When | Ctrl+Alt+Down is pressed |
+| Then | no merge is asked for |
+
 ## `ED-182` Writing a text still being typed before merging
 
 | Step | Statement |

@@ -100,6 +100,7 @@ describe("ShortcutsDialog", () => {
     ["Meta+?", { key: "?", shiftKey: true, metaKey: true }],
     ["Alt+?", { key: "?", shiftKey: true, altKey: true }],
     ["? while composing", { key: "?", shiftKey: true, isComposing: true }],
+    ["? an input method processes", { key: "?", shiftKey: true, keyCode: 229 }],
   ])("leaves %s alone", (_name, init) => {
     press("#elsewhere", init);
 

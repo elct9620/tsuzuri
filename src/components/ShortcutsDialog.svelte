@@ -11,6 +11,7 @@
     SHORTCUTS,
     SHORTCUT_GROUPS,
     chords,
+    isComposingKey,
     isShortcut,
     keyLabels,
   } from "#/ui/shortcuts.ts";
@@ -38,7 +39,7 @@
 
   /** Whether `event` asks for the list: ⌘/ or Ctrl+/ anywhere, or ? where no text is typed. */
   function isListShortcut(event: KeyboardEvent): boolean {
-    if (event.isComposing || !isShortcut(event, "list", isMacOS()))
+    if (isComposingKey(event) || !isShortcut(event, "list", isMacOS()))
       return false;
     return event.ctrlKey || event.metaKey || !isTextField(event.target);
   }

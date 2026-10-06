@@ -7,6 +7,7 @@
   import { t } from "#/i18n.ts";
   import { failureMessage } from "#/ui/failure.ts";
   import { sizeLabel, type HubFile } from "#/ui/models.ts";
+  import { isComposingKey } from "#/ui/shortcuts.ts";
 
   let dialog: HTMLDialogElement;
   let repoField: HTMLInputElement;
@@ -82,7 +83,7 @@
           bind:this={repoField}
           bind:value={repo}
           onkeydown={(event) => {
-            if (event.key !== "Enter") return;
+            if (event.key !== "Enter" || isComposingKey(event)) return;
             event.preventDefault();
             void list();
           }}

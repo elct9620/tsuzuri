@@ -16,7 +16,7 @@
     runWithNeighbour,
   } from "#/editor/index.ts";
   import { notifyEdit } from "#/state/notification.svelte.ts";
-  import { isShortcut } from "#/ui/shortcuts.ts";
+  import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
   import CheckedBar from "#/components/CheckedBar.svelte";
   import { cleanMarked } from "#/actions/cleanup.ts";
   import { editingSession } from "#/state/context.ts";
@@ -116,7 +116,7 @@
     if (
       direction === null ||
       index === null ||
-      event.isComposing ||
+      isComposingKey(event) ||
       isWorkingElsewhere(event.target)
     )
       return;

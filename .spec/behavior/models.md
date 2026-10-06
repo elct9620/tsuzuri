@@ -445,3 +445,19 @@ A Model file is offered by the extensions its slot takes, so with no settings to
 | Given | the Model settings cannot be read |
 | When | the user picks a file for a slot, in the general settings or as a Project Model |
 | Then | no file dialog opens and the slot keeps its Model |
+
+## `MD-053` Listing a Repository's files by Enter
+
+| Step | Statement |
+| --- | --- |
+| Given | `owner/name` typed as the Repository name |
+| When | Enter is pressed in the name |
+| Then | that Repository's files are asked for |
+
+## `MD-054` Leaving Enter to an input method in a Repository name
+
+| Step | Statement |
+| --- | --- |
+| Given | an input method processing a key in the Repository name |
+| When | Enter is pressed to pick a candidate |
+| Then | no files are asked for and the input method keeps the key |

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { KeptCaret, LiveCaret } from "./cursor";
-import { drawCursor } from "./marks";
+import { caretPlace, cursorMark } from "./marks";
 import { fieldOf } from "./test-field";
 
 function fieldInHost(text: string): HTMLElement {
@@ -12,101 +12,55 @@ function fieldInHost(text: string): HTMLElement {
   return field;
 }
 
-const caret = (
-  kind: "live" | "kept",
-  start: number,
-  end = start,
-): LiveCaret | KeptCaret => ({
-  kind,
+const caret = (start: number, end = start): LiveCaret | KeptCaret => ({
+  kind: "live",
   field: "text",
   start,
   end,
   text: "你好世界",
 });
 
-const caretMarks = () => document.querySelectorAll(".cursor-caret");
-
-describe("drawCursor", () => {
+describe("marks", () => {
   afterEach(() => {
-    drawCursor(null, null);
     document.body.innerHTML = "";
-    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
-  it("draws a blinking caret after the characters before it", () => {
-    const field = fieldInHost("你好世界");
-
-    drawCursor(field, caret("live", 2));
-
-    expect([
-      field.dataset.cursor,
-      caretMarks().length,
-      caretMarks()[0].classList.contains("animate-blink"),
-    ]).toEqual(["2", 1, true]);
+  it("says where a caret stands, or the range it covers", () => {
+    expect([cursorMark(caret(2)), cursorMark(caret(1, 3))]).toEqual([
+      "2",
+      "1-3",
+    ]);
   });
 
-  it("holds a kept caret still", () => {
-    const field = fieldInHost("你好世界");
-
-    drawCursor(field, caret("kept", 2));
-
-    expect([
-      field.hasAttribute("data-has-kept-cursor"),
-      caretMarks()[0].classList.contains("animate-blink"),
-    ]).toEqual([true, false]);
-  });
-
-  it("marks a range without a caret", () => {
-    const field = fieldInHost("你好世界");
-
-    drawCursor(field, caret("live", 1, 3));
-
-    expect([field.dataset.cursor, caretMarks().length]).toEqual(["1-3", 0]);
-  });
-
-  it("takes the Cursor away from the field it was drawn in before", () => {
-    const first = fieldInHost("你好世界");
-    const second = fieldInHost("今天");
-    drawCursor(first, caret("kept", 2));
-
-    drawCursor(second, caret("live", 1));
-
-    expect([
-      first.dataset.cursor,
-      caretMarks().length,
-      second.dataset.cursor,
-    ]).toEqual([undefined, 1, "1"]);
-  });
-
-  // @behavior ED-122
-  it("keeps the caret on its character as marks drawn above move the text", () => {
-    const observers: { targets: Element[]; notify: () => void }[] = [];
-    vi.stubGlobal(
-      "ResizeObserver",
-      class {
-        private readonly watched: { targets: Element[]; notify: () => void };
-        constructor(notify: () => void) {
-          this.watched = { targets: [], notify };
-          observers.push(this.watched);
-        }
-        observe(target: Element) {
-          this.watched.targets.push(target);
-        }
-        disconnect() {}
-      },
+  it("places a caret beside the character it stands after, within the field's parent", () => {
+    vi.spyOn(Range.prototype, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ x: 30, y: 24, width: 0, height: 20 }),
     );
-    let textTop = 0;
-    vi.spyOn(Range.prototype, "getBoundingClientRect").mockImplementation(() =>
-      DOMRect.fromRect({ x: 0, y: textTop, width: 0, height: 20 }),
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ x: 10, y: 4, width: 200, height: 40 }),
     );
-    const field = fieldInHost("你好世界");
-    drawCursor(field, caret("live", 2));
 
-    textTop = 24;
-    for (const { targets, notify } of observers)
-      if (targets.includes(field.parentElement!)) notify();
+    expect(caretPlace(fieldInHost("你好世界"), caret(2))).toEqual({
+      left: 20,
+      top: 20,
+      height: 20,
+    });
+  });
 
-    expect((caretMarks()[0] as HTMLElement).style.top).toBe("24px");
+  it("places the caret of an empty field where its text would begin", () => {
+    const field = fieldInHost("");
+    field.style.padding = "4px 6px";
+    field.style.lineHeight = "18px";
+
+    expect(caretPlace(field, caret(0))).toEqual({
+      left: 6,
+      top: 4,
+      height: 18,
+    });
+  });
+
+  it("places no caret in a field without a parent", () => {
+    expect(caretPlace(fieldOf("你好世界"), caret(2))).toBeNull();
   });
 });

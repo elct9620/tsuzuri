@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "#/assembly.ts";
 import type { EditingSession } from "#/editor/index.ts";
@@ -57,6 +58,8 @@ describe("EditingField", () => {
   afterEach(() => {
     drawn.unmount();
     clearMocks();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   // @behavior ED-029
@@ -205,6 +208,113 @@ describe("EditingField", () => {
     await settle();
 
     expect(field().textContent).toBe("大家好");
+  });
+
+  /** The caret marks drawn beside the field of the Segment at `index`. */
+  const caretMarks = (index = 0) => [
+    ...fieldAt(index).parentElement!.querySelectorAll<HTMLElement>(
+      ".cursor-caret",
+    ),
+  ];
+
+  it("draws a blinking caret after the characters before it", () => {
+    session.enter(0, "text", { start: 2, end: 2 }, "大家好");
+    flushSync();
+
+    expect([
+      field().dataset.cursor,
+      caretMarks().length,
+      caretMarks()[0].classList.contains("animate-blink"),
+    ]).toEqual(["2", 1, true]);
+  });
+
+  it("holds a kept caret still", async () => {
+    session.enter(0, "text", { start: 2, end: 2 }, "大家好");
+    await session.leave(0, "text", { start: 2, end: 2 }, "大家好");
+    flushSync();
+
+    expect([
+      field().hasAttribute("data-has-kept-cursor"),
+      caretMarks()[0].classList.contains("animate-blink"),
+    ]).toEqual([true, false]);
+  });
+
+  it("marks a range without a caret", () => {
+    session.enter(0, "text", { start: 1, end: 3 }, "大家好");
+    flushSync();
+
+    expect([field().dataset.cursor, caretMarks().length]).toEqual(["1-3", 0]);
+  });
+
+  it("marks only the range the Cursor covers now", () => {
+    const highlights = new Map<string, { ranges: Range[] }>();
+    vi.stubGlobal("CSS", { highlights });
+    vi.stubGlobal(
+      "Highlight",
+      class {
+        ranges: Range[];
+        constructor(...ranges: Range[]) {
+          this.ranges = ranges;
+        }
+      },
+    );
+    session.enter(1, "text", { start: 0, end: 2 }, "今天天氣");
+    flushSync();
+
+    session.enter(0, "text", { start: 1, end: 3 }, "大家好");
+    flushSync();
+    const markedInText = highlights.get("cursor")?.ranges.map(String);
+    session.select(0, "text", { start: 2, end: 2 }, "大家好");
+    flushSync();
+
+    expect([markedInText, highlights.has("cursor")]).toEqual([["家好"], false]);
+  });
+
+  it("takes the Cursor away from the field it was drawn in before", () => {
+    session.enter(0, "text", { start: 2, end: 2 }, "大家好");
+    flushSync();
+
+    session.enter(1, "text", { start: 1, end: 1 }, "今天天氣");
+    flushSync();
+
+    expect([
+      field().dataset.cursor,
+      caretMarks(0).length,
+      fieldAt(1).dataset.cursor,
+      caretMarks(1).length,
+    ]).toEqual([undefined, 0, "1", 1]);
+  });
+
+  // @behavior ED-122
+  it("keeps the caret on its character as marks drawn above move the text", () => {
+    const observers: { targets: Element[]; notify: () => void }[] = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        private readonly watched: { targets: Element[]; notify: () => void };
+        constructor(notify: () => void) {
+          this.watched = { targets: [], notify };
+          observers.push(this.watched);
+        }
+        observe(target: Element) {
+          this.watched.targets.push(target);
+        }
+        disconnect() {}
+      },
+    );
+    let textTop = 0;
+    vi.spyOn(Range.prototype, "getBoundingClientRect").mockImplementation(() =>
+      DOMRect.fromRect({ x: 0, y: textTop, width: 0, height: 20 }),
+    );
+    session.enter(0, "text", { start: 2, end: 2 }, "大家好");
+    flushSync();
+
+    textTop = 24;
+    for (const { targets, notify } of observers)
+      if (targets.includes(field().parentElement!)) notify();
+    flushSync();
+
+    expect(caretMarks()[0].style.top).toBe("24px");
   });
 
   // @behavior ED-078

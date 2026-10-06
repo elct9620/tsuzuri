@@ -2,14 +2,17 @@
   @component
   One text or translation field of a Segment, handing the session what the user does in it:
   entering it, moving the selection, leaving it or giving up its typing, and splitting its Segment
-  by shortcut; its keys also break a line and move on to the next Segment. Its text is written with
-  the editor's `setFieldValue` and never bound, as the editor draws the Cursor in it, and only while
-  the user is not typing in it.
+  by shortcut; its keys also break a line and move on to the next Segment. It draws the Cursor the
+  session holds in it. Its text is written with the editor's `setFieldValue` and never bound, and only
+  while the user is not typing in it.
 -->
 <script lang="ts">
   import { isMacOS } from "#/ipc/system.ts";
   import {
+    type CaretPlace,
+    caretPlace,
     type CursorField,
+    cursorMark,
     fieldSelection,
     fieldValue,
     insertLineBreak,
@@ -18,7 +21,11 @@
   } from "#/editor/index.ts";
   import { notifyEdit } from "#/state/notification.svelte.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
-  import { editingSession, segmentFields } from "#/state/context.ts";
+  import {
+    editingSession,
+    editingState,
+    segmentFields,
+  } from "#/state/context.ts";
 
   interface Props {
     index: number;
@@ -32,7 +39,7 @@
     isPending?: boolean;
     /** Whether a field being typed in keeps its value, as the Segments keep their number. */
     isTypingKept: boolean;
-    /** The field's element, where the editor draws the Cursor. */
+    /** The field's element. */
     element?: HTMLElement;
   }
 
@@ -48,8 +55,37 @@
   }: Props = $props();
 
   const session = editingSession();
+  const editing = editingState();
   const fields = segmentFields();
   const isMac = isMacOS();
+
+  /** The caret of the Cursor while it is in this field, or none. */
+  const caret = $derived.by(() => {
+    const { index: cursorIndex, caret: cursorCaret } = editing.cursor;
+    return cursorIndex === index && cursorCaret?.field === kind
+      ? cursorCaret
+      : null;
+  });
+  const isRange = $derived(caret !== null && caret.start !== caret.end);
+  /** Where the caret mark stands, measured from the text as it is laid out. */
+  let drawnCaret = $state.raw<CaretPlace | null>(null);
+
+  // Measures where the caret stands, again whenever the field or what is drawn beside it in its row
+  // moves the text
+  $effect(() => {
+    const field = element;
+    if (!field || !caret || isRange) {
+      drawnCaret = null;
+      return;
+    }
+    const measure = () => (drawnCaret = caretPlace(field, caret));
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    for (const target of [field, field.parentElement])
+      if (target) observer.observe(target);
+    return () => observer.disconnect();
+  });
 
   /** Whether an input method is composing, or has only just ended composing, in the field. */
   let hasComposition = false;
@@ -143,9 +179,23 @@
   data-index={index}
   data-field={kind}
   data-placeholder={placeholder}
+  data-cursor={caret === null ? undefined : cursorMark(caret)}
+  data-has-kept-cursor={caret?.kind === "kept" ? "" : undefined}
   onfocus={enter}
   onblur={leave}
   oncompositionstart={() => (hasComposition = true)}
   oncompositionend={endComposing}
   onkeydown={pressKey}
 ></div>
+{#if drawnCaret}
+  <span
+    aria-hidden="true"
+    class={[
+      "cursor-caret pointer-events-none absolute w-0.5 bg-base-content",
+      caret?.kind === "live" && "animate-blink",
+    ]}
+    style:left="{drawnCaret.left}px"
+    style:top="{drawnCaret.top}px"
+    style:height="{drawnCaret.height}px"
+  ></span>
+{/if}

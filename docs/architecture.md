@@ -536,7 +536,7 @@ components/   ------------> state/, actions/, ui/, ipc/ (editing aside)
     v
 editor/  session.ts           application: Cursor, Checked Segments, use cases, port
          cursor.ts, rules.ts   domain: state machines and rules
-         field.ts, marks.ts    DOM: field offsets, drawing the Cursor
+         field.ts, marks.ts    DOM: field offsets, measuring the Cursor
     ^
     | implements EditingPort
 ipc/editing.ts                gateway: the one caller of editing commands
@@ -653,7 +653,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `rules.ts` | 領域 | 合併、鎖定、分割的規則 |
 | `session.ts` | 應用 | `EditingSession` 與 port |
 | `field.ts` | DOM | 欄位內容、選取與文字欄位 |
-| `marks.ts` | DOM | 畫出 Cursor |
+| `marks.ts` | DOM | 量出 Cursor 的位置 |
 | `highlight.ts` | DOM | CSS Custom Highlight |
 
 `editor/` 是能抽成獨立套件的編輯核心：Current Segment、Cursor、Checked Segments 與改動段落的用例都在這裡。用例回傳結果而不發通知，由介面轉成文字。
@@ -703,7 +703,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `SegmentList` | 段落的快速鍵與編輯選單 |
 | `CheckedBar` | 勾選工具列 |
 | `SegmentRows`、`SegmentRow` | 段落列與選單、Placeholder、Cursor、追蹤播放 |
-| `EditingField` | 文字與譯文欄位接上 session |
+| `EditingField` | 欄位接上 session、畫出 Cursor |
 | `TimeField` | 時間欄覆寫輸入 |
 | `ComparisonMarks`、`EarlierText` | 列上的比較標記與舊文字 |
 | `RemovalRow`、`RevertMenu` | 已刪除的字幕、單句還原 |

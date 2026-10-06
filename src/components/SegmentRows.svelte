@@ -13,13 +13,14 @@
   import { isMacOS } from "#/ipc/system.ts";
   import type { ComparedRow } from "#/ipc/project.ts";
   import {
+    CURSOR_HIGHLIGHT,
     type Cursor,
     type CursorField,
-    drawCursor,
     fieldValue,
     isField,
     markRanges,
     placeSelection,
+    rangeOf,
     textRange,
     type TranscriptView,
   } from "#/editor/index.ts";
@@ -121,7 +122,6 @@
     view = session.transcript;
     placeholders.hide();
     flushSync();
-    drawSessionCursor();
     onshown?.(next);
   }
 
@@ -158,11 +158,11 @@
   });
 
   /**
-   * Marks the Current Segment and draws the Cursor in it, bringing its row into view as it becomes
-   * current, so the Cursor moving within it leaves the list where following playback put it; a live
-   * Cursor in a field without focus, as after a split, takes the focus there.
+   * Brings the Current Segment's row into view as it becomes current, so the Cursor moving within
+   * it leaves the list where following playback put it; a live Cursor in a field without focus, as
+   * after a split, takes the focus there.
    */
-  function showCursor({ index, caret }: Cursor): void {
+  function followCursor({ index, caret }: Cursor): void {
     const isNewlyCurrent = index !== shownCurrentIndex;
     shownCurrentIndex = index;
     if (index === null) return;
@@ -176,22 +176,26 @@
       caretField.focus();
       placeSelection(caretField, caret);
     }
-    drawSessionCursor();
   }
+
+  // Marks the range the Cursor covers, in the field as it is now drawn
+  $effect(() => {
+    const { index, caret } = editing.cursor;
+    const rangeField =
+      index !== null && caret && caret.start !== caret.end
+        ? field(index, caret.field)
+        : null;
+    markRanges(
+      CURSOR_HIGHLIGHT,
+      rangeField && caret ? [rangeOf(rangeField, caret)] : [],
+    );
+  });
 
   // Shows each Cursor the session tells of, once the rows it moves into are drawn
   $effect(() => {
     const cursor = editing.cursor;
-    untrack(() => showCursor(cursor));
+    untrack(() => followCursor(cursor));
   });
-
-  function drawSessionCursor(): void {
-    const { index, caret } = session.cursor;
-    drawCursor(
-      index === null || !caret ? null : field(index, caret.field),
-      caret,
-    );
-  }
 
   /**
    * Hands a selection change to the row whose field has focus; bound once on the document, as each

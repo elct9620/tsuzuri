@@ -10,6 +10,7 @@ import { EditingSession } from "#/editor/index.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
 import { pageContext } from "#/state/context.ts";
 import { ResourceDock } from "#/state/resource-dock.svelte.ts";
+import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import ResourceList from "#/components/ResourceList.svelte";
 import {
   notificationDetail,
@@ -24,7 +25,7 @@ describe("ResourceList", () => {
   let selectFailure: unknown;
   let reloadProject: () => unknown;
   let unfollow: () => void;
-  let loadingShown: number;
+  let placeholders: ResourcePlaceholders;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const sent = (command: string) =>
@@ -40,7 +41,7 @@ describe("ResourceList", () => {
       props: {
         dock: new ResourceDock(),
         openGlossary: () => {},
-        showLoading: () => loadingShown++,
+        placeholders,
       },
       context: pageContext(feed, new EditingSession(editingPort)),
     });
@@ -55,7 +56,7 @@ describe("ResourceList", () => {
 
   beforeEach(async () => {
     project = null;
-    loadingShown = 0;
+    placeholders = new ResourcePlaceholders();
     calls = [];
     selectFailure = undefined;
     reloadProject = () => null;
@@ -197,7 +198,7 @@ describe("ResourceList", () => {
 
     await choose("ep02");
 
-    expect(loadingShown).toBe(1);
+    expect(placeholders.isShown).toBe(true);
   });
 
   // @behavior PJ-116
@@ -255,7 +256,7 @@ describe("ResourceList", () => {
       props: {
         dock: new ResourceDock(),
         openGlossary: () => {},
-        showLoading: () => {},
+        placeholders: new ResourcePlaceholders(),
       },
       context: pageContext(feed, new EditingSession(editingPort)),
     });

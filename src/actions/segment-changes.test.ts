@@ -18,6 +18,7 @@ import { projectOf } from "#/testing/project.ts";
 import { EditingSession, fieldValue } from "#/editor/index.ts";
 import { pageContext, withSegmentDialogs } from "#/state/context.ts";
 import { Playback } from "#/state/playback.svelte.ts";
+import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
@@ -120,7 +121,10 @@ describe("Segment Changes", () => {
     const assembly = assemble();
     render(SegmentList, {
       target: document.querySelector("section")!,
-      props: { playback: new Playback() },
+      props: {
+        playback: new Playback(),
+        placeholders: new ResourcePlaceholders(),
+      },
       context: withSegmentDialogs(
         pageContext(assembly.feed, assembly.session),
         {

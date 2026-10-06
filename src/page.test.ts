@@ -301,6 +301,35 @@ describe("drawPage", () => {
     ).toBe(true);
   });
 
+  it("stands Placeholders in for the Segments of a Resource the list selects", async () => {
+    const page = document.createElement("div");
+    await setInterfaceLanguage("zh-TW");
+    mockPageMount(
+      projectOf({
+        resources: [resourceOf(), resourceOf({ name: "ep02" })],
+        segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }],
+      }),
+      {
+        // Rust has not answered yet, so the Segments of ep02 are still being read
+        select_resource: () => new Promise(() => {}),
+        take_requested_srt: () => null,
+      },
+    );
+    const assembly = assemble();
+    drawTestPage(assembly.feed, assembly.session, page);
+    const stop = await assembly.start();
+    await tick();
+
+    within(page).getByRole("button", { hidden: true, name: /ep02/ }).click();
+    await tick();
+
+    expect([
+      page.querySelectorAll("[data-placeholder]").length > 0,
+      page.querySelectorAll(".field").length,
+    ]).toEqual([true, 0]);
+    stop();
+  });
+
   it("sends an undo by its keys to the Project", async () => {
     let undoCount = 0;
     mockPageMount(null, { undo: () => (undoCount += 1) });

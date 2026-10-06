@@ -21,13 +21,16 @@
   import { cleanMarked } from "#/actions/cleanup.ts";
   import { editingSession } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
+  import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import SearchBar from "#/components/SearchBar.svelte";
   import SegmentRows from "#/components/SegmentRows.svelte";
 
-  let { playback }: { playback: Playback } = $props();
+  let {
+    playback,
+    placeholders,
+  }: { playback: Playback; placeholders: ResourcePlaceholders } = $props();
   const session = editingSession();
   let searchBar: SearchBar;
-  let segmentRows: SegmentRows;
   /** A change by key is being sent. */
   let isChangingByKey = false;
 
@@ -154,20 +157,11 @@
   export function openSearch(): void {
     searchBar.open();
   }
-
-  /** Stands Placeholders in for the Segments of a Resource being read. */
-  export function showLoading(): void {
-    segmentRows.showLoading();
-  }
 </script>
 
 <svelte:window onkeydown={followKeys} onrust:edit-command={applyEditCommand} />
 
-<SegmentRows
-  {playback}
-  onshown={() => searchBar.searchAgain()}
-  bind:this={segmentRows}
->
+<SegmentRows {playback} {placeholders} onshown={() => searchBar.searchAgain()}>
   <div class="sticky -top-4 z-10 mb-2 flex flex-col gap-2">
     <SearchBar bind:this={searchBar} />
     <CheckedBar />

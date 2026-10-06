@@ -7,6 +7,7 @@ import { render, screen, within } from "@testing-library/svelte";
 
 import { type SegmentDialogs, withSegmentDialogs } from "#/state/context.ts";
 import { Playback } from "#/state/playback.svelte.ts";
+import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import type ShiftDialog from "#/components/ShiftDialog.svelte";
 import type SpeakersDialog from "#/components/SpeakersDialog.svelte";
 import SegmentList from "#/components/SegmentList.svelte";
@@ -18,6 +19,7 @@ import type TranslationDialog from "#/components/TranslationDialog.svelte";
 export interface DrawnSegmentRows {
   rows: SegmentRows;
   playback: Playback;
+  placeholders: ResourcePlaceholders;
   unmount: () => void;
 }
 
@@ -30,12 +32,13 @@ export function drawSegmentRows(
   context: Map<symbol, unknown>,
   playback = new Playback(),
 ): DrawnSegmentRows {
+  const placeholders = new ResourcePlaceholders();
   const { component, unmount } = render(SegmentRows, {
     target,
-    props: { playback },
+    props: { playback, placeholders },
     context,
   });
-  return { rows: component, playback, unmount };
+  return { rows: component, playback, placeholders, unmount };
 }
 
 /** The list the rows are drawn in. */
@@ -76,7 +79,10 @@ export function drawSegmentList(
 ): SegmentList {
   return render(SegmentList, {
     target,
-    props: { playback: new Playback() },
+    props: {
+      playback: new Playback(),
+      placeholders: new ResourcePlaceholders(),
+    },
     context: withSegmentDialogs(context, dialogs),
   }).component;
 }

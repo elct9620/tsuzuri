@@ -24,6 +24,7 @@
   import { PreviewFold } from "#/state/preview-fold.svelte.ts";
   import ReplacementDialog from "#/components/ReplacementDialog.svelte";
   import { ResourceDock } from "#/state/resource-dock.svelte.ts";
+  import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import ResourceList from "#/components/ResourceList.svelte";
   import SegmentList from "#/components/SegmentList.svelte";
   import LicensesDialog from "#/components/settings/LicensesDialog.svelte";
@@ -59,6 +60,7 @@
   const dock = new ResourceDock();
   const playback = new Playback();
   const fold = new PreviewFold();
+  const placeholders = new ResourcePlaceholders();
   const feed = projectFeed();
   const comparison = editorComparison();
   setSegmentDialogs({
@@ -125,13 +127,13 @@
       />
       <Preview {playback} {fold} />
       <div class="flex-1 overflow-y-auto p-4">
-        <SegmentList {playback} bind:this={segmentList} />
+        <SegmentList {playback} {placeholders} bind:this={segmentList} />
       </div>
     </div>
     <ResourceList
       {dock}
       openGlossary={() => glossaryDialog.open()}
-      showLoading={() => segmentList.showLoading()}
+      {placeholders}
     />
   </div>
 </main>

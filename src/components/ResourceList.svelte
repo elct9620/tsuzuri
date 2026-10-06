@@ -10,15 +10,16 @@
   import { projectFeed } from "#/state/context.ts";
   import { reload } from "#/actions/project.ts";
   import type { ResourceDock } from "#/state/resource-dock.svelte.ts";
+  import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 
   interface Props {
     dock: ResourceDock;
     openGlossary: () => void;
-    /** Stands Placeholders in for the Segments of the Resource being read. */
-    showLoading: () => void;
+    /** Stand in for the Segments of the Resource being read. */
+    placeholders: ResourcePlaceholders;
   }
 
-  let { dock, openGlossary, showLoading }: Props = $props();
+  let { dock, openGlossary, placeholders }: Props = $props();
 
   const feed = projectFeed();
   let project = $state<ProjectView | null>(null);
@@ -33,7 +34,7 @@
   /** Selects the Resource named `name`, putting the list away while its Segments are read. */
   async function select(name: string): Promise<void> {
     dock.putAway();
-    showLoading();
+    placeholders.show();
     try {
       await selectResource(name);
     } catch (error) {

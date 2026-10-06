@@ -737,6 +737,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ResourceDock` | Page 建立 | 工具列、資源清單 |
 | `Playback` | Page 建立 | 預覽、時間軸、段落列 |
 | `PreviewFold` | Page 建立 | 編輯列的收起鈕、預覽 |
+| `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
 | 通知的清單 | `notification.svelte.ts` | 所有 Svelte 元件 |

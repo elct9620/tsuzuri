@@ -35,6 +35,7 @@
     type Side,
   } from "#/state/editor-comparison.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
+  import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import { resourceOffers } from "#/actions/segment-changes.ts";
   import RemovalRow from "#/components/RemovalRow.svelte";
   import SegmentRow from "#/components/SegmentRow.svelte";
@@ -50,10 +51,12 @@
 
   let {
     playback,
+    placeholders,
     onshown,
     children,
   }: {
     playback: Playback;
+    placeholders: ResourcePlaceholders;
     /** Hears each Project once its Segments are shown. */
     onshown?: (project: ProjectView | null) => void;
     /** What stands between the empty hint and the rows, as the search and checked bars do. */
@@ -69,8 +72,6 @@
   let project = $state.raw<ProjectView | null>(null);
   /** The transcript as the session read it with the Project, whose running Mode holds fields. */
   let view = $state.raw<TranscriptView | null>(null);
-  /** Whether another Resource is being read, its Segments not yet shown. */
-  let isLoading = $state(false);
   /** Whether a field being typed in keeps its value: the Segments kept their number. */
   let isTypingKept = $state(true);
   let currentIndex = $state<number | null>(null);
@@ -90,7 +91,7 @@
   const isTranscribing = $derived(run.task === "transcription");
   const isAwaitingSegments = $derived(segments.length === 0 && isTranscribing);
   const placeholderCount = $derived(
-    isLoading || isAwaitingSegments
+    placeholders.isShown || isAwaitingSegments
       ? 3
       : isTranscribing && segments.length > 0
         ? 1
@@ -103,17 +104,12 @@
     return batch !== null && index >= batch.first && index <= batch.last;
   }
 
-  /** Stands Placeholders in for the Segments of a Resource being read. */
-  export function showLoading(): void {
-    isLoading = true;
-  }
-
   function show(next: ProjectView | null): void {
-    const drawnCount = isLoading ? 0 : segments.length;
+    const drawnCount = placeholders.isShown ? 0 : segments.length;
     isTypingKept = (next?.segments.length ?? 0) === drawnCount;
     project = next;
     view = session.transcript;
-    isLoading = false;
+    placeholders.hide();
     currentIndex = session.cursor.index;
     checkedIndexes = new Set(session.checkedIndexes);
     flushSync();
@@ -228,7 +224,7 @@
   aria-label={t("edit.segments")}
   bind:this={list}
 >
-  {#if !isLoading}
+  {#if !placeholders.isShown}
     {#key offers.isTranslationShown}
       {#each segments as segment, index (index)}
         {#each layout.removalsBefore[index] as sideRow (`${sideRow.side} ${sideRow.index}`)}

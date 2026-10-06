@@ -17,6 +17,7 @@ import {
 import { pageContext } from "#/state/context.ts";
 import { saveMark } from "#/state/save-mark.svelte.ts";
 import { Playback } from "#/state/playback.svelte.ts";
+import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 import { TaskRun } from "#/state/task-run.svelte.ts";
 import { rowList, segmentRows } from "#/testing/segment-rows.ts";
@@ -56,6 +57,7 @@ describe("SegmentList", () => {
 
   let run: TaskRun;
   let segmentList: SegmentList;
+  let resourcePlaceholders: ResourcePlaceholders;
 
   const placeholders = () =>
     document.querySelectorAll("[data-placeholder]").length;
@@ -112,9 +114,13 @@ describe("SegmentList", () => {
     const assembly = assemble();
     run = new TaskRun();
     const context = pageContext(assembly.feed, assembly.session, run);
+    resourcePlaceholders = new ResourcePlaceholders();
     segmentList = render(SegmentList, {
       target: document.querySelector("section")!,
-      props: { playback: new Playback() },
+      props: {
+        playback: new Playback(),
+        placeholders: resourcePlaceholders,
+      },
       context,
     }).component;
     await assembly.start();
@@ -406,10 +412,25 @@ describe("SegmentList", () => {
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }] }),
     );
 
-    segmentList.showLoading();
+    resourcePlaceholders.show();
     flushSync();
 
     expect([placeholders() > 0, fields()]).toEqual([true, []]);
+  });
+
+  // @behavior ED-010
+  it("puts the Placeholder rows away once the other Resource is read", async () => {
+    await hold(
+      projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "大家好" }] }),
+    );
+    resourcePlaceholders.show();
+    flushSync();
+
+    await hold(
+      projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "第二集" }] }),
+    );
+
+    expect([placeholders(), fields()[0]]).toEqual([0, "第二集"]);
   });
 
   /** Opens the Speaker menu of the Segment at `index`, as focusing its button does. */

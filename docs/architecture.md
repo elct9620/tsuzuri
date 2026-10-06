@@ -170,7 +170,7 @@ Svelte 元件 ─▶ ipc/<情境>.ts ─▶ bindings.ts ─▶ <情境>/commands
              │            state/notification.svelte.ts（toast）◀┘
 ```
 
-`Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤由 `llama.rs`、hf-hub 的錯誤由 `hub.rs` 轉換。通知種類也依錯誤碼決定：拒絕是自動消失的 warning，出錯是留到關閉的 error。
+`Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤由 `llama.rs`、hf-hub 的錯誤由 `hub.rs` 轉換。通知種類也依錯誤碼決定：拒絕是自動消失的 warning，出錯是留到關閉的 error。啟動的 `set_up` 也回傳 `Failure`，只在 Tauri 的 setup 邊界轉成文字。
 
 ### 2.5 媒體檔（asset protocol）
 

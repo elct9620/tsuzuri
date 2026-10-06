@@ -17,7 +17,7 @@ use crate::conversion;
 use crate::failure::Failure;
 use crate::progress::{enter, Progress};
 use crate::project::CurrentProject;
-use crate::steps::{run_step, ModeRun, Steps, WorkDir, CONVERSION_STEP, DIARIZATION_STEP};
+use crate::steps::{convert_speech, run_step, ModeRun, Steps, WorkDir, DIARIZATION_STEP};
 use crate::timing::{Phase, PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
 use subcommand::DIARIZE_ARGUMENT;
@@ -56,17 +56,8 @@ pub async fn run_diarize<'a>(
     let wav = work.join("audio.wav");
     let turns_path = work.join("turns.json");
 
-    enter(ports, &mut phases, Phase::Conversion);
-    run_step(
-        ports,
-        CONVERSION_STEP,
-        &tools.ffmpeg,
-        &conversion::conversion_args(&job.media, &wav, conversion::SPEECH_SAMPLE_RATE, None),
-        |_| {},
-        |_| {},
-    )
-    .await?;
-    let audio_bytes = std::fs::metadata(&wav)?.len();
+    let audio_bytes =
+        convert_speech(ports, &mut phases, &tools.ffmpeg, &job.media, None, &wav).await?;
 
     enter(ports, &mut phases, Phase::Loading);
     let start = Instant::now();

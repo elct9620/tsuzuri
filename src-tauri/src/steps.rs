@@ -6,7 +6,11 @@ use std::path::{Path, PathBuf};
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::watch;
 
+use crate::conversion::{conversion_args, SPEECH_SAMPLE_RATE};
 use crate::failure::Failure;
+use crate::progress::{enter, Progress};
+use crate::timing::{Phase, Phases};
+use crate::transcript::AudioWindow;
 
 pub mod commands;
 
@@ -36,6 +40,29 @@ pub trait Steps {
     fn stop(&self, pid: u32);
     /// Stops every Component these Steps started that still runs, and none started elsewhere.
     fn stop_started(&self);
+}
+
+/// Converts `media`, or only its `window`, to the speech WAV `wav` in the Conversion Phase, and
+/// answers how many bytes the WAV holds.
+pub async fn convert_speech(
+    ports: &(impl Progress + Steps),
+    phases: &mut Phases,
+    ffmpeg: &Path,
+    media: &Path,
+    window: Option<AudioWindow>,
+    wav: &Path,
+) -> Result<u64, Failure> {
+    enter(ports, phases, Phase::Conversion);
+    run_step(
+        ports,
+        CONVERSION_STEP,
+        ffmpeg,
+        &conversion_args(media, wav, SPEECH_SAMPLE_RATE, window),
+        |_| {},
+        |_| {},
+    )
+    .await?;
+    Ok(std::fs::metadata(wav)?.len())
 }
 
 /// Runs one Step to completion. A Step that exits non-zero fails with the last lines it wrote to stderr.

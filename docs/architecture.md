@@ -296,7 +296,7 @@ Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直
 | `toolchain/` | `presets` | 應用 | 預設模型清單與比對 |
 | `toolchain/` | `settings` | 轉接 | 元件設定檔 |
 | — | `progress` | 應用 | 回報進度的 Port |
-| — | `steps` | 應用 | Step 與 `ModeRun` |
+| — | `steps` | 應用 | Step、`ModeRun`、轉成語音 |
 | — | `timing` | 應用 | Phase 計時 |
 | — | `transfer_report` | 領域 | 傳輸進度的回報間隔 |
 | — | `failure` | 應用 | 錯誤碼 |

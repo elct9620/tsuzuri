@@ -9,7 +9,7 @@ use crate::failure::Failure;
 use crate::language::Language;
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, SegmentSpan, TranscriptionRequest};
-use crate::steps::{run_step, ModeRun, Steps, WorkDir, CONVERSION_STEP, TRANSCRIPTION_STEP};
+use crate::steps::{convert_speech, run_step, ModeRun, Steps, WorkDir, TRANSCRIPTION_STEP};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -73,17 +73,8 @@ pub async fn run_transcribe<'a>(
     let wav = work.join("audio.wav");
     let srt_prefix = work.join("transcript");
 
-    enter(ports, &mut phases, Phase::Conversion);
-    run_step(
-        ports,
-        CONVERSION_STEP,
-        &tools.ffmpeg,
-        &conversion::conversion_args(input, &wav, conversion::SPEECH_SAMPLE_RATE, job.window),
-        |_| {},
-        |_| {},
-    )
-    .await?;
-    let audio_bytes = std::fs::metadata(&wav)?.len();
+    let audio_bytes =
+        convert_speech(ports, &mut phases, &tools.ffmpeg, input, job.window, &wav).await?;
 
     enter(ports, &mut phases, Phase::Loading);
     let start = Instant::now();

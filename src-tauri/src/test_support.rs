@@ -91,9 +91,11 @@ impl TempDir {
 }
 
 /// An ffmpeg that records its arguments beside itself and writes 64 044 zero bytes as its WAV.
+#[cfg(unix)]
 pub const RECORDING_FFMPEG: &str = "#!/bin/sh\necho \"$@\" > \"$0.args\"\nfor last; do :; done\nhead -c 64044 /dev/zero > \"$last\"\n";
 
 /// An ffmpeg that cannot read its input.
+#[cfg(unix)]
 pub const FAILING_FFMPEG: &str =
     "#!/bin/sh\necho 'Invalid data found when processing input' >&2\nexit 1\n";
 

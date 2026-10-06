@@ -2,6 +2,7 @@
 import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { editingPort } from "#/ipc/editing.ts";
@@ -12,6 +13,7 @@ import { projectOf, resourceOf } from "#/testing/project.ts";
 import { pageContext } from "#/state/context.ts";
 import EditorBar from "#/components/EditorBar.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
+import { saveMark } from "#/state/save-mark.svelte.ts";
 import { notifications, showNotifications } from "#/testing/notifications.ts";
 
 describe("EditorBar", () => {
@@ -94,6 +96,19 @@ describe("EditorBar", () => {
     await show(translatedProject);
 
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("ep01");
+  });
+
+  it("shows the Save Mark beside the Current Resource once an edit is saved", async () => {
+    await show(translatedProject);
+
+    saveMark.show();
+    flushSync();
+
+    const mark = screen.getByRole("status");
+    expect([mark.textContent, mark.hasAttribute("data-is-shown")]).toEqual([
+      "已存檔",
+      true,
+    ]);
   });
 
   // @behavior ED-188

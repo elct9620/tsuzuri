@@ -7,7 +7,7 @@ import type { Outcome } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
 import { failureKind, failureMessage } from "#/ui/failure.ts";
 import { factorItems, phaseItems } from "#/ui/progress.ts";
-import { showSaveMark } from "#/ui/save-mark.ts";
+import { saveMark } from "#/state/save-mark.svelte.ts";
 
 /** How long a Notification that goes on its own stays, paused while the pointer or focus rests on it. */
 export const NOTIFICATION_MS = 6000;
@@ -101,7 +101,7 @@ export function notifyEdit(
   outcome: Outcome,
   { refusal = "edit.notSaved", failure = "edit.notSaved" } = {},
 ): void {
-  if (outcome.kind === "written") showSaveMark();
+  if (outcome.kind === "written") saveMark.show();
   else if (outcome.kind === "refused")
     notify({ title: t(refusal), kind: "warning" });
   else if (outcome.kind === "failed") notifyFailure(t(failure), outcome.error);

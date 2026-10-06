@@ -740,6 +740,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
 | 通知的清單 | `notification.svelte.ts` | 所有 Svelte 元件 |
+| `SaveMark` | `save-mark.svelte.ts` | 寫入的編輯、編輯列 |
 | 開啟、重新載入、命名 | `project.ts` | 起始畫面、工具列、資源清單 |
 | 寫入說話者後的通知 | `speaker.ts` | 說話者 modal、段落列 |
 | 清理簡體與通知 | `cleanup.ts` | 段落列、勾選工具列、快速鍵 |
@@ -784,7 +785,6 @@ feed -> Preview.show    sets the player's source: media or silence
 
 | 模組 | 內容 |
 |---|---|
-| `ui/save-mark.ts` | 標題列的存檔提示與計時 |
 | `ui/failure.ts` | 錯誤碼的訊息與通知種類 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
 | `ui/time.ts`、`ui/menu.ts` | 時間格式與欄位綁定、關閉選單 |

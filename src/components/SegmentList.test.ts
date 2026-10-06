@@ -15,7 +15,7 @@ import {
   notifications,
 } from "#/testing/notifications.ts";
 import { pageContext } from "#/state/context.ts";
-import { SAVE_MARK, saveMark } from "#/testing/save-mark.ts";
+import { saveMark } from "#/state/save-mark.svelte.ts";
 import { Playback } from "#/state/playback.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 import { TaskRun } from "#/state/task-run.svelte.ts";
@@ -81,16 +81,14 @@ describe("SegmentList", () => {
     project = null;
     calls = [];
     editFailure = undefined;
+    saveMark.isShown = false;
     localStorage.clear();
     glossaryTable = {
       languages: ["zh-TW", "en", "ja"],
       rows: [],
       has_source_target_header: false,
     };
-    document.body.innerHTML = `
-      ${SAVE_MARK}
-      <section></section>
-    `;
+    document.body.innerHTML = `<section></section>`;
     showNotifications();
     mockIPC(
       (command, args) => {
@@ -274,7 +272,7 @@ describe("SegmentList", () => {
     edit(".field.text", "逐字稿");
     await settle();
 
-    expect(saveMark()).toBe("已存檔");
+    expect(saveMark.isShown).toBe(true);
     expect(notifications()).toEqual([]);
   });
 
@@ -568,7 +566,7 @@ describe("SegmentList", () => {
 
     await nameSpeaker("小明");
 
-    expect(saveMark()).toBe("已存檔");
+    expect(saveMark.isShown).toBe(true);
     expect(notifications()).toEqual([]);
   });
 

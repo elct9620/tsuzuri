@@ -1,12 +1,16 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SAVE_MARK_MS, showSaveMark } from "#/ui/save-mark.ts";
-import { SAVE_MARK, saveMark } from "#/testing/save-mark.ts";
 
-describe("showSaveMark", () => {
-  beforeEach(() => {
+import { setInterfaceLanguage } from "#/i18n.ts";
+import { SAVE_MARK_MS, SaveMark } from "#/state/save-mark.svelte.ts";
+
+describe("SaveMark", () => {
+  let mark: SaveMark;
+
+  beforeEach(async () => {
+    await setInterfaceLanguage("zh-TW");
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    document.body.innerHTML = SAVE_MARK;
+    mark = new SaveMark();
   });
 
   afterEach(() => {
@@ -14,29 +18,36 @@ describe("showSaveMark", () => {
   });
 
   it("marks an edit as saved", () => {
-    showSaveMark();
+    mark.show();
 
-    expect(saveMark()).toBe("已存檔");
+    expect(mark.label).toBe("已存檔");
   });
 
   // @behavior IF-037
   it("lets the Save Mark go on its own", () => {
-    showSaveMark();
+    mark.show();
 
     vi.advanceTimersByTime(SAVE_MARK_MS);
 
-    expect(saveMark()).toBeUndefined();
+    expect(mark.isShown).toBe(false);
   });
 
   // @behavior IF-038
   it("keeps the Save Mark for a whole moment from the latest edit saved", () => {
-    showSaveMark();
+    mark.show();
     vi.advanceTimersByTime(SAVE_MARK_MS - 100);
 
-    showSaveMark();
+    mark.show();
     vi.advanceTimersByTime(SAVE_MARK_MS - 100);
 
-    expect(saveMark()).toBe("已存檔");
-    expect(document.querySelectorAll("[data-save-mark]")).toHaveLength(1);
+    expect(mark.isShown).toBe(true);
+  });
+
+  it("takes its words away once it has faded", () => {
+    mark.show();
+
+    vi.runAllTimers();
+
+    expect(mark.label).toBe("");
   });
 });

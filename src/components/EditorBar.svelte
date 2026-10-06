@@ -21,6 +21,7 @@
   import CompareMenu from "#/components/CompareMenu.svelte";
   import { projectFeed } from "#/state/context.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
+  import { saveMark } from "#/state/save-mark.svelte.ts";
   import TaskProgress from "#/components/TaskProgress.svelte";
 
   interface Props {
@@ -66,10 +67,10 @@
     <span
       class="flex shrink-0 items-center gap-1 text-sm text-base-content/70 opacity-0 transition-opacity duration-200 ease-out data-is-shown:opacity-100 motion-reduce:transition-none"
       role="status"
-      data-save-mark
+      data-is-shown={saveMark.isShown ? "" : undefined}
       ><Check class="size-4 text-success" aria-hidden="true" /><span
-        data-save-mark-label
-      ></span></span
+        >{saveMark.label}</span
+      ></span
     >
   </div>
   <label class="flex items-center gap-2 text-sm"

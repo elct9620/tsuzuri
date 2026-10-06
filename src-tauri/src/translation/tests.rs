@@ -1,12 +1,6 @@
 use serde_json::json;
 
-use std::sync::{Arc, Mutex};
-
 use crate::test_support::mode_app;
-use tauri::Listener;
-use tauri_specta::Event;
-
-use crate::progress::{PipelineProgress, ProjectChanged};
 
 use tauri::Manager;
 
@@ -16,7 +10,9 @@ use crate::processes::{AppPorts, Processes};
 use crate::project::{Project, RunningMode, SegmentField};
 use crate::steps::{run_mode, ModeLock};
 use crate::test_support::Response;
-use crate::test_support::{project_of, segment, TempDir};
+use crate::test_support::{
+    announced_readings, progress_payloads, project_of, segment, ModeFixture, TempDir,
+};
 use fake_llama::{
     completion, echo_lines, numbered_summary, review_answer, translations, FakeLlama, Lines,
     Replies,
@@ -938,19 +934,11 @@ async fn shows_each_batch_as_it_is_translated() {
             indexes: None,
         },
     );
-    let shown_counts = Arc::new(Mutex::new(Vec::new()));
-    ProjectChanged::listen_any(&app, {
-        let shown_counts = Arc::clone(&shown_counts);
-        let handle = app.handle().clone();
-        move |_| {
-            let view = handle.state::<CurrentProject>().view().unwrap();
-            let count = view
-                .segments()
-                .iter()
-                .filter(|segment| segment.translation.is_some())
-                .count();
-            shown_counts.lock().unwrap().push(count);
-        }
+    let shown_counts = announced_readings(&app, |view| {
+        view.segments()
+            .iter()
+            .filter(|segment| segment.translation.is_some())
+            .count()
     });
 
     translate_once_ready(
@@ -987,15 +975,7 @@ async fn names_the_batch_being_translated() {
             indexes: None,
         },
     );
-    let pending_batches = Arc::new(Mutex::new(Vec::new()));
-    ProjectChanged::listen_any(&app, {
-        let pending_batches = Arc::clone(&pending_batches);
-        let handle = app.handle().clone();
-        move |_| {
-            let view = handle.state::<CurrentProject>().view().unwrap();
-            pending_batches.lock().unwrap().push(view.pending_batch());
-        }
-    });
+    let pending_batches = announced_readings(&app, |view| view.pending_batch());
 
     translate_once_ready(
         app.handle(),
@@ -1296,16 +1276,7 @@ async fn drops_the_translations_shown_when_cancelled() {
 async fn progress_events(phase: &str) -> Vec<String> {
     let llama = FakeLlama::with_echo(0);
     let app = mode_app();
-    let progress_events = Arc::new(Mutex::new(Vec::new()));
-    app.listen_any(PipelineProgress::NAME, {
-        let progress_events = Arc::clone(&progress_events);
-        move |event| {
-            progress_events
-                .lock()
-                .unwrap()
-                .push(event.payload().to_string())
-        }
-    });
+    let progress_events = progress_payloads(&app);
     let segments = three_segments();
 
     translate_once_ready(
@@ -1564,29 +1535,23 @@ fn plan_for(target: Language) -> TranslationPlan {
 // @behavior TL-003
 #[tokio::test]
 async fn refuses_without_a_translation_model() {
-    let dir = TempDir::new("tl-no-model");
-    let app = mode_app();
+    let fixture = ModeFixture::new("tl-no-model");
+    let dir = &fixture.dir;
+    let app = &fixture.app;
     let record = dir.path().join("processes.json");
-    let processes = Processes::new(record.clone());
 
     app.state::<CurrentProject>()
         .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
-    let result = run_mode(
-        &TranslateMode {
+    let result = fixture
+        .run(&TranslateMode {
             llama: Path::new("/bin/sleep"),
             model_settings: &ModelSettings::default(),
             plan: &plan_for(Language::Japanese),
             server: &LlamaServer::Job,
             ready_timeout: Duration::from_secs(1),
-        },
-        &ModeLock::default()
-            .begin(AppPorts::new(app.handle(), &processes))
-            .await,
-        app.state::<CurrentProject>().inner(),
-        Phases::start("translate", Phase::Preparation),
-    )
-    .await;
+        })
+        .await;
 
     assert!(result.is_err());
     assert!(!record.exists());
@@ -1595,7 +1560,8 @@ async fn refuses_without_a_translation_model() {
 // @behavior TL-039
 #[tokio::test]
 async fn refuses_to_translate_with_a_glossary_without_its_header() {
-    let dir = TempDir::new("tl-glossary-header");
+    let fixture = ModeFixture::new("tl-glossary-header");
+    let dir = &fixture.dir;
     std::fs::write(dir.path().join("glossary.csv"), "蝙蝠俠,Batman\n").unwrap();
     let mut settings = ModelSettings::default();
     settings.choose(
@@ -1604,27 +1570,20 @@ async fn refuses_to_translate_with_a_glossary_without_its_header() {
             path: dir.file("qwen3-4b.gguf"),
         },
     );
-    let app = mode_app();
-    let processes = Processes::new(dir.path().join("processes.json"));
+    let app = &fixture.app;
     let mut project = project_of(vec![segment(0, 1_000, "蝙蝠俠")]);
     project.directory = dir.path().to_path_buf();
     app.state::<CurrentProject>().replace(project);
 
-    let result = run_mode(
-        &TranslateMode {
+    let result = fixture
+        .run(&TranslateMode {
             llama: Path::new("/bin/sleep"),
             model_settings: &settings,
             plan: &plan_for(Language::English),
             server: &LlamaServer::Job,
             ready_timeout: Duration::from_secs(1),
-        },
-        &ModeLock::default()
-            .begin(AppPorts::new(app.handle(), &processes))
-            .await,
-        app.state::<CurrentProject>().inner(),
-        Phases::start("translate", Phase::Preparation),
-    )
-    .await;
+        })
+        .await;
 
     assert_eq!(result.map(|_| ()), Err(Failure::GlossaryWithoutHeader));
 }
@@ -1633,7 +1592,8 @@ async fn refuses_to_translate_with_a_glossary_without_its_header() {
 #[cfg(unix)]
 #[tokio::test]
 async fn stops_llama_server_when_translation_gives_up() {
-    let dir = TempDir::new("tl-stop");
+    let fixture = ModeFixture::new("tl-stop");
+    let dir = &fixture.dir;
     let llama = dir.path().join("llama-server");
     let pid_file = dir.path().join("llama.pid");
     crate::test_support::write_executable(
@@ -1650,27 +1610,20 @@ async fn stops_llama_server_when_translation_gives_up() {
             path: dir.file("qwen3-4b.gguf"),
         },
     );
-    let app = mode_app();
-    let processes = Processes::new(dir.path().join("processes.json"));
+    let app = &fixture.app;
 
     app.state::<CurrentProject>()
         .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
-    let result = run_mode(
-        &TranslateMode {
+    let result = fixture
+        .run(&TranslateMode {
             llama: &llama,
             model_settings: &settings,
             plan: &plan_for(Language::Japanese),
             server: &LlamaServer::Job,
             ready_timeout: Duration::from_secs(1),
-        },
-        &ModeLock::default()
-            .begin(AppPorts::new(app.handle(), &processes))
-            .await,
-        app.state::<CurrentProject>().inner(),
-        Phases::start("translate", Phase::Preparation),
-    )
-    .await;
+        })
+        .await;
 
     assert!(result.is_err());
     let pid = std::fs::read_to_string(pid_file).unwrap();
@@ -1690,20 +1643,15 @@ async fn stops_llama_server_when_translation_gives_up() {
 #[cfg(unix)]
 #[tokio::test]
 async fn fails_a_translation_whose_model_the_resident_llama_server_cannot_load() {
-    let dir = TempDir::new("tl-resident-load-failure");
+    let fixture = ModeFixture::new("tl-resident-load-failure");
+    let dir = &fixture.dir;
     let llama = dir.path().join("llama-server");
     crate::test_support::write_executable(&llama, "#!/bin/sh\nexec sleep 30\n");
     let router = FakeLlama::serve(Replies {
         has_load_failure: true,
         ..Replies::default()
     });
-    let port = router
-        .base_url()
-        .rsplit(':')
-        .next()
-        .unwrap()
-        .parse()
-        .unwrap();
+    let port = router.port();
     let mut settings = ModelSettings::default();
     settings.choose(
         ModelSlot::Translation,
@@ -1711,15 +1659,15 @@ async fn fails_a_translation_whose_model_the_resident_llama_server_cannot_load()
             path: dir.file("qwen3-4b.gguf"),
         },
     );
-    let app = mode_app();
+    let app = &fixture.app;
     let processes = Processes::new(dir.path().join("processes.json"));
     app.state::<CurrentProject>()
         .replace(project_of(vec![segment(0, 1_000, "大家好")]));
     let ready_timeout = Duration::from_secs(5);
     let started_at = std::time::Instant::now();
 
-    let result = run_mode(
-        &TranslateMode {
+    let result = fixture
+        .run(&TranslateMode {
             llama: &llama,
             model_settings: &settings,
             plan: &plan_for(Language::Japanese),
@@ -1729,14 +1677,8 @@ async fn fails_a_translation_whose_model_the_resident_llama_server_cannot_load()
                 keep: Duration::ZERO,
             },
             ready_timeout,
-        },
-        &ModeLock::default()
-            .begin(AppPorts::new(app.handle(), &processes))
-            .await,
-        app.state::<CurrentProject>().inner(),
-        Phases::start("translate", Phase::Preparation),
-    )
-    .await;
+        })
+        .await;
     processes.kill_all();
 
     assert_eq!(result.map(|_| ()), Err(Failure::LlamaExited));
@@ -1757,13 +1699,7 @@ async fn frees_the_model_when_a_translation_on_the_resident_llama_server_is_canc
         }),
         ..Replies::default()
     });
-    let port = router
-        .base_url()
-        .rsplit(':')
-        .next()
-        .unwrap()
-        .parse()
-        .unwrap();
+    let port = router.port();
     let mut settings = ModelSettings::default();
     settings.choose(
         ModelSlot::Translation,
@@ -1828,7 +1764,8 @@ async fn frees_the_model_when_a_translation_on_the_resident_llama_server_is_canc
 #[cfg(unix)]
 #[tokio::test]
 async fn fails_when_llama_server_exits_before_it_is_ready() {
-    let dir = TempDir::new("tl-llama-exits");
+    let fixture = ModeFixture::new("tl-llama-exits");
+    let dir = &fixture.dir;
     let llama = dir.path().join("llama-server");
     crate::test_support::write_executable(&llama, "#!/bin/sh\nexit 1\n");
     let mut settings = ModelSettings::default();
@@ -1838,26 +1775,19 @@ async fn fails_when_llama_server_exits_before_it_is_ready() {
             path: dir.file("qwen3-4b.gguf"),
         },
     );
-    let app = mode_app();
-    let processes = Processes::new(dir.path().join("processes.json"));
+    let app = &fixture.app;
     app.state::<CurrentProject>()
         .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
-    let result = run_mode(
-        &TranslateMode {
+    let result = fixture
+        .run(&TranslateMode {
             llama: &llama,
             model_settings: &settings,
             plan: &plan_for(Language::English),
             server: &LlamaServer::Job,
             ready_timeout: Duration::from_secs(10),
-        },
-        &ModeLock::default()
-            .begin(AppPorts::new(app.handle(), &processes))
-            .await,
-        app.state::<CurrentProject>().inner(),
-        Phases::start("translate", Phase::Preparation),
-    )
-    .await;
+        })
+        .await;
 
     assert_eq!(result.err(), Some(Failure::LlamaExited));
 }
@@ -1866,7 +1796,8 @@ async fn fails_when_llama_server_exits_before_it_is_ready() {
 #[cfg(unix)]
 #[tokio::test]
 async fn translates_with_the_project_model() {
-    let dir = TempDir::new("tl-project-model");
+    let fixture = ModeFixture::new("tl-project-model");
+    let dir = &fixture.dir;
     let llama = dir.path().join("llama-server");
     let args_file = dir.path().join("llama.args");
     crate::test_support::write_executable(
@@ -1888,25 +1819,18 @@ async fn translates_with_the_project_model() {
     project.options.models.translation = Some(ModelSource::File {
         path: project_model.clone(),
     });
-    let app = mode_app();
-    let processes = Processes::new(dir.path().join("processes.json"));
+    let app = &fixture.app;
     app.state::<CurrentProject>().replace(project);
 
-    let _ = run_mode(
-        &TranslateMode {
+    let _ = fixture
+        .run(&TranslateMode {
             llama: &llama,
             model_settings: &settings,
             plan: &plan_for(Language::Japanese),
             server: &LlamaServer::Job,
             ready_timeout: Duration::from_secs(1),
-        },
-        &ModeLock::default()
-            .begin(AppPorts::new(app.handle(), &processes))
-            .await,
-        app.state::<CurrentProject>().inner(),
-        Phases::start("translate", Phase::Preparation),
-    )
-    .await;
+        })
+        .await;
 
     let args = std::fs::read_to_string(args_file).unwrap();
     assert!(

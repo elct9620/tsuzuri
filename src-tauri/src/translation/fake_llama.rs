@@ -202,6 +202,11 @@ impl FakeLlama {
         &self.server.base_url
     }
 
+    /// The port the fake answers on, as a Resident llama-server is given one.
+    pub fn port(&self) -> u16 {
+        self.base_url().rsplit(':').next().unwrap().parse().unwrap()
+    }
+
     pub fn model(&self) -> TranslationModel {
         TranslationModel::new(&self.server.base_url)
     }

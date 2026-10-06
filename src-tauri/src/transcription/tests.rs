@@ -1,12 +1,3 @@
-use std::sync::{Arc, Mutex};
-
-use crate::test_support::mode_app;
-use tauri::test::MockRuntime;
-use tauri::Listener;
-use tauri_specta::Event;
-
-use crate::progress::{PipelineProgress, ProjectChanged};
-
 use tauri::Manager;
 
 use super::*;
@@ -17,12 +8,12 @@ use crate::project::{
     Project, ProjectModels, ProjectOptions, RunningMode, TranscriptionOverrides, TranscriptionScope,
 };
 use crate::steps::{run_mode, ModeLock};
-use crate::test_support::{write_executable, TempDir, FAILING_FFMPEG, RECORDING_FFMPEG};
+use crate::test_support::{announced_readings, mode_app, progress_payloads};
+use crate::test_support::{
+    write_executable, ModeFixture, TempDir, FAILING_FFMPEG, RECORDING_FFMPEG,
+};
 use crate::toolchain::{self, Resolver};
 use crate::transcript::{Segment, WrittenText};
-
-const TWO_SECOND_WAV: &str =
-    "#!/bin/sh\nfor last; do :; done\nhead -c 64044 /dev/zero > \"$last\"\n";
 
 fn whisper_script(started_marker: &Path) -> String {
     whisper_script_writing(started_marker, "大家好")
@@ -45,8 +36,7 @@ fn whisper_script_writing(started_marker: &Path, first_text: &str) -> String {
 }
 
 struct Fixture {
-    dir: TempDir,
-    app: tauri::App<MockRuntime>,
+    mode: ModeFixture,
     tools: Tools,
     settings: ModelSettings,
     transcription: TranscriptionSettings,
@@ -55,7 +45,8 @@ struct Fixture {
 
 impl Fixture {
     fn new(name: &str, ffmpeg: &str) -> Fixture {
-        let dir = TempDir::new(name);
+        let mode = ModeFixture::new(name);
+        let dir = &mode.dir;
         let whisper_started = dir.path().join("whisper-started");
         let tools = Tools {
             ffmpeg: dir.script("ffmpeg", ffmpeg),
@@ -68,10 +59,8 @@ impl Fixture {
                 path: dir.file("breeze.bin"),
             },
         );
-        let app = mode_app();
         Fixture {
-            dir,
-            app,
+            mode,
             tools,
             settings,
             transcription: TranscriptionSettings::default(),
@@ -110,10 +99,6 @@ impl Fixture {
         shown
     }
 
-    fn project(&self) -> tauri::State<'_, CurrentProject> {
-        self.app.state::<CurrentProject>()
-    }
-
     /// Opens a Project of `lecture.mp4` in `language` and asks to transcribe all of it.
     fn request_in(&self, language: Language) -> TranscriptionRequest {
         self.open_in(language);
@@ -131,35 +116,21 @@ impl Fixture {
         std::fs::read_to_string(self.project_dir().join("lecture.srt")).unwrap()
     }
 
-    fn project_dir(&self) -> PathBuf {
-        let directory = self.dir.path().join("project");
-        std::fs::create_dir_all(&directory).unwrap();
-        directory
-    }
-
     async fn transcribe(&self) -> Result<Transcription, Failure> {
         let request = self.request_in(Language::TraditionalChinese);
         self.run(request).await
     }
 
     async fn run(&self, request: TranscriptionRequest) -> Result<Transcription, Failure> {
-        let processes = Processes::new(self.dir.path().join("processes.json"));
-        let app = self.app.handle();
-        run_mode(
-            &TranscribeMode {
+        self.mode
+            .run(&TranscribeMode {
                 tools: &self.tools,
                 models: &self.settings,
                 settings: self.transcription,
                 request,
-                work: &self.dir.path().join("work"),
-            },
-            &ModeLock::default()
-                .begin(AppPorts::new(app, &processes))
-                .await,
-            app.state::<CurrentProject>().inner(),
-            Phases::start("transcribe", Phase::Preparation),
-        )
-        .await
+                work: &self.work_dir(),
+            })
+            .await
     }
 
     /// The arguments whisper-cli last ran with.
@@ -209,14 +180,13 @@ impl Fixture {
     fn ffmpeg_args(&self) -> String {
         std::fs::read_to_string(self.tools.ffmpeg.with_extension("args")).unwrap()
     }
+}
 
-    fn progress_events(&self) -> Arc<Mutex<Vec<String>>> {
-        let progress_events = Arc::new(Mutex::new(Vec::new()));
-        let sink = Arc::clone(&progress_events);
-        self.app.listen_any(PipelineProgress::NAME, move |event| {
-            sink.lock().unwrap().push(event.payload().to_string());
-        });
-        progress_events
+impl std::ops::Deref for Fixture {
+    type Target = ModeFixture;
+
+    fn deref(&self) -> &ModeFixture {
+        &self.mode
     }
 }
 
@@ -240,7 +210,7 @@ fn transcription_request(
 // @behavior TX-001
 #[tokio::test]
 async fn answers_the_segments_whisper_wrote() {
-    let fixture = Fixture::new("tx-transcribe", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-transcribe", RECORDING_FFMPEG);
 
     fixture.transcribe().await.unwrap();
 
@@ -258,7 +228,7 @@ async fn answers_the_segments_whisper_wrote() {
 // @behavior TX-015
 #[tokio::test]
 async fn transcribes_in_the_primary_language() {
-    let fixture = Fixture::new("tx-language", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-language", RECORDING_FFMPEG);
     let request = fixture.request_in(Language::Japanese);
 
     fixture.run(request).await.unwrap();
@@ -270,7 +240,7 @@ async fn transcribes_in_the_primary_language() {
 // @behavior TX-032
 #[tokio::test]
 async fn leaves_whisper_as_it_behaves_on_its_own_by_default() {
-    let fixture = Fixture::new("tx-defaults", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-defaults", RECORDING_FFMPEG);
 
     fixture.transcribe().await.unwrap();
 
@@ -283,7 +253,7 @@ async fn leaves_whisper_as_it_behaves_on_its_own_by_default() {
 // @behavior TX-033
 #[tokio::test]
 async fn transcribes_with_vad() {
-    let mut fixture = Fixture::new("tx-vad", TWO_SECOND_WAV);
+    let mut fixture = Fixture::new("tx-vad", RECORDING_FFMPEG);
     let vad = fixture.dir.file("ggml-silero-v6.2.0.bin");
     fixture
         .settings
@@ -302,7 +272,7 @@ async fn transcribes_with_vad() {
 // @behavior TX-034
 #[tokio::test]
 async fn refuses_vad_without_its_model() {
-    let mut fixture = Fixture::new("tx-vad-no-model", TWO_SECOND_WAV);
+    let mut fixture = Fixture::new("tx-vad-no-model", RECORDING_FFMPEG);
     fixture.transcription.has_vad = true;
 
     let result = fixture.transcribe().await;
@@ -319,7 +289,7 @@ async fn refuses_vad_without_its_model() {
 // @behavior TX-035
 #[tokio::test]
 async fn suppresses_non_speech_tokens_and_carries_no_context() {
-    let mut fixture = Fixture::new("tx-no-context", TWO_SECOND_WAV);
+    let mut fixture = Fixture::new("tx-no-context", RECORDING_FFMPEG);
     fixture.transcription.is_non_speech_suppressed = true;
     fixture.transcription.is_context_carried = false;
 
@@ -335,7 +305,7 @@ async fn suppresses_non_speech_tokens_and_carries_no_context() {
 // @behavior TX-036
 #[tokio::test]
 async fn takes_the_project_transcription_settings_over_the_general_ones() {
-    let mut fixture = Fixture::new("tx-project-vad", TWO_SECOND_WAV);
+    let mut fixture = Fixture::new("tx-project-vad", RECORDING_FFMPEG);
     fixture.settings.choose(
         ModelSlot::Vad,
         ModelSource::File {
@@ -359,7 +329,7 @@ async fn takes_the_project_transcription_settings_over_the_general_ones() {
 // @behavior TX-037
 #[tokio::test]
 async fn transcribes_with_the_project_model() {
-    let fixture = Fixture::new("tx-project-model", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-project-model", RECORDING_FFMPEG);
     let project_model = fixture.dir.file("kotoba.bin");
     let request = fixture.request_with(ProjectOptions {
         models: ProjectModels {
@@ -383,7 +353,7 @@ async fn transcribes_with_the_project_model() {
 // @behavior PJ-022
 #[tokio::test]
 async fn leaves_another_resource_untouched_by_a_late_transcription() {
-    let fixture = Fixture::new("pj-late-transcription", TWO_SECOND_WAV);
+    let fixture = Fixture::new("pj-late-transcription", RECORDING_FFMPEG);
     std::fs::write(
         fixture.project_dir().join("notes.srt"),
         "1\n00:00:00,000 --> 00:00:01,000\n另一份\n",
@@ -429,7 +399,7 @@ fn show_english_translation(fixture: &Fixture) {
 // @behavior TX-059
 #[tokio::test]
 async fn shows_no_translation_once_the_whole_media_file_is_transcribed_again() {
-    let fixture = Fixture::new("tx-whole-unshown", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-whole-unshown", RECORDING_FFMPEG);
     fixture.open_with_segments(&[0, 5_000]);
     show_english_translation(&fixture);
 
@@ -447,7 +417,7 @@ async fn shows_no_translation_once_the_whole_media_file_is_transcribed_again() {
 // @behavior TX-060
 #[tokio::test]
 async fn keeps_the_translation_shown_through_a_transcription_within_an_audio_window() {
-    let fixture = Fixture::new("tx-window-shown", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-window-shown", RECORDING_FFMPEG);
     fixture.open_with_segments(&[0, 5_000, 10_000]);
     show_english_translation(&fixture);
 
@@ -468,16 +438,8 @@ const WHISPER_SRT: &str =
 // @behavior PJ-095
 #[tokio::test]
 async fn holds_the_resource_while_it_is_transcribed() {
-    let fixture = Fixture::new("pj-hold-transcribing", TWO_SECOND_WAV);
-    let modes = Arc::new(Mutex::new(Vec::new()));
-    ProjectChanged::listen_any(&fixture.app, {
-        let modes = Arc::clone(&modes);
-        let handle = fixture.app.handle().clone();
-        move |_| {
-            let view = handle.state::<CurrentProject>().view().unwrap();
-            modes.lock().unwrap().push(view.running_mode());
-        }
-    });
+    let fixture = Fixture::new("pj-hold-transcribing", RECORDING_FFMPEG);
+    let modes = announced_readings(&fixture.app, |view| view.running_mode());
 
     fixture.transcribe().await.unwrap();
 
@@ -490,24 +452,11 @@ async fn holds_the_resource_while_it_is_transcribed() {
 // @behavior TX-017
 #[tokio::test]
 async fn shows_each_segment_as_whisper_prints_it() {
-    let fixture = Fixture::new("tx-stream", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-stream", RECORDING_FFMPEG);
     let request = fixture.request_in(Language::TraditionalChinese);
     let hold = fixture.whisper_started.with_extension("hold");
     std::fs::write(&hold, b"").unwrap();
-    let announced_counts = Arc::new(Mutex::new(Vec::new()));
-    ProjectChanged::listen_any(&fixture.app, {
-        let announced_counts = Arc::clone(&announced_counts);
-        let handle = fixture.app.handle().clone();
-        move |_| {
-            let count = handle
-                .state::<CurrentProject>()
-                .view()
-                .unwrap()
-                .segments()
-                .len();
-            announced_counts.lock().unwrap().push(count);
-        }
-    });
+    let announced_counts = announced_readings(&fixture.app, |view| view.segments().len());
     let watch = async {
         for _ in 0..250 {
             let count = fixture.project().view().unwrap().segments().len();
@@ -534,7 +483,7 @@ async fn shows_each_segment_as_whisper_prints_it() {
 // @behavior TX-018
 #[tokio::test]
 async fn writes_the_transcription_beside_its_media_file() {
-    let fixture = Fixture::new("tx-write", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-write", RECORDING_FFMPEG);
 
     fixture.transcribe().await.unwrap();
 
@@ -543,7 +492,7 @@ async fn writes_the_transcription_beside_its_media_file() {
 
 #[tokio::test]
 async fn leaves_the_written_subtitle_ready_to_be_diarized() {
-    let fixture = Fixture::new("tx-then-diarize", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-then-diarize", RECORDING_FFMPEG);
 
     fixture.transcribe().await.unwrap();
 
@@ -556,7 +505,7 @@ async fn leaves_the_written_subtitle_ready_to_be_diarized() {
 // @behavior PJ-053
 #[tokio::test]
 async fn saves_the_bilingual_srts_once_transcribed() {
-    let fixture = Fixture::new("pj-bilingual-transcribed", TWO_SECOND_WAV);
+    let fixture = Fixture::new("pj-bilingual-transcribed", RECORDING_FFMPEG);
     let dir = fixture.project_dir();
     std::fs::write(dir.join("lecture.en.srt"), "").unwrap();
     std::fs::write(
@@ -576,7 +525,7 @@ async fn saves_the_bilingual_srts_once_transcribed() {
 // @behavior PJ-066
 #[tokio::test]
 async fn backs_up_the_original_before_a_transcription_overwrites_it() {
-    let fixture = Fixture::new("pj-backup-transcribed", TWO_SECOND_WAV);
+    let fixture = Fixture::new("pj-backup-transcribed", RECORDING_FFMPEG);
     let dir = fixture.project_dir();
     let old = "1\n00:00:00,000 --> 00:00:01,000\n舊的\n";
     std::fs::write(dir.join("lecture.srt"), old).unwrap();
@@ -603,7 +552,7 @@ async fn backs_up_the_original_before_a_transcription_overwrites_it() {
 // @behavior TX-019
 #[tokio::test]
 async fn refuses_to_overwrite_a_subtitle_unless_asked() {
-    let fixture = Fixture::new("tx-refuse", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-refuse", RECORDING_FFMPEG);
     std::fs::write(fixture.project_dir().join("lecture.srt"), "").unwrap();
     fixture.open_in(Language::TraditionalChinese);
 
@@ -622,7 +571,7 @@ async fn refuses_to_overwrite_a_subtitle_unless_asked() {
 // @behavior TX-020
 #[tokio::test]
 async fn overwrites_a_subtitle_when_asked() {
-    let fixture = Fixture::new("tx-overwrite", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-overwrite", RECORDING_FFMPEG);
     std::fs::write(fixture.project_dir().join("lecture.srt"), "").unwrap();
     fixture.open_in(Language::TraditionalChinese);
     let request = transcription_request(true, TranscriptionScope::Whole);
@@ -635,7 +584,7 @@ async fn overwrites_a_subtitle_when_asked() {
 // @behavior TX-042
 #[tokio::test]
 async fn transcribes_from_a_segment_onward() {
-    let fixture = Fixture::new("tx-rest", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-rest", RECORDING_FFMPEG);
     fixture.open_with_segments(&[0, 5_000, 10_000]);
     let request = transcription_request(true, TranscriptionScope::Rest { first: 1 });
 
@@ -654,7 +603,7 @@ async fn transcribes_from_a_segment_onward() {
 // @behavior TX-043
 #[tokio::test]
 async fn transcribes_a_span_of_segments() {
-    let fixture = Fixture::new("tx-span", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-span", RECORDING_FFMPEG);
     fixture.open_with_segments(&[0, 5_000, 10_000, 15_000]);
     let request = transcription_request(
         true,
@@ -695,7 +644,7 @@ async fn converts_only_the_audio_window() {
 // @behavior TX-045
 #[tokio::test]
 async fn shows_the_kept_segments_while_transcribing_a_span() {
-    let fixture = Fixture::new("tx-window-stream", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-window-stream", RECORDING_FFMPEG);
     fixture.open_with_segments(&[0, 5_000, 10_000]);
     let request = transcription_request(
         true,
@@ -732,7 +681,7 @@ async fn shows_the_kept_segments_while_transcribing_a_span() {
 // @behavior TX-057
 #[tokio::test]
 async fn cleans_simplified_chinese_out_of_a_transcription_in_traditional_chinese() {
-    let fixture = Fixture::new("tx-clean", TWO_SECOND_WAV).with_whisper_writing("这是测试");
+    let fixture = Fixture::new("tx-clean", RECORDING_FFMPEG).with_whisper_writing("这是测试");
 
     let shown = fixture.segments_shown_while_transcribing().await;
 
@@ -743,7 +692,8 @@ async fn cleans_simplified_chinese_out_of_a_transcription_in_traditional_chinese
 // @behavior TX-058
 #[tokio::test]
 async fn leaves_a_transcription_as_whisper_wrote_it_with_the_cleanup_off() {
-    let mut fixture = Fixture::new("tx-clean-off", TWO_SECOND_WAV).with_whisper_writing("这是测试");
+    let mut fixture =
+        Fixture::new("tx-clean-off", RECORDING_FFMPEG).with_whisper_writing("这是测试");
     fixture.transcription.is_simplified_cleaned = false;
 
     fixture.transcribe().await.unwrap();
@@ -753,7 +703,7 @@ async fn leaves_a_transcription_as_whisper_wrote_it_with_the_cleanup_off() {
 
 #[tokio::test]
 async fn leaves_a_transcription_in_another_language_as_whisper_wrote_it() {
-    let fixture = Fixture::new("tx-clean-ja", TWO_SECOND_WAV).with_whisper_writing("这是测试");
+    let fixture = Fixture::new("tx-clean-ja", RECORDING_FFMPEG).with_whisper_writing("这是测试");
     let request = fixture.request_in(Language::Japanese);
 
     fixture.run(request).await.unwrap();
@@ -764,7 +714,7 @@ async fn leaves_a_transcription_in_another_language_as_whisper_wrote_it() {
 // @behavior TX-046
 #[tokio::test]
 async fn answers_the_segments_a_span_wrote() {
-    let fixture = Fixture::new("tx-written-span", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-written-span", RECORDING_FFMPEG);
     fixture.open_with_segments(&[0, 5_000, 10_000]);
     let request = transcription_request(true, TranscriptionScope::Rest { first: 1 });
 
@@ -779,7 +729,7 @@ async fn answers_the_segments_a_span_wrote() {
 // @behavior TX-047
 #[tokio::test]
 async fn refuses_a_segment_the_current_resource_does_not_have() {
-    let fixture = Fixture::new("tx-window-missing", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-window-missing", RECORDING_FFMPEG);
     fixture.open_with_segments(&[0, 5_000, 10_000]);
 
     let result = fixture
@@ -796,8 +746,8 @@ async fn refuses_a_segment_the_current_resource_does_not_have() {
 // @behavior TX-002
 #[tokio::test]
 async fn reports_each_percentage_whisper_prints() {
-    let fixture = Fixture::new("tx-progress", TWO_SECOND_WAV);
-    let progress_events = fixture.progress_events();
+    let fixture = Fixture::new("tx-progress", RECORDING_FFMPEG);
+    let progress_events = progress_payloads(&fixture.app);
 
     fixture.transcribe().await.unwrap();
 
@@ -819,7 +769,7 @@ async fn stops_at_a_failed_conversion() {
 
 #[tokio::test]
 async fn names_the_transcribe_step_when_whisper_fails() {
-    let fixture = Fixture::new("tx-whisper-fails", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-whisper-fails", RECORDING_FFMPEG);
     write_executable(&fixture.tools.whisper, "#!/bin/sh\nexit 1\n");
 
     let error = fixture.transcribe().await.unwrap_err();
@@ -830,7 +780,7 @@ async fn names_the_transcribe_step_when_whisper_fails() {
 // @behavior TX-056
 #[tokio::test]
 async fn leaves_no_intermediate_files_once_it_ends() {
-    let finishing_fixture = Fixture::new("tx-work-finished", TWO_SECOND_WAV);
+    let finishing_fixture = Fixture::new("tx-work-finished", RECORDING_FFMPEG);
     let failing_fixture = Fixture::new("tx-work-failed", FAILING_FFMPEG);
 
     finishing_fixture.transcribe().await.unwrap();
@@ -843,7 +793,7 @@ async fn leaves_no_intermediate_files_once_it_ends() {
 // @behavior TX-004
 #[tokio::test]
 async fn refuses_without_a_transcription_model() {
-    let mut fixture = Fixture::new("tx-no-model", TWO_SECOND_WAV);
+    let mut fixture = Fixture::new("tx-no-model", RECORDING_FFMPEG);
     fixture.settings = ModelSettings::default();
 
     let result = fixture.transcribe().await;
@@ -855,7 +805,7 @@ async fn refuses_without_a_transcription_model() {
 // @behavior TX-005
 #[tokio::test]
 async fn reports_the_audio_length_beside_the_transcription_time() {
-    let fixture = Fixture::new("tx-rtf", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-rtf", RECORDING_FFMPEG);
 
     let transcription = fixture.transcribe().await.unwrap();
 
@@ -866,8 +816,8 @@ async fn reports_the_audio_length_beside_the_transcription_time() {
 // @behavior TX-008
 #[tokio::test]
 async fn reports_the_model_load_before_transcription_percentages() {
-    let fixture = Fixture::new("tx-load", TWO_SECOND_WAV);
-    let progress_events = fixture.progress_events();
+    let fixture = Fixture::new("tx-load", RECORDING_FFMPEG);
+    let progress_events = progress_payloads(&fixture.app);
 
     fixture.transcribe().await.unwrap();
 
@@ -885,7 +835,7 @@ async fn reports_the_model_load_before_transcription_percentages() {
 // @behavior TX-009
 #[tokio::test]
 async fn answers_how_long_each_phase_took() {
-    let fixture = Fixture::new("tx-phases", TWO_SECOND_WAV);
+    let fixture = Fixture::new("tx-phases", RECORDING_FFMPEG);
 
     let transcription = fixture.transcribe().await.unwrap();
 

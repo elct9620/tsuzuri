@@ -381,13 +381,7 @@ mod tests {
     impl Fixture {
         fn new(name: &str, replies: Replies) -> Fixture {
             let llama = FakeLlama::serve(replies);
-            let port = llama
-                .base_url()
-                .rsplit(':')
-                .next()
-                .unwrap()
-                .parse()
-                .unwrap();
+            let port = llama.port();
             Fixture {
                 llama,
                 resident: ResidentLlama::with_port(port),

@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use tauri::test::{mock_context, noop_assets, MockRuntime};
 use tauri::{App, Builder};
@@ -319,6 +320,93 @@ pub fn mode_app() -> App<MockRuntime> {
             .plugin(tauri_plugin_shell::init())
             .manage(crate::project::CurrentProject::default()),
     )
+}
+
+/// A Mode's test: a mock app that runs Components and holds the Current Project, with a
+/// directory of its own for the Project, the run's processes and its intermediate files.
+pub struct ModeFixture {
+    pub dir: TempDir,
+    pub app: App<MockRuntime>,
+}
+
+impl ModeFixture {
+    pub fn new(name: &str) -> ModeFixture {
+        ModeFixture {
+            dir: TempDir::new(name),
+            app: mode_app(),
+        }
+    }
+
+    pub fn project(&self) -> tauri::State<'_, crate::project::CurrentProject> {
+        tauri::Manager::state(&self.app)
+    }
+
+    #[cfg(unix)]
+    /// The directory the Project is opened in, made on first ask.
+    pub fn project_dir(&self) -> PathBuf {
+        let directory = self.dir.path().join("project");
+        fs::create_dir_all(&directory).unwrap();
+        directory
+    }
+
+    #[cfg(unix)]
+    pub fn work_dir(&self) -> PathBuf {
+        self.dir.path().join("work")
+    }
+
+    /// Runs `mode` on the Current Project in a Mode Run of its own, as its command does.
+    pub async fn run<M: crate::steps::Mode>(
+        &self,
+        mode: &M,
+    ) -> Result<M::Outcome, crate::failure::Failure> {
+        let processes = crate::processes::Processes::new(self.dir.path().join("processes.json"));
+        let lock = crate::steps::ModeLock::default();
+        let run = lock
+            .begin(crate::processes::AppPorts::new(
+                self.app.handle(),
+                &processes,
+            ))
+            .await;
+        crate::steps::run_mode(
+            mode,
+            &run,
+            self.project().inner(),
+            crate::timing::Phases::start(M::NAME, crate::timing::Phase::Preparation),
+        )
+        .await
+    }
+}
+
+/// The `pipeline-progress` payloads `app` sends from now on, as JSON.
+pub fn progress_payloads(app: &App<MockRuntime>) -> Arc<Mutex<Vec<String>>> {
+    let payloads = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&payloads);
+    tauri::Listener::listen_any(
+        app,
+        <crate::progress::PipelineProgress as tauri_specta::Event>::NAME,
+        move |event| {
+            sink.lock().unwrap().push(event.payload().to_string());
+        },
+    );
+    payloads
+}
+
+/// What `read` takes from the Project's view each time `app` announces the Project changed, from
+/// now on.
+pub fn announced_readings<T: Send + 'static>(
+    app: &App<MockRuntime>,
+    read: impl Fn(&crate::project::ProjectView) -> T + Send + Sync + 'static,
+) -> Arc<Mutex<Vec<T>>> {
+    let readings = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&readings);
+    let handle = app.handle().clone();
+    <crate::progress::ProjectChanged as tauri_specta::Event>::listen_any(app, move |_| {
+        let view = tauri::Manager::state::<crate::project::CurrentProject>(&handle)
+            .view()
+            .unwrap();
+        sink.lock().unwrap().push(read(&view));
+    });
+    readings
 }
 
 /// Builds a mock app with the app's events mounted, as the app mounts them before it runs, so a

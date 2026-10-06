@@ -10,12 +10,12 @@ import {
   showNotifications,
 } from "#/testing/notifications.ts";
 import Project from "#/components/settings/project/Project.svelte";
+import { settle } from "#/testing/settle.ts";
 
 describe("Project", () => {
   let calls: { command: string; args: unknown }[];
   let optionsFailure: unknown;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const sent = (command: string) =>
     calls.find((call) => call.command === command)?.args;
   /** The field or switch on the row labelled `label`. */

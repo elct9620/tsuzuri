@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { render, screen, within } from "@testing-library/svelte";
 import { flushSync } from "svelte";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { setInterfaceLanguage } from "#/i18n.ts";
 import ShortcutsDialog from "#/components/ShortcutsDialog.svelte";
+import { usePlatform } from "#/testing/platform.ts";
 
 describe("ShortcutsDialog", () => {
   let shortcutsDialog: ShortcutsDialog;
@@ -35,18 +36,9 @@ describe("ShortcutsDialog", () => {
     return event;
   }
 
-  function usePlatform(platform: string): void {
-    Object.assign(window, { __TAURI_OS_PLUGIN_INTERNALS__: { platform } });
-  }
-
   beforeEach(() => {
     document.body.innerHTML = `<input id="typing" /><button id="elsewhere"></button>`;
     shortcutsDialog = render(ShortcutsDialog).component;
-  });
-
-  afterEach(async () => {
-    usePlatform("linux");
-    await setInterfaceLanguage("zh-Hant-TW");
   });
 
   // @behavior IF-055

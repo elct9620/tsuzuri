@@ -11,7 +11,7 @@ import type { EditingSession } from "#/editor/index.ts";
 import type { SegmentChange } from "#/ipc/editing.ts";
 import type { ProjectView, Segment } from "#/ipc/project.ts";
 import type { Waveform } from "#/ipc/waveform.ts";
-import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { t } from "#/i18n.ts";
 import { layOutTimeline } from "#/testing/layout.ts";
 import { projectOf } from "#/testing/project.ts";
 import { pageContext } from "#/state/context.ts";
@@ -24,6 +24,8 @@ import {
 import Timeline, { regionColor } from "#/components/Timeline.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
 import { ViewChoices } from "#/state/view-choices.svelte.ts";
+import { usePlatform } from "#/testing/platform.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("Timeline", () => {
   /** What the timeline plays, shared with the Preview. */
@@ -39,7 +41,6 @@ describe("Timeline", () => {
   /** Tells the page the system turned light or dark, as a colour scheme media query does. */
   let turnColorScheme: () => void;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   /**
    * How long wavesurfer.js keeps swallowing clicks on the document once a drag ends, so the press
    * that ended it does not click; its draggable lifts the guard on a 10 ms timer.
@@ -106,7 +107,6 @@ describe("Timeline", () => {
   let takeLayoutBack: () => void;
 
   beforeEach(async () => {
-    await setInterfaceLanguage("zh-TW");
     takeLayoutBack = layOutTimeline();
     localStorage.clear();
     // The regions measure a drag against their own width: 200 pixels over two seconds of Peaks
@@ -1130,17 +1130,9 @@ describe("Timeline", () => {
     describe("on macOS", () => {
       /** Runs as macOS, connecting the timeline again so it reads the platform as it starts. */
       beforeEach(async () => {
-        Object.assign(window, {
-          __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-        });
+        usePlatform("macos");
         cleanup();
         await drawTimeline();
-      });
-
-      afterEach(() => {
-        Object.assign(window, {
-          __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
-        });
       });
 
       // @behavior PV-089

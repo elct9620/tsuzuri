@@ -4,11 +4,11 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { projectOf } from "#/testing/project.ts";
 import Transcription from "#/components/settings/project/Transcription.svelte";
+import { settle } from "#/testing/settle.ts";
 
 describe("Transcription", () => {
   let calls: { command: string; args: unknown }[];
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const sent = (command: string) =>
     calls.find((call) => call.command === command)?.args;
 

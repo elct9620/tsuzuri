@@ -9,7 +9,7 @@ import { assemble } from "#/assembly.ts";
 import { DEFAULT_PREFERENCES } from "#/ipc/preferences.ts";
 import type { ProjectView } from "#/ipc/project.ts";
 import type { EditingSession } from "#/editor/index.ts";
-import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { t } from "#/i18n.ts";
 import { projectOf } from "#/testing/project.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
@@ -20,6 +20,8 @@ import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
 import Preview from "#/components/Preview.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
 import Timeline from "#/components/Timeline.svelte";
+import { usePlatform } from "#/testing/platform.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("Preview", () => {
   let session: EditingSession;
@@ -34,7 +36,6 @@ describe("Preview", () => {
   /** The timeline beside the Preview's player, as the page draws it. */
   let timelineFrame: () => HTMLElement;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const media = () => player;
   /** The screen the media plays on, with the Segment being played over it. */
   const screenOf = () => player.parentElement!;
@@ -223,7 +224,6 @@ describe("Preview", () => {
     screen.queryByText(t("preview.pickSegment")) !== null;
 
   beforeEach(async () => {
-    await setInterfaceLanguage("zh-TW");
     localStorage.clear();
     project = null;
     mockConvertFileSrc("macos");
@@ -1333,17 +1333,9 @@ describe("Preview", () => {
   describe("on macOS", () => {
     /** Runs as macOS, drawing the Preview again so it reads the platform as it starts. */
     beforeEach(async () => {
-      Object.assign(window, {
-        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-      });
+      usePlatform("macos");
       cleanup();
       await draw();
-    });
-
-    afterEach(() => {
-      Object.assign(window, {
-        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
-      });
     });
 
     // @behavior PV-091

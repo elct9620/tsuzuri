@@ -8,13 +8,14 @@ import { assemble } from "#/assembly.ts";
 import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
-import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { t } from "#/i18n.ts";
 import { drawPage } from "#/page.ts";
 import { checkedBarButton } from "#/testing/segment-rows.ts";
 import { mockPageMount } from "#/testing/page.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
 import { notificationDetail, notifications } from "#/testing/notifications.ts";
 import { notificationStack } from "#/state/notification.svelte.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("drawPage", () => {
   /** The pages each test draws, taken away after it so their Svelte Components stop following. */
@@ -60,7 +61,6 @@ describe("drawPage", () => {
     // In the document, so a name given by `aria-labelledby` finds the element it names.
     const page = document.createElement("div");
     document.body.append(page);
-    await setInterfaceLanguage("zh-TW");
 
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
@@ -72,7 +72,6 @@ describe("drawPage", () => {
 
   it("writes the resource list", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
 
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
@@ -96,7 +95,6 @@ describe("drawPage", () => {
     ["Models", "settings.models"],
   ])("writes the %s in the general settings", async (_part, name) => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
 
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
@@ -111,7 +109,6 @@ describe("drawPage", () => {
 
   it("writes the Choice Landings in the preferences tab", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
 
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
@@ -136,7 +133,6 @@ describe("drawPage", () => {
     "opens the %s dialog from the resource bar",
     async (_part, name, heading) => {
       const page = document.createElement("div");
-      await setInterfaceLanguage("zh-TW");
       mockPageMount(
         projectOf({ resources: [resourceOf({ has_media: true })] }),
         {
@@ -162,7 +158,6 @@ describe("drawPage", () => {
 
   it("writes the translation options in the translate dialog", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
 
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
@@ -176,7 +171,6 @@ describe("drawPage", () => {
 
   it("writes the progress a task started from the resource bar reports to", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
     mockPageMount(projectOf({ resources: [resourceOf({ has_media: true })] }), {
       model_settings: () => null,
       diarize: () => new Promise(() => {}),
@@ -211,7 +205,6 @@ describe("drawPage", () => {
     "writes the Project's %s in its tab while a Project is open",
     async (_part, name) => {
       const page = document.createElement("div");
-      await setInterfaceLanguage("zh-TW");
       mockPageMount(projectOf());
       const feed = new ProjectFeed();
       await feed.refresh();
@@ -234,7 +227,6 @@ describe("drawPage", () => {
 
   it("writes the Repository dialog the Model Slots open", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
 
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
@@ -248,7 +240,6 @@ describe("drawPage", () => {
 
   it("writes the window an App Update installs behind", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
 
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
 
@@ -263,7 +254,6 @@ describe("drawPage", () => {
   ])("opens the settings from the %s", async (_place, selector) => {
     const page = document.createElement("div");
     document.body.append(page);
-    await setInterfaceLanguage("zh-TW");
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
@@ -281,7 +271,6 @@ describe("drawPage", () => {
 
   it("opens the glossary dialog from the resource list", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
     mockPageMount(null, {
       translation_glossary_table: () => ({
         languages: ["zh-TW"],
@@ -309,7 +298,6 @@ describe("drawPage", () => {
 
   it("stands Placeholders in for the Segments of a Resource the list selects", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
     mockPageMount(
       projectOf({
         resources: [resourceOf(), resourceOf({ name: "ep02" })],
@@ -352,7 +340,6 @@ describe("drawPage", () => {
 
   it("opens the shortcut list from the toolbar", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
@@ -369,7 +356,6 @@ describe("drawPage", () => {
 
   it("opens the replace dialog from the edit tools", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
@@ -387,7 +373,6 @@ describe("drawPage", () => {
   it("opens the search bar from the edit tools", async () => {
     const page = document.createElement("div");
     document.body.append(page);
-    await setInterfaceLanguage("zh-TW");
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
@@ -406,7 +391,6 @@ describe("drawPage", () => {
 
   it("opens the Speaker dialog from the edit tools", async () => {
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
@@ -424,7 +408,6 @@ describe("drawPage", () => {
   it("opens the Versions dialog from the edit tools", async () => {
     mockPageMount(null, { subtitle_versions: () => [] });
     const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
@@ -449,8 +432,6 @@ describe("Page", () => {
   let stop: () => void;
   /** The arguments of each `compare_versions` the page asked for. */
   let comparedVersions: unknown[];
-
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
   /**
    * Starts the page as `main.ts` does, relaying Rust events and reading the Project, and clears

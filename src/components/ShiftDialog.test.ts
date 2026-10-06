@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { assemble } from "#/assembly.ts";
 import type { ProjectView } from "#/ipc/project.ts";
-import { setInterfaceLanguage } from "#/i18n.ts";
 import { projectOf } from "#/testing/project.ts";
 import { pageContext } from "#/state/context.ts";
 import ShiftDialog from "#/components/ShiftDialog.svelte";
@@ -16,12 +15,12 @@ import {
   drawSegmentList,
   segmentDialogsOf,
 } from "#/testing/segment-rows.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("ShiftDialog", () => {
   let project: ProjectView | null;
   let changes: unknown[];
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const dialog = () =>
     screen.getByRole<HTMLDialogElement>("dialog", { hidden: true });
   const row = (index: number) =>
@@ -63,7 +62,6 @@ describe("ShiftDialog", () => {
   }
 
   beforeEach(async () => {
-    await setInterfaceLanguage("zh-TW");
     project = null;
     changes = [];
     document.body.innerHTML = `

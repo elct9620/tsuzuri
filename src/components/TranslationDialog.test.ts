@@ -33,6 +33,7 @@ import {
   rowList,
   segmentDialogsOf,
 } from "#/testing/segment-rows.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("TranslationDialog", () => {
   let feed: ProjectFeed;
@@ -41,7 +42,6 @@ describe("TranslationDialog", () => {
   let project: ProjectView | null;
   let isCleanupSaved: boolean;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const openButton = () =>
     screen.getByRole<HTMLButtonElement>("button", { name: "翻譯" });
   const startButton = () =>
@@ -319,7 +319,6 @@ describe("TranslationDialog, translating chosen Segments again", () => {
   let project: ProjectView | null;
   let retranslateArgs: unknown;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const rows = () => [...rowList().children];
   const isProgressShown = () => progressSteps().length > 0;
 

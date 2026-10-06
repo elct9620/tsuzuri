@@ -11,13 +11,14 @@ import { showNotifications, notifications } from "#/testing/notifications.ts";
 import { pageContext } from "#/state/context.ts";
 import ReplacementDialog from "#/components/ReplacementDialog.svelte";
 import { drawSegmentRows } from "#/testing/segment-rows.ts";
+import { usePlatform } from "#/testing/platform.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("ReplacementDialog", () => {
   let project: ProjectView | null;
   let replaceArgs: unknown[];
   let count: number;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const dialog = () =>
     screen.getByRole<HTMLDialogElement>("dialog", { hidden: true });
   const textbox = (name: string) =>
@@ -78,9 +79,6 @@ describe("ReplacementDialog", () => {
 
   afterEach(() => {
     clearMocks();
-    Object.assign(window, {
-      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
-    });
   });
 
   /** Enters the first Segment's text and selects its characters `start` to `end`. */
@@ -139,9 +137,7 @@ describe("ReplacementDialog", () => {
   });
 
   it("opens by ⌘+Option+F on macOS, whose key Option changes, leaving Ctrl+H to the text", async () => {
-    Object.assign(window, {
-      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-    });
+    usePlatform("macos");
     await hold(translatedProject);
 
     press({ key: "h", code: "KeyH", ctrlKey: true });
@@ -154,9 +150,7 @@ describe("ReplacementDialog", () => {
   });
 
   it("opens by ⌘+Option+F on macOS with Shift held too", async () => {
-    Object.assign(window, {
-      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-    });
+    usePlatform("macos");
     await hold(translatedProject);
 
     press({

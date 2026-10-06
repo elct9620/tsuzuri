@@ -16,7 +16,7 @@ import {
 import type { ProjectView, Segment } from "#/ipc/project.ts";
 import type { Waveform } from "#/ipc/waveform.ts";
 import type { EditingSession } from "#/editor/index.ts";
-import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { t } from "#/i18n.ts";
 import { layOutTimeline } from "#/testing/layout.ts";
 import { projectOf } from "#/testing/project.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
@@ -30,6 +30,7 @@ import { PreviewFold } from "#/state/preview-fold.svelte.ts";
 import { SavedPreferences } from "#/state/saved-preferences.svelte.ts";
 import { drawSegmentRows, segmentRows } from "#/testing/segment-rows.ts";
 import Timeline, { regionColor } from "#/components/Timeline.svelte";
+import { settle } from "#/testing/settle.ts";
 
 describe("Current Segment", () => {
   let project: ProjectView | null;
@@ -41,7 +42,6 @@ describe("Current Segment", () => {
   let playback: Playback;
   let takeLayoutBack: () => void;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const media = () => playback.media;
   const rows = segmentRows;
   const regions = () => [
@@ -255,7 +255,6 @@ describe("Current Segment", () => {
   }
 
   beforeEach(async () => {
-    await setInterfaceLanguage("zh-TW");
     takeLayoutBack = layOutTimeline();
     localStorage.clear();
     project = null;

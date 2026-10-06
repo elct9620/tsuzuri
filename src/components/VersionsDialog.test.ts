@@ -5,11 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { editingPort } from "#/ipc/editing.ts";
 import { type ComparedRow, ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
-import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { t } from "#/i18n.ts";
 import { pageContext } from "#/state/context.ts";
 import { EditorComparison } from "#/state/editor-comparison.svelte.ts";
 import { notifications, showNotifications } from "#/testing/notifications.ts";
 import VersionsDialog from "#/components/VersionsDialog.svelte";
+import { settle } from "#/testing/settle.ts";
 
 describe("VersionsDialog", () => {
   let versionsDialog: VersionsDialog;
@@ -20,7 +21,6 @@ describe("VersionsDialog", () => {
   /** How `compare_versions` answers; the rows at once unless a test holds them back. */
   let takeRows: () => ComparedRow[] | Promise<ComparedRow[]>;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const dialog = () =>
     screen.getByRole<HTMLDialogElement>("dialog", { hidden: true });
   const buttons = (name: string) =>
@@ -47,7 +47,6 @@ describe("VersionsDialog", () => {
   }
 
   beforeEach(async () => {
-    await setInterfaceLanguage("zh-TW");
     restoreArgs = undefined;
     revertArgs = undefined;
     takeRows = () => rows;

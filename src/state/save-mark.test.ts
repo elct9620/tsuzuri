@@ -1,14 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { setInterfaceLanguage } from "#/i18n.ts";
 import { SAVE_MARK_MS, SaveMark } from "#/state/save-mark.svelte.ts";
 
 describe("SaveMark", () => {
   let mark: SaveMark;
 
   beforeEach(async () => {
-    await setInterfaceLanguage("zh-TW");
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     mark = new SaveMark();
   });

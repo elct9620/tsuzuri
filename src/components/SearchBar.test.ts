@@ -7,17 +7,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { assemble } from "#/assembly.ts";
 import type { ProjectView } from "#/ipc/project.ts";
-import { setInterfaceLanguage } from "#/i18n.ts";
 import { projectOf } from "#/testing/project.ts";
 import { pageContext, withSegmentFields } from "#/state/context.ts";
 import SearchBar from "#/components/SearchBar.svelte";
 import { drawSegmentRows, segmentRows } from "#/testing/segment-rows.ts";
+import { usePlatform } from "#/testing/platform.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("SearchBar", () => {
   let project: ProjectView | null;
   let highlights: Map<string, { ranges: Range[] }>;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const patternBox = () =>
     screen.queryByRole<HTMLInputElement>("searchbox", { name: "搜尋文字" });
   const isOpen = () => patternBox() !== null;
@@ -50,7 +50,6 @@ describe("SearchBar", () => {
   }
 
   beforeEach(async () => {
-    await setInterfaceLanguage("zh-TW");
     project = null;
     highlights = new Map();
     vi.stubGlobal("CSS", { highlights });
@@ -102,9 +101,6 @@ describe("SearchBar", () => {
   afterEach(() => {
     clearMocks();
     vi.unstubAllGlobals();
-    Object.assign(window, {
-      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
-    });
   });
 
   function press(init: KeyboardEventInit, on: EventTarget = window): void {
@@ -188,9 +184,7 @@ describe("SearchBar", () => {
 
   // @behavior ED-138
   it("opens by ⌘F on macOS, leaving Ctrl+F to the text", async () => {
-    Object.assign(window, {
-      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-    });
+    usePlatform("macos");
     await hold(commaProject);
 
     press({ key: "f", code: "KeyF", ctrlKey: true });
@@ -243,9 +237,7 @@ describe("SearchBar", () => {
 
   // @behavior ED-139
   it("moves to the next match by ⌘G on macOS", async () => {
-    Object.assign(window, {
-      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-    });
+    usePlatform("macos");
     await hold(commaProject);
     await openFinding("，");
 
@@ -283,9 +275,7 @@ describe("SearchBar", () => {
 
   // @behavior ED-141
   it("moves to the previous match by ⇧⌘G on macOS, leaving F3 to the system", async () => {
-    Object.assign(window, {
-      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-    });
+    usePlatform("macos");
     await hold(commaProject);
     await openFinding("，");
 

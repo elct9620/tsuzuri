@@ -16,6 +16,7 @@ import { pageContext } from "#/state/context.ts";
 import DiarizationDialog from "#/components/DiarizationDialog.svelte";
 import { renderWithResourceBar } from "#/testing/resource-bar.ts";
 import { TaskRun } from "#/state/task-run.svelte.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("DiarizationDialog", () => {
   let feed: ProjectFeed;
@@ -23,7 +24,6 @@ describe("DiarizationDialog", () => {
   let commandsSent: string[];
   let project: ProjectView | null;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const openButton = () =>
     screen.getByRole<HTMLButtonElement>("button", { name: "辨識說話者" });
   const startButton = () =>

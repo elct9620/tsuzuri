@@ -6,6 +6,7 @@ import type { ProjectView } from "#/ipc/project.ts";
 import type { PresetModel } from "#/ipc/toolchain.ts";
 import { projectOf } from "#/testing/project.ts";
 import Models from "#/components/settings/project/Models.svelte";
+import { settle } from "#/testing/settle.ts";
 
 const QWEN_PRESET: PresetModel = {
   slot: "translation",
@@ -33,7 +34,6 @@ describe("Models", () => {
   let chosenFile: string;
   let isModelSettingsReadable: boolean;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const sent = (command: string) =>
     calls.find((call) => call.command === command)?.args;
   const menu = (slot: string) =>

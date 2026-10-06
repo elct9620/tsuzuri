@@ -14,6 +14,7 @@ import { EditingSession } from "#/editor/index.ts";
 import { drawPage } from "#/page.ts";
 import { mockPageMount } from "#/testing/page.ts";
 import { projectOf } from "#/testing/project.ts";
+import { settle } from "#/testing/settle.ts";
 
 const LECTURE: RecentProjectView = {
   directory: "/videos/lecture",
@@ -28,7 +29,6 @@ describe("Toolbar", () => {
   let page: Record<string, unknown>;
   let unfollow: () => void;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const nameField = () =>
     screen.getByRole<HTMLInputElement>("textbox", { name: "專案名稱" });
 

@@ -23,6 +23,8 @@ import { ViewChoices } from "#/state/view-choices.svelte.ts";
 import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 import { renderFollowingProject } from "#/testing/following-project.ts";
+import { usePlatform } from "#/testing/platform.ts";
+import { settle } from "#/testing/settle.ts";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
 interface MenuItemSent {
@@ -47,8 +49,6 @@ describe("Segment Changes", () => {
   /** Each dialog a choice opened, with what it was opened for. */
   let openedDialogs: unknown[][];
   let session: EditingSession;
-
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
   async function hold(next: ProjectView): Promise<void> {
     project = next;
@@ -904,12 +904,6 @@ describe("Segment Changes", () => {
     const textOf = (index: number) =>
       row(index).querySelector<HTMLElement>(".field.text")!;
 
-    afterEach(() => {
-      Object.assign(window, {
-        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
-      });
-    });
-
     // @behavior ED-098
     it("deletes the Current Segment with Delete outside a text field", async () => {
       await hold(threeSegments);
@@ -951,9 +945,7 @@ describe("Segment Changes", () => {
 
     // @behavior ED-100
     it("deletes with Backspace on macOS", async () => {
-      Object.assign(window, {
-        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-      });
+      usePlatform("macos");
       await hold(threeSegments);
       row(1).click();
 
@@ -976,9 +968,7 @@ describe("Segment Changes", () => {
 
     // @behavior ED-100
     it("deletes with Delete on macOS too", async () => {
-      Object.assign(window, {
-        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-      });
+      usePlatform("macos");
       await hold(threeSegments);
       row(1).click();
 
@@ -1122,12 +1112,6 @@ describe("Segment Changes", () => {
     const textOf = (index: number) =>
       row(index).querySelector<HTMLElement>(".field.text")!;
 
-    afterEach(() => {
-      Object.assign(window, {
-        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
-      });
-    });
-
     // @behavior ED-171
     it("merges the Current Segment with the one before with Ctrl+Alt+Up", async () => {
       await hold(threeSegments);
@@ -1155,9 +1139,7 @@ describe("Segment Changes", () => {
 
     // @behavior ED-173
     it("merges with ⌘+Option+Down while a text is edited on macOS", async () => {
-      Object.assign(window, {
-        __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-      });
+      usePlatform("macos");
       await hold(threeSegments);
       textOf(1).focus();
       await settle();

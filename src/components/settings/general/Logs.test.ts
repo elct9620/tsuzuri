@@ -4,6 +4,7 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Logs from "#/components/settings/general/Logs.svelte";
 import { showNotifications, notifications } from "#/testing/notifications.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("Logs", () => {
   let calls: { command: string; args: unknown }[];
@@ -13,7 +14,6 @@ describe("Logs", () => {
   /** The command that answers with a failure, if any. */
   let failingCommand: string | null;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const argsByCommand = (command: string) =>
     calls.filter((call) => call.command === command).map((call) => call.args);
   const logs = () => screen.getByRole("group", { name: "日誌" });

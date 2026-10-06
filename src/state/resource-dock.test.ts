@@ -7,10 +7,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
-import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { t } from "#/i18n.ts";
 import { drawPage } from "#/page.ts";
 import { mockPageMount } from "#/testing/page.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
+import { usePlatform } from "#/testing/platform.ts";
 
 /**
  * Tailwind's rules for the toolbar's two buttons, which the page's stylesheet would give: the one
@@ -56,9 +57,9 @@ describe("ResourceDock", () => {
   /** Opens the page in a window of `viewport` on `platform`. */
   async function open(
     viewport = LANDSCAPE_WINDOW,
-    platform = "macos",
+    platform: Parameters<typeof usePlatform>[0] = "macos",
   ): Promise<void> {
-    Object.assign(window, { __TAURI_OS_PLUGIN_INTERNALS__: { platform } });
+    usePlatform(platform);
     holdWindow(viewport);
     feed = new ProjectFeed();
     page = drawPage(feed, new EditingSession(editingPort));
@@ -90,7 +91,6 @@ describe("ResourceDock", () => {
 
   beforeEach(async () => {
     localStorage.clear();
-    await setInterfaceLanguage("zh-TW");
     document.head.innerHTML = `<style>${DRAWER_BUTTON_STYLES}</style>`;
     selectedNames = [];
     mockPageMount(

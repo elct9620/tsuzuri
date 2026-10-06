@@ -11,6 +11,7 @@ import type {
 import { showNotifications, notifications } from "#/testing/notifications.ts";
 import RepositoryDialog from "#/components/settings/RepositoryDialog.svelte";
 import Models from "#/components/settings/general/Models.svelte";
+import { settle } from "#/testing/settle.ts";
 
 const BREEZE: ModelSource = {
   kind: "repository",
@@ -89,7 +90,6 @@ describe("Models", () => {
   let settings: () => ModelSettingsView;
   let handlers: Record<string, (args: unknown) => unknown>;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const sent = (command: string) =>
     calls.find((call) => call.command === command)?.args;
   const menu = (slot: string) =>

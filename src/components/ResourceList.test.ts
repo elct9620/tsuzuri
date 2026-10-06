@@ -18,6 +18,8 @@ import {
   notifications,
   showNotifications,
 } from "#/testing/notifications.ts";
+import { usePlatform } from "#/testing/platform.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("ResourceList", () => {
   let feed: ProjectFeed;
@@ -28,7 +30,6 @@ describe("ResourceList", () => {
   let unfollow: () => void;
   let placeholders: ResourcePlaceholders;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const sent = (command: string) =>
     calls.find((call) => call.command === command)?.args;
   const resourceList = () => screen.getByRole("list", { name: "資源" });
@@ -76,9 +77,6 @@ describe("ResourceList", () => {
   });
 
   afterEach(() => {
-    Object.assign(window, {
-      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" },
-    });
     unfollow();
     clearMocks();
   });
@@ -219,9 +217,7 @@ describe("ResourceList", () => {
 
   // @behavior PJ-116
   it("reloads the Project with ⌘R on macOS", async () => {
-    Object.assign(window, {
-      __TAURI_OS_PLUGIN_INTERNALS__: { platform: "macos" },
-    });
+    usePlatform("macos");
     await show(projectOf());
 
     window.dispatchEvent(

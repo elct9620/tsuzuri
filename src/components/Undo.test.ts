@@ -6,11 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "#/assembly.ts";
 import { pageContext } from "#/state/context.ts";
 import Undo from "#/components/Undo.svelte";
+import { settle } from "#/testing/settle.ts";
 
 describe("Undo", () => {
   let commands: string[];
-
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
   function press(target: Element, key: string, shiftKey = false): void {
     target.dispatchEvent(

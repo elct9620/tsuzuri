@@ -23,14 +23,13 @@ import SegmentList from "#/components/SegmentList.svelte";
 import { TaskRun } from "#/state/task-run.svelte.ts";
 import { rowList, segmentRows } from "#/testing/segment-rows.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("SegmentList", () => {
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
   let editFailure: unknown;
   let glossaryTable: GlossaryTable;
-
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
   async function hold(next: ProjectView): Promise<void> {
     project = next;

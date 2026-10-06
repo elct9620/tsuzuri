@@ -13,6 +13,7 @@ import { pageContext } from "#/state/context.ts";
 import { SavedPreferences as SharedPreferences } from "#/state/saved-preferences.svelte.ts";
 import { showNotifications, notifications } from "#/testing/notifications.ts";
 import Preferences from "#/components/settings/preferences/Preferences.svelte";
+import { settle } from "#/testing/settle.ts";
 
 describe("Preferences", () => {
   let savedPreferences: SavedPreferences;
@@ -21,7 +22,6 @@ describe("Preferences", () => {
   /** The Preferences the editor follows, as the settings hand them over. */
   let shared: SharedPreferences;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   /** The switch named `name`, as its Choice Source and its column read. */
   const switchByName = (name: string) =>
     screen.getByRole<HTMLInputElement>("checkbox", { name });

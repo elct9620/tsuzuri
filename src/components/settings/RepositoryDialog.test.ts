@@ -3,11 +3,10 @@ import { render, screen } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import RepositoryDialog from "#/components/settings/RepositoryDialog.svelte";
+import { settle } from "#/testing/settle.ts";
 
 describe("RepositoryDialog", () => {
   let repositoryFiles: (args: unknown) => unknown;
-
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
   /** Opens the dialog for the translation slot with `repo` typed as the Repository name. */
   function typeName(repo: string): HTMLInputElement {

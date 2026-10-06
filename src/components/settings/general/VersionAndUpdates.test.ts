@@ -16,6 +16,7 @@ import {
 import { pageContext } from "#/state/context.ts";
 import UpdatesDialog from "#/components/UpdatesDialog.svelte";
 import VersionAndUpdates from "#/components/settings/general/VersionAndUpdates.svelte";
+import { settle } from "#/testing/settle.ts";
 
 describe("VersionAndUpdates", () => {
   let build: Record<string, unknown>;
@@ -30,7 +31,6 @@ describe("VersionAndUpdates", () => {
   /** What installing answers: a refusal to throw, or never answering, as Tsuzuri restarts. */
   let installRefusal: { code: string } | null;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const shownBuild = () => screen.getByText(/（[0-9a-f]{7}）$/).textContent;
 
   const argsByCommand = (command: string) =>

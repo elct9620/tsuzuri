@@ -12,6 +12,7 @@ import { notificationStack } from "#/state/notification.svelte.ts";
 import { drawPage } from "#/page.ts";
 import { mockPageMount } from "#/testing/page.ts";
 import { notificationDetail, notifications } from "#/testing/notifications.ts";
+import { settle } from "#/testing/settle.ts";
 
 const LECTURE: RecentProjectView = {
   directory: "/videos/lecture",
@@ -27,7 +28,6 @@ describe("StartScreen", () => {
   let page: Record<string, unknown>;
   let unfollow: () => void;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const recentList = () =>
     screen.queryByRole("list", { name: t("start.recentProjects") });
   const rowButtons = () => within(recentList()!).getAllByRole("button");

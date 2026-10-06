@@ -16,6 +16,7 @@ import { pageContext } from "#/state/context.ts";
 import { EditorComparison } from "#/state/editor-comparison.svelte.ts";
 import { notifications, showNotifications } from "#/testing/notifications.ts";
 import { drawSegmentRows } from "#/testing/segment-rows.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("EditorComparison", () => {
   let comparison: EditorComparison;
@@ -33,7 +34,6 @@ describe("EditorComparison", () => {
   /** How `subtitle_versions` answers; the Backups at once unless a test holds them back. */
   let takeVersions: () => SubtitleVersions[] | Promise<SubtitleVersions[]>;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const argsByCommand = (command: string) =>
     calls.filter((call) => call.command === command).map((call) => call.args);
   const cue = (start_ms: number, end_ms: number, text: string) => ({

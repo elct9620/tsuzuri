@@ -13,13 +13,12 @@ import {
   segmentDialogsOf,
   segmentRows,
 } from "#/testing/segment-rows.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("cleanup", () => {
   let project: ProjectView | null;
   let sentCalls: [string, unknown][];
   let count: number;
-
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
   const projectInTraditionalChinese = projectOf({
     segments: [

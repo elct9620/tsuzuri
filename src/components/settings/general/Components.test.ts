@@ -4,9 +4,9 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Components from "#/components/settings/general/Components.svelte";
 import { showNotifications, notifications } from "#/testing/notifications.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("Components", () => {
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   /** The row of llama.cpp, which every case here looks at. */
   const llamaRow = () => screen.getByText("llama.cpp").closest("li")!;
 

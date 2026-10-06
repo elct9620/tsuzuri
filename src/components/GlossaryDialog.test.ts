@@ -4,6 +4,7 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { GlossaryTable } from "#/ipc/project.ts";
 import GlossaryDialog from "#/components/GlossaryDialog.svelte";
+import { settle } from "#/testing/settle.ts";
 
 describe("GlossaryDialog", () => {
   let table: GlossaryTable | Promise<never>;
@@ -11,7 +12,6 @@ describe("GlossaryDialog", () => {
   let isSavingRefused: boolean;
   let dialog: { open(): Promise<void> };
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const glossary = () => screen.getByRole("dialog", { hidden: true });
   /** Each row of terms, below the row naming the Languages. */
   const termRows = () =>

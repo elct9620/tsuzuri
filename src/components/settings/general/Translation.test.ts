@@ -4,13 +4,13 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Translation from "#/components/settings/general/Translation.svelte";
 import { showNotifications, notifications } from "#/testing/notifications.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("Translation", () => {
   let savedArgs: unknown;
   /** The command that answers with a failure, if any. */
   let failingCommand: string | null;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   /** The field of the row named `name`, of the given role. */
   const field = (name: string, role: "spinbutton" | "checkbox") =>
     within(screen.getByText(name).closest("li")!).getByRole<HTMLInputElement>(

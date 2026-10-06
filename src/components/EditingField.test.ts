@@ -10,13 +10,13 @@ import {
   type DrawnSegmentRows,
   drawSegmentRows,
 } from "#/testing/segment-rows.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("EditingField", () => {
   let drawn: DrawnSegmentRows;
   let edits: unknown[];
   let session: EditingSession;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const fieldAt = (index: number) =>
     document.querySelector<HTMLElement>(
       `.field[data-index="${index}"][data-field="text"]`,

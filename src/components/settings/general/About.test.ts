@@ -4,11 +4,11 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LicensesDialog from "#/components/settings/LicensesDialog.svelte";
 import About from "#/components/settings/general/About.svelte";
+import { settle } from "#/testing/settle.ts";
 
 describe("About", () => {
   let commands: string[];
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const dialog = () =>
     screen.getByRole<HTMLDialogElement>("dialog", { hidden: true });
   const notice = () => screen.queryByTitle<HTMLIFrameElement>("LICENSE.html");

@@ -31,8 +31,7 @@ import {
   rowList,
   segmentDialogsOf,
 } from "#/testing/segment-rows.ts";
-
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+import { settle } from "#/testing/settle.ts";
 
 const startButton = () =>
   screen.getByRole<HTMLButtonElement>("button", { hidden: true, name: /開始/ });

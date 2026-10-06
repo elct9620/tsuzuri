@@ -7,12 +7,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
-import { setInterfaceLanguage } from "#/i18n.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import ExportMenu from "#/components/ExportMenu.svelte";
 import { notifications, showNotifications } from "#/testing/notifications.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("ExportMenu", () => {
   let feed: ProjectFeed;
@@ -22,7 +22,6 @@ describe("ExportMenu", () => {
   let failingCommand: string | null;
   let unfollow: () => void;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const sent = (command: string) =>
     calls.find((call) => call.command === command)?.args;
   const exportButton = (name: string) =>
@@ -65,7 +64,6 @@ describe("ExportMenu", () => {
   }
 
   beforeEach(async () => {
-    await setInterfaceLanguage("zh-TW");
     project = null;
     calls = [];
     failingCommand = null;

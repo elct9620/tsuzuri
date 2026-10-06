@@ -4,13 +4,13 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Transcription from "#/components/settings/general/Transcription.svelte";
 import { showNotifications, notifications } from "#/testing/notifications.ts";
+import { settle } from "#/testing/settle.ts";
 
 describe("Transcription", () => {
   let savedArgs: unknown;
   /** The command that answers with a failure, if any. */
   let failingCommand: string | null;
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   /** The switch of the row named `name`. */
   const toggle = (name: string) =>
     within(screen.getByText(name).closest("li")!).getByRole<HTMLInputElement>(

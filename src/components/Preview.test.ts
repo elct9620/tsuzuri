@@ -11,6 +11,7 @@ import type { ProjectView } from "#/ipc/project.ts";
 import type { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { projectOf } from "#/testing/project.ts";
+import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import EditorBar from "#/components/EditorBar.svelte";
 import { Playback } from "#/state/playback.svelte.ts";
@@ -59,7 +60,7 @@ describe("Preview", () => {
     const playback = new Playback();
     const fold = new PreviewFold();
     player = playback.media;
-    render(EditorBar, {
+    renderFollowingProject(EditorBar, assembly.feed, {
       props: {
         openReplacement: () => {},
         openVersions: () => {},

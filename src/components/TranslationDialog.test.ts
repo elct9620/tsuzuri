@@ -14,6 +14,7 @@ import {
   notificationItems,
   notifications,
 } from "#/testing/notifications.ts";
+import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import { TaskRun } from "#/state/task-run.svelte.ts";
 import TaskProgress from "#/components/TaskProgress.svelte";
@@ -99,6 +100,7 @@ describe("TranslationDialog", () => {
       TranslationDialog,
       "openTranslation",
       pageContext(feed, new EditingSession(editingPort)),
+      feed,
     );
   });
 
@@ -302,6 +304,7 @@ describe("TranslationDialog", () => {
       TranslationDialog,
       "openTranslation",
       pageContext(feed, new EditingSession(editingPort), run),
+      feed,
     );
     await hold(projectOf());
     run.begin("transcription");
@@ -361,7 +364,13 @@ describe("TranslationDialog, translating chosen Segments again", () => {
     );
     const assembly = assemble();
     const context = pageContext(assembly.feed, assembly.session, new TaskRun());
-    const translation = render(TranslationDialog, { context }).component;
+    const translation = renderFollowingProject(
+      TranslationDialog,
+      assembly.feed,
+      {
+        context,
+      },
+    );
     drawSegmentList(
       document.querySelector("section")!,
       context,

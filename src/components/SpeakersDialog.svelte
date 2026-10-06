@@ -4,7 +4,7 @@
   Glossary. The checked bar opens it for the Checked Segments.
 -->
 <script lang="ts">
-  import { flushSync, onMount } from "svelte";
+  import { flushSync } from "svelte";
 
   import type { ProjectView, Segment } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
@@ -20,7 +20,7 @@
   const session = editingSession();
   let dialog: HTMLDialogElement;
   /** The Project the editor shows, whose Segments and Translation Glossary name the Speakers. */
-  let project = $state<ProjectView | null>(null);
+  let { project }: { project: ProjectView | null } = $props();
   /** The Checked Segments when the dialog was opened for them. */
   let checkedIndexes = $state<number[]>([]);
   let scope = $state<SpeakerScope>("all-segments");
@@ -70,8 +70,6 @@
       isTaken[chosenScope](segment) ? [index] : [],
     );
   }
-
-  onMount(() => feed.follow((next) => (project = next)));
 </script>
 
 <dialog class="modal" bind:this={dialog}>

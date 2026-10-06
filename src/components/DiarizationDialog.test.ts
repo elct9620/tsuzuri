@@ -88,6 +88,7 @@ describe("DiarizationDialog", () => {
       DiarizationDialog,
       "openDiarization",
       pageContext(feed, new EditingSession(editingPort), run),
+      feed,
     );
   });
 

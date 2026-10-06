@@ -118,7 +118,7 @@ describe("TranscriptionDialog", () => {
     feed = new ProjectFeed();
     run = new TaskRun();
     const context = pageContext(feed, new EditingSession(editingPort), run);
-    renderWithToolbar(TranscriptionDialog, "openTranscription", context);
+    renderWithToolbar(TranscriptionDialog, "openTranscription", context, feed);
     render(TaskProgress, { context });
   });
 
@@ -518,6 +518,7 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
       TranscriptionDialog,
       "openTranscription",
       context,
+      assembly.feed,
     );
     drawSegmentList(
       document.querySelector("section")!,

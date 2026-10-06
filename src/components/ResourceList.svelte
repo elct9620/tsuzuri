@@ -1,6 +1,5 @@
 <script lang="ts">
   import RefreshCw from "@lucide/svelte/icons/refresh-cw";
-  import { onMount } from "svelte";
 
   import { selectResource, type ProjectView } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
@@ -13,16 +12,17 @@
   import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 
   interface Props {
+    /** The open Project, as Page reads it. */
+    project: ProjectView | null;
     dock: ResourceDock;
     openGlossary: () => void;
     /** Stand in for the Segments of the Resource being read. */
     placeholders: ResourcePlaceholders;
   }
 
-  let { dock, openGlossary, placeholders }: Props = $props();
+  let { project, dock, openGlossary, placeholders }: Props = $props();
 
   const feed = projectFeed();
-  let project = $state<ProjectView | null>(null);
 
   const glossaryLabel = $derived.by(() => {
     const glossary = project?.translation_glossary ?? null;
@@ -58,8 +58,6 @@
       void reload(feed);
     }
   }
-
-  onMount(() => feed.follow((next) => (project = next)));
 </script>
 
 <svelte:window onkeydown={actByShortcut} />

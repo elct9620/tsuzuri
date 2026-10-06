@@ -8,7 +8,6 @@
   import Search from "@lucide/svelte/icons/search";
   import SquarePlay from "@lucide/svelte/icons/square-play";
   import Users from "@lucide/svelte/icons/users";
-  import { onMount } from "svelte";
 
   import {
     currentResource,
@@ -19,12 +18,13 @@
   import { notifyFailure } from "#/state/notification.svelte.ts";
   import { playedSource } from "#/ui/silence.ts";
   import CompareMenu from "#/components/CompareMenu.svelte";
-  import { projectFeed } from "#/state/context.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
   import { saveMark } from "#/state/save-mark.svelte.ts";
   import TaskProgress from "#/components/TaskProgress.svelte";
 
   interface Props {
+    /** The open Project, as Page reads it. */
+    project: ProjectView | null;
     openReplacement: () => void;
     /** Opens the Versions dialog at the subtitle in a Language, or at the original for none. */
     openVersions: (subtitle?: string | null) => void;
@@ -34,11 +34,14 @@
     fold: PreviewFold;
   }
 
-  let { openReplacement, openVersions, openSearch, openSpeakers, fold }: Props =
-    $props();
-
-  const feed = projectFeed();
-  let project = $state<ProjectView | null>(null);
+  let {
+    project,
+    openReplacement,
+    openVersions,
+    openSearch,
+    openSpeakers,
+    fold,
+  }: Props = $props();
 
   const hasPreview = $derived(playedSource(project, null) !== null);
   const shownLanguage = $derived(project?.shown_translation ?? null);
@@ -57,8 +60,6 @@
       notifyFailure(t("translate.notShown"), error);
     }
   }
-
-  onMount(() => feed.follow((next) => (project = next)));
 </script>
 
 <div class="flex items-center gap-2 border-b border-base-300 px-4 py-2">

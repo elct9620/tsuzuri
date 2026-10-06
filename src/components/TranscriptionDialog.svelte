@@ -4,8 +4,6 @@
   from a Segment onward or over a span of them.
 -->
 <script lang="ts">
-  import { onMount } from "svelte";
-
   import { diarize } from "#/ipc/diarization.ts";
   import {
     currentResource,
@@ -24,16 +22,15 @@
     notifyTranslation,
   } from "#/state/notification.svelte.ts";
   import { formatTime } from "#/ui/time.ts";
-  import { projectFeed, taskRun } from "#/state/context.ts";
+  import { taskRun } from "#/state/context.ts";
   import { TranslationChoices } from "#/state/translation-choices.svelte.ts";
   import TranslationOptions from "#/components/TranslationOptions.svelte";
 
-  const feed = projectFeed();
   const run = taskRun();
   let dialog: HTMLDialogElement;
   let options = $state<TranslationOptions>();
   const choices = new TranslationChoices();
-  let project = $state<ProjectView | null>(null);
+  let { project }: { project: ProjectView | null } = $props();
   let scope = $state<TranscriptionScope>({ kind: "whole" });
   /** Whether to diarize the Transcript once transcribed, before any translation. */
   let isDiarizedAfter = $state(false);
@@ -83,8 +80,6 @@
       }
     }
   });
-
-  onMount(() => feed.follow((next) => (project = next)));
 
   /** Opens the dialog to transcribe the whole Current Resource. */
   export async function open(): Promise<void> {

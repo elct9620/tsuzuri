@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from "@testing-library/svelte";
+import { cleanup, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -9,6 +9,7 @@ import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
+import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import ExportMenu from "#/components/ExportMenu.svelte";
 import { notifications, showNotifications } from "#/testing/notifications.ts";
@@ -45,7 +46,7 @@ describe("ExportMenu", () => {
   /** Draws the menu with `next` as the Project open. */
   async function show(next: ProjectView | null): Promise<void> {
     project = next;
-    render(ExportMenu, {
+    renderFollowingProject(ExportMenu, feed, {
       context: pageContext(feed, new EditingSession(editingPort)),
     });
     await emit("project-changed");

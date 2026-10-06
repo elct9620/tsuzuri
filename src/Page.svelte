@@ -110,6 +110,7 @@
     />
     <div class="drawer-content @container flex h-dvh min-w-0 flex-col">
       <Toolbar
+        {project}
         {dock}
         {recentProjects}
         {openSettings}
@@ -119,6 +120,7 @@
         openDiarization={() => diarizationDialog.open()}
       />
       <EditorBar
+        {project}
         openReplacement={() => replacementDialog.open()}
         openVersions={(subtitle) => versionsDialog.open(subtitle)}
         openSearch={() => segmentList.openSearch()}
@@ -131,6 +133,7 @@
       </div>
     </div>
     <ResourceList
+      {project}
       {dock}
       openGlossary={() => glossaryDialog.open()}
       {placeholders}
@@ -144,13 +147,13 @@
 />
 <RepositoryDialog bind:this={repositoryDialog} />
 <LicensesDialog bind:this={licensesDialog} />
-<TranscriptionDialog bind:this={transcriptionDialog} />
-<TranslationDialog bind:this={translationDialog} />
-<DiarizationDialog bind:this={diarizationDialog} />
+<TranscriptionDialog {project} bind:this={transcriptionDialog} />
+<TranslationDialog {project} bind:this={translationDialog} />
+<DiarizationDialog {project} bind:this={diarizationDialog} />
 <GlossaryDialog bind:this={glossaryDialog} />
 <ReplacementDialog bind:this={replacementDialog} />
 <VersionsDialog bind:this={versionsDialog} />
-<SpeakersDialog bind:this={speakersDialog} />
+<SpeakersDialog {project} bind:this={speakersDialog} />
 <ShiftDialog bind:this={shiftDialog} />
 <ShortcutsDialog bind:this={shortcutsDialog} />
 <UpdatesDialog />

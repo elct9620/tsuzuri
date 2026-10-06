@@ -508,6 +508,60 @@ describe("Page", () => {
     clearMocks();
   });
 
+  it("hands the open Project to each part beside the Segments that shows it", async () => {
+    await start();
+    await hold(
+      projectOf({
+        // Diarizing is offered only for a Resource with media
+        resources: [resourceOf({ has_media: true })],
+        segments: [
+          {
+            start_ms: 0,
+            end_ms: 1000,
+            text: "大家好",
+            speaker: "小明",
+            translation: "Hello",
+          },
+        ],
+      }),
+    );
+    /** The value each dialog writes beside `label`. */
+    const valuesBeside = (label: string) =>
+      [...document.querySelectorAll("dialog p")]
+        .filter((line) => line.firstElementChild?.textContent === label)
+        .map((line) => line.lastElementChild?.textContent);
+    const isExportOffered = !screen.getByRole<HTMLButtonElement>("button", {
+      hidden: true,
+      name: t("toolbar.originalText"),
+    }).disabled;
+    const renamedSpeakers = [
+      ...screen.getByRole<HTMLSelectElement>("combobox", {
+        hidden: true,
+        name: t("edit.speakersRenamed"),
+      }).options,
+    ].map((option) => option.value);
+    screen
+      .getByRole("button", { hidden: true, name: t("toolbar.diarize") })
+      .click();
+    await settle();
+
+    expect({
+      resourceName: screen.getByRole("heading", { level: 2 }).textContent,
+      isExportOffered,
+      transcribedLanguage: valuesBeside(t("transcribe.language")),
+      translatedLanguage: valuesBeside(t("translate.source")),
+      renamedSpeakers,
+      isOverwriteWarned: screen.queryByText(t("diarize.overwrite")) !== null,
+    }).toEqual({
+      resourceName: "ep01",
+      isExportOffered: true,
+      transcribedLanguage: [t("languages.zh-TW")],
+      translatedLanguage: [t("languages.zh-TW")],
+      renamedSpeakers: ["小明"],
+      isOverwriteWarned: true,
+    });
+  });
+
   // @behavior PJ-036
   it("shows only the start screen without a Project", async () => {
     await start();

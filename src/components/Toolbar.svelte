@@ -9,7 +9,6 @@
   import Pencil from "@lucide/svelte/icons/pencil";
   import Settings from "@lucide/svelte/icons/settings";
   import Users from "@lucide/svelte/icons/users";
-  import { onMount } from "svelte";
 
   import {
     currentResource,
@@ -29,6 +28,8 @@
   import type { ResourceDock } from "#/state/resource-dock.svelte.ts";
 
   interface Props {
+    /** The open Project, as Page reads it. */
+    project: ProjectView | null;
     dock: ResourceDock;
     recentProjects: RecentProjectView[];
     openSettings: () => void;
@@ -39,6 +40,7 @@
   }
 
   let {
+    project,
     dock,
     recentProjects,
     openSettings,
@@ -49,7 +51,6 @@
   }: Props = $props();
 
   const feed = projectFeed();
-  let project = $state<ProjectView | null>(null);
 
   /** The task buttons, each usable only for a Current Resource holding what its task reads. */
   const taskButtons = $derived.by(() => {
@@ -89,8 +90,6 @@
     else if (event.key !== "Enter") return;
     field.blur();
   }
-
-  onMount(() => feed.follow((next) => (project = next)));
 </script>
 
 <header class="navbar min-h-0 gap-2 bg-base-200 px-4 py-2">
@@ -198,7 +197,7 @@
       </button>
     {/each}
 
-    <ExportMenu />
+    <ExportMenu {project} />
 
     <button
       type="button"

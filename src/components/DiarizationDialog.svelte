@@ -1,24 +1,19 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-
   import { diarize } from "#/ipc/diarization.ts";
   import type { ProjectView } from "#/ipc/project.ts";
   import { modelSettings } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import { sourceFileName } from "#/ui/models.ts";
   import { notifyDiarization } from "#/state/notification.svelte.ts";
-  import { projectFeed, taskRun } from "#/state/context.ts";
+  import { taskRun } from "#/state/context.ts";
 
-  const feed = projectFeed();
   const run = taskRun();
   let dialog: HTMLDialogElement;
-  let project = $state<ProjectView | null>(null);
+  let { project }: { project: ProjectView | null } = $props();
   /** The file of the diarization Model it runs with, once read. */
   let model = $state("");
   /** Whether the Segments carry Speakers the diarization replaces, as of opening. */
   let hasSpeakers = $state(false);
-
-  onMount(() => feed.follow((next) => (project = next)));
 
   export async function open(): Promise<void> {
     hasSpeakers = (project?.segments ?? []).some(

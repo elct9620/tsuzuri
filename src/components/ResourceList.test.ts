@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { render, screen, within } from "@testing-library/svelte";
+import { screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -8,6 +8,7 @@ import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
+import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import { ResourceDock } from "#/state/resource-dock.svelte.ts";
 import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
@@ -37,7 +38,7 @@ describe("ResourceList", () => {
   /** Draws the list with `next` as the Project open. */
   async function show(next: ProjectView): Promise<void> {
     project = next;
-    render(ResourceList, {
+    renderFollowingProject(ResourceList, feed, {
       props: {
         dock: new ResourceDock(),
         openGlossary: () => {},
@@ -252,7 +253,7 @@ describe("ResourceList", () => {
   });
 
   it("reloads nothing without a Project", async () => {
-    render(ResourceList, {
+    renderFollowingProject(ResourceList, feed, {
       props: {
         dock: new ResourceDock(),
         openGlossary: () => {},

@@ -7,7 +7,6 @@
 <script lang="ts">
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import Download from "@lucide/svelte/icons/download";
-  import { onMount } from "svelte";
 
   import { save, SRT_FILTERS, TEXT_FILTERS } from "#/ipc/dialog.ts";
   import {
@@ -22,7 +21,6 @@
   import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";
   import { closeMenu } from "#/ui/menu.ts";
   import { notifyFailure } from "#/state/notification.svelte.ts";
-  import { projectFeed } from "#/state/context.ts";
 
   /** Where the webview remembers whether a Plain Text export names its Speakers. */
   const TEXT_SPEAKERS_KEY = "tsuzuri.plain-text-speakers";
@@ -60,8 +58,7 @@
     },
   ];
 
-  const feed = projectFeed();
-  let project = $state<ProjectView | null>(null);
+  let { project }: { project: ProjectView | null } = $props();
   let hasTextSpeakers = $state(rememberedFlag(TEXT_SPEAKERS_KEY, true));
   let hasTextBlankLines = $state(rememberedFlag(TEXT_BLANK_LINES_KEY, true));
 
@@ -95,8 +92,6 @@
       notifyFailure(t("toolbar.notExported"), error);
     }
   }
-
-  onMount(() => feed.follow((next) => (project = next)));
 </script>
 
 {#snippet exportItem(item: ExportChoice)}

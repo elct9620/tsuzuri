@@ -19,6 +19,7 @@ import type { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { layOutTimeline } from "#/testing/layout.ts";
 import { projectOf } from "#/testing/project.ts";
+import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import EditorBar from "#/components/EditorBar.svelte";
 import { Playback } from "#/state/playback.svelte.ts";
@@ -200,7 +201,7 @@ describe("Current Segment", () => {
     );
     playback = new Playback();
     const fold = new PreviewFold();
-    render(EditorBar, {
+    renderFollowingProject(EditorBar, assembly.feed, {
       props: {
         openReplacement: () => {},
         openVersions: () => {},

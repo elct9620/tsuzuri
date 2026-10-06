@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { render, screen } from "@testing-library/svelte";
+import { screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
@@ -10,6 +10,7 @@ import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
+import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import EditorBar from "#/components/EditorBar.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
@@ -46,7 +47,7 @@ describe("EditorBar", () => {
   /** Draws the bar with `next` as the Project open. */
   async function show(next: ProjectView): Promise<void> {
     project = next;
-    render(EditorBar, {
+    renderFollowingProject(EditorBar, feed, {
       props: {
         openReplacement: () => {},
         openVersions: () => {},

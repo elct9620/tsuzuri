@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { render, screen } from "@testing-library/svelte";
+import { screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -7,6 +7,7 @@ import { assemble } from "#/assembly.ts";
 import type { ProjectView } from "#/ipc/project.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
 import { projectOf } from "#/testing/project.ts";
+import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import SpeakersDialog from "#/components/SpeakersDialog.svelte";
 import { showNotifications } from "#/testing/notifications.ts";
@@ -98,7 +99,9 @@ describe("SpeakersDialog", () => {
     );
     const assembly = assemble();
     const context = pageContext(assembly.feed, assembly.session);
-    speakersDialog = render(SpeakersDialog, { context }).component;
+    speakersDialog = renderFollowingProject(SpeakersDialog, assembly.feed, {
+      context,
+    });
     drawSegmentList(
       document.querySelector("section")!,
       context,

@@ -732,7 +732,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 | 共用 | 位置 | 使用者 |
 |---|---|---|
-| 目前的專案 | Page 讀取 | 起始畫面、工作區、視窗標題 |
+| 目前的專案 | Page 讀取，以 prop 交下 | 工作區、各列與 modal |
 | 最近專案 | Page 讀取 | 起始畫面、工具列 |
 | `ResourceDock` | Page 建立 | 工具列、資源清單 |
 | `Playback` | Page 建立 | 預覽、時間軸、段落列 |

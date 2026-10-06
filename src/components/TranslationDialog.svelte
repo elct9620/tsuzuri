@@ -4,22 +4,19 @@
   chosen Segments again into the translation shown.
 -->
 <script lang="ts">
-  import { onMount } from "svelte";
-
   import type { ProjectView } from "#/ipc/project.ts";
   import { translateSegments } from "#/ipc/translation.ts";
   import { t } from "#/i18n.ts";
   import { notifyTranslation } from "#/state/notification.svelte.ts";
-  import { projectFeed, taskRun } from "#/state/context.ts";
+  import { taskRun } from "#/state/context.ts";
   import { TranslationChoices } from "#/state/translation-choices.svelte.ts";
   import TranslationOptions from "#/components/TranslationOptions.svelte";
 
-  const feed = projectFeed();
   const run = taskRun();
   let dialog: HTMLDialogElement;
   let options: TranslationOptions;
   const choices = new TranslationChoices();
-  let project = $state<ProjectView | null>(null);
+  let { project }: { project: ProjectView | null } = $props();
   /** The Segments to translate again, or none to translate the whole subtitle. */
   let chosenIndexes = $state<number[] | null>(null);
   /** Whether the Language chosen is already translated. */
@@ -37,8 +34,6 @@
         ? t("translate.scopeSegment", { number: chosenIndexes[0] + 1 })
         : t("translate.scopeChecked", { count: chosenIndexes.length }),
   );
-
-  onMount(() => feed.follow((next) => (project = next)));
 
   /** Opens the dialog to translate the whole original subtitle. */
   export function open(): void {

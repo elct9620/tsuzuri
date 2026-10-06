@@ -1,6 +1,5 @@
 //! How Tsuzuri behaves as it is worked in, saved across launches and the same in every Project.
 
-use std::fs;
 use std::io;
 use std::path::Path;
 
@@ -89,8 +88,7 @@ impl Preferences {
     }
 
     pub fn save(self, dir: &Path) -> io::Result<()> {
-        fs::create_dir_all(dir)?;
-        json_settings::write(&dir.join(PREFERENCES_FILE), &self)
+        json_settings::save(dir, PREFERENCES_FILE, &self)
     }
 }
 

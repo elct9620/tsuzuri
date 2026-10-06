@@ -1,4 +1,3 @@
-use std::fs;
 use std::io;
 use std::path::Path;
 
@@ -19,8 +18,7 @@ impl Choices {
     }
 
     pub fn save(&self, dir: &Path) -> io::Result<()> {
-        fs::create_dir_all(dir)?;
-        json_settings::write(&dir.join(CHOICES_FILE), self)
+        json_settings::save(dir, CHOICES_FILE, self)
     }
 }
 
@@ -31,8 +29,7 @@ impl ModelSettings {
     }
 
     pub fn save(&self, dir: &Path) -> io::Result<()> {
-        fs::create_dir_all(dir)?;
-        json_settings::write(&dir.join(SETTINGS_FILE), self)
+        json_settings::save(dir, SETTINGS_FILE, self)
     }
 }
 

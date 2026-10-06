@@ -179,3 +179,83 @@ export function choiceLanding({
 export function spanOf(segment: Segment): Span {
   return { start: toSeconds(segment.start_ms), end: toSeconds(segment.end_ms) };
 }
+
+/** The times an edge Snaps to and how near, in seconds, it comes to take one. */
+export type SnapReach = Pick<DragReach, "snapTimes" | "snapDistance">;
+
+/** The Segment dragged, by which edge or else as a whole, and whether the edge it shares with the neighbour there moves along. */
+export interface SegmentDrag {
+  index: number;
+  side: SpanSide | undefined;
+  isShared: boolean;
+}
+
+/** The neighbour on `side` of the Segment at `index` whose edge touches it, or none. */
+export function sharedNeighbour(
+  segments: Segment[],
+  index: number,
+  side: SpanSide,
+): number | null {
+  const segment = segments[index];
+  const neighbour = side === "end" ? index + 1 : index - 1;
+  const other = segments[neighbour];
+  if (!segment || !other) return null;
+  const isTouching =
+    side === "end"
+      ? other.start_ms === segment.end_ms
+      : other.end_ms === segment.start_ms;
+  return isTouching ? neighbour : null;
+}
+
+/** The times an edge Snaps to: `mediaTime`, and each edge of the Segments but the one at `index`. */
+export function snapTargets(
+  segments: Segment[],
+  index: number,
+  mediaTime: number,
+): number[] {
+  return [
+    mediaTime,
+    ...segments
+      .filter((_, other) => other !== index)
+      .flatMap((other) => [toSeconds(other.start_ms), toSeconds(other.end_ms)]),
+  ];
+}
+
+/**
+ * What the Segment `drag` moves may reach in media running `duration`: its start between its
+ * neighbours' starts and its end as late as the media, over its neighbours; or, where the edge it
+ * shares with the next moves with it, no later than that neighbour's end and the start after it.
+ */
+export function segmentReach(
+  segments: Segment[],
+  { index, side, isShared }: SegmentDrag,
+  duration: number,
+  snapReach: SnapReach,
+): DragReach {
+  const segment = spanOf(segments[index]);
+  const startOf = (at: number) => {
+    const other = segments[at];
+    return other ? toSeconds(other.start_ms) : undefined;
+  };
+  const next = segments[index + 1];
+  const highestEnd =
+    next && isShared && side === "end"
+      ? Math.min(toSeconds(next.end_ms), startOf(index + 2) ?? Infinity)
+      : duration;
+  return {
+    lowestStart: Math.min(startOf(index - 1) ?? 0, segment.start),
+    highestStart: Math.max(startOf(index + 1) ?? duration, segment.start),
+    highestEnd: Math.max(highestEnd, segment.end),
+    ...snapReach,
+  };
+}
+
+/** What a range drawn over media running `duration` may reach: the whole media. */
+export function rangeReach(duration: number, snapReach: SnapReach): DragReach {
+  return {
+    lowestStart: 0,
+    highestStart: duration,
+    highestEnd: duration,
+    ...snapReach,
+  };
+}

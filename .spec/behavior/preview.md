@@ -1330,6 +1330,22 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | When | its end is dragged 20 pixels later with Alt held |
 | Then | the Project is asked to move the edge after the first to 0.7 s |
 
+## `PV-209` Stopping a shared edge at the next Segment's end
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.5 to 1 s |
+| When | its end is dragged 80 pixels later with Alt held |
+| Then | the Project is asked to move the edge after the first to 1 s |
+
+## `PV-210` Stopping a shared edge at the start after the next Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.5 to 1 s, and the one after it from 0.8 s |
+| When | its end is dragged 50 pixels later with Alt held |
+| Then | the Project is asked to move the edge after the first to 0.8 s |
+
 ## `PV-061` Holding the timeline while a Mode writes
 
 | Step | Statement |

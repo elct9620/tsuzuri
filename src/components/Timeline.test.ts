@@ -726,6 +726,28 @@ describe("Timeline", () => {
       expect(changes).toEqual([{ kind: "boundary", index: 0, at_ms: 700 }]);
     });
 
+    // @behavior PV-209
+    it("stops the edge two Segments share at the next Segment's end", async () => {
+      await showCurrent([segmentAt(0, 0.5), segmentAt(0.5, 1)]);
+
+      await drag(endOf(0)!, 80, { altKey: true });
+
+      expect(changes).toEqual([{ kind: "boundary", index: 0, at_ms: 1000 }]);
+    });
+
+    // @behavior PV-210
+    it("stops the edge two Segments share at the start after the next Segment", async () => {
+      await showCurrent([
+        segmentAt(0, 0.5),
+        segmentAt(0.5, 1),
+        segmentAt(0.8, 1.2),
+      ]);
+
+      await drag(endOf(0)!, 50, { altKey: true });
+
+      expect(changes).toEqual([{ kind: "boundary", index: 0, at_ms: 800 }]);
+    });
+
     // @behavior PV-061
     it("holds every region while a Mode writes the Current Resource", async () => {
       await showCurrent([segmentAt(0, 0.5)], 0, {

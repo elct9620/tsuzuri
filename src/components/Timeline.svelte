@@ -93,13 +93,18 @@
     formatLength,
     formatSeconds,
     landingSpan,
+    rangeReach,
     regionLanes,
+    segmentReach,
+    sharedNeighbour,
+    snapTargets,
     snapTime,
     spanOf,
     toMilliseconds,
     toSeconds,
-    type DragReach,
     type Landing,
+    type SegmentDrag,
+    type SnapReach,
     type Span,
   } from "#/ui/timeline-spans.ts";
   import {
@@ -114,17 +119,12 @@
   let { playback, hidden }: { playback: Playback; hidden: boolean } = $props();
 
   /** A drag of the Current Segment's region under way, from its Segment's times to where it is shown. */
-  interface Drag {
-    index: number;
-    /** The edge dragged, or none for the whole region. */
-    side: UpdateSide | undefined;
+  interface Drag extends SegmentDrag {
     origin: Span;
     /** Where the pointer has taken the region, before it Snaps or is kept from its neighbours. */
     pointerSpan: Span;
     /** Where the region is shown now. */
     span: Span;
-    /** Whether the edge it shares with the neighbour on its dragged side moves along with it. */
-    isShared: boolean;
     isCancelled: boolean;
   }
 
@@ -342,7 +342,12 @@
     if (index === null || !segment || isTimeHeld) return;
     event.preventDefault();
     const time = player.currentTime;
-    const { lowestStart, highestStart, highestEnd } = dragReach(index, false);
+    const { lowestStart, highestStart, highestEnd } = segmentReach(
+      segments,
+      { index, side, isShared: false },
+      mediaDuration(),
+      snapReachBeside(index),
+    );
     const span = spanOf(segment);
     void retime(
       index,
@@ -678,17 +683,14 @@
     currentDrag.isShared =
       modifiers.altKey &&
       side !== undefined &&
-      sharedNeighbour(index, side) !== null;
-    const reach = dragReach(index, currentDrag.isShared, side);
-    const isSnappingNow = isSnapping !== modifiers.shiftKey;
-    showSpan(
+      sharedNeighbour(segments, index, side) !== null;
+    const reach = segmentReach(
+      segments,
       currentDrag,
-      landingSpan(
-        currentDrag.pointerSpan,
-        side,
-        isSnappingNow ? reach : { ...reach, snapTimes: [] },
-      ),
+      mediaDuration(),
+      snapReachBeside(index),
     );
+    showSpan(currentDrag, landingSpan(currentDrag.pointerSpan, side, reach));
   }
 
   /** Writes where a region was let go, unless the drag was taken back or ended where it began. */
@@ -718,7 +720,7 @@
     currentDrag.span = span;
     showTimes(span, true);
     for (const side of ["start", "end"] as const) {
-      const neighbour = sharedNeighbour(currentDrag.index, side);
+      const neighbour = sharedNeighbour(segments, currentDrag.index, side);
       if (neighbour === null) continue;
       const segment = spanOf(segments[neighbour]);
       drawnRegions[neighbour]?.setOptions(
@@ -732,60 +734,23 @@
     placeRegions();
   }
 
-  /** The neighbour on `side` of the Segment at `index` whose edge touches it, or none. */
-  function sharedNeighbour(index: number, side: UpdateSide): number | null {
-    const segment = segments[index];
-    const neighbour = side === "end" ? index + 1 : index - 1;
-    const other = segments[neighbour];
-    if (!segment || !other) return null;
-    const isTouching =
-      side === "end"
-        ? other.start_ms === segment.end_ms
-        : other.end_ms === segment.start_ms;
-    return isTouching ? neighbour : null;
+  /** How long the media runs, or without end before the waveform has it. */
+  function mediaDuration(): number {
+    return surfer?.getDuration() ?? Infinity;
   }
 
   /**
-   * What the Segment at `index` may reach: its start between its neighbours' starts and its end as
-   * late as the media, over its neighbours; or, where the edge it shares with the next moves with
-   * it, no later than that neighbour's end and the start after it. And what it Snaps to.
+   * What an edge Snaps to beside the Segment at `index`: where the media is and every other edge,
+   * within `SNAP_PX` at the waveform's zoom, or nothing while snapping is off.
    */
-  function dragReach(
-    index: number,
-    isShared: boolean,
-    side?: UpdateSide,
-  ): DragReach {
-    const segment = spanOf(segments[index]);
-    const startOf = (at: number) => {
-      const other = segments[at];
-      return other ? toSeconds(other.start_ms) : undefined;
-    };
-    const next = segments[index + 1];
-    const duration = surfer?.getDuration() ?? Infinity;
-    const highestEnd =
-      next && isShared && side === "end"
-        ? Math.min(toSeconds(next.end_ms), startOf(index + 2) ?? Infinity)
-        : duration;
+  function snapReachBeside(index: number): SnapReach {
+    const isSnappingNow = isSnapping !== modifiers.shiftKey;
     return {
-      lowestStart: Math.min(startOf(index - 1) ?? 0, segment.start),
-      highestStart: Math.max(startOf(index + 1) ?? duration, segment.start),
-      highestEnd: Math.max(highestEnd, segment.end),
-      snapTimes: snapTargets(index),
+      snapTimes: isSnappingNow
+        ? snapTargets(segments, index, player.currentTime)
+        : [],
       snapDistance: SNAP_PX / wrapperPxPerSec(),
     };
-  }
-
-  /** The times an edge Snaps to: where the media is, and each edge of the Segments but the one at `index`. */
-  function snapTargets(index: number): number[] {
-    return [
-      player.currentTime,
-      ...segments
-        .filter((_, other) => other !== index)
-        .flatMap((other) => [
-          toSeconds(other.start_ms),
-          toSeconds(other.end_ms),
-        ]),
-    ];
   }
 
   /** How many pixels the waveform draws a second, as the regions measure it while dragged. */
@@ -802,7 +767,10 @@
   function keepRange(newRange: Region): void {
     if (stroke) return;
     dropRange();
-    const { lowestStart, highestEnd, snapTimes, snapDistance } = rangeReach();
+    const { lowestStart, highestEnd, snapTimes, snapDistance } = rangeReach(
+      mediaDuration(),
+      snapReachBeside(-1),
+    );
     const snap = (time: number) => snapTime(time, snapTimes, snapDistance);
     const start = Math.max(lowestStart, snap(newRange.start));
     const end = Math.min(highestEnd, snap(newRange.end));
@@ -819,21 +787,14 @@
 
   /** Lands the drawn range where its `side`, or the whole of it, was let go, as a dragged Segment lands. */
   function placeRange(movedRange: Region, side: UpdateSide | undefined): void {
-    movedRange.setOptions(landingSpan(movedRange, side, rangeReach()));
+    movedRange.setOptions(
+      landingSpan(
+        movedRange,
+        side,
+        rangeReach(mediaDuration(), snapReachBeside(-1)),
+      ),
+    );
     showTimes(movedRange);
-  }
-
-  /** What the drawn range may reach: the whole media, Snapping to every Segment's edges while snapping is on. */
-  function rangeReach(): DragReach {
-    const duration = surfer?.getDuration() ?? Infinity;
-    const isSnappingNow = isSnapping !== modifiers.shiftKey;
-    return {
-      lowestStart: 0,
-      highestStart: duration,
-      highestEnd: duration,
-      snapTimes: isSnappingNow ? snapTargets(-1) : [],
-      snapDistance: SNAP_PX / wrapperPxPerSec(),
-    };
   }
 
   /**

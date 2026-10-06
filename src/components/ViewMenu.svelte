@@ -8,7 +8,7 @@
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import Eye from "@lucide/svelte/icons/eye";
 
-  import type { ProjectView } from "#/ipc/project.ts";
+  import type { Language, ProjectView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import type { CaptionChoices } from "#/state/caption-choices.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
@@ -23,7 +23,7 @@
     captionChoices: CaptionChoices;
     viewChoices: ViewChoices;
     /** Opens the Versions dialog at the subtitle in a Language, or at the original for none. */
-    openVersions: (subtitle: string | null) => void;
+    openVersions: (subtitle: Language | null) => void;
   }
 
   let { project, playback, captionChoices, viewChoices, openVersions }: Props =

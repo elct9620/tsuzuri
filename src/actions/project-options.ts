@@ -5,6 +5,7 @@
 import {
   setPrimaryLanguage,
   setProjectOptions,
+  type Language,
   type ProjectOptions,
   type ProjectView,
 } from "#/ipc/project.ts";
@@ -21,6 +22,6 @@ export async function saveOptions(
   );
 }
 
-export async function setLanguage(language: string): Promise<void> {
+export async function setLanguage(language: Language): Promise<void> {
   await attempt(t("settings.notSaved"), () => setPrimaryLanguage(language));
 }

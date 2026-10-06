@@ -11,10 +11,10 @@ export type Translation = bindings.Translation;
 
 /** Translates the Current Resource from the Primary Language; the translations land in the Project, not in the answer. */
 export function translate(
-  target: string,
+  target: Language,
   options: TranslationOptions,
 ): Promise<Translation> {
-  return commands.translate(target as Language, options);
+  return commands.translate(target, options);
 }
 
 /** Translates the Segments at `indexes` again into the translation shown with `options`, save the Rolling Summary, as one change. */
@@ -27,7 +27,7 @@ export function retranslate(
 
 /** Translates the whole Current Resource into `target`, or with `indexes` the Segments at them again into the translation shown. */
 export function translateSegments(
-  target: string,
+  target: Language,
   options: TranslationOptions,
   indexes: number[] | null,
 ): Promise<Translation> {

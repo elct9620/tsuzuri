@@ -140,9 +140,9 @@ export type OpenCommand = Extract<
 export async function openProject(
   command: OpenCommand,
   path: string,
-  language: string,
+  language: Language,
 ): Promise<void> {
-  await commands[command](path, language as Language);
+  await commands[command](path, language);
 }
 
 /** The Requested SRT, answered once, or none when the system asked for none since. */
@@ -161,8 +161,8 @@ export async function selectResource(name: string): Promise<void> {
   await commands.selectResource(name);
 }
 
-export async function setPrimaryLanguage(language: string): Promise<void> {
-  await commands.setPrimaryLanguage(language as Language);
+export async function setPrimaryLanguage(language: Language): Promise<void> {
+  await commands.setPrimaryLanguage(language);
 }
 
 export async function setProjectOptions(
@@ -176,8 +176,10 @@ export async function reloadProject(): Promise<void> {
   await commands.reloadProject();
 }
 
-export async function showTranslation(language: string | null): Promise<void> {
-  await commands.showTranslation(language as Language | null);
+export async function showTranslation(
+  language: Language | null,
+): Promise<void> {
+  await commands.showTranslation(language);
 }
 
 export type WrittenText = bindings.WrittenText;
@@ -231,37 +233,37 @@ export function subtitleVersions(): Promise<SubtitleVersions[]> {
 
 /** The cues of two Versions of one subtitle side by side, where none names the subtitle as it is now. */
 export function compareVersions(
-  language: string | null,
+  language: Language | null,
   left: string | null,
   right: string | null,
 ): Promise<ComparedRow[]> {
-  return commands.compareVersions(language as Language | null, left, right);
+  return commands.compareVersions(language, left, right);
 }
 
 export type Restoration = bindings.Restoration;
 
 export function restoreVersion(
-  language: string | null,
+  language: Language | null,
   backup: string,
 ): Promise<Restoration> {
-  return commands.restoreVersion(language as Language | null, backup);
+  return commands.restoreVersion(language, backup);
 }
 
 /** The cues of the Current Resource's translation into `language`, as its file is written. */
-export function translationCues(language: string): Promise<ComparedCue[]> {
-  return commands.translationCues(language as Language);
+export function translationCues(language: Language): Promise<ComparedCue[]> {
+  return commands.translationCues(language);
 }
 
 export type RevertPart = bindings.RevertPart;
 
 /** Takes back one Comparison Row of `backup` against the subtitle in `language`, as they compare now. */
 export function revertRow(
-  language: string | null,
+  language: Language | null,
   backup: string,
   row: number,
   part: RevertPart,
 ): Promise<Restoration> {
-  return commands.revertRow(language as Language | null, backup, row, part);
+  return commands.revertRow(language, backup, row, part);
 }
 
 export type GlossaryRow = bindings.GlossaryRow;

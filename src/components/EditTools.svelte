@@ -11,7 +11,7 @@
   import SquarePlay from "@lucide/svelte/icons/square-play";
   import Users from "@lucide/svelte/icons/users";
 
-  import type { ProjectView } from "#/ipc/project.ts";
+  import type { Language, ProjectView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { playedSource } from "#/ui/silence.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
@@ -25,7 +25,7 @@
     project: ProjectView | null;
     openReplacement: () => void;
     /** Opens the Versions dialog at the subtitle in a Language, or at the original for none. */
-    openVersions: (subtitle?: string | null) => void;
+    openVersions: (subtitle?: Language | null) => void;
     openSearch: () => void;
     openSpeakers: () => void;
     /** The parts of the Preview folded away, which only a Current Resource has to fold. */

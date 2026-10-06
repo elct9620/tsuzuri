@@ -12,6 +12,7 @@
 
   import {
     currentResource,
+    type Language,
     type ProjectView,
     showTranslation,
   } from "#/ipc/project.ts";
@@ -58,7 +59,7 @@
     },
   ]);
 
-  async function chooseTranslation(language: string): Promise<void> {
+  async function chooseTranslation(language: Language | ""): Promise<void> {
     await attempt(t("translate.notShown"), async () => {
       await showTranslation(language || null);
     });
@@ -83,7 +84,8 @@
       aria-label={t("edit.translation")}
       value={shownLanguage ?? ""}
       disabled={(project?.running_mode ?? null) !== null}
-      onchange={({ currentTarget }) => chooseTranslation(currentTarget.value)}
+      onchange={({ currentTarget }) =>
+        chooseTranslation(currentTarget.value as Language | "")}
     >
       <option value="">{t("edit.noTranslation")}</option>
       {#each translationLanguages as code (code)}

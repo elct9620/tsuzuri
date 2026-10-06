@@ -1,6 +1,6 @@
 export const MS_PER_SECOND = 1000;
 export const MS_PER_MINUTE = 60 * MS_PER_SECOND;
-export const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 
 /** `value` written with leading zeros to `width` digits, as every time the interface shows is. */
 function padDigits(value: number, width = 2): string {

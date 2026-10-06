@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ProjectOptions, ProjectView } from "#/ipc/project.ts";
+  import type { Language, ProjectOptions, ProjectView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
   import { saveOptions, setLanguage } from "#/actions/project-options.ts";
@@ -36,7 +36,8 @@
       <select
         class="select select-sm w-auto"
         value={project.language}
-        onchange={({ currentTarget }) => setLanguage(currentTarget.value)}
+        onchange={({ currentTarget }) =>
+          setLanguage(currentTarget.value as Language)}
       >
         <option value="zh-TW">繁體中文</option>
         <option value="en">English</option>

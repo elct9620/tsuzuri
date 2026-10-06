@@ -4,6 +4,7 @@
   rest, then the other translations to read beneath the cues.
 -->
 <script lang="ts">
+  import type { Language } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { closeMenu } from "#/ui/menu.ts";
   import { localTime } from "#/ui/time.ts";
@@ -14,7 +15,7 @@
     openVersions,
   }: {
     /** Opens the Versions dialog at the subtitle in a Language, or at the original for none. */
-    openVersions: (subtitle: string | null) => void;
+    openVersions: (subtitle: Language | null) => void;
   } = $props();
 
   const comparison = editorComparison();
@@ -34,7 +35,7 @@
     openVersions(comparison.sideLanguage(side));
   }
 
-  function chooseReference(language: string, isChosen: boolean): void {
+  function chooseReference(language: Language, isChosen: boolean): void {
     void comparison.chooseReferences(
       isChosen
         ? [...comparison.references, language]

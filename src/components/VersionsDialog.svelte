@@ -18,6 +18,7 @@
     subtitleVersions,
     type ComparedCue,
     type ComparedRow,
+    type Language,
     type SubtitleVersions,
   } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
@@ -35,7 +36,7 @@
   /** What Rust listed when the dialog opened; shown until it closes. */
   let versions = $state<SubtitleVersions[]>([]);
   /** Which subtitle's Versions are shown: the original as "", or a translation by its Language code. */
-  let language = $state("");
+  let language = $state<Language | "">("");
   /** The Backup on each side of the comparison, or "" for the subtitle now. */
   let leftVersion = $state("");
   let rightVersion = $state("");
@@ -53,7 +54,7 @@
     versions.find((each) => each.language === shownLanguage())?.backups ?? [],
   );
 
-  function shownLanguage(): string | null {
+  function shownLanguage(): Language | null {
     return language || null;
   }
 
@@ -71,7 +72,7 @@
   }
 
   /** Opens the dialog at the Versions of the subtitle in `subtitle`, or of the original for none. */
-  export async function open(subtitle: string | null = null): Promise<void> {
+  export async function open(subtitle: Language | null = null): Promise<void> {
     const isRead = await attempt(t("versions.unreadable"), async () => {
       versions = await subtitleVersions();
     });
@@ -90,7 +91,7 @@
   function chooseSubtitle(
     event: Event & { currentTarget: HTMLSelectElement },
   ): void {
-    language = event.currentTarget.value;
+    language = event.currentTarget.value as Language | "";
     closeComparison();
   }
 

@@ -12,6 +12,7 @@ import {
   translationCues,
   type ComparedCue,
   type ComparedRow,
+  type Language,
   type ProjectView,
   type RevertPart,
   type Segment,
@@ -31,7 +32,7 @@ const SIDES: Side[] = ["original", "translation"];
 
 /** A Backup of one subtitle, by its Language or none for the original, to compare the subtitle now with. */
 interface ComparedBackup {
-  language: string | null;
+  language: Language | null;
   file: string;
 }
 
@@ -45,7 +46,7 @@ export interface SideRow {
 /** What a Segment's row shows of the comparison: each side's rows covering it, and the cue of each translation read. */
 export interface SegmentComparison {
   rowsBySide: Record<Side, SideRow[]>;
-  references: { language: string; text: string }[];
+  references: { language: Language; text: string }[];
 }
 
 /** The comparison laid over the Segments: each Segment's, and the Removals standing before each, the last after them all. */
@@ -57,7 +58,7 @@ export interface ComparisonLayout {
 /** The newest Output of the subtitle in `language`, or of the original for none. */
 function newestOutput(
   versions: SubtitleVersions[],
-  language: string | null,
+  language: Language | null,
 ): string | null {
   const subtitle = versions.find((each) => each.language === language);
   return (
@@ -109,7 +110,7 @@ function takerAtTimes<T>(
 export function comparisonLayout(
   segments: Segment[],
   rowsBySide: Record<Side, ComparedRow[]>,
-  cuesByLanguage: [string, ComparedCue[]][],
+  cuesByLanguage: [Language, ComparedCue[]][],
 ): ComparisonLayout {
   const bySegment: SegmentComparison[] = segments.map(() => ({
     rowsBySide: { original: [], translation: [] },
@@ -163,17 +164,17 @@ export class EditorComparison {
     translation: null,
   });
   /** The translation shown, whose Backups the translation is compared with. */
-  shownTranslation = $state<string | null>(null);
+  shownTranslation = $state<Language | null>(null);
   /** The translations that could be read beneath the cues, and those read. */
-  offeredReferences = $state.raw<string[]>([]);
-  references = $state.raw<string[]>([]);
+  offeredReferences = $state.raw<Language[]>([]);
+  references = $state.raw<Language[]>([]);
   /** What each side's comparison answered. */
   rowsBySide = $state.raw<Record<Side, ComparedRow[]>>({
     original: [],
     translation: [],
   });
   /** The cues of each translation read. */
-  cuesByLanguage = $state.raw<[string, ComparedCue[]][]>([]);
+  cuesByLanguage = $state.raw<[Language, ComparedCue[]][]>([]);
 
   /** The Current Resource the choices were made for, so a new one is compared afresh. */
   private resource: string | null = null;
@@ -199,7 +200,7 @@ export class EditorComparison {
   }
 
   /** The subtitle a side compares: none for the original, or the translation's Language. */
-  sideLanguage(side: Side): string | null {
+  sideLanguage(side: Side): Language | null {
     return side === "original" ? null : this.shownTranslation;
   }
 
@@ -243,7 +244,7 @@ export class EditorComparison {
     this.versions = versions;
     const output = newestOutput(versions, null);
     const isNewResource = resource !== this.resource;
-    const isGone = (language: string | null, file: string | null) =>
+    const isGone = (language: Language | null, file: string | null) =>
       file !== null &&
       !versions
         .find((each) => each.language === language)
@@ -283,13 +284,13 @@ export class EditorComparison {
   }
 
   /** Reads the translations in `languages` beneath the cues. */
-  async chooseReferences(languages: string[]): Promise<void> {
+  async chooseReferences(languages: Language[]): Promise<void> {
     this.references = languages;
     await this.compare();
   }
 
   /** Compares with the Backup the Versions dialog set as the comparison, if it is of a side there is. */
-  async compareWith(language: string | null, file: string): Promise<void> {
+  async compareWith(language: Language | null, file: string): Promise<void> {
     if (language === null) this.fileBySide.original = file;
     else if (language === this.shownTranslation)
       this.fileBySide.translation = file;
@@ -325,7 +326,7 @@ export class EditorComparison {
       original: [],
       translation: [],
     };
-    const cuesByLanguage: [string, ComparedCue[]][] = [];
+    const cuesByLanguage: [Language, ComparedCue[]][] = [];
     try {
       for (const side of SIDES) {
         const backup = this.sideBackup(side);

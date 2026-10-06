@@ -6,7 +6,7 @@ import type { Translation } from "#/ipc/translation.ts";
 import type { Outcome } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
 import { failureKind, failureMessage } from "#/ui/failure.ts";
-import { factorItems, phaseItems } from "#/ui/progress.ts";
+import { factorItems, phaseItems, secondsLabel } from "#/ui/progress.ts";
 import { saveMark } from "#/state/save-mark.svelte.ts";
 
 /** How long a Notification that goes on its own stays, paused while the pointer or focus rests on it. */
@@ -167,10 +167,7 @@ function audioRunItems(
   phases: PhaseTiming[],
 ): [string, string][] {
   return [
-    [
-      t("transcribe.audio"),
-      t("phases.seconds", { seconds: audioSeconds.toFixed(1) }),
-    ],
+    [t("transcribe.audio"), secondsLabel(audioSeconds)],
     ...factorItems(runSeconds, audioSeconds),
     ...phaseItems(phases),
   ];

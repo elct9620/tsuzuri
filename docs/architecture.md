@@ -555,6 +555,8 @@ ipc/editing.ts                gateway: the one caller of editing commands
 
 `Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。
 
+預覽、時間軸與段落清單由 `EditorLayout` 排在同一個 grid。版面只換 grid areas，DOM 順序不變，唯一的播放器因此不被搬動而重新載入。
+
 #### 4.1.2 Modal 層
 
 Modal 都放在 `<main>` 旁，彼此同層。開啟時進入 top layer，後開的疊在上面，各自帶遮罩。

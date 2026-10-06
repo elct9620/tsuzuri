@@ -9,13 +9,13 @@
 <script lang="ts">
   import type { HTMLInputAttributes } from "svelte/elements";
 
-  import { isComposingKey } from "../ui/shortcuts";
+  import { isComposingKey } from "#/ui/shortcuts.ts";
   import {
     caretPastSeparator,
     formatTime,
     parseTime,
     typedTime,
-  } from "../ui/time";
+  } from "#/ui/time.ts";
 
   interface Props extends HTMLInputAttributes {
     /** The field's element, which the row writes the Segment's time into. */

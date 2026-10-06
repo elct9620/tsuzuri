@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import RepositoryDialog from "./RepositoryDialog.svelte";
+import RepositoryDialog from "#/components/settings/RepositoryDialog.svelte";
 
 describe("RepositoryDialog", () => {
   let repositoryFiles: (args: unknown) => unknown;

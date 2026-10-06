@@ -8,7 +8,7 @@
 import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 import { mount, unmount } from "svelte";
 
-import { t } from "../i18n";
+import { t } from "#/i18n.ts";
 
 /** What the text over the video sits on: a shadow alone, a translucent black or an opaque one. */
 export type CaptionBackdrop = "none" | "translucent" | "opaque";

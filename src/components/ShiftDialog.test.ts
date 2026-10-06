@@ -4,18 +4,18 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { assemble } from "../assembly";
-import type { ProjectView } from "../backend/project";
-import { setInterfaceLanguage } from "../i18n";
-import { projectOf } from "../test-project";
-import { pageContext } from "./context";
-import ShiftDialog from "./ShiftDialog.svelte";
-import { showNotifications } from "./test-notifications";
+import { assemble } from "#/assembly.ts";
+import type { ProjectView } from "#/backend/project.ts";
+import { setInterfaceLanguage } from "#/i18n.ts";
+import { projectOf } from "#/test-project.ts";
+import { pageContext } from "#/components/context.ts";
+import ShiftDialog from "#/components/ShiftDialog.svelte";
+import { showNotifications } from "#/components/test-notifications.ts";
 import {
   checkedBarButton,
   drawSegmentList,
   segmentDialogsOf,
-} from "./test-segment-rows";
+} from "#/components/test-segment-rows.ts";
 
 describe("ShiftDialog", () => {
   let project: ProjectView | null;

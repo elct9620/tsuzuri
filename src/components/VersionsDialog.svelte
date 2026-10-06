@@ -19,11 +19,14 @@
     type ComparedRow,
     type Restoration,
     type SubtitleVersions,
-  } from "../backend/project";
-  import { t } from "../i18n";
-  import { notifyFailure, notifyRestoration } from "../ui/notification.svelte";
-  import { formatTime, localTime } from "../ui/time";
-  import { editorComparison } from "./context";
+  } from "#/backend/project.ts";
+  import { t } from "#/i18n.ts";
+  import {
+    notifyFailure,
+    notifyRestoration,
+  } from "#/ui/notification.svelte.ts";
+  import { formatTime, localTime } from "#/ui/time.ts";
+  import { editorComparison } from "#/components/context.ts";
 
   const comparison = editorComparison();
   let dialog: HTMLDialogElement;

@@ -1,8 +1,12 @@
 <script lang="ts">
-  import type { RecentProjectView } from "../backend/project";
-  import { interfaceLanguageCode, t } from "../i18n";
-  import { projectFeed } from "./context";
-  import { openDirectory, openRecent, openSrt } from "./project-actions";
+  import type { RecentProjectView } from "#/backend/project.ts";
+  import { interfaceLanguageCode, t } from "#/i18n.ts";
+  import { projectFeed } from "#/components/context.ts";
+  import {
+    openDirectory,
+    openRecent,
+    openSrt,
+  } from "#/components/project-actions.ts";
 
   interface Props {
     recentProjects: RecentProjectView[];

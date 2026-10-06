@@ -4,11 +4,11 @@
   rest, then the other translations to read beneath the cues.
 -->
 <script lang="ts">
-  import { t } from "../i18n";
-  import { closeMenu } from "../ui/menu";
-  import { localTime } from "../ui/time";
-  import { editorComparison } from "./context";
-  import type { Side } from "./editor-comparison.svelte";
+  import { t } from "#/i18n.ts";
+  import { closeMenu } from "#/ui/menu.ts";
+  import { localTime } from "#/ui/time.ts";
+  import { editorComparison } from "#/components/context.ts";
+  import type { Side } from "#/components/editor-comparison.svelte.ts";
 
   let {
     openVersions,

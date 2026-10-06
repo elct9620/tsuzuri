@@ -4,20 +4,20 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { tick, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { assemble } from "./assembly";
-import { editingPort } from "./backend/editing";
-import { ProjectFeed, type ProjectView } from "./backend/project";
-import { EditingSession } from "./editor";
-import { setInterfaceLanguage, t } from "./i18n";
-import { drawPage } from "./page";
-import { checkedBarButton } from "./components/test-segment-rows";
-import { mockPageMount } from "./test-page";
-import { projectOf, resourceOf } from "./test-project";
+import { assemble } from "#/assembly.ts";
+import { editingPort } from "#/backend/editing.ts";
+import { ProjectFeed, type ProjectView } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { drawPage } from "#/page.ts";
+import { checkedBarButton } from "#/components/test-segment-rows.ts";
+import { mockPageMount } from "#/test-page.ts";
+import { projectOf, resourceOf } from "#/test-project.ts";
 import {
   notificationDetail,
   notifications,
-} from "./components/test-notifications";
-import { notificationStack } from "./ui/notification.svelte";
+} from "#/components/test-notifications.ts";
+import { notificationStack } from "#/ui/notification.svelte.ts";
 
 describe("drawPage", () => {
   /** The pages each test draws, taken away after it so their Svelte Components stop following. */

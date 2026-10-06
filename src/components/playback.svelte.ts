@@ -4,7 +4,7 @@
  * Current Segment alone, and whether the Segment list scrolls to the row being played.
  */
 
-import { rememberFlag, rememberedFlag } from "../ui/choices";
+import { rememberFlag, rememberedFlag } from "#/ui/choices.ts";
 
 /** Where the webview remembers whether the editor follows playback. */
 const FOLLOWING_KEY = "tsuzuri.transcript-following";

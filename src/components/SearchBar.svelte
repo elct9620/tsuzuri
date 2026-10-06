@@ -11,14 +11,14 @@
   import X from "@lucide/svelte/icons/x";
   import { flushSync, onDestroy } from "svelte";
 
-  import { findText, type TextMatch } from "../backend/editing";
-  import { isMacOS } from "../backend/system";
-  import { type CursorField, markRanges, rangeOf } from "../editor";
-  import { t } from "../i18n";
-  import { failureMessage } from "../ui/failure";
-  import { isComposingKey, isShortcut } from "../ui/shortcuts";
-  import { selectedText } from "../ui/text-fields";
-  import { editingSession, projectFeed } from "./context";
+  import { findText, type TextMatch } from "#/backend/editing.ts";
+  import { isMacOS } from "#/backend/system.ts";
+  import { type CursorField, markRanges, rangeOf } from "#/editor/index.ts";
+  import { t } from "#/i18n.ts";
+  import { failureMessage } from "#/ui/failure.ts";
+  import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
+  import { selectedText } from "#/ui/text-fields.ts";
+  import { editingSession, projectFeed } from "#/components/context.ts";
 
   /** The highlight every match is marked under, and the one the current match is. */
   const MATCH_HIGHLIGHT = "search-match";

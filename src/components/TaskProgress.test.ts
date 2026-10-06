@@ -4,15 +4,18 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { editingPort } from "../backend/editing";
-import type { PipelineProgress } from "../backend/progress";
-import { ProjectFeed } from "../backend/project";
-import { EditingSession } from "../editor";
-import { showNotifications, notifications } from "./test-notifications";
-import { pageContext } from "./context";
-import { TaskRun } from "./task-run.svelte";
-import TaskProgress from "./TaskProgress.svelte";
-import { progressSteps } from "./test-task-progress";
+import { editingPort } from "#/backend/editing.ts";
+import type { PipelineProgress } from "#/backend/progress.ts";
+import { ProjectFeed } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import {
+  showNotifications,
+  notifications,
+} from "#/components/test-notifications.ts";
+import { pageContext } from "#/components/context.ts";
+import { TaskRun } from "#/components/task-run.svelte.ts";
+import TaskProgress from "#/components/TaskProgress.svelte";
+import { progressSteps } from "#/components/test-task-progress.ts";
 
 describe("TaskProgress", () => {
   let run: TaskRun;

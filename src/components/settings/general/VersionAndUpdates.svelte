@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { appBuild } from "../../../backend/about";
+  import { appBuild } from "#/backend/about.ts";
   import {
     checkForRollback,
     checkForUpdate,
@@ -11,12 +11,12 @@
     updateSettings,
     type UpdateChannel,
     type UpdateSettings,
-  } from "../../../backend/updates";
-  import { t } from "../../../i18n";
-  import { notify, notifyFailure } from "../../../ui/notification.svelte";
-  import { updateFoundMessage } from "../../app-updates.svelte";
-  import { appUpdates } from "../../context";
-  import HelpButton from "../HelpButton.svelte";
+  } from "#/backend/updates.ts";
+  import { t } from "#/i18n.ts";
+  import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
+  import { updateFoundMessage } from "#/components/app-updates.svelte.ts";
+  import { appUpdates } from "#/components/context.ts";
+  import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** How much of the commit is shown, as git abbreviates it. */
   const SHORT_COMMIT_LENGTH = 7;

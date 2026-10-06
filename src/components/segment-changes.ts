@@ -3,13 +3,13 @@
  * menu or the bar draws and the right-click menu hands to the system, so both show the same.
  */
 
-import { type MenuChoice, popUpMenu } from "../backend/context-menu";
+import { type MenuChoice, popUpMenu } from "#/backend/context-menu.ts";
 import {
   currentResource,
   hasTraditionalChinese,
   type ProjectView,
-} from "../backend/project";
-import { isMacOS } from "../backend/system";
+} from "#/backend/project.ts";
+import { isMacOS } from "#/backend/system.ts";
 import {
   type EditingSession,
   isRun,
@@ -17,12 +17,12 @@ import {
   type MergeDirection,
   runWithNeighbour,
   type SegmentChange,
-} from "../editor";
-import { t } from "../i18n";
-import { notifyEdit } from "../ui/notification.svelte";
-import { accelerator, type ShortcutId } from "../ui/shortcuts";
-import { cleanSegments } from "./cleanup-actions";
-import type { SegmentDialogs } from "./context";
+} from "#/editor/index.ts";
+import { t } from "#/i18n.ts";
+import { notifyEdit } from "#/ui/notification.svelte.ts";
+import { accelerator, type ShortcutId } from "#/ui/shortcuts.ts";
+import { cleanSegments } from "#/components/cleanup-actions.ts";
+import type { SegmentDialogs } from "#/components/context.ts";
 
 /** One choice of a menu of Segment Changes: what it is called and shows, its keys, whether it can run, and what it does. */
 export interface ChangeChoice {

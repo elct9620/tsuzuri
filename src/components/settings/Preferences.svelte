@@ -8,12 +8,12 @@
     type ChoiceLanding,
     type ChoiceLandings,
     type Preferences,
-  } from "../../backend/preferences";
-  import type { ChoiceSource } from "../../editor";
-  import { t } from "../../i18n";
-  import { notifyFailure } from "../../ui/notification.svelte";
-  import { savedPreferences } from "../context";
-  import HelpButton from "./HelpButton.svelte";
+  } from "#/backend/preferences.ts";
+  import type { ChoiceSource } from "#/editor/index.ts";
+  import { t } from "#/i18n.ts";
+  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import { savedPreferences } from "#/components/context.ts";
+  import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** Each Choice Source, in the order the Preferences tab lists them. */
   const CHOICE_SOURCES = [

@@ -7,9 +7,9 @@ import {
   isTextField,
   type CleanupOutcome,
   type EditingSession,
-} from "../editor";
-import { t } from "../i18n";
-import { notify, notifyFailure } from "../ui/notification.svelte";
+} from "#/editor/index.ts";
+import { t } from "#/i18n.ts";
+import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
 
 /** Tells how a cleanup ended: how many characters were cleaned, or why none were. */
 function notifyCleanup(outcome: CleanupOutcome): void {

@@ -2,8 +2,11 @@
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import Components from "./Components.svelte";
-import { showNotifications, notifications } from "../../test-notifications";
+import Components from "#/components/settings/general/Components.svelte";
+import {
+  showNotifications,
+  notifications,
+} from "#/components/test-notifications.ts";
 
 describe("Components", () => {
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));

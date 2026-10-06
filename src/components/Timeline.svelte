@@ -7,7 +7,7 @@
 <script module lang="ts">
   import type { UpdateSide } from "wavesurfer.js/plugins/regions";
 
-  import { chords, type Shortcut, shortcutById } from "../ui/shortcuts";
+  import { chords, type Shortcut, shortcutById } from "#/ui/shortcuts.ts";
 
   /** The key that sets the Current Segment's start or end where the media is, as `KeyboardEvent.key` names it. */
   export function timeKeys(isMac: boolean): Record<UpdateSide, string> {
@@ -68,22 +68,22 @@
   import RegionsPlugin, { type Region } from "wavesurfer.js/plugins/regions";
   import TimelinePlugin from "wavesurfer.js/plugins/timeline";
 
-  import { preferences } from "../backend/preferences";
-  import type { ProjectView, Segment } from "../backend/project";
-  import { isMacOS } from "../backend/system";
-  import { extractWaveform, type Waveform } from "../backend/waveform";
-  import { isTextField, type SegmentChange } from "../editor";
-  import { t } from "../i18n";
-  import { rememberedFlag, rememberFlag } from "../ui/choices";
-  import { notifyEdit, notifyFailure } from "../ui/notification.svelte";
-  import { isShortcut } from "../ui/shortcuts";
+  import { preferences } from "#/backend/preferences.ts";
+  import type { ProjectView, Segment } from "#/backend/project.ts";
+  import { isMacOS } from "#/backend/system.ts";
+  import { extractWaveform, type Waveform } from "#/backend/waveform.ts";
+  import { isTextField, type SegmentChange } from "#/editor/index.ts";
+  import { t } from "#/i18n.ts";
+  import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";
+  import { notifyEdit, notifyFailure } from "#/ui/notification.svelte.ts";
+  import { isShortcut } from "#/ui/shortcuts.ts";
   import {
     type PlayedSource,
     SILENT_PEAKS,
     isSameSource,
     isSilenceOf,
     playedSource,
-  } from "../ui/silence";
+  } from "#/ui/silence.ts";
   import {
     choiceLanding,
     formatLength,
@@ -97,9 +97,13 @@
     type DragReach,
     type Landing,
     type Span,
-  } from "../ui/timeline-spans";
-  import { editingSession, projectFeed, savedPreferences } from "./context";
-  import type { Playback } from "./playback.svelte";
+  } from "#/ui/timeline-spans.ts";
+  import {
+    editingSession,
+    projectFeed,
+    savedPreferences,
+  } from "#/components/context.ts";
+  import type { Playback } from "#/components/playback.svelte.ts";
 
   let { playback, hidden }: { playback: Playback; hidden: boolean } = $props();
 

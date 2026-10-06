@@ -3,14 +3,14 @@ import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { tick } from "svelte";
 import { afterEach, describe, expect, it } from "vitest";
-import { editingPort } from "./backend/editing";
-import { ProjectFeed } from "./backend/project";
-import { EditingSession } from "./editor";
-import HelpButton from "./components/settings/HelpButton.svelte";
-import { interfaceLanguageCode, setInterfaceLanguage, t } from "./i18n";
-import { drawPage } from "./page";
-import { mockPageMount } from "./test-page";
-import { projectOf } from "./test-project";
+import { editingPort } from "#/backend/editing.ts";
+import { ProjectFeed } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import HelpButton from "#/components/settings/HelpButton.svelte";
+import { interfaceLanguageCode, setInterfaceLanguage, t } from "#/i18n.ts";
+import { drawPage } from "#/page.ts";
+import { mockPageMount } from "#/test-page.ts";
+import { projectOf } from "#/test-project.ts";
 
 describe("interface language", () => {
   afterEach(() => {

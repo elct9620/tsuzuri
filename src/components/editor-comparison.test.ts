@@ -3,19 +3,22 @@ import { render, screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { assemble } from "../assembly";
+import { assemble } from "#/assembly.ts";
 import type {
   ComparedRow,
   ProjectView,
   SubtitleVersions,
-} from "../backend/project";
-import { t } from "../i18n";
-import { projectOf, resourceOf } from "../test-project";
-import CompareMenu from "./CompareMenu.svelte";
-import { pageContext } from "./context";
-import { EditorComparison } from "./editor-comparison.svelte";
-import { notifications, showNotifications } from "./test-notifications";
-import { drawSegmentRows } from "./test-segment-rows";
+} from "#/backend/project.ts";
+import { t } from "#/i18n.ts";
+import { projectOf, resourceOf } from "#/test-project.ts";
+import CompareMenu from "#/components/CompareMenu.svelte";
+import { pageContext } from "#/components/context.ts";
+import { EditorComparison } from "#/components/editor-comparison.svelte.ts";
+import {
+  notifications,
+  showNotifications,
+} from "#/components/test-notifications.ts";
+import { drawSegmentRows } from "#/components/test-segment-rows.ts";
 
 describe("EditorComparison", () => {
   let comparison: EditorComparison;

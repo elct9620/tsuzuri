@@ -4,10 +4,10 @@
 
 import { mount } from "svelte";
 
-import type { ProjectFeed } from "./backend/project";
-import type { EditingSession } from "./editor";
-import { pageContext } from "./components/context";
-import Page from "./Page.svelte";
+import type { ProjectFeed } from "#/backend/project.ts";
+import type { EditingSession } from "#/editor/index.ts";
+import { pageContext } from "#/components/context.ts";
+import Page from "#/Page.svelte";
 
 /**
  * Writes the page into `target`, its Svelte Components following `feed` and editing through

@@ -2,17 +2,20 @@
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { editingPort } from "../../backend/editing";
+import { editingPort } from "#/backend/editing.ts";
 import {
   DEFAULT_PREFERENCES,
   type Preferences as SavedPreferences,
-} from "../../backend/preferences";
-import { ProjectFeed } from "../../backend/project";
-import { EditingSession } from "../../editor";
-import { pageContext } from "../context";
-import { SavedPreferences as SharedPreferences } from "../saved-preferences.svelte";
-import { showNotifications, notifications } from "../test-notifications";
-import Preferences from "./Preferences.svelte";
+} from "#/backend/preferences.ts";
+import { ProjectFeed } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import { pageContext } from "#/components/context.ts";
+import { SavedPreferences as SharedPreferences } from "#/components/saved-preferences.svelte.ts";
+import {
+  showNotifications,
+  notifications,
+} from "#/components/test-notifications.ts";
+import Preferences from "#/components/settings/Preferences.svelte";
 
 describe("Preferences", () => {
   let savedPreferences: SavedPreferences;

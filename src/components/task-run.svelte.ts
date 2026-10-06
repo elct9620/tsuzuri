@@ -7,11 +7,11 @@ import {
   cancelTask,
   type Phase,
   type PipelineProgress,
-} from "../backend/progress";
-import { t } from "../i18n";
-import { failureCode } from "../ui/failure";
-import { notify, notifyFailure } from "../ui/notification.svelte";
-import { progressLine, progressSummary, type TaskKind } from "../ui/progress";
+} from "#/backend/progress.ts";
+import { t } from "#/i18n.ts";
+import { failureCode } from "#/ui/failure.ts";
+import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
+import { progressLine, progressSummary, type TaskKind } from "#/ui/progress.ts";
 
 /** Where each task's messages are kept: under the dialog that starts it. */
 const MESSAGES_BY_TASK: Record<TaskKind, string> = {

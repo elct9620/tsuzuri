@@ -1,4 +1,4 @@
-import { t } from "../i18n";
+import { t } from "#/i18n.ts";
 
 /** Where a shortcut works, which is how the shortcut list groups them, in this order. */
 export const SHORTCUT_GROUPS = [

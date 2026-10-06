@@ -4,13 +4,13 @@ import { clearMocks } from "@tauri-apps/api/mocks";
 import { flushSync, tick, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { editingPort } from "../backend/editing";
-import { ProjectFeed } from "../backend/project";
-import { EditingSession } from "../editor";
-import { setInterfaceLanguage, t } from "../i18n";
-import { drawPage } from "../page";
-import { mockPageMount } from "../test-page";
-import { projectOf, resourceOf } from "../test-project";
+import { editingPort } from "#/backend/editing.ts";
+import { ProjectFeed } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { drawPage } from "#/page.ts";
+import { mockPageMount } from "#/test-page.ts";
+import { projectOf, resourceOf } from "#/test-project.ts";
 
 /**
  * Tailwind's rules for the toolbar's two buttons, which the page's stylesheet would give: the one

@@ -7,9 +7,9 @@ import {
   setProjectOptions,
   type ProjectOptions,
   type ProjectView,
-} from "../../../backend/project";
-import { t } from "../../../i18n";
-import { notifyFailure } from "../../../ui/notification.svelte";
+} from "#/backend/project.ts";
+import { t } from "#/i18n.ts";
+import { notifyFailure } from "#/ui/notification.svelte.ts";
 
 /** Sets the Project Options as `project` holds them, with `changes` in their place. */
 export async function saveOptions(

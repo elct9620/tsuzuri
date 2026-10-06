@@ -1,4 +1,4 @@
-import type en from "./en";
+import type en from "#/locales/en.ts";
 
 const zhHant: typeof en = {
   toolbar: {

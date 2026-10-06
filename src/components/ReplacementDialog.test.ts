@@ -3,13 +3,16 @@ import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { assemble } from "../assembly";
-import type { ProjectView } from "../backend/project";
-import { projectOf } from "../test-project";
-import { showNotifications, notifications } from "./test-notifications";
-import { pageContext } from "./context";
-import ReplacementDialog from "./ReplacementDialog.svelte";
-import { drawSegmentRows } from "./test-segment-rows";
+import { assemble } from "#/assembly.ts";
+import type { ProjectView } from "#/backend/project.ts";
+import { projectOf } from "#/test-project.ts";
+import {
+  showNotifications,
+  notifications,
+} from "#/components/test-notifications.ts";
+import { pageContext } from "#/components/context.ts";
+import ReplacementDialog from "#/components/ReplacementDialog.svelte";
+import { drawSegmentRows } from "#/components/test-segment-rows.ts";
 
 describe("ReplacementDialog", () => {
   let project: ProjectView | null;

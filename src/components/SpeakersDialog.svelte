@@ -6,11 +6,11 @@
 <script lang="ts">
   import { flushSync, onMount } from "svelte";
 
-  import type { ProjectView, Segment } from "../backend/project";
-  import { t } from "../i18n";
-  import { speakerNames } from "../ui/speakers";
-  import { editingSession, projectFeed } from "./context";
-  import { notifyNamed } from "./speaker-actions";
+  import type { ProjectView, Segment } from "#/backend/project.ts";
+  import { t } from "#/i18n.ts";
+  import { speakerNames } from "#/ui/speakers.ts";
+  import { editingSession, projectFeed } from "#/components/context.ts";
+  import { notifyNamed } from "#/components/speaker-actions.ts";
 
   /** Which Segments the dialog names. */
   type SpeakerScope =

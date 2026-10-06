@@ -4,10 +4,10 @@
  * the checks or the Choice Source moved, and the system turning to a light or dark theme.
  */
 
-import type { PipelineProgress } from "../backend/progress";
-import type { EditCommand } from "../backend/project";
-import type { DownloadProgress } from "../backend/toolchain";
-import type { UpdateProgress } from "../backend/updates";
+import type { PipelineProgress } from "#/backend/progress.ts";
+import type { EditCommand } from "#/backend/project.ts";
+import type { DownloadProgress } from "#/backend/toolchain.ts";
+import type { UpdateProgress } from "#/backend/updates.ts";
 
 declare module "svelte/elements" {
   export interface SvelteWindowAttributes {

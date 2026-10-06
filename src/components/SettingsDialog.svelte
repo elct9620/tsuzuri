@@ -1,22 +1,22 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import type { ProjectView } from "../backend/project";
-  import type { ModelSlot } from "../backend/toolchain";
-  import { t } from "../i18n";
-  import type { HubFile } from "../ui/models";
-  import { projectFeed } from "./context";
-  import About from "./settings/general/About.svelte";
-  import Components from "./settings/general/Components.svelte";
-  import GeneralModels from "./settings/general/Models.svelte";
-  import GeneralTranscription from "./settings/general/Transcription.svelte";
-  import Logs from "./settings/general/Logs.svelte";
-  import Preferences from "./settings/Preferences.svelte";
-  import Project from "./settings/project/Project.svelte";
-  import ProjectModels from "./settings/project/Models.svelte";
-  import ProjectTranscription from "./settings/project/Transcription.svelte";
-  import Translation from "./settings/general/Translation.svelte";
-  import VersionAndUpdates from "./settings/general/VersionAndUpdates.svelte";
+  import type { ProjectView } from "#/backend/project.ts";
+  import type { ModelSlot } from "#/backend/toolchain.ts";
+  import { t } from "#/i18n.ts";
+  import type { HubFile } from "#/ui/models.ts";
+  import { projectFeed } from "#/components/context.ts";
+  import About from "#/components/settings/general/About.svelte";
+  import Components from "#/components/settings/general/Components.svelte";
+  import GeneralModels from "#/components/settings/general/Models.svelte";
+  import GeneralTranscription from "#/components/settings/general/Transcription.svelte";
+  import Logs from "#/components/settings/general/Logs.svelte";
+  import Preferences from "#/components/settings/Preferences.svelte";
+  import Project from "#/components/settings/project/Project.svelte";
+  import ProjectModels from "#/components/settings/project/Models.svelte";
+  import ProjectTranscription from "#/components/settings/project/Transcription.svelte";
+  import Translation from "#/components/settings/general/Translation.svelte";
+  import VersionAndUpdates from "#/components/settings/general/VersionAndUpdates.svelte";
 
   interface Props {
     /** Opens the Repository dialog for a slot, answering the file picked, or none. */

@@ -6,23 +6,23 @@
   is marked.
 -->
 <script lang="ts">
-  import type { EditCommand } from "../backend/project";
-  import { isMacOS } from "../backend/system";
+  import type { EditCommand } from "#/backend/project.ts";
+  import { isMacOS } from "#/backend/system.ts";
   import {
     isHeld,
     isTextField,
     type MergeDirection,
     type Outcome,
     runWithNeighbour,
-  } from "../editor";
-  import { notifyEdit } from "../ui/notification.svelte";
-  import { isShortcut } from "../ui/shortcuts";
-  import CheckedBar from "./CheckedBar.svelte";
-  import { cleanMarked } from "./cleanup-actions";
-  import { editingSession } from "./context";
-  import type { Playback } from "./playback.svelte";
-  import SearchBar from "./SearchBar.svelte";
-  import SegmentRows from "./SegmentRows.svelte";
+  } from "#/editor/index.ts";
+  import { notifyEdit } from "#/ui/notification.svelte.ts";
+  import { isShortcut } from "#/ui/shortcuts.ts";
+  import CheckedBar from "#/components/CheckedBar.svelte";
+  import { cleanMarked } from "#/components/cleanup-actions.ts";
+  import { editingSession } from "#/components/context.ts";
+  import type { Playback } from "#/components/playback.svelte.ts";
+  import SearchBar from "#/components/SearchBar.svelte";
+  import SegmentRows from "#/components/SegmentRows.svelte";
 
   let { playback }: { playback: Playback } = $props();
   const session = editingSession();

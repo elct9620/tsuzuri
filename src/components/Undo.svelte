@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { EditCommand } from "../backend/project";
-  import { isMacOS } from "../backend/system";
-  import { isTextField } from "../editor";
-  import { notifyEdit } from "../ui/notification.svelte";
-  import { isShortcut } from "../ui/shortcuts";
-  import { editingSession } from "./context";
+  import type { EditCommand } from "#/backend/project.ts";
+  import { isMacOS } from "#/backend/system.ts";
+  import { isTextField } from "#/editor/index.ts";
+  import { notifyEdit } from "#/ui/notification.svelte.ts";
+  import { isShortcut } from "#/ui/shortcuts.ts";
+  import { editingSession } from "#/components/context.ts";
 
   const session = editingSession();
 

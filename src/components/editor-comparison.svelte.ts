@@ -16,9 +16,9 @@ import {
   type RevertPart,
   type Segment,
   type SubtitleVersions,
-} from "../backend/project";
-import { t } from "../i18n";
-import { notifyFailure, notifyRestoration } from "../ui/notification.svelte";
+} from "#/backend/project.ts";
+import { t } from "#/i18n.ts";
+import { notifyFailure, notifyRestoration } from "#/ui/notification.svelte.ts";
 
 /** Which subtitle a comparison is of: the original, or the translation shown. */
 export type Side = "original" | "translation";

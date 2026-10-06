@@ -1,13 +1,13 @@
-import type { Diarization } from "../backend/diarization";
-import type { PhaseTiming } from "../backend/progress";
-import type { Restoration } from "../backend/project";
-import type { Transcription } from "../backend/transcription";
-import type { Translation } from "../backend/translation";
-import type { Outcome } from "../editor";
-import { t } from "../i18n";
-import { failureKind, failureMessage } from "./failure";
-import { factorItems, phaseItems } from "./progress";
-import { showSaveMark } from "./save-mark";
+import type { Diarization } from "#/backend/diarization.ts";
+import type { PhaseTiming } from "#/backend/progress.ts";
+import type { Restoration } from "#/backend/project.ts";
+import type { Transcription } from "#/backend/transcription.ts";
+import type { Translation } from "#/backend/translation.ts";
+import type { Outcome } from "#/editor/index.ts";
+import { t } from "#/i18n.ts";
+import { failureKind, failureMessage } from "#/ui/failure.ts";
+import { factorItems, phaseItems } from "#/ui/progress.ts";
+import { showSaveMark } from "#/ui/save-mark.ts";
 
 /** How long a Notification that goes on its own stays, paused while the pointer or focus rests on it. */
 export const NOTIFICATION_MS = 6000;

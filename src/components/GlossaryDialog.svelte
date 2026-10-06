@@ -6,9 +6,9 @@
     translationGlossaryTable,
     type GlossaryRow,
     type GlossaryTable,
-  } from "../backend/project";
-  import { t } from "../i18n";
-  import { failureMessage } from "../ui/failure";
+  } from "#/backend/project.ts";
+  import { t } from "#/i18n.ts";
+  import { failureMessage } from "#/ui/failure.ts";
 
   let dialog: HTMLDialogElement;
   /** The Language of each column. */

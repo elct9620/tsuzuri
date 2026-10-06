@@ -3,19 +3,19 @@ import { screen } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { editingPort } from "../backend/editing";
-import { ProjectFeed, type ProjectView } from "../backend/project";
-import { EditingSession } from "../editor";
-import { projectOf, resourceOf } from "../test-project";
+import { editingPort } from "#/backend/editing.ts";
+import { ProjectFeed, type ProjectView } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import { projectOf, resourceOf } from "#/test-project.ts";
 import {
   showNotifications,
   notificationItems,
   notifications,
-} from "./test-notifications";
-import { pageContext } from "./context";
-import DiarizationDialog from "./DiarizationDialog.svelte";
-import { renderWithToolbar } from "./test-toolbar";
-import { TaskRun } from "./task-run.svelte";
+} from "#/components/test-notifications.ts";
+import { pageContext } from "#/components/context.ts";
+import DiarizationDialog from "#/components/DiarizationDialog.svelte";
+import { renderWithToolbar } from "#/components/test-toolbar.ts";
+import { TaskRun } from "#/components/task-run.svelte.ts";
 
 describe("DiarizationDialog", () => {
   let feed: ProjectFeed;

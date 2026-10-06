@@ -5,7 +5,7 @@
 
 import { MediaQuery } from "svelte/reactivity";
 
-import { rememberFlag, rememberedFlag } from "../ui/choices";
+import { rememberFlag, rememberedFlag } from "#/ui/choices.ts";
 
 type Orientation = "landscape" | "portrait";
 

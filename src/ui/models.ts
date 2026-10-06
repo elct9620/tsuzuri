@@ -1,5 +1,5 @@
-import type { ModelSource, PresetModel } from "../backend/toolchain";
-import { fileName } from "./file-name";
+import type { ModelSource, PresetModel } from "#/backend/toolchain.ts";
+import { fileName } from "#/ui/file-name.ts";
 
 /** How a Model Source is named to the user: a file by its path, a Repository's file by both. */
 export function sourceName(source: ModelSource): string {

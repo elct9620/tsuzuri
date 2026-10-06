@@ -5,23 +5,23 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WaveSurfer from "wavesurfer.js";
-import { assemble } from "../assembly";
-import { DEFAULT_PREFERENCES } from "../backend/preferences";
-import type { EditingSession } from "../editor";
-import type { SegmentChange } from "../backend/editing";
-import type { ProjectView, Segment } from "../backend/project";
-import type { Waveform } from "../backend/waveform";
-import { setInterfaceLanguage, t } from "../i18n";
-import { layOutTimeline } from "../test-layout";
-import { projectOf } from "../test-project";
-import { pageContext } from "./context";
-import { Playback } from "./playback.svelte";
+import { assemble } from "#/assembly.ts";
+import { DEFAULT_PREFERENCES } from "#/backend/preferences.ts";
+import type { EditingSession } from "#/editor/index.ts";
+import type { SegmentChange } from "#/backend/editing.ts";
+import type { ProjectView, Segment } from "#/backend/project.ts";
+import type { Waveform } from "#/backend/waveform.ts";
+import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { layOutTimeline } from "#/test-layout.ts";
+import { projectOf } from "#/test-project.ts";
+import { pageContext } from "#/components/context.ts";
+import { Playback } from "#/components/playback.svelte.ts";
 import {
   showNotifications,
   notificationDetail,
   notifications,
-} from "./test-notifications";
-import Timeline, { regionColor } from "./Timeline.svelte";
+} from "#/components/test-notifications.ts";
+import Timeline, { regionColor } from "#/components/Timeline.svelte";
 
 describe("Timeline", () => {
   /** What the timeline plays, shared with the Preview. */

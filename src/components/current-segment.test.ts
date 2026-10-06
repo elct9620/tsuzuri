@@ -6,27 +6,30 @@ import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WaveSurfer from "wavesurfer.js";
 
-import { assemble } from "../assembly";
+import { assemble } from "#/assembly.ts";
 import {
   DEFAULT_PREFERENCES,
   type ChoiceLanding,
   type ChoiceLandings,
   type Preferences,
-} from "../backend/preferences";
-import type { ProjectView, Segment } from "../backend/project";
-import type { Waveform } from "../backend/waveform";
-import type { EditingSession } from "../editor";
-import { setInterfaceLanguage, t } from "../i18n";
-import { layOutTimeline } from "../test-layout";
-import { projectOf } from "../test-project";
-import { pageContext } from "./context";
-import EditorBar from "./EditorBar.svelte";
-import { Playback } from "./playback.svelte";
-import Preview from "./Preview.svelte";
-import { PreviewFold } from "./preview-fold.svelte";
-import { SavedPreferences } from "./saved-preferences.svelte";
-import { drawSegmentRows, segmentRows } from "./test-segment-rows";
-import { regionColor } from "./Timeline.svelte";
+} from "#/backend/preferences.ts";
+import type { ProjectView, Segment } from "#/backend/project.ts";
+import type { Waveform } from "#/backend/waveform.ts";
+import type { EditingSession } from "#/editor/index.ts";
+import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { layOutTimeline } from "#/test-layout.ts";
+import { projectOf } from "#/test-project.ts";
+import { pageContext } from "#/components/context.ts";
+import EditorBar from "#/components/EditorBar.svelte";
+import { Playback } from "#/components/playback.svelte.ts";
+import Preview from "#/components/Preview.svelte";
+import { PreviewFold } from "#/components/preview-fold.svelte.ts";
+import { SavedPreferences } from "#/components/saved-preferences.svelte.ts";
+import {
+  drawSegmentRows,
+  segmentRows,
+} from "#/components/test-segment-rows.ts";
+import { regionColor } from "#/components/Timeline.svelte";
 
 describe("Current Segment", () => {
   let project: ProjectView | null;

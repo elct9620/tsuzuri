@@ -6,10 +6,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import type { ProjectView } from "../backend/project";
-  import { t } from "../i18n";
-  import { editingSession, projectFeed, segmentDialogs } from "./context";
-  import { checkedChoices, resourceOffers } from "./segment-changes";
+  import type { ProjectView } from "#/backend/project.ts";
+  import { t } from "#/i18n.ts";
+  import {
+    editingSession,
+    projectFeed,
+    segmentDialogs,
+  } from "#/components/context.ts";
+  import {
+    checkedChoices,
+    resourceOffers,
+  } from "#/components/segment-changes.ts";
 
   const feed = projectFeed();
   const session = editingSession();

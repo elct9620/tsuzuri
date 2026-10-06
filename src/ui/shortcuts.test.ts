@@ -9,7 +9,7 @@ import {
   isShortcut,
   shortcutById,
   shortcutText,
-} from "./shortcuts";
+} from "#/ui/shortcuts.ts";
 
 /** The page's markup and every module it runs, tests left out: `index.html`, Svelte Components and TS. */
 const pageSources = [

@@ -1,7 +1,7 @@
-import { assemble } from "./assembly";
-import { locale } from "./backend/system";
-import { setInterfaceLanguage } from "./i18n";
-import { drawPage } from "./page";
+import { assemble } from "#/assembly.ts";
+import { locale } from "#/backend/system.ts";
+import { setInterfaceLanguage } from "#/i18n.ts";
+import { drawPage } from "#/page.ts";
 
 /**
  * Svelte Components write text as they mount, so the language is settled before the page is

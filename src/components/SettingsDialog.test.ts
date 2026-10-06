@@ -2,14 +2,14 @@
 import { render, screen } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { afterEach, describe, expect, it } from "vitest";
-import { editingPort } from "../backend/editing";
-import { ProjectFeed, type ProjectView } from "../backend/project";
-import { EditingSession } from "../editor";
-import { mockPageMount } from "../test-page";
-import { projectOf } from "../test-project";
-import { showNotifications } from "./test-notifications";
-import { pageContext } from "./context";
-import SettingsDialog from "./SettingsDialog.svelte";
+import { editingPort } from "#/backend/editing.ts";
+import { ProjectFeed, type ProjectView } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import { mockPageMount } from "#/test-page.ts";
+import { projectOf } from "#/test-project.ts";
+import { showNotifications } from "#/components/test-notifications.ts";
+import { pageContext } from "#/components/context.ts";
+import SettingsDialog from "#/components/SettingsDialog.svelte";
 
 describe("SettingsDialog", () => {
   let feed: ProjectFeed;

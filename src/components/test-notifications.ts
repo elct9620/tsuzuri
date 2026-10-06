@@ -1,8 +1,8 @@
 import { render } from "@testing-library/svelte";
 import { flushSync } from "svelte";
 
-import { notificationStack } from "../ui/notification.svelte";
-import Notifications from "./Notifications.svelte";
+import { notificationStack } from "#/ui/notification.svelte.ts";
+import Notifications from "#/components/Notifications.svelte";
 
 /** Puts the corner Notifications are shown in on the test page, holding none yet. */
 export function showNotifications(): void {

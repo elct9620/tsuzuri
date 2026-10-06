@@ -2,8 +2,8 @@
 import { render, screen } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { projectOf } from "../../../test-project";
-import Transcription from "./Transcription.svelte";
+import { projectOf } from "#/test-project.ts";
+import Transcription from "#/components/settings/project/Transcription.svelte";
 
 describe("Transcription", () => {
   let calls: { command: string; args: unknown }[];

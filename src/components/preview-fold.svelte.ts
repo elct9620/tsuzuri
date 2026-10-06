@@ -3,7 +3,7 @@
  * shows.
  */
 
-import { rememberFlag, rememberedFlag } from "../ui/choices";
+import { rememberFlag, rememberedFlag } from "#/ui/choices.ts";
 
 /**
  * Where the webview remembers the player and its controls folded away, under the name a fold of the

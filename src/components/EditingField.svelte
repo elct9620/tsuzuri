@@ -7,7 +7,7 @@
   the user is not typing in it.
 -->
 <script lang="ts">
-  import { isMacOS } from "../backend/system";
+  import { isMacOS } from "#/backend/system.ts";
   import {
     type CursorField,
     fieldSelection,
@@ -15,10 +15,10 @@
     insertLineBreak,
     setFieldHeld,
     setFieldValue,
-  } from "../editor";
-  import { notifyEdit } from "../ui/notification.svelte";
-  import { isComposingKey, isShortcut } from "../ui/shortcuts";
-  import { editingSession } from "./context";
+  } from "#/editor/index.ts";
+  import { notifyEdit } from "#/ui/notification.svelte.ts";
+  import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
+  import { editingSession } from "#/components/context.ts";
 
   interface Props {
     index: number;

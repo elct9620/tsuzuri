@@ -3,9 +3,9 @@
  * offers one found at launch, and the window that stays while one installs.
  */
 
-import { installUpdate, type AppUpdate } from "../backend/updates";
-import { t } from "../i18n";
-import { notify, notifyFailure } from "../ui/notification.svelte";
+import { installUpdate, type AppUpdate } from "#/backend/updates.ts";
+import { t } from "#/i18n.ts";
+import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
 
 /** What the settings and the launch Notification say of a found App Update, by its Release Name. */
 export function updateFoundMessage(update: AppUpdate): string {

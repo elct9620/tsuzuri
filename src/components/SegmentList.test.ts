@@ -4,22 +4,22 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { assemble } from "../assembly";
-import type { GlossaryTable, ProjectView } from "../backend/project";
-import { projectOf, resourceOf } from "../test-project";
-import { fieldValue, isFieldHeld } from "../editor";
+import { assemble } from "#/assembly.ts";
+import type { GlossaryTable, ProjectView } from "#/backend/project.ts";
+import { projectOf, resourceOf } from "#/test-project.ts";
+import { fieldValue, isFieldHeld } from "#/editor/index.ts";
 import {
   showNotifications,
   notificationAction,
   notificationDetail,
   notifications,
-} from "./test-notifications";
-import { pageContext } from "./context";
-import { SAVE_MARK, saveMark } from "../ui/test-save-mark";
-import { Playback } from "./playback.svelte";
-import SegmentList from "./SegmentList.svelte";
-import { TaskRun } from "./task-run.svelte";
-import { rowList, segmentRows } from "./test-segment-rows";
+} from "#/components/test-notifications.ts";
+import { pageContext } from "#/components/context.ts";
+import { SAVE_MARK, saveMark } from "#/ui/test-save-mark.ts";
+import { Playback } from "#/components/playback.svelte.ts";
+import SegmentList from "#/components/SegmentList.svelte";
+import { TaskRun } from "#/components/task-run.svelte.ts";
+import { rowList, segmentRows } from "#/components/test-segment-rows.ts";
 
 describe("SegmentList", () => {
   let project: ProjectView | null;

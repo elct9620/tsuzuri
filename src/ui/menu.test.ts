@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { closeMenu } from "./menu";
+import { closeMenu } from "#/ui/menu.ts";
 
 describe("closeMenu", () => {
   // @behavior IF-006

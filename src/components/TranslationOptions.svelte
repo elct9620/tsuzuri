@@ -4,10 +4,10 @@
   offer the same choices; the dialog holds what is chosen.
 -->
 <script lang="ts">
-  import type { Language, TranslationGlossaryView } from "../backend/project";
-  import { t } from "../i18n";
-  import { fileName } from "../ui/file-name";
-  import type { TranslationChoices } from "./translation-choices.svelte";
+  import type { Language, TranslationGlossaryView } from "#/backend/project.ts";
+  import { t } from "#/i18n.ts";
+  import { fileName } from "#/ui/file-name.ts";
+  import type { TranslationChoices } from "#/components/translation-choices.svelte.ts";
 
   interface Props {
     choices: TranslationChoices;

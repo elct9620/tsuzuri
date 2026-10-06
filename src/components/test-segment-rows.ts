@@ -5,14 +5,17 @@
 
 import { render, screen, within } from "@testing-library/svelte";
 
-import { type SegmentDialogs, withSegmentDialogs } from "./context";
-import { Playback } from "./playback.svelte";
-import type ShiftDialog from "./ShiftDialog.svelte";
-import type SpeakersDialog from "./SpeakersDialog.svelte";
-import SegmentList from "./SegmentList.svelte";
-import SegmentRows from "./SegmentRows.svelte";
-import type TranscriptionDialog from "./TranscriptionDialog.svelte";
-import type TranslationDialog from "./TranslationDialog.svelte";
+import {
+  type SegmentDialogs,
+  withSegmentDialogs,
+} from "#/components/context.ts";
+import { Playback } from "#/components/playback.svelte.ts";
+import type ShiftDialog from "#/components/ShiftDialog.svelte";
+import type SpeakersDialog from "#/components/SpeakersDialog.svelte";
+import SegmentList from "#/components/SegmentList.svelte";
+import SegmentRows from "#/components/SegmentRows.svelte";
+import type TranscriptionDialog from "#/components/TranscriptionDialog.svelte";
+import type TranslationDialog from "#/components/TranslationDialog.svelte";
 
 /** The rows drawn, what they mark as played and follow, and how to take them away. */
 export interface DrawnSegmentRows {

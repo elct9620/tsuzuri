@@ -1,6 +1,6 @@
-import type { Failure } from "../backend/failure";
-import { t } from "../i18n";
-import type { NotificationKind } from "./notification.svelte";
+import type { Failure } from "#/backend/failure.ts";
+import { t } from "#/i18n.ts";
+import type { NotificationKind } from "#/ui/notification.svelte.ts";
 
 /**
  * The kind of Notification each code comes as: a refusal, which asking again differently or later

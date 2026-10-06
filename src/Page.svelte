@@ -5,41 +5,41 @@
     type ProjectView,
     recentProjects as readRecentProjects,
     type RecentProjectView,
-  } from "./backend/project";
+  } from "#/backend/project.ts";
   import {
     editorComparison,
     projectFeed,
     setSegmentDialogs,
-  } from "./components/context";
-  import DiarizationDialog from "./components/DiarizationDialog.svelte";
-  import EditorBar from "./components/EditorBar.svelte";
-  import GlossaryDialog from "./components/GlossaryDialog.svelte";
-  import Notifications from "./components/Notifications.svelte";
-  import Preview from "./components/Preview.svelte";
+  } from "#/components/context.ts";
+  import DiarizationDialog from "#/components/DiarizationDialog.svelte";
+  import EditorBar from "#/components/EditorBar.svelte";
+  import GlossaryDialog from "#/components/GlossaryDialog.svelte";
+  import Notifications from "#/components/Notifications.svelte";
+  import Preview from "#/components/Preview.svelte";
   import {
     notifyChangedElsewhereKept,
     openRequestedSrt,
-  } from "./components/project-actions";
-  import { Playback } from "./components/playback.svelte";
-  import { PreviewFold } from "./components/preview-fold.svelte";
-  import ReplacementDialog from "./components/ReplacementDialog.svelte";
-  import { ResourceDock } from "./components/resource-dock.svelte";
-  import ResourceList from "./components/ResourceList.svelte";
-  import SegmentList from "./components/SegmentList.svelte";
-  import LicensesDialog from "./components/settings/LicensesDialog.svelte";
-  import RepositoryDialog from "./components/settings/RepositoryDialog.svelte";
-  import SettingsDialog from "./components/SettingsDialog.svelte";
-  import ShiftDialog from "./components/ShiftDialog.svelte";
-  import ShortcutsDialog from "./components/ShortcutsDialog.svelte";
-  import SpeakersDialog from "./components/SpeakersDialog.svelte";
-  import StartScreen from "./components/StartScreen.svelte";
-  import Toolbar from "./components/Toolbar.svelte";
-  import Tooltip from "./components/Tooltip.svelte";
-  import TranscriptionDialog from "./components/TranscriptionDialog.svelte";
-  import TranslationDialog from "./components/TranslationDialog.svelte";
-  import Undo from "./components/Undo.svelte";
-  import UpdatesDialog from "./components/UpdatesDialog.svelte";
-  import VersionsDialog from "./components/VersionsDialog.svelte";
+  } from "#/components/project-actions.ts";
+  import { Playback } from "#/components/playback.svelte.ts";
+  import { PreviewFold } from "#/components/preview-fold.svelte.ts";
+  import ReplacementDialog from "#/components/ReplacementDialog.svelte";
+  import { ResourceDock } from "#/components/resource-dock.svelte.ts";
+  import ResourceList from "#/components/ResourceList.svelte";
+  import SegmentList from "#/components/SegmentList.svelte";
+  import LicensesDialog from "#/components/settings/LicensesDialog.svelte";
+  import RepositoryDialog from "#/components/settings/RepositoryDialog.svelte";
+  import SettingsDialog from "#/components/SettingsDialog.svelte";
+  import ShiftDialog from "#/components/ShiftDialog.svelte";
+  import ShortcutsDialog from "#/components/ShortcutsDialog.svelte";
+  import SpeakersDialog from "#/components/SpeakersDialog.svelte";
+  import StartScreen from "#/components/StartScreen.svelte";
+  import Toolbar from "#/components/Toolbar.svelte";
+  import Tooltip from "#/components/Tooltip.svelte";
+  import TranscriptionDialog from "#/components/TranscriptionDialog.svelte";
+  import TranslationDialog from "#/components/TranslationDialog.svelte";
+  import Undo from "#/components/Undo.svelte";
+  import UpdatesDialog from "#/components/UpdatesDialog.svelte";
+  import VersionsDialog from "#/components/VersionsDialog.svelte";
 
   let settingsDialog: SettingsDialog;
   let repositoryDialog: RepositoryDialog;

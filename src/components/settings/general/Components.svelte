@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { open } from "../../../backend/dialog";
+  import { open } from "#/backend/dialog.ts";
   import {
     chooseComponent,
     componentStatuses,
     forgetComponent,
     type ComponentStatus,
     type Origin,
-  } from "../../../backend/toolchain";
-  import { t } from "../../../i18n";
-  import { notifyFailure } from "../../../ui/notification.svelte";
-  import HelpButton from "../HelpButton.svelte";
+  } from "#/backend/toolchain.ts";
+  import { t } from "#/i18n.ts";
+  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** Each Component's row: its name as Rust knows it, as people know it, and its ⓘ. */
   const ROWS = [

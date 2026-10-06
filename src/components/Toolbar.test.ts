@@ -4,16 +4,16 @@ import { clearMocks } from "@tauri-apps/api/mocks";
 import { unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { editingPort } from "../backend/editing";
+import { editingPort } from "#/backend/editing.ts";
 import {
   ProjectFeed,
   type ProjectView,
   type RecentProjectView,
-} from "../backend/project";
-import { EditingSession } from "../editor";
-import { drawPage } from "../page";
-import { mockPageMount } from "../test-page";
-import { projectOf } from "../test-project";
+} from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import { drawPage } from "#/page.ts";
+import { mockPageMount } from "#/test-page.ts";
+import { projectOf } from "#/test-project.ts";
 
 const LECTURE: RecentProjectView = {
   directory: "/videos/lecture",

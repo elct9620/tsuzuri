@@ -4,30 +4,33 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { assemble } from "../assembly";
-import { editingPort } from "../backend/editing";
-import { ProjectFeed, type ProjectView } from "../backend/project";
-import { EditingSession } from "../editor";
-import { projectOf, resourceOf } from "../test-project";
+import { assemble } from "#/assembly.ts";
+import { editingPort } from "#/backend/editing.ts";
+import { ProjectFeed, type ProjectView } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import { projectOf, resourceOf } from "#/test-project.ts";
 import {
   showNotifications,
   notificationDetail,
   notificationItems,
   notifications,
-} from "./test-notifications";
-import { pageContext } from "./context";
-import { TaskRun } from "./task-run.svelte";
-import TaskProgress from "./TaskProgress.svelte";
-import { progressSteps } from "./test-task-progress";
-import { optionCheckbox, setSummaryWords } from "./test-translation-options";
-import TranscriptionDialog from "./TranscriptionDialog.svelte";
-import { renderWithToolbar } from "./test-toolbar";
+} from "#/components/test-notifications.ts";
+import { pageContext } from "#/components/context.ts";
+import { TaskRun } from "#/components/task-run.svelte.ts";
+import TaskProgress from "#/components/TaskProgress.svelte";
+import { progressSteps } from "#/components/test-task-progress.ts";
+import {
+  optionCheckbox,
+  setSummaryWords,
+} from "#/components/test-translation-options.ts";
+import TranscriptionDialog from "#/components/TranscriptionDialog.svelte";
+import { renderWithToolbar } from "#/components/test-toolbar.ts";
 import {
   checkedBarButton,
   drawSegmentList,
   rowList,
   segmentDialogsOf,
-} from "./test-segment-rows";
+} from "#/components/test-segment-rows.ts";
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 

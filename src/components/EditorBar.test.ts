@@ -4,15 +4,18 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { editingPort } from "../backend/editing";
-import { ProjectFeed, type ProjectView } from "../backend/project";
-import { EditingSession } from "../editor";
-import { setInterfaceLanguage } from "../i18n";
-import { projectOf, resourceOf } from "../test-project";
-import { pageContext } from "./context";
-import EditorBar from "./EditorBar.svelte";
-import { PreviewFold } from "./preview-fold.svelte";
-import { notifications, showNotifications } from "./test-notifications";
+import { editingPort } from "#/backend/editing.ts";
+import { ProjectFeed, type ProjectView } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import { setInterfaceLanguage } from "#/i18n.ts";
+import { projectOf, resourceOf } from "#/test-project.ts";
+import { pageContext } from "#/components/context.ts";
+import EditorBar from "#/components/EditorBar.svelte";
+import { PreviewFold } from "#/components/preview-fold.svelte.ts";
+import {
+  notifications,
+  showNotifications,
+} from "#/components/test-notifications.ts";
 
 describe("EditorBar", () => {
   let feed: ProjectFeed;

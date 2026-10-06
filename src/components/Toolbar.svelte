@@ -15,18 +15,18 @@
     currentResource,
     type ProjectView,
     type RecentProjectView,
-  } from "../backend/project";
-  import { t } from "../i18n";
-  import { isComposingKey } from "../ui/shortcuts";
-  import { projectFeed } from "./context";
-  import ExportMenu from "./ExportMenu.svelte";
+  } from "#/backend/project.ts";
+  import { t } from "#/i18n.ts";
+  import { isComposingKey } from "#/ui/shortcuts.ts";
+  import { projectFeed } from "#/components/context.ts";
+  import ExportMenu from "#/components/ExportMenu.svelte";
   import {
     openDirectory,
     openRecent,
     openSrt,
     rename,
-  } from "./project-actions";
-  import type { ResourceDock } from "./resource-dock.svelte";
+  } from "#/components/project-actions.ts";
+  import type { ResourceDock } from "#/components/resource-dock.svelte.ts";
 
   interface Props {
     dock: ResourceDock;

@@ -2,14 +2,14 @@
 import { render, screen } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ProjectView } from "../../../backend/project";
-import { projectOf } from "../../../test-project";
+import type { ProjectView } from "#/backend/project.ts";
+import { projectOf } from "#/test-project.ts";
 import {
   notificationDetail,
   notifications,
   showNotifications,
-} from "../../test-notifications";
-import Project from "./Project.svelte";
+} from "#/components/test-notifications.ts";
+import Project from "#/components/settings/project/Project.svelte";
 
 describe("Project", () => {
   let calls: { command: string; args: unknown }[];

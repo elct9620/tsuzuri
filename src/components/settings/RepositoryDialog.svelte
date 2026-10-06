@@ -3,10 +3,10 @@
     repositoryFiles,
     type ModelSlot,
     type RepositoryFile,
-  } from "../../backend/toolchain";
-  import { t } from "../../i18n";
-  import { failureMessage } from "../../ui/failure";
-  import { sizeLabel, type HubFile } from "../../ui/models";
+  } from "#/backend/toolchain.ts";
+  import { t } from "#/i18n.ts";
+  import { failureMessage } from "#/ui/failure.ts";
+  import { sizeLabel, type HubFile } from "#/ui/models.ts";
 
   let dialog: HTMLDialogElement;
   let repoField: HTMLInputElement;

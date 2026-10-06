@@ -1,5 +1,5 @@
-import type * as bindings from "./bindings";
-import { commands } from "./bindings";
+import type * as bindings from "#/backend/bindings.ts";
+import { commands } from "#/backend/bindings.ts";
 
 export type AppBuild = bindings.AppBuild;
 

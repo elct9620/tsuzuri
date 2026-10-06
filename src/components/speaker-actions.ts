@@ -7,15 +7,15 @@ import {
   type ProjectFeed,
   saveTranslationGlossary,
   translationGlossaryTable,
-} from "../backend/project";
-import type { Outcome } from "../editor";
-import { t } from "../i18n";
+} from "#/backend/project.ts";
+import type { Outcome } from "#/editor/index.ts";
+import { t } from "#/i18n.ts";
 import {
   type Notification,
   notify,
   notifyEdit,
   notifyFailure,
-} from "../ui/notification.svelte";
+} from "#/ui/notification.svelte.ts";
 
 /** Marks the term `name` in the Primary Language column as a Speaker, adding the term when the glossary has none. */
 async function addSpeaker(feed: ProjectFeed, name: string): Promise<void> {

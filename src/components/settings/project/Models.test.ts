@@ -2,10 +2,10 @@
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ProjectView } from "../../../backend/project";
-import type { PresetModel } from "../../../backend/toolchain";
-import { projectOf } from "../../../test-project";
-import Models from "./Models.svelte";
+import type { ProjectView } from "#/backend/project.ts";
+import type { PresetModel } from "#/backend/toolchain.ts";
+import { projectOf } from "#/test-project.ts";
+import Models from "#/components/settings/project/Models.svelte";
 
 const QWEN_PRESET: PresetModel = {
   slot: "translation",

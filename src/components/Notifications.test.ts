@@ -7,7 +7,7 @@ import {
   notify as show,
   notifyFailure,
   type Notification,
-} from "../ui/notification.svelte";
+} from "#/ui/notification.svelte.ts";
 import {
   showNotifications,
   notificationAction,
@@ -16,7 +16,7 @@ import {
   notificationCountdown,
   notificationItems,
   notifications,
-} from "./test-notifications";
+} from "#/components/test-notifications.ts";
 
 describe("Notifications", () => {
   /** Shows `notification` and draws it, so its countdown has started. */

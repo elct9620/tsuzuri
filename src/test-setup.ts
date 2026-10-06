@@ -1,5 +1,5 @@
-import { setInterfaceLanguage } from "./i18n";
-import { installTopLayer } from "./test-top-layer";
+import { setInterfaceLanguage } from "#/i18n.ts";
+import { installTopLayer } from "#/test-top-layer.ts";
 
 // Controller tests read the interface in Traditional Chinese, whatever language the machine running them uses.
 await setInterfaceLanguage("zh-Hant-TW");

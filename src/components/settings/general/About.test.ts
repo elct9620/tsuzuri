@@ -2,8 +2,8 @@
 import { render, screen } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import LicensesDialog from "../LicensesDialog.svelte";
-import About from "./About.svelte";
+import LicensesDialog from "#/components/settings/LicensesDialog.svelte";
+import About from "#/components/settings/general/About.svelte";
 
 describe("About", () => {
   let commands: string[];

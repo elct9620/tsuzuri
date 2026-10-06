@@ -5,17 +5,17 @@ import { clearMocks, mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { assemble } from "../assembly";
-import { DEFAULT_PREFERENCES } from "../backend/preferences";
-import type { ProjectView } from "../backend/project";
-import type { EditingSession } from "../editor";
-import { setInterfaceLanguage, t } from "../i18n";
-import { projectOf } from "../test-project";
-import { pageContext } from "./context";
-import EditorBar from "./EditorBar.svelte";
-import { Playback } from "./playback.svelte";
-import Preview from "./Preview.svelte";
-import { PreviewFold } from "./preview-fold.svelte";
+import { assemble } from "#/assembly.ts";
+import { DEFAULT_PREFERENCES } from "#/backend/preferences.ts";
+import type { ProjectView } from "#/backend/project.ts";
+import type { EditingSession } from "#/editor/index.ts";
+import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { projectOf } from "#/test-project.ts";
+import { pageContext } from "#/components/context.ts";
+import EditorBar from "#/components/EditorBar.svelte";
+import { Playback } from "#/components/playback.svelte.ts";
+import Preview from "#/components/Preview.svelte";
+import { PreviewFold } from "#/components/preview-fold.svelte.ts";
 
 describe("Preview", () => {
   let session: EditingSession;

@@ -2,14 +2,14 @@
   import RefreshCw from "@lucide/svelte/icons/refresh-cw";
   import { onMount } from "svelte";
 
-  import { selectResource, type ProjectView } from "../backend/project";
-  import { isMacOS } from "../backend/system";
-  import { t } from "../i18n";
-  import { notifyFailure } from "../ui/notification.svelte";
-  import { isShortcut } from "../ui/shortcuts";
-  import { projectFeed } from "./context";
-  import { reload } from "./project-actions";
-  import type { ResourceDock } from "./resource-dock.svelte";
+  import { selectResource, type ProjectView } from "#/backend/project.ts";
+  import { isMacOS } from "#/backend/system.ts";
+  import { t } from "#/i18n.ts";
+  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import { isShortcut } from "#/ui/shortcuts.ts";
+  import { projectFeed } from "#/components/context.ts";
+  import { reload } from "#/components/project-actions.ts";
+  import type { ResourceDock } from "#/components/resource-dock.svelte.ts";
 
   interface Props {
     dock: ResourceDock;

@@ -6,13 +6,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import type { ProjectView } from "../backend/project";
-  import { translateSegments } from "../backend/translation";
-  import { t } from "../i18n";
-  import { notifyTranslation } from "../ui/notification.svelte";
-  import { projectFeed, taskRun } from "./context";
-  import { TranslationChoices } from "./translation-choices.svelte";
-  import TranslationOptions from "./TranslationOptions.svelte";
+  import type { ProjectView } from "#/backend/project.ts";
+  import { translateSegments } from "#/backend/translation.ts";
+  import { t } from "#/i18n.ts";
+  import { notifyTranslation } from "#/ui/notification.svelte.ts";
+  import { projectFeed, taskRun } from "#/components/context.ts";
+  import { TranslationChoices } from "#/components/translation-choices.svelte.ts";
+  import TranslationOptions from "#/components/TranslationOptions.svelte";
 
   const feed = projectFeed();
   const run = taskRun();

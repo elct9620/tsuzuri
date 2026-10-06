@@ -3,7 +3,10 @@
  * that follows them.
  */
 
-import { DEFAULT_PREFERENCES, type Preferences } from "../backend/preferences";
+import {
+  DEFAULT_PREFERENCES,
+  type Preferences,
+} from "#/backend/preferences.ts";
 
 export class SavedPreferences {
   /** The defaults until the saved Preferences are read. */

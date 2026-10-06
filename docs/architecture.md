@@ -591,6 +591,18 @@ Svelte 元件之間以 prop、context 或共用的狀態溝通，不經 window �
 | Svelte 元件 | 事件屬性、`<svelte:window>`、`<svelte:document>` | 隨元件，由 Svelte |
 | 影片視窗 | `Preview` 自己綁定 | 例外，見 4.9 |
 
+#### 4.2.2 import 的寫法
+
+import 不依賴檔案所在的位置，搬動目錄時只換前綴。下表是各處的寫法。
+
+| 位置 | 寫法 | 原因 |
+|---|---|---|
+| `editor/` 以外 | `#/ui/time.ts` | `#/` 對應 `src/` |
+| `editor/` 內部 | `./rules` | 能抽成獨立套件 |
+| `src/` 以外 | 相對路徑 | 不在對應之內 |
+
+`#/` 由 `package.json` 的 `imports` 定義。副檔名要寫出，TypeScript 的 bundler 解析才找得到檔案。
+
 ### 4.3 組裝
 
 ```

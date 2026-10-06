@@ -3,7 +3,7 @@
  * they make lives in Rust, and each failure is told in a Notification.
  */
 
-import { open as chooseFile, SRT_FILTERS } from "../backend/dialog";
+import { open as chooseFile, SRT_FILTERS } from "#/backend/dialog.ts";
 import {
   openProject,
   type OpenCommand,
@@ -11,10 +11,10 @@ import {
   reloadProject,
   setProjectOptions,
   takeRequestedSrt,
-} from "../backend/project";
-import { interfaceLanguageCode, t } from "../i18n";
-import { closeMenu } from "../ui/menu";
-import { notify, notifyFailure } from "../ui/notification.svelte";
+} from "#/backend/project.ts";
+import { interfaceLanguageCode, t } from "#/i18n.ts";
+import { closeMenu } from "#/ui/menu.ts";
+import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
 
 /** Runs `action`, saying under `title` why it failed, and answers whether it succeeded. */
 async function report(

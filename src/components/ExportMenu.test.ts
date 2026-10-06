@@ -4,14 +4,17 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { editingPort } from "../backend/editing";
-import { ProjectFeed, type ProjectView } from "../backend/project";
-import { EditingSession } from "../editor";
-import { setInterfaceLanguage } from "../i18n";
-import { projectOf, resourceOf } from "../test-project";
-import { pageContext } from "./context";
-import ExportMenu from "./ExportMenu.svelte";
-import { notifications, showNotifications } from "./test-notifications";
+import { editingPort } from "#/backend/editing.ts";
+import { ProjectFeed, type ProjectView } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import { setInterfaceLanguage } from "#/i18n.ts";
+import { projectOf, resourceOf } from "#/test-project.ts";
+import { pageContext } from "#/components/context.ts";
+import ExportMenu from "#/components/ExportMenu.svelte";
+import {
+  notifications,
+  showNotifications,
+} from "#/components/test-notifications.ts";
 
 describe("ExportMenu", () => {
   let feed: ProjectFeed;

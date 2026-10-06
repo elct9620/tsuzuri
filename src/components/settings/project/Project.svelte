@@ -1,8 +1,11 @@
 <script lang="ts">
-  import type { ProjectOptions, ProjectView } from "../../../backend/project";
-  import { t } from "../../../i18n";
-  import HelpButton from "../HelpButton.svelte";
-  import { saveOptions, setLanguage } from "./project-options";
+  import type { ProjectOptions, ProjectView } from "#/backend/project.ts";
+  import { t } from "#/i18n.ts";
+  import HelpButton from "#/components/settings/HelpButton.svelte";
+  import {
+    saveOptions,
+    setLanguage,
+  } from "#/components/settings/project/project-options.ts";
 
   interface Props {
     project: ProjectView;

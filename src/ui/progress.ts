@@ -1,5 +1,9 @@
-import type { Phase, PhaseTiming, PipelineProgress } from "../backend/progress";
-import { t } from "../i18n";
+import type {
+  Phase,
+  PhaseTiming,
+  PipelineProgress,
+} from "#/backend/progress.ts";
+import { t } from "#/i18n.ts";
 
 /** The kind of task running, as the Mode it runs is named, which the editor shows Placeholders for. */
 export type TaskKind = "transcription" | "translation" | "diarization";

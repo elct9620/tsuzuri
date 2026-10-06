@@ -1,8 +1,8 @@
 import i18next, { type i18n, type TOptions } from "i18next";
 
-import type { Language } from "./backend/project";
-import en from "./locales/en";
-import zhHant from "./locales/zh-Hant";
+import type { Language } from "#/backend/project.ts";
+import en from "#/locales/en.ts";
+import zhHant from "#/locales/zh-Hant.ts";
 
 let instance: i18n = i18next.createInstance();
 

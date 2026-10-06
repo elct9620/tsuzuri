@@ -2,8 +2,8 @@
 import { render } from "@testing-library/svelte";
 import { flushSync } from "svelte";
 import { beforeEach, describe, expect, it } from "vitest";
-import { topLayer } from "../test-top-layer";
-import Tooltip from "./Tooltip.svelte";
+import { topLayer } from "#/test-top-layer.ts";
+import Tooltip from "#/components/Tooltip.svelte";
 
 describe("Tooltip", () => {
   const bubble = () =>

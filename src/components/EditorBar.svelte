@@ -14,14 +14,14 @@
     currentResource,
     type ProjectView,
     showTranslation,
-  } from "../backend/project";
-  import { t } from "../i18n";
-  import { notifyFailure } from "../ui/notification.svelte";
-  import { playedSource } from "../ui/silence";
-  import CompareMenu from "./CompareMenu.svelte";
-  import { projectFeed } from "./context";
-  import type { PreviewFold } from "./preview-fold.svelte";
-  import TaskProgress from "./TaskProgress.svelte";
+  } from "#/backend/project.ts";
+  import { t } from "#/i18n.ts";
+  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import { playedSource } from "#/ui/silence.ts";
+  import CompareMenu from "#/components/CompareMenu.svelte";
+  import { projectFeed } from "#/components/context.ts";
+  import type { PreviewFold } from "#/components/preview-fold.svelte.ts";
+  import TaskProgress from "#/components/TaskProgress.svelte";
 
   interface Props {
     openReplacement: () => void;

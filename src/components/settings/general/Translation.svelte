@@ -5,10 +5,10 @@
     saveTranslationSettings,
     translationSettings,
     type TranslationSettings,
-  } from "../../../backend/translation";
-  import { t } from "../../../i18n";
-  import { notifyFailure } from "../../../ui/notification.svelte";
-  import HelpButton from "../HelpButton.svelte";
+  } from "#/backend/translation.ts";
+  import { t } from "#/i18n.ts";
+  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** The general translation settings as the fields stand; a number field left empty is null. */
   let fields = $state({

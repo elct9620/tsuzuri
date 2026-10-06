@@ -6,11 +6,11 @@
 <script lang="ts">
   import RotateCcw from "@lucide/svelte/icons/rotate-ccw";
 
-  import type { RevertPart } from "../backend/project";
-  import { t } from "../i18n";
-  import { closeMenu } from "../ui/menu";
-  import { editorComparison } from "./context";
-  import type { SideRow } from "./editor-comparison.svelte";
+  import type { RevertPart } from "#/backend/project.ts";
+  import { t } from "#/i18n.ts";
+  import { closeMenu } from "#/ui/menu.ts";
+  import { editorComparison } from "#/components/context.ts";
+  import type { SideRow } from "#/components/editor-comparison.svelte.ts";
 
   let {
     sideRow,

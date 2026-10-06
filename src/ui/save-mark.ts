@@ -1,4 +1,4 @@
-import { t } from "../i18n";
+import { t } from "#/i18n.ts";
 
 /** How long the Save Mark stays after the latest edit written. */
 export const SAVE_MARK_MS = 1500;

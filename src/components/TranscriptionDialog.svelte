@@ -6,30 +6,30 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { diarize } from "../backend/diarization";
+  import { diarize } from "#/backend/diarization.ts";
   import {
     currentResource,
     spanIndexes,
     type ProjectView,
     type SegmentSpan,
-  } from "../backend/project";
-  import { modelSettings } from "../backend/toolchain";
+  } from "#/backend/project.ts";
+  import { modelSettings } from "#/backend/toolchain.ts";
   import {
     transcribe,
     type TranscriptionScope,
-  } from "../backend/transcription";
-  import { translateSegments } from "../backend/translation";
-  import { t } from "../i18n";
-  import { sourceFileName } from "../ui/models";
+  } from "#/backend/transcription.ts";
+  import { translateSegments } from "#/backend/translation.ts";
+  import { t } from "#/i18n.ts";
+  import { sourceFileName } from "#/ui/models.ts";
   import {
     notifyDiarization,
     notifyTranscription,
     notifyTranslation,
-  } from "../ui/notification.svelte";
-  import { formatTime } from "../ui/time";
-  import { projectFeed, taskRun } from "./context";
-  import { TranslationChoices } from "./translation-choices.svelte";
-  import TranslationOptions from "./TranslationOptions.svelte";
+  } from "#/ui/notification.svelte.ts";
+  import { formatTime } from "#/ui/time.ts";
+  import { projectFeed, taskRun } from "#/components/context.ts";
+  import { TranslationChoices } from "#/components/translation-choices.svelte.ts";
+  import TranslationOptions from "#/components/TranslationOptions.svelte";
 
   const feed = projectFeed();
   const run = taskRun();

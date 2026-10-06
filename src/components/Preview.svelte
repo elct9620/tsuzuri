@@ -69,21 +69,25 @@
   import VolumeX from "@lucide/svelte/icons/volume-x";
   import { onMount, untrack } from "svelte";
 
-  import { mediaUrl, type ProjectView, type Segment } from "../backend/project";
-  import { isMacOS } from "../backend/system";
+  import {
+    mediaUrl,
+    type ProjectView,
+    type Segment,
+  } from "#/backend/project.ts";
+  import { isMacOS } from "#/backend/system.ts";
   import {
     VIDEO_WINDOW,
     destroyVideoWindow,
     leaveVideoWindowFullscreen,
     toggleVideoWindowFullscreen,
-  } from "../backend/video-window";
-  import { t } from "../i18n";
+  } from "#/backend/video-window.ts";
+  import { t } from "#/i18n.ts";
   import {
     rememberChoice,
     rememberedChoice,
     rememberedFlag,
     rememberFlag,
-  } from "../ui/choices";
+  } from "#/ui/choices.ts";
   import {
     type PlayedSource,
     type Silence,
@@ -91,10 +95,10 @@
     isSilenceOf,
     playedSource,
     silentWav,
-  } from "../ui/silence";
-  import { isShortcut } from "../ui/shortcuts";
-  import { MS_PER_SECOND, formatClock, formatTime } from "../ui/time";
-  import { forwardKeys, openVideoWindow } from "../ui/video-window";
+  } from "#/ui/silence.ts";
+  import { isShortcut } from "#/ui/shortcuts.ts";
+  import { MS_PER_SECOND, formatClock, formatTime } from "#/ui/time.ts";
+  import { forwardKeys, openVideoWindow } from "#/ui/video-window.ts";
   import {
     playAtVolume,
     resumeAudioGraph,
@@ -102,16 +106,16 @@
     SLIDER_END,
     sliderPosition,
     volumeAt,
-  } from "../ui/volume";
-  import { editingSession, projectFeed } from "./context";
-  import type { Playback } from "./playback.svelte";
-  import type { PreviewFold } from "./preview-fold.svelte";
+  } from "#/ui/volume.ts";
+  import { editingSession, projectFeed } from "#/components/context.ts";
+  import type { Playback } from "#/components/playback.svelte.ts";
+  import type { PreviewFold } from "#/components/preview-fold.svelte.ts";
   import {
     type CaptionBackdrop,
     type DummyVideoColour,
     PreviewScreen,
-  } from "./preview-screen";
-  import Timeline, { timeKeys } from "./Timeline.svelte";
+  } from "#/components/preview-screen.ts";
+  import Timeline, { timeKeys } from "#/components/Timeline.svelte";
 
   let { playback, fold }: { playback: Playback; fold: PreviewFold } = $props();
 

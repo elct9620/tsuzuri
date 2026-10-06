@@ -5,14 +5,14 @@
   import X from "@lucide/svelte/icons/x";
   import { onMount } from "svelte";
 
-  import { t } from "../i18n";
+  import { t } from "#/i18n.ts";
   import {
     NOTIFICATION_MS,
     TICK_MS,
     notificationStack,
     type NotificationKind,
     type ShownNotification,
-  } from "../ui/notification.svelte";
+  } from "#/ui/notification.svelte.ts";
 
   /** A check, an exclamation and a cross, each in a circle or a triangle. */
   const KIND_ICONS: Record<NotificationKind, typeof CircleCheck> = {

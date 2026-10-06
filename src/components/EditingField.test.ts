@@ -1,11 +1,14 @@
 // @vitest-environment happy-dom
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { assemble } from "../assembly";
-import type { EditingSession } from "../editor";
-import { projectOf } from "../test-project";
-import { pageContext } from "./context";
-import { type DrawnSegmentRows, drawSegmentRows } from "./test-segment-rows";
+import { assemble } from "#/assembly.ts";
+import type { EditingSession } from "#/editor/index.ts";
+import { projectOf } from "#/test-project.ts";
+import { pageContext } from "#/components/context.ts";
+import {
+  type DrawnSegmentRows,
+  drawSegmentRows,
+} from "#/components/test-segment-rows.ts";
 
 describe("EditingField", () => {
   let drawn: DrawnSegmentRows;

@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import TimeField from "./TimeField.svelte";
+import TimeField from "#/components/TimeField.svelte";
 
 describe("TimeField", () => {
   let execCommand: typeof document.execCommand;

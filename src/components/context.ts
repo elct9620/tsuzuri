@@ -5,13 +5,13 @@
 
 import { getContext, setContext } from "svelte";
 
-import type { ProjectFeed } from "../backend/project";
-import type { TranscriptionScope } from "../backend/transcription";
-import type { EditingSession } from "../editor";
-import { AppUpdates } from "./app-updates.svelte";
-import { EditorComparison } from "./editor-comparison.svelte";
-import { SavedPreferences } from "./saved-preferences.svelte";
-import { TaskRun } from "./task-run.svelte";
+import type { ProjectFeed } from "#/backend/project.ts";
+import type { TranscriptionScope } from "#/backend/transcription.ts";
+import type { EditingSession } from "#/editor/index.ts";
+import { AppUpdates } from "#/components/app-updates.svelte.ts";
+import { EditorComparison } from "#/components/editor-comparison.svelte.ts";
+import { SavedPreferences } from "#/components/saved-preferences.svelte.ts";
+import { TaskRun } from "#/components/task-run.svelte.ts";
 
 const FEED = Symbol("feed");
 const TASK_RUN = Symbol("task run");

@@ -1,8 +1,8 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 
-import type * as bindings from "./bindings";
-import { commands, events } from "./bindings";
+import type * as bindings from "#/backend/bindings.ts";
+import { commands, events } from "#/backend/bindings.ts";
 
 export type { UnlistenFn };
 

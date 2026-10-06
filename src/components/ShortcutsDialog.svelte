@@ -4,16 +4,16 @@
   itself in its tooltip. It only tells; the keys are bound where they act.
 -->
 <script lang="ts">
-  import { isMacOS } from "../backend/system";
-  import { isTextField } from "../editor";
-  import { t } from "../i18n";
+  import { isMacOS } from "#/backend/system.ts";
+  import { isTextField } from "#/editor/index.ts";
+  import { t } from "#/i18n.ts";
   import {
     SHORTCUTS,
     SHORTCUT_GROUPS,
     chords,
     isShortcut,
     keyLabels,
-  } from "../ui/shortcuts";
+  } from "#/ui/shortcuts.ts";
 
   let dialog: HTMLDialogElement;
 

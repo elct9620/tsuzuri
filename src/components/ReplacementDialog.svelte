@@ -7,13 +7,13 @@
 <script lang="ts">
   import { flushSync } from "svelte";
 
-  import { isMacOS } from "../backend/system";
-  import type { CursorField } from "../editor";
-  import { t } from "../i18n";
-  import { notify, notifyFailure } from "../ui/notification.svelte";
-  import { isComposingKey, isShortcut } from "../ui/shortcuts";
-  import { selectedText } from "../ui/text-fields";
-  import { editingSession, projectFeed } from "./context";
+  import { isMacOS } from "#/backend/system.ts";
+  import type { CursorField } from "#/editor/index.ts";
+  import { t } from "#/i18n.ts";
+  import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
+  import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
+  import { selectedText } from "#/ui/text-fields.ts";
+  import { editingSession, projectFeed } from "#/components/context.ts";
 
   const feed = projectFeed();
   const session = editingSession();

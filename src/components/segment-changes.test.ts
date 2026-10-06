@@ -3,22 +3,22 @@ import { render, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { assemble } from "../assembly";
-import { editingPort } from "../backend/editing";
-import { ProjectFeed, type ProjectView } from "../backend/project";
+import { assemble } from "#/assembly.ts";
+import { editingPort } from "#/backend/editing.ts";
+import { ProjectFeed, type ProjectView } from "#/backend/project.ts";
 import {
   showNotifications,
   notificationCountdown,
   notificationDetail,
   notifications,
-} from "./test-notifications";
-import { drawPage } from "../page";
-import { mockPageMount } from "../test-page";
-import { projectOf } from "../test-project";
-import { EditingSession, fieldValue } from "../editor";
-import { pageContext, withSegmentDialogs } from "./context";
-import { Playback } from "./playback.svelte";
-import SegmentList from "./SegmentList.svelte";
+} from "#/components/test-notifications.ts";
+import { drawPage } from "#/page.ts";
+import { mockPageMount } from "#/test-page.ts";
+import { projectOf } from "#/test-project.ts";
+import { EditingSession, fieldValue } from "#/editor/index.ts";
+import { pageContext, withSegmentDialogs } from "#/components/context.ts";
+import { Playback } from "#/components/playback.svelte.ts";
+import SegmentList from "#/components/SegmentList.svelte";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
 interface MenuItemSent {

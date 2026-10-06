@@ -3,19 +3,19 @@ import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { editingPort } from "../../../backend/editing";
-import { ProjectFeed } from "../../../backend/project";
-import type { AppUpdate } from "../../../backend/updates";
-import { EditingSession } from "../../../editor";
+import { editingPort } from "#/backend/editing.ts";
+import { ProjectFeed } from "#/backend/project.ts";
+import type { AppUpdate } from "#/backend/updates.ts";
+import { EditingSession } from "#/editor/index.ts";
 import {
   showNotifications,
   notificationAction,
   notificationDetail,
   notifications,
-} from "../../test-notifications";
-import { pageContext } from "../../context";
-import UpdatesDialog from "../../UpdatesDialog.svelte";
-import VersionAndUpdates from "./VersionAndUpdates.svelte";
+} from "#/components/test-notifications.ts";
+import { pageContext } from "#/components/context.ts";
+import UpdatesDialog from "#/components/UpdatesDialog.svelte";
+import VersionAndUpdates from "#/components/settings/general/VersionAndUpdates.svelte";
 
 describe("VersionAndUpdates", () => {
   let build: Record<string, unknown>;

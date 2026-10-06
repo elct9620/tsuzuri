@@ -4,13 +4,16 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { assemble } from "../assembly";
-import type { ProjectView } from "../backend/project";
-import { setInterfaceLanguage } from "../i18n";
-import { projectOf } from "../test-project";
-import { pageContext } from "./context";
-import SearchBar from "./SearchBar.svelte";
-import { drawSegmentRows, segmentRows } from "./test-segment-rows";
+import { assemble } from "#/assembly.ts";
+import type { ProjectView } from "#/backend/project.ts";
+import { setInterfaceLanguage } from "#/i18n.ts";
+import { projectOf } from "#/test-project.ts";
+import { pageContext } from "#/components/context.ts";
+import SearchBar from "#/components/SearchBar.svelte";
+import {
+  drawSegmentRows,
+  segmentRows,
+} from "#/components/test-segment-rows.ts";
 
 describe("SearchBar", () => {
   let project: ProjectView | null;

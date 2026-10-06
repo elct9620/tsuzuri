@@ -1,13 +1,10 @@
 <script lang="ts">
-  import type { ProjectModels, ProjectView } from "../../../backend/project";
-  import type {
-    ModelSlot as Slot,
-    ModelSource,
-  } from "../../../backend/toolchain";
-  import { t } from "../../../i18n";
-  import { sourceName, type HubFile } from "../../../ui/models";
-  import ModelSlot from "../ModelSlot.svelte";
-  import { saveOptions } from "./project-options";
+  import type { ProjectModels, ProjectView } from "#/backend/project.ts";
+  import type { ModelSlot as Slot, ModelSource } from "#/backend/toolchain.ts";
+  import { t } from "#/i18n.ts";
+  import { sourceName, type HubFile } from "#/ui/models.ts";
+  import ModelSlot from "#/components/settings/ModelSlot.svelte";
+  import { saveOptions } from "#/components/settings/project/project-options.ts";
 
   interface Props {
     project: ProjectView;

@@ -2,8 +2,8 @@
  * The silence a Resource without a media file plays under its Dummy Video, so the Preview and the
  * timeline follow the player's clock for a subtitle alone as they do for a media file.
  */
-import type { ProjectView, Segment } from "../backend/project";
-import { MS_PER_MINUTE, MS_PER_SECOND } from "./time";
+import type { ProjectView, Segment } from "#/backend/project.ts";
+import { MS_PER_MINUTE, MS_PER_SECOND } from "#/ui/time.ts";
 
 /** Room past the last Segment, so it can still be dragged later and a new one drawn after it. */
 const ROOM_PAST_LAST_SEGMENT_MS = MS_PER_MINUTE;

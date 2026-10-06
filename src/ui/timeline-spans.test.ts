@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PREFERENCES } from "../backend/preferences";
+import { DEFAULT_PREFERENCES } from "#/backend/preferences.ts";
 import {
   choiceLanding,
   landingSpan,
   regionLanes,
   snapTime,
-} from "./timeline-spans";
+} from "#/ui/timeline-spans.ts";
 
 describe("timeline spans", () => {
   const reach = {

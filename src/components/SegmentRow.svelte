@@ -10,8 +10,8 @@
   import EllipsisVertical from "@lucide/svelte/icons/ellipsis-vertical";
   import { untrack } from "svelte";
 
-  import type { Segment } from "../backend/project";
-  import { isMacOS } from "../backend/system";
+  import type { Segment } from "#/backend/project.ts";
+  import { isMacOS } from "#/backend/system.ts";
   import {
     type ChoiceSource,
     type CursorField,
@@ -20,27 +20,38 @@
     orderedTimes,
     type TimeEdge,
     type TranscriptView,
-  } from "../editor";
-  import { t } from "../i18n";
-  import { closeMenu } from "../ui/menu";
-  import { notify } from "../ui/notification.svelte";
-  import { isComposingKey, shortcutById, shortcutText } from "../ui/shortcuts";
-  import { speakerNames } from "../ui/speakers";
-  import { formatTime, parseTime } from "../ui/time";
-  import ComparisonMarks from "./ComparisonMarks.svelte";
-  import { editingSession, projectFeed, segmentDialogs } from "./context";
-  import EarlierText from "./EarlierText.svelte";
-  import EditingField from "./EditingField.svelte";
-  import type { SegmentComparison, Side } from "./editor-comparison.svelte";
+  } from "#/editor/index.ts";
+  import { t } from "#/i18n.ts";
+  import { closeMenu } from "#/ui/menu.ts";
+  import { notify } from "#/ui/notification.svelte.ts";
+  import {
+    isComposingKey,
+    shortcutById,
+    shortcutText,
+  } from "#/ui/shortcuts.ts";
+  import { speakerNames } from "#/ui/speakers.ts";
+  import { formatTime, parseTime } from "#/ui/time.ts";
+  import ComparisonMarks from "#/components/ComparisonMarks.svelte";
+  import {
+    editingSession,
+    projectFeed,
+    segmentDialogs,
+  } from "#/components/context.ts";
+  import EarlierText from "#/components/EarlierText.svelte";
+  import EditingField from "#/components/EditingField.svelte";
+  import type {
+    SegmentComparison,
+    Side,
+  } from "#/components/editor-comparison.svelte.ts";
   import {
     change,
     checkedChoices,
     popUpChoices,
     type ResourceOffers,
     segmentChoices,
-  } from "./segment-changes";
-  import { notifyNamed } from "./speaker-actions";
-  import TimeField from "./TimeField.svelte";
+  } from "#/components/segment-changes.ts";
+  import { notifyNamed } from "#/components/speaker-actions.ts";
+  import TimeField from "#/components/TimeField.svelte";
 
   /** The side of the comparison each field shows the marks of. */
   const SIDE_BY_FIELD: Record<CursorField, Side> = {

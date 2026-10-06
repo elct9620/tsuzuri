@@ -7,10 +7,10 @@ import type {
   EditingPort,
   Segment as EditorSegment,
   TranscriptView,
-} from "../editor";
-import type { ProjectView, Segment } from "./project";
-import type * as bindings from "./bindings";
-import { commands } from "./bindings";
+} from "#/editor/index.ts";
+import type { ProjectView, Segment } from "#/backend/project.ts";
+import type * as bindings from "#/backend/bindings.ts";
+import { commands } from "#/backend/bindings.ts";
 
 export type SegmentField = bindings.SegmentField;
 

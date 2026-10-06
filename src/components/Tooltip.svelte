@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { isMacOS } from "../backend/system";
-  import { t } from "../i18n";
-  import { shortcutById, shortcutText } from "../ui/shortcuts";
+  import { isMacOS } from "#/backend/system.ts";
+  import { t } from "#/i18n.ts";
+  import { shortcutById, shortcutText } from "#/ui/shortcuts.ts";
 
   /** The text of `trigger`'s tooltip, followed by the keys of the Shortcut it names. */
   function tipOf({ dataset }: HTMLElement): string | undefined {

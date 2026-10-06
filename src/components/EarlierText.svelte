@@ -3,8 +3,8 @@
   What a changed text read in the Backup compared, with the characters since removed struck out.
 -->
 <script lang="ts">
-  import type { ComparedRow } from "../backend/project";
-  import { t } from "../i18n";
+  import type { ComparedRow } from "#/backend/project.ts";
+  import { t } from "#/i18n.ts";
 
   let { row }: { row: ComparedRow } = $props();
 </script>

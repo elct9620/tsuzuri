@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "../../i18n";
+  import { t } from "#/i18n.ts";
 
   let dialog: HTMLDialogElement;
   /** The License Notice, read the first time the dialog opens; null for a build without one. */

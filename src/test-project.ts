@@ -1,4 +1,4 @@
-import type { ProjectView, ResourceView } from "./backend/project";
+import type { ProjectView, ResourceView } from "#/backend/project.ts";
 
 /** A Project in `/talks`, in `zh-TW`, whose Current Resource is `ep01`, holding what `changes` name. */
 export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {

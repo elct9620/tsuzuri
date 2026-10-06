@@ -9,9 +9,9 @@
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
 
-  import type { ProjectView } from "../backend/project";
-  import { isMacOS } from "../backend/system";
-  import type { ComparedRow } from "../backend/project";
+  import type { ProjectView } from "#/backend/project.ts";
+  import { isMacOS } from "#/backend/system.ts";
+  import type { ComparedRow } from "#/backend/project.ts";
   import {
     type CursorField,
     drawCursor,
@@ -21,20 +21,23 @@
     placeSelection,
     textRange,
     type TranscriptView,
-  } from "../editor";
-  import { t } from "../i18n";
-  import { isShortcut } from "../ui/shortcuts";
+  } from "#/editor/index.ts";
+  import { t } from "#/i18n.ts";
+  import { isShortcut } from "#/ui/shortcuts.ts";
   import {
     editingSession,
     editorComparison,
     projectFeed,
     taskRun,
-  } from "./context";
-  import { comparisonLayout, type Side } from "./editor-comparison.svelte";
-  import type { Playback } from "./playback.svelte";
-  import { resourceOffers } from "./segment-changes";
-  import RemovalRow from "./RemovalRow.svelte";
-  import SegmentRow from "./SegmentRow.svelte";
+  } from "#/components/context.ts";
+  import {
+    comparisonLayout,
+    type Side,
+  } from "#/components/editor-comparison.svelte.ts";
+  import type { Playback } from "#/components/playback.svelte.ts";
+  import { resourceOffers } from "#/components/segment-changes.ts";
+  import RemovalRow from "#/components/RemovalRow.svelte";
+  import SegmentRow from "#/components/SegmentRow.svelte";
 
   /** The highlight marking the characters a text gained since the Backup compared. */
   const ADDED_HIGHLIGHT = "compare-addition";

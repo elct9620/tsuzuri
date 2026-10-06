@@ -8,11 +8,11 @@ import {
   currentResource,
   type Language,
   type ProjectView,
-} from "../backend/project";
+} from "#/backend/project.ts";
 import {
   translationSettings,
   type TranslationOptions,
-} from "../backend/translation";
+} from "#/backend/translation.ts";
 
 export class TranslationChoices {
   /** The code of the Language to translate into. */

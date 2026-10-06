@@ -4,11 +4,11 @@
   it was, with the menu that takes it back.
 -->
 <script lang="ts">
-  import { t } from "../i18n";
-  import { formatTime } from "../ui/time";
-  import { editorComparison } from "./context";
-  import type { SideRow } from "./editor-comparison.svelte";
-  import RevertMenu from "./RevertMenu.svelte";
+  import { t } from "#/i18n.ts";
+  import { formatTime } from "#/ui/time.ts";
+  import { editorComparison } from "#/components/context.ts";
+  import type { SideRow } from "#/components/editor-comparison.svelte.ts";
+  import RevertMenu from "#/components/RevertMenu.svelte";
 
   let { sideRow }: { sideRow: SideRow } = $props();
 

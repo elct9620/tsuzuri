@@ -2,8 +2,8 @@
 import { render, screen, within } from "@testing-library/svelte";
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { setInterfaceLanguage } from "../i18n";
-import ShortcutsDialog from "./ShortcutsDialog.svelte";
+import { setInterfaceLanguage } from "#/i18n.ts";
+import ShortcutsDialog from "#/components/ShortcutsDialog.svelte";
 
 describe("ShortcutsDialog", () => {
   let shortcutsDialog: ShortcutsDialog;

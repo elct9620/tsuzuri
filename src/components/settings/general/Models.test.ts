@@ -7,10 +7,13 @@ import type {
   ModelSlot,
   ModelSource,
   PresetModel,
-} from "../../../backend/toolchain";
-import { showNotifications, notifications } from "../../test-notifications";
-import RepositoryDialog from "../RepositoryDialog.svelte";
-import Models from "./Models.svelte";
+} from "#/backend/toolchain.ts";
+import {
+  showNotifications,
+  notifications,
+} from "#/components/test-notifications.ts";
+import RepositoryDialog from "#/components/settings/RepositoryDialog.svelte";
+import Models from "#/components/settings/general/Models.svelte";
 
 const BREEZE: ModelSource = {
   kind: "repository",

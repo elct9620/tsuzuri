@@ -2,14 +2,17 @@
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { editingPort } from "../backend/editing";
-import { type ComparedRow, ProjectFeed } from "../backend/project";
-import { EditingSession } from "../editor";
-import { setInterfaceLanguage, t } from "../i18n";
-import { pageContext } from "./context";
-import { EditorComparison } from "./editor-comparison.svelte";
-import { notifications, showNotifications } from "./test-notifications";
-import VersionsDialog from "./VersionsDialog.svelte";
+import { editingPort } from "#/backend/editing.ts";
+import { type ComparedRow, ProjectFeed } from "#/backend/project.ts";
+import { EditingSession } from "#/editor/index.ts";
+import { setInterfaceLanguage, t } from "#/i18n.ts";
+import { pageContext } from "#/components/context.ts";
+import { EditorComparison } from "#/components/editor-comparison.svelte.ts";
+import {
+  notifications,
+  showNotifications,
+} from "#/components/test-notifications.ts";
+import VersionsDialog from "#/components/VersionsDialog.svelte";
 
 describe("VersionsDialog", () => {
   let versionsDialog: VersionsDialog;

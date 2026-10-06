@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { diarize } from "../backend/diarization";
-  import type { ProjectView } from "../backend/project";
-  import { modelSettings } from "../backend/toolchain";
-  import { t } from "../i18n";
-  import { sourceFileName } from "../ui/models";
-  import { notifyDiarization } from "../ui/notification.svelte";
-  import { projectFeed, taskRun } from "./context";
+  import { diarize } from "#/backend/diarization.ts";
+  import type { ProjectView } from "#/backend/project.ts";
+  import { modelSettings } from "#/backend/toolchain.ts";
+  import { t } from "#/i18n.ts";
+  import { sourceFileName } from "#/ui/models.ts";
+  import { notifyDiarization } from "#/ui/notification.svelte.ts";
+  import { projectFeed, taskRun } from "#/components/context.ts";
 
   const feed = projectFeed();
   const run = taskRun();

@@ -7,11 +7,11 @@
     type ModelSettingsView,
     type ModelSlot as Slot,
     type ModelSource,
-  } from "../../../backend/toolchain";
-  import { t } from "../../../i18n";
-  import { sourceName, type HubFile } from "../../../ui/models";
-  import { notifyFailure } from "../../../ui/notification.svelte";
-  import ModelSlot from "../ModelSlot.svelte";
+  } from "#/backend/toolchain.ts";
+  import { t } from "#/i18n.ts";
+  import { sourceName, type HubFile } from "#/ui/models.ts";
+  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import ModelSlot from "#/components/settings/ModelSlot.svelte";
 
   interface Props {
     /** Opens the Repository dialog for a slot, answering the file picked, or none. */

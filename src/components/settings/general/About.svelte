@@ -1,9 +1,9 @@
 <script lang="ts">
   import Heart from "@lucide/svelte/icons/heart";
 
-  import { openReleases, openSponsorship } from "../../../backend/about";
-  import { t } from "../../../i18n";
-  import { notifyFailure } from "../../../ui/notification.svelte";
+  import { openReleases, openSponsorship } from "#/backend/about.ts";
+  import { t } from "#/i18n.ts";
+  import { notifyFailure } from "#/ui/notification.svelte.ts";
 
   interface Props {
     /** Opens the full License Notice. */

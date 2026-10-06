@@ -47,7 +47,7 @@
   import {
     type Layout,
     hasUnfoldedCurrentRow,
-  } from "#/components/EditorLayout.svelte";
+  } from "#/state/layout-choice.svelte.ts";
   import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import { resourceOffers } from "#/actions/segment-changes.ts";
   import RemovalRow from "#/components/RemovalRow.svelte";

@@ -6,6 +6,7 @@ How the editor's regions are arranged while the layouts are tried side by side. 
 
 - `src/components/Preview.test.ts`
 - `src/components/current-segment.test.ts`
+- `src/page.test.ts`
 
 ## `LY-001` Showing the Current Segment beside the video
 
@@ -99,3 +100,39 @@ In the layouts without the card, the row being edited carries what the card show
 | Given | Layout V2, a Current Resource with a media file and two Segments |
 | When | the second Segment's row is clicked |
 | Then | the Preview shows no Current Segment card |
+
+## `LY-012` Laying out the editor as the Layout chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the page |
+| When | Layout V3 is chosen in the Preferences tab |
+| Then | the editor takes Layout V3 |
+
+## `LY-013` Keeping the Layout chosen for the next time
+
+| Step | Statement |
+| --- | --- |
+| Given | Layout V3 chosen in the Preferences tab |
+| When | the page is drawn again |
+| Then | the editor takes Layout V3 |
+
+## `LY-014` Starting with Layout V1
+
+The editor as it was before any layout was tried stays the start.
+
+| Step | Statement |
+| --- | --- |
+| Given | no Layout chosen |
+| When | the page is drawn |
+| Then | the editor takes Layout V1 |
+
+## `LY-015` Playing on as the Layout changes
+
+The layouts move the regions on a grid, so the one player is never moved through the page.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, playing at 3 s |
+| When | Layout V2 is chosen in the Preferences tab |
+| Then | the same player plays on from 3 s |

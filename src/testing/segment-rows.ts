@@ -15,7 +15,7 @@ import type ShiftDialog from "#/components/ShiftDialog.svelte";
 import type SpeakersDialog from "#/components/SpeakersDialog.svelte";
 import SegmentList from "#/components/SegmentList.svelte";
 import SegmentRows from "#/components/SegmentRows.svelte";
-import type { Layout } from "#/components/EditorLayout.svelte";
+import type { Layout } from "#/state/layout-choice.svelte.ts";
 import type TranscriptionDialog from "#/components/TranscriptionDialog.svelte";
 import type TranslationDialog from "#/components/TranslationDialog.svelte";
 

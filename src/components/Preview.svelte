@@ -45,7 +45,7 @@
   import { PreviewScreen } from "#/ui/preview-screen.ts";
   import type { CaptionChoices } from "#/state/caption-choices.svelte.ts";
   import PlayerControls from "#/components/PlayerControls.svelte";
-  import type { Layout } from "#/components/EditorLayout.svelte";
+  import type { Layout } from "#/state/layout-choice.svelte.ts";
 
   let {
     playback,
@@ -355,8 +355,9 @@
   class="@container border-b border-base-300 p-3"
   hidden={source === null || fold.isPlayerFolded}
 >
+  <!-- A narrow Preview, as in a side column, stacks the video above its controls -->
   <div
-    class="flex gap-3 data-has-picture:h-[min(30vh,calc((100cqw_-_var(--spacing)*3)*0.4*var(--picture-ratio)))] data-has-picture:min-h-40"
+    class="flex gap-3 data-has-picture:h-[min(30vh,calc((100cqw_-_var(--spacing)*3)*0.4*var(--picture-ratio)))] data-has-picture:min-h-40 @max-xl:flex-col @max-xl:data-has-picture:h-auto @max-xl:[&>:first-child]:flex-none @max-xl:[&>:first-child]:[aspect-ratio:1/var(--picture-ratio,0.5625)]"
     data-has-picture={pictureRatio !== null && !isAway ? "" : undefined}
     style:--picture-ratio={pictureRatio ?? undefined}
     bind:this={screenRow}

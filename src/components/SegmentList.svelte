@@ -22,7 +22,7 @@
   import { editingSession } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { ViewChoices } from "#/state/view-choices.svelte.ts";
-  import type { Layout } from "#/components/EditorLayout.svelte";
+  import type { Layout } from "#/state/layout-choice.svelte.ts";
   import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import SearchBar from "#/components/SearchBar.svelte";
   import SegmentRows from "#/components/SegmentRows.svelte";

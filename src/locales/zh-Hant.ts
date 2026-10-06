@@ -293,6 +293,13 @@ const zhHant: typeof en = {
     notRestored: "沒有還原",
   },
   preferences: {
+    layout: "版面",
+    layouts: {
+      v1: "V1：上排，目前段落卡片",
+      v2: "V2：上排，展開目前列",
+      v3: "V3：側欄，展開目前列",
+    },
+    layoutHint: "試用中的排法，選定一種後這個選項會移除。",
     choosing: "播放中換到另一段時",
     pausing: "暫停",
     fromStart: "從頭",

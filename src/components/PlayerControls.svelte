@@ -31,7 +31,7 @@
   import {
     type Layout,
     hasUnfoldedCurrentRow,
-  } from "#/components/EditorLayout.svelte";
+  } from "#/state/layout-choice.svelte.ts";
 
   let {
     playback,

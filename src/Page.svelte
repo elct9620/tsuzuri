@@ -25,6 +25,7 @@
   import { PreviewFold } from "#/state/preview-fold.svelte.ts";
   import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
   import { ViewChoices } from "#/state/view-choices.svelte.ts";
+  import { LayoutChoice } from "#/state/layout-choice.svelte.ts";
   import ReplacementDialog from "#/components/ReplacementDialog.svelte";
   import { ResourceDock } from "#/state/resource-dock.svelte.ts";
   import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
@@ -64,6 +65,7 @@
   const fold = new PreviewFold();
   const captionChoices = new CaptionChoices();
   const viewChoices = new ViewChoices();
+  const layoutChoice = new LayoutChoice();
   const placeholders = new ResourcePlaceholders();
   const feed = projectFeed();
   const comparison = editorComparison();
@@ -141,7 +143,7 @@
       </div>
       <EditorLayout
         {project}
-        layout="v1"
+        layout={layoutChoice.layout}
         {playback}
         {fold}
         {captionChoices}
@@ -162,6 +164,7 @@
   bind:this={settingsDialog}
   pick={(slot) => repositoryDialog.pick(slot)}
   openLicenses={() => licensesDialog.open()}
+  {layoutChoice}
 />
 <RepositoryDialog bind:this={repositoryDialog} />
 <LicensesDialog bind:this={licensesDialog} />

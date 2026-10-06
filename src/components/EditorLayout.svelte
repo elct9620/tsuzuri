@@ -1,24 +1,12 @@
 <!--
   @component
   The editor's regions — the Preview's player, the timeline and the Segment list — laid out as the
-  Layout asks. Each Layout only moves the regions on a grid, never through the page, so the one
+  Layout chosen asks. Each Layout only moves the regions on a grid, never through the page, so the one
   player keeps playing as they move; only the Segment list scrolls.
 -->
-<script module lang="ts">
-  /**
-   * The arrangements of the editor's regions on trial, until one is kept: V1 shows the Current
-   * Segment's card beside the video, V2 unfolds its row in the Segment list instead.
-   */
-  export type Layout = "v1" | "v2";
-
-  /** Whether the Current Segment's row unfolds to carry what the card would show. */
-  export function hasUnfoldedCurrentRow(layout: Layout): boolean {
-    return layout !== "v1";
-  }
-</script>
-
 <script lang="ts">
   import type { ProjectView } from "#/ipc/project.ts";
+  import type { Layout } from "#/state/layout-choice.svelte.ts";
   import type { CaptionChoices } from "#/state/caption-choices.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
@@ -57,14 +45,20 @@
   }
 </script>
 
+<!-- V3 sets the list beside the player in a wide editor, the waveform beneath both; narrower, it
+     lays out as V2 does -->
 <div
-  class="grid min-h-0 flex-1 grid-rows-[auto_auto_minmax(0,1fr)] [grid-template-areas:'preview'_'timeline'_'list']"
+  class="group grid min-h-0 flex-1 grid-rows-[auto_auto_minmax(0,1fr)] [grid-template-areas:'preview'_'timeline'_'list'] data-[layout=v3]:@5xl:grid-cols-[minmax(0,1fr)_auto] data-[layout=v3]:@5xl:grid-rows-[minmax(0,1fr)_auto] data-[layout=v3]:@5xl:[grid-template-areas:'list_preview'_'timeline_timeline']"
   data-layout={layout}
 >
-  <div class="min-w-0 [grid-area:preview]">
+  <div
+    class="min-w-0 [grid-area:preview] group-data-[layout=v3]:@5xl:overflow-y-auto group-data-[layout=v3]:@5xl:border-l group-data-[layout=v3]:@5xl:border-base-300 group-data-[layout=v3]:@5xl:has-[>:not([hidden])]:w-md"
+  >
     <Preview {playback} {fold} choices={captionChoices} editorLayout={layout} />
   </div>
-  <div class="min-w-0 [grid-area:timeline]">
+  <div
+    class="min-w-0 [grid-area:timeline] group-data-[layout=v3]:@5xl:border-t group-data-[layout=v3]:@5xl:border-base-300"
+  >
     <Timeline {playback} {fold} {viewChoices} />
   </div>
   <div class="min-h-0 min-w-0 overflow-y-auto p-4 [grid-area:list]">

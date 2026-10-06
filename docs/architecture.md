@@ -691,6 +691,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 整體的 `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
 | `Components` | 元件的狀態、指定與還原 |
 | `Logs` | log 目錄與除錯紀錄 |
+| `Layout` | 偏好頁的版面，選定後刪除 |
 | `Preferences` | 偏好頁的換段設定 |
 | `GlossaryDialog` | 詞彙表 modal |
 | `SettingsDialog` | 設定的分頁，專案頁只在開啟時出現 |
@@ -745,6 +746,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `PreviewFold` | Page 建立 | 編輯工具的收起鈕、預覽、時間軸 |
 | `CaptionChoices` | Page 建立 | 預覽、檢視選單 |
 | `ViewChoices` | Page 建立 | 時間軸、段落列、檢視選單 |
+| `LayoutChoice` | Page 建立 | 版面容器、偏好頁 |
 | `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |

@@ -9,6 +9,7 @@ import { mockPageMount } from "#/testing/page.ts";
 import { projectOf } from "#/testing/project.ts";
 import { showNotifications } from "#/testing/notifications.ts";
 import { pageContext } from "#/state/context.ts";
+import { LayoutChoice } from "#/state/layout-choice.svelte.ts";
 import SettingsDialog from "#/components/settings/SettingsDialog.svelte";
 
 describe("SettingsDialog", () => {
@@ -25,7 +26,11 @@ describe("SettingsDialog", () => {
     await feed.refresh();
     render(SettingsDialog, {
       context: pageContext(feed, new EditingSession(editingPort)),
-      props: { pick: async () => null, openLicenses: () => {} },
+      props: {
+        pick: async () => null,
+        openLicenses: () => {},
+        layoutChoice: new LayoutChoice(),
+      },
     });
   }
 

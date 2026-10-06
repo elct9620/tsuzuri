@@ -23,7 +23,7 @@ import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import EditTools from "#/components/EditTools.svelte";
 import { Playback } from "#/state/playback.svelte.ts";
-import type { Layout } from "#/components/EditorLayout.svelte";
+import type { Layout } from "#/state/layout-choice.svelte.ts";
 import { ViewChoices } from "#/state/view-choices.svelte.ts";
 import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
 import Preview from "#/components/Preview.svelte";

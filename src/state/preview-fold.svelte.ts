@@ -1,5 +1,5 @@
 /**
- * Which parts of the Preview are folded away, which the editor bar's buttons turn and the Preview
+ * Which parts of the Preview are folded away, which the edit tools' buttons turn and the Preview
  * shows.
  */
 

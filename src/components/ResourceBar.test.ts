@@ -12,12 +12,11 @@ import { setInterfaceLanguage } from "#/i18n.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
-import EditorBar from "#/components/EditorBar.svelte";
-import { PreviewFold } from "#/state/preview-fold.svelte.ts";
+import ResourceBar from "#/components/ResourceBar.svelte";
 import { saveMark } from "#/state/save-mark.svelte.ts";
 import { notifications, showNotifications } from "#/testing/notifications.ts";
 
-describe("EditorBar", () => {
+describe("ResourceBar", () => {
   let feed: ProjectFeed;
   let project: ProjectView | null;
   let calls: { command: string; args: unknown }[];
@@ -47,13 +46,11 @@ describe("EditorBar", () => {
   /** Draws the bar with `next` as the Project open. */
   async function show(next: ProjectView): Promise<void> {
     project = next;
-    renderFollowingProject(EditorBar, feed, {
+    renderFollowingProject(ResourceBar, feed, {
       props: {
-        openReplacement: () => {},
-        openVersions: () => {},
-        openSearch: () => {},
-        openSpeakers: () => {},
-        fold: new PreviewFold(),
+        openTranscription: () => {},
+        openTranslation: () => {},
+        openDiarization: () => {},
       },
       context: pageContext(feed, new EditingSession(editingPort)),
     });
@@ -156,5 +153,19 @@ describe("EditorBar", () => {
     });
 
     expect(translationChoice().disabled).toBe(true);
+  });
+
+  it("closes the transcribe menu once one of its items is chosen", async () => {
+    await show(projectOf({ resources: [resourceOf({ has_media: true })] }));
+    const item = screen.getByRole<HTMLButtonElement>("button", {
+      name: "轉錄語音",
+    });
+    item.focus();
+
+    item.click();
+
+    expect(item.closest(".dropdown")?.contains(document.activeElement)).toBe(
+      false,
+    );
   });
 });

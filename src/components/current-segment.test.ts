@@ -21,7 +21,7 @@ import { layOutTimeline } from "#/testing/layout.ts";
 import { projectOf } from "#/testing/project.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
-import EditorBar from "#/components/EditorBar.svelte";
+import EditTools from "#/components/EditTools.svelte";
 import { Playback } from "#/state/playback.svelte.ts";
 import Preview from "#/components/Preview.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
@@ -195,7 +195,7 @@ describe("Current Segment", () => {
     scrolledRows = () => scroll.mock.contexts as HTMLElement[];
   }
 
-  /** Draws the editor bar, the Preview with its timeline and the rows, sharing what they play, as the page draws them. */
+  /** Draws the edit tools, the Preview with its timeline and the rows, sharing what they play, as the page draws them. */
   async function drawEditor(): Promise<void> {
     const assembly = assemble();
     session = assembly.session;
@@ -210,7 +210,7 @@ describe("Current Segment", () => {
     );
     playback = new Playback();
     const fold = new PreviewFold();
-    renderFollowingProject(EditorBar, assembly.feed, {
+    renderFollowingProject(EditTools, assembly.feed, {
       props: {
         openReplacement: () => {},
         openVersions: () => {},

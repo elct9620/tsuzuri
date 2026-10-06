@@ -52,7 +52,7 @@ describe("drawPage", () => {
     ["start screen", "region", "Tsuzuri"],
     ["toolbar", "textbox", "toolbar.projectName"],
     ["export menu", "button", "toolbar.export"],
-    ["editor bar's translation choice", "combobox", "edit.translation"],
+    ["resource bar's translation choice", "combobox", "edit.translation"],
     ["Segment list", "list", "edit.segments"],
     ["Preview", "button", "preview.play"],
     ["timeline", "button", "preview.zoomIn"],
@@ -127,32 +127,38 @@ describe("drawPage", () => {
     ).not.toBeNull();
   });
 
-  // A task's toolbar button is found by the name it carries, and its dialog by its heading.
+  // A task's entry in the resource bar is found by the name it carries, and its dialog by its heading.
   it.each([
-    ["transcribe", "toolbar.transcribe", "toolbar.transcribe"],
+    ["transcribe", "toolbar.transcribeSpeech", "toolbar.transcribe"],
     ["translate", "toolbar.translate", "toolbar.translate"],
     ["diarize", "toolbar.diarize", "diarize.title"],
-  ])("opens the %s dialog from the toolbar", async (_part, name, heading) => {
-    const page = document.createElement("div");
-    await setInterfaceLanguage("zh-TW");
-    mockPageMount(projectOf({ resources: [resourceOf({ has_media: true })] }), {
-      model_settings: () => null,
-    });
-    const feed = new ProjectFeed();
-    await feed.refresh();
-    drawTestPage(feed, new EditingSession(editingPort), page);
-    await tick();
+  ])(
+    "opens the %s dialog from the resource bar",
+    async (_part, name, heading) => {
+      const page = document.createElement("div");
+      await setInterfaceLanguage("zh-TW");
+      mockPageMount(
+        projectOf({ resources: [resourceOf({ has_media: true })] }),
+        {
+          model_settings: () => null,
+        },
+      );
+      const feed = new ProjectFeed();
+      await feed.refresh();
+      drawTestPage(feed, new EditingSession(editingPort), page);
+      await tick();
 
-    within(page)
-      .getByRole("button", { hidden: true, name: t(name) })
-      .click();
+      within(page)
+        .getByRole("button", { hidden: true, name: t(name) })
+        .click();
 
-    const dialogs = [...page.querySelectorAll("dialog")].filter(
-      (dialog) =>
-        dialog.querySelector("h3")?.textContent?.trim() === t(heading),
-    );
-    expect(dialogs.map((dialog) => dialog.open)).toEqual([true]);
-  });
+      const dialogs = [...page.querySelectorAll("dialog")].filter(
+        (dialog) =>
+          dialog.querySelector("h3")?.textContent?.trim() === t(heading),
+      );
+      expect(dialogs.map((dialog) => dialog.open)).toEqual([true]);
+    },
+  );
 
   it("writes the translation options in the translate dialog", async () => {
     const page = document.createElement("div");
@@ -168,7 +174,7 @@ describe("drawPage", () => {
     ).not.toBeNull();
   });
 
-  it("writes the progress a task started from the toolbar reports to", async () => {
+  it("writes the progress a task started from the resource bar reports to", async () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
     mockPageMount(projectOf({ resources: [resourceOf({ has_media: true })] }), {
@@ -361,7 +367,7 @@ describe("drawPage", () => {
     ).toBe(true);
   });
 
-  it("opens the replace dialog from the editor bar", async () => {
+  it("opens the replace dialog from the edit tools", async () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
@@ -378,7 +384,7 @@ describe("drawPage", () => {
     ).toBe(true);
   });
 
-  it("opens the search bar from the editor bar", async () => {
+  it("opens the search bar from the edit tools", async () => {
     const page = document.createElement("div");
     document.body.append(page);
     await setInterfaceLanguage("zh-TW");
@@ -398,7 +404,7 @@ describe("drawPage", () => {
     page.remove();
   });
 
-  it("opens the Speaker dialog from the editor bar", async () => {
+  it("opens the Speaker dialog from the edit tools", async () => {
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
@@ -415,7 +421,7 @@ describe("drawPage", () => {
     ).toBe(true);
   });
 
-  it("opens the Versions dialog from the editor bar", async () => {
+  it("opens the Versions dialog from the edit tools", async () => {
     mockPageMount(null, { subtitle_versions: () => [] });
     const page = document.createElement("div");
     await setInterfaceLanguage("zh-TW");

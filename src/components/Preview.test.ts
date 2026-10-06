@@ -13,7 +13,7 @@ import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { projectOf } from "#/testing/project.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
-import EditorBar from "#/components/EditorBar.svelte";
+import EditTools from "#/components/EditTools.svelte";
 import { Playback } from "#/state/playback.svelte.ts";
 import Preview from "#/components/Preview.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
@@ -54,7 +54,7 @@ describe("Preview", () => {
     await settle();
   }
 
-  /** Draws the Preview with the editor bar folding its parts, as the page draws them. */
+  /** Draws the Preview with the edit tools folding its parts, as the page draws them. */
   async function draw(): Promise<void> {
     const assembly = assemble();
     session = assembly.session;
@@ -62,7 +62,7 @@ describe("Preview", () => {
     const playback = new Playback();
     const fold = new PreviewFold();
     player = playback.media;
-    renderFollowingProject(EditorBar, assembly.feed, {
+    renderFollowingProject(EditTools, assembly.feed, {
       props: {
         openReplacement: () => {},
         openVersions: () => {},

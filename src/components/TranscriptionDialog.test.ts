@@ -24,7 +24,7 @@ import {
   setSummaryWords,
 } from "#/testing/translation-options.ts";
 import TranscriptionDialog from "#/components/TranscriptionDialog.svelte";
-import { renderWithToolbar } from "#/testing/toolbar.ts";
+import { renderWithResourceBar } from "#/testing/resource-bar.ts";
 import {
   checkedBarButton,
   drawSegmentList,
@@ -63,7 +63,7 @@ describe("TranscriptionDialog", () => {
   let commandsSent: string[];
 
   const openButton = () =>
-    screen.getByRole<HTMLButtonElement>("button", { name: "轉錄" });
+    screen.getByRole<HTMLButtonElement>("button", { name: "轉錄語音" });
 
   async function hold(next: ProjectView): Promise<void> {
     project = next;
@@ -118,7 +118,12 @@ describe("TranscriptionDialog", () => {
     feed = new ProjectFeed();
     run = new TaskRun();
     const context = pageContext(feed, new EditingSession(editingPort), run);
-    renderWithToolbar(TranscriptionDialog, "openTranscription", context, feed);
+    renderWithResourceBar(
+      TranscriptionDialog,
+      "openTranscription",
+      context,
+      feed,
+    );
     render(TaskProgress, { context });
   });
 
@@ -514,7 +519,7 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
     );
     const assembly = assemble();
     const context = pageContext(assembly.feed, assembly.session);
-    const transcriptionDialog = renderWithToolbar(
+    const transcriptionDialog = renderWithResourceBar(
       TranscriptionDialog,
       "openTranscription",
       context,

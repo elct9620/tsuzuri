@@ -7,7 +7,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 - `src-tauri/src/translation.rs`
 - `src-tauri/src/translation/*.rs`
 - `src-tauri/src/project/glossary.rs`
-- `src/components/EditorBar.test.ts`
+- `src/components/ResourceBar.test.ts`
 - `src/components/TranslationDialog.test.ts`
 - `src/components/TaskProgress.test.ts`
 - `src/components/TranscriptionDialog.test.ts`
@@ -91,7 +91,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource of a media file alone |
-| When | the toolbar shows it |
+| When | the resource bar shows it |
 | Then | translating cannot be started |
 
 ## `TL-013` Naming the target Language to the Model
@@ -823,5 +823,5 @@ One task runs at a time, so a translation asked for while one runs leaves the ru
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a subtitle, while a transcription runs |
-| When | its translation is started from the toolbar |
+| When | its translation is started from the resource bar |
 | Then | no translation is asked for |

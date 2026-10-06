@@ -14,7 +14,7 @@ import {
 } from "#/testing/notifications.ts";
 import { pageContext } from "#/state/context.ts";
 import DiarizationDialog from "#/components/DiarizationDialog.svelte";
-import { renderWithToolbar } from "#/testing/toolbar.ts";
+import { renderWithResourceBar } from "#/testing/resource-bar.ts";
 import { TaskRun } from "#/state/task-run.svelte.ts";
 
 describe("DiarizationDialog", () => {
@@ -25,7 +25,7 @@ describe("DiarizationDialog", () => {
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const openButton = () =>
-    screen.getByRole<HTMLButtonElement>("button", { name: "辨識" });
+    screen.getByRole<HTMLButtonElement>("button", { name: "辨識說話者" });
   const startButton = () =>
     screen.getByRole<HTMLButtonElement>("button", {
       hidden: true,
@@ -84,7 +84,7 @@ describe("DiarizationDialog", () => {
     });
     feed = new ProjectFeed();
     run = new TaskRun();
-    renderWithToolbar(
+    renderWithResourceBar(
       DiarizationDialog,
       "openDiarization",
       pageContext(feed, new EditingSession(editingPort), run),
@@ -97,7 +97,7 @@ describe("DiarizationDialog", () => {
   });
 
   // @behavior DZ-015
-  it("diarizes the Current Resource from the toolbar", async () => {
+  it("diarizes the Current Resource from the transcribe menu", async () => {
     await hold(resourceWithMedia);
     await openDialog();
 

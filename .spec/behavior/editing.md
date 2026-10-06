@@ -5,7 +5,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 ## Includes
 
 - `src/components/SegmentList.test.ts`
-- `src/components/EditorBar.test.ts`
+- `src/components/ResourceBar.test.ts`
 - `src/components/ExportMenu.test.ts`
 - `src/components/ResourceList.test.ts`
 - `src/actions/segment-changes.test.ts`

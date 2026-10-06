@@ -179,7 +179,7 @@ Transcribing leads into translating, so the transcribe dialog offers the same tr
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource of an SRT file alone |
-| When | the toolbar shows it |
+| When | the resource bar shows it |
 | Then | transcribing cannot be started |
 
 ## `TX-022` Asking before overwriting a subtitle
@@ -517,7 +517,7 @@ One task runs at a time, so a transcription asked for while one runs leaves the 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file, while a diarization runs |
-| When | its transcription is started from the toolbar |
+| When | its transcription is started from the transcribe menu |
 | Then | no transcription is asked for |
 
 ## `TX-063` Keeping the translation options through unchecking translating afterwards

@@ -12,7 +12,8 @@
     setSegmentDialogs,
   } from "#/state/context.ts";
   import DiarizationDialog from "#/components/DiarizationDialog.svelte";
-  import EditorBar from "#/components/EditorBar.svelte";
+  import EditTools from "#/components/EditTools.svelte";
+  import ResourceBar from "#/components/ResourceBar.svelte";
   import GlossaryDialog from "#/components/GlossaryDialog.svelte";
   import Notifications from "#/components/Notifications.svelte";
   import Preview from "#/components/Preview.svelte";
@@ -116,18 +117,23 @@
         {recentProjects}
         {openSettings}
         openShortcuts={() => shortcutsDialog.open()}
-        openTranscription={() => transcriptionDialog.open()}
-        openTranslation={() => translationDialog.open()}
-        openDiarization={() => diarizationDialog.open()}
       />
-      <EditorBar
-        {project}
-        openReplacement={() => replacementDialog.open()}
-        openVersions={(subtitle) => versionsDialog.open(subtitle)}
-        openSearch={() => segmentList.openSearch()}
-        openSpeakers={() => speakersDialog.open()}
-        {fold}
-      />
+      <div class="flex items-center gap-2 border-b border-base-300 px-4 py-2">
+        <ResourceBar
+          {project}
+          openTranscription={() => transcriptionDialog.open()}
+          openTranslation={() => translationDialog.open()}
+          openDiarization={() => diarizationDialog.open()}
+        />
+        <EditTools
+          {project}
+          openReplacement={() => replacementDialog.open()}
+          openVersions={(subtitle) => versionsDialog.open(subtitle)}
+          openSearch={() => segmentList.openSearch()}
+          openSpeakers={() => speakersDialog.open()}
+          {fold}
+        />
+      </div>
       <Preview {playback} {fold} />
       <Timeline {playback} {fold} />
       <div class="flex-1 overflow-y-auto p-4">

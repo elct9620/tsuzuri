@@ -1,5 +1,5 @@
 /**
- * The Save Mark beside the Current Resource's name, which the editor bar draws and every edit
+ * The Save Mark beside the Current Resource's name, which the resource bar draws and every edit
  * written shows.
  */
 

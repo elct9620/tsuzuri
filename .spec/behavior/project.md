@@ -559,7 +559,7 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | Step | Statement |
 | --- | --- |
 | Given | a Project whose translation export defaults to `/talks/lecture.en.srt` |
-| When | the translation is exported from the toolbar |
+| When | the translation is exported from the resource bar |
 | Then | the save dialog opens at `/talks/lecture.en.srt` |
 
 ## `PJ-033` Opening a directory from the toolbar

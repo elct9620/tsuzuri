@@ -1,24 +1,16 @@
 <script lang="ts">
-  import AudioLines from "@lucide/svelte/icons/audio-lines";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import FolderOpen from "@lucide/svelte/icons/folder-open";
   import Keyboard from "@lucide/svelte/icons/keyboard";
-  import Languages from "@lucide/svelte/icons/languages";
   import Menu from "@lucide/svelte/icons/menu";
   import PanelLeft from "@lucide/svelte/icons/panel-left";
   import Pencil from "@lucide/svelte/icons/pencil";
   import Settings from "@lucide/svelte/icons/settings";
-  import Users from "@lucide/svelte/icons/users";
 
-  import {
-    currentResource,
-    type ProjectView,
-    type RecentProjectView,
-  } from "#/ipc/project.ts";
+  import type { ProjectView, RecentProjectView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { isComposingKey } from "#/ui/shortcuts.ts";
   import { projectFeed } from "#/state/context.ts";
-  import ExportMenu from "#/components/ExportMenu.svelte";
   import {
     openDirectory,
     openRecent,
@@ -34,50 +26,12 @@
     recentProjects: RecentProjectView[];
     openSettings: () => void;
     openShortcuts: () => void;
-    openTranscription: () => void;
-    openTranslation: () => void;
-    openDiarization: () => void;
   }
 
-  let {
-    project,
-    dock,
-    recentProjects,
-    openSettings,
-    openShortcuts,
-    openTranscription,
-    openTranslation,
-    openDiarization,
-  }: Props = $props();
+  let { project, dock, recentProjects, openSettings, openShortcuts }: Props =
+    $props();
 
   const feed = projectFeed();
-
-  /** The task buttons, each usable only for a Current Resource holding what its task reads. */
-  const taskButtons = $derived.by(() => {
-    const resource = currentResource(project);
-    const hasMedia = resource?.has_media ?? false;
-    const hasSubtitle = resource?.has_subtitle ?? false;
-    return [
-      {
-        Icon: AudioLines,
-        label: t("toolbar.transcribe"),
-        isOffered: hasMedia,
-        open: openTranscription,
-      },
-      {
-        Icon: Languages,
-        label: t("toolbar.translate"),
-        isOffered: hasSubtitle,
-        open: openTranslation,
-      },
-      {
-        Icon: Users,
-        label: t("toolbar.diarize"),
-        isOffered: hasMedia && hasSubtitle,
-        open: openDiarization,
-      },
-    ];
-  });
 
   /**
    * Leaves the name field: Enter writes the name typed there as the field loses focus, and Esc
@@ -183,21 +137,6 @@
         {/if}
       </ul>
     </div>
-
-    {#each taskButtons as { Icon, label, isOffered, open } (label)}
-      <button
-        type="button"
-        class="btn btn-sm"
-        aria-label={label}
-        data-tooltip={label}
-        disabled={!isOffered}
-        onclick={open}
-      >
-        <Icon class="size-4" /><span class="hidden @5xl:inline">{label}</span>
-      </button>
-    {/each}
-
-    <ExportMenu {project} />
 
     <button
       type="button"

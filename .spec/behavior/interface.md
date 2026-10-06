@@ -57,13 +57,13 @@ A Project's Primary Language follows the Interface Language until its directory 
 | When | the Language it stands for is asked |
 | Then | it is `en` |
 
-## `IF-006` Closing a toolbar menu once an item is chosen
+## `IF-006` Closing a bar's menu once an item is chosen
 
 A menu stays open only while focus is inside it, so clicking anywhere else closes it too.
 
 | Step | Statement |
 | --- | --- |
-| Given | an open toolbar menu |
+| Given | an open menu of the toolbar or the resource bar |
 | When | one of its items is chosen |
 | Then | focus leaves the menu |
 

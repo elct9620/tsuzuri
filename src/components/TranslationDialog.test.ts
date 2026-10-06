@@ -26,7 +26,7 @@ import {
   setSummaryWords,
 } from "#/testing/translation-options.ts";
 import TranslationDialog from "#/components/TranslationDialog.svelte";
-import { renderWithToolbar } from "#/testing/toolbar.ts";
+import { renderWithResourceBar } from "#/testing/resource-bar.ts";
 import {
   checkedBarButton,
   drawSegmentList,
@@ -96,7 +96,7 @@ describe("TranslationDialog", () => {
       }
     });
     feed = new ProjectFeed();
-    renderWithToolbar(
+    renderWithResourceBar(
       TranslationDialog,
       "openTranslation",
       pageContext(feed, new EditingSession(editingPort)),
@@ -300,7 +300,7 @@ describe("TranslationDialog", () => {
     const run = new TaskRun();
     cleanup();
     showNotifications();
-    renderWithToolbar(
+    renderWithResourceBar(
       TranslationDialog,
       "openTranslation",
       pageContext(feed, new EditingSession(editingPort), run),

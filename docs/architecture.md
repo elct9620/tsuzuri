@@ -697,9 +697,10 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `Project` 與專案的 `Transcription`、`Models` | 專案頁的設定與模型 |
 | `Models`、`ModelSlot` | 整體的模型來源與下載 |
 | `RepositoryDialog` | Hugging Face 的檔案清單 |
-| `Toolbar` | 名稱、開啟選單、任務與清單按鈕 |
+| `Toolbar` | 名稱、開啟選單、設定與清單按鈕 |
 | `ExportMenu` | 匯出選單與純文字的兩個開關 |
-| `EditorBar` | 資源名稱與譯文選單 |
+| `ResourceBar` | 資源名稱、譯文、資源的任務 |
+| `EditTools` | 搜尋、取代、說話者、版本、收起鈕 |
 | `CompareMenu` | 比較的備份與參照譯文 |
 | `SearchBar` | 搜尋列與符合處標記 |
 | `SegmentList` | 段落的快速鍵與編輯選單 |
@@ -713,7 +714,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `TranscriptionDialog`、`TranslationDialog` | 任務 modal，含重做 |
 | `TranslationOptions` | 兩個任務 modal 共用的翻譯選項 |
 | `DiarizationDialog` | 辨識說話者的 modal |
-| `TaskProgress` | 標題列的任務進度徽章 |
+| `TaskProgress` | 資源列的任務進度徽章 |
 | `ShortcutsDialog` | 快速鍵一覽 |
 | `ReplacementDialog` | 取代 modal |
 | `VersionsDialog` | 版本 modal：備份、比較、還原 |
@@ -738,7 +739,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 最近專案 | Page 讀取 | 起始畫面、工具列 |
 | `ResourceDock` | Page 建立 | 工具列、資源清單 |
 | `Playback` | Page 建立 | 預覽、時間軸、段落列 |
-| `PreviewFold` | Page 建立 | 編輯列的收起鈕、預覽、時間軸 |
+| `PreviewFold` | Page 建立 | 編輯工具的收起鈕、預覽、時間軸 |
 | `CaptionChoices` | Preview 建立 | 預覽、疊字控制 |
 | `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
@@ -746,7 +747,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `EditingState` | 經 context | 段落列、勾選列、目前段落卡、時間軸 |
 | 段落列的欄位 | SegmentRows 經 context | 文字欄位、搜尋列 |
 | 通知的清單 | `notification.svelte.ts` | 所有 Svelte 元件 |
-| `SaveMark` | `save-mark.svelte.ts` | 寫入的編輯、編輯列 |
+| `SaveMark` | `save-mark.svelte.ts` | 寫入的編輯、資源列 |
 
 資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。Page 每讀到一份專案就交給 `EditorComparison` 比較；段落清單畫好列之後，讓搜尋列重新搜尋。
 

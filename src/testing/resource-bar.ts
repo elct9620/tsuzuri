@@ -1,18 +1,17 @@
 import type { Component } from "svelte";
 
 import type { ProjectFeed, ProjectView } from "#/ipc/project.ts";
-import { ResourceDock } from "#/state/resource-dock.svelte.ts";
-import Toolbar from "#/components/Toolbar.svelte";
+import ResourceBar from "#/components/ResourceBar.svelte";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 
-/** The toolbar props each opening the dialog of one task. */
+/** The resource bar props each opening the dialog of one task. */
 type TaskOpener = "openTranscription" | "openTranslation" | "openDiarization";
 
 /**
- * Writes `Dialog` beside the toolbar whose `opener` button opens it, as the page composes them,
+ * Writes `Dialog` beside the resource bar whose `opener` opens it, as the page composes them,
  * both reading `context` and handed each Project `feed` reads.
  */
-export function renderWithToolbar<Exports extends { open: () => unknown }>(
+export function renderWithResourceBar<Exports extends { open: () => unknown }>(
   Dialog: Component<{ project: ProjectView | null }, Exports>,
   opener: TaskOpener,
   context: Map<symbol, unknown>,
@@ -20,13 +19,9 @@ export function renderWithToolbar<Exports extends { open: () => unknown }>(
 ): Exports {
   const component = renderFollowingProject(Dialog, feed, { context });
   const ignore = () => {};
-  renderFollowingProject(Toolbar, feed, {
+  renderFollowingProject(ResourceBar, feed, {
     context,
     props: {
-      dock: new ResourceDock(),
-      recentProjects: [],
-      openSettings: ignore,
-      openShortcuts: ignore,
       openTranscription: ignore,
       openTranslation: ignore,
       openDiarization: ignore,

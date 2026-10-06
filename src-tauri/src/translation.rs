@@ -513,11 +513,11 @@ async fn translate_chosen_segments(
             })
             .collect();
         let is_last_batch = at + 1 == ranges.len();
-        let answer = repair::translate_batch(
+        let translations = translate_lines(
             model,
             job,
             &lines,
-            &translated_pairs,
+            &mut translated_pairs,
             BatchSurroundings {
                 summary: None,
                 preceding_text: (at == 0).then_some(preceding_text.as_deref()).flatten(),
@@ -525,15 +525,37 @@ async fn translate_chosen_segments(
             },
         )
         .await?;
-        for (position, (index, dialogue)) in range.zip(lines) {
-            if let Some(translation) = answer.get(&index) {
-                translated_pairs.push((dialogue.to_string(), translation.clone()));
-                segments[index].translation = Some(labelled_texts[position].reattach(translation));
+        for ((position, (index, _)), translation) in range.zip(lines).zip(translations) {
+            if let Some(translation) = translation {
+                segments[index].translation = Some(labelled_texts[position].reattach(&translation));
             }
         }
         on_batch(&segments, span_at(at + 1));
     }
     Ok(segments)
+}
+
+/// Translates one Batch of `lines`, each a Segment's index and its dialogue, after the lines in
+/// `translated_pairs`, and answers each line's translation in order, none for a line the Model
+/// left out; each line translated joins `translated_pairs`.
+async fn translate_lines(
+    model: &TranslationModel,
+    job: &TranslationJob<'_>,
+    lines: &[(usize, &str)],
+    translated_pairs: &mut Vec<(String, String)>,
+    surroundings: BatchSurroundings<'_>,
+) -> Result<Vec<Option<String>>, Failure> {
+    let answer = repair::translate_batch(model, job, lines, translated_pairs, surroundings).await?;
+    Ok(lines
+        .iter()
+        .map(|(index, dialogue)| {
+            let translation = answer.get(index).cloned();
+            if let Some(translation) = &translation {
+                translated_pairs.push((dialogue.to_string(), translation.clone()));
+            }
+            translation
+        })
+        .collect())
 }
 
 /// The source text of the Split Sentence `first` goes on from, the part of it before `first`;
@@ -584,24 +606,23 @@ async fn translate_segments(
             .clone()
             .map(|index| (index, labelled_texts[index].dialogue.as_str()))
             .collect();
-        let answer = repair::translate_batch(
+        let translations = translate_lines(
             model,
             job,
             &lines,
-            &translated_pairs,
+            &mut translated_pairs,
             BatchSurroundings {
                 summary: summary.as_deref(),
                 ..BatchSurroundings::default()
             },
         )
         .await?;
-        for (index, dialogue) in lines {
-            let translation = answer.get(&index).ok_or_else(|| Failure::LlamaRequest {
+        for ((index, _), translation) in lines.into_iter().zip(translations) {
+            let translation = translation.ok_or_else(|| Failure::LlamaRequest {
                 detail: format!("answered without line {index}"),
             })?;
-            translated_pairs.push((dialogue.to_string(), translation.clone()));
             translated_segments.push(Segment {
-                translation: Some(labelled_texts[index].reattach(translation)),
+                translation: Some(labelled_texts[index].reattach(&translation)),
                 ..job.segments[index].clone()
             });
         }

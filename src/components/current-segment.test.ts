@@ -697,7 +697,7 @@ describe("Current Segment", () => {
     expect([session.cursor.index, media().paused]).toEqual([1, false]);
   });
 
-  // @behavior PV-036
+  // @behavior LY-001
   it("shows the Current Segment's number, times, text and translation beside the video", async () => {
     await show(twoSegments);
 
@@ -711,7 +711,7 @@ describe("Current Segment", () => {
     ]);
   });
 
-  // @behavior PV-097
+  // @behavior LY-002
   it("names the Current Segment's Speaker beside the video", async () => {
     await show(spokenSegments);
 
@@ -720,7 +720,7 @@ describe("Current Segment", () => {
     expect(currentSpeaker()).toBe("小明");
   });
 
-  // @behavior PV-098
+  // @behavior LY-003
   it("names no one beside the video for a Segment without a Speaker", async () => {
     await show(spokenSegments);
     chooseRow(1);
@@ -730,7 +730,7 @@ describe("Current Segment", () => {
     expect(currentSpeaker()).toBeNull();
   });
 
-  // @behavior PV-037
+  // @behavior LY-004
   it("follows an edit of the Current Segment beside the video", async () => {
     await show(twoSegments);
     chooseRow(1);

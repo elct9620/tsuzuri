@@ -1154,7 +1154,7 @@ describe("Preview", () => {
       ]).toEqual([true, false, 3]);
     });
 
-    // @behavior PV-128
+    // @behavior LY-005
     it("shows only the controls, without the Current Segment's card, while the video is away", async () => {
       await show(projectWithMedia());
 
@@ -1182,7 +1182,7 @@ describe("Preview", () => {
       expect(screenRow().hasAttribute("data-has-picture")).toBe(true);
     });
 
-    // @behavior PV-139
+    // @behavior LY-006
     it("shows the Current Segment's card again as the video comes back", async () => {
       await show(projectWithMedia());
       pressVideoWindowButton();

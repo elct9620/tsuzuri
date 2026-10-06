@@ -28,10 +28,6 @@
   } from "#/ui/volume.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import CurrentSegmentCard from "#/components/CurrentSegmentCard.svelte";
-  import {
-    type Layout,
-    hasUnfoldedCurrentRow,
-  } from "#/state/layout-choice.svelte.ts";
 
   let {
     playback,
@@ -39,7 +35,6 @@
     clock,
     isPlaying,
     isAway,
-    editorLayout,
     toggleVideoWindow,
   }: {
     playback: Playback;
@@ -49,7 +44,6 @@
     isPlaying: boolean;
     /** Whether the video is out in the Video Window. */
     isAway: boolean;
-    editorLayout: Layout;
     toggleVideoWindow: () => void;
   } = $props();
 
@@ -140,7 +134,7 @@
         >
       </div>
     </div>
-    {#if !isAway && !hasUnfoldedCurrentRow(editorLayout)}
+    {#if !isAway}
       <div class="divider my-0"></div>
       <CurrentSegmentCard {segments} {playback} />
     {/if}

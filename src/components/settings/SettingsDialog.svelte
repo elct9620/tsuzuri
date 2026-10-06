@@ -11,9 +11,7 @@
   import GeneralModels from "#/components/settings/general/Models.svelte";
   import GeneralTranscription from "#/components/settings/general/Transcription.svelte";
   import Logs from "#/components/settings/general/Logs.svelte";
-  import Layout from "#/components/settings/preferences/Layout.svelte";
   import Preferences from "#/components/settings/preferences/Preferences.svelte";
-  import type { LayoutChoice } from "#/state/layout-choice.svelte.ts";
   import Project from "#/components/settings/project/Project.svelte";
   import ProjectModels from "#/components/settings/project/Models.svelte";
   import ProjectTranscription from "#/components/settings/project/Transcription.svelte";
@@ -25,10 +23,9 @@
     pick: (slot: ModelSlot) => Promise<HubFile | null>;
     /** Opens the full License Notice. */
     openLicenses: () => void;
-    layoutChoice: LayoutChoice;
   }
 
-  let { pick, openLicenses, layoutChoice }: Props = $props();
+  let { pick, openLicenses }: Props = $props();
 
   const feed = projectFeed();
   let dialog: HTMLDialogElement;
@@ -105,7 +102,6 @@
         onchange={() => (tab = "preferences")}
       />
       <div class="tab-content pt-4">
-        <Layout {layoutChoice} />
         <Preferences />
       </div>
     </div>

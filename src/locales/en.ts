@@ -302,12 +302,6 @@ const en = {
     notRestored: "Not restored",
   },
   preferences: {
-    layout: "Layout",
-    layouts: {
-      v1: "V1: top row, Current Segment card",
-      v3: "V3: side column, current row unfolded",
-    },
-    layoutHint: "Layouts on trial; this choice goes once one is kept.",
     choosing: "Choosing another Segment while playing, from",
     pausing: "Pause",
     fromStart: "From start",

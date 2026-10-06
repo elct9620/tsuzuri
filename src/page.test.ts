@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
-import { clearMocks, mockConvertFileSrc } from "@tauri-apps/api/mocks";
-import { flushSync, tick, unmount } from "svelte";
+import { clearMocks } from "@tauri-apps/api/mocks";
+import { tick, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "#/assembly.ts";
 import { editingPort } from "#/ipc/editing.ts";
@@ -741,77 +741,6 @@ describe("Page", () => {
       language: null,
       left: "ep01.20260925T030000Z.srt",
       right: null,
-    });
-  });
-
-  describe("choosing a Layout", () => {
-    const takenLayout = () =>
-      document.querySelector<HTMLElement>("[data-layout]")?.dataset.layout;
-
-    function chooseLayout(layout: string): void {
-      const select = screen.getByRole<HTMLSelectElement>("combobox", {
-        hidden: true,
-        name: t("preferences.layout"),
-      });
-      select.value = layout;
-      select.dispatchEvent(new Event("change", { bubbles: true }));
-      flushSync();
-    }
-
-    beforeEach(() => {
-      localStorage.clear();
-    });
-
-    // @behavior LY-012
-    it("lays out the editor as the Layout chosen", async () => {
-      await start();
-
-      chooseLayout("v3");
-
-      expect(takenLayout()).toBe("v3");
-    });
-
-    // @behavior LY-013
-    it("keeps the Layout chosen for the next time the page is drawn", async () => {
-      await start();
-      chooseLayout("v3");
-      stop();
-      unmount(page);
-
-      await start();
-
-      expect(takenLayout()).toBe("v3");
-    });
-
-    // @behavior LY-014
-    it("starts with Layout V1", async () => {
-      await start();
-
-      expect(takenLayout()).toBe("v1");
-    });
-
-    // @behavior LY-015
-    it("plays on from where it was as the Layout changes", async () => {
-      mockConvertFileSrc("macos");
-      await start();
-      await hold(projectOf({ media: "/talks/ep01.mp4" }));
-      const player = document.querySelector("video")!;
-      Object.defineProperty(player, "duration", {
-        value: 10,
-        configurable: true,
-      });
-      player.currentTime = 3;
-      await player.play();
-
-      chooseLayout("v3");
-      await settle();
-
-      const shown = document.querySelector("video");
-      expect([shown === player, player.currentTime, player.paused]).toEqual([
-        true,
-        3,
-        false,
-      ]);
     });
   });
 });

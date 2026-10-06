@@ -8,7 +8,7 @@
 -->
 <script lang="ts">
   import EllipsisVertical from "@lucide/svelte/icons/ellipsis-vertical";
-  import { type Snippet, untrack } from "svelte";
+  import { untrack } from "svelte";
 
   import type { Segment } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
@@ -72,7 +72,6 @@
     isTypingKept,
     isSpeakerColumnShown,
     comparison,
-    details,
   }: {
     segment: Segment;
     index: number;
@@ -93,8 +92,6 @@
     isSpeakerColumnShown: boolean;
     /** What the editor's comparison shows on this row. */
     comparison: SegmentComparison;
-    /** What the row unfolds to show beneath its text, as the Current Segment's may. */
-    details?: Snippet<[Segment]>;
   } = $props();
 
   const feed = projectFeed();
@@ -132,11 +129,6 @@
   /** Brings the row into view, as it becomes current or is played while playback is followed. */
   export function bringIntoView(): void {
     row?.scrollIntoView({ block: "nearest" });
-  }
-
-  /** Where the row's top stands on screen, or none while it is not drawn. */
-  export function topOnScreen(): number | null {
-    return row?.getBoundingClientRect().top ?? null;
   }
 
   /** The row's text or translation field, or none for a translation not shown. */
@@ -409,7 +401,6 @@
         <span data-cue>{text}</span>
       </p>
     {/each}
-    {@render details?.(segment)}
   </div>
   <div class="dropdown dropdown-left">
     <div

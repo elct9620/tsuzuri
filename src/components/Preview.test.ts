@@ -30,8 +30,6 @@ describe("Preview", () => {
   let windowCalls: [string, unknown][];
   let isFullscreen: boolean;
   /** The Preview's root element, holding the player's row and the timeline. */
-  /** What the Preview plays, shared with the regions laid out around it. */
-  let playback: Playback;
   let panel: () => HTMLElement;
   /** The timeline beside the Preview's player, as the page draws it. */
   let timelineFrame: () => HTMLElement;
@@ -63,7 +61,7 @@ describe("Preview", () => {
     const assembly = assemble();
     session = assembly.session;
     const context = pageContext(assembly.feed, assembly.session);
-    playback = new Playback();
+    const playback = new Playback();
     const fold = new PreviewFold();
     const captionChoices = new CaptionChoices();
     const viewChoices = new ViewChoices();
@@ -1166,17 +1164,7 @@ describe("Preview", () => {
       ]).toEqual([true, false, 3]);
     });
 
-    it("tells the regions laid out around it while the video is away", async () => {
-      await show(projectWithMedia());
-
-      pressVideoWindowButton();
-      const isAwayOpen = playback.isVideoAway;
-      pressVideoWindowButton();
-
-      expect([isAwayOpen, playback.isVideoAway]).toEqual([true, false]);
-    });
-
-    // @behavior LY-005
+    // @behavior PV-128
     it("shows only the controls, without the Current Segment's card, while the video is away", async () => {
       await show(projectWithMedia());
 
@@ -1204,7 +1192,7 @@ describe("Preview", () => {
       expect(screenRow().hasAttribute("data-has-picture")).toBe(true);
     });
 
-    // @behavior LY-006
+    // @behavior PV-139
     it("shows the Current Segment's card again as the video comes back", async () => {
       await show(projectWithMedia());
       pressVideoWindowButton();

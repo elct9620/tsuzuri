@@ -245,6 +245,24 @@ Someone cutting in speaks over the Segment already shown, so every Segment being
 | When | the Video Window button is pressed |
 | Then | the video plays on from 3 s in a window of its own |
 
+## `PV-128` Leaving only the controls above the timeline while the video is away
+
+Once the video has left, the Current Segment's card repeats the row being edited in the list, so the Preview keeps only its controls and gives the height to the editor.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video |
+| When | the Video Window button is pressed |
+| Then | the Preview shows its controls without the Current Segment's card |
+
+## `PV-139` Showing the Current Segment's card again as the video comes back
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window |
+| When | the Video Window button is pressed again |
+| Then | the Preview shows the Current Segment's card beside the video |
+
 ## `PV-129` Showing the Segment being played over the video in the Video Window
 
 | Step | Statement |
@@ -644,6 +662,38 @@ Space plays and stops the media and the timeline still selects and retimes Segme
 | Given | the player and its controls folded away, the media paused |
 | When | Space is pressed outside a text field |
 | Then | the media plays |
+
+## `PV-036` Showing the Current Segment beside the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments |
+| When | the second Segment's row is clicked |
+| Then | the card beside the video shows #2 with its times, text and translation |
+
+## `PV-097` Naming the Current Segment's Speaker beside the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments, the second said by `小明` |
+| When | the second Segment's row is clicked |
+| Then | the card beside the video names `小明` |
+
+## `PV-098` Naming no one beside the video for a Segment without a Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment current, said by `小明` |
+| When | the first Segment's row, said by no one, is clicked |
+| Then | the card beside the video names no Speaker |
+
+## `PV-037` Following an edit of the Current Segment beside the video
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment current, reading `今天` |
+| When | its text is changed to `明天` |
+| Then | the card beside the video shows `明天` |
 
 ## `PV-038` Clearing the playing mark when the media stops
 

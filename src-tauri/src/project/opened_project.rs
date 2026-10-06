@@ -78,11 +78,8 @@ impl Project {
     pub fn show_translation(&mut self, language: Option<Language>) -> Result<(), Failure> {
         let speaker_names = self.speaker_names(language);
         let current = self.current.as_mut().ok_or(Failure::NoResource)?;
-        let resource = self
-            .resources
-            .iter()
-            .find(|resource| resource.name == current.name)
-            .ok_or(Failure::NoResource)?;
+        let resource =
+            resource_by_name(&self.resources, &current.name).ok_or(Failure::NoResource)?;
         resource.carry_translations(&mut current.transcript.segments, language, &speaker_names)?;
         current.translation = language;
         self.remember_subtitles()
@@ -317,8 +314,7 @@ impl Project {
         &mut self,
         take: impl FnOnce(&mut UndoHistory, SubtitleSnapshot) -> Option<SubtitleSnapshot>,
     ) -> Result<(), Failure> {
-        let current = self.current()?;
-        let (name, translation) = (current.name.clone(), current.translation);
+        let name = self.current()?.name.clone();
         let now = self.subtitle_snapshot(&name)?;
         let Some(history) = self.undo_histories.get_mut(&name) else {
             return Ok(());
@@ -327,8 +323,7 @@ impl Project {
             return Ok(());
         };
         files::put_back(&now, &snapshot)?;
-        self.pair_again(Some(&name))?;
-        self.read_again_showing(&name, translation)?;
+        self.read_current_again()?;
         self.write_bilingual_subtitles(&name, None)
     }
 
@@ -695,19 +690,16 @@ impl Project {
     pub(super) fn change_segments(&mut self, change: SegmentChange) -> Result<(), Failure> {
         self.read_current_transcript()?;
         let current = self.current()?;
-        let (name, translation) = (current.name.clone(), current.translation);
+        let name = current.name.clone();
         let mut original = current.transcript.clone();
         change.clone().apply(&mut original.segments)?;
         let resource = self.resource(&name)?;
         let mut translations = Vec::new();
         for (language, path) in &resource.translations {
-            let mut translation =
-                resource.transcript(Some(*language), &self.speaker_names(Some(*language)))?;
+            let speaker_names = self.speaker_names(Some(*language));
+            let mut translation = resource.transcript(Some(*language), &speaker_names)?;
             change.clone().apply(&mut translation.segments)?;
-            translations.push((
-                path.clone(),
-                translation_srt(&translation, self.speaker_names(Some(*language))),
-            ));
+            translations.push((path.clone(), translation_srt(&translation, speaker_names)));
         }
         self.current_mut()?.transcript = original;
         self.write_subtitle(WrittenText::Original)?;
@@ -715,8 +707,7 @@ impl Project {
             self.back_up_first_change(&path)?;
             files::write_text(&path, srt)?;
         }
-        self.pair_again(Some(&name))?;
-        self.read_again_showing(&name, translation)?;
+        self.read_current_again()?;
         self.write_bilingual_subtitles(&name, None)
     }
 

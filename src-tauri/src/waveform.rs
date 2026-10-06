@@ -5,7 +5,7 @@ use serde::Serialize;
 use crate::conversion::{conversion_args, wav_chunks};
 use crate::failure::Failure;
 use crate::project::CurrentProject;
-use crate::steps::{run_step, Steps, WAVEFORM_STEP};
+use crate::steps::{run_step, Steps, WorkDir, WAVEFORM_STEP};
 
 pub mod commands;
 
@@ -32,9 +32,9 @@ pub async fn extract(
     work: &Path,
 ) -> Result<Waveform, Failure> {
     let media = project.current_media()?;
-    std::fs::create_dir_all(work)?;
+    let _work_dir = WorkDir::try_new(work)?;
     let wav = work.join("waveform.wav");
-    let conversion = run_step(
+    run_step(
         steps,
         WAVEFORM_STEP,
         ffmpeg,
@@ -42,13 +42,12 @@ pub async fn extract(
         |_| {},
         |_| {},
     )
-    .await;
-    let wav_bytes = conversion.and_then(|()| Ok(std::fs::read(&wav)?));
-    let _ = std::fs::remove_dir_all(work);
+    .await?;
+    let wav_bytes = std::fs::read(&wav)?;
     Ok(Waveform {
         media,
         peaks_per_second: PEAKS_PER_SECOND,
-        peaks: peaks(&pcm_samples(&wav_bytes?)),
+        peaks: peaks(&pcm_samples(&wav_bytes)),
     })
 }
 

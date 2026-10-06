@@ -262,11 +262,9 @@ async fn fetch_model_status(
         .get(format!("{base_url}/models"))
         .send()
         .await
-        .and_then(reqwest::Response::error_for_status)
-        .map_err(request_failure)?
+        .and_then(reqwest::Response::error_for_status)?
         .json()
-        .await
-        .map_err(request_failure)?;
+        .await?;
     list.data
         .into_iter()
         .find(|entry| entry.id == MODEL_NAME)
@@ -289,8 +287,7 @@ async fn request_load(
             .json(&json!({ "model": MODEL_NAME }))
             .send()
             .await
-            .and_then(reqwest::Response::error_for_status)
-            .map_err(request_failure)?;
+            .and_then(reqwest::Response::error_for_status)?;
     }
     let deadline = Instant::now() + timeout;
     loop {
@@ -321,8 +318,7 @@ async fn request_unload(base_url: &str) -> Result<(), Failure> {
         .json(&json!({ "model": MODEL_NAME }))
         .send()
         .await
-        .and_then(reqwest::Response::error_for_status)
-        .map_err(request_failure)?;
+        .and_then(reqwest::Response::error_for_status)?;
     let deadline = Instant::now() + UNLOAD_TIMEOUT;
     while fetch_model_status(&client, base_url).await?.value != "unloaded" {
         if Instant::now() >= deadline {
@@ -331,12 +327,6 @@ async fn request_unload(base_url: &str) -> Result<(), Failure> {
         tokio::time::sleep(STATUS_POLL).await;
     }
     Ok(())
-}
-
-fn request_failure(error: reqwest::Error) -> Failure {
-    Failure::LlamaRequest {
-        detail: error.to_string(),
-    }
 }
 
 #[cfg(test)]

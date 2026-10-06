@@ -452,10 +452,10 @@ impl CurrentProject {
 
     /// The Current Resource's media file.
     pub fn current_media(&self) -> Result<PathBuf, Failure> {
-        let held_project = self.lock();
-        let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
-        let resource = project.resource(&project.current()?.name)?;
-        resource.media.clone().ok_or(Failure::NoMedia)
+        self.read_project(|project| {
+            let resource = project.resource(&project.current()?.name)?;
+            resource.media.clone().ok_or(Failure::NoMedia)
+        })
     }
 
     /// Holds the Current Resource for a transcription to write, answering what it starts from:

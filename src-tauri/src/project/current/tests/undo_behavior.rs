@@ -193,7 +193,7 @@ fn refuses_an_undo_over_a_subtitle_changed_elsewhere() {
     assert_eq!(
         (
             result,
-            file_text(&dir, "ep01.srt"),
+            read(&dir, "ep01.srt"),
             current.view().unwrap().has_undo()
         ),
         (Err(Failure::ChangedElsewhere), cue("外面改的"), false)

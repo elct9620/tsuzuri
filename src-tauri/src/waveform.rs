@@ -79,18 +79,15 @@ fn peaks(samples: &[i16]) -> Vec<f32> {
 
 #[cfg(all(test, unix))]
 mod tests {
-    use crate::test_support::build_mock_app;
-    use tauri::test::{mock_builder, MockRuntime};
+    use crate::test_support::mode_app;
+    use tauri::test::MockRuntime;
     use tauri::Manager;
 
     use super::*;
     use crate::language::Language;
     use crate::processes::{AppPorts, Processes};
     use crate::project::Project;
-    use crate::test_support::{write_executable, TempDir};
-
-    const FAILING_FFMPEG: &str =
-        "#!/bin/sh\necho 'Invalid data found when processing input' >&2\nexit 1\n";
+    use crate::test_support::{write_executable, TempDir, FAILING_FFMPEG};
 
     /// A mono 16-bit WAV of `samples`, with a `LIST` chunk before `data` as ffmpeg writes one.
     fn wav_file(samples: &[i16]) -> Vec<u8> {
@@ -111,11 +108,7 @@ mod tests {
 
     impl Fixture {
         fn new(name: &str) -> Fixture {
-            let app = build_mock_app(
-                mock_builder()
-                    .plugin(tauri_plugin_shell::init())
-                    .manage(CurrentProject::default()),
-            );
+            let app = mode_app();
             Fixture {
                 dir: TempDir::new(name),
                 app,

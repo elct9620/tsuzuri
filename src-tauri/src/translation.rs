@@ -588,8 +588,7 @@ mod tests {
 
     use std::sync::{Arc, Mutex};
 
-    use crate::test_support::build_mock_app;
-    use tauri::test::{mock_builder, MockRuntime};
+    use crate::test_support::mode_app;
     use tauri::Listener;
     use tauri_specta::Event;
 
@@ -603,33 +602,15 @@ mod tests {
     use crate::project::{Project, RunningMode, SegmentField};
     use crate::steps::ModeLock;
     use crate::test_support::Response;
-    use crate::test_support::{project_of, TempDir};
+    use crate::test_support::{project_of, segment, TempDir};
     use fake_llama::{
         completion, echo_lines, numbered_summary, review_answer, translations, FakeLlama, Lines,
         Replies,
     };
 
-    fn segment(start_ms: u64, end_ms: u64, text: &str) -> Segment {
-        Segment {
-            start_ms,
-            end_ms,
-            speaker: None,
-            text: text.to_string(),
-            translation: None,
-        }
-    }
-
-    fn mock_app() -> tauri::App<MockRuntime> {
-        build_mock_app(
-            mock_builder()
-                .plugin(tauri_plugin_shell::init())
-                .manage(CurrentProject::default()),
-        )
-    }
-
     /// Detects, then translates, as a job does once llama-server is ready.
     async fn detect_and_translate(llama: &FakeLlama, job: &TranslationJob<'_>) -> Vec<Segment> {
-        let app = mock_app();
+        let app = mode_app();
         translate_once_ready(
             app.handle(),
             llama.base_url(),
@@ -1541,7 +1522,7 @@ mod tests {
     async fn shows_each_batch_as_it_is_translated() {
         let llama = FakeLlama::with_echo(0);
         let dir = TempDir::new("tl-stream");
-        let app = mock_app();
+        let app = mode_app();
         let mut project = project_of(three_segments());
         project.directory = dir.path().to_path_buf();
         let current = app.state::<CurrentProject>();
@@ -1590,7 +1571,7 @@ mod tests {
     async fn names_the_batch_being_translated() {
         let llama = FakeLlama::with_echo(0);
         let dir = TempDir::new("tl-pending-batch");
-        let app = mock_app();
+        let app = mode_app();
         let mut project = project_of(three_segments());
         project.directory = dir.path().to_path_buf();
         let current = app.state::<CurrentProject>();
@@ -1646,7 +1627,7 @@ mod tests {
                 ..segment(index * 1_000, (index + 1) * 1_000, &format!("第{index}句"))
             })
             .collect();
-        let app = mock_app();
+        let app = mode_app();
 
         translate_once_ready(
             app.handle(),
@@ -1846,7 +1827,7 @@ mod tests {
             translations(echo_lines(lines))
         });
         let dir = TempDir::new("tl-cancel");
-        let app = mock_app();
+        let app = mode_app();
         let mut project = project_of(three_segments());
         project.directory = dir.path().to_path_buf();
         let current = app.state::<CurrentProject>();
@@ -1912,7 +1893,7 @@ mod tests {
     /// The `pipeline-progress` payloads of `phase`, as sent, while three Segments are translated in Batches of two.
     async fn progress_events(phase: &str) -> Vec<String> {
         let llama = FakeLlama::with_echo(0);
-        let app = mock_app();
+        let app = mode_app();
         let progress_events = Arc::new(Mutex::new(Vec::new()));
         app.listen_any(PipelineProgress::NAME, {
             let progress_events = Arc::clone(&progress_events);
@@ -2078,7 +2059,7 @@ mod tests {
     // @behavior TL-098
     #[test]
     fn shows_a_batch_into_traditional_chinese_cleaned() {
-        let app = mock_app();
+        let app = mode_app();
         let current = app.state::<CurrentProject>();
         current.replace(project_of(vec![segment(0, 1_000, "こんにちは")]));
         let source = current.snapshot().unwrap();
@@ -2184,7 +2165,7 @@ mod tests {
     #[tokio::test]
     async fn refuses_without_a_translation_model() {
         let dir = TempDir::new("tl-no-model");
-        let app = mock_app();
+        let app = mode_app();
         let record = dir.path().join("processes.json");
         let processes = Processes::new(record.clone());
 
@@ -2221,7 +2202,7 @@ mod tests {
                 path: dir.file("qwen3-4b.gguf"),
             },
         );
-        let app = mock_app();
+        let app = mode_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         let mut project = project_of(vec![segment(0, 1_000, "蝙蝠俠")]);
         project.directory = dir.path().to_path_buf();
@@ -2265,7 +2246,7 @@ mod tests {
                 path: dir.file("qwen3-4b.gguf"),
             },
         );
-        let app = mock_app();
+        let app = mode_app();
         let processes = Processes::new(dir.path().join("processes.json"));
 
         app.state::<CurrentProject>()
@@ -2313,7 +2294,7 @@ mod tests {
                 path: dir.file("qwen3-4b.gguf"),
             },
         );
-        let app = mock_app();
+        let app = mode_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         app.state::<CurrentProject>()
             .replace(project_of(vec![segment(0, 1_000, "大家好")]));
@@ -2361,7 +2342,7 @@ mod tests {
         project.options.models.translation = Some(ModelSource::File {
             path: project_model.clone(),
         });
-        let app = mock_app();
+        let app = mode_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         app.state::<CurrentProject>().replace(project);
 
@@ -2408,7 +2389,7 @@ mod tests {
                 path: dir.file("qwen3-4b.gguf"),
             },
         );
-        let app = mock_app();
+        let app = mode_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         app.state::<CurrentProject>()
             .replace(project_of(vec![segment(0, 1_000, "大家好")]));
@@ -2454,7 +2435,7 @@ mod tests {
     #[tokio::test]
     async fn answers_how_long_each_phase_took() {
         let llama = FakeLlama::with_echo(2);
-        let app = mock_app();
+        let app = mode_app();
         let mut phases = Phases::start("translate", Phase::Loading);
         let segments = [
             segment(0, 1_000, "大家好"),
@@ -2491,7 +2472,7 @@ mod tests {
             },
         );
         let dir = TempDir::new(name);
-        let app = mock_app();
+        let app = mode_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         let mut project = project_of(vec![
             segment(0, 1_000, "co: 大家好"),

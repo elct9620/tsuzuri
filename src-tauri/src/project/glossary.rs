@@ -244,21 +244,13 @@ fn malformed_glossary(error: csv::Error) -> GlossaryError {
 mod tests {
     use super::*;
     use crate::failure::Failure;
-    use crate::project::{CurrentProject, Project, ProjectConfig};
-    use crate::test_support::TempDir;
+    use crate::project::{CurrentProject, ProjectConfig};
+    use crate::test_support::{project_in, TempDir};
 
     const ZH_TO_EN: LanguagePair = LanguagePair {
         source: Language::TraditionalChinese,
         target: Language::English,
     };
-
-    fn project_in(dir: &TempDir) -> CurrentProject {
-        let current = CurrentProject::default();
-        current.replace(
-            Project::open(dir.path().to_path_buf(), Language::TraditionalChinese).unwrap(),
-        );
-        current
-    }
 
     /// A Project in `zh-TW` whose last translation was into `en`.
     fn translated_project_in(dir: &TempDir) -> CurrentProject {

@@ -33,6 +33,33 @@ pub fn project_of(segments: Vec<Segment>) -> Project {
     }
 }
 
+/// A Segment from `start_ms` to `end_ms` reading `text`, with no Speaker or translation.
+pub fn segment(start_ms: u64, end_ms: u64, text: &str) -> Segment {
+    Segment {
+        start_ms,
+        end_ms,
+        speaker: None,
+        text: text.to_string(),
+        translation: None,
+    }
+}
+
+/// A Current Project open on `dir` in `zh-TW`.
+pub fn project_in(dir: &TempDir) -> crate::project::CurrentProject {
+    let current = crate::project::CurrentProject::default();
+    current.replace(Project::open(dir.path().to_path_buf(), Language::TraditionalChinese).unwrap());
+    current
+}
+
+/// A temp directory `name` holding each `(file name, content)` of `files`.
+pub fn directory_of(name: &str, files: &[(&str, &str)]) -> TempDir {
+    let dir = TempDir::new(name);
+    for (file_name, content) in files {
+        fs::write(dir.path().join(file_name), content).unwrap();
+    }
+    dir
+}
+
 /// A directory under the system temp dir, unique to this test process and removed when dropped.
 pub struct TempDir(PathBuf);
 
@@ -53,7 +80,22 @@ impl TempDir {
         fs::write(&path, b"weights").unwrap();
         path
     }
+
+    /// An executable script named `name` running `body`, standing in for a Component.
+    #[cfg(unix)]
+    pub fn script(&self, name: &str, body: &str) -> PathBuf {
+        let path = self.0.join(name);
+        write_executable(&path, body);
+        path
+    }
 }
+
+/// An ffmpeg that records its arguments beside itself and writes 64 044 zero bytes as its WAV.
+pub const RECORDING_FFMPEG: &str = "#!/bin/sh\necho \"$@\" > \"$0.args\"\nfor last; do :; done\nhead -c 64044 /dev/zero > \"$last\"\n";
+
+/// An ffmpeg that cannot read its input.
+pub const FAILING_FFMPEG: &str =
+    "#!/bin/sh\necho 'Invalid data found when processing input' >&2\nexit 1\n";
 
 impl Drop for TempDir {
     fn drop(&mut self) {
@@ -266,6 +308,15 @@ pub fn output_backups(directory: &std::path::Path) -> Vec<(String, String)> {
         .into_iter()
         .filter(|(file, _)| file.ends_with(".output.srt"))
         .collect()
+}
+
+/// A mock app that runs Components and holds the Current Project, as a Mode needs.
+pub fn mode_app() -> App<MockRuntime> {
+    build_mock_app(
+        tauri::test::mock_builder()
+            .plugin(tauri_plugin_shell::init())
+            .manage(crate::project::CurrentProject::default()),
+    )
 }
 
 /// Builds a mock app with the app's events mounted, as the app mounts them before it runs, so a

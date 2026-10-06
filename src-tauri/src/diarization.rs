@@ -140,7 +140,7 @@ impl From<std::io::Error> for DiarizationError {
 mod tests {
     use std::sync::{Arc, Mutex};
 
-    use tauri::test::{mock_builder, MockRuntime};
+    use tauri::test::MockRuntime;
     use tauri::{Listener, Manager};
     use tauri_specta::Event;
 
@@ -151,10 +151,8 @@ mod tests {
     use crate::progress::{PipelineProgress, ProjectChanged};
     use crate::project::{Project, RunningMode};
     use crate::steps::ModeLock;
-    use crate::test_support::{build_mock_app, write_executable, TempDir};
+    use crate::test_support::{mode_app, write_executable, TempDir, RECORDING_FFMPEG};
     use crate::transcript::{Segment, Transcript, WrittenText};
-
-    const RECORDING_FFMPEG: &str = "#!/bin/sh\necho \"$@\" > \"$0.args\"\nfor last; do :; done\nhead -c 64044 /dev/zero > \"$last\"\n";
 
     /// A diarize Step hearing `Speaker 1` over 0-4 s and `Speaker 2` over 4-8 s.
     const DIARIZER: &str = "#!/bin/sh\n\
@@ -175,8 +173,8 @@ mod tests {
         fn new(name: &str) -> Fixture {
             let dir = TempDir::new(name);
             let tools = Tools {
-                ffmpeg: script(&dir, "ffmpeg", RECORDING_FFMPEG),
-                diarizer: script(&dir, "tsuzuri", DIARIZER),
+                ffmpeg: dir.script("ffmpeg", RECORDING_FFMPEG),
+                diarizer: dir.script("tsuzuri", DIARIZER),
             };
             let mut settings = ModelSettings::default();
             settings.choose(
@@ -185,11 +183,7 @@ mod tests {
                     path: dir.file("Nemotron-3-Diarization.q8_0.gguf"),
                 },
             );
-            let app = build_mock_app(
-                mock_builder()
-                    .plugin(tauri_plugin_shell::init())
-                    .manage(CurrentProject::default()),
-            );
+            let app = mode_app();
             let fixture = Fixture {
                 dir,
                 app,
@@ -265,12 +259,6 @@ mod tests {
             text: text.to_string(),
             translation: None,
         }
-    }
-
-    fn script(dir: &TempDir, name: &str, body: &str) -> PathBuf {
-        let path = dir.path().join(name);
-        write_executable(&path, body);
-        path
     }
 
     fn speakers(names: &[&str]) -> Vec<Option<String>> {

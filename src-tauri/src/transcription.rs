@@ -129,8 +129,8 @@ pub async fn run_transcribe<'a>(
 mod tests {
     use std::sync::{Arc, Mutex};
 
-    use crate::test_support::build_mock_app;
-    use tauri::test::{mock_builder, MockRuntime};
+    use crate::test_support::mode_app;
+    use tauri::test::MockRuntime;
     use tauri::Listener;
     use tauri_specta::Event;
 
@@ -147,15 +147,12 @@ mod tests {
         TranscriptionScope,
     };
     use crate::steps::ModeLock;
-    use crate::test_support::{write_executable, TempDir};
+    use crate::test_support::{write_executable, TempDir, FAILING_FFMPEG, RECORDING_FFMPEG};
     use crate::toolchain::{self, Resolver};
     use crate::transcript::{Segment, WrittenText};
 
     const TWO_SECOND_WAV: &str =
         "#!/bin/sh\nfor last; do :; done\nhead -c 64044 /dev/zero > \"$last\"\n";
-    const RECORDING_FFMPEG: &str = "#!/bin/sh\necho \"$@\" > \"$0.args\"\nfor last; do :; done\nhead -c 64044 /dev/zero > \"$last\"\n";
-    const FAILING_FFMPEG: &str =
-        "#!/bin/sh\necho 'Invalid data found when processing input' >&2\nexit 1\n";
 
     fn whisper_script(started_marker: &Path) -> String {
         whisper_script_writing(started_marker, "大家好")
@@ -191,8 +188,8 @@ mod tests {
             let dir = TempDir::new(name);
             let whisper_started = dir.path().join("whisper-started");
             let tools = Tools {
-                ffmpeg: script(&dir, "ffmpeg", ffmpeg),
-                whisper: script(&dir, "whisper-cli", &whisper_script(&whisper_started)),
+                ffmpeg: dir.script("ffmpeg", ffmpeg),
+                whisper: dir.script("whisper-cli", &whisper_script(&whisper_started)),
             };
             let mut settings = ModelSettings::default();
             settings.choose(
@@ -201,11 +198,7 @@ mod tests {
                     path: dir.file("breeze.bin"),
                 },
             );
-            let app = build_mock_app(
-                mock_builder()
-                    .plugin(tauri_plugin_shell::init())
-                    .manage(CurrentProject::default()),
-            );
+            let app = mode_app();
             Fixture {
                 dir,
                 app,
@@ -370,12 +363,6 @@ mod tests {
             is_overwrite_allowed,
             scope,
         }
-    }
-
-    fn script(dir: &TempDir, name: &str, body: &str) -> PathBuf {
-        let path = dir.path().join(name);
-        write_executable(&path, body);
-        path
     }
 
     // @behavior TX-001
@@ -1068,11 +1055,7 @@ mod tests {
         let tools = Tools { ffmpeg, whisper };
         let mut settings = ModelSettings::default();
         settings.choose(ModelSlot::Transcription, ModelSource::File { path: model });
-        let app = build_mock_app(
-            mock_builder()
-                .plugin(tauri_plugin_shell::init())
-                .manage(CurrentProject::default()),
-        );
+        let app = mode_app();
         let processes = Processes::new(dir.path().join("processes.json"));
         let project = app.state::<CurrentProject>();
         let mut opened_project = Project::open(

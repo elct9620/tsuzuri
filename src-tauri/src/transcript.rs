@@ -304,19 +304,10 @@ fn format_timestamp(ms: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::segment;
 
     const TWO_CUES: &str =
         "1\n00:00:01,000 --> 00:00:02,500\n你好\n\n2\n00:01:02,003 --> 01:00:00,000\n世界\n";
-
-    fn segment(start_ms: u64, end_ms: u64, text: &str) -> Segment {
-        Segment {
-            start_ms,
-            end_ms,
-            speaker: None,
-            text: text.to_string(),
-            translation: None,
-        }
-    }
 
     fn translated_segment(start_ms: u64, end_ms: u64, text: &str, translation: &str) -> Segment {
         Segment {

@@ -59,12 +59,14 @@
   daisyUI draws a tooltip inside its element, where a scrolling list or a dialog cuts it off; as a
   popover this one sits in the top layer above them. The popover's own margin, border, padding,
   background and overflow are taken off so it lies exactly over the element and shows the tip
-  drawn outside it.
+  drawn outside it. daisyUI's display and position outrank the popover's own, which WebKit keeps,
+  so the bubble is hidden while closed and fixed while open, or a closed one would stand in the
+  page below everything, offset by the last element's top, and lengthen it.
 -->
 <div
   bind:this={bubble}
   popover="manual"
-  class="tooltip tooltip-open pointer-events-none m-0 overflow-visible border-0 bg-transparent p-0 {isInRightHalf
+  class="tooltip tooltip-open pointer-events-none fixed m-0 overflow-visible border-0 bg-transparent p-0 not-open:hidden {isInRightHalf
     ? 'tooltip-left'
     : 'tooltip-right'}"
   style:left="{triggerBox.left}px"

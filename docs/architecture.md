@@ -589,7 +589,7 @@ body
 
 事件交給框架接上與解除，所以不自己訂閱 Rust 或 window 的事件；只有影片視窗例外。下表是各處的接法。
 
-Svelte 元件之間以 prop、context 或共用的狀態溝通，不經 window 事件。window 事件只來自 Rust 與系統。
+Svelte 元件之間以 prop 或 context 溝通，不經 window 事件。要另一個元件做事就交它的開啟函式；幾個元件都讀寫的值才放共用的狀態。window 事件只來自 Rust 與系統。
 
 | 誰 | 接法 | 解除 |
 |---|---|---|

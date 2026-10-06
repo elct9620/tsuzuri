@@ -749,6 +749,9 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
 | `EditingState` | 經 context | 段落列、勾選列、目前段落卡、時間軸 |
+| `TaskRun` | 經 context | 任務 modal、任務進度、段落列 |
+| `AppUpdates` | 經 context | 更新 modal、版本與更新頁 |
+| `TranslationChoices` | 翻譯、轉錄 modal 建立 | 翻譯選項 |
 | 段落列的欄位 | SegmentRows 經 context | 文字欄位、搜尋列 |
 | 通知的清單 | `notification.svelte.ts` | 所有 Svelte 元件 |
 | `SaveMark` | `save-mark.svelte.ts` | 寫入的編輯、資源列 |
@@ -762,6 +765,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 動作 | 模組 | 使用者 |
 |---|---|---|
 | 開啟、重新載入、命名 | `project.ts` | 起始畫面、工具列、資源清單 |
+| 專案選項與語言 | `project-options.ts` | 專案設定的各頁 |
 | 寫入說話者後的通知 | `speaker.ts` | 說話者 modal、段落列 |
 | 清理簡體與通知 | `cleanup.ts` | 段落列、勾選工具列、快速鍵 |
 | Segment Changes 的選項 | `segment-changes.ts` | 段落選單、勾選工具列、右鍵 |
@@ -788,6 +792,7 @@ feed -> Preview.show    sets the player's source: media or silence
 | `logs.ts` | log 目錄、除錯紀錄的指令 |
 | `preferences.ts` | 偏好設定的指令與預設值 |
 | `about.ts` | App Build、開啟釋出與贊助頁面 |
+| `updates.ts` | 檢查與安裝更新、更新設定 |
 | `waveform.ts` | 波形的指令與型別 |
 | `progress.ts` | 取消任務，進度與 Phase 耗時的型別 |
 | `bindings.ts` | 生成的指令、事件、型別與常數 |

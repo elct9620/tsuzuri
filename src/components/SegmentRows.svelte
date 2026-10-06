@@ -186,10 +186,8 @@
     const isNewlyCurrent = index !== shownCurrentIndex;
     shownCurrentIndex = index;
     if (index === null) return;
-    if (isNewlyCurrent) {
-      keepComingRowInPlace(index);
+    if (isNewlyCurrent && !keepComingRowInPlace(index))
       rows[index]?.bringIntoView();
-    }
     const caretField = caret && field(index, caret.field);
     if (
       caretField &&
@@ -215,20 +213,25 @@
   });
 
   /**
-   * Scrolls the list so the row becoming current stays where it stood, as the row it leaves folds
-   * up above it or its own unfolding would otherwise move it.
+   * Scrolls the list so the row becoming current stays where it stood in view, as the row it leaves
+   * folds up above it; a row chosen from out of view is left to be brought into it. Whether the row
+   * was kept in place.
    */
-  function keepComingRowInPlace(index: number): void {
+  function keepComingRowInPlace(index: number): boolean {
     const topBefore = comingRowTop;
     comingRowTop = null;
     const topAfter = rows[index]?.topOnScreen() ?? null;
     const scroller = list ? scrollingAncestor(list) : null;
-    if (topBefore === null || topAfter === null || scroller === null) return;
+    if (topBefore === null || topAfter === null || scroller === null)
+      return false;
+    const view = scroller.getBoundingClientRect();
+    if (topBefore < view.top || topBefore >= view.bottom) return false;
     scroller.scrollTop = anchoredScrollTop(
       scroller.scrollTop,
       topBefore,
       topAfter,
     );
+    return true;
   }
 
   // Notes where the row becoming current stands before the rows redraw, so it is kept there

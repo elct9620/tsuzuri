@@ -46,13 +46,13 @@
 </script>
 
 <!-- V3 sets the list beside the player in a wide editor, the waveform beneath both; narrower, it
-     lays out as V2 does -->
+     lays out as V2 does. The timeline shown after the player takes the line between them -->
 <div
   class="group grid min-h-0 flex-1 grid-rows-[auto_auto_minmax(0,1fr)] [grid-template-areas:'preview'_'timeline'_'list'] data-[layout=v3]:@5xl:grid-cols-[minmax(0,1fr)_auto] data-[layout=v3]:@5xl:grid-rows-[minmax(0,1fr)_auto] data-[layout=v3]:@5xl:[grid-template-areas:'list_preview'_'timeline_timeline']"
   data-layout={layout}
 >
   <div
-    class="min-w-0 [grid-area:preview] group-data-[layout=v3]:@5xl:overflow-y-auto group-data-[layout=v3]:@5xl:border-l group-data-[layout=v3]:@5xl:border-base-300 group-data-[layout=v3]:@5xl:has-[>:not([hidden])]:w-md"
+    class="min-w-0 [grid-area:preview] has-[+div>:not([hidden])]:[&>*]:border-b-0 has-[+div>:not([hidden])]:[&>*]:pb-0 group-data-[layout=v3]:@5xl:overflow-y-auto group-data-[layout=v3]:@5xl:border-l group-data-[layout=v3]:@5xl:border-base-300 group-data-[layout=v3]:@5xl:has-[>:not([hidden])]:w-md"
   >
     <Preview {playback} {fold} choices={captionChoices} editorLayout={layout} />
   </div>

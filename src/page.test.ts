@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
-import { clearMocks } from "@tauri-apps/api/mocks";
+import { clearMocks, mockConvertFileSrc } from "@tauri-apps/api/mocks";
 import { flushSync, tick, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "#/assembly.ts";
@@ -792,6 +792,7 @@ describe("Page", () => {
 
     // @behavior LY-015
     it("plays on from where it was as the Layout changes", async () => {
+      mockConvertFileSrc("macos");
       await start();
       await hold(projectOf({ media: "/talks/ep01.mp4" }));
       const player = document.querySelector("video")!;

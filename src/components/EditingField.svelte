@@ -18,7 +18,7 @@
   } from "#/editor/index.ts";
   import { notifyEdit } from "#/state/notification.svelte.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
-  import { editingSession } from "#/state/context.ts";
+  import { editingSession, segmentFields } from "#/state/context.ts";
 
   interface Props {
     index: number;
@@ -48,6 +48,7 @@
   }: Props = $props();
 
   const session = editingSession();
+  const fields = segmentFields();
   const isMac = isMacOS();
 
   /** Whether an input method is composing, or has only just ended composing, in the field. */
@@ -111,9 +112,7 @@
    * the text as a click elsewhere does.
    */
   function enterNext(): void {
-    const next = document.querySelector<HTMLElement>(
-      `.field[data-index="${index + 1}"][data-field="${kind}"]`,
-    );
+    const next = fields.field(index + 1, kind);
     if (next) session.chooseFrom("next", () => next.focus());
     else element!.blur();
   }

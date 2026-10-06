@@ -8,7 +8,7 @@ import { assemble } from "#/assembly.ts";
 import type { ProjectView } from "#/ipc/project.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
 import { projectOf } from "#/testing/project.ts";
-import { pageContext } from "#/state/context.ts";
+import { pageContext, withSegmentFields } from "#/state/context.ts";
 import SearchBar from "#/components/SearchBar.svelte";
 import { drawSegmentRows, segmentRows } from "#/testing/segment-rows.ts";
 
@@ -85,8 +85,15 @@ describe("SearchBar", () => {
     );
     const assembly = assemble();
     const context = pageContext(assembly.feed, assembly.session);
-    drawSegmentRows(document.querySelector("section")!, context);
-    render(SearchBar, { context });
+    const { rows } = drawSegmentRows(
+      document.querySelector("section")!,
+      context,
+    );
+    render(SearchBar, {
+      context: withSegmentFields(context, {
+        field: (index, kind) => rows.field(index, kind),
+      }),
+    });
     await assembly.start();
     await settle();
   });

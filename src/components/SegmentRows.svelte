@@ -28,6 +28,7 @@
     editingSession,
     editorComparison,
     projectFeed,
+    setSegmentFields,
     taskRun,
   } from "#/state/context.ts";
   import {
@@ -69,6 +70,7 @@
   const comparison = editorComparison();
   let list = $state<HTMLOListElement>();
   const rows: SegmentRow[] = $state([]);
+  setSegmentFields({ field });
   let project = $state.raw<ProjectView | null>(null);
   /** The transcript as the session read it with the Project, whose running Mode holds fields. */
   let view = $state.raw<TranscriptView | null>(null);
@@ -102,6 +104,11 @@
   function isPendingAt(index: number): boolean {
     const batch = project?.pending_batch ?? null;
     return batch !== null && index >= batch.first && index <= batch.last;
+  }
+
+  /** The field of `kind` in the row of the Segment at `index`, or none while that row is not drawn. */
+  export function field(index: number, kind: CursorField): HTMLElement | null {
+    return rows[index]?.field(kind) ?? null;
   }
 
   function show(next: ProjectView | null): void {
@@ -142,8 +149,8 @@
       Object.values(rowsBySide)
         .flat()
         .flatMap(({ side, row }) => {
-          const field = rows[index]?.field(FIELD_BY_SIDE[side]);
-          return field ? addedRanges(field, row) : [];
+          const sideField = field(index, FIELD_BY_SIDE[side]);
+          return sideField ? addedRanges(sideField, row) : [];
         }),
     );
     markRanges(ADDED_HIGHLIGHT, ranges);
@@ -162,10 +169,14 @@
     flushSync();
     if (index === null) return;
     if (isNewlyCurrent) rows[index]?.bringIntoView();
-    const field = caret && rows[index]?.field(caret.field);
-    if (field && caret?.kind === "live" && document.activeElement !== field) {
-      field.focus();
-      placeSelection(field, caret);
+    const caretField = caret && field(index, caret.field);
+    if (
+      caretField &&
+      caret?.kind === "live" &&
+      document.activeElement !== caretField
+    ) {
+      caretField.focus();
+      placeSelection(caretField, caret);
     }
     drawSessionCursor();
   }
@@ -173,9 +184,7 @@
   function drawSessionCursor(): void {
     const { index, caret } = session.cursor;
     drawCursor(
-      index === null || !caret
-        ? null
-        : (rows[index]?.field(caret.field) ?? null),
+      index === null || !caret ? null : field(index, caret.field),
       caret,
     );
   }
@@ -185,9 +194,9 @@
    * change reaches every listener there and a row drawn with its time fields reports one each.
    */
   function followSelection(): void {
-    const field = document.activeElement;
-    if (isField(field) && list?.contains(field))
-      rows[Number(field.dataset.index)]?.followSelection();
+    const focused = document.activeElement;
+    if (isField(focused) && list?.contains(focused))
+      rows[Number(focused.dataset.index)]?.followSelection();
   }
 
   /** Turns following playback on or off by its shortcut, wherever the focus is. */

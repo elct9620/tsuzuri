@@ -7,7 +7,7 @@ import { getContext, setContext } from "svelte";
 
 import type { ProjectFeed } from "#/ipc/project.ts";
 import type { TranscriptionScope } from "#/ipc/transcription.ts";
-import type { EditingSession } from "#/editor/index.ts";
+import type { CursorField, EditingSession } from "#/editor/index.ts";
 import { AppUpdates } from "#/state/app-updates.svelte.ts";
 import { EditorComparison } from "#/state/editor-comparison.svelte.ts";
 import { SavedPreferences } from "#/state/saved-preferences.svelte.ts";
@@ -18,6 +18,7 @@ const TASK_RUN = Symbol("task run");
 const APP_UPDATES = Symbol("app updates");
 const SESSION = Symbol("editing session");
 const SEGMENT_DIALOGS = Symbol("segment dialogs");
+const SEGMENT_FIELDS = Symbol("segment fields");
 const COMPARISON = Symbol("editor comparison");
 const PREFERENCES = Symbol("saved preferences");
 
@@ -94,6 +95,30 @@ export function setSegmentDialogs(dialogs: SegmentDialogs): void {
 /** The dialogs Page holds, which a Segment's menu and the checked bar open. */
 export function segmentDialogs(): SegmentDialogs {
   return getContext<SegmentDialogs>(SEGMENT_DIALOGS);
+}
+
+/** The fields the Segment rows draw, which the fields themselves and the search bar reach. */
+export interface SegmentFields {
+  /** The field of `kind` in the row of the Segment at `index`, or none while that row is not drawn. */
+  field(index: number, kind: CursorField): HTMLElement | null;
+}
+
+/** Hands the Svelte Components below the fields of the Segment rows; called while SegmentRows initialises. */
+export function setSegmentFields(fields: SegmentFields): void {
+  setContext(SEGMENT_FIELDS, fields);
+}
+
+/** The fields the Segment rows draw. */
+export function segmentFields(): SegmentFields {
+  return getContext<SegmentFields>(SEGMENT_FIELDS);
+}
+
+/** `context` with `fields` added, to draw a Svelte Component beside the rows as a test does. */
+export function withSegmentFields(
+  context: Map<symbol, unknown>,
+  fields: SegmentFields,
+): Map<symbol, unknown> {
+  return new Map([...context, [SEGMENT_FIELDS, fields]]);
 }
 
 /** `context` with `dialogs` added, to draw the Segment list apart from Page as a test does. */

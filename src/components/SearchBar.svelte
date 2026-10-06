@@ -18,7 +18,11 @@
   import { failureMessage } from "#/ui/failure.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
   import { selectedText } from "#/ui/text-fields.ts";
-  import { editingSession, projectFeed } from "#/state/context.ts";
+  import {
+    editingSession,
+    projectFeed,
+    segmentFields,
+  } from "#/state/context.ts";
 
   /** The highlight every match is marked under, and the one the current match is. */
   const MATCH_HIGHLIGHT = "search-match";
@@ -26,6 +30,7 @@
 
   const feed = projectFeed();
   const session = editingSession();
+  const fields = segmentFields();
   let patternInput = $state<HTMLInputElement>();
   let isOpen = $state(false);
   let pattern = $state("");
@@ -161,9 +166,7 @@
 
   /** The Range a match covers in its field, or none while its row is not drawn. */
   function matchRange({ index, start, end }: TextMatch): Range | null {
-    const element = document.querySelector<HTMLElement>(
-      `.field[data-index="${index}"][data-field="${field}"]`,
-    );
+    const element = fields.field(index, field);
     return element ? rangeOf(element, { start, end }) : null;
   }
 

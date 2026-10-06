@@ -740,6 +740,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
+| 段落列的欄位 | SegmentRows 經 context | 文字欄位、搜尋列 |
 | 通知的清單 | `notification.svelte.ts` | 所有 Svelte 元件 |
 | `SaveMark` | `save-mark.svelte.ts` | 寫入的編輯、編輯列 |
 | 開啟、重新載入、命名 | `project.ts` | 起始畫面、工具列、資源清單 |

@@ -4,7 +4,7 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "#/assembly.ts";
-import { pageContext } from "#/components/context.ts";
+import { pageContext } from "#/state/context.ts";
 import Undo from "#/components/Undo.svelte";
 
 describe("Undo", () => {

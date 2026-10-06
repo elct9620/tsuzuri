@@ -18,15 +18,15 @@
   } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { isComposingKey } from "#/ui/shortcuts.ts";
-  import { projectFeed } from "#/components/context.ts";
+  import { projectFeed } from "#/state/context.ts";
   import ExportMenu from "#/components/ExportMenu.svelte";
   import {
     openDirectory,
     openRecent,
     openSrt,
     rename,
-  } from "#/components/project-actions.ts";
-  import type { ResourceDock } from "#/components/resource-dock.svelte.ts";
+  } from "#/actions/project.ts";
+  import type { ResourceDock } from "#/state/resource-dock.svelte.ts";
 
   interface Props {
     dock: ResourceDock;

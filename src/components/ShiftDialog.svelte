@@ -5,8 +5,8 @@
 -->
 <script lang="ts">
   import { t } from "#/i18n.ts";
-  import { notifyEdit } from "#/ui/notification.svelte.ts";
-  import { editingSession } from "#/components/context.ts";
+  import { notifyEdit } from "#/state/notification.svelte.ts";
+  import { editingSession } from "#/state/context.ts";
 
   const session = editingSession();
   let dialog: HTMLDialogElement;

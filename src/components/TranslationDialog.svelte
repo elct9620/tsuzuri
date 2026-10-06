@@ -9,9 +9,9 @@
   import type { ProjectView } from "#/ipc/project.ts";
   import { translateSegments } from "#/ipc/translation.ts";
   import { t } from "#/i18n.ts";
-  import { notifyTranslation } from "#/ui/notification.svelte.ts";
-  import { projectFeed, taskRun } from "#/components/context.ts";
-  import { TranslationChoices } from "#/components/translation-choices.svelte.ts";
+  import { notifyTranslation } from "#/state/notification.svelte.ts";
+  import { projectFeed, taskRun } from "#/state/context.ts";
+  import { TranslationChoices } from "#/state/translation-choices.svelte.ts";
   import TranslationOptions from "#/components/TranslationOptions.svelte";
 
   const feed = projectFeed();

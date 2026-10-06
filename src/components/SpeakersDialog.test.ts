@@ -6,15 +6,15 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "#/assembly.ts";
 import type { ProjectView } from "#/ipc/project.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
-import { projectOf } from "#/test-project.ts";
-import { pageContext } from "#/components/context.ts";
+import { projectOf } from "#/testing/project.ts";
+import { pageContext } from "#/state/context.ts";
 import SpeakersDialog from "#/components/SpeakersDialog.svelte";
-import { showNotifications } from "#/components/test-notifications.ts";
+import { showNotifications } from "#/testing/notifications.ts";
 import {
   checkedBarButton,
   drawSegmentList,
   segmentDialogsOf,
-} from "#/components/test-segment-rows.ts";
+} from "#/testing/segment-rows.ts";
 
 describe("SpeakersDialog", () => {
   let speakersDialog: SpeakersDialog;

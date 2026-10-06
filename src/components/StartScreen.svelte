@@ -1,12 +1,8 @@
 <script lang="ts">
   import type { RecentProjectView } from "#/ipc/project.ts";
   import { interfaceLanguageCode, t } from "#/i18n.ts";
-  import { projectFeed } from "#/components/context.ts";
-  import {
-    openDirectory,
-    openRecent,
-    openSrt,
-  } from "#/components/project-actions.ts";
+  import { projectFeed } from "#/state/context.ts";
+  import { openDirectory, openRecent, openSrt } from "#/actions/project.ts";
 
   interface Props {
     recentProjects: RecentProjectView[];

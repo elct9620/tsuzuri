@@ -17,18 +17,15 @@ import type { ProjectView, Segment } from "#/ipc/project.ts";
 import type { Waveform } from "#/ipc/waveform.ts";
 import type { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
-import { layOutTimeline } from "#/test-layout.ts";
-import { projectOf } from "#/test-project.ts";
-import { pageContext } from "#/components/context.ts";
+import { layOutTimeline } from "#/testing/layout.ts";
+import { projectOf } from "#/testing/project.ts";
+import { pageContext } from "#/state/context.ts";
 import EditorBar from "#/components/EditorBar.svelte";
-import { Playback } from "#/components/playback.svelte.ts";
+import { Playback } from "#/state/playback.svelte.ts";
 import Preview from "#/components/Preview.svelte";
-import { PreviewFold } from "#/components/preview-fold.svelte.ts";
-import { SavedPreferences } from "#/components/saved-preferences.svelte.ts";
-import {
-  drawSegmentRows,
-  segmentRows,
-} from "#/components/test-segment-rows.ts";
+import { PreviewFold } from "#/state/preview-fold.svelte.ts";
+import { SavedPreferences } from "#/state/saved-preferences.svelte.ts";
+import { drawSegmentRows, segmentRows } from "#/testing/segment-rows.ts";
 import { regionColor } from "#/components/Timeline.svelte";
 
 describe("Current Segment", () => {

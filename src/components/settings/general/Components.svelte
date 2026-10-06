@@ -10,7 +10,7 @@
     type Origin,
   } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import { notifyFailure } from "#/state/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** Each Component's row: its name as Rust knows it, as people know it, and its ⓘ. */

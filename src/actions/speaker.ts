@@ -15,7 +15,7 @@ import {
   notify,
   notifyEdit,
   notifyFailure,
-} from "#/ui/notification.svelte.ts";
+} from "#/state/notification.svelte.ts";
 
 /** Marks the term `name` in the Primary Language column as a Speaker, adding the term when the glossary has none. */
 async function addSpeaker(feed: ProjectFeed, name: string): Promise<void> {

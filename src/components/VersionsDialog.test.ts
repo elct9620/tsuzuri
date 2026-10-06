@@ -6,12 +6,9 @@ import { editingPort } from "#/ipc/editing.ts";
 import { type ComparedRow, ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
-import { pageContext } from "#/components/context.ts";
-import { EditorComparison } from "#/components/editor-comparison.svelte.ts";
-import {
-  notifications,
-  showNotifications,
-} from "#/components/test-notifications.ts";
+import { pageContext } from "#/state/context.ts";
+import { EditorComparison } from "#/state/editor-comparison.svelte.ts";
+import { notifications, showNotifications } from "#/testing/notifications.ts";
 import VersionsDialog from "#/components/VersionsDialog.svelte";
 
 describe("VersionsDialog", () => {

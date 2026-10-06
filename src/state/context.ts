@@ -8,10 +8,10 @@ import { getContext, setContext } from "svelte";
 import type { ProjectFeed } from "#/ipc/project.ts";
 import type { TranscriptionScope } from "#/ipc/transcription.ts";
 import type { EditingSession } from "#/editor/index.ts";
-import { AppUpdates } from "#/components/app-updates.svelte.ts";
-import { EditorComparison } from "#/components/editor-comparison.svelte.ts";
-import { SavedPreferences } from "#/components/saved-preferences.svelte.ts";
-import { TaskRun } from "#/components/task-run.svelte.ts";
+import { AppUpdates } from "#/state/app-updates.svelte.ts";
+import { EditorComparison } from "#/state/editor-comparison.svelte.ts";
+import { SavedPreferences } from "#/state/saved-preferences.svelte.ts";
+import { TaskRun } from "#/state/task-run.svelte.ts";
 
 const FEED = Symbol("feed");
 const TASK_RUN = Symbol("task run");

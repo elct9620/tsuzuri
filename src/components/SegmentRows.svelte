@@ -29,13 +29,13 @@
     editorComparison,
     projectFeed,
     taskRun,
-  } from "#/components/context.ts";
+  } from "#/state/context.ts";
   import {
     comparisonLayout,
     type Side,
-  } from "#/components/editor-comparison.svelte.ts";
-  import type { Playback } from "#/components/playback.svelte.ts";
-  import { resourceOffers } from "#/components/segment-changes.ts";
+  } from "#/state/editor-comparison.svelte.ts";
+  import type { Playback } from "#/state/playback.svelte.ts";
+  import { resourceOffers } from "#/actions/segment-changes.ts";
   import RemovalRow from "#/components/RemovalRow.svelte";
   import SegmentRow from "#/components/SegmentRow.svelte";
 

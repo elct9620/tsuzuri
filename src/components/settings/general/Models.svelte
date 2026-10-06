@@ -10,7 +10,7 @@
   } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import { sourceName, type HubFile } from "#/ui/models.ts";
-  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import { notifyFailure } from "#/state/notification.svelte.ts";
   import ModelSlot from "#/components/settings/ModelSlot.svelte";
 
   interface Props {

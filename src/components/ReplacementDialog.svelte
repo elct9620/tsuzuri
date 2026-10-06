@@ -10,10 +10,10 @@
   import { isMacOS } from "#/ipc/system.ts";
   import type { CursorField } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
-  import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
+  import { notify, notifyFailure } from "#/state/notification.svelte.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
   import { selectedText } from "#/ui/text-fields.ts";
-  import { editingSession, projectFeed } from "#/components/context.ts";
+  import { editingSession, projectFeed } from "#/state/context.ts";
 
   const feed = projectFeed();
   const session = editingSession();

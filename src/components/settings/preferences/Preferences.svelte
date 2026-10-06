@@ -11,8 +11,8 @@
   } from "#/ipc/preferences.ts";
   import type { ChoiceSource } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/ui/notification.svelte.ts";
-  import { savedPreferences } from "#/components/context.ts";
+  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { savedPreferences } from "#/state/context.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** Each Choice Source, in the order the Preferences tab lists them. */

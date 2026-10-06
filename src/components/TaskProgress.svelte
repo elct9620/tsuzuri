@@ -5,7 +5,7 @@
   import type { Phase, PipelineProgress } from "#/ipc/progress.ts";
   import { t } from "#/i18n.ts";
   import { phaseLabel, type TaskKind } from "#/ui/progress.ts";
-  import { taskRun } from "#/components/context.ts";
+  import { taskRun } from "#/state/context.ts";
 
   /** The Phases each task goes through, in the order Rust enters them. */
   const PHASES_BY_TASK: Record<TaskKind, Phase[]> = {

@@ -16,9 +16,9 @@
     setFieldHeld,
     setFieldValue,
   } from "#/editor/index.ts";
-  import { notifyEdit } from "#/ui/notification.svelte.ts";
+  import { notifyEdit } from "#/state/notification.svelte.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
-  import { editingSession } from "#/components/context.ts";
+  import { editingSession } from "#/state/context.ts";
 
   interface Props {
     index: number;

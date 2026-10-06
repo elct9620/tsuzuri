@@ -10,15 +10,12 @@ import type {
   SubtitleVersions,
 } from "#/ipc/project.ts";
 import { t } from "#/i18n.ts";
-import { projectOf, resourceOf } from "#/test-project.ts";
+import { projectOf, resourceOf } from "#/testing/project.ts";
 import CompareMenu from "#/components/CompareMenu.svelte";
-import { pageContext } from "#/components/context.ts";
-import { EditorComparison } from "#/components/editor-comparison.svelte.ts";
-import {
-  notifications,
-  showNotifications,
-} from "#/components/test-notifications.ts";
-import { drawSegmentRows } from "#/components/test-segment-rows.ts";
+import { pageContext } from "#/state/context.ts";
+import { EditorComparison } from "#/state/editor-comparison.svelte.ts";
+import { notifications, showNotifications } from "#/testing/notifications.ts";
+import { drawSegmentRows } from "#/testing/segment-rows.ts";
 
 describe("EditorComparison", () => {
   let comparison: EditorComparison;

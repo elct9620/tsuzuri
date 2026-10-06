@@ -5,17 +5,14 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "#/assembly.ts";
 import type { ProjectView } from "#/ipc/project.ts";
-import { projectOf } from "#/test-project.ts";
-import {
-  showNotifications,
-  notifications,
-} from "#/components/test-notifications.ts";
-import { pageContext } from "#/components/context.ts";
+import { projectOf } from "#/testing/project.ts";
+import { showNotifications, notifications } from "#/testing/notifications.ts";
+import { pageContext } from "#/state/context.ts";
 import {
   drawSegmentList,
   segmentDialogsOf,
   segmentRows,
-} from "#/components/test-segment-rows.ts";
+} from "#/testing/segment-rows.ts";
 
 describe("cleanup", () => {
   let project: ProjectView | null;

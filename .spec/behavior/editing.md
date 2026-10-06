@@ -8,7 +8,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/components/EditorBar.test.ts`
 - `src/components/ExportMenu.test.ts`
 - `src/components/ResourceList.test.ts`
-- `src/components/segment-changes.test.ts`
+- `src/actions/segment-changes.test.ts`
 - `src/components/SpeakersDialog.test.ts`
 - `src/components/ShiftDialog.test.ts`
 - `src/components/TranslationDialog.test.ts`
@@ -16,7 +16,7 @@ Correcting the Project in the transcript panel, where every edit is written to R
 - `src/components/TimeField.test.ts`
 - `src/components/Timeline.test.ts`
 - `src/components/ReplacementDialog.test.ts`
-- `src/components/cleanup-actions.test.ts`
+- `src/actions/cleanup.test.ts`
 - `src/components/SearchBar.test.ts`
 - `src/editor/*.test.ts`
 - `src-tauri/src/replacement.rs`

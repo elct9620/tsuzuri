@@ -5,7 +5,7 @@
 
 import { installUpdate, type AppUpdate } from "#/ipc/updates.ts";
 import { t } from "#/i18n.ts";
-import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
+import { notify, notifyFailure } from "#/state/notification.svelte.ts";
 
 /** What the settings and the launch Notification say of a found App Update, by its Release Name. */
 export function updateFoundMessage(update: AppUpdate): string {

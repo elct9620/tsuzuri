@@ -19,10 +19,10 @@ import {
   type SegmentChange,
 } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
-import { notifyEdit } from "#/ui/notification.svelte.ts";
+import { notifyEdit } from "#/state/notification.svelte.ts";
 import { accelerator, type ShortcutId } from "#/ui/shortcuts.ts";
-import { cleanSegments } from "#/components/cleanup-actions.ts";
-import type { SegmentDialogs } from "#/components/context.ts";
+import { cleanSegments } from "#/actions/cleanup.ts";
+import type { SegmentDialogs } from "#/state/context.ts";
 
 /** One choice of a menu of Segment Changes: what it is called and shows, its keys, whether it can run, and what it does. */
 export interface ChangeChoice {

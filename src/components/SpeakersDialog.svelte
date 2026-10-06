@@ -9,8 +9,8 @@
   import type { ProjectView, Segment } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { speakerNames } from "#/ui/speakers.ts";
-  import { editingSession, projectFeed } from "#/components/context.ts";
-  import { notifyNamed } from "#/components/speaker-actions.ts";
+  import { editingSession, projectFeed } from "#/state/context.ts";
+  import { notifyNamed } from "#/actions/speaker.ts";
 
   /** Which Segments the dialog names. */
   type SpeakerScope =

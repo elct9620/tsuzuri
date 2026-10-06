@@ -22,10 +22,10 @@
     notifyDiarization,
     notifyTranscription,
     notifyTranslation,
-  } from "#/ui/notification.svelte.ts";
+  } from "#/state/notification.svelte.ts";
   import { formatTime } from "#/ui/time.ts";
-  import { projectFeed, taskRun } from "#/components/context.ts";
-  import { TranslationChoices } from "#/components/translation-choices.svelte.ts";
+  import { projectFeed, taskRun } from "#/state/context.ts";
+  import { TranslationChoices } from "#/state/translation-choices.svelte.ts";
   import TranslationOptions from "#/components/TranslationOptions.svelte";
 
   const feed = projectFeed();

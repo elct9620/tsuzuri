@@ -9,8 +9,8 @@ import { ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { drawPage } from "#/page.ts";
-import { mockPageMount } from "#/test-page.ts";
-import { projectOf, resourceOf } from "#/test-project.ts";
+import { mockPageMount } from "#/testing/page.ts";
+import { projectOf, resourceOf } from "#/testing/project.ts";
 
 /**
  * Tailwind's rules for the toolbar's two buttons, which the page's stylesheet would give: the one

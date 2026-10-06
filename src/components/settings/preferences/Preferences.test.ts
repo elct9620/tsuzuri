@@ -9,13 +9,10 @@ import {
 } from "#/ipc/preferences.ts";
 import { ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
-import { pageContext } from "#/components/context.ts";
-import { SavedPreferences as SharedPreferences } from "#/components/saved-preferences.svelte.ts";
-import {
-  showNotifications,
-  notifications,
-} from "#/components/test-notifications.ts";
-import Preferences from "#/components/settings/Preferences.svelte";
+import { pageContext } from "#/state/context.ts";
+import { SavedPreferences as SharedPreferences } from "#/state/saved-preferences.svelte.ts";
+import { showNotifications, notifications } from "#/testing/notifications.ts";
+import Preferences from "#/components/settings/preferences/Preferences.svelte";
 
 describe("Preferences", () => {
   let savedPreferences: SavedPreferences;

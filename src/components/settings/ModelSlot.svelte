@@ -19,7 +19,7 @@
     sourceFileName,
     type HubFile,
   } from "#/ui/models.ts";
-  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import { notifyFailure } from "#/state/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   interface Props {

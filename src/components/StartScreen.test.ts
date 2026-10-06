@@ -8,13 +8,10 @@ import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type RecentProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
-import { notificationStack } from "#/ui/notification.svelte.ts";
+import { notificationStack } from "#/state/notification.svelte.ts";
 import { drawPage } from "#/page.ts";
-import { mockPageMount } from "#/test-page.ts";
-import {
-  notificationDetail,
-  notifications,
-} from "#/components/test-notifications.ts";
+import { mockPageMount } from "#/testing/page.ts";
+import { notificationDetail, notifications } from "#/testing/notifications.ts";
 
 const LECTURE: RecentProjectView = {
   directory: "/videos/lecture",

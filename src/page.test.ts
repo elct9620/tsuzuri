@@ -10,14 +10,11 @@ import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { drawPage } from "#/page.ts";
-import { checkedBarButton } from "#/components/test-segment-rows.ts";
-import { mockPageMount } from "#/test-page.ts";
-import { projectOf, resourceOf } from "#/test-project.ts";
-import {
-  notificationDetail,
-  notifications,
-} from "#/components/test-notifications.ts";
-import { notificationStack } from "#/ui/notification.svelte.ts";
+import { checkedBarButton } from "#/testing/segment-rows.ts";
+import { mockPageMount } from "#/testing/page.ts";
+import { projectOf, resourceOf } from "#/testing/project.ts";
+import { notificationDetail, notifications } from "#/testing/notifications.ts";
+import { notificationStack } from "#/state/notification.svelte.ts";
 
 describe("drawPage", () => {
   /** The pages each test draws, taken away after it so their Svelte Components stop following. */

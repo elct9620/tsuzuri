@@ -8,13 +8,10 @@ import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
-import { projectOf, resourceOf } from "#/test-project.ts";
-import { pageContext } from "#/components/context.ts";
+import { projectOf, resourceOf } from "#/testing/project.ts";
+import { pageContext } from "#/state/context.ts";
 import ExportMenu from "#/components/ExportMenu.svelte";
-import {
-  notifications,
-  showNotifications,
-} from "#/components/test-notifications.ts";
+import { notifications, showNotifications } from "#/testing/notifications.ts";
 
 describe("ExportMenu", () => {
   let feed: ProjectFeed;

@@ -7,7 +7,7 @@
   import type { Language, TranslationGlossaryView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { fileName } from "#/ui/file-name.ts";
-  import type { TranslationChoices } from "#/components/translation-choices.svelte.ts";
+  import type { TranslationChoices } from "#/state/translation-choices.svelte.ts";
 
   interface Props {
     choices: TranslationChoices;

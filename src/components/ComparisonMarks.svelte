@@ -8,7 +8,7 @@
   import {
     markLabels,
     type SideRow,
-  } from "#/components/editor-comparison.svelte.ts";
+  } from "#/state/editor-comparison.svelte.ts";
   import RevertMenu from "#/components/RevertMenu.svelte";
 
   let { sideRow }: { sideRow: SideRow } = $props();

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
 
-  import { notificationStack } from "#/ui/notification.svelte.ts";
+  import { notificationStack } from "#/state/notification.svelte.ts";
   import NotificationCard from "#/components/NotificationCard.svelte";
 
   // The Notifications go with the corner that shows them.

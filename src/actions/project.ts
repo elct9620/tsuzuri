@@ -14,7 +14,7 @@ import {
 } from "#/ipc/project.ts";
 import { interfaceLanguageCode, t } from "#/i18n.ts";
 import { closeMenu } from "#/ui/menu.ts";
-import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
+import { notify, notifyFailure } from "#/state/notification.svelte.ts";
 
 /** Runs `action`, saying under `title` why it failed, and answers whether it succeeded. */
 async function report(

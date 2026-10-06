@@ -24,9 +24,9 @@
   import {
     notifyFailure,
     notifyRestoration,
-  } from "#/ui/notification.svelte.ts";
+  } from "#/state/notification.svelte.ts";
   import { formatTime, localTime } from "#/ui/time.ts";
-  import { editorComparison } from "#/components/context.ts";
+  import { editorComparison } from "#/state/context.ts";
 
   const comparison = editorComparison();
   let dialog: HTMLDialogElement;

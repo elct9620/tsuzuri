@@ -12,8 +12,8 @@ import {
   notificationAction,
   notificationDetail,
   notifications,
-} from "#/components/test-notifications.ts";
-import { pageContext } from "#/components/context.ts";
+} from "#/testing/notifications.ts";
+import { pageContext } from "#/state/context.ts";
 import UpdatesDialog from "#/components/UpdatesDialog.svelte";
 import VersionAndUpdates from "#/components/settings/general/VersionAndUpdates.svelte";
 

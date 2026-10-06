@@ -8,14 +8,11 @@ import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
-import { projectOf, resourceOf } from "#/test-project.ts";
-import { pageContext } from "#/components/context.ts";
+import { projectOf, resourceOf } from "#/testing/project.ts";
+import { pageContext } from "#/state/context.ts";
 import EditorBar from "#/components/EditorBar.svelte";
-import { PreviewFold } from "#/components/preview-fold.svelte.ts";
-import {
-  notifications,
-  showNotifications,
-} from "#/components/test-notifications.ts";
+import { PreviewFold } from "#/state/preview-fold.svelte.ts";
+import { notifications, showNotifications } from "#/testing/notifications.ts";
 
 describe("EditorBar", () => {
   let feed: ProjectFeed;

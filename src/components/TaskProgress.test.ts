@@ -8,14 +8,11 @@ import { editingPort } from "#/ipc/editing.ts";
 import type { PipelineProgress } from "#/ipc/progress.ts";
 import { ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
-import {
-  showNotifications,
-  notifications,
-} from "#/components/test-notifications.ts";
-import { pageContext } from "#/components/context.ts";
-import { TaskRun } from "#/components/task-run.svelte.ts";
+import { showNotifications, notifications } from "#/testing/notifications.ts";
+import { pageContext } from "#/state/context.ts";
+import { TaskRun } from "#/state/task-run.svelte.ts";
 import TaskProgress from "#/components/TaskProgress.svelte";
-import { progressSteps } from "#/components/test-task-progress.ts";
+import { progressSteps } from "#/testing/task-progress.ts";
 
 describe("TaskProgress", () => {
   let run: TaskRun;

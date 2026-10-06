@@ -10,7 +10,7 @@
     editorComparison,
     projectFeed,
     setSegmentDialogs,
-  } from "#/components/context.ts";
+  } from "#/state/context.ts";
   import DiarizationDialog from "#/components/DiarizationDialog.svelte";
   import EditorBar from "#/components/EditorBar.svelte";
   import GlossaryDialog from "#/components/GlossaryDialog.svelte";
@@ -19,16 +19,16 @@
   import {
     notifyChangedElsewhereKept,
     openRequestedSrt,
-  } from "#/components/project-actions.ts";
-  import { Playback } from "#/components/playback.svelte.ts";
-  import { PreviewFold } from "#/components/preview-fold.svelte.ts";
+  } from "#/actions/project.ts";
+  import { Playback } from "#/state/playback.svelte.ts";
+  import { PreviewFold } from "#/state/preview-fold.svelte.ts";
   import ReplacementDialog from "#/components/ReplacementDialog.svelte";
-  import { ResourceDock } from "#/components/resource-dock.svelte.ts";
+  import { ResourceDock } from "#/state/resource-dock.svelte.ts";
   import ResourceList from "#/components/ResourceList.svelte";
   import SegmentList from "#/components/SegmentList.svelte";
   import LicensesDialog from "#/components/settings/LicensesDialog.svelte";
   import RepositoryDialog from "#/components/settings/RepositoryDialog.svelte";
-  import SettingsDialog from "#/components/SettingsDialog.svelte";
+  import SettingsDialog from "#/components/settings/SettingsDialog.svelte";
   import ShiftDialog from "#/components/ShiftDialog.svelte";
   import ShortcutsDialog from "#/components/ShortcutsDialog.svelte";
   import SpeakersDialog from "#/components/SpeakersDialog.svelte";

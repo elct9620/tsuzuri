@@ -7,13 +7,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "#/assembly.ts";
 import type { ProjectView } from "#/ipc/project.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
-import { projectOf } from "#/test-project.ts";
-import { pageContext } from "#/components/context.ts";
+import { projectOf } from "#/testing/project.ts";
+import { pageContext } from "#/state/context.ts";
 import SearchBar from "#/components/SearchBar.svelte";
-import {
-  drawSegmentRows,
-  segmentRows,
-} from "#/components/test-segment-rows.ts";
+import { drawSegmentRows, segmentRows } from "#/testing/segment-rows.ts";
 
 describe("SearchBar", () => {
   let project: ProjectView | null;

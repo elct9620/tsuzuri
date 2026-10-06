@@ -14,8 +14,8 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src/ipc/project.test.ts`
 - `src/components/ExportMenu.test.ts`
 - `src/components/ResourceList.test.ts`
-- `src/components/resource-dock.test.ts`
-- `src/components/SettingsDialog.test.ts`
+- `src/state/resource-dock.test.ts`
+- `src/components/settings/SettingsDialog.test.ts`
 - `src/components/StartScreen.test.ts`
 - `src/components/Toolbar.test.ts`
 - `src/components/settings/project/Project.test.ts`

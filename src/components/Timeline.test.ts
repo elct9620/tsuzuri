@@ -12,15 +12,15 @@ import type { SegmentChange } from "#/ipc/editing.ts";
 import type { ProjectView, Segment } from "#/ipc/project.ts";
 import type { Waveform } from "#/ipc/waveform.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
-import { layOutTimeline } from "#/test-layout.ts";
-import { projectOf } from "#/test-project.ts";
-import { pageContext } from "#/components/context.ts";
-import { Playback } from "#/components/playback.svelte.ts";
+import { layOutTimeline } from "#/testing/layout.ts";
+import { projectOf } from "#/testing/project.ts";
+import { pageContext } from "#/state/context.ts";
+import { Playback } from "#/state/playback.svelte.ts";
 import {
   showNotifications,
   notificationDetail,
   notifications,
-} from "#/components/test-notifications.ts";
+} from "#/testing/notifications.ts";
 import Timeline, { regionColor } from "#/components/Timeline.svelte";
 
 describe("Timeline", () => {

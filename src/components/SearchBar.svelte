@@ -18,7 +18,7 @@
   import { failureMessage } from "#/ui/failure.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
   import { selectedText } from "#/ui/text-fields.ts";
-  import { editingSession, projectFeed } from "#/components/context.ts";
+  import { editingSession, projectFeed } from "#/state/context.ts";
 
   /** The highlight every match is marked under, and the one the current match is. */
   const MATCH_HIGHLIGHT = "search-match";

@@ -6,8 +6,8 @@
 <script lang="ts">
   import { t } from "#/i18n.ts";
   import { formatTime } from "#/ui/time.ts";
-  import { editorComparison } from "#/components/context.ts";
-  import type { SideRow } from "#/components/editor-comparison.svelte.ts";
+  import { editorComparison } from "#/state/context.ts";
+  import type { SideRow } from "#/state/editor-comparison.svelte.ts";
   import RevertMenu from "#/components/RevertMenu.svelte";
 
   let { sideRow }: { sideRow: SideRow } = $props();

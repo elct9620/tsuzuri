@@ -7,7 +7,7 @@
     type TranscriptionSettings,
   } from "#/ipc/transcription.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import { notifyFailure } from "#/state/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** The general Transcription Settings, the default of every Project, as the switches stand. */

@@ -12,7 +12,7 @@
     notificationStack,
     type NotificationKind,
     type ShownNotification,
-  } from "#/ui/notification.svelte.ts";
+  } from "#/state/notification.svelte.ts";
 
   /** A check, an exclamation and a cross, each in a circle or a triangle. */
   const KIND_ICONS: Record<NotificationKind, typeof CircleCheck> = {

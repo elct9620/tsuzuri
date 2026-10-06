@@ -75,7 +75,7 @@
   import { isTextField, type SegmentChange } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";
-  import { notifyEdit, notifyFailure } from "#/ui/notification.svelte.ts";
+  import { notifyEdit, notifyFailure } from "#/state/notification.svelte.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";
   import {
     type PlayedSource,
@@ -102,8 +102,8 @@
     editingSession,
     projectFeed,
     savedPreferences,
-  } from "#/components/context.ts";
-  import type { Playback } from "#/components/playback.svelte.ts";
+  } from "#/state/context.ts";
+  import type { Playback } from "#/state/playback.svelte.ts";
 
   let { playback, hidden }: { playback: Playback; hidden: boolean } = $props();
 

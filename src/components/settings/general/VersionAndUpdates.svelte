@@ -13,9 +13,9 @@
     type UpdateSettings,
   } from "#/ipc/updates.ts";
   import { t } from "#/i18n.ts";
-  import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
-  import { updateFoundMessage } from "#/components/app-updates.svelte.ts";
-  import { appUpdates } from "#/components/context.ts";
+  import { notify, notifyFailure } from "#/state/notification.svelte.ts";
+  import { updateFoundMessage } from "#/state/app-updates.svelte.ts";
+  import { appUpdates } from "#/state/context.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** How much of the commit is shown, as git abbreviates it. */

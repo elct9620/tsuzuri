@@ -10,7 +10,7 @@ import {
 } from "#/ipc/progress.ts";
 import { t } from "#/i18n.ts";
 import { failureCode } from "#/ui/failure.ts";
-import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
+import { notify, notifyFailure } from "#/state/notification.svelte.ts";
 import { progressLine, progressSummary, type TaskKind } from "#/ui/progress.ts";
 
 /** Where each task's messages are kept: under the dialog that starts it. */

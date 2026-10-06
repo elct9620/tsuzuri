@@ -9,7 +9,7 @@ import {
   type ProjectView,
 } from "#/ipc/project.ts";
 import { t } from "#/i18n.ts";
-import { notifyFailure } from "#/ui/notification.svelte.ts";
+import { notifyFailure } from "#/state/notification.svelte.ts";
 
 /** Sets the Project Options as `project` holds them, with `changes` in their place. */
 export async function saveOptions(

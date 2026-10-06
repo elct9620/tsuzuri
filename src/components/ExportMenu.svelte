@@ -21,8 +21,8 @@
   import { t } from "#/i18n.ts";
   import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";
   import { closeMenu } from "#/ui/menu.ts";
-  import { notifyFailure } from "#/ui/notification.svelte.ts";
-  import { projectFeed } from "#/components/context.ts";
+  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { projectFeed } from "#/state/context.ts";
 
   /** Where the webview remembers whether a Plain Text export names its Speakers. */
   const TEXT_SPEAKERS_KEY = "tsuzuri.plain-text-speakers";

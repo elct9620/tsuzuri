@@ -10,12 +10,12 @@ import { DEFAULT_PREFERENCES } from "#/ipc/preferences.ts";
 import type { ProjectView } from "#/ipc/project.ts";
 import type { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
-import { projectOf } from "#/test-project.ts";
-import { pageContext } from "#/components/context.ts";
+import { projectOf } from "#/testing/project.ts";
+import { pageContext } from "#/state/context.ts";
 import EditorBar from "#/components/EditorBar.svelte";
-import { Playback } from "#/components/playback.svelte.ts";
+import { Playback } from "#/state/playback.svelte.ts";
 import Preview from "#/components/Preview.svelte";
-import { PreviewFold } from "#/components/preview-fold.svelte.ts";
+import { PreviewFold } from "#/state/preview-fold.svelte.ts";
 
 describe("Preview", () => {
   let session: EditingSession;

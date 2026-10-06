@@ -18,7 +18,10 @@ import {
   type SubtitleVersions,
 } from "#/ipc/project.ts";
 import { t } from "#/i18n.ts";
-import { notifyFailure, notifyRestoration } from "#/ui/notification.svelte.ts";
+import {
+  notifyFailure,
+  notifyRestoration,
+} from "#/state/notification.svelte.ts";
 
 /** Which subtitle a comparison is of: the original, or the translation shown. */
 export type Side = "original" | "translation";

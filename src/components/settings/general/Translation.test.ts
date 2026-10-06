@@ -3,10 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Translation from "#/components/settings/general/Translation.svelte";
-import {
-  showNotifications,
-  notifications,
-} from "#/components/test-notifications.ts";
+import { showNotifications, notifications } from "#/testing/notifications.ts";
 
 describe("Translation", () => {
   let savedArgs: unknown;

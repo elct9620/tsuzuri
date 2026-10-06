@@ -6,8 +6,8 @@
   import { modelSettings } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import { sourceFileName } from "#/ui/models.ts";
-  import { notifyDiarization } from "#/ui/notification.svelte.ts";
-  import { projectFeed, taskRun } from "#/components/context.ts";
+  import { notifyDiarization } from "#/state/notification.svelte.ts";
+  import { projectFeed, taskRun } from "#/state/context.ts";
 
   const feed = projectFeed();
   const run = taskRun();

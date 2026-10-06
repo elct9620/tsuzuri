@@ -16,11 +16,11 @@
     showTranslation,
   } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import { notifyFailure } from "#/state/notification.svelte.ts";
   import { playedSource } from "#/ui/silence.ts";
   import CompareMenu from "#/components/CompareMenu.svelte";
-  import { projectFeed } from "#/components/context.ts";
-  import type { PreviewFold } from "#/components/preview-fold.svelte.ts";
+  import { projectFeed } from "#/state/context.ts";
+  import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
   import TaskProgress from "#/components/TaskProgress.svelte";
 
   interface Props {

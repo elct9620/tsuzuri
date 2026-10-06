@@ -7,8 +7,8 @@
   import { t } from "#/i18n.ts";
   import { closeMenu } from "#/ui/menu.ts";
   import { localTime } from "#/ui/time.ts";
-  import { editorComparison } from "#/components/context.ts";
-  import type { Side } from "#/components/editor-comparison.svelte.ts";
+  import { editorComparison } from "#/state/context.ts";
+  import type { Side } from "#/state/editor-comparison.svelte.ts";
 
   let {
     openVersions,

@@ -9,8 +9,8 @@ import { EditingSession } from "#/editor/index.ts";
 import HelpButton from "#/components/settings/HelpButton.svelte";
 import { interfaceLanguageCode, setInterfaceLanguage, t } from "#/i18n.ts";
 import { drawPage } from "#/page.ts";
-import { mockPageMount } from "#/test-page.ts";
-import { projectOf } from "#/test-project.ts";
+import { mockPageMount } from "#/testing/page.ts";
+import { projectOf } from "#/testing/project.ts";
 
 describe("interface language", () => {
   afterEach(() => {

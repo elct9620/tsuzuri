@@ -12,8 +12,8 @@ import {
 } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { drawPage } from "#/page.ts";
-import { mockPageMount } from "#/test-page.ts";
-import { projectOf } from "#/test-project.ts";
+import { mockPageMount } from "#/testing/page.ts";
+import { projectOf } from "#/testing/project.ts";
 
 const LECTURE: RecentProjectView = {
   directory: "/videos/lecture",

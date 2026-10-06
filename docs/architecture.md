@@ -68,10 +68,13 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 │  ├─ page.ts             draws Page.svelte into <body> (4.3)
 │  ├─ Page.svelte         composes the page's regions (4.1)
 │  ├─ components/         Svelte Components and their tests (4.1)
+│  ├─ state/              shared state and the context (4.6.2)
+│  ├─ actions/            shared actions (4.6.2)
 │  ├─ ipc/                the only way to Rust
 │  ├─ editor/             editing core, depends on nothing outside (4.5)
-│  ├─ ui/                 shared screen modules
-│  └─ locales/            en, zh-Hant
+│  ├─ ui/                 shared screen modules (4.8)
+│  ├─ locales/            en, zh-Hant
+│  └─ testing/            helpers the tests share
 ├─ src-tauri/src/         Rust (chapter 3)
 │  ├─ project/            the Project context
 │  ├─ transcription/      transcription adapters and commands
@@ -164,7 +167,7 @@ Svelte 元件 ─▶ ipc/<情境>.ts ─▶ bindings.ts ─▶ <情境>/commands
              │        （failure.rs，應用層）                  │
              │                    ui/failure.ts（依 code 給訊息與種類）◀┘
              │                                                │
-             │               ui/notification.svelte.ts（toast）◀┘
+             │            state/notification.svelte.ts（toast）◀┘
 ```
 
 `Failure` 只帶錯誤碼與資料，文字由 webview 依介面語言產生。各情境回傳自己的錯誤，由 `failure.rs` 以 `From` 收攏；reqwest 的錯誤由 `llama.rs`、hf-hub 的錯誤由 `hub.rs` 轉換。通知種類也依錯誤碼決定：拒絕是自動消失的 warning，出錯是留到關閉的 error。
@@ -528,7 +531,7 @@ command ── begin_mode ──▶ ModeRun: turn, ports, keep   + Phases
 ```
 index.html, Page.svelte       markup
     |
-components/   ------------> ui/, ipc/ (editing aside)
+components/   ------------> state/, actions/, ui/, ipc/ (editing aside)
     |                         interface: DOM events to use cases, changes to the page
     v
 editor/  session.ts           application: Cursor, Checked Segments, use cases, port
@@ -573,9 +576,11 @@ body
 |---|---|---|
 | `editor/` | DOM | `editor/` 以外的模組 |
 | `ipc/` | Tauri、`editor/` 的 port | Svelte 元件 |
-| `ui/` | i18n、`editor/` 與 `ipc/` 的型別 | Svelte 元件 |
-| `page.ts` | `Page.svelte`、`components/context.ts`、i18n、`ui/`、`editor/` 與 `ipc/` 的型別 | `editor/` 的模組 |
-| `Page.svelte`、`components/` | 其他 Svelte 元件、i18n、`ui/`、`ipc/`、`editor/index.ts` | 編輯指令 |
+| `ui/` | i18n、`editor/`、`ipc/` 與 `state/` 的型別 | Svelte 元件 |
+| `state/` | `ui/`、`ipc/`、i18n、`editor/index.ts` | Svelte 元件、`actions/` |
+| `actions/` | `state/`、`ui/`、`ipc/`、i18n、`editor/index.ts` | Svelte 元件 |
+| `page.ts` | `Page.svelte`、`state/context.ts`、i18n、`ui/`、`editor/` 與 `ipc/` 的型別 | `editor/` 的模組 |
+| `Page.svelte`、`components/` | 其他 Svelte 元件、`state/`、`actions/`、i18n、`ui/`、`ipc/`、`editor/index.ts` | 編輯指令 |
 | `main.ts` | 全部 | — |
 
 `architecture.test.ts` 依這張表檢查每個 import。編輯一律經過 session。對應 Rust 的型別只定義在 `ipc/`；`editor/` 有自己的型別，由 `ipc/editing.ts` 換算，同名的型別在那裡以別名區分。
@@ -723,7 +728,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 
 #### 4.6.2 共用的狀態與動作
 
-共用的狀態由 Page 保存，自己使用或以 prop、context 交下；共用的動作寫成模組。
+共用的狀態由 Page 保存，自己使用或以 prop、context 交下；類別放在 `state/`。共用的動作寫成 `actions/` 的模組。
 
 | 共用 | 位置 | 使用者 |
 |---|---|---|
@@ -734,9 +739,10 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ta
 | `PreviewFold` | Page 建立 | 編輯列的收起鈕、預覽 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
-| 開啟、重新載入、命名 | `project-actions.ts` | 起始畫面、工具列、資源清單 |
-| 寫入說話者後的通知 | `speaker-actions.ts` | 說話者 modal、段落列 |
-| 清理簡體與通知 | `cleanup-actions.ts` | 段落列、勾選工具列、快速鍵 |
+| 通知的清單 | `notification.svelte.ts` | 所有 Svelte 元件 |
+| 開啟、重新載入、命名 | `project.ts` | 起始畫面、工具列、資源清單 |
+| 寫入說話者後的通知 | `speaker.ts` | 說話者 modal、段落列 |
+| 清理簡體與通知 | `cleanup.ts` | 段落列、勾選工具列、快速鍵 |
 | Segment Changes 的選項 | `segment-changes.ts` | 段落選單、勾選工具列、右鍵 |
 
 資源清單的按鈕哪顆出現由樣式表依視窗寬度決定，快速鍵照看得見的那顆動作。Page 每讀到一份專案就交給 `EditorComparison` 比較；段落清單畫好列之後，讓搜尋列重新搜尋。
@@ -778,7 +784,6 @@ feed -> Preview.show    sets the player's source: media or silence
 
 | 模組 | 內容 |
 |---|---|
-| `ui/notification.svelte.ts` | 通知的清單，Svelte 元件都由此發出 |
 | `ui/save-mark.ts` | 標題列的存檔提示與計時 |
 | `ui/failure.ts` | 錯誤碼的訊息與通知種類 |
 | `ui/progress.ts` | 任務種類、進度文字、Phase 耗時 |
@@ -790,6 +795,7 @@ feed -> Preview.show    sets the player's source: media or silence
 | `ui/timeline-spans.ts` | 時間軸區段與選段的落點 |
 | `ui/file-name.ts` | 路徑的最後一段 |
 | `ui/silence.ts` | 沒有媒體檔時播放的靜音 |
+| `ui/preview-screen.ts` | 影片視窗會移走的播放器與疊字 |
 | `ui/shortcuts.ts` | 各平台的快速鍵、比對與寫法 |
 | `ui/text-fields.ts` | 選取的文字 |
 | `ui/speakers.ts` | 段落與詞彙表的說話者名單 |
@@ -811,7 +817,7 @@ Svelte 元件以 `@lucide/svelte` 畫出圖示。快速鍵以 `ui/shortcuts.ts` 
 | 規則 | 做法 |
 |---|---|
 | 播放器 | 只有一個，移動不複製 |
-| 移出去的元素 | 由 `preview-screen.ts` 建立 |
+| 移出去的元素 | 由 `ui/preview-screen.ts` 建立 |
 | 播放器的事件 | `Preview` 自己綁在元素上 |
 | 影片視窗的事件 | `Preview` 開窗時綁定 |
 | 每格畫面 | 用影片所在視窗的 rAF |

@@ -7,7 +7,7 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
 - `src-tauri/src/project/current/tests/versions_behavior.rs`
-- `src/components/editor-comparison.test.ts`
+- `src/state/editor-comparison.test.ts`
 - `src/components/VersionsDialog.test.ts`
 - `src/page.test.ts`
 

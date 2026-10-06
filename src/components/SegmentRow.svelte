@@ -23,7 +23,7 @@
   } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { closeMenu } from "#/ui/menu.ts";
-  import { notify } from "#/ui/notification.svelte.ts";
+  import { notify } from "#/state/notification.svelte.ts";
   import {
     isComposingKey,
     shortcutById,
@@ -36,21 +36,21 @@
     editingSession,
     projectFeed,
     segmentDialogs,
-  } from "#/components/context.ts";
+  } from "#/state/context.ts";
   import EarlierText from "#/components/EarlierText.svelte";
   import EditingField from "#/components/EditingField.svelte";
   import type {
     SegmentComparison,
     Side,
-  } from "#/components/editor-comparison.svelte.ts";
+  } from "#/state/editor-comparison.svelte.ts";
   import {
     change,
     checkedChoices,
     popUpChoices,
     type ResourceOffers,
     segmentChoices,
-  } from "#/components/segment-changes.ts";
-  import { notifyNamed } from "#/components/speaker-actions.ts";
+  } from "#/actions/segment-changes.ts";
+  import { notifyNamed } from "#/actions/speaker.ts";
   import TimeField from "#/components/TimeField.svelte";
 
   /** The side of the comparison each field shows the marks of. */

@@ -9,8 +9,8 @@
   import type { RevertPart } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { closeMenu } from "#/ui/menu.ts";
-  import { editorComparison } from "#/components/context.ts";
-  import type { SideRow } from "#/components/editor-comparison.svelte.ts";
+  import { editorComparison } from "#/state/context.ts";
+  import type { SideRow } from "#/state/editor-comparison.svelte.ts";
 
   let {
     sideRow,

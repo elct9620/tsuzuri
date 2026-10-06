@@ -8,30 +8,30 @@ import { assemble } from "#/assembly.ts";
 import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
-import { projectOf, resourceOf } from "#/test-project.ts";
+import { projectOf, resourceOf } from "#/testing/project.ts";
 import {
   showNotifications,
   notificationItems,
   notifications,
-} from "#/components/test-notifications.ts";
-import { pageContext } from "#/components/context.ts";
-import { TaskRun } from "#/components/task-run.svelte.ts";
+} from "#/testing/notifications.ts";
+import { pageContext } from "#/state/context.ts";
+import { TaskRun } from "#/state/task-run.svelte.ts";
 import TaskProgress from "#/components/TaskProgress.svelte";
-import { progressSteps } from "#/components/test-task-progress.ts";
+import { progressSteps } from "#/testing/task-progress.ts";
 import {
   chooseLanguage,
   languageSelect,
   optionCheckbox,
   setSummaryWords,
-} from "#/components/test-translation-options.ts";
+} from "#/testing/translation-options.ts";
 import TranslationDialog from "#/components/TranslationDialog.svelte";
-import { renderWithToolbar } from "#/components/test-toolbar.ts";
+import { renderWithToolbar } from "#/testing/toolbar.ts";
 import {
   checkedBarButton,
   drawSegmentList,
   rowList,
   segmentDialogsOf,
-} from "#/components/test-segment-rows.ts";
+} from "#/testing/segment-rows.ts";
 
 describe("TranslationDialog", () => {
   let feed: ProjectFeed;

@@ -11,13 +11,13 @@ import {
   notificationCountdown,
   notificationDetail,
   notifications,
-} from "#/components/test-notifications.ts";
+} from "#/testing/notifications.ts";
 import { drawPage } from "#/page.ts";
-import { mockPageMount } from "#/test-page.ts";
-import { projectOf } from "#/test-project.ts";
+import { mockPageMount } from "#/testing/page.ts";
+import { projectOf } from "#/testing/project.ts";
 import { EditingSession, fieldValue } from "#/editor/index.ts";
-import { pageContext, withSegmentDialogs } from "#/components/context.ts";
-import { Playback } from "#/components/playback.svelte.ts";
+import { pageContext, withSegmentDialogs } from "#/state/context.ts";
+import { Playback } from "#/state/playback.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */

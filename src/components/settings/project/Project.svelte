@@ -2,10 +2,7 @@
   import type { ProjectOptions, ProjectView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
-  import {
-    saveOptions,
-    setLanguage,
-  } from "#/components/settings/project/project-options.ts";
+  import { saveOptions, setLanguage } from "#/actions/project-options.ts";
 
   interface Props {
     project: ProjectView;

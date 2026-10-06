@@ -5,11 +5,11 @@
   import { selectResource, type ProjectView } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import { notifyFailure } from "#/state/notification.svelte.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";
-  import { projectFeed } from "#/components/context.ts";
-  import { reload } from "#/components/project-actions.ts";
-  import type { ResourceDock } from "#/components/resource-dock.svelte.ts";
+  import { projectFeed } from "#/state/context.ts";
+  import { reload } from "#/actions/project.ts";
+  import type { ResourceDock } from "#/state/resource-dock.svelte.ts";
 
   interface Props {
     dock: ResourceDock;

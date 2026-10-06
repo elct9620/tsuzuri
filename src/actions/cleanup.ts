@@ -9,7 +9,7 @@ import {
   type EditingSession,
 } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
-import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
+import { notify, notifyFailure } from "#/state/notification.svelte.ts";
 
 /** Tells how a cleanup ended: how many characters were cleaned, or why none were. */
 function notifyCleanup(outcome: CleanupOutcome): void {

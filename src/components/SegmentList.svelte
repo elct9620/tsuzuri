@@ -15,12 +15,12 @@
     type Outcome,
     runWithNeighbour,
   } from "#/editor/index.ts";
-  import { notifyEdit } from "#/ui/notification.svelte.ts";
+  import { notifyEdit } from "#/state/notification.svelte.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";
   import CheckedBar from "#/components/CheckedBar.svelte";
-  import { cleanMarked } from "#/components/cleanup-actions.ts";
-  import { editingSession } from "#/components/context.ts";
-  import type { Playback } from "#/components/playback.svelte.ts";
+  import { cleanMarked } from "#/actions/cleanup.ts";
+  import { editingSession } from "#/state/context.ts";
+  import type { Playback } from "#/state/playback.svelte.ts";
   import SearchBar from "#/components/SearchBar.svelte";
   import SegmentRows from "#/components/SegmentRows.svelte";
 

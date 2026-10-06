@@ -5,11 +5,8 @@
 
 import { render, screen, within } from "@testing-library/svelte";
 
-import {
-  type SegmentDialogs,
-  withSegmentDialogs,
-} from "#/components/context.ts";
-import { Playback } from "#/components/playback.svelte.ts";
+import { type SegmentDialogs, withSegmentDialogs } from "#/state/context.ts";
+import { Playback } from "#/state/playback.svelte.ts";
 import type ShiftDialog from "#/components/ShiftDialog.svelte";
 import type SpeakersDialog from "#/components/SpeakersDialog.svelte";
 import SegmentList from "#/components/SegmentList.svelte";

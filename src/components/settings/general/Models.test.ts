@@ -8,10 +8,7 @@ import type {
   ModelSource,
   PresetModel,
 } from "#/ipc/toolchain.ts";
-import {
-  showNotifications,
-  notifications,
-} from "#/components/test-notifications.ts";
+import { showNotifications, notifications } from "#/testing/notifications.ts";
 import RepositoryDialog from "#/components/settings/RepositoryDialog.svelte";
 import Models from "#/components/settings/general/Models.svelte";
 

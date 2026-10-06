@@ -3,12 +3,12 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "#/assembly.ts";
 import type { EditingSession } from "#/editor/index.ts";
-import { projectOf } from "#/test-project.ts";
-import { pageContext } from "#/components/context.ts";
+import { projectOf } from "#/testing/project.ts";
+import { pageContext } from "#/state/context.ts";
 import {
   type DrawnSegmentRows,
   drawSegmentRows,
-} from "#/components/test-segment-rows.ts";
+} from "#/testing/segment-rows.ts";
 
 describe("EditingField", () => {
   let drawn: DrawnSegmentRows;

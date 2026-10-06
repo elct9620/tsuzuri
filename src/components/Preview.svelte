@@ -103,14 +103,14 @@
     sliderPosition,
     volumeAt,
   } from "#/ui/volume.ts";
-  import { editingSession, projectFeed } from "#/components/context.ts";
-  import type { Playback } from "#/components/playback.svelte.ts";
-  import type { PreviewFold } from "#/components/preview-fold.svelte.ts";
+  import { editingSession, projectFeed } from "#/state/context.ts";
+  import type { Playback } from "#/state/playback.svelte.ts";
+  import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
   import {
     type CaptionBackdrop,
     type DummyVideoColour,
     PreviewScreen,
-  } from "#/components/preview-screen.ts";
+  } from "#/ui/preview-screen.ts";
   import Timeline, { timeKeys } from "#/components/Timeline.svelte";
 
   let { playback, fold }: { playback: Playback; fold: PreviewFold } = $props();

@@ -12,11 +12,8 @@
     editingSession,
     projectFeed,
     segmentDialogs,
-  } from "#/components/context.ts";
-  import {
-    checkedChoices,
-    resourceOffers,
-  } from "#/components/segment-changes.ts";
+  } from "#/state/context.ts";
+  import { checkedChoices, resourceOffers } from "#/actions/segment-changes.ts";
 
   const feed = projectFeed();
   const session = editingSession();

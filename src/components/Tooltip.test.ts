@@ -2,7 +2,7 @@
 import { render } from "@testing-library/svelte";
 import { flushSync } from "svelte";
 import { beforeEach, describe, expect, it } from "vitest";
-import { topLayer } from "#/test-top-layer.ts";
+import { topLayer } from "#/testing/top-layer.ts";
 import Tooltip from "#/components/Tooltip.svelte";
 
 describe("Tooltip", () => {

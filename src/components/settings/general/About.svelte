@@ -3,7 +3,7 @@
 
   import { openReleases, openSponsorship } from "#/ipc/about.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/ui/notification.svelte.ts";
+  import { notifyFailure } from "#/state/notification.svelte.ts";
 
   interface Props {
     /** Opens the full License Notice. */

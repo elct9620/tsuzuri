@@ -6,20 +6,20 @@ import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "#/assembly.ts";
 import type { GlossaryTable, ProjectView } from "#/ipc/project.ts";
-import { projectOf, resourceOf } from "#/test-project.ts";
+import { projectOf, resourceOf } from "#/testing/project.ts";
 import { fieldValue, isFieldHeld } from "#/editor/index.ts";
 import {
   showNotifications,
   notificationAction,
   notificationDetail,
   notifications,
-} from "#/components/test-notifications.ts";
-import { pageContext } from "#/components/context.ts";
-import { SAVE_MARK, saveMark } from "#/ui/test-save-mark.ts";
-import { Playback } from "#/components/playback.svelte.ts";
+} from "#/testing/notifications.ts";
+import { pageContext } from "#/state/context.ts";
+import { SAVE_MARK, saveMark } from "#/testing/save-mark.ts";
+import { Playback } from "#/state/playback.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
-import { TaskRun } from "#/components/task-run.svelte.ts";
-import { rowList, segmentRows } from "#/components/test-segment-rows.ts";
+import { TaskRun } from "#/state/task-run.svelte.ts";
+import { rowList, segmentRows } from "#/testing/segment-rows.ts";
 
 describe("SegmentList", () => {
   let project: ProjectView | null;

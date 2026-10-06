@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { UpdateProgress } from "#/ipc/updates.ts";
   import { t } from "#/i18n.ts";
-  import { appUpdates } from "#/components/context.ts";
+  import { appUpdates } from "#/state/context.ts";
 
   const BYTES_PER_MEGABYTE = 1024 * 1024;
 

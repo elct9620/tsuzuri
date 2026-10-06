@@ -7,15 +7,15 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
-import { projectOf, resourceOf } from "#/test-project.ts";
-import { pageContext } from "#/components/context.ts";
-import { ResourceDock } from "#/components/resource-dock.svelte.ts";
+import { projectOf, resourceOf } from "#/testing/project.ts";
+import { pageContext } from "#/state/context.ts";
+import { ResourceDock } from "#/state/resource-dock.svelte.ts";
 import ResourceList from "#/components/ResourceList.svelte";
 import {
   notificationDetail,
   notifications,
   showNotifications,
-} from "#/components/test-notifications.ts";
+} from "#/testing/notifications.ts";
 
 describe("ResourceList", () => {
   let feed: ProjectFeed;

@@ -5,11 +5,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
-import { mockPageMount } from "#/test-page.ts";
-import { projectOf } from "#/test-project.ts";
-import { showNotifications } from "#/components/test-notifications.ts";
-import { pageContext } from "#/components/context.ts";
-import SettingsDialog from "#/components/SettingsDialog.svelte";
+import { mockPageMount } from "#/testing/page.ts";
+import { projectOf } from "#/testing/project.ts";
+import { showNotifications } from "#/testing/notifications.ts";
+import { pageContext } from "#/state/context.ts";
+import SettingsDialog from "#/components/settings/SettingsDialog.svelte";
 
 describe("SettingsDialog", () => {
   let feed: ProjectFeed;

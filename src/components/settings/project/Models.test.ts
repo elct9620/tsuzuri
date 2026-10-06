@@ -4,7 +4,7 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectView } from "#/ipc/project.ts";
 import type { PresetModel } from "#/ipc/toolchain.ts";
-import { projectOf } from "#/test-project.ts";
+import { projectOf } from "#/testing/project.ts";
 import Models from "#/components/settings/project/Models.svelte";
 
 const QWEN_PRESET: PresetModel = {

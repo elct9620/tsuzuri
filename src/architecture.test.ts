@@ -9,7 +9,8 @@ const sources = Object.fromEntries(
         "./**/*.ts",
         "./**/*.svelte",
         "!./**/*.test.ts",
-        "!./**/test-*.ts",
+        "!./testing/**",
+        "!./editor/test-*.ts",
         "!./**/*.d.ts",
       ],
       { query: "?raw", import: "default", eager: true },
@@ -29,6 +30,8 @@ type Layer =
   | "editor entry"
   | "ipc"
   | "ui"
+  | "state"
+  | "actions"
   | "page.ts"
   | "Svelte Component"
   | "i18n"
@@ -39,6 +42,8 @@ function layer(path: string): Layer {
   if (path.startsWith("editor/")) return "editor";
   if (path.startsWith("ipc/")) return "ipc";
   if (path.startsWith("ui/")) return "ui";
+  if (path.startsWith("state/")) return "state";
+  if (path.startsWith("actions/")) return "actions";
   if (path === "page.ts") return "page.ts";
   if (path === "Page.svelte" || path.startsWith("components/"))
     return "Svelte Component";
@@ -60,13 +65,28 @@ const RULE_BY_LAYER: Partial<Record<Layer, LayerRule>> = {
   editor: { modules: ["editor", "editor entry"] },
   "editor entry": { modules: ["editor"] },
   ipc: { modules: ["ipc", "editor entry"] },
-  ui: { modules: ["ui", "i18n"], types: ["editor entry", "editor", "ipc"] },
+  ui: {
+    modules: ["ui", "i18n"],
+    types: ["editor entry", "editor", "ipc", "state"],
+  },
+  state: { modules: ["state", "ui", "ipc", "editor entry", "i18n"] },
+  actions: {
+    modules: ["actions", "state", "ui", "ipc", "editor entry", "i18n"],
+  },
   "page.ts": {
-    modules: ["Svelte Component", "ui", "i18n"],
+    modules: ["Svelte Component", "state", "ui", "i18n"],
     types: ["editor entry", "ipc"],
   },
   "Svelte Component": {
-    modules: ["Svelte Component", "ui", "ipc", "editor entry", "i18n"],
+    modules: [
+      "Svelte Component",
+      "state",
+      "actions",
+      "ui",
+      "ipc",
+      "editor entry",
+      "i18n",
+    ],
   },
 };
 

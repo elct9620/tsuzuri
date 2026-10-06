@@ -2,7 +2,7 @@
   import type { ProjectView, TranscriptionOverrides } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
-  import { saveOptions } from "#/components/settings/project/project-options.ts";
+  import { saveOptions } from "#/actions/project-options.ts";
 
   interface Props {
     project: ProjectView;

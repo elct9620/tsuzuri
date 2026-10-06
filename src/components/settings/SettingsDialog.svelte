@@ -5,13 +5,13 @@
   import type { ModelSlot } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import type { HubFile } from "#/ui/models.ts";
-  import { projectFeed } from "#/components/context.ts";
+  import { projectFeed } from "#/state/context.ts";
   import About from "#/components/settings/general/About.svelte";
   import Components from "#/components/settings/general/Components.svelte";
   import GeneralModels from "#/components/settings/general/Models.svelte";
   import GeneralTranscription from "#/components/settings/general/Transcription.svelte";
   import Logs from "#/components/settings/general/Logs.svelte";
-  import Preferences from "#/components/settings/Preferences.svelte";
+  import Preferences from "#/components/settings/preferences/Preferences.svelte";
   import Project from "#/components/settings/project/Project.svelte";
   import ProjectModels from "#/components/settings/project/Models.svelte";
   import ProjectTranscription from "#/components/settings/project/Transcription.svelte";

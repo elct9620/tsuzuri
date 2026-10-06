@@ -18,7 +18,7 @@ export default defineConfig(() => ({
     listBundledPackages(),
   ],
   test: {
-    setupFiles: ["src/test-setup.ts"],
+    setupFiles: ["src/testing/setup.ts"],
     // Times show in the local time zone, so tests pin one to read the same on every machine.
     env: { TZ: "Asia/Taipei" },
   },

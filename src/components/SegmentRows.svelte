@@ -9,7 +9,7 @@
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
 
-  import type { ProjectView } from "#/ipc/project.ts";
+  import type { ProjectView, Segment } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
   import type { ComparedRow } from "#/ipc/project.ts";
   import {
@@ -40,6 +40,14 @@
   } from "#/state/editor-comparison.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { ViewChoices } from "#/state/view-choices.svelte.ts";
+  import { anchoredScrollTop, scrollingAncestor } from "#/ui/scroll-anchor.ts";
+  import { MS_PER_SECOND } from "#/ui/time.ts";
+  import { formatLength } from "#/ui/timeline-spans.ts";
+  import CurrentSegmentKeys from "#/components/CurrentSegmentKeys.svelte";
+  import {
+    type Layout,
+    hasUnfoldedCurrentRow,
+  } from "#/components/EditorLayout.svelte";
   import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import { resourceOffers } from "#/actions/segment-changes.ts";
   import RemovalRow from "#/components/RemovalRow.svelte";
@@ -58,12 +66,14 @@
     playback,
     placeholders,
     viewChoices,
+    editorLayout = "v1",
     onshown,
     children,
   }: {
     playback: Playback;
     placeholders: ResourcePlaceholders;
     viewChoices: ViewChoices;
+    editorLayout?: Layout;
     /** Hears each Project once its Segments are shown. */
     onshown?: (project: ProjectView | null) => void;
     /** What stands between the empty hint and the rows, as the search and checked bars do. */
@@ -87,6 +97,8 @@
   const checkedIndexes = $derived(new Set(editing.checkedIndexes));
   /** The position of the Current Segment as its row was last brought into view. */
   let shownCurrentIndex: number | null = null;
+  /** Where the row becoming current stood on screen before the rows redrew, while rows unfold. */
+  let comingRowTop: number | null = null;
 
   const segments = $derived(project?.segments ?? []);
   /** Whether rows show the Speaker column: once a Segment names a Speaker, or as the View menu asks. */
@@ -174,7 +186,10 @@
     const isNewlyCurrent = index !== shownCurrentIndex;
     shownCurrentIndex = index;
     if (index === null) return;
-    if (isNewlyCurrent) rows[index]?.bringIntoView();
+    if (isNewlyCurrent) {
+      keepComingRowInPlace(index);
+      rows[index]?.bringIntoView();
+    }
     const caretField = caret && field(index, caret.field);
     if (
       caretField &&
@@ -197,6 +212,36 @@
       CURSOR_HIGHLIGHT,
       rangeField && caret ? [rangeOf(rangeField, caret)] : [],
     );
+  });
+
+  /**
+   * Scrolls the list so the row becoming current stays where it stood, as the row it leaves folds
+   * up above it or its own unfolding would otherwise move it.
+   */
+  function keepComingRowInPlace(index: number): void {
+    const topBefore = comingRowTop;
+    comingRowTop = null;
+    const topAfter = rows[index]?.topOnScreen() ?? null;
+    const scroller = list ? scrollingAncestor(list) : null;
+    if (topBefore === null || topAfter === null || scroller === null) return;
+    scroller.scrollTop = anchoredScrollTop(
+      scroller.scrollTop,
+      topBefore,
+      topAfter,
+    );
+  }
+
+  // Notes where the row becoming current stands before the rows redraw, so it is kept there
+  $effect.pre(() => {
+    const { index } = editing.cursor;
+    untrack(() => {
+      comingRowTop =
+        hasUnfoldedCurrentRow(editorLayout) &&
+        index !== null &&
+        index !== shownCurrentIndex
+          ? (rows[index]?.topOnScreen() ?? null)
+          : null;
+    });
   });
 
   // Shows each Cursor the session tells of, once the rows it moves into are drawn
@@ -231,6 +276,18 @@
       untrack(() => rows[index]?.bringIntoView());
   });
 </script>
+
+{#snippet currentDetails(segment: Segment)}
+  <div class="flex flex-col gap-1 px-1.5 pt-1">
+    <span class="badge badge-sm w-fit tabular-nums" data-length
+      >{formatLength({
+        start: segment.start_ms / MS_PER_SECOND,
+        end: segment.end_ms / MS_PER_SECOND,
+      })}</span
+    >
+    <CurrentSegmentKeys {playback} />
+  </div>
+{/snippet}
 
 <svelte:window
   onkeydown={followShortcut}
@@ -267,6 +324,9 @@
           {isTypingKept}
           {isSpeakerColumnShown}
           comparison={layout.bySegment[index]}
+          details={hasUnfoldedCurrentRow(editorLayout) && currentIndex === index
+            ? currentDetails
+            : undefined}
         />
       {/each}
       {#each layout.removalsBefore[segments.length] as sideRow (`${sideRow.side} ${sideRow.index}`)}

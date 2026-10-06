@@ -23,6 +23,7 @@ import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import EditTools from "#/components/EditTools.svelte";
 import { Playback } from "#/state/playback.svelte.ts";
+import type { Layout } from "#/components/EditorLayout.svelte";
 import { ViewChoices } from "#/state/view-choices.svelte.ts";
 import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
 import Preview from "#/components/Preview.svelte";
@@ -39,6 +40,8 @@ describe("Current Segment", () => {
   let session: EditingSession;
   /** What the Preview, the timeline and the rows play and follow. */
   let playback: Playback;
+  /** How the editor's regions are laid out, the card's V1 unless a test asks for another. */
+  let editorLayout: Layout;
   let takeLayoutBack: () => void;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -233,7 +236,7 @@ describe("Current Segment", () => {
       context,
     });
     render(Preview, {
-      props: { playback, fold, choices: captionChoices },
+      props: { playback, fold, choices: captionChoices, editorLayout },
       context,
     });
     render(Timeline, { props: { playback, fold, viewChoices }, context });
@@ -242,6 +245,7 @@ describe("Current Segment", () => {
       context,
       playback,
       viewChoices,
+      editorLayout,
     );
     await assembly.start();
     await settle();
@@ -260,6 +264,7 @@ describe("Current Segment", () => {
     localStorage.clear();
     project = null;
     savedPreferences = structuredClone(DEFAULT_PREFERENCES) as Preferences;
+    editorLayout = "v1";
     const waveform: Waveform = {
       media: "/talks/ep01.mp4",
       peaks_per_second: 100,
@@ -1054,6 +1059,66 @@ describe("Current Segment", () => {
       moveVolumeSlider(100);
 
       expect(waveformScaling()).toEqual([true, 1]);
+    });
+  });
+
+  describe("in Layout V2, unfolding the current row", () => {
+    const unfolded = (row: HTMLElement) =>
+      row.querySelector("[data-length]")?.textContent ?? null;
+
+    beforeEach(async () => {
+      editorLayout = "v2";
+      await reopen();
+    });
+
+    // @behavior LY-007
+    it("shows the Current Segment's length in its row", async () => {
+      await show(
+        projectOf({
+          media: "/talks/ep01.mp4",
+          segments: [segmentAt(0, 1), segmentAt(1, 4.2)],
+        }),
+      );
+
+      chooseRow(1);
+      flushSync();
+
+      expect(unfolded(rows()[1])).toBe("3.200s");
+    });
+
+    // @behavior LY-008
+    it("shows Space and the keys setting the times in the current row", async () => {
+      await show(twoSegments);
+
+      chooseRow(1);
+      flushSync();
+
+      const details = rows()[1].querySelector("[data-length]")!.parentElement!;
+      const keys = [...details.querySelectorAll("kbd")].map(
+        (kbd) => kbd.textContent,
+      );
+      expect(keys).toEqual([t("shortcuts.keys.space"), "F11", "F12"]);
+    });
+
+    // @behavior LY-009
+    it("folds up the row left behind", async () => {
+      await show(twoSegments);
+      chooseRow(1);
+
+      chooseRow(0);
+      flushSync();
+
+      expect(unfolded(rows()[1])).toBeNull();
+    });
+
+    // @behavior LY-011
+    it("leaves out the Current Segment's card", async () => {
+      await show(twoSegments);
+
+      chooseRow(1);
+      flushSync();
+
+      expect(screen.queryByText(t("preview.current"))).toBeNull();
     });
   });
 });

@@ -5,8 +5,16 @@
   player keeps playing as they move; only the Segment list scrolls.
 -->
 <script module lang="ts">
-  /** The arrangements of the editor's regions on trial, until one is kept. */
-  export type Layout = "v1";
+  /**
+   * The arrangements of the editor's regions on trial, until one is kept: V1 shows the Current
+   * Segment's card beside the video, V2 unfolds its row in the Segment list instead.
+   */
+  export type Layout = "v1" | "v2";
+
+  /** Whether the Current Segment's row unfolds to carry what the card would show. */
+  export function hasUnfoldedCurrentRow(layout: Layout): boolean {
+    return layout !== "v1";
+  }
 </script>
 
 <script lang="ts">
@@ -54,7 +62,7 @@
   data-layout={layout}
 >
   <div class="min-w-0 [grid-area:preview]">
-    <Preview {playback} {fold} choices={captionChoices} />
+    <Preview {playback} {fold} choices={captionChoices} editorLayout={layout} />
   </div>
   <div class="min-w-0 [grid-area:timeline]">
     <Timeline {playback} {fold} {viewChoices} />
@@ -65,6 +73,7 @@
       {playback}
       {placeholders}
       {viewChoices}
+      editorLayout={layout}
       bind:this={segmentList}
     />
   </div>

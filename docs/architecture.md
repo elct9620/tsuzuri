@@ -729,6 +729,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `PlayerControls` | 播放、時間、音量與靜音 |
 | `CaptionControls` | 檢視選單裡的疊字選擇 |
 | `CurrentSegmentCard` | 預覽旁的目前段落卡 |
+| `CurrentSegmentKeys` | 播放與設定時間的按鍵提示 |
 | `Timeline` | 波形、段落區段、縮放、選段 |
 
 #### 4.6.2 共用的狀態
@@ -816,6 +817,7 @@ feed -> Preview.show    sets the player's source: media or silence
 | `ui/shortcuts.ts` | 各平台的快速鍵、比對與寫法 |
 | `ui/text-fields.ts` | 選取的文字 |
 | `ui/speakers.ts` | 段落與詞彙表的說話者名單 |
+| `ui/scroll-anchor.ts` | 換段時留住目前列的捲動 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
 Svelte 元件以 `@lucide/svelte` 畫出圖示。快速鍵以 `ui/shortcuts.ts` 為準：Svelte 元件比對的鍵用 `isShortcut` 讀它，這些鍵與 Rust 選單的鍵由測試雙向核對。

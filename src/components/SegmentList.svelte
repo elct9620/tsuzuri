@@ -22,6 +22,7 @@
   import { editingSession } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { ViewChoices } from "#/state/view-choices.svelte.ts";
+  import type { Layout } from "#/components/EditorLayout.svelte";
   import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import SearchBar from "#/components/SearchBar.svelte";
   import SegmentRows from "#/components/SegmentRows.svelte";
@@ -31,11 +32,13 @@
     playback,
     placeholders,
     viewChoices,
+    editorLayout = "v1",
   }: {
     project: ProjectView | null;
     playback: Playback;
     placeholders: ResourcePlaceholders;
     viewChoices: ViewChoices;
+    editorLayout?: Layout;
   } = $props();
   const session = editingSession();
   let searchBar: SearchBar;
@@ -173,6 +176,7 @@
   {playback}
   {placeholders}
   {viewChoices}
+  {editorLayout}
   onshown={() => searchBar.searchAgain()}
 >
   <div class="sticky -top-4 z-10 mb-2 flex flex-col gap-2">

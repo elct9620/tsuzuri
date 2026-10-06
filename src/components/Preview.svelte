@@ -45,13 +45,19 @@
   import { PreviewScreen } from "#/ui/preview-screen.ts";
   import type { CaptionChoices } from "#/state/caption-choices.svelte.ts";
   import PlayerControls from "#/components/PlayerControls.svelte";
+  import type { Layout } from "#/components/EditorLayout.svelte";
 
   let {
     playback,
     fold,
     choices,
-  }: { playback: Playback; fold: PreviewFold; choices: CaptionChoices } =
-    $props();
+    editorLayout = "v1",
+  }: {
+    playback: Playback;
+    fold: PreviewFold;
+    choices: CaptionChoices;
+    editorLayout?: Layout;
+  } = $props();
 
   const feed = projectFeed();
   /** The player stays the same for as long as the page does. */
@@ -364,6 +370,7 @@
       {clock}
       {isPlaying}
       {isAway}
+      {editorLayout}
       {toggleVideoWindow}
     />
   </div>

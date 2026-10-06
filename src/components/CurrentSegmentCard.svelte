@@ -3,32 +3,17 @@
   The Current Segment as the Preview shows it beside the media: its number, times, Speaker, text
   and translation, with the keys that play it and set its times; or a hint to pick one.
 -->
-<script module lang="ts">
-  import { chords, type Shortcut, shortcutById } from "#/ui/shortcuts.ts";
-
-  /** The keys that set the Current Segment's start and end where the media is, as `KeyboardEvent.key` names them. */
-  function timeKeys(isMac: boolean): Record<"start" | "end", string> {
-    const key = (shortcut: Shortcut) =>
-      chords(shortcut, isMac)[0].toUpperCase();
-    return {
-      start: key(shortcutById("setStart")),
-      end: key(shortcutById("setEnd")),
-    };
-  }
-</script>
-
 <script lang="ts">
   import type { Segment } from "#/ipc/project.ts";
-  import { isMacOS } from "#/ipc/system.ts";
   import { t } from "#/i18n.ts";
   import { formatTime } from "#/ui/time.ts";
   import { editingState } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
+  import CurrentSegmentKeys from "#/components/CurrentSegmentKeys.svelte";
 
   let { segments, playback }: { segments: Segment[]; playback: Playback } =
     $props();
   const editing = editingState();
-  const keys = timeKeys(isMacOS());
   const currentIndex = $derived(editing.cursor.index);
   const currentSegment = $derived(
     currentIndex === null ? undefined : segments[currentIndex],
@@ -59,19 +44,7 @@
     >
       {currentSegment.translation ?? ""}
     </p>
-    <p class="text-xs text-base-content/60">
-      <kbd class="kbd kbd-xs">{t("shortcuts.keys.space")}</kbd>
-      <span
-        >{t(
-          playback.isPlayingAlone ? "preview.playCurrent" : "preview.playOn",
-        )}</span
-      >
-    </p>
-    <p class="text-xs text-base-content/60">
-      <kbd class="kbd kbd-xs">{keys.start}</kbd>
-      <kbd class="kbd kbd-xs">{keys.end}</kbd>
-      <span>{t("preview.setTimes")}</span>
-    </p>
+    <CurrentSegmentKeys {playback} />
   </div>
 {:else}
   <p class="text-sm text-base-content/60">

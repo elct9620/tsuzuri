@@ -15,6 +15,7 @@ import type ShiftDialog from "#/components/ShiftDialog.svelte";
 import type SpeakersDialog from "#/components/SpeakersDialog.svelte";
 import SegmentList from "#/components/SegmentList.svelte";
 import SegmentRows from "#/components/SegmentRows.svelte";
+import type { Layout } from "#/components/EditorLayout.svelte";
 import type TranscriptionDialog from "#/components/TranscriptionDialog.svelte";
 import type TranslationDialog from "#/components/TranslationDialog.svelte";
 
@@ -29,18 +30,19 @@ export interface DrawnSegmentRows {
 
 /**
  * Draws the rows at the end of `target`, reading the feed, session and task run of `context`,
- * marking what `playback` plays and showing their columns as `viewChoices` asks.
+ * marking what `playback` plays and showing their columns as `viewChoices` and `editorLayout` ask.
  */
 export function drawSegmentRows(
   target: HTMLElement,
   context: Map<symbol, unknown>,
   playback = new Playback(),
   viewChoices = new ViewChoices(),
+  editorLayout: Layout = "v1",
 ): DrawnSegmentRows {
   const placeholders = new ResourcePlaceholders();
   const { component, unmount } = render(SegmentRows, {
     target,
-    props: { playback, placeholders, viewChoices },
+    props: { playback, placeholders, viewChoices, editorLayout },
     context,
   });
   return { rows: component, playback, viewChoices, placeholders, unmount };

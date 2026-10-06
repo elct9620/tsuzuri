@@ -534,6 +534,14 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | When | a translation asks for it |
 | Then | the translation fails without waiting for the load timeout |
 
+## `TL-104` Failing when llama-server exits before it is ready
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation on a llama-server started for it alone, which exits before it answers |
+| When | the translation waits for it to be ready |
+| Then | the translation fails as llama-server exited, without waiting for the ready timeout |
+
 ## `TL-070` Freeing the Model once the kept seconds pass
 
 | Step | Statement |

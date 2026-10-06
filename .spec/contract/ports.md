@@ -74,7 +74,7 @@ pub trait Steps {}
 
 ## `Steps::start`
 
-Start a Component by absolute path and answer its events with its PID. The events end with the exit, after every line it wrote, so a caller may stop at the exit.
+Start a Component by absolute path and answer its events with its PID. The events end with the exit, after every line it wrote, so a caller may stop at the exit. The events end only once the Component has ended, so their end means it ended even without an exit.
 
 | Attribute | Value |
 | --- | --- |

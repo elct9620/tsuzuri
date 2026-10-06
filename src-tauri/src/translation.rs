@@ -2317,6 +2317,42 @@ mod tests {
         );
     }
 
+    // @behavior TL-104
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn fails_when_llama_server_exits_before_it_is_ready() {
+        let dir = TempDir::new("tl-llama-exits");
+        let llama = dir.path().join("llama-server");
+        crate::test_support::write_executable(&llama, "#!/bin/sh\nexit 1\n");
+        let mut settings = ModelSettings::default();
+        settings.choose(
+            ModelSlot::Translation,
+            ModelSource::File {
+                path: dir.file("qwen3-4b.gguf"),
+            },
+        );
+        let app = mock_app();
+        let processes = Processes::new(dir.path().join("processes.json"));
+        app.state::<CurrentProject>()
+            .replace(project_of(vec![segment(0, 1_000, "大家好")]));
+
+        let result = run_translate(
+            &ModeLock::default()
+                .begin(AppPorts::new(app.handle(), &processes))
+                .await,
+            app.state::<CurrentProject>().inner(),
+            &llama,
+            &settings,
+            &plan_for(Language::English),
+            &LlamaServer::Job,
+            Duration::from_secs(10),
+            Phases::start("translate", Phase::Preparation),
+        )
+        .await;
+
+        assert_eq!(result.err(), Some(Failure::LlamaExited));
+    }
+
     // @behavior TL-085
     #[cfg(unix)]
     #[tokio::test]

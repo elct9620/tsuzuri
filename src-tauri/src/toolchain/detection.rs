@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
+
+use crate::processes::hidden_command;
 
 /// Where Detection looks, in order: `vendor/` in debug builds, the `PATH`, then the directories package managers install into.
 pub fn search_dirs() -> Vec<PathBuf> {
@@ -82,17 +84,11 @@ pub fn detect(program: &str, version_flag: &str, dirs: &[PathBuf]) -> Option<Pat
 
 /// Runs the executable with its version flag and answers whether it succeeded.
 pub fn probe(executable: &Path, version_flag: &str) -> bool {
-    let mut command = Command::new(executable);
-    command
+    hidden_command(executable)
         .arg(version_flag)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
-    command.status().is_ok_and(|status| status.success())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok_and(|status| status.success())
 }

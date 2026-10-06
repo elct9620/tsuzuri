@@ -53,6 +53,7 @@
 | `scripts/preview_version.ts` | 算出並寫入預覽版號 |
 | `scripts/site.ts` | 組出更新網站 |
 | CI 的 cargo-about | 列出 Rust 套件的授權 |
+| `vite build` | 列出 webview 套件的授權 |
 | `scripts/licenses.ts` | 檢查授權並寫出授權頁 |
 | `src-tauri/build.rs` | 把建置的 commit 寫進執行檔 |
 

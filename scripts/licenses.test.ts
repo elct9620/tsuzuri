@@ -1,9 +1,12 @@
 // @vitest-environment happy-dom
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { build } from "vite";
 import { describe, expect, it } from "vitest";
 import {
+  type BundledPackage,
+  listBundledPackages,
   parakeetWork,
   acceptedLicenses,
   licenseText,
@@ -25,7 +28,7 @@ const bundled = (license: string) => ({
   name: "some-package",
   version: "1.0.0",
   license,
-  path: "/nowhere",
+  text: "",
 });
 
 const emptyNotice = (): Notice => ({
@@ -35,6 +38,18 @@ const emptyNotice = (): Notice => ({
   crates: { licenses: [] },
   packages: [],
 });
+
+/** Installs under `root` a package exporting `name`, under MIT with its license file. */
+const installPackage = (root: string, name: string) => {
+  const path = join(root, "node_modules", name);
+  mkdirSync(path, { recursive: true });
+  writeFileSync(
+    join(path, "package.json"),
+    JSON.stringify({ name, version: "1.0.0", license: "MIT", main: "index.js" }),
+  );
+  writeFileSync(join(path, "index.js"), `export default "${name}";`);
+  writeFileSync(join(path, "LICENSE"), `MIT License for ${name}`);
+};
 
 const noticeDocument = (notice: Notice) =>
   new DOMParser().parseFromString(noticeHtml(notice), "text/html");
@@ -70,7 +85,6 @@ describe("licenses", () => {
           name: "lucide",
           version: "1.48.0",
           license: "ISC",
-          path,
           text: licenseText(path),
         },
       ],
@@ -79,6 +93,32 @@ describe("licenses", () => {
     expect(notice).toContain(
       "<h3>lucide 1.48.0</h3><p>ISC</p><pre>ISC License &lt;text&gt;</pre>",
     );
+  });
+
+  // @behavior LC-011
+  it("leaves out a package only the build uses", async () => {
+    const root = mkdtempSync(join(tmpdir(), "webview-"));
+    installPackage(root, "kept");
+    installPackage(root, "build-only");
+    writeFileSync(
+      join(root, "index.html"),
+      '<script type="module" src="./main.js"></script>',
+    );
+    writeFileSync(join(root, "main.js"), 'import kept from "kept";\nconsole.log(kept);');
+    const listingFile = join(root, "bundled-packages.json");
+
+    await build({
+      root,
+      configFile: false,
+      logLevel: "silent",
+      plugins: [listBundledPackages(listingFile)],
+      build: { write: false },
+    });
+
+    const packages = JSON.parse(
+      readFileSync(listingFile, "utf8"),
+    ) as BundledPackage[];
+    expect(packages.map((each) => each.name)).toEqual(["kept"]);
   });
 
   // @behavior LC-004

@@ -98,9 +98,13 @@ jobs:
         with:
           name: crate-licenses
       # Written after the Bundled Variants are built, whose licenses it carries, and before
-      # the webview is bundled, which ships it for the settings to open.
+      # the webview is bundled, which ships it for the settings to open. A first bundling lists
+      # the packages the webview carries; the same sources bundle the same packages again.
       - name: Write the License Notice
-        run: node scripts/licenses.ts crate-licenses.json
+        shell: bash
+        run: |
+          pnpm exec vite build
+          node scripts/licenses.ts crate-licenses.json
       - name: Number the Preview build
         if: inputs.preview-version != ''
         shell: bash

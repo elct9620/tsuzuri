@@ -31,6 +31,16 @@ Which licenses the packages the webview bundles may carry, and the License Notic
 | When | the License Notice is written |
 | Then | it names `lucide` 1.48.0 and `ISC` beside the text of that file |
 
+## `LC-011` Leaving out a package only the build uses
+
+The packages come from what the bundle carries, not from what the dependencies declare: a compiler that turns components into the bundle's code does not ship.
+
+| Step | Statement |
+| --- | --- |
+| Given | a webview importing `kept`, beside an installed `build-only` it never imports |
+| When | the webview is bundled |
+| Then | the packages listed for the License Notice name `kept` and not `build-only` |
+
 ## `LC-004` Opening the notice with Tsuzuri's own license
 
 | Step | Statement |

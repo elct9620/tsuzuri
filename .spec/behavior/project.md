@@ -1496,6 +1496,16 @@ A name changed in the Translation Glossary since a translation was written leave
 | When | its text is edited to `您好` |
 | Then | `ep01.srt` reads `您好` |
 
+## `PJ-193` Refusing an edit of a Speaker while it is translated
+
+A Speaker is written into every translation as its label, so the translation being written holds it too.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en`, whose `ep01.srt` reads `你好` |
+| When | its Speaker is set to `小明` |
+| Then | the edit is refused because a Mode runs |
+
 ## `PJ-093` Refusing a Segment Change or an undo while a Mode runs
 
 | Step | Statement |

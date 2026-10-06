@@ -2482,6 +2482,18 @@ fn edits_the_original_while_it_is_translated() {
     assert_eq!(read(&dir, "ep01.srt"), cue("您好"));
 }
 
+// @behavior PJ-193
+#[test]
+fn refuses_an_edit_of_a_speaker_while_it_is_translated() {
+    let dir = directory_of("pj-hold-speaker", &[("ep01.srt", &cue("你好"))]);
+    let current = project_in(&dir);
+    let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
+
+    let result = current.edit(0, SegmentField::Speaker, "小明".to_string());
+
+    assert_eq!(result, Err(Failure::ModeRunning));
+}
+
 // @behavior PJ-093
 #[test]
 fn refuses_a_segment_change_or_an_undo_while_a_mode_runs() {

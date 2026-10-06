@@ -8,8 +8,6 @@
 <script module lang="ts">
   /** The height of a Dummy Video to its width: 16:9, the shape most videos take. */
   const DUMMY_VIDEO_RATIO = 9 / 16;
-  /** Where the webview remembers how loud the media plays, as a percentage. */
-  const VOLUME_KEY = "tsuzuri.preview-volume";
 
   /** `text` after a Speaker Label naming `name`, as a cue names its Speaker; with nothing to say, no one is named. */
   function withSpeakerLabel(text: string, name: string | undefined): string {
@@ -18,13 +16,6 @@
 </script>
 
 <script lang="ts">
-  import ArrowRightToLine from "@lucide/svelte/icons/arrow-right-to-line";
-  import LocateFixed from "@lucide/svelte/icons/locate-fixed";
-  import Pause from "@lucide/svelte/icons/pause";
-  import PictureInPicture2 from "@lucide/svelte/icons/picture-in-picture-2";
-  import Play from "@lucide/svelte/icons/play";
-  import Volume2 from "@lucide/svelte/icons/volume-2";
-  import VolumeX from "@lucide/svelte/icons/volume-x";
   import { onMount, untrack } from "svelte";
 
   import { mediaUrl, type ProjectView, type Segment } from "#/ipc/project.ts";
@@ -36,7 +27,6 @@
     toggleVideoWindowFullscreen,
   } from "#/ipc/video-window.ts";
   import { t } from "#/i18n.ts";
-  import { rememberChoice, rememberedChoice } from "#/ui/choices.ts";
   import {
     type PlayedSource,
     type Silence,
@@ -48,21 +38,13 @@
   import { isShortcut } from "#/ui/shortcuts.ts";
   import { MS_PER_SECOND, formatClock } from "#/ui/time.ts";
   import { forwardKeys, openVideoWindow } from "#/ui/video-window.ts";
-  import {
-    playAtVolume,
-    resumeAudioGraph,
-    savedVolume,
-    SLIDER_END,
-    sliderPosition,
-    volumeAt,
-  } from "#/ui/volume.ts";
+  import { resumeAudioGraph } from "#/ui/volume.ts";
   import { projectFeed } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
   import { PreviewScreen } from "#/ui/preview-screen.ts";
   import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
-  import CaptionControls from "#/components/CaptionControls.svelte";
-  import CurrentSegmentCard from "#/components/CurrentSegmentCard.svelte";
+  import PlayerControls from "#/components/PlayerControls.svelte";
 
   let { playback, fold }: { playback: Playback; fold: PreviewFold } = $props();
 
@@ -76,9 +58,6 @@
   /** The object URL of the silence the player reads, released once it reads something else. */
   let silenceUrl: string | null = null;
   const choices = new CaptionChoices();
-  let volume = $state(savedVolume(rememberedChoice(VOLUME_KEY)));
-  /** A mute is not remembered, so a Preview opening silent never passes for media with no sound. */
-  let isMuted = $state(false);
   let isPlaying = $state(false);
   let isUnplayable = $state(false);
   /** Where the media is and how long it lasts. */
@@ -106,8 +85,6 @@
   const shownLanguage = $derived(choices.shownLanguage(hasTranslation));
   const isAway = $derived(videoWindow !== null);
 
-  applyVolume();
-
   // Shows the caption again as its language or Speaker is chosen; each Project shows its own
   $effect(() => {
     void choices.language;
@@ -120,23 +97,6 @@
 
   // Fills the screen with the colour chosen while no picture is there
   $effect(showDummyVideo);
-
-  /** Plays the media at the volume chosen, or silent while muted. */
-  function applyVolume(): void {
-    playAtVolume(media, isMuted ? 0 : volume);
-  }
-
-  function setVolume(position: number): void {
-    volume = volumeAt(position);
-    rememberChoice(VOLUME_KEY, String(volume));
-    isMuted = false;
-    applyVolume();
-  }
-
-  function toggleMute(): void {
-    isMuted = !isMuted;
-    applyVolume();
-  }
 
   function toggleVideoWindow(): void {
     if (videoWindow) closeVideoWindow();
@@ -155,11 +115,6 @@
       if (videoWindowRemoval === removal) videoWindowRemoval = null;
     });
     videoWindowRemoval = removal;
-  }
-
-  function togglePlayback(): void {
-    if (media.paused) void media.play();
-    else media.pause();
   }
 
   /** Sizes the row to the media just loaded, which tells only now whether it has a picture. */
@@ -404,98 +359,17 @@
       row.prepend(screen.element);
     }}
   >
-    <div class="card card-sm card-border min-w-0 flex-3">
-      <div class="card-body">
-        <div class="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            class="btn btn-circle"
-            aria-label={t("preview.play")}
-            onclick={togglePlayback}
-          >
-            <span class={["swap", isPlaying && "swap-active"]}>
-              <Pause class="swap-on size-5" aria-hidden="true" />
-              <Play class="swap-off size-5" aria-hidden="true" />
-            </span>
-          </button>
-          <button
-            type="button"
-            class={[
-              "btn btn-square btn-sm",
-              playback.isFollowing && "btn-primary",
-            ]}
-            aria-pressed={playback.isFollowing}
-            aria-label={t("preview.following")}
-            data-tooltip={t("preview.followingHint")}
-            data-shortcut="following"
-            onclick={() => playback.toggleFollowing()}
-          >
-            <LocateFixed class="size-4" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            class={[
-              "btn btn-square btn-sm",
-              playback.isPlayingAlone && "btn-primary",
-            ]}
-            aria-pressed={playback.isPlayingAlone}
-            aria-label={t("preview.playingAlone")}
-            data-tooltip={t("preview.playingAloneHint")}
-            onclick={() => playback.togglePlayingAlone()}
-          >
-            <ArrowRightToLine class="size-4" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            class={["btn btn-square btn-sm", isAway && "btn-primary"]}
-            aria-pressed={isAway}
-            aria-label={t("preview.videoWindow")}
-            data-tooltip={t("preview.videoWindowHint")}
-            onclick={toggleVideoWindow}
-          >
-            <PictureInPicture2 class="size-4" aria-hidden="true" />
-          </button>
-          <span
-            role="timer"
-            class="text-lg font-medium whitespace-nowrap tabular-nums"
-            >{clock}</span
-          >
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class={["btn btn-square btn-sm", isMuted && "btn-primary"]}
-              aria-pressed={isMuted}
-              aria-label={t("preview.mute")}
-              data-tooltip={t("preview.muteHint")}
-              onclick={toggleMute}
-            >
-              <span class={["swap", isMuted && "swap-active"]}>
-                <VolumeX class="swap-on size-4" aria-hidden="true" />
-                <Volume2 class="swap-off size-4" aria-hidden="true" />
-              </span>
-            </button>
-            <input
-              type="range"
-              min="0"
-              max={SLIDER_END}
-              value={sliderPosition(volume)}
-              class="range range-sm w-24"
-              aria-label={t("preview.volume")}
-              oninput={(event) => setVolume(Number(event.currentTarget.value))}
-            />
-            <span class="w-10 text-right text-sm tabular-nums"
-              >{Math.round(volume)}%</span
-            >
-          </div>
-          {#if !isUnplayable}
-            <CaptionControls {choices} {hasTranslation} {hasPicture} />
-          {/if}
-        </div>
-        {#if !isAway}
-          <div class="divider my-0"></div>
-          <CurrentSegmentCard {segments} {playback} />
-        {/if}
-      </div>
-    </div>
+    <PlayerControls
+      {playback}
+      {segments}
+      {choices}
+      {clock}
+      {isPlaying}
+      {isAway}
+      {isUnplayable}
+      {hasTranslation}
+      {hasPicture}
+      {toggleVideoWindow}
+    />
   </div>
 </div>

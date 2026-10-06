@@ -723,6 +723,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `Tooltip` | 全頁共用的 tooltip |
 | `Undo` | 全頁的復原與重做，不畫任何東西 |
 | `Preview` | 播放器、疊字、影片視窗 |
+| `PlayerControls` | 播放、時間、音量與靜音 |
 | `CaptionControls` | 疊字語言與疊字設定 |
 | `CurrentSegmentCard` | 預覽旁的目前段落卡 |
 | `Timeline` | 波形、段落區段、縮放、選段 |

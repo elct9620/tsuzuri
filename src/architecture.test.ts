@@ -70,16 +70,20 @@ const RULE_BY_LAYER: Partial<Record<Layer, LayerRule>> = {
   },
 };
 
-/** The modules `source`, found at `path`, imports by a relative path, resolved to paths from `src/`. */
+/**
+ * The modules `source`, found at `path`, imports by a relative path or by a `#/` path that
+ * `package.json` maps to `src/`, resolved to paths from `src/`.
+ */
 function importedModules(path: string, source: string): ImportedModule[] {
   const directory = path.split("/").slice(0, -1);
   return [
     ...source.matchAll(
-      /^\s*(import|export)\s+(type\s+)?([^;]*?)\s+from\s+["'](\.{1,2}\/[^"']+)["']/gm,
+      /^\s*(import|export)\s+(type\s+)?([^;]*?)\s+from\s+["']((?:\.{1,2}|#)\/[^"']+)["']/gm,
     ),
   ].map(([, , typeKeyword, names, specifier]) => {
-    const parts = [...directory];
-    for (const part of specifier.split("/")) {
+    const isRootedAtSrc = specifier.startsWith("#/");
+    const parts = isRootedAtSrc ? [] : [...directory];
+    for (const part of specifier.slice(isRootedAtSrc ? 2 : 0).split("/")) {
       if (part === "..") parts.pop();
       else if (part !== ".") parts.push(part);
     }
@@ -145,6 +149,27 @@ describe("the webview's layers", () => {
       { path: "editor/index.ts", isTypeOnly: true },
       { path: "components/y", isTypeOnly: false },
     ]);
+  });
+
+  it("finds the imports a source makes from src/ by a # path", () => {
+    const modules = importedModules(
+      "components/settings/x.svelte",
+      'import { y } from "#/editor/session.ts";\nimport type { Z } from "#/ui/z.ts";',
+    );
+
+    expect(modules).toEqual([
+      { path: "editor/session.ts", isTypeOnly: false },
+      { path: "ui/z.ts", isTypeOnly: true },
+    ]);
+  });
+
+  it("keeps the editor's own imports relative, so it can leave the package", () => {
+    const editorFilesWithRootedImports = Object.entries(sources)
+      .filter(([path]) => path.startsWith("editor/"))
+      .filter(([, source]) => /\bfrom\s+["']#\//.test(source))
+      .map(([path]) => path);
+
+    expect(editorFilesWithRootedImports).toEqual([]);
   });
 
   it("keeps every import pointing where docs/architecture.md § 4.2 allows", () => {

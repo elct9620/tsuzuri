@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { ProjectModels, ProjectView } from "#/backend/project.ts";
-  import type { ModelSlot as Slot, ModelSource } from "#/backend/toolchain.ts";
+  import type { ProjectModels, ProjectView } from "#/ipc/project.ts";
+  import type { ModelSlot as Slot, ModelSource } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import { sourceName, type HubFile } from "#/ui/models.ts";
   import ModelSlot from "#/components/settings/ModelSlot.svelte";

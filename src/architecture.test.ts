@@ -27,7 +27,7 @@ interface ImportedModule {
 type Layer =
   | "editor"
   | "editor entry"
-  | "backend"
+  | "ipc"
   | "ui"
   | "page.ts"
   | "Svelte Component"
@@ -37,7 +37,7 @@ type Layer =
 function layer(path: string): Layer {
   if (path === "editor/index.ts") return "editor entry";
   if (path.startsWith("editor/")) return "editor";
-  if (path.startsWith("backend/")) return "backend";
+  if (path.startsWith("ipc/")) return "ipc";
   if (path.startsWith("ui/")) return "ui";
   if (path === "page.ts") return "page.ts";
   if (path === "Page.svelte" || path.startsWith("components/"))
@@ -59,14 +59,14 @@ interface LayerRule {
 const RULE_BY_LAYER: Partial<Record<Layer, LayerRule>> = {
   editor: { modules: ["editor", "editor entry"] },
   "editor entry": { modules: ["editor"] },
-  backend: { modules: ["backend", "editor entry"] },
-  ui: { modules: ["ui", "i18n"], types: ["editor entry", "editor", "backend"] },
+  ipc: { modules: ["ipc", "editor entry"] },
+  ui: { modules: ["ui", "i18n"], types: ["editor entry", "editor", "ipc"] },
   "page.ts": {
     modules: ["Svelte Component", "ui", "i18n"],
-    types: ["editor entry", "backend"],
+    types: ["editor entry", "ipc"],
   },
   "Svelte Component": {
-    modules: ["Svelte Component", "ui", "backend", "editor entry", "i18n"],
+    modules: ["Svelte Component", "ui", "ipc", "editor entry", "i18n"],
   },
 };
 
@@ -181,6 +181,6 @@ describe("the webview's layers", () => {
       .filter(([, source]) => /\beditingPort\b/.test(source))
       .map(([path]) => path);
 
-    expect(callers).toEqual(["assembly.ts", "backend/editing.ts"]);
+    expect(callers).toEqual(["assembly.ts", "ipc/editing.ts"]);
   });
 });

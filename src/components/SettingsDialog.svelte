@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import type { ProjectView } from "#/backend/project.ts";
-  import type { ModelSlot } from "#/backend/toolchain.ts";
+  import type { ProjectView } from "#/ipc/project.ts";
+  import type { ModelSlot } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import type { HubFile } from "#/ui/models.ts";
   import { projectFeed } from "#/components/context.ts";

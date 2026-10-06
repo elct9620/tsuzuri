@@ -1,6 +1,6 @@
-import type * as bindings from "#/backend/bindings.ts";
-import type { Language } from "#/backend/project.ts";
-import { commands } from "#/backend/bindings.ts";
+import type * as bindings from "#/ipc/bindings.ts";
+import type { Language } from "#/ipc/project.ts";
+import { commands } from "#/ipc/bindings.ts";
 
 export type TranslationOptions = bindings.TranslationOptions;
 

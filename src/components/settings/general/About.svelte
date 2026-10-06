@@ -1,7 +1,7 @@
 <script lang="ts">
   import Heart from "@lucide/svelte/icons/heart";
 
-  import { openReleases, openSponsorship } from "#/backend/about.ts";
+  import { openReleases, openSponsorship } from "#/ipc/about.ts";
   import { t } from "#/i18n.ts";
   import { notifyFailure } from "#/ui/notification.svelte.ts";
 

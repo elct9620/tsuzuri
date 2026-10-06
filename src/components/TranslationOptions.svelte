@@ -4,7 +4,7 @@
   offer the same choices; the dialog holds what is chosen.
 -->
 <script lang="ts">
-  import type { Language, TranslationGlossaryView } from "#/backend/project.ts";
+  import type { Language, TranslationGlossaryView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { fileName } from "#/ui/file-name.ts";
   import type { TranslationChoices } from "#/components/translation-choices.svelte.ts";

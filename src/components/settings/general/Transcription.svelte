@@ -5,7 +5,7 @@
     saveTranscriptionSettings,
     transcriptionSettings,
     type TranscriptionSettings,
-  } from "#/backend/transcription.ts";
+  } from "#/ipc/transcription.ts";
   import { t } from "#/i18n.ts";
   import { notifyFailure } from "#/ui/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";

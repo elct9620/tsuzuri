@@ -1,4 +1,4 @@
-import type { ProjectView } from "#/backend/project.ts";
+import type { ProjectView } from "#/ipc/project.ts";
 
 /** The Speakers the Segments name and those the Translation Glossary names, in order. */
 export function speakerNames(project: ProjectView | null): string[] {

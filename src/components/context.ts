@@ -5,8 +5,8 @@
 
 import { getContext, setContext } from "svelte";
 
-import type { ProjectFeed } from "#/backend/project.ts";
-import type { TranscriptionScope } from "#/backend/transcription.ts";
+import type { ProjectFeed } from "#/ipc/project.ts";
+import type { TranscriptionScope } from "#/ipc/transcription.ts";
 import type { EditingSession } from "#/editor/index.ts";
 import { AppUpdates } from "#/components/app-updates.svelte.ts";
 import { EditorComparison } from "#/components/editor-comparison.svelte.ts";

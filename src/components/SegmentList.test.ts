@@ -5,7 +5,7 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { assemble } from "#/assembly.ts";
-import type { GlossaryTable, ProjectView } from "#/backend/project.ts";
+import type { GlossaryTable, ProjectView } from "#/ipc/project.ts";
 import { projectOf, resourceOf } from "#/test-project.ts";
 import { fieldValue, isFieldHeld } from "#/editor/index.ts";
 import {

@@ -2,8 +2,8 @@
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { editingPort } from "#/backend/editing.ts";
-import { type ComparedRow, ProjectFeed } from "#/backend/project.ts";
+import { editingPort } from "#/ipc/editing.ts";
+import { type ComparedRow, ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { pageContext } from "#/components/context.ts";

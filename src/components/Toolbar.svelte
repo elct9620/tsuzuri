@@ -15,7 +15,7 @@
     currentResource,
     type ProjectView,
     type RecentProjectView,
-  } from "#/backend/project.ts";
+  } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { isComposingKey } from "#/ui/shortcuts.ts";
   import { projectFeed } from "#/components/context.ts";

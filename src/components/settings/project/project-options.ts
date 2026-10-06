@@ -7,7 +7,7 @@ import {
   setProjectOptions,
   type ProjectOptions,
   type ProjectView,
-} from "#/backend/project.ts";
+} from "#/ipc/project.ts";
 import { t } from "#/i18n.ts";
 import { notifyFailure } from "#/ui/notification.svelte.ts";
 

@@ -6,8 +6,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import type { ProjectView } from "#/backend/project.ts";
-  import { translateSegments } from "#/backend/translation.ts";
+  import type { ProjectView } from "#/ipc/project.ts";
+  import { translateSegments } from "#/ipc/translation.ts";
   import { t } from "#/i18n.ts";
   import { notifyTranslation } from "#/ui/notification.svelte.ts";
   import { projectFeed, taskRun } from "#/components/context.ts";

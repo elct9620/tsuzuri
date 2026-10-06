@@ -4,8 +4,8 @@ import { clearMocks } from "@tauri-apps/api/mocks";
 import { flushSync, tick, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { editingPort } from "#/backend/editing.ts";
-import { ProjectFeed } from "#/backend/project.ts";
+import { editingPort } from "#/ipc/editing.ts";
+import { ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { drawPage } from "#/page.ts";

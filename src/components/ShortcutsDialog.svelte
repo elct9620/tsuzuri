@@ -4,7 +4,7 @@
   itself in its tooltip. It only tells; the keys are bound where they act.
 -->
 <script lang="ts">
-  import { isMacOS } from "#/backend/system.ts";
+  import { isMacOS } from "#/ipc/system.ts";
   import { isTextField } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import {

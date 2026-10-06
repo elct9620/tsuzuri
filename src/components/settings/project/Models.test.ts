@@ -2,8 +2,8 @@
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ProjectView } from "#/backend/project.ts";
-import type { PresetModel } from "#/backend/toolchain.ts";
+import type { ProjectView } from "#/ipc/project.ts";
+import type { PresetModel } from "#/ipc/toolchain.ts";
 import { projectOf } from "#/test-project.ts";
 import Models from "#/components/settings/project/Models.svelte";
 

@@ -1,8 +1,8 @@
-import type { Diarization } from "#/backend/diarization.ts";
-import type { PhaseTiming } from "#/backend/progress.ts";
-import type { Restoration } from "#/backend/project.ts";
-import type { Transcription } from "#/backend/transcription.ts";
-import type { Translation } from "#/backend/translation.ts";
+import type { Diarization } from "#/ipc/diarization.ts";
+import type { PhaseTiming } from "#/ipc/progress.ts";
+import type { Restoration } from "#/ipc/project.ts";
+import type { Transcription } from "#/ipc/transcription.ts";
+import type { Translation } from "#/ipc/translation.ts";
 import type { Outcome } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
 import { failureKind, failureMessage } from "#/ui/failure.ts";

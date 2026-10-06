@@ -68,10 +68,10 @@
   import RegionsPlugin, { type Region } from "wavesurfer.js/plugins/regions";
   import TimelinePlugin from "wavesurfer.js/plugins/timeline";
 
-  import { preferences } from "#/backend/preferences.ts";
-  import type { ProjectView, Segment } from "#/backend/project.ts";
-  import { isMacOS } from "#/backend/system.ts";
-  import { extractWaveform, type Waveform } from "#/backend/waveform.ts";
+  import { preferences } from "#/ipc/preferences.ts";
+  import type { ProjectView, Segment } from "#/ipc/project.ts";
+  import { isMacOS } from "#/ipc/system.ts";
+  import { extractWaveform, type Waveform } from "#/ipc/waveform.ts";
   import { isTextField, type SegmentChange } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";

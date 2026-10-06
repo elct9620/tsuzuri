@@ -9,9 +9,9 @@
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
 
-  import type { ProjectView } from "#/backend/project.ts";
-  import { isMacOS } from "#/backend/system.ts";
-  import type { ComparedRow } from "#/backend/project.ts";
+  import type { ProjectView } from "#/ipc/project.ts";
+  import { isMacOS } from "#/ipc/system.ts";
+  import type { ComparedRow } from "#/ipc/project.ts";
   import {
     type CursorField,
     drawCursor,

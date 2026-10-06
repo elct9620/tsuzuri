@@ -2,7 +2,7 @@
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { GlossaryTable } from "#/backend/project.ts";
+import type { GlossaryTable } from "#/ipc/project.ts";
 import GlossaryDialog from "#/components/GlossaryDialog.svelte";
 
 describe("GlossaryDialog", () => {

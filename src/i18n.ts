@@ -1,6 +1,6 @@
 import i18next, { type i18n, type TOptions } from "i18next";
 
-import type { Language } from "#/backend/project.ts";
+import type { Language } from "#/ipc/project.ts";
 import en from "#/locales/en.ts";
 import zhHant from "#/locales/zh-Hant.ts";
 

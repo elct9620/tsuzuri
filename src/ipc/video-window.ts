@@ -4,7 +4,7 @@
  */
 
 import { Window } from "@tauri-apps/api/window";
-import { VIDEO_WINDOW } from "#/backend/bindings.ts";
+import { VIDEO_WINDOW } from "#/ipc/bindings.ts";
 
 /** The label Rust gives the Video Window, which a page opening it has to open it under. */
 export { VIDEO_WINDOW };

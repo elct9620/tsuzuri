@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { open } from "#/backend/dialog.ts";
+  import { open } from "#/ipc/dialog.ts";
   import {
     chooseDebugLog,
     chooseLogDirectory,
@@ -10,7 +10,7 @@
     openLogDirectory,
     type DebugLog,
     type LogDirectory,
-  } from "#/backend/logs.ts";
+  } from "#/ipc/logs.ts";
   import { t } from "#/i18n.ts";
   import { notifyFailure } from "#/ui/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";

@@ -1,5 +1,5 @@
-import type * as bindings from "#/backend/bindings.ts";
-import { commands } from "#/backend/bindings.ts";
+import type * as bindings from "#/ipc/bindings.ts";
+import { commands } from "#/ipc/bindings.ts";
 
 export type Waveform = bindings.Waveform;
 

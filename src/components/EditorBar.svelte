@@ -14,7 +14,7 @@
     currentResource,
     type ProjectView,
     showTranslation,
-  } from "#/backend/project.ts";
+  } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { notifyFailure } from "#/ui/notification.svelte.ts";
   import { playedSource } from "#/ui/silence.ts";

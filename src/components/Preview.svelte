@@ -69,18 +69,14 @@
   import VolumeX from "@lucide/svelte/icons/volume-x";
   import { onMount, untrack } from "svelte";
 
-  import {
-    mediaUrl,
-    type ProjectView,
-    type Segment,
-  } from "#/backend/project.ts";
-  import { isMacOS } from "#/backend/system.ts";
+  import { mediaUrl, type ProjectView, type Segment } from "#/ipc/project.ts";
+  import { isMacOS } from "#/ipc/system.ts";
   import {
     VIDEO_WINDOW,
     destroyVideoWindow,
     leaveVideoWindowFullscreen,
     toggleVideoWindowFullscreen,
-  } from "#/backend/video-window.ts";
+  } from "#/ipc/video-window.ts";
   import { t } from "#/i18n.ts";
   import {
     rememberChoice,

@@ -11,8 +11,8 @@
   import X from "@lucide/svelte/icons/x";
   import { flushSync, onDestroy } from "svelte";
 
-  import { findText, type TextMatch } from "#/backend/editing.ts";
-  import { isMacOS } from "#/backend/system.ts";
+  import { findText, type TextMatch } from "#/ipc/editing.ts";
+  import { isMacOS } from "#/ipc/system.ts";
   import { type CursorField, markRanges, rangeOf } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { failureMessage } from "#/ui/failure.ts";

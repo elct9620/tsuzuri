@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { appBuild } from "#/backend/about.ts";
+  import { appBuild } from "#/ipc/about.ts";
   import {
     checkForRollback,
     checkForUpdate,
@@ -11,7 +11,7 @@
     updateSettings,
     type UpdateChannel,
     type UpdateSettings,
-  } from "#/backend/updates.ts";
+  } from "#/ipc/updates.ts";
   import { t } from "#/i18n.ts";
   import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
   import { updateFoundMessage } from "#/components/app-updates.svelte.ts";

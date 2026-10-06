@@ -6,9 +6,9 @@
  * `rust:<name>`, and the system turning to a light or dark theme as `system:color-scheme`.
  */
 
-import { editingPort, transcriptView } from "#/backend/editing.ts";
-import { relayEvents } from "#/backend/events.ts";
-import { ProjectFeed, type UnlistenFn } from "#/backend/project.ts";
+import { editingPort, transcriptView } from "#/ipc/editing.ts";
+import { relayEvents } from "#/ipc/events.ts";
+import { ProjectFeed, type UnlistenFn } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 
 export interface Assembly {

@@ -8,7 +8,7 @@
     type ChoiceLanding,
     type ChoiceLandings,
     type Preferences,
-  } from "#/backend/preferences.ts";
+  } from "#/ipc/preferences.ts";
   import type { ChoiceSource } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { notifyFailure } from "#/ui/notification.svelte.ts";

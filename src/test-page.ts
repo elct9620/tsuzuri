@@ -1,6 +1,6 @@
 import { mockIPC } from "@tauri-apps/api/mocks";
 
-import type { ProjectView } from "#/backend/project.ts";
+import type { ProjectView } from "#/ipc/project.ts";
 
 /**
  * Answers the reads the Svelte Components make as the page mounts: the App Build and the update

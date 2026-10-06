@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { UpdateProgress } from "#/backend/updates.ts";
+  import type { UpdateProgress } from "#/ipc/updates.ts";
   import { t } from "#/i18n.ts";
   import { appUpdates } from "#/components/context.ts";
 

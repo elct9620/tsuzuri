@@ -3,13 +3,13 @@
  * menu or the bar draws and the right-click menu hands to the system, so both show the same.
  */
 
-import { type MenuChoice, popUpMenu } from "#/backend/context-menu.ts";
+import { type MenuChoice, popUpMenu } from "#/ipc/context-menu.ts";
 import {
   currentResource,
   hasTraditionalChinese,
   type ProjectView,
-} from "#/backend/project.ts";
-import { isMacOS } from "#/backend/system.ts";
+} from "#/ipc/project.ts";
+import { isMacOS } from "#/ipc/system.ts";
 import {
   type EditingSession,
   isRun,

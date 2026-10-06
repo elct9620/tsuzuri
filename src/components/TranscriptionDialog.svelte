@@ -6,19 +6,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { diarize } from "#/backend/diarization.ts";
+  import { diarize } from "#/ipc/diarization.ts";
   import {
     currentResource,
     spanIndexes,
     type ProjectView,
     type SegmentSpan,
-  } from "#/backend/project.ts";
-  import { modelSettings } from "#/backend/toolchain.ts";
-  import {
-    transcribe,
-    type TranscriptionScope,
-  } from "#/backend/transcription.ts";
-  import { translateSegments } from "#/backend/translation.ts";
+  } from "#/ipc/project.ts";
+  import { modelSettings } from "#/ipc/toolchain.ts";
+  import { transcribe, type TranscriptionScope } from "#/ipc/transcription.ts";
+  import { translateSegments } from "#/ipc/translation.ts";
   import { t } from "#/i18n.ts";
   import { sourceFileName } from "#/ui/models.ts";
   import {

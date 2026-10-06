@@ -1,5 +1,5 @@
-import type * as bindings from "#/backend/bindings.ts";
-import { commands, DEFAULT_PREFERENCES } from "#/backend/bindings.ts";
+import type * as bindings from "#/ipc/bindings.ts";
+import { commands, DEFAULT_PREFERENCES } from "#/ipc/bindings.ts";
 
 export type ChoiceLanding = bindings.ChoiceLanding;
 

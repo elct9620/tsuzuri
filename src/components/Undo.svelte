@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { EditCommand } from "#/backend/project.ts";
-  import { isMacOS } from "#/backend/system.ts";
+  import type { EditCommand } from "#/ipc/project.ts";
+  import { isMacOS } from "#/ipc/system.ts";
   import { isTextField } from "#/editor/index.ts";
   import { notifyEdit } from "#/ui/notification.svelte.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";

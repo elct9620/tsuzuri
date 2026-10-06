@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { RecentProjectView } from "#/backend/project.ts";
+  import type { RecentProjectView } from "#/ipc/project.ts";
   import { interfaceLanguageCode, t } from "#/i18n.ts";
   import { projectFeed } from "#/components/context.ts";
   import {

@@ -9,7 +9,7 @@
   import Download from "@lucide/svelte/icons/download";
   import { onMount } from "svelte";
 
-  import { save, SRT_FILTERS, TEXT_FILTERS } from "#/backend/dialog.ts";
+  import { save, SRT_FILTERS, TEXT_FILTERS } from "#/ipc/dialog.ts";
   import {
     type ExportFormat,
     exportPath,
@@ -17,7 +17,7 @@
     saveSrt,
     saveText,
     type WrittenText,
-  } from "#/backend/project.ts";
+  } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";
   import { closeMenu } from "#/ui/menu.ts";

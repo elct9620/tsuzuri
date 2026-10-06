@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ProjectView } from "#/backend/project.ts";
+import type { ProjectView } from "#/ipc/project.ts";
 import { projectOf } from "#/test-project.ts";
 import {
   notificationDetail,

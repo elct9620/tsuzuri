@@ -16,7 +16,7 @@ import {
   type RevertPart,
   type Segment,
   type SubtitleVersions,
-} from "#/backend/project.ts";
+} from "#/ipc/project.ts";
 import { t } from "#/i18n.ts";
 import { notifyFailure, notifyRestoration } from "#/ui/notification.svelte.ts";
 

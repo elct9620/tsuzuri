@@ -1,8 +1,4 @@
-import type {
-  Phase,
-  PhaseTiming,
-  PipelineProgress,
-} from "#/backend/progress.ts";
+import type { Phase, PhaseTiming, PipelineProgress } from "#/ipc/progress.ts";
 import { t } from "#/i18n.ts";
 
 /** The kind of task running, as the Mode it runs is named, which the editor shows Placeholders for. */

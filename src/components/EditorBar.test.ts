@@ -4,8 +4,8 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { editingPort } from "#/backend/editing.ts";
-import { ProjectFeed, type ProjectView } from "#/backend/project.ts";
+import { editingPort } from "#/ipc/editing.ts";
+import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
 import { projectOf, resourceOf } from "#/test-project.ts";

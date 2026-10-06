@@ -5,7 +5,7 @@
     type ProjectView,
     recentProjects as readRecentProjects,
     type RecentProjectView,
-  } from "#/backend/project.ts";
+  } from "#/ipc/project.ts";
   import {
     editorComparison,
     projectFeed,

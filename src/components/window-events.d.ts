@@ -1,13 +1,13 @@
 /**
  * The window events Svelte Components bind with `<svelte:window>`: Rust events relayed as
- * `rust:<name>` with the payload as `detail` (`backend/events.ts`), the session telling the Cursor,
+ * `rust:<name>` with the payload as `detail` (`ipc/events.ts`), the session telling the Cursor,
  * the checks or the Choice Source moved, and the system turning to a light or dark theme.
  */
 
-import type { PipelineProgress } from "#/backend/progress.ts";
-import type { EditCommand } from "#/backend/project.ts";
-import type { DownloadProgress } from "#/backend/toolchain.ts";
-import type { UpdateProgress } from "#/backend/updates.ts";
+import type { PipelineProgress } from "#/ipc/progress.ts";
+import type { EditCommand } from "#/ipc/project.ts";
+import type { DownloadProgress } from "#/ipc/toolchain.ts";
+import type { UpdateProgress } from "#/ipc/updates.ts";
 
 declare module "svelte/elements" {
   export interface SvelteWindowAttributes {

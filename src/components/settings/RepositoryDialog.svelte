@@ -3,7 +3,7 @@
     repositoryFiles,
     type ModelSlot,
     type RepositoryFile,
-  } from "#/backend/toolchain.ts";
+  } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import { failureMessage } from "#/ui/failure.ts";
   import { sizeLabel, type HubFile } from "#/ui/models.ts";

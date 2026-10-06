@@ -1,5 +1,5 @@
 import { assemble } from "#/assembly.ts";
-import { locale } from "#/backend/system.ts";
+import { locale } from "#/ipc/system.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
 import { drawPage } from "#/page.ts";
 

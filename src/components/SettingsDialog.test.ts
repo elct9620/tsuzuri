@@ -2,8 +2,8 @@
 import { render, screen } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { afterEach, describe, expect, it } from "vitest";
-import { editingPort } from "#/backend/editing.ts";
-import { ProjectFeed, type ProjectView } from "#/backend/project.ts";
+import { editingPort } from "#/ipc/editing.ts";
+import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { mockPageMount } from "#/test-page.ts";
 import { projectOf } from "#/test-project.ts";

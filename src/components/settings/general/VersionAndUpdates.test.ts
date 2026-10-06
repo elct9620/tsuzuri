@@ -3,9 +3,9 @@ import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { editingPort } from "#/backend/editing.ts";
-import { ProjectFeed } from "#/backend/project.ts";
-import type { AppUpdate } from "#/backend/updates.ts";
+import { editingPort } from "#/ipc/editing.ts";
+import { ProjectFeed } from "#/ipc/project.ts";
+import type { AppUpdate } from "#/ipc/updates.ts";
 import { EditingSession } from "#/editor/index.ts";
 import {
   showNotifications,

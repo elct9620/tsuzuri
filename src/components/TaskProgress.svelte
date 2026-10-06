@@ -2,7 +2,7 @@
   import Check from "@lucide/svelte/icons/check";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
 
-  import type { Phase, PipelineProgress } from "#/backend/progress.ts";
+  import type { Phase, PipelineProgress } from "#/ipc/progress.ts";
   import { t } from "#/i18n.ts";
   import { phaseLabel, type TaskKind } from "#/ui/progress.ts";
   import { taskRun } from "#/components/context.ts";

@@ -7,7 +7,7 @@
     type ModelSettingsView,
     type ModelSlot as Slot,
     type ModelSource,
-  } from "#/backend/toolchain.ts";
+  } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import { sourceName, type HubFile } from "#/ui/models.ts";
   import { notifyFailure } from "#/ui/notification.svelte.ts";

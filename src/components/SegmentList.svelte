@@ -6,8 +6,8 @@
   is marked.
 -->
 <script lang="ts">
-  import type { EditCommand } from "#/backend/project.ts";
-  import { isMacOS } from "#/backend/system.ts";
+  import type { EditCommand } from "#/ipc/project.ts";
+  import { isMacOS } from "#/ipc/system.ts";
   import {
     isHeld,
     isTextField,

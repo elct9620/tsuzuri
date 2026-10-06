@@ -5,7 +5,7 @@
     saveTranslationSettings,
     translationSettings,
     type TranslationSettings,
-  } from "#/backend/translation.ts";
+  } from "#/ipc/translation.ts";
   import { t } from "#/i18n.ts";
   import { notifyFailure } from "#/ui/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";

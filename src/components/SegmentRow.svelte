@@ -10,8 +10,8 @@
   import EllipsisVertical from "@lucide/svelte/icons/ellipsis-vertical";
   import { untrack } from "svelte";
 
-  import type { Segment } from "#/backend/project.ts";
-  import { isMacOS } from "#/backend/system.ts";
+  import type { Segment } from "#/ipc/project.ts";
+  import { isMacOS } from "#/ipc/system.ts";
   import {
     type ChoiceSource,
     type CursorField,

@@ -1,6 +1,6 @@
-import type { Segment } from "#/backend/project.ts";
+import type { Segment } from "#/ipc/project.ts";
 import type { ChoiceSource } from "#/editor/index.ts";
-import type { ChoiceLandings } from "#/backend/preferences.ts";
+import type { ChoiceLandings } from "#/ipc/preferences.ts";
 import { MS_PER_SECOND, formatTime } from "#/ui/time.ts";
 
 /**

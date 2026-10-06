@@ -2,8 +2,8 @@
   import RefreshCw from "@lucide/svelte/icons/refresh-cw";
   import { onMount } from "svelte";
 
-  import { selectResource, type ProjectView } from "#/backend/project.ts";
-  import { isMacOS } from "#/backend/system.ts";
+  import { selectResource, type ProjectView } from "#/ipc/project.ts";
+  import { isMacOS } from "#/ipc/system.ts";
   import { t } from "#/i18n.ts";
   import { notifyFailure } from "#/ui/notification.svelte.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";

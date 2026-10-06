@@ -15,7 +15,7 @@
 
 ```
             Webview (src/)
-                 │ invoke / listen, only through backend/
+                 │ invoke / listen, only through ipc/
  ┌───────────────▼────────────────────────┐
  │ Interface: */commands.rs, window.rs    │  assembled in lib.rs
  └───────────────┬────────────────────────┘
@@ -68,7 +68,7 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 │  ├─ page.ts             draws Page.svelte into <body> (4.3)
 │  ├─ Page.svelte         composes the page's regions (4.1)
 │  ├─ components/         Svelte Components and their tests (4.1)
-│  ├─ backend/            the only way to Rust
+│  ├─ ipc/                the only way to Rust
 │  ├─ editor/             editing core, depends on nothing outside (4.5)
 │  ├─ ui/                 shared screen modules
 │  └─ locales/            en, zh-Hant
@@ -119,13 +119,13 @@ Rust 的目錄依情境分，目錄裡的檔案依層分：情境的主檔放規
 ### 2.2 指令（Webview ↔ Rust）
 
 ```
-Svelte 元件 ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/commands.rs ─▶ 用例／CurrentProject
+Svelte 元件 ─▶ ipc/<情境>.ts ─▶ bindings.ts ─▶ <情境>/commands.rs ─▶ 用例／CurrentProject
     │    ▲                                                             │
     │    └─────────────── 回答，或 Failure ◀──────────────────────────┘
-    └─▶ editor/ session ─▶ backend/editing.ts ─▶ bindings.ts        編輯只走這條
+    └─▶ editor/ session ─▶ ipc/editing.ts ─▶ bindings.ts        編輯只走這條
 ```
 
-| backend 模組 | Rust 模組 | 指令 |
+| `ipc/` 模組 | Rust 模組 | 指令 |
 |---|---|---|
 | `project.ts` | `project/commands.rs` | 專案、版本、詞彙表 |
 | `editing.ts` | `project/commands.rs` | 編輯、搜尋、取代、清理、段落改動、復原 |
@@ -160,7 +160,7 @@ Svelte 元件 ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/comm
 
 ```
 領域的錯誤 ─┐  SrtError、SegmentChangeError、ReplacementError、ProjectError、GlossaryError、ModelError
-函式庫的錯誤 ┼─From─▶ Failure { code, … } ──serde──▶ backend/failure.ts（型別）
+函式庫的錯誤 ┼─From─▶ Failure { code, … } ──serde──▶ ipc/failure.ts（型別）
              │        （failure.rs，應用層）                  │
              │                    ui/failure.ts（依 code 給訊息與種類）◀┘
              │                                                │
@@ -173,7 +173,7 @@ Svelte 元件 ─▶ backend/<情境>.ts ─▶ bindings.ts ─▶ <情境>/comm
 
 ```
 open_project／open_srt ─▶ asset_protocol_scope().allow_directory(專案目錄)
-Svelte 元件 ─▶ backend/project.ts mediaUrl(media) ─▶ <video>／<audio> 直接讀檔
+Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直接讀檔
 ```
 
 | 規則 | 做法 |
@@ -528,7 +528,7 @@ command ── begin_mode ──▶ ModeRun: turn, ports, keep   + Phases
 ```
 index.html, Page.svelte       markup
     |
-components/   ------------> ui/, backend/ (editing aside)
+components/   ------------> ui/, ipc/ (editing aside)
     |                         interface: DOM events to use cases, changes to the page
     v
 editor/  session.ts           application: Cursor, Checked Segments, use cases, port
@@ -536,7 +536,7 @@ editor/  session.ts           application: Cursor, Checked Segments, use cases, 
          field.ts, marks.ts    DOM: field offsets, drawing the Cursor
     ^
     | implements EditingPort
-backend/editing.ts            gateway: the one caller of editing commands
+ipc/editing.ts                gateway: the one caller of editing commands
 ```
 
 依賴一律往內，和 Rust 端（3.1）同一套規則：介面呼叫應用，應用使用領域，閘道實作應用宣告的 port。`main.ts` 是組裝點（4.3）。
@@ -572,13 +572,13 @@ body
 | 層 | 可以依賴 | 不可以依賴 |
 |---|---|---|
 | `editor/` | DOM | `editor/` 以外的模組 |
-| `backend/` | Tauri、`editor/` 的 port | Svelte 元件 |
-| `ui/` | i18n、`editor/` 與 `backend/` 的型別 | Svelte 元件 |
-| `page.ts` | `Page.svelte`、`components/context.ts`、i18n、`ui/`、`editor/` 與 `backend/` 的型別 | `editor/` 的模組 |
-| `Page.svelte`、`components/` | 其他 Svelte 元件、i18n、`ui/`、`backend/`、`editor/index.ts` | 編輯指令 |
+| `ipc/` | Tauri、`editor/` 的 port | Svelte 元件 |
+| `ui/` | i18n、`editor/` 與 `ipc/` 的型別 | Svelte 元件 |
+| `page.ts` | `Page.svelte`、`components/context.ts`、i18n、`ui/`、`editor/` 與 `ipc/` 的型別 | `editor/` 的模組 |
+| `Page.svelte`、`components/` | 其他 Svelte 元件、i18n、`ui/`、`ipc/`、`editor/index.ts` | 編輯指令 |
 | `main.ts` | 全部 | — |
 
-`architecture.test.ts` 依這張表檢查每個 import。編輯一律經過 session。對應 Rust 的型別只定義在 `backend/`；`editor/` 有自己的型別，由 `backend/editing.ts` 換算，同名的型別在那裡以別名區分。
+`architecture.test.ts` 依這張表檢查每個 import。編輯一律經過 session。對應 Rust 的型別只定義在 `ipc/`；`editor/` 有自己的型別，由 `ipc/editing.ts` 換算，同名的型別在那裡以別名區分。
 
 #### 4.2.1 事件的接法
 
@@ -624,7 +624,7 @@ main.ts -> assembly.start()
 | context 注入 | Svelte 元件取得共用的物件 | `projectFeed()`、`segmentDialogs()` |
 | 專案訂閱 | 分送同一份專案 | `ProjectFeed` |
 
-feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`TaskRun`、`AppUpdates`、`EditorComparison` 與 `SavedPreferences` 也經 context 共用。頁面寫好後才讀專案。Svelte 元件直接 import `backend/`，在 `onMount` 讀取。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。Svelte 元件不自己向 Rust 讀專案。
+feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`TaskRun`、`AppUpdates`、`EditorComparison` 與 `SavedPreferences` 也經 context 共用。頁面寫好後才讀專案。Svelte 元件直接 import `ipc/`，在 `onMount` 讀取。測試也呼叫 `assemble`，替身只換 IPC，組裝與 App 相同。Svelte 元件不自己向 Rust 讀專案。
 
 ### 4.4 先後順序
 
@@ -752,7 +752,7 @@ feed -> Preview.show    sets the player's source: media or silence
 
 `Preview` 在初始化時就跟上專案，早於子元件 `Timeline` 的 `onMount`。wavesurfer.js 建立時會換掉不同的來源，所以這個順序要固定。沒有媒體檔時，兩者由 `ui/silence.ts` 決定同一段靜音。
 
-### 4.7 backend
+### 4.7 ipc
 
 | 模組 | 內容 |
 |---|---|
@@ -772,7 +772,7 @@ feed -> Preview.show    sets the player's source: media or silence
 | `video-window.ts` | 影片視窗的全螢幕與關閉 |
 | `context-menu.ts` | 右鍵時的系統選單 |
 
-`backend/` 是 webview 接觸 Tauri 的地方：指令、外掛與系統選單都經過它，Svelte 元件不直接呼叫 Tauri。
+`ipc/` 是 webview 接觸 Tauri 的地方：指令、外掛與系統選單都經過它，Svelte 元件不直接呼叫 Tauri。
 
 ### 4.8 共用模組
 

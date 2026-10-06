@@ -6,7 +6,7 @@
     translationGlossaryTable,
     type GlossaryRow,
     type GlossaryTable,
-  } from "#/backend/project.ts";
+  } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { failureMessage } from "#/ui/failure.ts";
 

@@ -12,9 +12,9 @@ import {
   type ChoiceLanding,
   type ChoiceLandings,
   type Preferences,
-} from "#/backend/preferences.ts";
-import type { ProjectView, Segment } from "#/backend/project.ts";
-import type { Waveform } from "#/backend/waveform.ts";
+} from "#/ipc/preferences.ts";
+import type { ProjectView, Segment } from "#/ipc/project.ts";
+import type { Waveform } from "#/ipc/waveform.ts";
 import type { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { layOutTimeline } from "#/test-layout.ts";

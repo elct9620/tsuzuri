@@ -6,7 +6,7 @@
 <script lang="ts">
   import { flushSync, onMount } from "svelte";
 
-  import type { ProjectView, Segment } from "#/backend/project.ts";
+  import type { ProjectView, Segment } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { speakerNames } from "#/ui/speakers.ts";
   import { editingSession, projectFeed } from "#/components/context.ts";

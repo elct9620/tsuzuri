@@ -19,7 +19,7 @@
     type ComparedRow,
     type Restoration,
     type SubtitleVersions,
-  } from "#/backend/project.ts";
+  } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import {
     notifyFailure,

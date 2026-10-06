@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ProjectOptions, ProjectView } from "#/backend/project.ts";
+  import type { ProjectOptions, ProjectView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
   import {

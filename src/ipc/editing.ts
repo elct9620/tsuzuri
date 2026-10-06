@@ -8,9 +8,9 @@ import type {
   Segment as EditorSegment,
   TranscriptView,
 } from "#/editor/index.ts";
-import type { ProjectView, Segment } from "#/backend/project.ts";
-import type * as bindings from "#/backend/bindings.ts";
-import { commands } from "#/backend/bindings.ts";
+import type { ProjectView, Segment } from "#/ipc/project.ts";
+import type * as bindings from "#/ipc/bindings.ts";
+import { commands } from "#/ipc/bindings.ts";
 
 export type SegmentField = bindings.SegmentField;
 

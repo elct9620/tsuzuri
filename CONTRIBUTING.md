@@ -14,7 +14,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 sumi verify         # check code against .spec/
 ```
 
-The webview's `src/backend/bindings.ts` is generated from the Rust commands, events and constants. When one changes, `cargo test` rewrites the file and fails once; commit the rewritten file with the change.
+The webview's `src/ipc/bindings.ts` is generated from the Rust commands, events and constants. When one changes, `cargo test` rewrites the file and fails once; commit the rewritten file with the change.
 
 ## Components
 

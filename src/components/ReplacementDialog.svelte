@@ -7,7 +7,7 @@
 <script lang="ts">
   import { flushSync } from "svelte";
 
-  import { isMacOS } from "#/backend/system.ts";
+  import { isMacOS } from "#/ipc/system.ts";
   import type { CursorField } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { notify, notifyFailure } from "#/ui/notification.svelte.ts";

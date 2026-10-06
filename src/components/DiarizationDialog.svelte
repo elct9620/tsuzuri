@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { diarize } from "#/backend/diarization.ts";
-  import type { ProjectView } from "#/backend/project.ts";
-  import { modelSettings } from "#/backend/toolchain.ts";
+  import { diarize } from "#/ipc/diarization.ts";
+  import type { ProjectView } from "#/ipc/project.ts";
+  import { modelSettings } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import { sourceFileName } from "#/ui/models.ts";
   import { notifyDiarization } from "#/ui/notification.svelte.ts";

@@ -7,7 +7,7 @@ import {
   type ProjectFeed,
   saveTranslationGlossary,
   translationGlossaryTable,
-} from "#/backend/project.ts";
+} from "#/ipc/project.ts";
 import type { Outcome } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
 import {

@@ -5,7 +5,7 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { assemble } from "#/assembly.ts";
-import type { ProjectView } from "#/backend/project.ts";
+import type { ProjectView } from "#/ipc/project.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
 import { projectOf } from "#/test-project.ts";
 import { pageContext } from "#/components/context.ts";

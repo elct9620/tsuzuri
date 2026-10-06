@@ -6,8 +6,8 @@ import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { assemble } from "#/assembly.ts";
-import { DEFAULT_PREFERENCES } from "#/backend/preferences.ts";
-import type { ProjectView } from "#/backend/project.ts";
+import { DEFAULT_PREFERENCES } from "#/ipc/preferences.ts";
+import type { ProjectView } from "#/ipc/project.ts";
 import type { EditingSession } from "#/editor/index.ts";
 import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { projectOf } from "#/test-project.ts";

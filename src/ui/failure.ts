@@ -1,4 +1,4 @@
-import type { Failure } from "#/backend/failure.ts";
+import type { Failure } from "#/ipc/failure.ts";
 import { t } from "#/i18n.ts";
 import type { NotificationKind } from "#/ui/notification.svelte.ts";
 

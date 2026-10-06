@@ -7,7 +7,7 @@ import {
   cancelTask,
   type Phase,
   type PipelineProgress,
-} from "#/backend/progress.ts";
+} from "#/ipc/progress.ts";
 import { t } from "#/i18n.ts";
 import { failureCode } from "#/ui/failure.ts";
 import { notify, notifyFailure } from "#/ui/notification.svelte.ts";

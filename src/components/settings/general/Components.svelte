@@ -1,14 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { open } from "#/backend/dialog.ts";
+  import { open } from "#/ipc/dialog.ts";
   import {
     chooseComponent,
     componentStatuses,
     forgetComponent,
     type ComponentStatus,
     type Origin,
-  } from "#/backend/toolchain.ts";
+  } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import { notifyFailure } from "#/ui/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";

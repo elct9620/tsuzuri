@@ -4,7 +4,7 @@
 
 import { mount } from "svelte";
 
-import type { ProjectFeed } from "#/backend/project.ts";
+import type { ProjectFeed } from "#/ipc/project.ts";
 import type { EditingSession } from "#/editor/index.ts";
 import { pageContext } from "#/components/context.ts";
 import Page from "#/Page.svelte";

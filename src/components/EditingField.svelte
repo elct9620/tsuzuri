@@ -7,7 +7,7 @@
   the user is not typing in it.
 -->
 <script lang="ts">
-  import { isMacOS } from "#/backend/system.ts";
+  import { isMacOS } from "#/ipc/system.ts";
   import {
     type CursorField,
     fieldSelection,

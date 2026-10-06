@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { open } from "#/backend/dialog.ts";
+  import { open } from "#/ipc/dialog.ts";
   import {
     cancelModelDownload,
     downloadModel,
@@ -11,7 +11,7 @@
     type ModelSlot,
     type ModelSource,
     type PresetModel,
-  } from "#/backend/toolchain.ts";
+  } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import {
     presetLabel,

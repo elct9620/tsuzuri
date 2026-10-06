@@ -2,12 +2,12 @@
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { editingPort } from "#/backend/editing.ts";
+import { editingPort } from "#/ipc/editing.ts";
 import {
   DEFAULT_PREFERENCES,
   type Preferences as SavedPreferences,
-} from "#/backend/preferences.ts";
-import { ProjectFeed } from "#/backend/project.ts";
+} from "#/ipc/preferences.ts";
+import { ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { pageContext } from "#/components/context.ts";
 import { SavedPreferences as SharedPreferences } from "#/components/saved-preferences.svelte.ts";

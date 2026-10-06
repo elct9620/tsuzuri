@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { isMacOS } from "#/backend/system.ts";
+  import { isMacOS } from "#/ipc/system.ts";
   import { t } from "#/i18n.ts";
   import { shortcutById, shortcutText } from "#/ui/shortcuts.ts";
 

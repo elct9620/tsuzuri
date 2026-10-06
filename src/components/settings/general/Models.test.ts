@@ -7,7 +7,7 @@ import type {
   ModelSlot,
   ModelSource,
   PresetModel,
-} from "#/backend/toolchain.ts";
+} from "#/ipc/toolchain.ts";
 import {
   showNotifications,
   notifications,

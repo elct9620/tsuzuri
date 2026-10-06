@@ -6,7 +6,7 @@
 
 import type { UnlistenFn } from "@tauri-apps/api/event";
 
-import { events } from "#/backend/bindings.ts";
+import { events } from "#/ipc/bindings.ts";
 
 const RELAYED_EVENTS = [
   "pipelineProgress",

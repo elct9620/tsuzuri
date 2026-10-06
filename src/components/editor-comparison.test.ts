@@ -8,7 +8,7 @@ import type {
   ComparedRow,
   ProjectView,
   SubtitleVersions,
-} from "#/backend/project.ts";
+} from "#/ipc/project.ts";
 import { t } from "#/i18n.ts";
 import { projectOf, resourceOf } from "#/test-project.ts";
 import CompareMenu from "#/components/CompareMenu.svelte";

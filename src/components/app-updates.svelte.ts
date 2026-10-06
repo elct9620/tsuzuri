@@ -3,7 +3,7 @@
  * offers one found at launch, and the window that stays while one installs.
  */
 
-import { installUpdate, type AppUpdate } from "#/backend/updates.ts";
+import { installUpdate, type AppUpdate } from "#/ipc/updates.ts";
 import { t } from "#/i18n.ts";
 import { notify, notifyFailure } from "#/ui/notification.svelte.ts";
 

@@ -4,8 +4,8 @@ import { clearMocks } from "@tauri-apps/api/mocks";
 import { unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { editingPort } from "#/backend/editing.ts";
-import { ProjectFeed, type RecentProjectView } from "#/backend/project.ts";
+import { editingPort } from "#/ipc/editing.ts";
+import { ProjectFeed, type RecentProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
 import { notificationStack } from "#/ui/notification.svelte.ts";

@@ -4,9 +4,9 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { editingPort } from "#/backend/editing.ts";
-import type { PipelineProgress } from "#/backend/progress.ts";
-import { ProjectFeed } from "#/backend/project.ts";
+import { editingPort } from "#/ipc/editing.ts";
+import type { PipelineProgress } from "#/ipc/progress.ts";
+import { ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import {
   showNotifications,

@@ -6,7 +6,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import type { ProjectView } from "#/backend/project.ts";
+  import type { ProjectView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import {
     editingSession,

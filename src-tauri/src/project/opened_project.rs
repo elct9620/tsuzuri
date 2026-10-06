@@ -19,7 +19,7 @@ use crate::failure::Failure;
 use crate::language::Language;
 use crate::replacement::{Finder, Replacer};
 use crate::segment_change::SegmentChange;
-use crate::transcript::{SpeakerNames, Transcript, WrittenText};
+use crate::transcript::{Segment, SpeakerNames, Transcript, WrittenText};
 
 impl Project {
     /// The directory's Resources in the Primary Language its Project Config records, else in
@@ -547,22 +547,16 @@ impl Project {
         field: SegmentField,
         finder: &Finder,
     ) -> Result<Vec<TextMatch>, Failure> {
+        self.refuse_unshown_translation(field)?;
         let current = self.current()?;
-        if field == SegmentField::Translation && current.translation.is_none() {
-            return Err(Failure::NoTranslationShown);
-        }
         Ok(current
             .transcript
             .segments
             .iter()
             .enumerate()
             .flat_map(|(index, segment)| {
-                let text = match field {
-                    SegmentField::Translation => segment.translation.as_deref().unwrap_or_default(),
-                    _ => &segment.text,
-                };
                 finder
-                    .match_ranges(text)
+                    .match_ranges(field_text(segment, field).unwrap_or_default())
                     .into_iter()
                     .map(move |(start, end)| TextMatch { index, start, end })
             })
@@ -618,6 +612,13 @@ impl Project {
         }
     }
 
+    fn refuse_unshown_translation(&self, field: SegmentField) -> Result<(), Failure> {
+        if field == SegmentField::Translation && self.current()?.translation.is_none() {
+            return Err(Failure::NoTranslationShown);
+        }
+        Ok(())
+    }
+
     fn refuse_absent_segments(&self, indexes: &[usize]) -> Result<(), Failure> {
         let length = self.current()?.transcript.segments.len();
         match indexes.iter().find(|index| **index >= length) {
@@ -635,10 +636,7 @@ impl Project {
             .segments
             .get(index)
             .ok_or_else(|| missing_segment(index))?;
-        Ok(match field {
-            SegmentField::Translation => segment.translation.as_deref().unwrap_or_default(),
-            _ => &segment.text,
-        })
+        Ok(field_text(segment, field).unwrap_or_default())
     }
 
     /// Puts what `rewrite` makes of `field` of each Segment of the Current Resource, given its
@@ -650,21 +648,15 @@ impl Project {
         field: SegmentField,
         rewrite: impl Fn(usize, &str) -> Option<(String, usize)>,
     ) -> Result<usize, Failure> {
+        self.refuse_unshown_translation(field)?;
         let current = self.current()?;
-        if field == SegmentField::Translation && current.translation.is_none() {
-            return Err(Failure::NoTranslationShown);
-        }
         let rewritten_texts: Vec<(usize, String, usize)> = current
             .transcript
             .segments
             .iter()
             .enumerate()
             .filter_map(|(index, segment)| {
-                let text = match field {
-                    SegmentField::Translation => segment.translation.as_deref()?,
-                    _ => &segment.text,
-                };
-                let (text, count) = rewrite(index, text)?;
+                let (text, count) = rewrite(index, field_text(segment, field)?)?;
                 Some((index, text, count))
             })
             .collect();
@@ -775,10 +767,7 @@ impl Project {
         .ok_or(Failure::NoRow { row })?;
         self.back_up_first_change(&subtitle)?;
         files::write_text(&subtitle, transcript.to_srt(WrittenText::Original))?;
-        let name = self.current()?.name.clone();
-        self.read_current_again()?;
-        self.write_bilingual_subtitles(&name, language)?;
-        self.restoration(language, &previous)
+        self.finish_restoration(language, &previous)
     }
 
     /// Keeps the subtitle in `language` as a Backup, puts the named Backup in its place and reads
@@ -791,12 +780,22 @@ impl Project {
         let previous = self.current()?.transcript.clone();
         let backup_path = self.backup_of(language, backup)?;
         let subtitle = self.subtitle_path(language)?;
-        let name = self.current()?.name.clone();
         self.keep_backup(&subtitle, BackupKind::Overwrite)?;
         files::copy(&backup_path, &subtitle)?;
+        self.finish_restoration(language, &previous)
+    }
+
+    /// Reads the Current Resource again from the subtitle in `language` just restored, writes the
+    /// Bilingual SRTs it feeds and answers what the restoration left behind.
+    fn finish_restoration(
+        &mut self,
+        language: Option<Language>,
+        previous: &Transcript,
+    ) -> Result<Restoration, Failure> {
+        let name = self.current()?.name.clone();
         self.read_current_again()?;
         self.write_bilingual_subtitles(&name, language)?;
-        self.restoration(language, &previous)
+        self.restoration(language, previous)
     }
 
     /// What restoring the subtitle in `language` left behind, given the original as it was before;
@@ -938,6 +937,14 @@ fn text_from(value: &str) -> String {
 fn speaker_from(value: &str) -> Option<String> {
     let speaker = value.trim();
     (!speaker.is_empty()).then(|| speaker.to_string())
+}
+
+/// The text `field` holds in `segment`; none for a translation it does not have.
+fn field_text(segment: &Segment, field: SegmentField) -> Option<&str> {
+    match field {
+        SegmentField::Translation => segment.translation.as_deref(),
+        _ => Some(&segment.text),
+    }
 }
 
 /// The Resource of `resources` named `name`, if any.

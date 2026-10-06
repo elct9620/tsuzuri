@@ -235,6 +235,16 @@ export function chords(shortcut: Shortcut, isMac: boolean): readonly string[] {
   return isMac ? shortcut.mac : shortcut.other;
 }
 
+/** Which modifiers `event` holds. */
+function heldModifiers(event: KeyboardEvent | MouseEvent) {
+  return {
+    meta: event.metaKey,
+    ctrl: event.ctrlKey,
+    alt: event.altKey,
+    shift: event.shiftKey,
+  };
+}
+
 /** Whether `event` presses `chord` of `shortcut`: its modifiers and no others, and its key. */
 function isChord(
   event: KeyboardEvent,
@@ -243,12 +253,7 @@ function isChord(
 ): boolean {
   const keys = chord.split("+");
   const key = keys[keys.length - 1];
-  const isHeld = {
-    meta: event.metaKey,
-    ctrl: event.ctrlKey,
-    alt: event.altKey,
-    shift: event.shiftKey,
-  };
+  const isHeld = heldModifiers(event);
   const hasModifiers = MODIFIERS.every(
     (modifier) =>
       isHeld[modifier] === keys.includes(modifier) ||
@@ -272,6 +277,23 @@ export function isShortcut(
   const shortcut = shortcutById(id);
   return chords(shortcut, isMac).some((chord) =>
     isChord(event, chord, shortcut),
+  );
+}
+
+/**
+ * Whether `event` holds the modifiers a mouse Shortcut `id` names on this platform, others held
+ * too or not, as a drag with them held draws over the Segments.
+ */
+export function isShortcutHeld(
+  event: MouseEvent,
+  id: ShortcutId,
+  isMac: boolean,
+): boolean {
+  const isHeld = heldModifiers(event);
+  return chords(shortcutById(id), isMac).some((chord) =>
+    MODIFIERS.filter((modifier) => chord.split("+").includes(modifier)).every(
+      (modifier) => isHeld[modifier],
+    ),
   );
 }
 

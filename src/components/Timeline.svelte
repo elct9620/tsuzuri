@@ -64,7 +64,7 @@
   } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { notifyEdit, notifyFailure } from "#/state/notification.svelte.ts";
-  import { chords, isShortcut, shortcutById } from "#/ui/shortcuts.ts";
+  import { isShortcut, isShortcutHeld } from "#/ui/shortcuts.ts";
   import {
     type PlayedSource,
     SILENT_PEAKS,
@@ -349,7 +349,12 @@
    * drags its Segment, so this goes before the regions hear it and draws over them.
    */
   function drawOver(event: PointerEvent): void {
-    if (event.button !== 0 || !isDrawingKey(event) || !surfer) return;
+    if (
+      event.button !== 0 ||
+      !isShortcutHeld(event, "drawOver", isMac) ||
+      !surfer
+    )
+      return;
     event.stopPropagation();
     event.preventDefault();
     if (isTimeHeld) return;
@@ -362,7 +367,7 @@
 
   /** Keeps a click with the drawing key held from choosing a Segment or moving the media. */
   function ignoreClickOver(event: MouseEvent): void {
-    if (isDrawingKey(event)) event.stopPropagation();
+    if (isShortcutHeld(event, "drawOver", isMac)) event.stopPropagation();
   }
 
   /** Takes a drag back to where it began, or drops the drawn range. */
@@ -866,12 +871,6 @@
   function themeColor(variable: string, fallback: string): string {
     const value = getComputedStyle(frame).getPropertyValue(variable);
     return value.trim() || fallback;
-  }
-
-  /** Whether the key the shortcut list names for drawing a range over the Segments is held. */
-  function isDrawingKey(event: MouseEvent): boolean {
-    const [modifier] = chords(shortcutById("drawOver"), isMac)[0].split("+");
-    return modifier === "meta" ? event.metaKey : event.ctrlKey;
   }
 
   onMount(() => {

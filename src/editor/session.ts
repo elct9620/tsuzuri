@@ -36,23 +36,24 @@ export interface EditingPort {
   redo(): Promise<void>;
 }
 
+/** A use case Rust refused or could not carry out, and why. */
+type FailedOutcome = { kind: "failed"; error: unknown };
+
 /** How a use case ended, for the screen to tell the user. */
 export type Outcome =
   | { kind: "written" }
   | { kind: "unchanged" }
   /** Refused before anything was sent: a split needs text on both sides of the Cursor. */
   | { kind: "refused" }
-  | { kind: "failed"; error: unknown };
+  | FailedOutcome;
 
 /** How a replacement ended: how many matches were replaced, none when nothing matched. */
 export type ReplacementOutcome =
-  { kind: "replaced"; count: number } | { kind: "failed"; error: unknown };
+  { kind: "replaced"; count: number } | FailedOutcome;
 
 /** How a Simplified Cleanup ended: how many characters changed, or refused with no Segment to clean. */
 export type CleanupOutcome =
-  | { kind: "cleaned"; count: number }
-  | { kind: "refused" }
-  | { kind: "failed"; error: unknown };
+  { kind: "cleaned"; count: number } | { kind: "refused" } | FailedOutcome;
 
 /**
  * What a listener is told has changed; a `choice` is the user making another Segment current, as a
@@ -298,18 +299,14 @@ export class EditingSession {
     return this.write(() => this.port.setSpeakers(indexes, speaker));
   }
 
-  async replaceText(
+  replaceText(
     field: CursorField,
     replacement: Replacement,
   ): Promise<ReplacementOutcome> {
-    try {
-      return {
-        kind: "replaced",
-        count: await this.port.replaceText(field, replacement),
-      };
-    } catch (error) {
-      return { kind: "failed", error };
-    }
+    return outcomeOf(
+      () => this.port.replaceText(field, replacement),
+      (count) => ({ kind: "replaced", count }),
+    );
   }
 
   /**
@@ -339,15 +336,11 @@ export class EditingSession {
     return this.clean({ kind: "segments", indexes });
   }
 
-  private async clean(scope: CleanupScope): Promise<CleanupOutcome> {
-    try {
-      return {
-        kind: "cleaned",
-        count: await this.port.cleanSimplified(scope),
-      };
-    } catch (error) {
-      return { kind: "failed", error };
-    }
+  private clean(scope: CleanupScope): Promise<CleanupOutcome> {
+    return outcomeOf(
+      () => this.port.cleanSimplified(scope),
+      (count) => ({ kind: "cleaned", count }),
+    );
   }
 
   /**
@@ -467,13 +460,8 @@ export class EditingSession {
     return outcome;
   }
 
-  private async write(send: () => Promise<void>): Promise<Outcome> {
-    try {
-      await send();
-      return { kind: "written" };
-    } catch (error) {
-      return { kind: "failed", error };
-    }
+  private write(send: () => Promise<void>): Promise<Outcome> {
+    return outcomeOf(send, () => ({ kind: "written" }));
   }
 
   /** Moves the Cursor as the user does, telling the listeners at once. */
@@ -494,5 +482,17 @@ export class EditingSession {
     if (next === this.state) return;
     this.state = next;
     this.unannouncedChanges.add("cursor");
+  }
+}
+
+/** What `send` came to, as `done` tells it, or that it failed and why. */
+async function outcomeOf<T, O>(
+  send: () => Promise<T>,
+  done: (value: T) => O,
+): Promise<O | FailedOutcome> {
+  try {
+    return done(await send());
+  } catch (error) {
+    return { kind: "failed", error };
   }
 }

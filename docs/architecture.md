@@ -555,8 +555,6 @@ ipc/editing.ts                gateway: the one caller of editing commands
 
 `Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。
 
-預覽、時間軸與段落清單由 `EditorLayout` 排在同一個 grid。版面只換 grid areas，DOM 順序不變，唯一的播放器因此不被搬動而重新載入。
-
 #### 4.1.2 Modal 層
 
 Modal 都放在 `<main>` 旁，彼此同層。開啟時進入 top layer，後開的疊在上面，各自帶遮罩。
@@ -693,7 +691,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 整體的 `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
 | `Components` | 元件的狀態、指定與還原 |
 | `Logs` | log 目錄與除錯紀錄 |
-| `Layout` | 偏好頁的版面，選定後刪除 |
 | `Preferences` | 偏好頁的換段設定 |
 | `GlossaryDialog` | 詞彙表 modal |
 | `SettingsDialog` | 設定的分頁，專案頁只在開啟時出現 |
@@ -727,7 +724,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `Notifications`、`NotificationCard` | 通知的堆疊、倒數、暫停與按鈕 |
 | `Tooltip` | 全頁共用的 tooltip |
 | `Undo` | 全頁的復原與重做，不畫任何東西 |
-| `EditorLayout` | 依版面排列預覽、時間軸、段落清單 |
+| `EditorLayout` | 上下排列預覽、時間軸、段落清單 |
 | `Preview` | 播放器、疊字、影片視窗 |
 | `PlayerControls` | 播放、時間、音量與靜音 |
 | `CaptionControls` | 檢視選單裡的疊字選擇 |
@@ -748,7 +745,6 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `PreviewFold` | Page 建立 | 編輯工具的收起鈕、預覽、時間軸 |
 | `CaptionChoices` | Page 建立 | 預覽、檢視選單 |
 | `ViewChoices` | Page 建立 | 時間軸、段落列、檢視選單 |
-| `LayoutChoice` | Page 建立 | 版面容器、偏好頁 |
 | `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
@@ -821,7 +817,6 @@ feed -> Preview.show    sets the player's source: media or silence
 | `ui/shortcuts.ts` | 各平台的快速鍵、比對與寫法 |
 | `ui/text-fields.ts` | 選取的文字 |
 | `ui/speakers.ts` | 段落與詞彙表的說話者名單 |
-| `ui/scroll-anchor.ts` | 換段時留住目前列的捲動 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
 Svelte 元件以 `@lucide/svelte` 畫出圖示。快速鍵以 `ui/shortcuts.ts` 為準：Svelte 元件比對的鍵用 `isShortcut` 讀它，這些鍵與 Rust 選單的鍵由測試雙向核對。

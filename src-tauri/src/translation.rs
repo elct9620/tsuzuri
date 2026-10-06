@@ -1,8 +1,6 @@
 use std::path::Path;
 #[cfg(test)]
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -12,7 +10,7 @@ use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::progress::{enter, Progress};
 use crate::project::{CurrentProject, Restoration, SegmentSpan, TranslationSource};
-use crate::steps::{ModeRun, StepEvent, Steps, TRANSLATION_STEP};
+use crate::steps::{ModeRun, Steps};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -29,7 +27,7 @@ mod resident;
 mod settings;
 mod speaker_labels;
 
-use llama::TranslationModel;
+use llama::{ServerProcess, TranslationModel};
 use repair::BatchSurroundings;
 pub use resident::ResidentLlama;
 pub use settings::TranslationSettings;
@@ -271,34 +269,18 @@ async fn translate_on_job_server(
     on_batch: impl Fn(&[Segment], Option<SegmentSpan>),
 ) -> Result<Vec<Segment>, Failure> {
     let port = llama::free_port()?;
-    let (mut events, pid) = ports
-        .start(llama, &llama::server_args(model, port))
-        .map_err(|detail| Failure::StepFailed {
-            step: TRANSLATION_STEP.to_string(),
-            detail,
-        })?;
-    let has_exited = Arc::new(AtomicBool::new(false));
-    tokio::spawn({
-        let has_exited = Arc::clone(&has_exited);
-        async move {
-            while let Some(event) = events.recv().await {
-                if matches!(event, StepEvent::Exit(_)) {
-                    has_exited.store(true, Ordering::SeqCst);
-                }
-            }
-        }
-    });
+    let server = ServerProcess::start(ports, llama, &llama::server_args(model, port))?;
     let result = translate_once_ready(
         ports,
         &llama::base_url(port),
         ready_timeout,
-        || has_exited.load(Ordering::SeqCst),
+        || server.has_exited(),
         job,
         phases,
         on_batch,
     )
     .await;
-    ports.stop(pid);
+    ports.stop(server.pid);
     result
 }
 
@@ -604,7 +586,7 @@ async fn translate_segments(
 mod tests {
     use serde_json::json;
 
-    use std::sync::Mutex;
+    use std::sync::{Arc, Mutex};
 
     use crate::test_support::build_mock_app;
     use tauri::test::{mock_builder, MockRuntime};

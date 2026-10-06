@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use async_openai::config::OpenAIConfig;
@@ -19,6 +21,7 @@ use super::prompt::{
 };
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
+use crate::steps::{Steps, TRANSLATION_STEP};
 
 /// How long llama-server may take to load its Model before translation gives up.
 pub const READY_TIMEOUT: Duration = Duration::from_secs(180);
@@ -84,6 +87,40 @@ pub async fn wait_until_ready(
             return Err(Failure::LlamaTimedOut);
         }
         tokio::time::sleep(HEALTH_POLL).await;
+    }
+}
+
+/// A llama-server process started for translation, watched until it ends.
+pub struct ServerProcess {
+    pub pid: u32,
+    has_exited: Arc<AtomicBool>,
+}
+
+impl ServerProcess {
+    /// Starts llama-server with `args`; its events ending is taken as its end, whether or not
+    /// they carried its exit.
+    pub fn start(
+        steps: &impl Steps,
+        llama: &Path,
+        args: &[String],
+    ) -> Result<ServerProcess, Failure> {
+        let (mut events, pid) = steps
+            .start(llama, args)
+            .map_err(|detail| Failure::StepFailed {
+                step: TRANSLATION_STEP.to_string(),
+                detail,
+            })?;
+        let has_exited = Arc::new(AtomicBool::new(false));
+        let flag = Arc::clone(&has_exited);
+        tokio::spawn(async move {
+            while events.recv().await.is_some() {}
+            flag.store(true, Ordering::SeqCst);
+        });
+        Ok(ServerProcess { pid, has_exited })
+    }
+
+    pub fn has_exited(&self) -> bool {
+        self.has_exited.load(Ordering::SeqCst)
     }
 }
 

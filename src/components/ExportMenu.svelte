@@ -20,7 +20,7 @@
   import { t } from "#/i18n.ts";
   import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";
   import { closeMenu } from "#/ui/menu.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
 
   /** Where the webview remembers whether a Plain Text export names its Speakers. */
   const TEXT_SPEAKERS_KEY = "tsuzuri.plain-text-speakers";
@@ -79,7 +79,7 @@
   ): Promise<void> {
     closeMenu(item);
     const isPlainText = format === "plain_text";
-    try {
+    await attempt(t("toolbar.notExported"), async () => {
       const path = await save({
         defaultPath: await exportPath(content, format),
         filters: isPlainText ? TEXT_FILTERS : SRT_FILTERS,
@@ -88,9 +88,7 @@
       if (isPlainText)
         await saveText(path, content, hasTextSpeakers, hasTextBlankLines);
       else await saveSrt(path, content);
-    } catch (error) {
-      notifyFailure(t("toolbar.notExported"), error);
-    }
+    });
   }
 </script>
 

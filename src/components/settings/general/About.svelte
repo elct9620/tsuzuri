@@ -3,7 +3,7 @@
 
   import { openReleases, openSponsorship } from "#/ipc/about.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
 
   interface Props {
     /** Opens the full License Notice. */
@@ -13,19 +13,15 @@
   let { openLicenses }: Props = $props();
 
   async function openSource(): Promise<void> {
-    try {
+    await attempt(t("settings.releasesNotOpened"), async () => {
       await openReleases();
-    } catch (error) {
-      notifyFailure(t("settings.releasesNotOpened"), error);
-    }
+    });
   }
 
   async function openSponsorshipPage(): Promise<void> {
-    try {
+    await attempt(t("settings.sponsorshipNotOpened"), async () => {
       await openSponsorship();
-    } catch (error) {
-      notifyFailure(t("settings.sponsorshipNotOpened"), error);
-    }
+    });
   }
 </script>
 

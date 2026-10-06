@@ -13,7 +13,7 @@
     type UpdateSettings,
   } from "#/ipc/updates.ts";
   import { t } from "#/i18n.ts";
-  import { notify, notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt, notify } from "#/state/notification.svelte.ts";
   import { updateFoundMessage } from "#/state/app-updates.svelte.ts";
   import { appUpdates } from "#/state/context.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
@@ -45,7 +45,7 @@
   );
 
   onMount(async () => {
-    try {
+    await attempt(t("settings.updateNotChecked"), async () => {
       const build = await appBuild();
       const commit = build.commit.slice(0, SHORT_COMMIT_LENGTH);
       shownBuild = t("settings.appBuild", {
@@ -57,57 +57,43 @@
       hasPreviewChannel = build.has_preview_channel;
       settings = await updateSettings();
       updates.offer(await checkForUpdateAtLaunch());
-    } catch (error) {
-      notifyFailure(t("settings.updateNotChecked"), error);
-    }
+    });
   });
 
   async function copyBuild(): Promise<void> {
-    try {
+    await attempt(t("settings.appBuildNotCopied"), async () => {
       await navigator.clipboard.writeText(buildLine);
       notify({ title: t("settings.appBuildCopied"), kind: "success" });
-    } catch (error) {
-      notifyFailure(t("settings.appBuildNotCopied"), error);
-    }
+    });
   }
 
   async function check(): Promise<void> {
     isChecking = true;
-    try {
+    await attempt(t("settings.updateNotChecked"), async () => {
       updates.show(await checkForUpdate());
-    } catch (error) {
-      notifyFailure(t("settings.updateNotChecked"), error);
-    } finally {
-      isChecking = false;
-    }
+    });
+    isChecking = false;
   }
 
   async function rollBack(): Promise<void> {
     isRollingBack = true;
-    try {
+    await attempt(t("settings.updateNotChecked"), async () => {
       updates.show(await checkForRollback());
       await updates.install();
-    } catch (error) {
-      notifyFailure(t("settings.updateNotChecked"), error);
-    } finally {
-      isRollingBack = false;
-    }
+    });
+    isRollingBack = false;
   }
 
   async function saveLaunchCheck(hasLaunchCheck: boolean): Promise<void> {
-    try {
+    await attempt(t("settings.launchCheckNotChosen"), async () => {
       settings = await chooseLaunchCheck(hasLaunchCheck);
-    } catch (error) {
-      notifyFailure(t("settings.launchCheckNotChosen"), error);
-    }
+    });
   }
 
   async function saveChannel(channel: UpdateChannel): Promise<void> {
-    try {
+    await attempt(t("settings.updateChannelNotChosen"), async () => {
       settings = await chooseUpdateChannel(channel);
-    } catch (error) {
-      notifyFailure(t("settings.updateChannelNotChosen"), error);
-    }
+    });
   }
 </script>
 

@@ -5,7 +5,7 @@
 
 import { installUpdate, type AppUpdate } from "#/ipc/updates.ts";
 import { t } from "#/i18n.ts";
-import { notify, notifyFailure } from "#/state/notification.svelte.ts";
+import { attempt, notify } from "#/state/notification.svelte.ts";
 
 /** What the settings and the launch Notification say of a found App Update, by its Release Name. */
 export function updateFoundMessage(update: AppUpdate): string {
@@ -44,11 +44,7 @@ export class AppUpdates {
   async install(): Promise<void> {
     if (!this.foundUpdate) return;
     this.installingUpdate = this.foundUpdate;
-    try {
-      await installUpdate();
-    } catch (error) {
+    if (!(await attempt(t("settings.updateNotInstalled"), installUpdate)))
       this.installingUpdate = null;
-      notifyFailure(t("settings.updateNotInstalled"), error);
-    }
   }
 }

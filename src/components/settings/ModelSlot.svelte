@@ -19,7 +19,7 @@
     sourceFileName,
     type HubFile,
   } from "#/ui/models.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   interface Props {
@@ -85,11 +85,9 @@
   let downloadLabel = $state("");
 
   onMount(async () => {
-    try {
+    await attempt(t("settings.unreadable"), async () => {
       presets = await presetModels(slot);
-    } catch (error) {
-      notifyFailure(t("settings.unreadable"), error);
-    }
+    });
   });
 
   /** Picks a Model file by the extensions Rust names for the slot; none is offered while they cannot be read. */
@@ -148,14 +146,11 @@
     pendingDownload = target;
     downloadPercent = null;
     downloadLabel = "";
-    try {
+    const isDownloaded = await attempt(t("models.notDownloaded"), async () => {
       onchoose(await downloadModel(target.repo, target.file, revision));
-    } catch (error) {
-      notifyFailure(t("models.notDownloaded"), error);
-      menuChoice = modelChoice;
-    } finally {
-      pendingDownload = null;
-    }
+    });
+    if (!isDownloaded) menuChoice = modelChoice;
+    pendingDownload = null;
   }
 </script>
 

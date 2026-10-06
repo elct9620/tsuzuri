@@ -10,7 +10,7 @@
   } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
   import { sourceName, type HubFile } from "#/ui/models.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
   import ModelSlot from "#/components/settings/ModelSlot.svelte";
 
   interface Props {
@@ -26,11 +26,9 @@
   let settings = $state<ModelSettingsView | null>(null);
 
   onMount(async () => {
-    try {
+    await attempt(t("settings.unreadable"), async () => {
       settings = await modelSettings();
-    } catch (error) {
-      notifyFailure(t("settings.unreadable"), error);
-    }
+    });
   });
 
   /** Where the slot's Model is, or why it is not there. */
@@ -46,11 +44,9 @@
 
   async function record(slot: Slot, source: ModelSource | null): Promise<void> {
     if (source === null) return;
-    try {
+    await attempt(t("settings.notSaved"), async () => {
       settings = await chooseModel(slot, source);
-    } catch (error) {
-      notifyFailure(t("settings.notSaved"), error);
-    }
+    });
   }
 </script>
 

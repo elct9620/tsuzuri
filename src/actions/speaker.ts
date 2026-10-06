@@ -11,15 +11,15 @@ import {
 import type { Outcome } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
 import {
-  type Notification,
+  attempt,
   notify,
   notifyEdit,
-  notifyFailure,
+  type Notification,
 } from "#/state/notification.svelte.ts";
 
 /** Marks the term `name` in the Primary Language column as a Speaker, adding the term when the glossary has none. */
 async function addSpeaker(feed: ProjectFeed, name: string): Promise<void> {
-  try {
+  await attempt(t("edit.speakerNotAdded"), async () => {
     const table = await translationGlossaryTable();
     const project = feed.project;
     const column = project ? table.languages.indexOf(project.language) : -1;
@@ -37,9 +37,7 @@ async function addSpeaker(feed: ProjectFeed, name: string): Promise<void> {
         ];
     await saveTranslationGlossary(rows);
     notify({ title: t("edit.speakerAdded", { name }), kind: "success" });
-  } catch (error) {
-    notifyFailure(t("edit.speakerNotAdded"), error);
-  }
+  });
 }
 
 /** An offer to add the Speaker just named to the Translation Glossary, when it names none such. */

@@ -17,11 +17,11 @@
     subtitleVersions,
     type ComparedCue,
     type ComparedRow,
-    type Restoration,
     type SubtitleVersions,
   } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import {
+    attempt,
     notifyFailure,
     notifyRestoration,
   } from "#/state/notification.svelte.ts";
@@ -71,12 +71,10 @@
 
   /** Opens the dialog at the Versions of the subtitle in `subtitle`, or of the original for none. */
   export async function open(subtitle: string | null = null): Promise<void> {
-    try {
+    const isRead = await attempt(t("versions.unreadable"), async () => {
       versions = await subtitleVersions();
-    } catch (error) {
-      notifyFailure(t("versions.unreadable"), error);
-      return;
-    }
+    });
+    if (!isRead) return;
     language = subtitle ?? "";
     closeComparison();
     dialog.showModal();
@@ -160,36 +158,25 @@
 
   /** Takes back row `index` from the Backup on the left, and compares again. */
   async function revert(index: number): Promise<void> {
-    let restoration: Restoration;
-    try {
-      restoration = await revertRow(
-        shownLanguage(),
-        leftVersion,
-        index,
-        "whole",
+    const isReverted = await attempt(t("compare.notReverted"), async () => {
+      notifyRestoration(
+        t("compare.reverted"),
+        await revertRow(shownLanguage(), leftVersion, index, "whole"),
       );
-    } catch (error) {
-      notifyFailure(t("compare.notReverted"), error);
-      return;
-    }
-    notifyRestoration(t("compare.reverted"), restoration);
-    await showComparison();
+    });
+    if (isReverted) await showComparison();
   }
 
   async function restore(file: string): Promise<void> {
-    let restoration: Restoration;
-    try {
-      restoration = await restoreVersion(shownLanguage(), file);
-    } catch (error) {
-      notifyFailure(t("versions.notRestored"), error);
-      return;
-    }
-    dialog.close();
-    notifyRestoration(
-      t("versions.restored"),
-      restoration,
-      t("versions.replacedKept"),
-    );
+    await attempt(t("versions.notRestored"), async () => {
+      const restoration = await restoreVersion(shownLanguage(), file);
+      dialog.close();
+      notifyRestoration(
+        t("versions.restored"),
+        restoration,
+        t("versions.replacedKept"),
+      );
+    });
   }
 </script>
 

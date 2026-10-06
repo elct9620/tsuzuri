@@ -7,7 +7,7 @@
     type TranscriptionSettings,
   } from "#/ipc/transcription.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** The general Transcription Settings, the default of every Project, as the switches stand. */
@@ -19,19 +19,15 @@
   });
 
   onMount(async () => {
-    try {
+    await attempt(t("settings.unreadable"), async () => {
       settings = await transcriptionSettings();
-    } catch (error) {
-      notifyFailure(t("settings.unreadable"), error);
-    }
+    });
   });
 
   async function save(): Promise<void> {
-    try {
+    await attempt(t("settings.notSaved"), async () => {
       settings = await saveTranscriptionSettings($state.snapshot(settings));
-    } catch (error) {
-      notifyFailure(t("settings.notSaved"), error);
-    }
+    });
   }
 </script>
 

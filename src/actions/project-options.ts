@@ -9,25 +9,18 @@ import {
   type ProjectView,
 } from "#/ipc/project.ts";
 import { t } from "#/i18n.ts";
-import { notifyFailure } from "#/state/notification.svelte.ts";
+import { attempt } from "#/state/notification.svelte.ts";
 
 /** Sets the Project Options as `project` holds them, with `changes` in their place. */
 export async function saveOptions(
   project: ProjectView,
   changes: Partial<ProjectOptions>,
 ): Promise<void> {
-  await report(() => setProjectOptions({ ...project.options, ...changes }));
+  await attempt(t("settings.notSaved"), () =>
+    setProjectOptions({ ...project.options, ...changes }),
+  );
 }
 
 export async function setLanguage(language: string): Promise<void> {
-  await report(() => setPrimaryLanguage(language));
-}
-
-/** Runs `action`, showing why it failed. */
-async function report(action: () => Promise<unknown>): Promise<void> {
-  try {
-    await action();
-  } catch (error) {
-    notifyFailure(t("settings.notSaved"), error);
-  }
+  await attempt(t("settings.notSaved"), () => setPrimaryLanguage(language));
 }

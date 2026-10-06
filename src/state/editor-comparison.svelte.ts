@@ -19,6 +19,7 @@ import {
 } from "#/ipc/project.ts";
 import { t } from "#/i18n.ts";
 import {
+  attempt,
   notifyFailure,
   notifyRestoration,
 } from "#/state/notification.svelte.ts";
@@ -300,14 +301,12 @@ export class EditorComparison {
   async revert({ side, index }: SideRow, part: RevertPart): Promise<void> {
     const backup = this.sideBackup(side);
     if (backup === null) return;
-    try {
+    await attempt(t("compare.notReverted"), async () => {
       notifyRestoration(
         t("compare.reverted"),
         await revertRow(backup.language, backup.file, index, part),
       );
-    } catch (error) {
-      notifyFailure(t("compare.notReverted"), error);
-    }
+    });
   }
 
   private sideBackup(side: Side): ComparedBackup | null {

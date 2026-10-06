@@ -11,7 +11,7 @@
   } from "#/ipc/preferences.ts";
   import type { ChoiceSource } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
   import { savedPreferences } from "#/state/context.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
@@ -39,11 +39,9 @@
   );
 
   onMount(async () => {
-    try {
+    await attempt(t("settings.unreadable"), async () => {
       show(await readPreferences());
-    } catch (error) {
-      notifyFailure(t("settings.unreadable"), error);
-    }
+    });
   });
 
   /** Shows `next` on the switches and hands it to the editor, which follows the Preferences saved. */
@@ -54,14 +52,12 @@
 
   /** Saves the switches as they stand; a refusal shows the Preferences saved before. */
   async function save(): Promise<void> {
-    try {
+    const isSaved = await attempt(t("settings.notSaved"), async () => {
       show(
         await savePreferences({ choice_landings: $state.snapshot(landings) }),
       );
-    } catch (error) {
-      notifyFailure(t("settings.notSaved"), error);
-      await showSaved();
-    }
+    });
+    if (!isSaved) await showSaved();
   }
 
   async function showSaved(): Promise<void> {

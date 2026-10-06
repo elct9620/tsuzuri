@@ -7,7 +7,7 @@
     type TranslationSettings,
   } from "#/ipc/translation.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** The general translation settings as the fields stand; a number field left empty is null. */
@@ -23,11 +23,9 @@
   let isModelKeepOffered = $state(true);
 
   onMount(async () => {
-    try {
+    await attempt(t("settings.unreadable"), async () => {
       show(await translationSettings());
-    } catch (error) {
-      notifyFailure(t("settings.unreadable"), error);
-    }
+    });
   });
 
   async function save(): Promise<void> {
@@ -38,11 +36,9 @@
       reference_lines: Number(fields.reference_lines),
       model_keep_seconds: Number(fields.model_keep_seconds),
     };
-    try {
+    await attempt(t("settings.notSaved"), async () => {
       show(await saveTranslationSettings(settings));
-    } catch (error) {
-      notifyFailure(t("settings.notSaved"), error);
-    }
+    });
   }
 
   function show(settings: TranslationSettings): void {

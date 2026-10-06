@@ -10,7 +10,7 @@
     type Origin,
   } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** Each Component's row: its name as Rust knows it, as people know it, and its ⓘ. */
@@ -30,11 +30,9 @@
   let statuses = $state<ComponentStatus[] | null>(null);
 
   onMount(async () => {
-    try {
+    await attempt(t("settings.unreadable"), async () => {
       statuses = await componentStatuses();
-    } catch (error) {
-      notifyFailure(t("settings.unreadable"), error);
-    }
+    });
   });
 
   function statusByName(name: string): ComponentStatus | undefined {
@@ -65,19 +63,15 @@
   async function choosePath(name: string): Promise<void> {
     const path = await open({ multiple: false, directory: false });
     if (path === null) return;
-    try {
+    await attempt(t("settings.notSaved"), async () => {
       statuses = await chooseComponent(name, path);
-    } catch (error) {
-      notifyFailure(t("settings.notSaved"), error);
-    }
+    });
   }
 
   async function restoreDefault(name: string): Promise<void> {
-    try {
+    await attempt(t("settings.notSaved"), async () => {
       statuses = await forgetComponent(name);
-    } catch (error) {
-      notifyFailure(t("settings.notSaved"), error);
-    }
+    });
   }
 </script>
 

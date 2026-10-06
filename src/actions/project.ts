@@ -14,25 +14,11 @@ import {
 } from "#/ipc/project.ts";
 import { interfaceLanguageCode, t } from "#/i18n.ts";
 import { closeMenu } from "#/ui/menu.ts";
-import { notify, notifyFailure } from "#/state/notification.svelte.ts";
-
-/** Runs `action`, saying under `title` why it failed, and answers whether it succeeded. */
-async function report(
-  title: string,
-  action: () => Promise<unknown>,
-): Promise<boolean> {
-  try {
-    await action();
-    return true;
-  } catch (error) {
-    notifyFailure(t(title), error);
-    return false;
-  }
-}
+import { attempt, notify } from "#/state/notification.svelte.ts";
 
 /** Opens `path` with the Interface Language for a directory that records none, answering whether it opened. */
 function open(command: OpenCommand, path: string): Promise<boolean> {
-  return report("toolbar.notOpened", () =>
+  return attempt(t("toolbar.notOpened"), () =>
     openProject(command, path, interfaceLanguageCode()),
   );
 }
@@ -82,14 +68,14 @@ export async function reload(feed: ProjectFeed): Promise<void> {
   if (feed.project === null) return;
   if (document.activeElement instanceof HTMLElement)
     document.activeElement.blur();
-  await report("resources.notReloaded", () => reloadProject());
+  await attempt(t("resources.notReloaded"), () => reloadProject());
 }
 
 /** Names the open Project `name`, or by its directory when `name` is blank. */
 export async function rename(feed: ProjectFeed, name: string): Promise<void> {
   const project = feed.project;
   if (project === null) return;
-  await report("toolbar.notRenamed", () =>
+  await attempt(t("toolbar.notRenamed"), () =>
     setProjectOptions({ ...project.options, name: name || null }),
   );
 }

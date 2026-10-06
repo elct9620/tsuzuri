@@ -12,7 +12,7 @@
     type LogDirectory,
   } from "#/ipc/logs.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** Where the log is written in this launch and where after a restart, once read. */
@@ -41,12 +41,10 @@
   );
 
   onMount(async () => {
-    try {
+    await attempt(t("settings.logsUnreadable"), async () => {
       directory = await logDirectory();
       showDebugLog(await debugLog());
-    } catch (error) {
-      notifyFailure(t("settings.logsUnreadable"), error);
-    }
+    });
   });
 
   function showDebugLog(answer: DebugLog): void {
@@ -55,29 +53,23 @@
   }
 
   async function saveDebugLogChoice(): Promise<void> {
-    try {
+    await attempt(t("settings.debugLogNotChosen"), async () => {
       showDebugLog(await chooseDebugLog(isDebugLogChosen));
-    } catch (error) {
-      notifyFailure(t("settings.debugLogNotChosen"), error);
-    }
+    });
   }
 
   async function chooseDirectory(): Promise<void> {
     const path = await open({ multiple: false, directory: true });
     if (path === null) return;
-    try {
+    await attempt(t("settings.logsNotChosen"), async () => {
       directory = await chooseLogDirectory(path);
-    } catch (error) {
-      notifyFailure(t("settings.logsNotChosen"), error);
-    }
+    });
   }
 
   async function openDirectory(): Promise<void> {
-    try {
+    await attempt(t("settings.logsNotOpened"), async () => {
       await openLogDirectory();
-    } catch (error) {
-      notifyFailure(t("settings.logsNotOpened"), error);
-    }
+    });
   }
 </script>
 

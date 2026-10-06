@@ -4,7 +4,7 @@
   import { selectResource, type ProjectView } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
   import { t } from "#/i18n.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";
   import { projectFeed } from "#/state/context.ts";
   import { reload } from "#/actions/project.ts";
@@ -35,13 +35,11 @@
   async function select(name: string): Promise<void> {
     dock.putAway();
     placeholders.show();
-    try {
-      await selectResource(name);
-    } catch (error) {
-      notifyFailure(t("resources.notSelected"), error);
-      // Rust announces nothing when it could not select, so the editor is told to read what it holds.
-      await feed.refresh();
-    }
+    const isSelected = await attempt(t("resources.notSelected"), () =>
+      selectResource(name),
+    );
+    // Rust announces nothing when it could not select, so the editor is told to read what it holds.
+    if (!isSelected) await feed.refresh();
   }
 
   /**

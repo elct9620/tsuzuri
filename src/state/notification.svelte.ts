@@ -92,6 +92,20 @@ export function notifyFailure(title: string, error: unknown): void {
   notify({ title, detail: failureMessage(error), kind: failureKind(error) });
 }
 
+/** Runs `action`, saying under `title` why it failed, and answers whether it succeeded. */
+export async function attempt(
+  title: string,
+  action: () => Promise<unknown>,
+): Promise<boolean> {
+  try {
+    await action();
+    return true;
+  } catch (error) {
+    notifyFailure(title, error);
+    return false;
+  }
+}
+
 /**
  * Says how an edit ended: saved, by the Save Mark rather than a Notification since every field left
  * writes one; refused before it was sent with `refusal`; or not done as `failure` says and why. An

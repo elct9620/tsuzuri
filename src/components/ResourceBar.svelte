@@ -17,7 +17,7 @@
   } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { closeMenu } from "#/ui/menu.ts";
-  import { notifyFailure } from "#/state/notification.svelte.ts";
+  import { attempt } from "#/state/notification.svelte.ts";
   import { saveMark } from "#/state/save-mark.svelte.ts";
   import ExportMenu from "#/components/ExportMenu.svelte";
   import TaskProgress from "#/components/TaskProgress.svelte";
@@ -59,11 +59,9 @@
   ]);
 
   async function chooseTranslation(language: string): Promise<void> {
-    try {
+    await attempt(t("translate.notShown"), async () => {
       await showTranslation(language || null);
-    } catch (error) {
-      notifyFailure(t("translate.notShown"), error);
-    }
+    });
   }
 </script>
 

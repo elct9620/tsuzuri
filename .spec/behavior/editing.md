@@ -181,6 +181,40 @@ The translation being written is held from typing, and a held field is still the
 | When | that Resource is selected |
 | Then | the Project is read again, so the editor shows what it holds |
 
+## `ED-193` Leaving out the Speaker column where no Segment names a Speaker
+
+A subtitle naming no one, as most translations are, keeps its rows free of an empty column; the Speaker menus below are those of rows showing it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Segments name no Speaker |
+| When | the Segment list shows it |
+| Then | no row shows a Speaker menu |
+
+## `ED-194` Showing the Speaker column once a Segment names a Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose second Segment is said by `小明` |
+| When | the Segment list shows it |
+| Then | every row shows a Speaker menu |
+
+## `ED-195` Showing the Speaker column from the View menu
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Segments name no Speaker |
+| When | the Speaker column is turned on in the View menu |
+| Then | every row shows a Speaker menu |
+
+## `ED-196` Keeping the Speaker column on for the next time
+
+| Step | Statement |
+| --- | --- |
+| Given | the Speaker column turned on in the View menu |
+| When | the app opens again |
+| Then | the Speaker column is still turned on |
+
 ## `ED-012` Naming a new Speaker for a Segment
 
 | Step | Statement |

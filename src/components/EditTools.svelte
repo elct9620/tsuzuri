@@ -1,12 +1,10 @@
 <!--
   @component
   The edit tools: searching, replacing, setting Speakers and the Versions of the whole subtitle,
-  the comparison shown, and the buttons folding the Preview's parts away.
+  the View menu, and the buttons folding the Preview's parts away.
 -->
 <script lang="ts">
   import AudioWaveform from "@lucide/svelte/icons/audio-waveform";
-  import ChevronDown from "@lucide/svelte/icons/chevron-down";
-  import GitCompare from "@lucide/svelte/icons/git-compare";
   import History from "@lucide/svelte/icons/history";
   import Replace from "@lucide/svelte/icons/replace";
   import Search from "@lucide/svelte/icons/search";
@@ -17,7 +15,10 @@
   import { t } from "#/i18n.ts";
   import { playedSource } from "#/ui/silence.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
-  import CompareMenu from "#/components/CompareMenu.svelte";
+  import type { CaptionChoices } from "#/state/caption-choices.svelte.ts";
+  import type { Playback } from "#/state/playback.svelte.ts";
+  import type { ViewChoices } from "#/state/view-choices.svelte.ts";
+  import ViewMenu from "#/components/ViewMenu.svelte";
 
   interface Props {
     /** The open Project, as Page reads it. */
@@ -29,6 +30,9 @@
     openSpeakers: () => void;
     /** The parts of the Preview folded away, which only a Current Resource has to fold. */
     fold: PreviewFold;
+    playback: Playback;
+    captionChoices: CaptionChoices;
+    viewChoices: ViewChoices;
   }
 
   let {
@@ -38,6 +42,9 @@
     openSearch,
     openSpeakers,
     fold,
+    playback,
+    captionChoices,
+    viewChoices,
   }: Props = $props();
 
   const hasPreview = $derived(playedSource(project, null) !== null);
@@ -90,26 +97,13 @@
       class="hidden @5xl:inline">{t("versions.open")}</span
     >
   </button>
-  <div class="dropdown dropdown-end">
-    <div
-      tabindex="0"
-      role="button"
-      class="btn btn-sm"
-      aria-label={t("compare.label")}
-      data-tooltip={t("compare.label")}
-    >
-      <GitCompare class="size-4" aria-hidden="true" /><span
-        class="hidden @5xl:inline">{t("compare.label")}</span
-      >
-      <ChevronDown class="size-4" aria-hidden="true" />
-    </div>
-    <div
-      tabindex="-1"
-      class="dropdown-content z-20 w-64 rounded-box bg-base-100 shadow-md"
-    >
-      <CompareMenu {openVersions} />
-    </div>
-  </div>
+  <ViewMenu
+    {project}
+    {playback}
+    {captionChoices}
+    {viewChoices}
+    {openVersions}
+  />
   {#if hasPreview}
     <!-- Each lights while its part is folded away, as a toggle button is lit while it is on -->
     <button

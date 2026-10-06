@@ -39,6 +39,7 @@
     type Side,
   } from "#/state/editor-comparison.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
+  import type { ViewChoices } from "#/state/view-choices.svelte.ts";
   import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import { resourceOffers } from "#/actions/segment-changes.ts";
   import RemovalRow from "#/components/RemovalRow.svelte";
@@ -56,11 +57,13 @@
   let {
     playback,
     placeholders,
+    viewChoices,
     onshown,
     children,
   }: {
     playback: Playback;
     placeholders: ResourcePlaceholders;
+    viewChoices: ViewChoices;
     /** Hears each Project once its Segments are shown. */
     onshown?: (project: ProjectView | null) => void;
     /** What stands between the empty hint and the rows, as the search and checked bars do. */
@@ -86,6 +89,11 @@
   let shownCurrentIndex: number | null = null;
 
   const segments = $derived(project?.segments ?? []);
+  /** Whether rows show the Speaker column: once a Segment names a Speaker, or as the View menu asks. */
+  const isSpeakerColumnShown = $derived(
+    viewChoices.isSpeakerColumnShown ||
+      segments.some((segment) => (segment.speaker ?? "") !== ""),
+  );
   const offers = $derived(resourceOffers(project));
   const layout = $derived(
     comparisonLayout(
@@ -257,6 +265,7 @@
           isCurrent={currentIndex === index}
           isPlaying={playback.playingIndexes.includes(index)}
           {isTypingKept}
+          {isSpeakerColumnShown}
           comparison={layout.bySegment[index]}
         />
       {/each}

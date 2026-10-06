@@ -19,6 +19,7 @@ import { projectOf } from "#/testing/project.ts";
 import { EditingSession, fieldValue } from "#/editor/index.ts";
 import { pageContext, withSegmentDialogs } from "#/state/context.ts";
 import { Playback } from "#/state/playback.svelte.ts";
+import { ViewChoices } from "#/state/view-choices.svelte.ts";
 import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 import { renderFollowingProject } from "#/testing/following-project.ts";
@@ -128,6 +129,7 @@ describe("Segment Changes", () => {
       props: {
         playback: new Playback(),
         placeholders: new ResourcePlaceholders(),
+        viewChoices: new ViewChoices(),
       },
       context: withSegmentDialogs(
         pageContext(assembly.feed, assembly.session),

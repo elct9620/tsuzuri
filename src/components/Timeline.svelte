@@ -39,15 +39,12 @@
     drag: true,
     resize: true,
   };
-  /** Where the webview remembers whether a dragged edge Snaps without Shift. */
-  const SNAPPING_KEY = "tsuzuri.timeline-snapping";
 
   const CONTROL_SELECTOR =
     "input, select, textarea, button, summary, [contenteditable], [role=button]";
 </script>
 
 <script lang="ts">
-  import Magnet from "@lucide/svelte/icons/magnet";
   import ZoomIn from "@lucide/svelte/icons/zoom-in";
   import ZoomOut from "@lucide/svelte/icons/zoom-out";
   import { onMount, untrack } from "svelte";
@@ -66,7 +63,6 @@
     type SegmentChange,
   } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
-  import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";
   import { notifyEdit, notifyFailure } from "#/state/notification.svelte.ts";
   import { chords, isShortcut, shortcutById } from "#/ui/shortcuts.ts";
   import {
@@ -104,8 +100,14 @@
   import type { Choice } from "#/state/editing-state.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
+  import type { ViewChoices } from "#/state/view-choices.svelte.ts";
 
-  let { playback, fold }: { playback: Playback; fold: PreviewFold } = $props();
+  let {
+    playback,
+    fold,
+    viewChoices,
+  }: { playback: Playback; fold: PreviewFold; viewChoices: ViewChoices } =
+    $props();
 
   /** A drag of the Current Segment's region under way, from its Segment's times to where it is shown. */
   interface Drag extends SegmentDrag {
@@ -132,8 +134,6 @@
   /** Whether a running Mode holds the Current Resource, which refuses every Segment Change. */
   let isTimeHeld = false;
   let pxPerSec = $state(INITIAL_PX_PER_SEC);
-  /** Whether a dragged edge Snaps, which Shift reverses for one drag; off unless chosen, as in Aegisub. */
-  let isSnapping = $state(rememberedFlag(SNAPPING_KEY, false));
   /** Whether a Waveform is being taken, shown as a skeleton until it is drawn. */
   let isTakingWaveform = $state(false);
   /** The times a dragged region or a drawn range will be written with, shown only while there is one. */
@@ -241,11 +241,6 @@
   function zoomTo(next: number): void {
     pxPerSec = Math.min(MAX_PX_PER_SEC, Math.max(MIN_PX_PER_SEC, next));
     surfer?.zoom(pxPerSec);
-  }
-
-  function toggleSnapping(): void {
-    isSnapping = !isSnapping;
-    rememberFlag(SNAPPING_KEY, isSnapping);
   }
 
   /**
@@ -733,7 +728,7 @@
    * within `SNAP_PX` at the waveform's zoom, or nothing while snapping is off.
    */
   function snapReachBeside(index: number): SnapReach {
-    const isSnappingNow = isSnapping !== modifiers.shiftKey;
+    const isSnappingNow = viewChoices.isSnapping !== modifiers.shiftKey;
     return {
       snapTimes: isSnappingNow
         ? snapTargets(segments, index, player.currentTime)
@@ -916,16 +911,6 @@
           )})</span
         >
       {/if}
-      <button
-        type="button"
-        class={["btn btn-square btn-xs", isSnapping && "btn-primary"]}
-        aria-pressed={isSnapping}
-        aria-label={t("preview.snapping")}
-        data-tooltip={t("preview.snappingHint")}
-        onclick={toggleSnapping}
-      >
-        <Magnet class="size-3.5" aria-hidden="true" />
-      </button>
       <div class="join">
         <button
           type="button"

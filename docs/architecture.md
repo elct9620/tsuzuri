@@ -701,6 +701,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `ExportMenu` | 匯出選單與純文字的兩個開關 |
 | `ResourceBar` | 資源名稱、譯文、資源的任務 |
 | `EditTools` | 搜尋、取代、說話者、版本、收起鈕 |
+| `ViewMenu` | 播放、疊字、吸附、說話者欄、對照 |
 | `CompareMenu` | 比較的備份與參照譯文 |
 | `SearchBar` | 搜尋列與符合處標記 |
 | `SegmentList` | 段落的快速鍵與編輯選單 |
@@ -725,7 +726,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `Undo` | 全頁的復原與重做，不畫任何東西 |
 | `Preview` | 播放器、疊字、影片視窗 |
 | `PlayerControls` | 播放、時間、音量與靜音 |
-| `CaptionControls` | 疊字語言與疊字設定 |
+| `CaptionControls` | 檢視選單裡的疊字選擇 |
 | `CurrentSegmentCard` | 預覽旁的目前段落卡 |
 | `Timeline` | 波形、段落區段、縮放、選段 |
 
@@ -738,9 +739,10 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 目前的專案 | Page 讀取，以 prop 交下 | 工作區、各列與 modal |
 | 最近專案 | Page 讀取 | 起始畫面、工具列 |
 | `ResourceDock` | Page 建立 | 工具列、資源清單 |
-| `Playback` | Page 建立 | 預覽、時間軸、段落列 |
+| `Playback` | Page 建立 | 預覽、時間軸、段落列、檢視選單 |
 | `PreviewFold` | Page 建立 | 編輯工具的收起鈕、預覽、時間軸 |
-| `CaptionChoices` | Preview 建立 | 預覽、疊字控制 |
+| `CaptionChoices` | Page 建立 | 預覽、檢視選單 |
+| `ViewChoices` | Page 建立 | 時間軸、段落列、檢視選單 |
 | `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |

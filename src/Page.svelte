@@ -24,6 +24,8 @@
   } from "#/actions/project.ts";
   import { Playback } from "#/state/playback.svelte.ts";
   import { PreviewFold } from "#/state/preview-fold.svelte.ts";
+  import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
+  import { ViewChoices } from "#/state/view-choices.svelte.ts";
   import ReplacementDialog from "#/components/ReplacementDialog.svelte";
   import { ResourceDock } from "#/state/resource-dock.svelte.ts";
   import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
@@ -62,6 +64,8 @@
   const dock = new ResourceDock();
   const playback = new Playback();
   const fold = new PreviewFold();
+  const captionChoices = new CaptionChoices();
+  const viewChoices = new ViewChoices();
   const placeholders = new ResourcePlaceholders();
   const feed = projectFeed();
   const comparison = editorComparison();
@@ -132,15 +136,19 @@
           openSearch={() => segmentList.openSearch()}
           openSpeakers={() => speakersDialog.open()}
           {fold}
+          {playback}
+          {captionChoices}
+          {viewChoices}
         />
       </div>
-      <Preview {playback} {fold} />
-      <Timeline {playback} {fold} />
+      <Preview {playback} {fold} choices={captionChoices} />
+      <Timeline {playback} {fold} {viewChoices} />
       <div class="flex-1 overflow-y-auto p-4">
         <SegmentList
           {project}
           {playback}
           {placeholders}
+          {viewChoices}
           bind:this={segmentList}
         />
       </div>

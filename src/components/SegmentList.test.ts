@@ -17,6 +17,7 @@ import {
 import { pageContext } from "#/state/context.ts";
 import { saveMark } from "#/state/save-mark.svelte.ts";
 import { Playback } from "#/state/playback.svelte.ts";
+import { ViewChoices } from "#/state/view-choices.svelte.ts";
 import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 import { TaskRun } from "#/state/task-run.svelte.ts";
@@ -59,6 +60,8 @@ describe("SegmentList", () => {
   let run: TaskRun;
   let segmentList: SegmentList;
   let resourcePlaceholders: ResourcePlaceholders;
+  /** What the View menu chooses, the Speaker column among it. */
+  let viewChoices: ViewChoices;
 
   const placeholders = () =>
     document.querySelectorAll("[data-placeholder]").length;
@@ -116,11 +119,13 @@ describe("SegmentList", () => {
     run = new TaskRun();
     const context = pageContext(assembly.feed, assembly.session, run);
     resourcePlaceholders = new ResourcePlaceholders();
+    viewChoices = new ViewChoices();
     segmentList = renderFollowingProject(SegmentList, assembly.feed, {
       target: document.querySelector("section")!,
       props: {
         playback: new Playback(),
         placeholders: resourcePlaceholders,
+        viewChoices,
       },
       context,
     });
@@ -480,6 +485,7 @@ describe("SegmentList", () => {
 
   // @behavior ED-012
   it("writes a new Speaker named for a Segment to the Project", async () => {
+    viewChoices.toggleSpeakerColumn();
     await hold(
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "你好" }] }),
     );
@@ -495,6 +501,7 @@ describe("SegmentList", () => {
 
   // @behavior ED-191
   it("leaves Enter to an input method composing a new Speaker name", async () => {
+    viewChoices.toggleSpeakerColumn();
     await hold(
       projectOf({ segments: [{ start_ms: 0, end_ms: 1000, text: "你好" }] }),
     );
@@ -575,6 +582,7 @@ describe("SegmentList", () => {
 
   // @behavior ED-022
   it("offers to add a new Speaker to the Translation Glossary", async () => {
+    viewChoices.toggleSpeakerColumn();
     await hold(projectNaming([]));
 
     await nameSpeaker("co");
@@ -584,6 +592,7 @@ describe("SegmentList", () => {
 
   // @behavior ED-023
   it("offers nothing for a Speaker the Translation Glossary names", async () => {
+    viewChoices.toggleSpeakerColumn();
     await hold(projectNaming(["小明"]));
 
     await nameSpeaker("小明");
@@ -594,6 +603,7 @@ describe("SegmentList", () => {
 
   // @behavior ED-024
   it("adds a new Speaker to the Translation Glossary", async () => {
+    viewChoices.toggleSpeakerColumn();
     glossaryTable.rows = [{ words: ["東京", "Tokyo", ""], is_speaker: false }];
     await hold(projectNaming([]));
     await nameSpeaker("co");
@@ -611,6 +621,7 @@ describe("SegmentList", () => {
 
   // @behavior ED-025
   it("marks a term already in the Translation Glossary as a Speaker", async () => {
+    viewChoices.toggleSpeakerColumn();
     glossaryTable.rows = [{ words: ["co", "", ""], is_speaker: false }];
     await hold(projectNaming([]));
     await nameSpeaker("co");
@@ -624,6 +635,7 @@ describe("SegmentList", () => {
   });
   // @behavior ED-026
   it("holds every field while the Current Resource is transcribed", async () => {
+    viewChoices.toggleSpeakerColumn();
     await hold(translatedProject);
     await hold({
       ...translatedProject,
@@ -712,5 +724,45 @@ describe("SegmentList", () => {
     expect(document.querySelector("li button.delete kbd")?.textContent).toBe(
       "Delete",
     );
+  });
+
+  const speakerMenus = () => document.querySelectorAll(".speaker-menu").length;
+  const twoSegments = (speaker?: string) =>
+    projectOf({
+      segments: [
+        { start_ms: 0, end_ms: 1000, text: "你好" },
+        { start_ms: 1000, end_ms: 2000, text: "世界", speaker },
+      ],
+    });
+
+  // @behavior ED-193
+  it("leaves out the Speaker column where no Segment names a Speaker", async () => {
+    await hold(twoSegments());
+
+    expect(speakerMenus()).toBe(0);
+  });
+
+  // @behavior ED-194
+  it("shows the Speaker column once a Segment names a Speaker", async () => {
+    await hold(twoSegments("小明"));
+
+    expect(speakerMenus()).toBe(2);
+  });
+
+  // @behavior ED-195
+  it("shows the Speaker column as the View menu turns it on", async () => {
+    await hold(twoSegments());
+
+    viewChoices.toggleSpeakerColumn();
+    flushSync();
+
+    expect(speakerMenus()).toBe(2);
+  });
+
+  // @behavior ED-196
+  it("keeps the Speaker column on for the next time the app opens", () => {
+    viewChoices.toggleSpeakerColumn();
+
+    expect(new ViewChoices().isSpeakerColumnShown).toBe(true);
   });
 });

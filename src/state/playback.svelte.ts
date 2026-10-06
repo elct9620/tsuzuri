@@ -1,7 +1,8 @@
 /**
  * The Current Resource's media as the Preview plays it, shared by what follows it: the player the
  * Preview shows and the timeline drives, the Segments being played, whether Space plays the
- * Current Segment alone, and whether the Segment list scrolls to the row being played.
+ * Current Segment alone, whether the Segment list scrolls to the row being played, and whether the
+ * media has a picture.
  */
 
 import { rememberFlag, rememberedFlag } from "#/ui/choices.ts";
@@ -23,6 +24,8 @@ export class Playback {
   isFollowing = $state(rememberedFlag(FOLLOWING_KEY, true));
   /** Whether Space plays the Current Segment alone and stops at its end, rather than on from where the media is. */
   isPlayingAlone = $state(rememberedFlag(ALONE_KEY, false));
+  /** Whether the media loaded has a picture, which tells only once its metadata arrives. */
+  hasPicture = $state(false);
 
   /** Notes the Segments at `indexes` as being played, only when they differ from those noted. */
   markPlaying(indexes: number[]): void {

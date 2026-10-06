@@ -1,8 +1,7 @@
 <!--
   @component
-  The Preview's player controls: playing and pausing, where the media is, the Video Window, the
-  volume and what is shown over the video, with the Current Segment's card beneath while the video
-  is on the page.
+  The Preview's player controls: playing and pausing, where the media is, the Video Window and the
+  volume, with the Current Segment's card beneath while the video is on the page.
 -->
 <script module lang="ts">
   /** Where the webview remembers how loud the media plays, as a percentage. */
@@ -10,8 +9,6 @@
 </script>
 
 <script lang="ts">
-  import ArrowRightToLine from "@lucide/svelte/icons/arrow-right-to-line";
-  import LocateFixed from "@lucide/svelte/icons/locate-fixed";
   import Pause from "@lucide/svelte/icons/pause";
   import PictureInPicture2 from "@lucide/svelte/icons/picture-in-picture-2";
   import Play from "@lucide/svelte/icons/play";
@@ -29,34 +26,24 @@
     sliderPosition,
     volumeAt,
   } from "#/ui/volume.ts";
-  import type { CaptionChoices } from "#/state/caption-choices.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
-  import CaptionControls from "#/components/CaptionControls.svelte";
   import CurrentSegmentCard from "#/components/CurrentSegmentCard.svelte";
 
   let {
     playback,
     segments,
-    choices,
     clock,
     isPlaying,
     isAway,
-    isUnplayable,
-    hasTranslation,
-    hasPicture,
     toggleVideoWindow,
   }: {
     playback: Playback;
     segments: Segment[];
-    choices: CaptionChoices;
     /** Where the media is and how long it lasts. */
     clock: string;
     isPlaying: boolean;
     /** Whether the video is out in the Video Window. */
     isAway: boolean;
-    isUnplayable: boolean;
-    hasTranslation: boolean;
-    hasPicture: boolean;
     toggleVideoWindow: () => void;
   } = $props();
 
@@ -107,30 +94,6 @@
       </button>
       <button
         type="button"
-        class={["btn btn-square btn-sm", playback.isFollowing && "btn-primary"]}
-        aria-pressed={playback.isFollowing}
-        aria-label={t("preview.following")}
-        data-tooltip={t("preview.followingHint")}
-        data-shortcut="following"
-        onclick={() => playback.toggleFollowing()}
-      >
-        <LocateFixed class="size-4" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        class={[
-          "btn btn-square btn-sm",
-          playback.isPlayingAlone && "btn-primary",
-        ]}
-        aria-pressed={playback.isPlayingAlone}
-        aria-label={t("preview.playingAlone")}
-        data-tooltip={t("preview.playingAloneHint")}
-        onclick={() => playback.togglePlayingAlone()}
-      >
-        <ArrowRightToLine class="size-4" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
         class={["btn btn-square btn-sm", isAway && "btn-primary"]}
         aria-pressed={isAway}
         aria-label={t("preview.videoWindow")}
@@ -170,9 +133,6 @@
           >{Math.round(volume)}%</span
         >
       </div>
-      {#if !isUnplayable}
-        <CaptionControls {choices} {hasTranslation} {hasPicture} />
-      {/if}
     </div>
     {#if !isAway}
       <div class="divider my-0"></div>

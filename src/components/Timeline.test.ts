@@ -23,10 +23,12 @@ import {
 } from "#/testing/notifications.ts";
 import Timeline, { regionColor } from "#/components/Timeline.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
+import { ViewChoices } from "#/state/view-choices.svelte.ts";
 
 describe("Timeline", () => {
   /** What the timeline plays, shared with the Preview. */
   let playback: Playback;
+  let viewChoices: ViewChoices;
   const media = () => playback.media;
   let session: EditingSession;
   let project: ProjectView | null;
@@ -72,6 +74,12 @@ describe("Timeline", () => {
   }
 
   /** Presses the button labelled by the key `label`. */
+  /** Turns Snapping on or off, as the View menu does. */
+  function turnSnapping(): void {
+    viewChoices.toggleSnapping();
+    flushSync();
+  }
+
   function press(label: string): void {
     screen.getByRole("button", { name: t(label) }).click();
     flushSync();
@@ -85,8 +93,9 @@ describe("Timeline", () => {
     const assembly = assemble();
     session = assembly.session;
     playback = new Playback();
+    viewChoices = new ViewChoices();
     const { container } = render(Timeline, {
-      props: { playback, fold: new PreviewFold() },
+      props: { playback, fold: new PreviewFold(), viewChoices },
       context: pageContext(assembly.feed, assembly.session),
     });
     frame = () => container.firstElementChild!.firstElementChild as HTMLElement;
@@ -638,7 +647,7 @@ describe("Timeline", () => {
     // @behavior PV-054
     it("snaps a dragged edge to the next Segment", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
-      press("preview.snapping");
+      turnSnapping();
 
       await drag(endOf(0)!, 5);
 
@@ -649,7 +658,7 @@ describe("Timeline", () => {
     it("snaps a dragged edge to where the media is", async () => {
       await showCurrent([segmentAt(0, 0.5)]);
       media().currentTime = 0.8;
-      press("preview.snapping");
+      turnSnapping();
 
       await drag(endOf(0)!, 25);
 
@@ -659,7 +668,7 @@ describe("Timeline", () => {
     // @behavior PV-056
     it("does not snap while Shift is held once snapping is turned on", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
-      press("preview.snapping");
+      turnSnapping();
 
       await drag(endOf(0)!, 5, { shiftKey: true });
 
@@ -669,8 +678,8 @@ describe("Timeline", () => {
     // @behavior PV-057
     it("does not snap once snapping is turned off", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
-      press("preview.snapping");
-      press("preview.snapping");
+      turnSnapping();
+      turnSnapping();
 
       await drag(endOf(0)!, 5);
 
@@ -885,7 +894,7 @@ describe("Timeline", () => {
     // @behavior PV-072
     it("reads where a dragged Segment lands before it is let go", async () => {
       await showCurrent([segmentAt(0, 0.5), segmentAt(0.6, 1)]);
-      press("preview.snapping");
+      turnSnapping();
 
       pressAndMove(endOf(0)!, 5);
 
@@ -953,7 +962,7 @@ describe("Timeline", () => {
     // @behavior PV-155
     it("snaps a dragged edge of a drawn range", async () => {
       await show(projectWithMedia([segmentAt(1.8, 2)]));
-      press("preview.snapping");
+      turnSnapping();
       await draw(100, 45);
 
       await drag(rangeEnd(), 27);

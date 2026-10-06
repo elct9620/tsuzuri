@@ -21,6 +21,7 @@
   import { cleanMarked } from "#/actions/cleanup.ts";
   import { editingSession } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
+  import type { ViewChoices } from "#/state/view-choices.svelte.ts";
   import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import SearchBar from "#/components/SearchBar.svelte";
   import SegmentRows from "#/components/SegmentRows.svelte";
@@ -29,10 +30,12 @@
     project,
     playback,
     placeholders,
+    viewChoices,
   }: {
     project: ProjectView | null;
     playback: Playback;
     placeholders: ResourcePlaceholders;
+    viewChoices: ViewChoices;
   } = $props();
   const session = editingSession();
   let searchBar: SearchBar;
@@ -166,7 +169,12 @@
 
 <svelte:window onkeydown={followKeys} onrust:edit-command={applyEditCommand} />
 
-<SegmentRows {playback} {placeholders} onshown={() => searchBar.searchAgain()}>
+<SegmentRows
+  {playback}
+  {placeholders}
+  {viewChoices}
+  onshown={() => searchBar.searchAgain()}
+>
   <div class="sticky -top-4 z-10 mb-2 flex flex-col gap-2">
     <SearchBar bind:this={searchBar} />
     <CheckedBar {project} />

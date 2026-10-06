@@ -9,6 +9,7 @@ import type { ProjectFeed } from "#/ipc/project.ts";
 import { type SegmentDialogs, withSegmentDialogs } from "#/state/context.ts";
 import { Playback } from "#/state/playback.svelte.ts";
 import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
+import { ViewChoices } from "#/state/view-choices.svelte.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import type ShiftDialog from "#/components/ShiftDialog.svelte";
 import type SpeakersDialog from "#/components/SpeakersDialog.svelte";
@@ -21,26 +22,28 @@ import type TranslationDialog from "#/components/TranslationDialog.svelte";
 export interface DrawnSegmentRows {
   rows: SegmentRows;
   playback: Playback;
+  viewChoices: ViewChoices;
   placeholders: ResourcePlaceholders;
   unmount: () => void;
 }
 
 /**
- * Draws the rows at the end of `target`, reading the feed, session and task run of `context`, and
- * marking what `playback` plays.
+ * Draws the rows at the end of `target`, reading the feed, session and task run of `context`,
+ * marking what `playback` plays and showing their columns as `viewChoices` asks.
  */
 export function drawSegmentRows(
   target: HTMLElement,
   context: Map<symbol, unknown>,
   playback = new Playback(),
+  viewChoices = new ViewChoices(),
 ): DrawnSegmentRows {
   const placeholders = new ResourcePlaceholders();
   const { component, unmount } = render(SegmentRows, {
     target,
-    props: { playback, placeholders },
+    props: { playback, placeholders, viewChoices },
     context,
   });
-  return { rows: component, playback, placeholders, unmount };
+  return { rows: component, playback, viewChoices, placeholders, unmount };
 }
 
 /** The list the rows are drawn in. */
@@ -88,6 +91,7 @@ export function drawSegmentList(
     props: {
       playback: new Playback(),
       placeholders: new ResourcePlaceholders(),
+      viewChoices: new ViewChoices(),
     },
     context: withSegmentDialogs(context, dialogs),
   });

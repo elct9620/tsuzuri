@@ -15,6 +15,8 @@ import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import EditTools from "#/components/EditTools.svelte";
 import { Playback } from "#/state/playback.svelte.ts";
+import { ViewChoices } from "#/state/view-choices.svelte.ts";
+import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
 import Preview from "#/components/Preview.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
 import Timeline from "#/components/Timeline.svelte";
@@ -61,6 +63,8 @@ describe("Preview", () => {
     const context = pageContext(assembly.feed, assembly.session);
     const playback = new Playback();
     const fold = new PreviewFold();
+    const captionChoices = new CaptionChoices();
+    const viewChoices = new ViewChoices();
     player = playback.media;
     renderFollowingProject(EditTools, assembly.feed, {
       props: {
@@ -69,15 +73,21 @@ describe("Preview", () => {
         openSearch: () => {},
         openSpeakers: () => {},
         fold,
+        playback,
+        captionChoices,
+        viewChoices,
       },
       context,
     });
     const { container } = render(Preview, {
-      props: { playback, fold },
+      props: { playback, fold, choices: captionChoices },
       context,
     });
     panel = () => container.firstElementChild as HTMLElement;
-    const timeline = render(Timeline, { props: { playback, fold }, context });
+    const timeline = render(Timeline, {
+      props: { playback, fold, viewChoices },
+      context,
+    });
     timelineFrame = () => timeline.container.lastElementChild as HTMLElement;
     await assembly.start();
     await settle();

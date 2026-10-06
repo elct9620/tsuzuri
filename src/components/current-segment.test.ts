@@ -23,6 +23,8 @@ import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
 import EditTools from "#/components/EditTools.svelte";
 import { Playback } from "#/state/playback.svelte.ts";
+import { ViewChoices } from "#/state/view-choices.svelte.ts";
+import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
 import Preview from "#/components/Preview.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
 import { SavedPreferences } from "#/state/saved-preferences.svelte.ts";
@@ -170,7 +172,7 @@ describe("Current Segment", () => {
   async function playFirstAlone(): Promise<void> {
     await show(twoSegments);
     chooseRow(0);
-    aloneButton().click();
+    aloneToggle().click();
     await media().play();
     playTo(0.5);
   }
@@ -184,8 +186,11 @@ describe("Current Segment", () => {
 
   const button = (label: string) =>
     screen.getByRole<HTMLButtonElement>("button", { name: t(label) });
-  const aloneButton = () => button("preview.playingAlone");
-  const snapButton = () => button("preview.snapping");
+  const toggle = (label: string) =>
+    screen.getByRole<HTMLInputElement>("checkbox", { name: t(label) });
+  const aloneToggle = () => toggle("preview.playingAlone");
+  const snapToggle = () => toggle("preview.snapping");
+  const muteButton = () => button("preview.mute");
 
   /** The rows scrolledRows into view since `watchScrolls` began watching. */
   let scrolledRows: () => HTMLElement[];
@@ -210,6 +215,10 @@ describe("Current Segment", () => {
     );
     playback = new Playback();
     const fold = new PreviewFold();
+    const captionChoices = new CaptionChoices();
+    const viewChoices = new ViewChoices();
+    // The rows show their Speaker menus, which these Segments naming no one would leave out
+    viewChoices.isSpeakerColumnShown = true;
     renderFollowingProject(EditTools, assembly.feed, {
       props: {
         openReplacement: () => {},
@@ -217,12 +226,23 @@ describe("Current Segment", () => {
         openSearch: () => {},
         openSpeakers: () => {},
         fold,
+        playback,
+        captionChoices,
+        viewChoices,
       },
       context,
     });
-    render(Preview, { props: { playback, fold }, context });
-    render(Timeline, { props: { playback, fold }, context });
-    drawSegmentRows(document.querySelector("main")!, context, playback);
+    render(Preview, {
+      props: { playback, fold, choices: captionChoices },
+      context,
+    });
+    render(Timeline, { props: { playback, fold, viewChoices }, context });
+    drawSegmentRows(
+      document.querySelector("main")!,
+      context,
+      playback,
+      viewChoices,
+    );
     await assembly.start();
     await settle();
   }
@@ -336,7 +356,7 @@ describe("Current Segment", () => {
   // @behavior PV-028
   it("plays the Current Segment from its start with Space while playing alone", async () => {
     await show(twoSegments);
-    aloneButton().click();
+    aloneToggle().click();
     chooseRow(1);
     playTo(1.5);
 
@@ -349,7 +369,7 @@ describe("Current Segment", () => {
   // @behavior PV-029
   it("pauses at the end of the Current Segment while playing alone", async () => {
     await show(twoSegments);
-    aloneButton().click();
+    aloneToggle().click();
     chooseRow(1);
     pressSpace();
     await settle();
@@ -395,14 +415,14 @@ describe("Current Segment", () => {
     await show(twoSegments);
     chooseRow(1);
 
-    clickWithPointer(aloneButton());
-    const isTaken = isSpaceTaken(aloneButton());
+    clickWithPointer(muteButton());
+    const isTaken = isSpaceTaken(muteButton());
     await settle();
 
     expect([
       media().paused,
       isTaken,
-      aloneButton().getAttribute("aria-pressed"),
+      muteButton().getAttribute("aria-pressed"),
     ]).toEqual([false, true, "true"]);
   });
 
@@ -411,8 +431,8 @@ describe("Current Segment", () => {
     await show(twoSegments);
     chooseRow(1);
 
-    aloneButton().focus();
-    const isTaken = isSpaceTaken(aloneButton());
+    muteButton().focus();
+    const isTaken = isSpaceTaken(muteButton());
     await settle();
 
     expect([media().paused, isTaken]).toEqual([true, false]);
@@ -893,7 +913,7 @@ describe("Current Segment", () => {
     await media().play();
     playTo(1.5);
 
-    aloneButton().click();
+    aloneToggle().click();
     playTo(2);
 
     expect(media().paused).toBe(true);
@@ -902,12 +922,12 @@ describe("Current Segment", () => {
   // @behavior PV-123
   it("plays on past the Current Segment once playing alone is turned off while playing it", async () => {
     await show(twoSegments);
-    aloneButton().click();
+    aloneToggle().click();
     chooseRow(1);
     pressSpace();
     await settle();
 
-    aloneButton().click();
+    aloneToggle().click();
     playTo(2);
 
     expect(media().paused).toBe(false);
@@ -916,7 +936,7 @@ describe("Current Segment", () => {
   // @behavior PV-124
   it("pauses at the Current Segment's new end while playing it alone", async () => {
     await show(twoSegments);
-    aloneButton().click();
+    aloneToggle().click();
     chooseRow(1);
     pressSpace();
     await settle();
@@ -952,23 +972,23 @@ describe("Current Segment", () => {
   // @behavior PV-087
   it("keeps playing alone on for the next Resource", async () => {
     await show(twoSegments);
-    aloneButton().click();
+    aloneToggle().click();
     await reopen();
 
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
-    expect(aloneButton().getAttribute("aria-pressed")).toBe("true");
+    expect(aloneToggle().checked).toBe(true);
   });
 
   // @behavior PV-101
   it("keeps snapping on for the next Resource", async () => {
     await show(twoSegments);
-    snapButton().click();
+    snapToggle().click();
     await reopen();
 
     await show({ ...twoSegments, media: "/talks/ep02.mp4" });
 
-    expect(snapButton().getAttribute("aria-pressed")).toBe("true");
+    expect(snapToggle().checked).toBe(true);
   });
   describe("the Waveform's height", () => {
     /** Every node Web Audio would make passes the sound on; none is heard in a test. */

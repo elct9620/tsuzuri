@@ -43,10 +43,15 @@
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
   import { PreviewScreen } from "#/ui/preview-screen.ts";
-  import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
+  import type { CaptionChoices } from "#/state/caption-choices.svelte.ts";
   import PlayerControls from "#/components/PlayerControls.svelte";
 
-  let { playback, fold }: { playback: Playback; fold: PreviewFold } = $props();
+  let {
+    playback,
+    fold,
+    choices,
+  }: { playback: Playback; fold: PreviewFold; choices: CaptionChoices } =
+    $props();
 
   const feed = projectFeed();
   /** The player stays the same for as long as the page does. */
@@ -57,13 +62,9 @@
   let source = $state.raw<PlayedSource | null>(null);
   /** The object URL of the silence the player reads, released once it reads something else. */
   let silenceUrl: string | null = null;
-  const choices = new CaptionChoices();
   let isPlaying = $state(false);
-  let isUnplayable = $state(false);
   /** Where the media is and how long it lasts. */
   let clock = $state("");
-  /** Whether the media just loaded has a picture, which tells only once its metadata arrives. */
-  let hasPicture = $state(false);
   /** The height the row beside the card takes for its picture at the picture's width, once measured. */
   let pictureRatio = $state<number | null>(null);
   /** The window the video is in while it is out of the Preview. */
@@ -119,7 +120,7 @@
 
   /** Sizes the row to the media just loaded, which tells only now whether it has a picture. */
   function measure(): void {
-    hasPicture = media.videoWidth > 0;
+    playback.hasPicture = media.videoWidth > 0;
     fitScreenRow();
     showDummyVideo();
     showTime();
@@ -150,7 +151,6 @@
   }
 
   function showUnplayable(): void {
-    isUnplayable = true;
     screen.showUnplayable(true);
   }
 
@@ -283,7 +283,6 @@
     const lastSource = source;
     source = nextSource;
     if (nextSource === null && videoWindow) closeVideoWindow();
-    isUnplayable = false;
     screen.showUnplayable(false);
     screen.showCaption("");
     playback.markPlaying([]);
@@ -362,13 +361,9 @@
     <PlayerControls
       {playback}
       {segments}
-      {choices}
       {clock}
       {isPlaying}
       {isAway}
-      {isUnplayable}
-      {hasTranslation}
-      {hasPicture}
       {toggleVideoWindow}
     />
   </div>

@@ -70,6 +70,7 @@
     isCurrent,
     isPlaying,
     isTypingKept,
+    isSpeakerColumnShown,
     comparison,
   }: {
     segment: Segment;
@@ -87,6 +88,8 @@
     isPlaying: boolean;
     /** Whether a field being typed in keeps its value, as the Segments keep their number. */
     isTypingKept: boolean;
+    /** Whether the row shows its Speaker menu, as the Segment list does for every row or none. */
+    isSpeakerColumnShown: boolean;
     /** What the editor's comparison shows on this row. */
     comparison: SegmentComparison;
   } = $props();
@@ -303,59 +306,61 @@
       onchange={() => changeTimes("end")}
       bind:input={endInput}
     />
-    <div class="speaker-menu dropdown">
-      <div
-        tabindex={isOtherHeld ? -1 : 0}
-        role="button"
-        class={[
-          "speaker btn btn-xs w-28 justify-start truncate font-normal",
-          speaker === "" && "text-base-content/40",
-          isOtherHeld && "btn-disabled",
-        ]}
-        data-field="speaker"
-        onfocus={listSpeakers}
-      >
-        {speaker || t("edit.speaker")}
-      </div>
-      <!-- A focus dropdown stays open only while focus is inside, so a click on the card keeps it -->
-      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-      <div
-        tabindex="0"
-        class="dropdown-content card card-sm z-10 w-48 bg-base-100 shadow-md"
-      >
-        <div class="card-body gap-1 p-2">
-          <input
-            class="new-speaker input input-xs"
-            placeholder={t("edit.newSpeakerName")}
-            onkeydown={nameSpeaker}
-            disabled={isOtherHeld}
-            bind:this={newSpeakerInput}
-          />
-          <ul class="speakers menu menu-sm w-full p-0">
-            {#each offeredSpeakers as name (name)}
-              <li>
-                <button
-                  type="button"
-                  class={[name === speaker && "menu-active"]}
-                  onclick={({ currentTarget }) =>
-                    writeSpeaker(currentTarget, name)}>{name}</button
-                >
-              </li>
-            {/each}
-            {#if speaker !== ""}
-              <li>
-                <button
-                  type="button"
-                  onclick={({ currentTarget }) =>
-                    writeSpeaker(currentTarget, "")}
-                  >{t("edit.clearSpeaker")}</button
-                >
-              </li>
-            {/if}
-          </ul>
+    {#if isSpeakerColumnShown}
+      <div class="speaker-menu dropdown">
+        <div
+          tabindex={isOtherHeld ? -1 : 0}
+          role="button"
+          class={[
+            "speaker btn btn-xs w-28 justify-start truncate font-normal",
+            speaker === "" && "text-base-content/40",
+            isOtherHeld && "btn-disabled",
+          ]}
+          data-field="speaker"
+          onfocus={listSpeakers}
+        >
+          {speaker || t("edit.speaker")}
+        </div>
+        <!-- A focus dropdown stays open only while focus is inside, so a click on the card keeps it -->
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <div
+          tabindex="0"
+          class="dropdown-content card card-sm z-10 w-48 bg-base-100 shadow-md"
+        >
+          <div class="card-body gap-1 p-2">
+            <input
+              class="new-speaker input input-xs"
+              placeholder={t("edit.newSpeakerName")}
+              onkeydown={nameSpeaker}
+              disabled={isOtherHeld}
+              bind:this={newSpeakerInput}
+            />
+            <ul class="speakers menu menu-sm w-full p-0">
+              {#each offeredSpeakers as name (name)}
+                <li>
+                  <button
+                    type="button"
+                    class={[name === speaker && "menu-active"]}
+                    onclick={({ currentTarget }) =>
+                      writeSpeaker(currentTarget, name)}>{name}</button
+                  >
+                </li>
+              {/each}
+              {#if speaker !== ""}
+                <li>
+                  <button
+                    type="button"
+                    onclick={({ currentTarget }) =>
+                      writeSpeaker(currentTarget, "")}
+                    >{t("edit.clearSpeaker")}</button
+                  >
+                </li>
+              {/if}
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
+    {/if}
   </div>
   <div
     class="list-col-grow @max-4xl:col-start-2 @max-4xl:col-end-4 @max-4xl:row-start-2"

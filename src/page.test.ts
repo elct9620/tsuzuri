@@ -649,17 +649,17 @@ describe("Page", () => {
   });
 
   // @behavior PV-081
-  it("stops following playback from the Preview's button", async () => {
+  it("stops following playback from the View menu", async () => {
     await start();
 
-    const button = screen.getByRole("button", {
+    const toggle = screen.getByRole<HTMLInputElement>("checkbox", {
       hidden: true,
       name: t("preview.following"),
     });
-    button.click();
+    toggle.click();
     await tick();
 
-    expect(button.getAttribute("aria-pressed")).toBe("false");
+    expect(toggle.checked).toBe(false);
   });
 
   it.each([

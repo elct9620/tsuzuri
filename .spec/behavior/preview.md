@@ -560,7 +560,7 @@ A button clicked keeps the focus, yet Space pressed afterward is meant for the m
 | Step | Statement |
 | --- | --- |
 | Given | a paused Current Resource with a Current Segment, with playing alone turned off |
-| When | the playing alone button is clicked and Space is pressed |
+| When | the mute button is clicked and Space is pressed |
 | Then | the media plays and playing alone stays on |
 
 ## `PV-126` Leaving Space to a button reached by keyboard
@@ -568,7 +568,7 @@ A button clicked keeps the focus, yet Space pressed afterward is meant for the m
 | Step | Statement |
 | --- | --- |
 | Given | a paused Current Resource with a Current Segment |
-| When | the playing alone button is reached by keyboard and Space is pressed |
+| When | the mute button is reached by keyboard and Space is pressed |
 | Then | the media stays paused |
 
 ## `PV-032` Marking the Segment being played in the editor

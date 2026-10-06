@@ -17,6 +17,7 @@ import EditorBar from "#/components/EditorBar.svelte";
 import { Playback } from "#/state/playback.svelte.ts";
 import Preview from "#/components/Preview.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
+import Timeline from "#/components/Timeline.svelte";
 
 describe("Preview", () => {
   let session: EditingSession;
@@ -28,6 +29,8 @@ describe("Preview", () => {
   let isFullscreen: boolean;
   /** The Preview's root element, holding the player's row and the timeline. */
   let panel: () => HTMLElement;
+  /** The timeline beside the Preview's player, as the page draws it. */
+  let timelineFrame: () => HTMLElement;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const media = () => player;
@@ -40,7 +43,6 @@ describe("Preview", () => {
   const clock = () => screen.getByRole("timer");
   /** The row the video sits in beside the Current Segment's card. */
   const screenRow = () => panel().firstElementChild as HTMLElement;
-  const timelineFrame = () => panel().lastElementChild as HTMLElement;
   const button = (label: string) =>
     screen.getByRole<HTMLButtonElement>("button", { name: t(label) });
   const projectWithMedia = (changes: Partial<ProjectView> = {}) =>
@@ -75,6 +77,8 @@ describe("Preview", () => {
       context,
     });
     panel = () => container.firstElementChild as HTMLElement;
+    const timeline = render(Timeline, { props: { playback, fold }, context });
+    timelineFrame = () => timeline.container.lastElementChild as HTMLElement;
     await assembly.start();
     await settle();
   }
@@ -802,11 +806,7 @@ describe("Preview", () => {
 
     foldPlayer();
 
-    expect([
-      screenRow().hidden,
-      timelineFrame().hidden,
-      panel().hidden,
-    ]).toEqual([true, false, false]);
+    expect([panel().hidden, timelineFrame().hidden]).toEqual([true, false]);
   });
 
   it("lights the fold buttons of the parts folded away", async () => {
@@ -838,7 +838,7 @@ describe("Preview", () => {
 
     await show(projectOf({ media: "/talks/ep02.mp4" }));
 
-    expect(screenRow().hidden).toBe(true);
+    expect(panel().hidden).toBe(true);
   });
 
   // @behavior PV-189
@@ -847,7 +847,7 @@ describe("Preview", () => {
 
     foldTimeline();
 
-    expect([timelineFrame().hidden, screenRow().hidden]).toEqual([true, false]);
+    expect([timelineFrame().hidden, panel().hidden]).toEqual([true, false]);
   });
 
   // @behavior PV-190
@@ -868,7 +868,7 @@ describe("Preview", () => {
 
     foldTimeline();
 
-    expect(panel().hidden).toBe(true);
+    expect([panel().hidden, timelineFrame().hidden]).toEqual([true, true]);
   });
 
   const volumeSlider = () =>

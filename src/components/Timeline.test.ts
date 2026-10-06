@@ -22,6 +22,7 @@ import {
   notifications,
 } from "#/testing/notifications.ts";
 import Timeline, { regionColor } from "#/components/Timeline.svelte";
+import { PreviewFold } from "#/state/preview-fold.svelte.ts";
 
 describe("Timeline", () => {
   /** What the timeline plays, shared with the Preview. */
@@ -85,10 +86,10 @@ describe("Timeline", () => {
     session = assembly.session;
     playback = new Playback();
     const { container } = render(Timeline, {
-      props: { playback, hidden: false },
+      props: { playback, fold: new PreviewFold() },
       context: pageContext(assembly.feed, assembly.session),
     });
-    frame = () => container.firstElementChild as HTMLElement;
+    frame = () => container.firstElementChild!.firstElementChild as HTMLElement;
     await assembly.start();
     await settle();
   }

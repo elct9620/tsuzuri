@@ -103,8 +103,9 @@
   } from "#/state/context.ts";
   import type { Choice } from "#/state/editing-state.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
+  import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
 
-  let { playback, hidden }: { playback: Playback; hidden: boolean } = $props();
+  let { playback, fold }: { playback: Playback; fold: PreviewFold } = $props();
 
   /** A drag of the Current Segment's region under way, from its Segment's times to where it is shown. */
   interface Drag extends SegmentDrag {
@@ -900,76 +901,80 @@
 />
 
 <div
-  class="relative h-28 rounded-box border border-base-300 px-2 pt-2 pb-6"
-  {hidden}
-  bind:this={frame}
+  class="border-b border-base-300 p-3"
+  hidden={source === null || fold.isTimelineFolded}
 >
-  <div class="absolute top-1 right-1 z-10 flex items-center gap-1">
-    {#if shownSpan}
-      <span class="badge badge-neutral badge-sm tabular-nums"
-        >{formatSeconds(shownSpan.start)} → {formatSeconds(shownSpan.end)} ({formatLength(
-          shownSpan,
-        )})</span
-      >
-    {/if}
-    <button
-      type="button"
-      class={["btn btn-square btn-xs", isSnapping && "btn-primary"]}
-      aria-pressed={isSnapping}
-      aria-label={t("preview.snapping")}
-      data-tooltip={t("preview.snappingHint")}
-      onclick={toggleSnapping}
-    >
-      <Magnet class="size-3.5" aria-hidden="true" />
-    </button>
-    <div class="join">
-      <button
-        type="button"
-        class="btn btn-square btn-xs join-item"
-        aria-label={t("preview.zoomOut")}
-        data-tooltip={t("preview.zoomHint")}
-        data-shortcut="zoom"
-        onclick={() => zoomTo(pxPerSec / ZOOM_FACTOR)}
-      >
-        <ZoomOut class="size-3.5" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        class="btn btn-xs join-item tabular-nums"
-        data-tooltip={t("preview.resetZoom")}
-        onclick={() => zoomTo(INITIAL_PX_PER_SEC)}
-        >{Math.round((pxPerSec / INITIAL_PX_PER_SEC) * 100)}%</button
-      >
-      <button
-        type="button"
-        class="btn btn-square btn-xs join-item"
-        aria-label={t("preview.zoomIn")}
-        data-tooltip={t("preview.zoomHint")}
-        data-shortcut="zoom"
-        onclick={() => zoomTo(pxPerSec * ZOOM_FACTOR)}
-      >
-        <ZoomIn class="size-3.5" aria-hidden="true" />
-      </button>
-    </div>
-  </div>
   <div
-    class={[
-      "h-full [--segment-even:color-mix(in_oklab,var(--color-base-content)_6%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-base-content)_12%,transparent)] [--segment-current:color-mix(in_oklab,var(--color-primary)_25%,transparent)] [--segment-range:color-mix(in_oklab,var(--color-secondary)_25%,transparent)]",
-      isTakingWaveform && "skeleton",
-    ]}
-    role="slider"
-    aria-valuemin={0}
-    aria-valuemax={mediaLength}
-    aria-valuenow={mediaTime}
-    aria-valuetext={formatSeconds(mediaTime)}
-    aria-label={t("preview.waveform")}
-    tabindex="0"
-    hidden={source === null}
-    data-is-dragging={isDragging ? "" : undefined}
-    bind:this={waveform}
-    onwheel={scrollOrZoom}
-    onpointerdowncapture={drawOver}
-    onclickcapture={ignoreClickOver}
-    onkeydown={stepByKeys}
-  ></div>
+    class="relative h-28 rounded-box border border-base-300 px-2 pt-2 pb-6"
+    bind:this={frame}
+  >
+    <div class="absolute top-1 right-1 z-10 flex items-center gap-1">
+      {#if shownSpan}
+        <span class="badge badge-neutral badge-sm tabular-nums"
+          >{formatSeconds(shownSpan.start)} → {formatSeconds(shownSpan.end)} ({formatLength(
+            shownSpan,
+          )})</span
+        >
+      {/if}
+      <button
+        type="button"
+        class={["btn btn-square btn-xs", isSnapping && "btn-primary"]}
+        aria-pressed={isSnapping}
+        aria-label={t("preview.snapping")}
+        data-tooltip={t("preview.snappingHint")}
+        onclick={toggleSnapping}
+      >
+        <Magnet class="size-3.5" aria-hidden="true" />
+      </button>
+      <div class="join">
+        <button
+          type="button"
+          class="btn btn-square btn-xs join-item"
+          aria-label={t("preview.zoomOut")}
+          data-tooltip={t("preview.zoomHint")}
+          data-shortcut="zoom"
+          onclick={() => zoomTo(pxPerSec / ZOOM_FACTOR)}
+        >
+          <ZoomOut class="size-3.5" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          class="btn btn-xs join-item tabular-nums"
+          data-tooltip={t("preview.resetZoom")}
+          onclick={() => zoomTo(INITIAL_PX_PER_SEC)}
+          >{Math.round((pxPerSec / INITIAL_PX_PER_SEC) * 100)}%</button
+        >
+        <button
+          type="button"
+          class="btn btn-square btn-xs join-item"
+          aria-label={t("preview.zoomIn")}
+          data-tooltip={t("preview.zoomHint")}
+          data-shortcut="zoom"
+          onclick={() => zoomTo(pxPerSec * ZOOM_FACTOR)}
+        >
+          <ZoomIn class="size-3.5" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+    <div
+      class={[
+        "h-full [--segment-even:color-mix(in_oklab,var(--color-base-content)_6%,transparent)] [--segment-odd:color-mix(in_oklab,var(--color-base-content)_12%,transparent)] [--segment-current:color-mix(in_oklab,var(--color-primary)_25%,transparent)] [--segment-range:color-mix(in_oklab,var(--color-secondary)_25%,transparent)]",
+        isTakingWaveform && "skeleton",
+      ]}
+      role="slider"
+      aria-valuemin={0}
+      aria-valuemax={mediaLength}
+      aria-valuenow={mediaTime}
+      aria-valuetext={formatSeconds(mediaTime)}
+      aria-label={t("preview.waveform")}
+      tabindex="0"
+      hidden={source === null}
+      data-is-dragging={isDragging ? "" : undefined}
+      bind:this={waveform}
+      onwheel={scrollOrZoom}
+      onpointerdowncapture={drawOver}
+      onclickcapture={ignoreClickOver}
+      onkeydown={stepByKeys}
+    ></div>
+  </div>
 </div>

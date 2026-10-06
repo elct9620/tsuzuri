@@ -16,6 +16,7 @@
   import GlossaryDialog from "#/components/GlossaryDialog.svelte";
   import Notifications from "#/components/Notifications.svelte";
   import Preview from "#/components/Preview.svelte";
+  import Timeline from "#/components/Timeline.svelte";
   import {
     notifyChangedElsewhereKept,
     openRequestedSrt,
@@ -128,6 +129,7 @@
         {fold}
       />
       <Preview {playback} {fold} />
+      <Timeline {playback} {fold} />
       <div class="flex-1 overflow-y-auto p-4">
         <SegmentList
           {project}

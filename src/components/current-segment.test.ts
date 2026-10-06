@@ -27,7 +27,7 @@ import Preview from "#/components/Preview.svelte";
 import { PreviewFold } from "#/state/preview-fold.svelte.ts";
 import { SavedPreferences } from "#/state/saved-preferences.svelte.ts";
 import { drawSegmentRows, segmentRows } from "#/testing/segment-rows.ts";
-import { regionColor } from "#/components/Timeline.svelte";
+import Timeline, { regionColor } from "#/components/Timeline.svelte";
 
 describe("Current Segment", () => {
   let project: ProjectView | null;
@@ -221,6 +221,7 @@ describe("Current Segment", () => {
       context,
     });
     render(Preview, { props: { playback, fold }, context });
+    render(Timeline, { props: { playback, fold }, context });
     drawSegmentRows(document.querySelector("main")!, context, playback);
     await assembly.start();
     await settle();

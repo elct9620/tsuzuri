@@ -1,8 +1,9 @@
 <!--
   @component
-  The Preview: the Current Resource's media, played whole, with the Segment being played over it,
-  its controls, the Current Segment's card beside it and the timeline beneath. The screen the media
-  plays on is a `PreviewScreen`, which the Video Window takes out of the page and gives back.
+  The Preview's player: the Current Resource's media, played whole, with the Segment being played
+  over it, its controls and the Current Segment's card beside it; the timeline is a region of its
+  own. The screen the media plays on is a `PreviewScreen`, which the Video Window takes out of the
+  page and gives back.
 -->
 <script module lang="ts">
   /** The height of a Dummy Video to its width: 16:9, the shape most videos take. */
@@ -62,7 +63,6 @@
   import { CaptionChoices } from "#/state/caption-choices.svelte.ts";
   import CaptionControls from "#/components/CaptionControls.svelte";
   import CurrentSegmentCard from "#/components/CurrentSegmentCard.svelte";
-  import Timeline from "#/components/Timeline.svelte";
 
   let { playback, fold }: { playback: Playback; fold: PreviewFold } = $props();
 
@@ -392,12 +392,11 @@
 <svelte:window onrust:video-window-closing={closeVideoWindow} />
 
 <div
-  class="@container flex flex-col gap-3 border-b border-base-300 p-3"
-  hidden={source === null || (fold.isPlayerFolded && fold.isTimelineFolded)}
+  class="@container border-b border-base-300 p-3"
+  hidden={source === null || fold.isPlayerFolded}
 >
   <div
     class="flex gap-3 data-has-picture:h-[min(30vh,calc((100cqw_-_var(--spacing)*3)*0.4*var(--picture-ratio)))] data-has-picture:min-h-40"
-    hidden={fold.isPlayerFolded}
     data-has-picture={pictureRatio !== null && !isAway ? "" : undefined}
     style:--picture-ratio={pictureRatio ?? undefined}
     bind:this={screenRow}
@@ -499,5 +498,4 @@
       </div>
     </div>
   </div>
-  <Timeline {playback} hidden={fold.isTimelineFolded} />
 </div>

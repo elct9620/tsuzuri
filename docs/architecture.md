@@ -737,7 +737,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 最近專案 | Page 讀取 | 起始畫面、工具列 |
 | `ResourceDock` | Page 建立 | 工具列、資源清單 |
 | `Playback` | Page 建立 | 預覽、時間軸、段落列 |
-| `PreviewFold` | Page 建立 | 編輯列的收起鈕、預覽 |
+| `PreviewFold` | Page 建立 | 編輯列的收起鈕、預覽、時間軸 |
 | `CaptionChoices` | Preview 建立 | 預覽、疊字控制 |
 | `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
@@ -769,7 +769,7 @@ feed -> Preview.show    sets the player's source: media or silence
      -> Timeline.show   wavesurfer.js draws over that source
 ```
 
-`Preview` 在初始化時就跟上專案，早於子元件 `Timeline` 的 `onMount`。wavesurfer.js 建立時會換掉不同的來源，所以這個順序要固定。沒有媒體檔時，兩者由 `ui/silence.ts` 決定同一段靜音。
+`Preview` 排在 `Timeline` 之前，初始化時就跟上專案，早於 `Timeline` 的 `onMount`。wavesurfer.js 建立時會換掉不同的來源，所以這個順序要固定。沒有媒體檔時，兩者由 `ui/silence.ts` 決定同一段靜音。
 
 ### 4.7 ipc
 

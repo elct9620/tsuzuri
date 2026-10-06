@@ -522,6 +522,7 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
     );
     drawSegmentList(
       document.querySelector("section")!,
+      assembly.feed,
       context,
       segmentDialogsOf({ transcription: transcriptionDialog }),
     );

@@ -83,6 +83,7 @@ describe("ShiftDialog", () => {
     const shift = render(ShiftDialog, { context }).component;
     drawSegmentList(
       document.querySelector("section")!,
+      assembly.feed,
       context,
       segmentDialogsOf({ shift }),
     );

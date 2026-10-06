@@ -104,6 +104,7 @@ describe("SpeakersDialog", () => {
     });
     drawSegmentList(
       document.querySelector("section")!,
+      assembly.feed,
       context,
       segmentDialogsOf({ speakers: speakersDialog }),
     );

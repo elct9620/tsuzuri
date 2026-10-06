@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { render, screen } from "@testing-library/svelte";
+import { screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
@@ -21,6 +21,7 @@ import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 import { TaskRun } from "#/state/task-run.svelte.ts";
 import { rowList, segmentRows } from "#/testing/segment-rows.ts";
+import { renderFollowingProject } from "#/testing/following-project.ts";
 
 describe("SegmentList", () => {
   let project: ProjectView | null;
@@ -115,14 +116,14 @@ describe("SegmentList", () => {
     run = new TaskRun();
     const context = pageContext(assembly.feed, assembly.session, run);
     resourcePlaceholders = new ResourcePlaceholders();
-    segmentList = render(SegmentList, {
+    segmentList = renderFollowingProject(SegmentList, assembly.feed, {
       target: document.querySelector("section")!,
       props: {
         playback: new Playback(),
         placeholders: resourcePlaceholders,
       },
       context,
-    }).component;
+    });
     await assembly.start();
     await settle();
   });

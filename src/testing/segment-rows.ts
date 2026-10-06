@@ -5,9 +5,11 @@
 
 import { render, screen, within } from "@testing-library/svelte";
 
+import type { ProjectFeed } from "#/ipc/project.ts";
 import { type SegmentDialogs, withSegmentDialogs } from "#/state/context.ts";
 import { Playback } from "#/state/playback.svelte.ts";
 import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
+import { renderFollowingProject } from "#/testing/following-project.ts";
 import type ShiftDialog from "#/components/ShiftDialog.svelte";
 import type SpeakersDialog from "#/components/SpeakersDialog.svelte";
 import SegmentList from "#/components/SegmentList.svelte";
@@ -71,20 +73,24 @@ export function segmentDialogsOf(drawn: {
   };
 }
 
-/** Draws the Segment list at the end of `target`, its menus and checked bar opening `dialogs`. */
+/**
+ * Draws the Segment list at the end of `target`, following each Project `feed` reads, its menus
+ * and checked bar opening `dialogs`.
+ */
 export function drawSegmentList(
   target: HTMLElement,
+  feed: ProjectFeed,
   context: Map<symbol, unknown>,
   dialogs: SegmentDialogs,
 ): SegmentList {
-  return render(SegmentList, {
+  return renderFollowingProject(SegmentList, feed, {
     target,
     props: {
       playback: new Playback(),
       placeholders: new ResourcePlaceholders(),
     },
     context: withSegmentDialogs(context, dialogs),
-  }).component;
+  });
 }
 
 /** The checked bar's button named `name`, or none while no Segment is checked or it offers none such. */

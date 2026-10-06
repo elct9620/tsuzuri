@@ -373,6 +373,7 @@ describe("TranslationDialog, translating chosen Segments again", () => {
     );
     drawSegmentList(
       document.querySelector("section")!,
+      assembly.feed,
       context,
       segmentDialogsOf({ translation }),
     );

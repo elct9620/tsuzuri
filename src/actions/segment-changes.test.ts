@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { render, screen } from "@testing-library/svelte";
+import { screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
@@ -21,6 +21,7 @@ import { pageContext, withSegmentDialogs } from "#/state/context.ts";
 import { Playback } from "#/state/playback.svelte.ts";
 import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
+import { renderFollowingProject } from "#/testing/following-project.ts";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
 interface MenuItemSent {
@@ -122,7 +123,7 @@ describe("Segment Changes", () => {
     );
     const assembly = assemble();
     session = assembly.session;
-    render(SegmentList, {
+    renderFollowingProject(SegmentList, assembly.feed, {
       target: document.querySelector("section")!,
       props: {
         playback: new Playback(),

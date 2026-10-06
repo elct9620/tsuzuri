@@ -6,7 +6,7 @@
   is marked.
 -->
 <script lang="ts">
-  import type { EditCommand } from "#/ipc/project.ts";
+  import type { EditCommand, ProjectView } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
   import {
     isHeld,
@@ -26,9 +26,14 @@
   import SegmentRows from "#/components/SegmentRows.svelte";
 
   let {
+    project,
     playback,
     placeholders,
-  }: { playback: Playback; placeholders: ResourcePlaceholders } = $props();
+  }: {
+    project: ProjectView | null;
+    playback: Playback;
+    placeholders: ResourcePlaceholders;
+  } = $props();
   const session = editingSession();
   let searchBar: SearchBar;
   /** A change by key is being sent. */
@@ -164,6 +169,6 @@
 <SegmentRows {playback} {placeholders} onshown={() => searchBar.searchAgain()}>
   <div class="sticky -top-4 z-10 mb-2 flex flex-col gap-2">
     <SearchBar bind:this={searchBar} />
-    <CheckedBar />
+    <CheckedBar {project} />
   </div>
 </SegmentRows>

@@ -4,30 +4,24 @@
   at once, the same a right-click on a row offers then.
 -->
 <script lang="ts">
-  import { onMount } from "svelte";
-
   import type { ProjectView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import {
     editingSession,
     editingState,
-    projectFeed,
     segmentDialogs,
   } from "#/state/context.ts";
   import { checkedChoices, resourceOffers } from "#/actions/segment-changes.ts";
 
-  const feed = projectFeed();
+  let { project }: { project: ProjectView | null } = $props();
   const session = editingSession();
   const editing = editingState();
   const dialogs = segmentDialogs();
-  let project = $state.raw<ProjectView | null>(null);
   const indexes = $derived(editing.checkedIndexes);
 
   const choices = $derived(
     checkedChoices(session, dialogs, indexes, resourceOffers(project)),
   );
-
-  onMount(() => feed.follow((next) => (project = next)));
 </script>
 
 {#if indexes.length > 0}

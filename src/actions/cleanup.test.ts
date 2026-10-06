@@ -57,6 +57,7 @@ describe("cleanup", () => {
     const assembly = assemble();
     drawSegmentList(
       document.querySelector("section")!,
+      assembly.feed,
       pageContext(assembly.feed, assembly.session),
       segmentDialogsOf({}),
     );

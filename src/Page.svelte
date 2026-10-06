@@ -129,7 +129,12 @@
       />
       <Preview {playback} {fold} />
       <div class="flex-1 overflow-y-auto p-4">
-        <SegmentList {playback} {placeholders} bind:this={segmentList} />
+        <SegmentList
+          {project}
+          {playback}
+          {placeholders}
+          bind:this={segmentList}
+        />
       </div>
     </div>
     <ResourceList

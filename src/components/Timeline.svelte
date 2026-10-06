@@ -56,7 +56,7 @@
   import RegionsPlugin, { type Region } from "wavesurfer.js/plugins/regions";
   import TimelinePlugin from "wavesurfer.js/plugins/timeline";
 
-  import { preferences } from "#/ipc/preferences.ts";
+  import { preferences as readPreferences } from "#/ipc/preferences.ts";
   import type { ProjectView, Segment } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
   import { extractWaveform, type Waveform } from "#/ipc/waveform.ts";
@@ -119,7 +119,7 @@
   const feed = projectFeed();
   const session = editingSession();
   const editing = editingState();
-  const saved = savedPreferences();
+  const preferences = savedPreferences();
   const isMac = isMacOS();
   /** The player stays the same for as long as the page does. */
   const player = untrack(() => playback.media);
@@ -208,9 +208,9 @@
   }
 
   /** Takes the Choice Landings the Preferences set; the settings tell of Preferences they cannot read. */
-  async function readPreferences(): Promise<void> {
+  async function takePreferences(): Promise<void> {
     try {
-      saved.current = await preferences();
+      preferences.current = await readPreferences();
     } catch {
       // The defaults stay in use
     }
@@ -287,7 +287,7 @@
         start: toSeconds(segment.start_ms),
         isPaused: player.paused,
         isPlayingAlone: playback.isPlayingAlone,
-        landings: saved.current.choice_landings,
+        landings: preferences.current.choice_landings,
       }),
     );
   }
@@ -613,7 +613,7 @@
       clicked: timeAt(event.clientX),
       isPaused: player.paused,
       isPlayingAlone: playback.isPlayingAlone,
-      landings: saved.current.choice_landings,
+      landings: preferences.current.choice_landings,
     });
     session.makeCurrent(index, "region");
     land(landing);
@@ -880,7 +880,7 @@
 
   onMount(() => {
     const unfollow = feed.follow(show);
-    void readPreferences();
+    void takePreferences();
     return () => {
       unfollow();
       waveformRequest = undefined;

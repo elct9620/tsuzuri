@@ -47,7 +47,7 @@ export function pageContext(
   run: TaskRun = new TaskRun(),
   updates: AppUpdates = new AppUpdates(),
   comparison: EditorComparison = new EditorComparison(),
-  saved: SavedPreferences = new SavedPreferences(),
+  preferences: SavedPreferences = new SavedPreferences(),
 ): Map<symbol, unknown> {
   return new Map<symbol, unknown>([
     [FEED, feed],
@@ -56,7 +56,7 @@ export function pageContext(
     [TASK_RUN, run],
     [APP_UPDATES, updates],
     [COMPARISON, comparison],
-    [PREFERENCES, saved],
+    [PREFERENCES, preferences],
   ]);
 }
 

@@ -202,9 +202,9 @@
    * change reaches every listener there and a row drawn with its time fields reports one each.
    */
   function followSelection(): void {
-    const focused = document.activeElement;
-    if (isField(focused) && list?.contains(focused))
-      rows[Number(focused.dataset.index)]?.followSelection();
+    const { activeElement } = document;
+    if (isField(activeElement) && list?.contains(activeElement))
+      rows[Number(activeElement.dataset.index)]?.followSelection();
   }
 
   /** Turns following playback on or off by its shortcut, wherever the focus is. */

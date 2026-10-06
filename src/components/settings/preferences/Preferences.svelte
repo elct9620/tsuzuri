@@ -3,7 +3,7 @@
 
   import {
     DEFAULT_PREFERENCES,
-    preferences,
+    preferences as readPreferences,
     savePreferences,
     type ChoiceLanding,
     type ChoiceLandings,
@@ -32,7 +32,7 @@
     ["is_from_start", "preferences.fromStart"],
   ] as const satisfies readonly [keyof ChoiceLanding, string][];
 
-  const saved = savedPreferences();
+  const preferences = savedPreferences();
   /** The Choice Landings the switches stand for, the defaults until the saved ones are read. */
   let landings = $state<ChoiceLandings>(
     structuredClone(DEFAULT_PREFERENCES.choice_landings),
@@ -40,16 +40,16 @@
 
   onMount(async () => {
     try {
-      show(await preferences());
+      show(await readPreferences());
     } catch (error) {
       notifyFailure(t("settings.unreadable"), error);
     }
   });
 
-  /** Shows `read` on the switches and hands it to the editor, which follows the Preferences saved. */
-  function show(read: Preferences): void {
-    landings = read.choice_landings;
-    saved.current = read;
+  /** Shows `next` on the switches and hands it to the editor, which follows the Preferences saved. */
+  function show(next: Preferences): void {
+    landings = next.choice_landings;
+    preferences.current = next;
   }
 
   /** Saves the switches as they stand; a refusal shows the Preferences saved before. */
@@ -66,7 +66,7 @@
 
   async function showSaved(): Promise<void> {
     try {
-      show(await preferences());
+      show(await readPreferences());
     } catch {
       // The failure to save is already told
     }

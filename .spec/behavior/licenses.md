@@ -41,6 +41,16 @@ The packages come from what the bundle carries, not from what the dependencies d
 | When | the webview is bundled |
 | Then | the packages listed for the License Notice name `kept` and not `build-only` |
 
+## `LC-012` Naming who wrote a package that ships no license text
+
+A package can state its license in its manifest without shipping the text. Its author and repository stand in for the copyright line the text would carry.
+
+| Step | Statement |
+| --- | --- |
+| Given | `is-reference` 3.0.3 under `MIT` by Rich Harris, from its repository, shipping no license file |
+| When | the License Notice is written |
+| Then | it names `is-reference` 3.0.3 and `MIT` beside its author and repository, without a license text |
+
 ## `LC-004` Opening the notice with Tsuzuri's own license
 
 | Step | Statement |

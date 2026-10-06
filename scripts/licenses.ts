@@ -15,11 +15,14 @@ import licenseModule from "rollup-plugin-license";
 // so under `nodenext` the default import is typed as the module while Node hands over the plugin.
 const license = licenseModule as unknown as typeof licenseModule.default;
 
+/** A package the webview bundles; one shipping no license text is named by its author and repository. */
 export interface BundledPackage {
   name: string;
   version: string;
   license: string;
-  text: string;
+  text: string | null;
+  author?: string;
+  repository?: string;
 }
 
 /** Where `vite build` lists the packages the bundle carries. */
@@ -161,6 +164,19 @@ function sectionHtml(id: string, title: string, body: string[]): string {
   return `<section id="${id}"><h2>${title}</h2>\n${body.join("\n")}\n</section>`;
 }
 
+/** A bundled package under its license: its text, or failing that who wrote it and where it lives. */
+function packageHtml(each: BundledPackage): string {
+  const heading =
+    `<h3>${escapeHtml(each.name)} ${escapeHtml(each.version)}</h3>` +
+    `<p>${escapeHtml(each.license)}</p>`;
+  if (each.text !== null) return `${heading}<pre>${escapeHtml(each.text)}</pre>`;
+  const byline = each.author ? `<p>By: ${escapeHtml(each.author)}</p>` : "";
+  const source = each.repository
+    ? `<p>Repository: ${escapeHtml(each.repository)}</p>`
+    : "";
+  return heading + byline + source;
+}
+
 /** The License Notice: Tsuzuri first, then what ships with it from the outside in. */
 export function noticeHtml(notice: Notice): string {
   const sections = [
@@ -199,11 +215,7 @@ export function noticeHtml(notice: Notice): string {
     sectionHtml(
       "webview",
       "Webview packages",
-      notice.packages.map(
-        (each) =>
-          `<h3>${escapeHtml(each.name)} ${escapeHtml(each.version)}</h3>` +
-          `<p>${escapeHtml(each.license)}</p><pre>${escapeHtml(each.text)}</pre>`,
-      ),
+      notice.packages.map(packageHtml),
     ),
   ];
   return `<!DOCTYPE html>
@@ -239,6 +251,11 @@ export function listBundledPackages(file = BUNDLED_PACKAGES_FILE) {
               version: each.version,
               license: each.license,
               text: each.licenseText,
+              author: each.author?.name,
+              repository:
+                typeof each.repository === "string"
+                  ? each.repository
+                  : each.repository?.url,
             })),
           ),
       },
@@ -248,15 +265,7 @@ export function listBundledPackages(file = BUNDLED_PACKAGES_FILE) {
 
 /** The packages `vite build` listed, and the build packages whose CSS ships with them. */
 function bundledPackages(file: string): BundledPackage[] {
-  const listing = JSON.parse(readFileSync(file, "utf8")) as (Omit<
-    BundledPackage,
-    "text"
-  > & { text: string | null })[];
-  const bundle = listing.map((each) => {
-    if (each.text === null)
-      throw new Error(`no license text in ${each.name} ${each.version}`);
-    return { ...each, text: each.text };
-  });
+  const bundle = JSON.parse(readFileSync(file, "utf8")) as BundledPackage[];
   const build = BUILD_PACKAGES_IN_BUNDLE.map((name) => {
     const path = join("node_modules", name);
     const manifest = JSON.parse(

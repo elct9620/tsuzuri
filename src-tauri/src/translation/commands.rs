@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use tauri::{AppHandle, Manager, State};
 
 use super::llama::READY_TIMEOUT;
@@ -67,7 +69,7 @@ async fn run_translation(
         settings: TranslationSettings::load(&json_settings::settings_dir(app)?)?,
         scope,
     };
-    let preset_dir = app.path().app_data_dir()?;
+    let preset_dir = preset_dir(app)?;
     let resident = app.state::<ResidentLlama>();
     let server = llama_server(&plan.settings, &resident, &preset_dir);
     let result = run
@@ -139,7 +141,7 @@ pub fn start_resident_llama(app: &AppHandle) {
                     &AppPorts::new(&app, &processes),
                     &llama,
                     &model,
-                    &app.path().app_data_dir()?,
+                    &preset_dir(&app)?,
                     READY_TIMEOUT,
                 )
                 .await
@@ -148,4 +150,9 @@ pub fn start_resident_llama(app: &AppHandle) {
             log::info!("the Resident llama-server waits for the first translation: {failure:?}");
         }
     });
+}
+
+/// Where the Resident llama-server's preset naming the translation Model is written.
+fn preset_dir(app: &AppHandle) -> Result<PathBuf, Failure> {
+    Ok(app.path().app_data_dir()?)
 }

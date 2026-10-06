@@ -7,13 +7,13 @@ import { rememberChoice, rememberedChoice } from "#/ui/choices.ts";
 
 /**
  * The arrangements on trial, until one is kept: V1 shows the Current Segment's card beside the
- * video, V2 unfolds its row in the Segment list instead, and V3 does so with the video beside the
- * list in a wide editor.
+ * video above the list; V3 sets the video beside the list in a wide editor and unfolds the
+ * Current Segment's row instead.
  */
-export type Layout = "v1" | "v2" | "v3";
+export type Layout = "v1" | "v3";
 
 /** Each Layout, in the order the Preferences tab offers them. */
-export const LAYOUTS: readonly Layout[] = ["v1", "v2", "v3"];
+export const LAYOUTS: readonly Layout[] = ["v1", "v3"];
 
 /** Where the webview remembers the Layout chosen. */
 const LAYOUT_KEY = "tsuzuri.layout";

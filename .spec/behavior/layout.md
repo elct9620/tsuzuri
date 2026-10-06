@@ -7,6 +7,7 @@ How the editor's regions are arranged while the layouts are tried side by side. 
 - `src/components/Preview.test.ts`
 - `src/components/current-segment.test.ts`
 - `src/page.test.ts`
+- `src/components/EditorLayout.test.ts`
 
 ## `LY-001` Showing the Current Segment beside the video
 
@@ -64,7 +65,7 @@ In the layouts without the card, the row being edited carries what the card show
 
 | Step | Statement |
 | --- | --- |
-| Given | Layout V2, a Current Resource whose second Segment runs from 1 to 4.2 s |
+| Given | Layout V3, a Current Resource whose second Segment runs from 1 to 4.2 s |
 | When | the second Segment's row is clicked |
 | Then | that row shows `3.200s` |
 
@@ -72,7 +73,7 @@ In the layouts without the card, the row being edited carries what the card show
 
 | Step | Statement |
 | --- | --- |
-| Given | Layout V2, a Current Resource with two Segments |
+| Given | Layout V3, a Current Resource with two Segments |
 | When | the second Segment's row is clicked |
 | Then | that row shows Space and the keys setting its times |
 
@@ -80,7 +81,7 @@ In the layouts without the card, the row being edited carries what the card show
 
 | Step | Statement |
 | --- | --- |
-| Given | Layout V2, the second Segment current |
+| Given | Layout V3, the second Segment current |
 | When | the first Segment's row is clicked |
 | Then | the second row shows no length |
 
@@ -88,7 +89,7 @@ In the layouts without the card, the row being edited carries what the card show
 
 | Step | Statement |
 | --- | --- |
-| Given | Layout V2, the first Segment current with its row unfolded |
+| Given | Layout V3, the first Segment current with its row unfolded |
 | When | the second Segment's row is clicked |
 | Then | the second row stays where it stood on screen |
 | unverifiable | happy-dom lays nothing out; the Chrome probe measures it |
@@ -97,7 +98,7 @@ In the layouts without the card, the row being edited carries what the card show
 
 | Step | Statement |
 | --- | --- |
-| Given | Layout V2, a Current Resource with a media file and two Segments |
+| Given | Layout V3, a Current Resource with a media file and two Segments |
 | When | the second Segment's row is clicked |
 | Then | the Preview shows no Current Segment card |
 
@@ -134,5 +135,15 @@ The layouts move the regions on a grid, so the one player is never moved through
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file, playing at 3 s |
-| When | Layout V2 is chosen in the Preferences tab |
+| When | Layout V3 is chosen in the Preferences tab |
 | Then | the same player plays on from 3 s |
+
+## `LY-016` Laying the player's controls across the top while the video is away
+
+Once the video has gone to the Video Window, a side column would hold only the controls, so Layout V3 gives the list the full width.
+
+| Step | Statement |
+| --- | --- |
+| Given | Layout V3 in a wide editor |
+| When | the video is in the Video Window |
+| Then | the editor lays out no side column |

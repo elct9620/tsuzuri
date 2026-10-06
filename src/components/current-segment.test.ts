@@ -1062,12 +1062,12 @@ describe("Current Segment", () => {
     });
   });
 
-  describe("in Layout V2, unfolding the current row", () => {
+  describe("in Layout V3, unfolding the current row", () => {
     const unfolded = (row: HTMLElement) =>
       row.querySelector("[data-length]")?.textContent ?? null;
 
     beforeEach(async () => {
-      editorLayout = "v2";
+      editorLayout = "v3";
       await reopen();
     });
 

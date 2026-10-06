@@ -305,7 +305,6 @@ const en = {
     layout: "Layout",
     layouts: {
       v1: "V1: top row, Current Segment card",
-      v2: "V2: top row, current row unfolded",
       v3: "V3: side column, current row unfolded",
     },
     layoutHint: "Layouts on trial; this choice goes once one is kept.",

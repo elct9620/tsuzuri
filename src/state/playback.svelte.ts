@@ -26,6 +26,8 @@ export class Playback {
   isPlayingAlone = $state(rememberedFlag(ALONE_KEY, false));
   /** Whether the media loaded has a picture, which tells only once its metadata arrives. */
   hasPicture = $state(false);
+  /** Whether the video is out in the Video Window rather than on the page. */
+  isVideoAway = $state(false);
 
   /** Notes the Segments at `indexes` as being played, only when they differ from those noted. */
   markPlaying(indexes: number[]): void {

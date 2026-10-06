@@ -296,7 +296,6 @@ const zhHant: typeof en = {
     layout: "版面",
     layouts: {
       v1: "V1：上排，目前段落卡片",
-      v2: "V2：上排，展開目前列",
       v3: "V3：側欄，展開目前列",
     },
     layoutHint: "試用中的排法，選定一種後這個選項會移除。",

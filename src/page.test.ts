@@ -803,7 +803,7 @@ describe("Page", () => {
       player.currentTime = 3;
       await player.play();
 
-      chooseLayout("v2");
+      chooseLayout("v3");
       await settle();
 
       const shown = document.querySelector("video");

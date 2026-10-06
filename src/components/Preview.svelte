@@ -198,12 +198,14 @@
       () => void toggleVideoWindowFullscreen(),
     );
     videoWindow = newWindow;
+    playback.isVideoAway = true;
     moveScreen(() => newWindow.document.body.append(screen.element));
   }
 
   function bringVideoBack(): void {
     if (!videoWindow) return;
     videoWindow = null;
+    playback.isVideoAway = false;
     moveScreen(() => screenRow.prepend(screen.element));
   }
 

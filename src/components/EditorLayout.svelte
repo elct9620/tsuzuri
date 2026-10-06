@@ -37,6 +37,8 @@
     placeholders,
   }: Props = $props();
 
+  /** Whether the player stands in a side column: V3's, until the video goes to the Video Window. */
+  const hasSideColumn = $derived(layout === "v3" && !playback.isVideoAway);
   let segmentList: SegmentList;
 
   /** Opens the search bar above the Segment list. */
@@ -45,19 +47,20 @@
   }
 </script>
 
-<!-- V3 sets the list beside the player in a wide editor, the waveform beneath both; narrower, it
-     lays out as V2 does. The timeline shown after the player takes the line between them -->
+<!-- V3 sets the list beside the player in a wide editor, the waveform beneath both; narrower, or
+     with the video away, the player's controls stand across the top. The timeline shown after the player takes the line between them -->
 <div
-  class="group grid min-h-0 flex-1 grid-rows-[auto_auto_minmax(0,1fr)] [grid-template-areas:'preview'_'timeline'_'list'] data-[layout=v3]:@5xl:grid-cols-[minmax(0,1fr)_auto] data-[layout=v3]:@5xl:grid-rows-[minmax(0,1fr)_auto] data-[layout=v3]:@5xl:[grid-template-areas:'list_preview'_'timeline_timeline']"
+  class="group grid min-h-0 flex-1 grid-rows-[auto_auto_minmax(0,1fr)] [grid-template-areas:'preview'_'timeline'_'list'] data-has-side-column:@5xl:grid-cols-[minmax(0,1fr)_auto] data-has-side-column:@5xl:grid-rows-[minmax(0,1fr)_auto] data-has-side-column:@5xl:[grid-template-areas:'list_preview'_'timeline_timeline']"
   data-layout={layout}
+  data-has-side-column={hasSideColumn ? "" : undefined}
 >
   <div
-    class="min-w-0 [grid-area:preview] has-[+div>:not([hidden])]:[&>*]:border-b-0 has-[+div>:not([hidden])]:[&>*]:pb-0 group-data-[layout=v3]:@5xl:overflow-y-auto group-data-[layout=v3]:@5xl:border-l group-data-[layout=v3]:@5xl:border-base-300 group-data-[layout=v3]:@5xl:has-[>:not([hidden])]:w-md"
+    class="min-w-0 [grid-area:preview] has-[+div>:not([hidden])]:[&>*]:border-b-0 has-[+div>:not([hidden])]:[&>*]:pb-0 group-data-has-side-column:@5xl:overflow-y-auto group-data-has-side-column:@5xl:border-l group-data-has-side-column:@5xl:border-base-300 group-data-has-side-column:@5xl:has-[>:not([hidden])]:w-md"
   >
     <Preview {playback} {fold} choices={captionChoices} editorLayout={layout} />
   </div>
   <div
-    class="min-w-0 [grid-area:timeline] group-data-[layout=v3]:@5xl:border-t group-data-[layout=v3]:@5xl:border-base-300"
+    class="min-w-0 [grid-area:timeline] group-data-has-side-column:@5xl:border-t group-data-has-side-column:@5xl:border-base-300"
   >
     <Timeline {playback} {fold} {viewChoices} />
   </div>

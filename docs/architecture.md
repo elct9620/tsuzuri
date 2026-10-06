@@ -804,7 +804,7 @@ feed -> Preview.show    sets the player's source: media or silence
 | `ui/choices.ts` | 記在這台電腦的畫面選擇 |
 | `ui/volume.ts` | 音量曲線、增益與限幅 |
 | `ui/video-window.ts` | 開啟影片視窗、轉交按鍵 |
-| `ui/timeline-spans.ts` | 時間軸區段與選段的落點 |
+| `ui/timeline-spans.ts` | 區段、拖曳範圍、選段的落點 |
 | `ui/file-name.ts` | 路徑的最後一段 |
 | `ui/silence.ts` | 沒有媒體檔時播放的靜音 |
 | `ui/preview-screen.ts` | 影片視窗會移走的播放器與疊字 |

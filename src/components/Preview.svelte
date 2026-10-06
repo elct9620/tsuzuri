@@ -93,7 +93,7 @@
     silentWav,
   } from "#/ui/silence.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";
-  import { MS_PER_SECOND, formatClock, formatTime } from "#/ui/time.ts";
+  import { MS_PER_SECOND, formatClock } from "#/ui/time.ts";
   import { forwardKeys, openVideoWindow } from "#/ui/video-window.ts";
   import {
     playAtVolume,
@@ -103,7 +103,7 @@
     sliderPosition,
     volumeAt,
   } from "#/ui/volume.ts";
-  import { editingState, projectFeed } from "#/state/context.ts";
+  import { projectFeed } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { PreviewFold } from "#/state/preview-fold.svelte.ts";
   import {
@@ -111,16 +111,15 @@
     type DummyVideoColour,
     PreviewScreen,
   } from "#/ui/preview-screen.ts";
-  import Timeline, { timeKeys } from "#/components/Timeline.svelte";
+  import CurrentSegmentCard from "#/components/CurrentSegmentCard.svelte";
+  import Timeline from "#/components/Timeline.svelte";
 
   let { playback, fold }: { playback: Playback; fold: PreviewFold } = $props();
 
   const feed = projectFeed();
-  const editing = editingState();
   /** The player stays the same for as long as the page does. */
   const media = untrack(() => playback.media);
   const screen = new PreviewScreen(media);
-  const keys = timeKeys(isMacOS());
 
   let project = $state.raw<ProjectView | null>(null);
   let source = $state.raw<PlayedSource | null>(null);
@@ -148,7 +147,6 @@
   let hasPicture = $state(false);
   /** The height the row beside the card takes for its picture at the picture's width, once measured. */
   let pictureRatio = $state<number | null>(null);
-  const currentIndex = $derived(editing.cursor.index);
   /** The window the video is in while it is out of the Preview. */
   let videoWindow = $state.raw<Window | null>(null);
   /**
@@ -167,9 +165,6 @@
   );
   /** What is shown over the video: the translation only while one is shown, the choice kept for when one is again. */
   const shownLanguage = $derived(hasTranslation ? captionLanguage : "original");
-  const currentSegment = $derived(
-    currentIndex === null ? undefined : segments[currentIndex],
-  );
   const isAway = $derived(videoWindow !== null);
 
   screen.showBackdrop(untrack(() => captionBackdrop));
@@ -655,52 +650,7 @@
         </div>
         {#if !isAway}
           <div class="divider my-0"></div>
-          {#if currentSegment && currentIndex !== null}
-            <div class="flex min-h-0 flex-col gap-1">
-              <h3 class="card-title text-sm">
-                <span>{t("preview.current")}</span>
-                <span class="badge badge-sm">#{currentIndex + 1}</span>
-                <span
-                  class="text-xs font-normal tabular-nums text-base-content/60"
-                  >{formatTime(currentSegment.start_ms)} → {formatTime(
-                    currentSegment.end_ms,
-                  )}</span
-                >
-                {#if currentSegment.speaker}
-                  <span class="badge badge-sm badge-neutral max-w-32 truncate"
-                    >{currentSegment.speaker}</span
-                  >
-                {/if}
-              </h3>
-              <p class="line-clamp-3 text-lg whitespace-pre-line">
-                {currentSegment.text}
-              </p>
-              <p
-                class="line-clamp-2 whitespace-pre-line text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))]"
-              >
-                {currentSegment.translation ?? ""}
-              </p>
-              <p class="text-xs text-base-content/60">
-                <kbd class="kbd kbd-xs">{t("shortcuts.keys.space")}</kbd>
-                <span
-                  >{t(
-                    playback.isPlayingAlone
-                      ? "preview.playCurrent"
-                      : "preview.playOn",
-                  )}</span
-                >
-              </p>
-              <p class="text-xs text-base-content/60">
-                <kbd class="kbd kbd-xs">{keys.start}</kbd>
-                <kbd class="kbd kbd-xs">{keys.end}</kbd>
-                <span>{t("preview.setTimes")}</span>
-              </p>
-            </div>
-          {:else}
-            <p class="text-sm text-base-content/60">
-              {t("preview.pickSegment")}
-            </p>
-          {/if}
+          <CurrentSegmentCard {segments} {playback} />
         {/if}
       </div>
     </div>

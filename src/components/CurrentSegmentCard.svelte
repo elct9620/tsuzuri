@@ -1,0 +1,80 @@
+<!--
+  @component
+  The Current Segment as the Preview shows it beside the media: its number, times, Speaker, text
+  and translation, with the keys that play it and set its times; or a hint to pick one.
+-->
+<script module lang="ts">
+  import { chords, type Shortcut, shortcutById } from "#/ui/shortcuts.ts";
+
+  /** The keys that set the Current Segment's start and end where the media is, as `KeyboardEvent.key` names them. */
+  function timeKeys(isMac: boolean): Record<"start" | "end", string> {
+    const key = (shortcut: Shortcut) =>
+      chords(shortcut, isMac)[0].toUpperCase();
+    return {
+      start: key(shortcutById("setStart")),
+      end: key(shortcutById("setEnd")),
+    };
+  }
+</script>
+
+<script lang="ts">
+  import type { Segment } from "#/ipc/project.ts";
+  import { isMacOS } from "#/ipc/system.ts";
+  import { t } from "#/i18n.ts";
+  import { formatTime } from "#/ui/time.ts";
+  import { editingState } from "#/state/context.ts";
+  import type { Playback } from "#/state/playback.svelte.ts";
+
+  let { segments, playback }: { segments: Segment[]; playback: Playback } =
+    $props();
+  const editing = editingState();
+  const keys = timeKeys(isMacOS());
+  const currentIndex = $derived(editing.cursor.index);
+  const currentSegment = $derived(
+    currentIndex === null ? undefined : segments[currentIndex],
+  );
+</script>
+
+{#if currentSegment && currentIndex !== null}
+  <div class="flex min-h-0 flex-col gap-1">
+    <h3 class="card-title text-sm">
+      <span>{t("preview.current")}</span>
+      <span class="badge badge-sm">#{currentIndex + 1}</span>
+      <span class="text-xs font-normal tabular-nums text-base-content/60"
+        >{formatTime(currentSegment.start_ms)} → {formatTime(
+          currentSegment.end_ms,
+        )}</span
+      >
+      {#if currentSegment.speaker}
+        <span class="badge badge-sm badge-neutral max-w-32 truncate"
+          >{currentSegment.speaker}</span
+        >
+      {/if}
+    </h3>
+    <p class="line-clamp-3 text-lg whitespace-pre-line">
+      {currentSegment.text}
+    </p>
+    <p
+      class="line-clamp-2 whitespace-pre-line text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))]"
+    >
+      {currentSegment.translation ?? ""}
+    </p>
+    <p class="text-xs text-base-content/60">
+      <kbd class="kbd kbd-xs">{t("shortcuts.keys.space")}</kbd>
+      <span
+        >{t(
+          playback.isPlayingAlone ? "preview.playCurrent" : "preview.playOn",
+        )}</span
+      >
+    </p>
+    <p class="text-xs text-base-content/60">
+      <kbd class="kbd kbd-xs">{keys.start}</kbd>
+      <kbd class="kbd kbd-xs">{keys.end}</kbd>
+      <span>{t("preview.setTimes")}</span>
+    </p>
+  </div>
+{:else}
+  <p class="text-sm text-base-content/60">
+    {t("preview.pickSegment")}
+  </p>
+{/if}

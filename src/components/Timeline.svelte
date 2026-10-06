@@ -7,18 +7,6 @@
 <script module lang="ts">
   import type { UpdateSide } from "wavesurfer.js/plugins/regions";
 
-  import { chords, type Shortcut, shortcutById } from "#/ui/shortcuts.ts";
-
-  /** The key that sets the Current Segment's start or end where the media is, as `KeyboardEvent.key` names it. */
-  export function timeKeys(isMac: boolean): Record<UpdateSide, string> {
-    const key = (shortcut: Shortcut) =>
-      chords(shortcut, isMac)[0].toUpperCase();
-    return {
-      start: key(shortcutById("setStart")),
-      end: key(shortcutById("setEnd")),
-    };
-  }
-
   /**
    * The colour of the Segment at `index`, as the waveform's element defines it: neighbours take
    * turns, so where one ends and the next begins shows, and the Current Segment is stronger.
@@ -80,7 +68,7 @@
   import { t } from "#/i18n.ts";
   import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";
   import { notifyEdit, notifyFailure } from "#/state/notification.svelte.ts";
-  import { isShortcut } from "#/ui/shortcuts.ts";
+  import { chords, isShortcut, shortcutById } from "#/ui/shortcuts.ts";
   import {
     type PlayedSource,
     SILENT_PEAKS,

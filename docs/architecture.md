@@ -722,7 +722,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `Notifications`、`NotificationCard` | 通知的堆疊、倒數、暫停與按鈕 |
 | `Tooltip` | 全頁共用的 tooltip |
 | `Undo` | 全頁的復原與重做，不畫任何東西 |
-| `Preview` | 播放器、疊字、目前段落卡、影片視窗 |
+| `Preview` | 播放器、疊字、影片視窗 |
+| `CurrentSegmentCard` | 預覽旁的目前段落卡 |
 | `Timeline` | 波形、段落區段、縮放、選段 |
 
 #### 4.6.2 共用的狀態與動作
@@ -739,7 +740,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
 | `SavedPreferences` | 經 context | 偏好頁、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
-| `EditingState` | 經 context | 段落列、勾選列、預覽、時間軸 |
+| `EditingState` | 經 context | 段落列、勾選列、目前段落卡、時間軸 |
 | 段落列的欄位 | SegmentRows 經 context | 文字欄位、搜尋列 |
 | 通知的清單 | `notification.svelte.ts` | 所有 Svelte 元件 |
 | `SaveMark` | `save-mark.svelte.ts` | 寫入的編輯、編輯列 |

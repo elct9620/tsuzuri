@@ -72,7 +72,11 @@
   import type { ProjectView, Segment } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
   import { extractWaveform, type Waveform } from "#/ipc/waveform.ts";
-  import { isTextField, type SegmentChange } from "#/editor/index.ts";
+  import {
+    areTimesHeld,
+    isTextField,
+    type SegmentChange,
+  } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";
   import { notifyEdit, notifyFailure } from "#/state/notification.svelte.ts";
@@ -134,7 +138,7 @@
   let source = $state.raw<PlayedSource | null>(null);
   let segments: Segment[] = [];
   /** Whether a running Mode holds the Current Resource, which refuses every Segment Change. */
-  let isHeld = false;
+  let isTimeHeld = false;
   let pxPerSec = $state(INITIAL_PX_PER_SEC);
   /** Whether a dragged edge Snaps, which Shift reverses for one drag; off unless chosen, as in Aegisub. */
   let isSnapping = $state(rememberedFlag(SNAPPING_KEY, false));
@@ -322,7 +326,7 @@
   function setTimeAtMedia(event: KeyboardEvent, side: UpdateSide): void {
     const index = session.cursor.index;
     const segment = currentSegment();
-    if (index === null || !segment || isHeld) return;
+    if (index === null || !segment || isTimeHeld) return;
     event.preventDefault();
     const time = player.currentTime;
     const { lowestStart, highestStart, highestEnd } = dragReach(index, false);
@@ -346,7 +350,7 @@
     if (event.button !== 0 || !isDrawingKey(event) || !surfer) return;
     event.stopPropagation();
     event.preventDefault();
-    if (isHeld) return;
+    if (isTimeHeld) return;
     stroke = {
       from: timeAt(event.clientX),
       clientX: event.clientX,
@@ -397,7 +401,8 @@
 
   function show(project: ProjectView | null): void {
     segments = project?.segments ?? [];
-    isHeld = (project?.running_mode ?? null) !== null;
+    const view = session.transcript;
+    isTimeHeld = view !== null && areTimesHeld(view);
     // A dragged region is drawn anew, so a drag cannot outlive the Segments it began on
     if (drag) regions?.clearRegions();
     drag = null;
@@ -619,7 +624,7 @@
    */
   function regionLook(index: number) {
     const isCurrent = index === session.cursor.index;
-    const isMovable = isCurrent && !isHeld;
+    const isMovable = isCurrent && !isTimeHeld;
     return {
       color: regionColor(index, isCurrent),
       drag: isMovable,
@@ -788,7 +793,7 @@
     const snap = (time: number) => snapTime(time, snapTimes, snapDistance);
     const start = Math.max(lowestStart, snap(newRange.start));
     const end = Math.min(highestEnd, snap(newRange.end));
-    if (isHeld || end <= start) {
+    if (isTimeHeld || end <= start) {
       newRange.remove();
       return;
     }

@@ -26,6 +26,7 @@ export {
 export { hasHighlights, markRanges, textRange } from "./highlight";
 export { CURSOR_HIGHLIGHT, drawCursor } from "./marks";
 export {
+  areTimesHeld,
   isHeld,
   isRun,
   orderedTimes,

@@ -92,7 +92,7 @@ pub async fn wait_until_ready(
 
 /// A llama-server process started for translation, watched until it ends.
 pub struct ServerProcess {
-    pub pid: u32,
+    pid: u32,
     has_exited: Arc<AtomicBool>,
 }
 
@@ -121,6 +121,10 @@ impl ServerProcess {
 
     pub fn has_exited(&self) -> bool {
         self.has_exited.load(Ordering::SeqCst)
+    }
+
+    pub fn stop(&self, steps: &impl Steps) {
+        steps.stop(self.pid);
     }
 }
 

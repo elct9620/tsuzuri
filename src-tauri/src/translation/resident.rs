@@ -139,7 +139,7 @@ impl ResidentLlama {
     /// Stops the router and the Model it holds.
     pub async fn stop(&self, steps: &impl Steps) {
         if let Some(running) = self.router.lock().await.take() {
-            steps.stop(running.process.pid);
+            running.process.stop(steps);
         }
     }
 
@@ -161,7 +161,7 @@ impl ResidentLlama {
             return Ok(());
         }
         if let Some(stale) = router.take() {
-            steps.stop(stale.process.pid);
+            stale.process.stop(steps);
         }
         let preset = preset_dir.join(PRESET_FILE);
         std::fs::create_dir_all(preset_dir)?;
@@ -170,7 +170,7 @@ impl ResidentLlama {
         let process = ServerProcess::start(steps, llama, &router_args(&preset, port))?;
         let base_url = base_url(port);
         if let Err(failure) = wait_until_ready(&base_url, timeout, || process.has_exited()).await {
-            steps.stop(process.pid);
+            process.stop(steps);
             return Err(failure);
         }
         *router = Some(Router {

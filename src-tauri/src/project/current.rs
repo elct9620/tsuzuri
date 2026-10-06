@@ -133,16 +133,20 @@ impl ProjectView {
         self
     }
 
+    pub fn options(&self) -> &ProjectOptions {
+        &self.options
+    }
+}
+
+/// What the tests read of a view; the webview reads the whole of it as JSON.
+#[cfg(test)]
+impl ProjectView {
     pub fn pending_batch(&self) -> Option<SegmentSpan> {
         self.pending_batch
     }
 
     pub fn language(&self) -> Language {
         self.language
-    }
-
-    pub fn options(&self) -> &ProjectOptions {
-        &self.options
     }
 
     pub fn name(&self) -> &str {

@@ -207,24 +207,22 @@ pub async fn run_translate<'a>(
             preset_dir,
             keep,
         } => {
-            let result = match resident
-                .load_model(ports, llama, &model, preset_dir, ready_timeout)
+            let result = async {
+                let base_url = resident
+                    .load_model(ports, llama, &model, preset_dir, ready_timeout)
+                    .await?;
+                translate_once_ready(
+                    ports,
+                    &base_url,
+                    ready_timeout,
+                    || false,
+                    &job,
+                    &mut phases,
+                    on_batch,
+                )
                 .await
-            {
-                Ok(base_url) => {
-                    translate_once_ready(
-                        ports,
-                        &base_url,
-                        ready_timeout,
-                        || false,
-                        &job,
-                        &mut phases,
-                        on_batch,
-                    )
-                    .await
-                }
-                Err(failure) => Err(failure),
-            };
+            }
+            .await;
             resident.release_after(*keep).await;
             result
         }
@@ -280,7 +278,7 @@ async fn translate_on_job_server(
         on_batch,
     )
     .await;
-    ports.stop(server.pid);
+    server.stop(ports);
     result
 }
 
@@ -2278,6 +2276,61 @@ mod tests {
             state.trim().is_empty() || state.starts_with('Z'),
             "llama-server still running: {state}"
         );
+    }
+
+    // @behavior TL-069
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn fails_a_translation_whose_model_the_resident_llama_server_cannot_load() {
+        let dir = TempDir::new("tl-resident-load-failure");
+        let llama = dir.path().join("llama-server");
+        crate::test_support::write_executable(&llama, "#!/bin/sh\nexec sleep 30\n");
+        let router = FakeLlama::serve(Replies {
+            has_load_failure: true,
+            ..Replies::default()
+        });
+        let port = router
+            .base_url()
+            .rsplit(':')
+            .next()
+            .unwrap()
+            .parse()
+            .unwrap();
+        let mut settings = ModelSettings::default();
+        settings.choose(
+            ModelSlot::Translation,
+            ModelSource::File {
+                path: dir.file("qwen3-4b.gguf"),
+            },
+        );
+        let app = mode_app();
+        let processes = Processes::new(dir.path().join("processes.json"));
+        app.state::<CurrentProject>()
+            .replace(project_of(vec![segment(0, 1_000, "大家好")]));
+        let ready_timeout = Duration::from_secs(5);
+        let started_at = std::time::Instant::now();
+
+        let result = run_translate(
+            &ModeLock::default()
+                .begin(AppPorts::new(app.handle(), &processes))
+                .await,
+            app.state::<CurrentProject>().inner(),
+            &llama,
+            &settings,
+            &plan_for(Language::Japanese),
+            &LlamaServer::Router {
+                resident: &ResidentLlama::with_port(port),
+                preset_dir: dir.path(),
+                keep: Duration::ZERO,
+            },
+            ready_timeout,
+            Phases::start("translate", Phase::Preparation),
+        )
+        .await;
+        processes.kill_all();
+
+        assert_eq!(result.map(|_| ()), Err(Failure::LlamaExited));
+        assert!(started_at.elapsed() < ready_timeout);
     }
 
     // @behavior TL-104

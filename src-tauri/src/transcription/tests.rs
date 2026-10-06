@@ -1,4 +1,3 @@
-
 use std::sync::{Arc, Mutex};
 
 use crate::test_support::mode_app;
@@ -17,7 +16,7 @@ use crate::processes::{AppPorts, Processes};
 use crate::project::{
     Project, ProjectModels, ProjectOptions, RunningMode, TranscriptionOverrides, TranscriptionScope,
 };
-use crate::steps::ModeLock;
+use crate::steps::{run_mode, ModeLock};
 use crate::test_support::{write_executable, TempDir, FAILING_FFMPEG, RECORDING_FFMPEG};
 use crate::toolchain::{self, Resolver};
 use crate::transcript::{Segment, WrittenText};
@@ -146,16 +145,18 @@ impl Fixture {
     async fn run(&self, request: TranscriptionRequest) -> Result<Transcription, Failure> {
         let processes = Processes::new(self.dir.path().join("processes.json"));
         let app = self.app.handle();
-        run_transcribe(
+        run_mode(
+            &TranscribeMode {
+                tools: &self.tools,
+                models: &self.settings,
+                settings: self.transcription,
+                request,
+                work: &self.dir.path().join("work"),
+            },
             &ModeLock::default()
                 .begin(AppPorts::new(app, &processes))
                 .await,
             app.state::<CurrentProject>().inner(),
-            &self.tools,
-            &self.settings,
-            self.transcription,
-            request,
-            &self.dir.path().join("work"),
             Phases::start("transcribe", Phase::Preparation),
         )
         .await
@@ -939,16 +940,18 @@ async fn transcribes_real_media_with_vendored_components() {
     project.replace(opened_project);
     let request = transcription_request(true, TranscriptionScope::Whole);
 
-    let transcription = run_transcribe(
+    let transcription = run_mode(
+        &TranscribeMode {
+            tools: &tools,
+            models: &settings,
+            settings: TranscriptionSettings::default(),
+            request,
+            work: &dir.path().join("work"),
+        },
         &ModeLock::default()
             .begin(AppPorts::new(app.handle(), &processes))
             .await,
         &project,
-        &tools,
-        &settings,
-        TranscriptionSettings::default(),
-        request,
-        &dir.path().join("work"),
         Phases::start("transcribe", Phase::Preparation),
     )
     .await

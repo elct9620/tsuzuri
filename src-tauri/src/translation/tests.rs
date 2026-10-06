@@ -1,4 +1,3 @@
-
 use serde_json::json;
 
 use std::sync::{Arc, Mutex};
@@ -15,7 +14,7 @@ use super::*;
 use crate::model_source::ModelSource;
 use crate::processes::{AppPorts, Processes};
 use crate::project::{Project, RunningMode, SegmentField};
-use crate::steps::ModeLock;
+use crate::steps::{run_mode, ModeLock};
 use crate::test_support::Response;
 use crate::test_support::{project_of, segment, TempDir};
 use fake_llama::{
@@ -1573,16 +1572,18 @@ async fn refuses_without_a_translation_model() {
     app.state::<CurrentProject>()
         .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
-    let result = run_translate(
+    let result = run_mode(
+        &TranslateMode {
+            llama: Path::new("/bin/sleep"),
+            model_settings: &ModelSettings::default(),
+            plan: &plan_for(Language::Japanese),
+            server: &LlamaServer::Job,
+            ready_timeout: Duration::from_secs(1),
+        },
         &ModeLock::default()
             .begin(AppPorts::new(app.handle(), &processes))
             .await,
         app.state::<CurrentProject>().inner(),
-        Path::new("/bin/sleep"),
-        &ModelSettings::default(),
-        &plan_for(Language::Japanese),
-        &LlamaServer::Job,
-        Duration::from_secs(1),
         Phases::start("translate", Phase::Preparation),
     )
     .await;
@@ -1609,16 +1610,18 @@ async fn refuses_to_translate_with_a_glossary_without_its_header() {
     project.directory = dir.path().to_path_buf();
     app.state::<CurrentProject>().replace(project);
 
-    let result = run_translate(
+    let result = run_mode(
+        &TranslateMode {
+            llama: Path::new("/bin/sleep"),
+            model_settings: &settings,
+            plan: &plan_for(Language::English),
+            server: &LlamaServer::Job,
+            ready_timeout: Duration::from_secs(1),
+        },
         &ModeLock::default()
             .begin(AppPorts::new(app.handle(), &processes))
             .await,
         app.state::<CurrentProject>().inner(),
-        Path::new("/bin/sleep"),
-        &settings,
-        &plan_for(Language::English),
-        &LlamaServer::Job,
-        Duration::from_secs(1),
         Phases::start("translate", Phase::Preparation),
     )
     .await;
@@ -1653,16 +1656,18 @@ async fn stops_llama_server_when_translation_gives_up() {
     app.state::<CurrentProject>()
         .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
-    let result = run_translate(
+    let result = run_mode(
+        &TranslateMode {
+            llama: &llama,
+            model_settings: &settings,
+            plan: &plan_for(Language::Japanese),
+            server: &LlamaServer::Job,
+            ready_timeout: Duration::from_secs(1),
+        },
         &ModeLock::default()
             .begin(AppPorts::new(app.handle(), &processes))
             .await,
         app.state::<CurrentProject>().inner(),
-        &llama,
-        &settings,
-        &plan_for(Language::Japanese),
-        &LlamaServer::Job,
-        Duration::from_secs(1),
         Phases::start("translate", Phase::Preparation),
     )
     .await;
@@ -1713,20 +1718,22 @@ async fn fails_a_translation_whose_model_the_resident_llama_server_cannot_load()
     let ready_timeout = Duration::from_secs(5);
     let started_at = std::time::Instant::now();
 
-    let result = run_translate(
+    let result = run_mode(
+        &TranslateMode {
+            llama: &llama,
+            model_settings: &settings,
+            plan: &plan_for(Language::Japanese),
+            server: &LlamaServer::Router {
+                resident: &ResidentLlama::with_port(port),
+                preset_dir: dir.path(),
+                keep: Duration::ZERO,
+            },
+            ready_timeout,
+        },
         &ModeLock::default()
             .begin(AppPorts::new(app.handle(), &processes))
             .await,
         app.state::<CurrentProject>().inner(),
-        &llama,
-        &settings,
-        &plan_for(Language::Japanese),
-        &LlamaServer::Router {
-            resident: &ResidentLlama::with_port(port),
-            preset_dir: dir.path(),
-            keep: Duration::ZERO,
-        },
-        ready_timeout,
         Phases::start("translate", Phase::Preparation),
     )
     .await;
@@ -1734,6 +1741,87 @@ async fn fails_a_translation_whose_model_the_resident_llama_server_cannot_load()
 
     assert_eq!(result.map(|_| ()), Err(Failure::LlamaExited));
     assert!(started_at.elapsed() < ready_timeout);
+}
+
+// @behavior TL-105
+#[cfg(unix)]
+#[tokio::test]
+async fn frees_the_model_when_a_translation_on_the_resident_llama_server_is_cancelled() {
+    let dir = TempDir::new("tl-resident-cancel");
+    let llama = dir.path().join("llama-server");
+    crate::test_support::write_executable(&llama, "#!/bin/sh\nexec sleep 30\n");
+    let router = FakeLlama::serve(Replies {
+        split_sentences: Box::new(|_| {
+            std::thread::sleep(Duration::from_millis(500));
+            completion(&json!({"clusters": []}).to_string())
+        }),
+        ..Replies::default()
+    });
+    let port = router
+        .base_url()
+        .rsplit(':')
+        .next()
+        .unwrap()
+        .parse()
+        .unwrap();
+    let mut settings = ModelSettings::default();
+    settings.choose(
+        ModelSlot::Translation,
+        ModelSource::File {
+            path: dir.file("qwen3-4b.gguf"),
+        },
+    );
+    let app = mode_app();
+    let processes = Processes::new(dir.path().join("processes.json"));
+    let mut project = project_of(vec![segment(0, 1_000, "大家好")]);
+    project.directory = dir.path().to_path_buf();
+    let subtitle = dir.path().join("lecture.srt");
+    std::fs::write(&subtitle, "1\n00:00:00,000 --> 00:00:01,000\n大家好\n").unwrap();
+    project.resources[0].subtitle = Some(subtitle);
+    app.state::<CurrentProject>().replace(project);
+    let resident = ResidentLlama::with_port(port);
+    let plan = plan_for(Language::Japanese);
+    let server = LlamaServer::Router {
+        resident: &resident,
+        preset_dir: dir.path(),
+        keep: Duration::ZERO,
+    };
+    let translate = TranslateMode {
+        llama: &llama,
+        model_settings: &settings,
+        plan: &plan,
+        server: &server,
+        ready_timeout: Duration::from_secs(5),
+    };
+    let lock = ModeLock::default();
+    let mode_run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
+    let asked_for_chat = async {
+        while !router.log.lock().unwrap().contains(&"chat".to_string()) {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    };
+    let result = {
+        let run = run_mode(
+            &translate,
+            &mode_run,
+            app.state::<CurrentProject>().inner(),
+            Phases::start("translate", Phase::Preparation),
+        );
+        tokio::pin!(run);
+
+        tokio::select! {
+            result = &mut run => result,
+            () = asked_for_chat => {
+                lock.cancel();
+                run.await
+            }
+        }
+    };
+    drop(mode_run);
+    processes.kill_all();
+
+    assert_eq!(result.map(|_| ()), Err(Failure::ModeCancelled));
+    assert!(router.log.lock().unwrap().contains(&"unload".to_string()));
 }
 
 // @behavior TL-104
@@ -1755,16 +1843,18 @@ async fn fails_when_llama_server_exits_before_it_is_ready() {
     app.state::<CurrentProject>()
         .replace(project_of(vec![segment(0, 1_000, "大家好")]));
 
-    let result = run_translate(
+    let result = run_mode(
+        &TranslateMode {
+            llama: &llama,
+            model_settings: &settings,
+            plan: &plan_for(Language::English),
+            server: &LlamaServer::Job,
+            ready_timeout: Duration::from_secs(10),
+        },
         &ModeLock::default()
             .begin(AppPorts::new(app.handle(), &processes))
             .await,
         app.state::<CurrentProject>().inner(),
-        &llama,
-        &settings,
-        &plan_for(Language::English),
-        &LlamaServer::Job,
-        Duration::from_secs(10),
         Phases::start("translate", Phase::Preparation),
     )
     .await;
@@ -1802,16 +1892,18 @@ async fn translates_with_the_project_model() {
     let processes = Processes::new(dir.path().join("processes.json"));
     app.state::<CurrentProject>().replace(project);
 
-    let _ = run_translate(
+    let _ = run_mode(
+        &TranslateMode {
+            llama: &llama,
+            model_settings: &settings,
+            plan: &plan_for(Language::Japanese),
+            server: &LlamaServer::Job,
+            ready_timeout: Duration::from_secs(1),
+        },
         &ModeLock::default()
             .begin(AppPorts::new(app.handle(), &processes))
             .await,
         app.state::<CurrentProject>().inner(),
-        &llama,
-        &settings,
-        &plan_for(Language::Japanese),
-        &LlamaServer::Job,
-        Duration::from_secs(1),
         Phases::start("translate", Phase::Preparation),
     )
     .await;
@@ -1861,14 +1953,17 @@ async fn holds_the_translation_until_the_run_ends() {
     let lock = ModeLock::default();
     let mode_run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
     let plan = plan_for(Language::Japanese);
-    let run = run_translate(
+    let translate = TranslateMode {
+        llama: &llama,
+        model_settings: &settings,
+        plan: &plan,
+        server: &LlamaServer::Job,
+        ready_timeout: Duration::from_secs(1),
+    };
+    let run = run_mode(
+        &translate,
         &mode_run,
         project.inner(),
-        &llama,
-        &settings,
-        &plan,
-        &LlamaServer::Job,
-        Duration::from_secs(1),
         Phases::start("translate", Phase::Preparation),
     );
 
@@ -1946,45 +2041,49 @@ async fn translate_on_a_real_llama_server(name: &str, server: &LlamaServer<'_>) 
     let lock = ModeLock::default();
     let mode_run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
 
-    let translated_segments = run_translate(
+    let translated_segments = run_mode(
+        &TranslateMode {
+            llama: &llama,
+            model_settings: &settings,
+            plan: &TranslationPlan {
+                options: TranslationOptions {
+                    has_speaker_labels: true,
+                    has_self_review: true,
+                    summary_word_limit: Some(50),
+                    is_simplified_cleaned: false,
+                },
+                ..plan_for(Language::English)
+            },
+            server,
+            ready_timeout: llama::READY_TIMEOUT,
+        },
         &mode_run,
         app.state::<CurrentProject>().inner(),
-        &llama,
-        &settings,
-        &TranslationPlan {
-            options: TranslationOptions {
-                has_speaker_labels: true,
-                has_self_review: true,
-                summary_word_limit: Some(50),
-                is_simplified_cleaned: false,
-            },
-            ..plan_for(Language::English)
-        },
-        server,
-        llama::READY_TIMEOUT,
         Phases::start("translate", Phase::Preparation),
     )
     .await
     .unwrap();
     drop(mode_run);
     let mode_run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
-    run_translate(
+    run_mode(
+        &TranslateMode {
+            llama: &llama,
+            model_settings: &settings,
+            plan: &TranslationPlan {
+                options: TranslationOptions {
+                    has_speaker_labels: true,
+                    has_self_review: true,
+                    summary_word_limit: None,
+                    is_simplified_cleaned: false,
+                },
+                scope: TranslationScope::Segments(vec![1, 2]),
+                ..plan_for(Language::English)
+            },
+            server,
+            ready_timeout: llama::READY_TIMEOUT,
+        },
         &mode_run,
         app.state::<CurrentProject>().inner(),
-        &llama,
-        &settings,
-        &TranslationPlan {
-            options: TranslationOptions {
-                has_speaker_labels: true,
-                has_self_review: true,
-                summary_word_limit: None,
-                is_simplified_cleaned: false,
-            },
-            scope: TranslationScope::Segments(vec![1, 2]),
-            ..plan_for(Language::English)
-        },
-        server,
-        llama::READY_TIMEOUT,
         Phases::start("translate", Phase::Preparation),
     )
     .await

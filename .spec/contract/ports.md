@@ -155,3 +155,69 @@ impl<'a, P: Steps> ModeRun<'a, P> {
     pub fn keep(&self, guard: impl Send + 'a) {}
 }
 ```
+
+## `Mode`
+
+The shape every Mode takes, so one skeleton holds, runs and cancels each of them; the Modes stay a fixed set, each run on its own.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+pub trait Mode {}
+```
+
+## `Mode::hold`
+
+Take what the Mode works on and hold the subtitles it writes, both in one hold of the Current Project's lock.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+pub trait Mode {
+    fn hold<'p>(&self, project: &'p CurrentProject) -> Result<(Self::Target, ResourceHold<'p>), Failure>;
+}
+```
+
+## `Mode::run`
+
+Carry out the Mode on what it holds, through the Mode Run's ports.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+pub trait Mode {
+    fn run<'a, P: Progress + Steps + Sync>(&self, run: &ModeRun<'a, P>, project: &'a CurrentProject, target: Self::Target, phases: Phases) -> impl Future<Output = Result<Self::Outcome, Failure>> + Send;
+}
+```
+
+## `Mode::release_cancelled`
+
+Free what a cancelled run leaves behind outside its Components.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+pub trait Mode {
+    fn release_cancelled(&self) -> impl Future<Output = ()> + Send {}
+}
+```
+
+## `run_mode`
+
+Run `mode` until it ends or is cancelled, holding its target from the start of the run to its end.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+pub async fn run_mode<'a, M: Mode>(mode: &M, run: &ModeRun<'a, impl Progress + Steps + Sync>, project: &'a CurrentProject, phases: Phases) -> Result<M::Outcome, Failure> {}
+```

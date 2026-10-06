@@ -21,7 +21,7 @@ mod requested_srt;
 pub mod versions;
 
 use backups::Backups;
-pub use current::{CurrentProject, ProjectView, Reload, ResourceView};
+pub use current::{CurrentProject, ProjectView, Reload, ResourceHold, ResourceView};
 #[cfg(test)]
 pub(crate) use files::HISTORY_DIR;
 use glossary::TranslationGlossary;

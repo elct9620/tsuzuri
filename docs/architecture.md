@@ -296,7 +296,7 @@ Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直
 | `toolchain/` | `presets` | 應用 | 預設模型清單與比對 |
 | `toolchain/` | `settings` | 轉接 | 元件設定檔 |
 | — | `progress` | 應用 | 回報進度的 Port |
-| — | `steps` | 應用 | Step、`ModeRun`、轉成語音 |
+| — | `steps` | 應用 | Step、`Mode`、`ModeRun`、轉成語音 |
 | — | `timing` | 應用 | Phase 計時 |
 | — | `transfer_report` | 領域 | 傳輸進度的回報間隔 |
 | — | `failure` | 應用 | 錯誤碼 |
@@ -313,7 +313,7 @@ Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直
 | `Progress` | 回報 Phase、百分比、專案已變更 | `AppHandle` 發出事件；`AppPorts` 轉交 | mock app 監聽事件 |
 | `Steps` | 啟動元件、逐行讀輸出、停止 | `AppPorts` 經由 `Processes` 與 shell plugin | 以 shell 腳本假裝元件 |
 
-介面以 `.spec/contract/ports.md` 為準。只有這兩個 trait，讓用例不依賴 Tauri；其餘協作直接呼叫函式，例外列在 3.1。`AppPorts` 記下它啟動的 PID，取消時只停這些。
+介面以 `.spec/contract/ports.md` 為準。Port 只有這兩個，讓用例不依賴 Tauri；其餘協作直接呼叫函式，例外列在 3.1。任務另有 `Mode` trait 統一形狀，見 3.11。`AppPorts` 記下它啟動的 PID，取消時只停這些。
 
 ### 3.5 生命週期
 
@@ -446,21 +446,21 @@ Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直
 mode command: transcribe, diarize, translate, retranslate
   │ begin_mode    wait ModeLock ─▶ Phases start ─▶ prepare
   │ make room for the Model, find Components, work_directory
-  ▼ run_until_cancelled(use case)
-  │   hold_for_*  target + hold in one lock
-  │   Steps       progress + project-changed
-  │   write_*     one lock
-  ▼ end_mode      drop ModeRun ─▶ project-changed
+  ▼ run_mode(Mode)  until cancelled
+  │   Mode::hold  target + hold in one lock
+  │   Mode::run   Steps, progress, project-changed, write_*
+  │   cancelled ─▶ Mode::release_cancelled
+  ▼ CommandRun dropped ─▶ project-changed, however it ended
 answer Phase timings
 ```
 
-任務指令都走同一條骨架，等鎖的時間不算進任何 Phase。用例在取得執行權後才取目標，目標與 hold 在同一次取鎖內拿到。
+任務指令都走同一條骨架，等鎖的時間不算進任何 Phase。每個任務實作 `Mode`，`run_mode` 先取目標與 hold，再執行。任務的組合固定，`Mode` 只統一形狀，不串接。
 
-| 任務 | 目標與 hold | Steps | 寫回 |
+| `Mode` | 目標與 hold | Steps | 寫回 |
 |---|---|---|---|
-| 轉錄 | `hold_for_transcription` | ffmpeg、whisper-cli | `write_transcription` |
-| 辨識 | `hold_for_diarization` | ffmpeg、`diarize` | `write_speakers` |
-| 翻譯 | `hold_for_translation` | 常駐 router 載入 | `write_translations` |
+| `TranscribeMode` | `hold_for_transcription` | ffmpeg、whisper-cli | `write_transcription` |
+| `DiarizeMode` | `hold_for_diarization` | ffmpeg、`diarize` | `write_speakers` |
+| `TranslateMode` | `hold_for_translation` | 常駐 router 載入 | `write_translations` |
 
 轉錄與辨識先請常駐 llama-server 釋放模型。轉錄逐段 `push_segment`，翻譯分批 `show_translations` 並 `mark_pending_batch`，保留 N 秒後釋放模型。
 
@@ -510,10 +510,10 @@ answer Phase timings
 lib.rs run() ── manage ──▶ Processes · CurrentProject · ResidentLlama · ModeLock
                                │ commands take State<'_, T>
                                ▼
-command ── begin_mode ──▶ ModeRun: turn, ports, keep   + Phases
-                             │ &ModeRun
+command ── begin_mode ──▶ CommandRun: ModeRun + Phases
+                             │ run_mode(&Mode, &ModeRun)
                              ▼
-                          use case (sees only Ports) ── end_mode
+                          Mode (sees only Ports) ── CommandRun dropped
 ```
 
 | 模式 | 何時用 | 範例 |
@@ -522,7 +522,7 @@ command ── begin_mode ──▶ ModeRun: turn, ports, keep   + Phases
 | 注入 State | 指令取得依賴 | `project/commands.rs` |
 | Mode Run | 任務範圍的狀態 | `transcription/commands.rs` |
 
-任務範圍的東西（取消、它啟動的行程、資源的 hold）由 `ModeRun` 擁有，不寄放在 app 範圍的物件上。Phases 與 `ModeRun` 一起由 `begin_mode` 開始，任務的組合固定，不另寫狀態機。
+任務範圍的東西（取消、它啟動的行程、資源的 hold）由 `ModeRun` 擁有，不寄放在 app 範圍的物件上。Phases 與 `ModeRun` 一起由 `begin_mode` 開始，`CommandRun` 被丟下時結束。任務的組合固定，不另寫狀態機。
 
 ## 4 Webview
 

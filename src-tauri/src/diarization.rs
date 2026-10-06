@@ -16,8 +16,8 @@ use serde::Serialize;
 use crate::conversion;
 use crate::failure::Failure;
 use crate::progress::{enter, Progress};
-use crate::project::CurrentProject;
-use crate::steps::{convert_speech, run_step, ModeRun, Steps, WorkDir, DIARIZATION_STEP};
+use crate::project::{CurrentProject, DiarizationTarget, ResourceHold};
+use crate::steps::{convert_speech, run_step, Mode, ModeRun, Steps, WorkDir, DIARIZATION_STEP};
 use crate::timing::{Phase, PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
 use subcommand::DIARIZE_ARGUMENT;
@@ -38,67 +38,86 @@ pub struct Tools {
     pub diarizer: PathBuf,
 }
 
-/// Runs the Diarize Mode on the Current Resource: converts its whole media file, runs the diarize
-/// Step and gives the Segments of its subtitle the Speakers heard.
-pub async fn run_diarize<'a>(
-    run: &ModeRun<'a, impl Progress + Steps>,
-    project: &'a CurrentProject,
-    tools: &Tools,
-    models: &ModelSettings,
-    work: &Path,
-    mut phases: Phases,
-) -> Result<Diarization, Failure> {
-    let (job, hold) = project.hold_for_diarization()?;
-    run.keep(hold);
-    let ports = run.ports();
-    let model = models.ready_path(ModelSlot::Diarization)?;
-    run.keep(WorkDir::try_new(work)?);
-    let wav = work.join("audio.wav");
-    let turns_path = work.join("turns.json");
+/// The Diarize Mode on the Current Resource: converts its whole media file, runs the diarize Step
+/// and gives the Segments of its subtitle the Speakers heard.
+pub struct DiarizeMode<'a> {
+    pub tools: &'a Tools,
+    pub models: &'a ModelSettings,
+    pub work: &'a Path,
+}
 
-    let audio_bytes =
-        convert_speech(ports, &mut phases, &tools.ffmpeg, &job.media, None, &wav).await?;
+impl Mode for DiarizeMode<'_> {
+    const NAME: &'static str = "diarize";
+    type Target = DiarizationTarget;
+    type Outcome = Diarization;
 
-    enter(ports, &mut phases, Phase::Loading);
-    let start = Instant::now();
-    let args = [
-        DIARIZE_ARGUMENT.as_ref(),
-        model.as_path(),
-        wav.as_path(),
-        turns_path.as_path(),
-    ]
-    .map(|arg| arg.to_string_lossy().into_owned());
-    run_step(
-        ports,
-        DIARIZATION_STEP,
-        &tools.diarizer,
-        &args,
-        |line| {
-            if let Some(percent) = subcommand::progress(line) {
-                if percent == 0 {
-                    enter(ports, &mut phases, Phase::Diarization);
+    fn hold<'p>(
+        &self,
+        project: &'p CurrentProject,
+    ) -> Result<(DiarizationTarget, ResourceHold<'p>), Failure> {
+        project.hold_for_diarization()
+    }
+
+    async fn run<'a, P: Progress + Steps + Sync>(
+        &self,
+        run: &ModeRun<'a, P>,
+        project: &'a CurrentProject,
+        job: DiarizationTarget,
+        mut phases: Phases,
+    ) -> Result<Diarization, Failure> {
+        let DiarizeMode {
+            tools,
+            models,
+            work,
+        } = *self;
+        let ports = run.ports();
+        let model = models.ready_path(ModelSlot::Diarization)?;
+        run.keep(WorkDir::try_new(work)?);
+        let wav = work.join("audio.wav");
+        let turns_path = work.join("turns.json");
+
+        let audio_bytes =
+            convert_speech(ports, &mut phases, &tools.ffmpeg, &job.media, None, &wav).await?;
+
+        enter(ports, &mut phases, Phase::Loading);
+        let start = Instant::now();
+        let args = [
+            DIARIZE_ARGUMENT.as_ref(),
+            model.as_path(),
+            wav.as_path(),
+            turns_path.as_path(),
+        ]
+        .map(|arg| arg.to_string_lossy().into_owned());
+        run_step(
+            ports,
+            DIARIZATION_STEP,
+            &tools.diarizer,
+            &args,
+            |line| {
+                if let Some(percent) = subcommand::progress(line) {
+                    if percent == 0 {
+                        enter(ports, &mut phases, Phase::Diarization);
+                    }
+                    ports.report(Phase::Diarization, Some(percent));
                 }
-                ports.report(Phase::Diarization, Some(percent));
-            }
-        },
-        |_| {},
-    )
-    .await?;
-    let diarize_seconds = start.elapsed().as_secs_f64();
+            },
+            |_| {},
+        )
+        .await?;
+        let diarize_seconds = start.elapsed().as_secs_f64();
 
-    let turns: Vec<SpeakerTurn> =
-        serde_json::from_slice(&std::fs::read(&turns_path)?).map_err(|error| {
-            Failure::Internal {
+        let turns: Vec<SpeakerTurn> = serde_json::from_slice(&std::fs::read(&turns_path)?)
+            .map_err(|error| Failure::Internal {
                 detail: format!("unreadable Speaker Turns: {error}"),
-            }
-        })?;
-    project.write_speakers(&job, |segments| segment_speakers(segments, &turns))?;
-    ports.announce_project();
-    Ok(Diarization {
-        audio_seconds: conversion::audio_seconds(audio_bytes),
-        diarize_seconds,
-        phases: phases.finish(),
-    })
+            })?;
+        project.write_speakers(&job, |segments| segment_speakers(segments, &turns))?;
+        ports.announce_project();
+        Ok(Diarization {
+            audio_seconds: conversion::audio_seconds(audio_bytes),
+            diarize_seconds,
+            phases: phases.finish(),
+        })
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -150,7 +169,7 @@ mod tests {
     use crate::processes::{AppPorts, Processes};
     use crate::progress::{PipelineProgress, ProjectChanged};
     use crate::project::{Project, RunningMode};
-    use crate::steps::ModeLock;
+    use crate::steps::{run_mode, ModeLock};
     use crate::test_support::{mode_app, write_executable, TempDir, RECORDING_FFMPEG};
     use crate::transcript::{Segment, Transcript, WrittenText};
 
@@ -227,14 +246,16 @@ mod tests {
         async fn run(&self) -> Result<Diarization, Failure> {
             let processes = Processes::new(self.dir.path().join("processes.json"));
             let app = self.app.handle();
-            run_diarize(
+            run_mode(
+                &DiarizeMode {
+                    tools: &self.tools,
+                    models: &self.settings,
+                    work: &self.dir.path().join("work"),
+                },
                 &ModeLock::default()
                     .begin(AppPorts::new(app, &processes))
                     .await,
                 app.state::<CurrentProject>().inner(),
-                &self.tools,
-                &self.settings,
-                &self.dir.path().join("work"),
                 Phases::start("diarize", Phase::Preparation),
             )
             .await

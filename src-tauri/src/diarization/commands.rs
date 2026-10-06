@@ -1,11 +1,11 @@
 use tauri::{AppHandle, State};
 
-use super::{run_diarize, Diarization, Tools};
+use super::{Diarization, DiarizeMode, Tools};
 use crate::failure::Failure;
 use crate::processes::Processes;
 use crate::project::CurrentProject;
-use crate::steps::commands::{begin_mode, end_mode, work_directory};
-use crate::steps::ModeLock;
+use crate::steps::commands::{begin_mode, work_directory};
+use crate::steps::{run_mode, Mode, ModeLock};
 use crate::toolchain::{self, settings};
 use crate::translation::ResidentLlama;
 
@@ -18,7 +18,7 @@ pub async fn diarize(
     processes: State<'_, Processes>,
     resident: State<'_, ResidentLlama>,
 ) -> Result<Diarization, Failure> {
-    let (run, phases) = begin_mode(&app, &mode_lock, &processes, "diarize").await;
+    let (run, phases) = begin_mode(&app, &mode_lock, &processes, DiarizeMode::NAME).await;
     // Only one Model is loaded at a time, so the translation Model makes way.
     resident.make_room(run.ports()).await;
     let [ffmpeg] =
@@ -28,17 +28,11 @@ pub async fn diarize(
         diarizer: std::env::current_exe()?,
     };
     let models = settings::load_settings(&app)?;
-    let work = work_directory(&app, "diarize")?;
-    let result = run
-        .run_until_cancelled(run_diarize(
-            &run,
-            current.inner(),
-            &tools,
-            &models,
-            &work,
-            phases,
-        ))
-        .await;
-    end_mode(&app, run);
-    result
+    let work = work_directory(&app, DiarizeMode::NAME)?;
+    let mode = DiarizeMode {
+        tools: &tools,
+        models: &models,
+        work: &work,
+    };
+    run_mode(&mode, &run, current.inner(), phases).await
 }

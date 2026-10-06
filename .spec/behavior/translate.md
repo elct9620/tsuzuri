@@ -670,6 +670,16 @@ A cancelled translation writes nothing, so what it showed goes with it and the e
 | When | it is cancelled before the next Batch is answered |
 | Then | it fails as `mode-cancelled`, no Segment shows a translation, and no translation file is written |
 
+## `TL-105` Freeing the Model when a translation on the Resident llama-server is cancelled
+
+A cancelled translation leaves the Resident llama-server running, so its Model is freed as after any other translation.
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation on the Resident llama-server, keeping the Model for no time |
+| When | it is cancelled while the Model answers |
+| Then | it fails as `mode-cancelled` and the Model is unloaded |
+
 ## `TL-084` Translating chosen Segments again with their neighbours
 
 A line translated alone loses the context a Batch gives, so it carries the lines around it: those before with their translations, those after in the source alone.

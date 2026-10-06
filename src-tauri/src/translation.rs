@@ -9,8 +9,8 @@ use crate::cleanup::clean_translations;
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
 use crate::progress::{enter, Progress};
-use crate::project::{CurrentProject, Restoration, SegmentSpan, TranslationSource};
-use crate::steps::{ModeRun, Steps};
+use crate::project::{CurrentProject, ResourceHold, Restoration, SegmentSpan, TranslationSource};
+use crate::steps::{Mode, ModeRun, Steps};
 use crate::timing::Phase;
 use crate::timing::{PhaseTiming, Phases};
 use crate::toolchain::{ModelSettings, ModelSlot};
@@ -150,90 +150,124 @@ pub fn llama_server<'a>(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-pub async fn run_translate<'a>(
-    run: &ModeRun<'a, impl Progress + Steps>,
-    project: &'a CurrentProject,
-    llama: &Path,
-    model_settings: &ModelSettings,
-    plan: &TranslationPlan,
-    server: &LlamaServer<'_>,
-    ready_timeout: Duration,
-    mut phases: Phases,
-) -> Result<Translation, Failure> {
-    let (source, hold) =
-        project.hold_for_translation(plan.target, plan.scope.indexes().map(<[usize]>::to_vec))?;
-    run.keep(hold);
-    let model_settings = model_settings
-        .clone()
-        .with_project_model(ModelSlot::Translation, source.model.clone());
-    let model = model_settings.ready_path(ModelSlot::Translation)?;
-    let ports = run.ports();
-    let languages = LanguagePair {
-        source: source.language,
-        target: plan.target,
-    };
-    let glossary_terms = project
-        .reload_translation_glossary()?
-        .map_or_else(Vec::new, |glossary| glossary.terms_for(languages));
-    let job = TranslationJob {
-        segments: &source.transcript.segments,
-        languages,
-        settings: plan.settings,
-        has_speaker_labels: plan.options.has_speaker_labels,
-        has_self_review: plan.options.has_self_review,
-        summary_word_limit: plan.options.summary_word_limit,
-        glossary_terms: &glossary_terms,
-        chosen_indexes: plan.scope.indexes().unwrap_or_default(),
-    };
-    enter(ports, &mut phases, Phase::Loading);
-    let is_cleaned = plan.is_simplified_cleaned();
-    let on_batch = batch_display(ports, project, &source, is_cleaned);
-    let result = match server {
-        LlamaServer::Job => {
-            translate_on_job_server(
-                ports,
-                llama,
-                &model,
-                ready_timeout,
-                &job,
-                &mut phases,
-                on_batch,
-            )
-            .await
-        }
-        LlamaServer::Router {
-            resident,
-            preset_dir,
-            keep,
-        } => {
-            let result = async {
-                let base_url = resident
-                    .load_model(ports, llama, &model, preset_dir, ready_timeout)
-                    .await?;
-                translate_once_ready(
+/// The Translate Mode on the Current Resource: translates its Primary Language subtitle, whole or
+/// its chosen Segments, as `plan` asks, on `server`.
+pub struct TranslateMode<'a> {
+    pub llama: &'a Path,
+    pub model_settings: &'a ModelSettings,
+    pub plan: &'a TranslationPlan,
+    pub server: &'a LlamaServer<'a>,
+    pub ready_timeout: Duration,
+}
+
+impl Mode for TranslateMode<'_> {
+    const NAME: &'static str = "translate";
+    type Target = TranslationSource;
+    type Outcome = Translation;
+
+    fn hold<'p>(
+        &self,
+        project: &'p CurrentProject,
+    ) -> Result<(TranslationSource, ResourceHold<'p>), Failure> {
+        project.hold_for_translation(
+            self.plan.target,
+            self.plan.scope.indexes().map(<[usize]>::to_vec),
+        )
+    }
+
+    async fn run<'a, P: Progress + Steps + Sync>(
+        &self,
+        run: &ModeRun<'a, P>,
+        project: &'a CurrentProject,
+        source: TranslationSource,
+        mut phases: Phases,
+    ) -> Result<Translation, Failure> {
+        let TranslateMode {
+            llama,
+            model_settings,
+            plan,
+            server,
+            ready_timeout,
+        } = *self;
+        let model_settings = model_settings
+            .clone()
+            .with_project_model(ModelSlot::Translation, source.model.clone());
+        let model = model_settings.ready_path(ModelSlot::Translation)?;
+        let ports = run.ports();
+        let languages = LanguagePair {
+            source: source.language,
+            target: plan.target,
+        };
+        let glossary_terms = project
+            .reload_translation_glossary()?
+            .map_or_else(Vec::new, |glossary| glossary.terms_for(languages));
+        let job = TranslationJob {
+            segments: &source.transcript.segments,
+            languages,
+            settings: plan.settings,
+            has_speaker_labels: plan.options.has_speaker_labels,
+            has_self_review: plan.options.has_self_review,
+            summary_word_limit: plan.options.summary_word_limit,
+            glossary_terms: &glossary_terms,
+            chosen_indexes: plan.scope.indexes().unwrap_or_default(),
+        };
+        enter(ports, &mut phases, Phase::Loading);
+        let is_cleaned = plan.is_simplified_cleaned();
+        let on_batch = batch_display(ports, project, &source, is_cleaned);
+        let result = match server {
+            LlamaServer::Job => {
+                translate_on_job_server(
                     ports,
-                    &base_url,
+                    llama,
+                    &model,
                     ready_timeout,
-                    || false,
                     &job,
                     &mut phases,
                     on_batch,
                 )
                 .await
             }
-            .await;
+            LlamaServer::Router {
+                resident,
+                preset_dir,
+                keep,
+            } => {
+                let result = async {
+                    let base_url = resident
+                        .load_model(ports, llama, &model, preset_dir, ready_timeout)
+                        .await?;
+                    translate_once_ready(
+                        ports,
+                        &base_url,
+                        ready_timeout,
+                        || false,
+                        &job,
+                        &mut phases,
+                        on_batch,
+                    )
+                    .await
+                }
+                .await;
+                resident.release_after(*keep).await;
+                result
+            }
+        };
+        let unmatched_count =
+            write_translated_segments(project, &source, plan, result?, is_cleaned)?.unmatched_count;
+        ports.announce_project();
+        Ok(Translation {
+            phases: phases.finish(),
+            unmatched_count,
+        })
+    }
+
+    /// A cancelled translation leaves the Resident llama-server running, so its Model is freed as
+    /// after any other translation.
+    async fn release_cancelled(&self) {
+        if let LlamaServer::Router { resident, keep, .. } = self.server {
             resident.release_after(*keep).await;
-            result
         }
-    };
-    let unmatched_count =
-        write_translated_segments(project, &source, plan, result?, is_cleaned)?.unmatched_count;
-    ports.announce_project();
-    Ok(Translation {
-        phases: phases.finish(),
-        unmatched_count,
-    })
+    }
 }
 
 /// Writes the Segments translated into `plan.target`, cleaned of Simplified Chinese when

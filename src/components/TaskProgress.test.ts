@@ -113,16 +113,6 @@ describe("TaskProgress", () => {
     ).not.toBeNull();
   });
 
-  // @behavior TX-025
-  it("clears the progress once the transcription ends", async () => {
-    await begin("transcription");
-
-    run.finish();
-    await tick();
-
-    expect(progressButton()).toBeNull();
-  });
-
   // @behavior TX-029
   it("cancels a transcription from its progress", async () => {
     await begin("transcription");

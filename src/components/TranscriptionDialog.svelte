@@ -15,7 +15,7 @@
   import { transcribe, type TranscriptionScope } from "#/ipc/transcription.ts";
   import { translateSegments } from "#/ipc/translation.ts";
   import { t } from "#/i18n.ts";
-  import { sourceFileName } from "#/ui/models.ts";
+  import { chosenModelName } from "#/ui/models.ts";
   import {
     notifyDiarization,
     notifyTranscription,
@@ -102,11 +102,11 @@
     if (project !== null)
       choices.reset(project, isWhole ? null : project.shown_translation);
     dialog.showModal();
-    const source =
+    model = chosenModelName(
       project?.options.models.transcription ??
-      (await modelSettings())?.transcription.source ??
-      null;
-    model = source === null ? t("models.notChosen") : sourceFileName(source);
+        (await modelSettings())?.transcription.source ??
+        null,
+    );
   }
 
   async function start(): Promise<void> {
@@ -116,8 +116,7 @@
     )
       return;
     dialog.close();
-    run.begin("transcription");
-    try {
+    await run.perform("transcription", async () => {
       const transcription = await transcribe(
         !isWhole || (currentResource(project)?.has_subtitle ?? false),
         scope,
@@ -129,10 +128,7 @@
       }
       if (isTranslatedAfter)
         await translateAfterwards(transcription.written_span);
-      run.finish();
-    } catch (error) {
-      run.fail(error);
-    }
+    });
   }
 
   /**

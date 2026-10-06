@@ -3,7 +3,7 @@
   import type { ProjectView } from "#/ipc/project.ts";
   import { modelSettings } from "#/ipc/toolchain.ts";
   import { t } from "#/i18n.ts";
-  import { sourceFileName } from "#/ui/models.ts";
+  import { chosenModelName } from "#/ui/models.ts";
   import { notifyDiarization } from "#/state/notification.svelte.ts";
   import { taskRun } from "#/state/context.ts";
 
@@ -20,20 +20,17 @@
       (segment) => (segment.speaker ?? null) !== null,
     );
     dialog.showModal();
-    const source = (await modelSettings())?.diarization.source ?? null;
-    model = source === null ? t("models.notChosen") : sourceFileName(source);
+    model = chosenModelName(
+      (await modelSettings())?.diarization.source ?? null,
+    );
   }
 
   async function start(): Promise<void> {
     if (run.isBusy) return;
     dialog.close();
-    run.begin("diarization");
-    try {
+    await run.perform("diarization", async () => {
       notifyDiarization(await diarize());
-      run.finish();
-    } catch (error) {
-      run.fail(error);
-    }
+    });
   }
 </script>
 

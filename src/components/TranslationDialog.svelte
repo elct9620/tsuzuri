@@ -59,8 +59,7 @@
   async function start(): Promise<void> {
     if (run.isBusy || !options.reportValidity()) return;
     dialog.close();
-    run.begin("translation");
-    try {
+    await run.perform("translation", async () => {
       notifyTranslation(
         await translateSegments(
           choices.language,
@@ -68,10 +67,7 @@
           chosenIndexes,
         ),
       );
-      run.finish();
-    } catch (error) {
-      run.fail(error);
-    }
+    });
   }
 </script>
 

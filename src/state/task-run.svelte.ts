@@ -48,8 +48,15 @@ export class TaskRun {
     this.reachedPhase = null;
   }
 
-  finish(): void {
-    this.#end();
+  /** Runs `body` as `task`, ending the run once it has, or saying why it failed. */
+  async perform(task: TaskKind, body: () => Promise<void>): Promise<void> {
+    this.begin(task);
+    try {
+      await body();
+      this.#end();
+    } catch (error) {
+      this.fail(error);
+    }
   }
 
   /** Ends the run, saying the task running when it failed did not finish, and why; one given up says only that. */

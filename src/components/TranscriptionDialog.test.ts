@@ -157,6 +157,17 @@ describe("TranscriptionDialog", () => {
     expect(tasksSent()).toEqual(["transcribe", "diarize", "translate"]);
   });
 
+  // @behavior TX-025
+  it("clears the progress once the transcription ends", async () => {
+    await hold(media);
+    transcription = transcribed;
+
+    await start();
+    await settle();
+
+    expect(progressSteps()).toEqual([]);
+  });
+
   // @behavior DZ-019
   it("asks to diarize once transcribed as the Project chooses", async () => {
     const asked = async (isChosen: boolean) => {

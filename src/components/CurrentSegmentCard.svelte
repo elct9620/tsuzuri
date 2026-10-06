@@ -1,12 +1,13 @@
 <!--
   @component
-  The Current Segment as the Preview shows it beside the media: its number, times, Speaker, text
-  and translation, with the keys that play it and set its times; or a hint to pick one.
+  The Current Segment as the Preview shows it beside the media: its number, times and length,
+  Speaker, text and translation, with the keys that play it and set its times; or a hint to pick one.
 -->
 <script lang="ts">
   import type { Segment } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
-  import { formatTime } from "#/ui/time.ts";
+  import { MS_PER_SECOND, formatTime } from "#/ui/time.ts";
+  import { formatLength } from "#/ui/timeline-spans.ts";
   import { editingState } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import CurrentSegmentKeys from "#/components/CurrentSegmentKeys.svelte";
@@ -29,6 +30,12 @@
         >{formatTime(currentSegment.start_ms)} → {formatTime(
           currentSegment.end_ms,
         )}</span
+      >
+      <span class="badge badge-sm badge-ghost tabular-nums" data-length
+        >{formatLength({
+          start: currentSegment.start_ms / MS_PER_SECOND,
+          end: currentSegment.end_ms / MS_PER_SECOND,
+        })}</span
       >
       {#if currentSegment.speaker}
         <span class="badge badge-sm badge-neutral max-w-32 truncate"

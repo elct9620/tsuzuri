@@ -732,6 +732,25 @@ describe("Current Segment", () => {
     ]);
   });
 
+  // @behavior PV-213
+  it("shows the Current Segment's length beside the video", async () => {
+    await show(
+      projectOf({
+        media: "/talks/ep01.mp4",
+        segments: [segmentAt(0, 1), segmentAt(1, 4.2)],
+      }),
+    );
+
+    chooseRow(1);
+    flushSync();
+
+    expect(
+      screen
+        .getByText(t("preview.current"))
+        .parentElement!.querySelector("[data-length]")?.textContent,
+    ).toBe("3.200s");
+  });
+
   // @behavior PV-097
   it("names the Current Segment's Speaker beside the video", async () => {
     await show(spokenSegments);

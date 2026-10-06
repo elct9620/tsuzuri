@@ -671,6 +671,16 @@ Space plays and stops the media and the timeline still selects and retimes Segme
 | When | the second Segment's row is clicked |
 | Then | the card beside the video shows #2 with its times, text and translation |
 
+## `PV-213` Showing the Current Segment's length beside the video
+
+How long a Segment runs is what timing it checks against, so the card says so beside its times.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, its second Segment from 1 to 4.2 s |
+| When | the second Segment's row is clicked |
+| Then | the card beside the video shows `3.200s` |
+
 ## `PV-097` Naming the Current Segment's Speaker beside the video
 
 | Step | Statement |

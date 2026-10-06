@@ -137,10 +137,6 @@ impl ProjectView {
         self.pending_batch
     }
 
-    pub fn media(&self) -> Option<&Path> {
-        self.media.as_deref()
-    }
-
     pub fn language(&self) -> Language {
         self.language
     }

@@ -270,6 +270,11 @@ export type GlossaryRow = bindings.GlossaryRow;
 
 export type GlossaryTable = bindings.GlossaryTable;
 
+/** A stretch of a field underlined as a Translation Glossary term or as a candidate for one. */
+export type GlossaryMark = bindings.GlossaryMark;
+
+export type GlossaryMarkKind = bindings.GlossaryMarkKind;
+
 export function translationGlossaryTable(): Promise<GlossaryTable> {
   return commands.translationGlossaryTable();
 }

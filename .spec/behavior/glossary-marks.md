@@ -6,6 +6,7 @@ Underlining in the editor where the Translation Glossary's terms are written, in
 
 - `src-tauri/src/project/glossary_marks.rs`
 - `src-tauri/src/proper_nouns.rs`
+- `src/components/glossary-marks.test.ts`
 
 ## `GM-001` Marking a term in the text
 
@@ -115,3 +116,22 @@ A single character tagged as a name is more often a misreading than a name.
 | Given | a Segment translated into `zh-TW` as `小林先生明天要去京都`, its translation shown |
 | When | the Project is shown |
 | Then | the translation has no Glossary Marks |
+
+## `GM-012` Underlining the terms and the candidates in their fields
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment reading `小林先生明天要去京都` with the candidate `小林` and the term `京都`, translated as `Kobayashi goes to Kyoto` with the term `Kyoto`, its translation shown |
+| When | its row is drawn |
+| Then | `京都` and `Kyoto` are underlined as terms and `小林` as a candidate |
+
+## `GM-013` Leaving the marks out of a field typed in since they were found
+
+A mark counts characters of the text it was found in, and would land on other words in a text since changed.
+
+| Step | Statement |
+| --- | --- |
+| Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林` |
+| Given | its text field typed in to read `小林先生` |
+| When | the Project is shown again |
+| Then | nothing in the field is underlined as a candidate |

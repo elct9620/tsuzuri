@@ -3,13 +3,13 @@
   The rows of the Current Resource's Segments, refreshed in place as each Project is read, since
   Chromium reports a selection change for each time field drawn; rows are drawn anew only when the
   translation is shown or hidden. Placeholders stand in while Segments are being made or read. It
-  marks the Current Segment and the rows being played, draws the Cursor, and lays the editor's
-  comparison over the rows with each removed cue in its place.
+  marks the Current Segment and the rows being played, draws the Cursor, underlines the Glossary
+  Marks, and lays the editor's comparison over the rows with each removed cue in its place.
 -->
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
 
-  import type { ProjectView } from "#/ipc/project.ts";
+  import type { GlossaryMarkKind, ProjectView } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
   import type { ComparedRow } from "#/ipc/project.ts";
   import {
@@ -47,6 +47,12 @@
 
   /** The highlight marking the characters a text gained since the Backup compared. */
   const ADDED_HIGHLIGHT = "compare-addition";
+
+  /** The highlight each kind of Glossary Mark is drawn under. */
+  const GLOSSARY_HIGHLIGHT: Record<GlossaryMarkKind, string> = {
+    term: "glossary-term",
+    candidate: "glossary-candidate",
+  };
 
   /** The field each side's comparison marks. */
   const FIELD_BY_SIDE: Record<Side, CursorField> = {
@@ -165,6 +171,37 @@
     markRanges(ADDED_HIGHLIGHT, ranges);
   });
 
+  // Underlines the Glossary Marks of each field that still reads the text they were found in
+  $effect(() => {
+    const rangesByKind: Record<GlossaryMarkKind, Range[]> = {
+      term: [],
+      candidate: [],
+    };
+    const marksBySegment = project?.glossary_marks ?? [];
+    segments.forEach((segment, index) => {
+      const marks = marksBySegment[index];
+      if (!marks) return;
+      const fields = [
+        { kind: "text", text: segment.text, marks: marks.text },
+        {
+          kind: "translation",
+          text: segment.translation ?? "",
+          marks: marks.translation,
+        },
+      ] as const;
+      for (const { kind, text, marks: fieldMarks } of fields) {
+        const markField = field(index, kind);
+        if (!markField || fieldValue(markField) !== text) continue;
+        for (const mark of fieldMarks) {
+          const range = textRange(markField, mark.start, mark.end);
+          if (range) rangesByKind[mark.kind].push(range);
+        }
+      }
+    });
+    for (const kind of ["term", "candidate"] as const)
+      markRanges(GLOSSARY_HIGHLIGHT[kind], rangesByKind[kind]);
+  });
+
   /**
    * Brings the Current Segment's row into view as it becomes current, so the Cursor moving within
    * it leaves the list where following playback put it; a live Cursor in a field without focus, as
@@ -243,7 +280,7 @@
 {/if}
 {@render children?.()}
 <ol
-  class="list @container text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_.field::highlight(search-match)]:bg-warning/30 [&_.field::highlight(search-current)]:bg-warning/70 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
+  class="list @container text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_.field::highlight(search-match)]:bg-warning/30 [&_.field::highlight(search-current)]:bg-warning/70 [&_.field::highlight(glossary-term)]:underline [&_.field::highlight(glossary-term)]:decoration-primary [&_.field::highlight(glossary-candidate)]:underline [&_.field::highlight(glossary-candidate)]:decoration-dashed [&_.field::highlight(glossary-candidate)]:decoration-base-content/40 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
   aria-label={t("edit.segments")}
   bind:this={list}
 >

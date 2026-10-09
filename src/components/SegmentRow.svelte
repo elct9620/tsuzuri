@@ -53,7 +53,7 @@
     type ResourceOffers,
     segmentChoices,
   } from "#/actions/segment-changes.ts";
-  import { glossaryChoice, markAt } from "#/actions/glossary.ts";
+  import { glossaryChoice, enclosingMark } from "#/actions/glossary.ts";
   import { notifyNamed } from "#/actions/speaker.ts";
   import TimeField from "#/components/TimeField.svelte";
 
@@ -262,7 +262,7 @@
     const language = isText ? project.language : project.shown_translation;
     const range = fieldSelection(markField);
     if (!language || !range || fieldValue(markField) !== text) return [];
-    const mark = markAt(glossaryMarks[kind], range);
+    const mark = enclosingMark(glossaryMarks[kind], range);
     return mark ? [glossaryChoice(mark, language, dialogs)] : [];
   }
 

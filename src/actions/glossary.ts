@@ -35,7 +35,7 @@ export function rowsWithTerm(
 }
 
 /** The Glossary Mark of `marks` that `range` stands within, if any. */
-export function markAt(
+export function enclosingMark(
   marks: GlossaryMark[],
   range: TextRange,
 ): GlossaryMark | undefined {

@@ -147,11 +147,11 @@ mod tests {
         project.translation_glossary =
             TranslationGlossary::from_directory(dir.path(), None).unwrap();
         project.current.as_mut().unwrap().translation = translation;
-        marks_of(project)
+        first_segment_marks(project)
     }
 
     /// The Glossary Marks `project` shows of its first Segment.
-    fn marks_of(project: Project) -> SegmentGlossaryMarks {
+    fn first_segment_marks(project: Project) -> SegmentGlossaryMarks {
         let current = CurrentProject::default();
         current.replace(project);
         current.view().unwrap().glossary_marks()[0].clone()
@@ -167,7 +167,7 @@ mod tests {
         let mut project = project_of(vec![segment]);
         project.language = language;
         project.current.as_mut().unwrap().translation = translation;
-        marks_of(project)
+        first_segment_marks(project)
     }
 
     fn translated_segment(text: &str, translation: &str) -> Segment {

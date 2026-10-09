@@ -58,7 +58,7 @@ impl ChineseTagger {
     }
 
     fn tagged_proper_nouns(&self, text: &str) -> Vec<Range<usize>> {
-        let simplified: String = text
+        let simplified_text: String = text
             .chars()
             .map(|character| *self.simplified_forms.get(&character).unwrap_or(&character))
             .collect();
@@ -69,7 +69,7 @@ impl ChineseTagger {
             .chain([text.len()])
             .collect();
         self.jieba
-            .tag(&simplified, true)
+            .tag(&simplified_text, true)
             .into_iter()
             .filter(|tag| PROPER_NOUN_TAGS.contains(&tag.tag) && tag.end - tag.start >= 2)
             .map(|tag| byte_starts[tag.start]..byte_starts[tag.end])

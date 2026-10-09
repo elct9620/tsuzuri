@@ -27,7 +27,7 @@ describe("Glossary Marks", () => {
   };
 
   /** The text each range drawn under `name` covers. */
-  const marked = (name: string) =>
+  const markedTexts = (name: string) =>
     highlights.get(name)?.ranges.map(String) ?? [];
 
   async function show(): Promise<void> {
@@ -110,10 +110,10 @@ describe("Glossary Marks", () => {
   it("underlines the terms and the candidates in their fields", async () => {
     await show();
 
-    expect([marked("glossary-term"), marked("glossary-candidate")]).toEqual([
-      ["京都", "Kyoto"],
-      ["小林"],
-    ]);
+    expect([
+      markedTexts("glossary-term"),
+      markedTexts("glossary-candidate"),
+    ]).toEqual([["京都", "Kyoto"], ["小林"]]);
   });
 
   // @behavior GM-013
@@ -126,7 +126,7 @@ describe("Glossary Marks", () => {
     project = { ...project };
     await show();
 
-    expect(marked("glossary-candidate")).toEqual([]);
+    expect(markedTexts("glossary-candidate")).toEqual([]);
   });
 
   describe("the right-click menu", () => {

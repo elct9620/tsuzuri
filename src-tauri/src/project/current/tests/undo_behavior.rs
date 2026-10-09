@@ -183,7 +183,7 @@ fn forgets_the_changes_of_a_subtitle_changed_elsewhere() {
 // @behavior UD-018
 #[test]
 fn refuses_an_undo_over_a_subtitle_changed_elsewhere() {
-    let dir = directory_of("ud-elsewhere", &[("ep01.srt", &cue("你好"))]);
+    let dir = directory_of("ud-undo-elsewhere", &[("ep01.srt", &cue("你好"))]);
     let current = project_in(&dir);
     edit_text(&current, "您好");
     std::fs::write(dir.path().join("ep01.srt"), cue("外面改的")).unwrap();

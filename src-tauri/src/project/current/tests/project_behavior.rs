@@ -550,7 +550,7 @@ fn keeps_the_directory_name_in_the_view_of_a_named_project() {
 // @behavior PJ-174
 #[test]
 fn names_a_project_after_its_directory_without_a_name_of_its_own() {
-    let dir = TempDir::new("pj-directory-name");
+    let dir = TempDir::new("pj-directory-name-unnamed");
     let current = lecture_in(&dir);
 
     current.set_options(options_named("   ")).unwrap();

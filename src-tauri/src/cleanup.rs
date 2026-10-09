@@ -179,18 +179,18 @@ pub fn simplified_forms() -> HashMap<char, char> {
         let Some((key, candidates)) = line.trim_end().split_once('\t') else {
             continue;
         };
-        let Some(simplified) = sole_character(key) else {
+        let Some(simplified_character) = sole_character(key) else {
             continue;
         };
         for traditional in candidates.split(' ').filter_map(sole_character) {
-            if traditional != simplified {
-                forms.entry(traditional).or_insert(simplified);
+            if traditional != simplified_character {
+                forms.entry(traditional).or_insert(simplified_character);
             }
         }
     }
     for (standard, variant) in single_characters(TW_VARIANTS) {
-        let simplified = *forms.get(&standard).unwrap_or(&standard);
-        forms.entry(variant).or_insert(simplified);
+        let simplified_character = *forms.get(&standard).unwrap_or(&standard);
+        forms.entry(variant).or_insert(simplified_character);
     }
     forms
 }

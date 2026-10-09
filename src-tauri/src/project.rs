@@ -13,6 +13,7 @@ pub mod commands;
 mod current;
 mod files;
 pub mod glossary;
+pub mod glossary_marks;
 mod history;
 mod mode_hold;
 mod opened_project;

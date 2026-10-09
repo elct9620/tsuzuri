@@ -35,6 +35,8 @@ export const commands = {
 	current_resource: string | null,
 	media: string | null,
 	segments: Segment_Serialize[],
+	/**  The Glossary Marks of each of `segments`. */
+	glossary_marks: SegmentGlossaryMarks[],
 	shown_translation: Language | null,
 	/**
 	 *  What the Translation Glossary calls each Speaker in the translation shown, by its name in
@@ -352,6 +354,23 @@ export type Failure =
 /**  Something that should not happen, such as a background task panicking. */
 { code: "internal"; detail: string };
 
+/**
+ *  A stretch of a field the editor underlines, from `start` to `end` in UTF-16 units, as the
+ *  webview counts text.
+ */
+export type GlossaryMark = {
+	start: number,
+	end: number,
+	/**  The words the stretch holds, as the field writes them. */
+	word: string,
+	kind: GlossaryMarkKind,
+};
+
+/**  What a Glossary Mark stands for; serialized in lowercase, as `term`. */
+export type GlossaryMarkKind = 
+/**  A term of the Translation Glossary. */
+"term";
+
 /**  One term: its word in each Language, and whether it names a Speaker. */
 export type GlossaryRow = {
 	words: string[],
@@ -512,6 +531,8 @@ export type ProjectView_Deserialize = {
 	current_resource: string | null,
 	media: string | null,
 	segments: Segment_Deserialize[],
+	/**  The Glossary Marks of each of `segments`. */
+	glossary_marks: SegmentGlossaryMarks[],
 	shown_translation: Language | null,
 	/**
 	 *  What the Translation Glossary calls each Speaker in the translation shown, by its name in
@@ -542,6 +563,8 @@ export type ProjectView_Serialize = {
 	current_resource: string | null,
 	media: string | null,
 	segments: Segment_Serialize[],
+	/**  The Glossary Marks of each of `segments`. */
+	glossary_marks: SegmentGlossaryMarks[],
 	shown_translation: Language | null,
 	/**
 	 *  What the Translation Glossary calls each Speaker in the translation shown, by its name in
@@ -668,6 +691,12 @@ export type SegmentChange = { kind: "times"; index: number; start_ms: number; en
 export type SegmentField = "text" | "translation" | 
 /**  Written to the original and the translation shown; an empty one leaves the Segment with none. */
 "speaker";
+
+/**  The Glossary Marks of one Segment's text and of its translation shown. */
+export type SegmentGlossaryMarks = {
+	text: GlossaryMark[],
+	translation: GlossaryMark[],
+};
 
 /**  The Segments from `first` through `last`, by position. */
 export type SegmentSpan = {

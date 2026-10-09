@@ -8,6 +8,7 @@ use serde::Serialize;
 use super::directory_name;
 use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
+use super::glossary_marks::{segment_glossary_marks, SegmentGlossaryMarks};
 use super::history::UndoHistory;
 use super::mode_hold::{
     is_always_written, is_written_by_edit, ModeHold, ModeProgress, RunningMode,
@@ -113,6 +114,8 @@ pub struct ProjectView {
     current_resource: Option<String>,
     media: Option<PathBuf>,
     segments: Vec<Segment>,
+    /// The Glossary Marks of each of `segments`.
+    glossary_marks: Vec<SegmentGlossaryMarks>,
     shown_translation: Option<Language>,
     /// What the Translation Glossary calls each Speaker in the translation shown, by its name in
     /// the Primary Language, so the webview names a Speaker as the saved subtitle does.
@@ -163,6 +166,11 @@ impl ProjectView {
 
     pub fn segments(&self) -> &[Segment] {
         &self.segments
+    }
+
+    #[cfg(test)]
+    pub fn glossary_marks(&self) -> &[SegmentGlossaryMarks] {
+        &self.glossary_marks
     }
 
     pub fn shown_speaker_names(&self) -> &HashMap<String, String> {
@@ -425,6 +433,12 @@ impl CurrentProject {
                 media: current
                     .and_then(|current| project.resource(&current.name).ok())
                     .and_then(|resource| resource.media.clone()),
+                glossary_marks: segment_glossary_marks(
+                    &segments,
+                    project.translation_glossary.as_ref(),
+                    project.language,
+                    shown_translation,
+                ),
                 segments,
                 shown_translation,
                 shown_speaker_names: project.speaker_names(shown_translation),

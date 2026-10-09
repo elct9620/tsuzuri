@@ -226,7 +226,7 @@ Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直
    ┌──────────── 共用核心 ───────────┐
    │ transcript、segment_change、    │
    │ replacement、cleanup、language、│
-   │ model_source                    │
+   │ model_source、term_search       │
    └───▲──────────▲───────────▲──────┘
        │          │           │
   ┌────┴───┐ ┌────┴─────┐ ┌───┴──────────┐
@@ -260,10 +260,12 @@ Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直
 | — | `cleanup` | 領域 | 簡體清理 |
 | — | `language` | 領域 | 語言代碼 |
 | — | `model_source` | 領域 | 模型來源 |
+| — | `term_search` | 領域 | 詞彙在字句中的位置 |
 | — | `project` | 領域 | 專案聚合、寫回 |
 | `project/` | `versions` | 領域 | 逐 cue 比較版本 |
 | `project/` | `history` | 領域 | 資源的復原紀錄 |
 | `project/` | `glossary` | 領域、轉接 | 詞彙表與 CSV |
+| `project/` | `glossary_marks` | 領域 | 段落的詞彙標記 |
 | `project/` | `current` | 應用 | 專案的鎖、任務的 hold 與寫入 |
 | `project/` | `opened_project` | 應用 | 開啟、編輯、重新載入 |
 | `project/` | `mode_hold` | 應用 | 任務對資源的保留 |

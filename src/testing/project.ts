@@ -27,6 +27,7 @@ export function projectOf(changes: Partial<ProjectView> = {}): ProjectView {
     current_resource: "ep01",
     media: null,
     segments: [],
+    glossary_marks: [],
     shown_translation: null,
     shown_speaker_names: {},
     has_undo: false,

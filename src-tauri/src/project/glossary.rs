@@ -173,6 +173,18 @@ impl TranslationGlossary {
             .collect()
     }
 
+    /// Each term's word in `language`, of the terms that have one.
+    pub fn words(&self, language: Language) -> Vec<&str> {
+        let Some(column) = self.languages.iter().position(|each| *each == language) else {
+            return Vec::new();
+        };
+        self.rows
+            .iter()
+            .map(|row| row.words[column].as_str())
+            .filter(|word| !word.is_empty())
+            .collect()
+    }
+
     /// Its file and terms, naming its Speakers as `language` does.
     pub fn view(&self, language: Language) -> TranslationGlossaryView {
         let column = self.languages.iter().position(|each| *each == language);

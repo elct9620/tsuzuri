@@ -20,6 +20,7 @@ pub mod replacement;
 pub mod segment_change;
 pub mod steps;
 pub mod system_opener;
+pub mod term_search;
 pub mod timing;
 pub mod toolchain;
 pub mod transcript;

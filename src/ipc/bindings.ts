@@ -366,10 +366,12 @@ export type GlossaryMark = {
 	kind: GlossaryMarkKind,
 };
 
-/**  What a Glossary Mark stands for; serialized in lowercase, as `term`. */
+/**  What a Glossary Mark stands for; serialized in lowercase, as `term` or `candidate`. */
 export type GlossaryMarkKind = 
 /**  A term of the Translation Glossary. */
-"term";
+"term" | 
+/**  A proper noun the Translation Glossary does not have. */
+"candidate";
 
 /**  One term: its word in each Language, and whether it names a Speaker. */
 export type GlossaryRow = {

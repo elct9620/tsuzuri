@@ -15,6 +15,7 @@ pub mod preference;
 pub mod processes;
 pub mod progress;
 pub mod project;
+pub mod proper_nouns;
 pub mod release_number;
 pub mod replacement;
 pub mod segment_change;
@@ -133,6 +134,7 @@ fn set_up(app: &mut App) -> Result<(), Failure> {
     app.manage(FoundUpdate::default());
     app.manage(ModelDownloads::default());
     std::thread::spawn(cleanup::load_tables);
+    std::thread::spawn(proper_nouns::load_taggers);
     translation::commands::start_resident_llama(app.handle());
     window::build_main_window(app)?;
     window::size_first_window(app)?;

@@ -46,6 +46,7 @@ candle-core = "0.11"
 candle-nn = "0.11"
 ndarray = "0.17"
 realfft = "3.5"
+jieba-rs = "0.11.0"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

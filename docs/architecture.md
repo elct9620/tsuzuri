@@ -226,7 +226,8 @@ Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直
    ┌──────────── 共用核心 ───────────┐
    │ transcript、segment_change、    │
    │ replacement、cleanup、language、│
-   │ model_source、term_search       │
+   │ model_source、term_search、     │
+   │ proper_nouns                    │
    └───▲──────────▲───────────▲──────┘
        │          │           │
   ┌────┴───┐ ┌────┴─────┐ ┌───┴──────────┐
@@ -261,6 +262,7 @@ Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直
 | — | `language` | 領域 | 語言代碼 |
 | — | `model_source` | 領域 | 模型來源 |
 | — | `term_search` | 領域 | 詞彙在字句中的位置 |
+| — | `proper_nouns` | 領域 | 依語言找出專有名詞 |
 | — | `project` | 領域 | 專案聚合、寫回 |
 | `project/` | `versions` | 領域 | 逐 cue 比較版本 |
 | `project/` | `history` | 領域 | 資源的復原紀錄 |

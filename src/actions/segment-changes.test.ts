@@ -25,17 +25,9 @@ import SegmentList from "#/components/SegmentList.svelte";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import { usePlatform } from "#/testing/platform.ts";
 import { settle } from "#/testing/settle.ts";
+import { type MenuItemSent, menuTexts } from "#/testing/system-menu.ts";
 
 /** A menu item as the webview hands it to Rust: a predefined one, or one of its own with a handler. */
-interface MenuItemSent {
-  item?: string;
-  id?: string;
-  text?: string;
-  enabled?: boolean;
-  accelerator?: string;
-  handler?: { onmessage: (id: string) => void };
-}
-
 describe("Segment Changes", () => {
   let project: ProjectView | null;
   let changes: unknown[];
@@ -140,6 +132,7 @@ describe("Segment Changes", () => {
             openedDialogs.push(["retranscription", scope]),
           openShift: () => openedDialogs.push(["shift"]),
           openSpeakers: (indexes) => openedDialogs.push(["speakers", indexes]),
+          openGlossary: (term) => openedDialogs.push(["glossary", term]),
         },
       ),
     });
@@ -1308,8 +1301,6 @@ describe("Segment Changes", () => {
 
   describe("the right-click menu", () => {
     const lastMenu = () => menus[menus.length - 1];
-    const texts = (items: MenuItemSent[]) =>
-      items.map((item) => item.text ?? item.item);
     /** The text of each visible button in `container`, as the menu it belongs to shows it. */
     const buttonTexts = (container: Element) =>
       [...container.querySelectorAll<HTMLButtonElement>("button")]
@@ -1332,7 +1323,7 @@ describe("Segment Changes", () => {
 
       const isTaken = await rightClick(row(0));
 
-      expect([isTaken, popupCount, texts(lastMenu())]).toEqual([
+      expect([isTaken, popupCount, menuTexts(lastMenu())]).toEqual([
         true,
         1,
         buttonTexts(row(0).querySelector(".change-menu")!),
@@ -1371,7 +1362,7 @@ describe("Segment Changes", () => {
       await rightClick(row(2));
 
       const bar = screen.getByText(/^已勾選 \d+ 段$/).parentElement!;
-      expect(texts(lastMenu())).toEqual(buttonTexts(bar));
+      expect(menuTexts(lastMenu())).toEqual(buttonTexts(bar));
     });
 
     // @behavior ED-168

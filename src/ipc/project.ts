@@ -275,6 +275,8 @@ export type GlossaryMark = bindings.GlossaryMark;
 
 export type GlossaryMarkKind = bindings.GlossaryMarkKind;
 
+export type SegmentGlossaryMarks = bindings.SegmentGlossaryMarks;
+
 export function translationGlossaryTable(): Promise<GlossaryTable> {
   return commands.translationGlossaryTable();
 }

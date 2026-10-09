@@ -7,6 +7,7 @@ Underlining in the editor where the Translation Glossary's terms are written, in
 - `src-tauri/src/project/glossary_marks.rs`
 - `src-tauri/src/proper_nouns.rs`
 - `src/components/glossary-marks.test.ts`
+- `src/components/GlossaryDialog.test.ts`
 
 ## `GM-001` Marking a term in the text
 
@@ -135,3 +136,68 @@ A mark counts characters of the text it was found in, and would land on other wo
 | Given | its text field typed in to read `小林先生` |
 | When | the Project is shown again |
 | Then | nothing in the field is underlined as a candidate |
+
+## `GM-014` Offering to add the candidate the caret stands in
+
+A click places the caret as it always does, so the glossary's choices wait in the right-click menu.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment reading `小林先生明天要去京都` with the candidate `小林` and the term `京都`, translated into `en` as `Kobayashi goes to Kyoto` with the term `Kyoto`, its translation shown |
+| Given | the caret inside `小林` in the text |
+| When | the text field is right-clicked |
+| Then | the menu offers `加入詞彙表：小林` |
+
+## `GM-015` Offering to edit the term the caret stands in
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment reading `小林先生明天要去京都` with the candidate `小林` and the term `京都`, translated into `en` as `Kobayashi goes to Kyoto` with the term `Kyoto`, its translation shown |
+| Given | the caret inside `京都` in the text |
+| When | the text field is right-clicked |
+| Then | the menu offers `在詞彙表中編輯：京都` |
+
+## `GM-016` Offering nothing of the glossary outside the marks
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment reading `小林先生明天要去京都` with the candidate `小林` and the term `京都`, translated into `en` as `Kobayashi goes to Kyoto` with the term `Kyoto`, its translation shown |
+| Given | the caret inside `明天` in the text |
+| When | the text field is right-clicked |
+| Then | the menu offers nothing of the Translation Glossary |
+
+## `GM-017` Writing a candidate added into the Primary Language column
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment reading `小林先生明天要去京都` with the candidate `小林` and the term `京都`, translated into `en` as `Kobayashi goes to Kyoto` with the term `Kyoto`, its translation shown |
+| Given | a Translation Glossary with the row `京都`, `Kyoto`, empty |
+| When | `加入詞彙表：小林` is chosen in the text field's right-click menu |
+| Then | the rows saved are `京都`, `Kyoto`, empty and `小林`, empty, empty |
+
+## `GM-018` Opening the glossary at a candidate once it is added
+
+The term just added has only its Primary Language word, so the dialog opens where its translations are filled in.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment reading `小林先生明天要去京都` with the candidate `小林` and the term `京都`, translated into `en` as `Kobayashi goes to Kyoto` with the term `Kyoto`, its translation shown |
+| When | `加入詞彙表：小林` is chosen in the text field's right-click menu |
+| Then | the glossary dialog opens at the `zh-TW` word `小林` |
+
+## `GM-019` Opening the glossary at a term of the translation in its Language
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment reading `小林先生明天要去京都` with the candidate `小林` and the term `京都`, translated into `en` as `Kobayashi goes to Kyoto` with the term `Kyoto`, its translation shown |
+| Given | the caret inside `Kyoto` in the translation |
+| When | `在詞彙表中編輯：Kyoto` is chosen in the translation field's right-click menu |
+| Then | the glossary dialog opens at the `en` word `Kyoto` |
+
+## `GM-020` Opening the glossary dialog at a term's row
+
+| Step | Statement |
+| --- | --- |
+| Given | a Translation Glossary with the rows `蝙蝠俠`, `Batman`, empty and `小林`, empty, empty |
+| When | its dialog opens at the `zh-TW` word `小林` |
+| Then | the `en` field of the row `小林`, its first empty one, has focus |

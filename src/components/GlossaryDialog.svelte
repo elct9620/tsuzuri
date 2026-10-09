@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import X from "@lucide/svelte/icons/x";
   import Modal from "#/components/Modal.svelte";
 
@@ -10,6 +11,7 @@
   } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
   import { failureMessage } from "#/ui/failure.ts";
+  import type { GlossaryTerm } from "#/state/context.ts";
 
   let dialog: Modal;
   /** The Language of each column. */
@@ -22,8 +24,14 @@
   /** Whether the glossary was read, so a file that could not be read is never saved over. */
   let isRead = $state(false);
 
-  /** Reads the glossary afresh and opens its dialog: every Language a column and every term a row of fields with whether it names a Speaker. */
-  export async function open(): Promise<void> {
+  let tableBody = $state<HTMLTableSectionElement>();
+
+  /**
+   * Reads the glossary afresh and opens its dialog: every Language a column and every term a row of
+   * fields with whether it names a Speaker; at the row of `term`, when given, with its first empty
+   * field in focus to fill in.
+   */
+  export async function open(term?: GlossaryTerm): Promise<void> {
     failure = null;
     try {
       show(await translationGlossaryTable());
@@ -34,6 +42,26 @@
       failure = failureMessage(error);
     }
     dialog.showModal();
+    if (term) {
+      await tick();
+      focusRow(term);
+    }
+  }
+
+  /** Brings the row holding `term` into view with its first empty field in focus, or its word's. */
+  function focusRow({ language, word }: GlossaryTerm): void {
+    const column = languages.indexOf(language);
+    const at = rows.findIndex(
+      (row) => row.words[column]?.toLowerCase() === word.toLowerCase(),
+    );
+    const inputs = [
+      ...(tableBody?.children[at]?.querySelectorAll<HTMLInputElement>(
+        'input[type="text"]',
+      ) ?? []),
+    ];
+    const input = inputs.find((each) => each.value === "") ?? inputs[column];
+    input?.scrollIntoView({ block: "nearest" });
+    input?.focus();
   }
 
   function show(table: GlossaryTable): void {
@@ -85,7 +113,7 @@
           <th></th>
         </tr>
       </thead>
-      <tbody>
+      <tbody bind:this={tableBody}>
         {#each rows as row, index (row)}
           <tr>
             {#each row.words, column}

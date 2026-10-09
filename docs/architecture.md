@@ -771,6 +771,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 開啟、重新載入、命名 | `project.ts` | 起始畫面、工具列、資源清單 |
 | 專案選項與語言 | `project-options.ts` | 專案設定的各頁 |
 | 寫入說話者後的通知 | `speaker.ts` | 說話者 modal、段落列 |
+| 加入詞彙表、詞彙的右鍵 | `glossary.ts` | 說話者、段落列 |
 | 清理簡體與通知 | `cleanup.ts` | 段落列、勾選工具列、快速鍵 |
 | Segment Changes 的選項 | `segment-changes.ts` | 段落選單、勾選工具列、右鍵 |
 

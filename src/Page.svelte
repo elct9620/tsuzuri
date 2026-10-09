@@ -73,6 +73,7 @@
       void transcriptionDialog.openForScope(scope),
     openShift: () => shiftDialog.open(),
     openSpeakers: (indexes) => speakersDialog.openFor(indexes),
+    openGlossary: (term) => void glossaryDialog.open(term),
   });
   let project = $state<ProjectView | null>(null);
   let recentProjects = $state<RecentProjectView[]>([]);

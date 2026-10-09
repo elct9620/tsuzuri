@@ -304,6 +304,7 @@
           {isTypingKept}
           {isSpeakerColumnShown}
           comparison={layout.bySegment[index]}
+          glossaryMarks={project?.glossary_marks[index]}
         />
       {/each}
       {#each layout.removalsBefore[segments.length] as sideRow (`${sideRow.side} ${sideRow.index}`)}

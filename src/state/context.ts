@@ -5,7 +5,7 @@
 
 import { getContext, setContext } from "svelte";
 
-import type { ProjectFeed } from "#/ipc/project.ts";
+import type { Language, ProjectFeed } from "#/ipc/project.ts";
 import type { TranscriptionScope } from "#/ipc/transcription.ts";
 import type { CursorField, EditingSession } from "#/editor/index.ts";
 import { AppUpdates } from "#/state/app-updates.svelte.ts";
@@ -24,6 +24,12 @@ const SEGMENT_FIELDS = Symbol("segment fields");
 const COMPARISON = Symbol("editor comparison");
 const PREFERENCES = Symbol("saved preferences");
 
+/** A word of the Translation Glossary as one Language writes it, whose row the glossary dialog opens at. */
+export interface GlossaryTerm {
+  language: Language;
+  word: string;
+}
+
 /** The dialogs beside the page's main element that a Segment's menu and the checked bar open. */
 export interface SegmentDialogs {
   /** Translates the Segments at `indexes` again. */
@@ -34,6 +40,8 @@ export interface SegmentDialogs {
   openShift(): void;
   /** Names the Speaker of the Checked Segments `indexes`. */
   openSpeakers(indexes: number[]): void;
+  /** Edits the Translation Glossary at the row of `term`. */
+  openGlossary(term: GlossaryTerm): void;
 }
 
 /**

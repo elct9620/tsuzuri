@@ -10,6 +10,7 @@ import {
 } from "#/ipc/project.ts";
 import type { Outcome } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
+import { rowsWithTerm } from "#/actions/glossary.ts";
 import {
   attempt,
   notify,
@@ -20,21 +21,14 @@ import {
 /** Marks the term `name` in the Primary Language column as a Speaker, adding the term when the glossary has none. */
 async function addSpeaker(feed: ProjectFeed, name: string): Promise<void> {
   await attempt(t("edit.speakerNotAdded"), async () => {
-    const table = await translationGlossaryTable();
     const project = feed.project;
-    const column = project ? table.languages.indexOf(project.language) : -1;
-    const term = table.rows.find((row) => row.words[column] === name);
-    const rows = term
-      ? table.rows.map((row) =>
-          row === term ? { ...row, is_speaker: true } : row,
-        )
-      : [
-          ...table.rows,
-          {
-            words: table.languages.map((_, at) => (at === column ? name : "")),
-            is_speaker: true,
-          },
-        ];
+    if (!project) return;
+    const rows = rowsWithTerm(
+      await translationGlossaryTable(),
+      project.language,
+      name,
+      (row) => ({ ...row, is_speaker: true }),
+    );
     await saveTranslationGlossary(rows);
     notify({ title: t("edit.speakerAdded", { name }), kind: "success" });
   });

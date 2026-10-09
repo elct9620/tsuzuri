@@ -10,12 +10,14 @@
   import EllipsisVertical from "@lucide/svelte/icons/ellipsis-vertical";
   import { untrack } from "svelte";
 
-  import type { Segment } from "#/ipc/project.ts";
+  import type { Segment, SegmentGlossaryMarks } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
   import {
     type ChoiceSource,
     type CursorField,
     type FieldKind,
+    fieldSelection,
+    fieldValue,
     isHeld,
     orderedTimes,
     type TimeEdge,
@@ -44,12 +46,14 @@
     Side,
   } from "#/state/editor-comparison.svelte.ts";
   import {
+    type ChangeChoice,
     change,
     checkedChoices,
     popUpChoices,
     type ResourceOffers,
     segmentChoices,
   } from "#/actions/segment-changes.ts";
+  import { glossaryChoice, markAt } from "#/actions/glossary.ts";
   import { notifyNamed } from "#/actions/speaker.ts";
   import TimeField from "#/components/TimeField.svelte";
 
@@ -72,6 +76,7 @@
     isTypingKept,
     isSpeakerColumnShown,
     comparison,
+    glossaryMarks,
   }: {
     segment: Segment;
     index: number;
@@ -92,6 +97,8 @@
     isSpeakerColumnShown: boolean;
     /** What the editor's comparison shows on this row. */
     comparison: SegmentComparison;
+    /** The Glossary Marks of the text and the translation shown, once the Project read has them. */
+    glossaryMarks?: SegmentGlossaryMarks;
   } = $props();
 
   const feed = projectFeed();
@@ -231,11 +238,32 @@
     event.preventDefault();
     const indexes = session.checkedIndexes;
     await popUpChoices(
-      indexes.length > 0
-        ? checkedChoices(session, dialogs, indexes, offers)
-        : choices,
+      [
+        ...glossaryChoices(event.target),
+        ...(indexes.length > 0
+          ? checkedChoices(session, dialogs, indexes, offers)
+          : choices),
+      ],
       event.target,
     );
+  }
+
+  /**
+   * The choice for the Glossary Mark the caret or selection of the field `target` stands within,
+   * while the field still reads the text the mark was found in.
+   */
+  function glossaryChoices(target: EventTarget | null): ChangeChoice[] {
+    const project = feed.project;
+    const kind = kinds.find((each) => fieldByKind[each] === target);
+    const markField = kind && fieldByKind[kind];
+    if (!project || !glossaryMarks || !kind || !markField) return [];
+    const isText = kind === "text";
+    const text = isText ? segment.text : (segment.translation ?? "");
+    const language = isText ? project.language : project.shown_translation;
+    const range = fieldSelection(markField);
+    if (!language || !range || fieldValue(markField) !== text) return [];
+    const mark = markAt(glossaryMarks[kind], range);
+    return mark ? [glossaryChoice(mark, language, dialogs)] : [];
   }
 
   /** Lists every Speaker named as the Speaker menu opens, with no new name typed yet. */

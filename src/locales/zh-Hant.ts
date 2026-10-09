@@ -55,6 +55,9 @@ const zhHant: typeof en = {
     speaker: "說話者",
     sourceTargetHeader: "目前的標頭是 source,target，儲存後改用語言代碼",
     save: "儲存",
+    addTerm: "加入詞彙表：{{word}}",
+    editTerm: "在詞彙表中編輯：{{word}}",
+    termNotAdded: "沒有加入詞彙表",
   },
   work: {
     into: "譯成",

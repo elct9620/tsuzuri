@@ -4,13 +4,14 @@ import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { GlossaryTable } from "#/ipc/project.ts";
 import GlossaryDialog from "#/components/GlossaryDialog.svelte";
+import type { GlossaryTerm } from "#/state/context.ts";
 import { settle } from "#/testing/settle.ts";
 
 describe("GlossaryDialog", () => {
   let table: GlossaryTable | Promise<never>;
   let savedArgs: unknown;
   let isSavingRefused: boolean;
-  let dialog: { open(): Promise<void> };
+  let dialog: { open(term?: GlossaryTerm): Promise<void> };
 
   const glossary = () => screen.getByRole("dialog", { hidden: true });
   /** Each row of terms, below the row naming the Languages. */
@@ -218,5 +219,22 @@ describe("GlossaryDialog", () => {
     await openDialog();
 
     expect([failure(), saveButton().disabled]).toEqual([null, false]);
+  });
+
+  // @behavior GM-020
+  it("opens at a term's row with its first empty field in focus", async () => {
+    table = tableOf({
+      rows: [
+        { words: ["蝙蝠俠", "Batman", ""], is_speaker: false },
+        { words: ["小林", "", ""], is_speaker: false },
+      ],
+    });
+
+    await dialog.open({ language: "zh-TW", word: "小林" });
+    await settle();
+
+    expect(document.activeElement).toBe(
+      within(termRows()[1]).getAllByRole("textbox", { hidden: true })[1],
+    );
   });
 });

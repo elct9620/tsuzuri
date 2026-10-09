@@ -55,6 +55,9 @@ const en = {
     sourceTargetHeader:
       "The header is source,target; saving writes it as Language codes",
     save: "Save",
+    addTerm: "Add to glossary: {{word}}",
+    editTerm: "Edit in glossary: {{word}}",
+    termNotAdded: "Not added to the glossary",
   },
   work: {
     into: "Into",

@@ -11,6 +11,7 @@ import { Playback } from "#/state/playback.svelte.ts";
 import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import { ViewChoices } from "#/state/view-choices.svelte.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
+import type GlossaryDialog from "#/components/GlossaryDialog.svelte";
 import type ShiftDialog from "#/components/ShiftDialog.svelte";
 import type SpeakersDialog from "#/components/SpeakersDialog.svelte";
 import SegmentList from "#/components/SegmentList.svelte";
@@ -66,6 +67,7 @@ export function segmentDialogsOf(drawn: {
   transcription?: TranscriptionDialog;
   shift?: ShiftDialog;
   speakers?: SpeakersDialog;
+  glossary?: GlossaryDialog;
 }): SegmentDialogs {
   return {
     openRetranslation: (indexes) => drawn.translation!.openForSegments(indexes),
@@ -73,6 +75,7 @@ export function segmentDialogsOf(drawn: {
       void drawn.transcription!.openForScope(scope),
     openShift: () => drawn.shift!.open(),
     openSpeakers: (indexes) => drawn.speakers!.openFor(indexes),
+    openGlossary: (term) => void drawn.glossary!.open(term),
   };
 }
 

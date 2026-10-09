@@ -253,7 +253,7 @@ The terms the user gives, such as names and titles, as a CSV with one column per
 
 ### Glossary Mark
 
-A stretch of a Segment's text, or of the translation shown, that the editor underlines: a term, where a term of the Translation Glossary is written as that field's Language writes it, ignoring case in a translation; or a candidate, where the original text holds a proper noun (a person, place, organisation or other name) the Translation Glossary does not have. Where two terms overlap the longer is marked, and a candidate overlapping a term is not. Candidates are found only in the original, in a Language Tsuzuri can tag word by word, Chinese for now. A stretch is counted in UTF-16 units, as the webview counts text.
+A stretch of a Segment's text, or of the translation shown, that the editor underlines: a term, where a term of the Translation Glossary is written as that field's Language writes it, ignoring case in a translation; or a candidate, where the original text holds a proper noun (a person, place, organisation or other name) of two characters or more that the Translation Glossary does not have. Where two terms overlap the longer is marked, and a candidate overlapping a term is not. Candidates are found only in the original, in a Language Tsuzuri can tag word by word, Chinese for now. A stretch is counted in UTF-16 units, as the webview counts text.
 
 ### Rolling Summary
 

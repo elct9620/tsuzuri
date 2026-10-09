@@ -251,6 +251,10 @@ The `name:` or `name：` before a line of dialogue, everything up to the line's 
 
 The terms the user gives, such as names and titles, as a CSV with one column per Language headed by its code, like `zh-TW,en,ja`, and one row per term, then a last `type` column where `speaker` marks a term that names a Speaker; a file without the column holds no Speakers. Translating uses the Primary Language column as the source term and the target Language column as the term each translation of a line using the source must contain. A `source,target` header stands for the Primary Language and the Project's translation Language, and is refused while the Project has none. It is the Project's `glossary.csv`, read when the Project opens and again before each translation, and written with Language codes when edited; without the file there is none. Unrelated to this file.
 
+### Glossary Mark
+
+A stretch of a Segment's text, or of the translation shown, that the editor underlines: a term, where a term of the Translation Glossary is written as that field's Language writes it, ignoring case in a translation; or a candidate, where the original text holds a proper noun (a person, place, organisation or other name) the Translation Glossary does not have. Where two terms overlap the longer is marked, and a candidate overlapping a term is not. Candidates are found only in the original, in a Language Tsuzuri can tag word by word, Chinese for now. A stretch is counted in UTF-16 units, as the webview counts text.
+
 ### Rolling Summary
 
 A summary of the translation so far, within a word limit the user sets, that the Model rewrites after each Batch and every later Batch carries. It keeps names and tone consistent beyond the few reference lines, at the cost of one more request per Batch; it is off unless turned on.

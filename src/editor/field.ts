@@ -64,37 +64,6 @@ function offsetOf(field: HTMLElement, node: Node, offset: number): number {
   return [...before.toString()].length;
 }
 
-/**
- * Where in `field`'s text the point `x`, `y` of the viewport falls, counted in UTF-16 units as the
- * Glossary Marks count, or none when the point is outside its text.
- */
-export function offsetAtPoint(
-  field: HTMLElement,
-  x: number,
-  y: number,
-): number | null {
-  const position = pointPosition(x, y);
-  if (!position || !field.contains(position.node)) return null;
-  const before = document.createRange();
-  before.selectNodeContents(field);
-  before.setEnd(position.node, position.offset);
-  return before.toString().length;
-}
-
-/** The text position at `x`, `y`, through the standard lookup or WebKit's older one. */
-function pointPosition(
-  x: number,
-  y: number,
-): { node: Node; offset: number } | null {
-  // Older WebKit has only caretRangeFromPoint, its own earlier form of the lookup
-  if (typeof document.caretPositionFromPoint === "function") {
-    const position = document.caretPositionFromPoint(x, y);
-    return position && { node: position.offsetNode, offset: position.offset };
-  }
-  const range = document.caretRangeFromPoint?.(x, y);
-  return range && { node: range.startContainer, offset: range.startOffset };
-}
-
 /** The part of the document's selection within the field, or none when the selection is elsewhere. */
 export function fieldSelection(field: HTMLElement): TextRange | null {
   const selection = document.getSelection();

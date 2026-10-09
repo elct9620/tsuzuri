@@ -130,15 +130,11 @@ describe("Glossary Marks", () => {
   });
 
   describe("the right-click menu", () => {
-    /** Right-clicks the field of `kind` with the pointer on its character at `offset`. */
+    /** Puts the caret of the field of `kind` at `offset`, then right-clicks the field. */
     async function rightClickAt(kind: string, offset: number): Promise<void> {
       const field = document.querySelector<HTMLElement>(`.field.${kind}`)!;
       const text = field.firstChild!;
-      // happy-dom lays nothing out, so the point lands where the test says
-      Object.defineProperty(document, "caretPositionFromPoint", {
-        configurable: true,
-        value: () => ({ offsetNode: text, offset }),
-      });
+      document.getSelection()!.setBaseAndExtent(text, offset, text, offset);
       field.dispatchEvent(
         new MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
       );
@@ -157,26 +153,22 @@ describe("Glossary Marks", () => {
 
     beforeEach(show);
 
-    afterEach(() => {
-      Reflect.deleteProperty(document, "caretPositionFromPoint");
-    });
-
     // @behavior GM-014
-    it("offers to add the candidate right-clicked on", async () => {
+    it("offers to add the candidate the caret stands in", async () => {
       await rightClickAt("text", 1);
 
       expect(menuTexts(lastMenu())).toContain("加入詞彙表：小林");
     });
 
     // @behavior GM-015
-    it("offers to edit the term right-clicked on", async () => {
+    it("offers to edit the term the caret stands in", async () => {
       await rightClickAt("text", 9);
 
       expect(menuTexts(lastMenu())).toContain("在詞彙表中編輯：京都");
     });
 
     // @behavior GM-016
-    it("offers nothing of the glossary right-clicked outside the marks", async () => {
+    it("offers nothing of the glossary where the caret stands in no mark", async () => {
       await rightClickAt("text", 5);
 
       expect(
@@ -194,16 +186,6 @@ describe("Glossary Marks", () => {
       expect(
         menuTexts(lastMenu()).some((text) => text?.includes("詞彙表")),
       ).toBe(false);
-    });
-
-    // @behavior GM-022
-    it("offers the word under the pointer whatever is selected", async () => {
-      const text = document.querySelector(".field.text")!.firstChild!;
-      document.getSelection()!.setBaseAndExtent(text, 0, text, 10);
-
-      await rightClickAt("text", 1);
-
-      expect(menuTexts(lastMenu())).toContain("加入詞彙表：小林");
     });
 
     // @behavior GM-017

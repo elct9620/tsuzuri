@@ -843,3 +843,13 @@ One task runs at a time, so a translation asked for while one runs leaves the ru
 | Given | a Current Resource with a subtitle, while a transcription runs |
 | When | its translation is started from the resource bar |
 | Then | no translation is asked for |
+
+## `TL-106` Accepting a glossary term written in another case
+
+A model may capitalise a name to start a sentence or for emphasis, which still uses the term.
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that translates `蝙蝠俠` as `BATMAN` and a Translation Glossary giving `Batman` |
+| When | a Transcript is translated |
+| Then | the line is not asked for again |

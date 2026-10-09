@@ -693,6 +693,37 @@ async fn retries_a_translation_that_ignores_the_translation_glossary() {
     );
 }
 
+// @behavior TL-106
+#[tokio::test]
+async fn accepts_a_glossary_term_written_in_another_case() {
+    let llama = FakeLlama::with_answer(|lines| {
+        lines
+            .into_iter()
+            .map(|(index, _)| (index, "BATMAN is here".to_string()))
+            .collect()
+    });
+    let segments = [segment(0, 1_000, "蝙蝠俠來了")];
+    let glossary_terms = batman_glossary();
+
+    translate_segments(
+        &llama.model(),
+        &TranslationJob {
+            languages: english_pair(),
+            glossary_terms: &glossary_terms,
+            ..job(&segments)
+        },
+        &[],
+        |_, _| {},
+    )
+    .await
+    .unwrap();
+
+    assert!(!llama
+        .user_messages()
+        .iter()
+        .any(|message| message.contains("must use glossary translation")));
+}
+
 /// Translates `segments` one per Batch, keeping a Rolling Summary of at most 50 words.
 async fn translate_with_summary(llama: &FakeLlama, segments: &[Segment]) {
     translate_segments(

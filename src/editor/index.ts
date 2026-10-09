@@ -18,6 +18,7 @@ export {
   isField,
   isFieldHeld,
   isTextField,
+  offsetAtPoint,
   placeSelection,
   rangeOf,
   setFieldHeld,

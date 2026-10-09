@@ -16,9 +16,9 @@
     type ChoiceSource,
     type CursorField,
     type FieldKind,
-    fieldSelection,
     fieldValue,
     isHeld,
+    offsetAtPoint,
     orderedTimes,
     type TimeEdge,
     type TranscriptView,
@@ -239,7 +239,7 @@
     const indexes = session.checkedIndexes;
     await popUpChoices(
       [
-        ...glossaryChoices(event.target),
+        ...glossaryChoices(event),
         ...(indexes.length > 0
           ? checkedChoices(session, dialogs, indexes, offers)
           : choices),
@@ -249,20 +249,25 @@
   }
 
   /**
-   * The choice for the Glossary Mark the caret or selection of the field `target` stands within,
-   * while the field still reads the text the mark was found in.
+   * The choice for the Glossary Mark under the pointer that opened a field's menu, while the field
+   * still reads the text the mark was found in. The pointer decides rather than the selection, as
+   * macOS selects a word of its own choosing on a right-click.
    */
-  function glossaryChoices(target: EventTarget | null): ChangeChoice[] {
+  function glossaryChoices(event: MouseEvent): ChangeChoice[] {
     const project = feed.project;
-    const kind = kinds.find((each) => fieldByKind[each] === target);
+    const kind = kinds.find((each) => fieldByKind[each] === event.target);
     const markField = kind && fieldByKind[kind];
     if (!project || !glossaryMarks || !kind || !markField) return [];
     const isText = kind === "text";
     const text = isText ? segment.text : (segment.translation ?? "");
     const language = isText ? project.language : project.shown_translation;
-    const range = fieldSelection(markField);
-    if (!language || !range || fieldValue(markField) !== text) return [];
-    const mark = enclosingMark(glossaryMarks[kind], range);
+    const offset = offsetAtPoint(markField, event.clientX, event.clientY);
+    if (!language || offset === null || fieldValue(markField) !== text)
+      return [];
+    const mark = enclosingMark(glossaryMarks[kind], {
+      start: offset,
+      end: offset,
+    });
     return mark ? [glossaryChoice(mark, language, dialogs)] : [];
   }
 

@@ -496,9 +496,11 @@
 #### 4.5.1 詞彙標記
 
 ```
-  I met Batman near Taipei 101
-        ━━━━━━      ┄┄┄┄┄┄
-        term        candidate
+  original     ..TERM....NAME..      zh original: both kinds
+                 ━━━━    ┄┄┄┄
+                 term    candidate
+  translation  ..TERM..              terms only
+                 ━━━━
 ```
 
 | 標記 | 外觀 | 出現在 | 元件 |

@@ -176,6 +176,18 @@ describe("Glossary Marks", () => {
       ).toBe(false);
     });
 
+    // @behavior GM-021
+    it("offers nothing of the glossary in a field typed in since the marks were found", async () => {
+      document.querySelector<HTMLElement>(".field.text")!.textContent =
+        "小林來了";
+
+      await rightClickAt("text", 1);
+
+      expect(
+        menuTexts(lastMenu()).some((text) => text?.includes("詞彙表")),
+      ).toBe(false);
+    });
+
     // @behavior GM-017
     it("writes a candidate added into the Primary Language column", async () => {
       await rightClickAt("text", 1);

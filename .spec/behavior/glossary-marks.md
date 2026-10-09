@@ -201,3 +201,14 @@ The term just added has only its Primary Language word, so the dialog opens wher
 | Given | a Translation Glossary with the rows `蝙蝠俠`, `Batman`, empty and `小林`, empty, empty |
 | When | its dialog opens at the `zh-TW` word `小林` |
 | Then | the `en` field of the row `小林`, its first empty one, has focus |
+
+## `GM-021` Offering nothing of the glossary in a field typed in since the marks were found
+
+A mark counts characters of the text it was found in, so in a text since changed it would name the wrong word.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment reading `小林先生明天要去京都` with the candidate `小林` |
+| Given | its text field typed in to read `小林來了` |
+| When | the text field is right-clicked with the caret inside `小林` |
+| Then | the menu offers nothing of the Translation Glossary |

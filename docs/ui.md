@@ -930,6 +930,7 @@
   |   Logs         |                                             |
   |   About        |                                             |
   | Preferences    |                                             |
+  |   Language     |                                             |
   |   Choosing     |                                             |
   +----------------+---------------------------------------------+
    window < 1024px: the menu folds into a select above the section
@@ -1209,6 +1210,26 @@
 | 暫停、從頭 | 各自切換 | toggle |
 
 每一列的說明直接寫在名稱下方，不必停在 ⓘ 上才看得到。偏好不分專案，與整體設定一樣存在這台電腦。預設值就是原本的行為，切換後立即存檔，時間軸也立即照新設定換段。規則見 `docs/design.md` 10.9。
+
+### 7.8 介面語言
+
+偏好的第一個分區，選擇介面的文字用哪種語言。
+
+```
+  Interface language  [Follow the system v]
+                       Follow the system
+                       English
+                       繁體中文
+  Changes the text at once; nothing else on the screen moves.
+```
+
+| 部分 | 內容 | 元件 |
+|---|---|---|
+| 選單 | 系統語言與各語言 | select |
+| 語言名稱 | 用該語言書寫 | option |
+| 說明 | 列在選單下方 | text |
+
+選了就存檔，畫面的文字立即換成新語言，仍停在這個分區。選系統語言時依 `docs/design.md` 11.3 選語言。
 
 ## 8 匯出選單
 

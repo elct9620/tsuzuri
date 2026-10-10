@@ -322,6 +322,9 @@ const zhHant: typeof en = {
     },
   },
   settings: {
+    back: "返回",
+    sections: "設定分區",
+    choosing: "換段",
     preferences: "偏好",
     unreadable: "讀不到設定",
     notSaved: "設定沒有儲存",

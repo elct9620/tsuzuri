@@ -16,7 +16,7 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src/components/ExportMenu.test.ts`
 - `src/components/ResourceList.test.ts`
 - `src/state/resource-dock.test.ts`
-- `src/components/settings/SettingsDialog.test.ts`
+- `src/components/settings/SettingsPage.test.ts`
 - `src/components/StartScreen.test.ts`
 - `src/components/Toolbar.test.ts`
 - `src/components/settings/project/Project.test.ts`
@@ -1071,7 +1071,7 @@ Without the Project Option a Mode keeps what it writes over as any first change 
 | When | a Project is opened |
 | Then | the settings show the Project's own |
 
-## `PJ-194` Keeping the settings' tab as the Project changes
+## `PJ-194` Keeping the settings' section as the Project changes
 
 | Step | Statement |
 | --- | --- |

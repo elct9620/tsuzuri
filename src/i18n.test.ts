@@ -79,11 +79,10 @@ describe("interface language", () => {
     drawPage(feed, new EditingSession(editingPort), settings);
     await tick();
 
-    const settingsDialog = [...settings.querySelectorAll("dialog")].find(
-      (dialog) =>
-        dialog.querySelector("h3")?.textContent === t("toolbar.settings"),
+    const settingsPage = settings.querySelector(
+      `[role="region"][aria-label="${t("toolbar.settings")}"]`,
     );
-    const rows = [...(settingsDialog?.querySelectorAll(".list-row") ?? [])];
+    const rows = [...(settingsPage?.querySelectorAll(".list-row") ?? [])];
     const rowsWithoutHelp = rows.filter((row) => {
       const help = within(row as HTMLElement).queryByRole("button", {
         hidden: true,

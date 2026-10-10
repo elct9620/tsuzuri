@@ -3,7 +3,7 @@ import { screen, within } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks } from "@tauri-apps/api/mocks";
 import { tick, unmount } from "svelte";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "#/assembly.ts";
 import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
@@ -16,14 +16,82 @@ import { projectOf, resourceOf } from "#/testing/project.ts";
 import { notificationDetail, notifications } from "#/testing/notifications.ts";
 import { notificationStack } from "#/state/notification.svelte.ts";
 import { settle } from "#/testing/settle.ts";
+import { shownSectionTitles } from "#/testing/settings-page.ts";
 
 describe("drawPage", () => {
   /** The pages each test draws, taken away after it so their Svelte Components stop following. */
   const drawnPages: Record<string, unknown>[] = [];
+  /** The pages put in the document, taken out after each test. */
+  const pagesInDocument: HTMLElement[] = [];
 
   /** Draws the page into `target` as `drawPage` does, to be taken away after the test. */
   function drawTestPage(...args: Parameters<typeof drawPage>): void {
     drawnPages.push(drawPage(...args));
+  }
+
+  /** Draws the page with a Project open in the editor, in the document so keys reach it. */
+  async function drawEditorPage(): Promise<HTMLElement> {
+    const page = document.createElement("div");
+    document.body.append(page);
+    pagesInDocument.push(page);
+    mockPageMount(projectOf());
+    const feed = new ProjectFeed();
+    await feed.refresh();
+    drawTestPage(feed, new EditingSession(editingPort), page);
+    await tick();
+    return page;
+  }
+
+  /** The settings, shown or hidden; hidden, they carry no accessible name to be found by. */
+  function settingsRegion(page: HTMLElement): HTMLElement {
+    return page.querySelector<HTMLElement>(
+      `[role="region"][aria-label="${t("toolbar.settings")}"]`,
+    )!;
+  }
+
+  /** The editor with its toolbar, the drawer the Resource list slides out of. */
+  function editor(page: HTMLElement): HTMLElement {
+    return page.querySelector<HTMLElement>(".drawer")!;
+  }
+
+  /** Opens the settings by the button in the part `selector` finds: the start screen or the toolbar. */
+  async function openSettings(
+    page: HTMLElement,
+    selector: string,
+  ): Promise<void> {
+    within(page.querySelector<HTMLElement>(selector)!)
+      .getAllByRole("button", { hidden: true, name: t("toolbar.settings") })[0]
+      .click();
+    await tick();
+  }
+
+  /** Opens the settings, then chooses the first section titled `section` from the section list. */
+  async function openSettingsAt(
+    page: HTMLElement,
+    selector: string,
+    section: string,
+  ): Promise<void> {
+    await openSettings(page, selector);
+    within(
+      within(settingsRegion(page)).getByRole("navigation", { hidden: true }),
+    )
+      .getAllByRole("button", { hidden: true, name: section })[0]
+      .click();
+    await tick();
+  }
+
+  async function goBack(page: HTMLElement): Promise<void> {
+    within(settingsRegion(page))
+      .getByRole("button", { hidden: true, name: t("settings.back") })
+      .click();
+    await tick();
+  }
+
+  async function pressEscape(): Promise<void> {
+    (document.activeElement ?? document.body).dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    await tick();
   }
 
   beforeEach(() => {
@@ -32,6 +100,7 @@ describe("drawPage", () => {
 
   afterEach(() => {
     drawnPages.splice(0).forEach((page) => unmount(page));
+    pagesInDocument.splice(0).forEach((page) => page.remove());
     clearMocks();
   });
 
@@ -83,45 +152,33 @@ describe("drawPage", () => {
     ).not.toBeNull();
   });
 
-  // A general setting whose Svelte Component reads for itself is found by the name of its group
-  // under the general tab, since the Project tab names some groups the same.
+  // A general setting whose Svelte Component reads for itself is found by the title of its
+  // section once that section is chosen, since the Project's sections share some titles.
   it.each([
-    ["version and updates", "settings.versionAndUpdates"],
-    ["about", "settings.about"],
-    ["transcription settings", "settings.transcription"],
-    ["translation settings", "settings.translation"],
-    ["Components", "settings.components"],
-    ["logs", "settings.logs"],
-    ["Models", "settings.models"],
-  ])("writes the %s in the general settings", async (_part, name) => {
+    [
+      "version and updates",
+      "settings.versionAndUpdates",
+      "settings.versionAndUpdates",
+    ],
+    ["about", "settings.about", "settings.about"],
+    [
+      "transcription settings",
+      "settings.transcription",
+      "settings.transcription",
+    ],
+    ["translation settings", "settings.translation", "settings.translation"],
+    ["Components", "settings.components", "settings.components"],
+    ["logs", "settings.logs", "settings.logs"],
+    ["Models", "settings.models", "settings.models"],
+    ["Choice Landings", "settings.choosing", "preferences.choosing"],
+  ])("writes the %s in the settings", async (_part, section, title) => {
     const page = document.createElement("div");
-
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    await tick();
 
-    const generalTab = within(page).getByRole("radio", {
-      hidden: true,
-      name: t("settings.general"),
-    }).nextElementSibling as HTMLElement;
-    expect(
-      within(generalTab).queryByRole("group", { hidden: true, name: t(name) }),
-    ).not.toBeNull();
-  });
+    await openSettingsAt(page, "section", t(section));
 
-  it("writes the Choice Landings in the preferences tab", async () => {
-    const page = document.createElement("div");
-
-    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
-
-    const preferencesTab = within(page).getByRole("radio", {
-      hidden: true,
-      name: t("settings.preferences"),
-    }).nextElementSibling as HTMLElement;
-    expect(
-      within(preferencesTab).queryByRole("group", {
-        hidden: true,
-        name: t("preferences.choosing"),
-      }),
-    ).not.toBeNull();
+    expect(shownSectionTitles(settingsRegion(page))).toEqual([t(title)]);
   });
 
   // A task's entry in the resource bar is found by the name it carries, and its dialog by its heading.
@@ -144,7 +201,7 @@ describe("drawPage", () => {
       drawTestPage(feed, new EditingSession(editingPort), page);
       await tick();
 
-      within(page)
+      within(editor(page))
         .getByRole("button", { hidden: true, name: t(name) })
         .click();
 
@@ -202,26 +259,19 @@ describe("drawPage", () => {
     ["transcription settings", "settings.transcription"],
     ["Models", "settings.models"],
   ])(
-    "writes the Project's %s in its tab while a Project is open",
+    "writes the Project's %s in its section while a Project is open",
     async (_part, name) => {
       const page = document.createElement("div");
       mockPageMount(projectOf());
       const feed = new ProjectFeed();
       await feed.refresh();
-
       drawTestPage(feed, new EditingSession(editingPort), page);
       await tick();
 
-      const projectTab = within(page).getByRole("radio", {
-        hidden: true,
-        name: t("settings.project"),
-      }).nextElementSibling as HTMLElement;
-      expect(
-        within(projectTab).queryByRole("group", {
-          hidden: true,
-          name: t(name),
-        }),
-      ).not.toBeNull();
+      // The Project's sections come first, ahead of the general ones of the same title.
+      await openSettingsAt(page, "header", t(name));
+
+      expect(shownSectionTitles(settingsRegion(page))).toEqual([t(name)]);
     },
   );
 
@@ -253,20 +303,124 @@ describe("drawPage", () => {
     ["toolbar", "header"],
   ])("opens the settings from the %s", async (_place, selector) => {
     const page = document.createElement("div");
-    document.body.append(page);
     drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
     await tick();
 
-    within(page.querySelector<HTMLElement>(selector)!)
-      .getAllByRole("button", { hidden: true, name: t("toolbar.settings") })[0]
-      .click();
+    await openSettings(page, selector);
 
-    const settingsHeading = within(page).getByRole("heading", {
-      hidden: true,
-      name: t("toolbar.settings"),
-    });
-    expect(settingsHeading.closest("dialog")?.open).toBe(true);
+    expect(settingsRegion(page).hidden).toBe(false);
+  });
+
+  // @behavior IF-057
+  it("shows the settings over the whole window, hiding the editor", async () => {
+    const page = await drawEditorPage();
+
+    await openSettings(page, "header");
+
+    expect([settingsRegion(page).hidden, editor(page).hidden]).toEqual([
+      false,
+      true,
+    ]);
+  });
+
+  // @behavior IF-058
+  it("goes back to the editor by the settings' back button", async () => {
+    const page = await drawEditorPage();
+    await openSettings(page, "header");
+
+    await goBack(page);
+
+    expect([settingsRegion(page).hidden, editor(page).hidden]).toEqual([
+      true,
+      false,
+    ]);
+  });
+
+  // @behavior IF-059
+  it("goes back to the editor by Esc", async () => {
+    const page = await drawEditorPage();
+    await openSettings(page, "header");
+
+    await pressEscape();
+
+    expect([settingsRegion(page).hidden, editor(page).hidden]).toEqual([
+      true,
+      false,
+    ]);
+  });
+
+  // @behavior IF-060
+  it("leaves Esc to the License Notice open over the settings", async () => {
+    const page = await drawEditorPage();
+    await openSettingsAt(page, "header", t("settings.about"));
+    within(settingsRegion(page))
+      .getByRole("button", { hidden: true, name: t("settings.fullLicenses") })
+      .click();
+    await tick();
+
+    await pressEscape();
+
+    expect(settingsRegion(page).hidden).toBe(false);
+  });
+
+  // @behavior IF-065
+  it("takes focus into the settings and back to the toolbar's button", async () => {
+    const page = await drawEditorPage();
+    const settingsButton = within(
+      page.querySelector<HTMLElement>("header")!,
+    ).getAllByRole("button", { name: t("toolbar.settings") })[0];
+    settingsButton.focus();
+    await openSettings(page, "header");
+    const focusShown = document.activeElement;
+
+    await goBack(page);
+
+    expect([focusShown, document.activeElement]).toEqual([
+      within(settingsRegion(page)).getByRole("button", {
+        hidden: true,
+        name: t("settings.back"),
+      }),
+      settingsButton,
+    ]);
+  });
+
+  // @behavior IF-061
+  it("goes back to the start screen the settings were opened from", async () => {
+    // In the document, so the start screen's name given by `aria-labelledby` is found.
+    const page = document.createElement("div");
+    document.body.append(page);
+    drawTestPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    await tick();
+    await openSettings(page, "section");
+
+    await goBack(page);
+
+    expect(
+      within(page).queryByRole("region", { hidden: true, name: "Tsuzuri" }),
+    ).not.toBeNull();
     page.remove();
+  });
+
+  // @behavior IF-062
+  it("pauses the media as the settings open", async () => {
+    const page = await drawEditorPage();
+    const pause = vi.spyOn(HTMLMediaElement.prototype, "pause");
+
+    await openSettings(page, "header");
+
+    expect(pause).toHaveBeenCalled();
+    pause.mockRestore();
+  });
+
+  // @behavior IF-063
+  it("keeps the editor it hid while the settings showed", async () => {
+    const page = await drawEditorPage();
+    const editorLeft = editor(page);
+    await openSettings(page, "header");
+
+    await goBack(page);
+
+    expect(editor(page)).toBe(editorLeft);
   });
 
   it("opens the glossary dialog from the resource list", async () => {

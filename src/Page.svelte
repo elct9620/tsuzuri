@@ -31,7 +31,7 @@
   import ResourceList from "#/components/ResourceList.svelte";
   import LicensesDialog from "#/components/settings/LicensesDialog.svelte";
   import RepositoryDialog from "#/components/settings/RepositoryDialog.svelte";
-  import SettingsDialog from "#/components/settings/SettingsDialog.svelte";
+  import SettingsPage from "#/components/settings/SettingsPage.svelte";
   import ShiftDialog from "#/components/ShiftDialog.svelte";
   import ShortcutsDialog from "#/components/ShortcutsDialog.svelte";
   import SpeakersDialog from "#/components/SpeakersDialog.svelte";
@@ -44,7 +44,6 @@
   import UpdatesDialog from "#/components/UpdatesDialog.svelte";
   import VersionsDialog from "#/components/VersionsDialog.svelte";
 
-  let settingsDialog: SettingsDialog;
   let repositoryDialog: RepositoryDialog;
   let licensesDialog: LicensesDialog;
   let transcriptionDialog: TranscriptionDialog;
@@ -58,13 +57,18 @@
   let shiftDialog: ShiftDialog;
   let editorLayout: EditorLayout;
 
-  const openSettings = () => settingsDialog.open();
   const dock = new ResourceDock();
   const playback = new Playback();
   const fold = new PreviewFold();
   const captionChoices = new CaptionChoices();
   const viewChoices = new ViewChoices();
   const placeholders = new ResourcePlaceholders();
+
+  /** Shows the settings, pausing the media, which plays on unseen while they cover the Preview. */
+  function openSettings(): void {
+    playback.media.pause();
+    isSettingsShown = true;
+  }
   const feed = projectFeed();
   const comparison = editorComparison();
   setSegmentDialogs({
@@ -76,6 +80,8 @@
     openGlossary: (term) => void glossaryDialog.open(term),
   });
   let project = $state<ProjectView | null>(null);
+  /** Whether the settings cover the window, hiding the screen they were opened from. */
+  let isSettingsShown = $state(false);
   let recentProjects = $state<RecentProjectView[]>([]);
 
   $effect(() => {
@@ -98,14 +104,14 @@
 />
 
 <main class="flex h-dvh flex-col">
-  {#if project === null}
+  {#if project === null && !isSettingsShown}
     <StartScreen {recentProjects} {openSettings} />
   {/if}
 
   <div
     class="drawer h-dvh lg:data-is-docked:drawer-open"
     data-is-docked={dock.isDocked ? "" : undefined}
-    hidden={project === null}
+    hidden={project === null || isSettingsShown}
   >
     <input
       id="resources-drawer"
@@ -157,13 +163,14 @@
       {placeholders}
     />
   </div>
+  <SettingsPage
+    {project}
+    isShown={isSettingsShown}
+    goBack={() => (isSettingsShown = false)}
+    pick={(slot) => repositoryDialog.pick(slot)}
+    openLicenses={() => licensesDialog.open()}
+  />
 </main>
-<SettingsDialog
-  {project}
-  bind:this={settingsDialog}
-  pick={(slot) => repositoryDialog.pick(slot)}
-  openLicenses={() => licensesDialog.open()}
-/>
 <RepositoryDialog bind:this={repositoryDialog} />
 <LicensesDialog bind:this={licensesDialog} />
 <TranscriptionDialog {project} bind:this={transcriptionDialog} />

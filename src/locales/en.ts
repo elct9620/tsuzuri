@@ -334,6 +334,9 @@ const en = {
     },
   },
   settings: {
+    back: "Back",
+    sections: "Settings sections",
+    choosing: "Choosing a Segment",
     preferences: "Preferences",
     unreadable: "Settings not read",
     notSaved: "Settings not saved",

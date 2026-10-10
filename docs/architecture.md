@@ -565,9 +565,9 @@ Modal 都放在 `<main>` 旁，彼此同層。開啟時進入 top layer，後開
 
 ```
 body
-  |-- main                  buttons get openers as props
-  |-- SettingsDialog        Page holds each modal (bind:this)
-  |-- RepositoryDialog ...  opens over the settings
+  |-- main                  start screen, editor, settings page
+  |-- RepositoryDialog ...  Page holds each modal (bind:this),
+  |                         drawn over the settings page
   |-- Notifications
   +-- Tooltip               popover, shown again over each modal
 ```
@@ -685,7 +685,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 
 | Svelte 元件 | 畫面區域 |
 |---|---|
-| `Page` | 起始畫面與工作區的切換、視窗標題 |
+| `Page` | 三個畫面的切換、視窗標題 |
 | `StartScreen` | 起始畫面與最近專案 |
 | `HelpButton` | 設定名稱旁的 ⓘ |
 | `VersionAndUpdates` | 版本列、更新檢查與設定 |
@@ -695,10 +695,10 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 整體的 `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
 | `Components` | 元件的狀態、指定與還原 |
 | `Logs` | log 目錄與除錯紀錄 |
-| `Preferences` | 偏好頁的換段設定 |
+| `Preferences` | 偏好的換段設定 |
 | `GlossaryDialog` | 詞彙表 modal |
-| `SettingsDialog` | 設定的分頁，專案頁只在開啟時出現 |
-| `Project` 與專案的 `Transcription`、`Models` | 專案頁的設定與模型 |
+| `SettingsPage` | 設定頁的分區清單、返回與 Esc |
+| `Project` 與專案的 `Transcription`、`Models` | 專案分區的設定與模型 |
 | `Models`、`ModelSlot` | 整體的模型來源與下載 |
 | `RepositoryDialog` | Hugging Face 的檔案清單 |
 | `Toolbar` | 名稱、開啟選單、設定與清單按鈕 |
@@ -750,11 +750,11 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `CaptionChoices` | Page 建立 | 預覽、檢視選單 |
 | `ViewChoices` | Page 建立 | 時間軸、段落列、檢視選單 |
 | `ResourcePlaceholders` | Page 建立 | 資源清單、段落列 |
-| `SavedPreferences` | 經 context | 偏好頁、時間軸 |
+| `SavedPreferences` | 經 context | 偏好分區、時間軸 |
 | `EditorComparison` | 經 context | 比較選單、段落列、版本 modal |
 | `EditingState` | 經 context | 段落列、勾選列、目前段落卡、時間軸 |
 | `TaskRun` | 經 context | 任務 modal、任務進度、段落列 |
-| `AppUpdates` | 經 context | 更新 modal、版本與更新頁 |
+| `AppUpdates` | 經 context | 更新 modal、版本與更新分區 |
 | `TranslationChoices` | 翻譯、轉錄 modal 建立 | 翻譯選項 |
 | 段落列的欄位 | SegmentRows 經 context | 文字欄位、搜尋列 |
 | 通知的清單 | `notification.svelte.ts` | 所有 Svelte 元件 |

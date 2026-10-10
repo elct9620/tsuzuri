@@ -1,6 +1,6 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, docking the Resource list beside a window wide enough to hold it, telling what just happened in Notifications and that an edit was saved in the Save Mark, opening where Tsuzuri can be sponsored, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
+Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, showing the settings as a page over the whole window, docking the Resource list beside a window wide enough to hold it, telling what just happened in Notifications and that an edit was saved in the Save Mark, opening where Tsuzuri can be sponsored, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
@@ -13,6 +13,8 @@ Writing the webview's text in the Interface Language, chosen from the system's l
 - `src/components/ShortcutsDialog.test.ts`
 - `src-tauri/src/window.rs`
 - `src/components/settings/general/About.test.ts`
+- `src/components/settings/SettingsPage.test.ts`
+- `src/page.test.ts`
 - `src/state/resource-dock.test.ts`
 
 ## `IF-001` Following the system language
@@ -135,7 +137,7 @@ Each setting says what it is for and how to use it, since its name alone rarely 
 
 | Step | Statement |
 | --- | --- |
-| Given | the settings dialog |
+| Given | the settings page |
 | When | its rows are read in either Interface Language |
 | Then | every row carries a tooltip that explains it |
 
@@ -502,3 +504,85 @@ A narrow window never docks the list, so the shortcut lays it over the editor as
 | Given | a window too narrow to dock the Resource list |
 | When | ⌘B on macOS or Ctrl+B elsewhere is pressed |
 | Then | the Resource list is laid over the editor |
+
+## `IF-057` Showing the settings over the whole window
+
+The settings hold tables and explanations that need the window's width, so they take the whole of it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project open in the editor |
+| When | the settings are opened from the toolbar |
+| Then | the settings show and the editor is hidden |
+
+## `IF-058` Going back from the settings by their button
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings opened from the editor |
+| When | the back button is clicked |
+| Then | the editor shows again and the settings are hidden |
+
+## `IF-059` Going back from the settings by Esc
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings opened from the editor |
+| When | Esc is pressed |
+| Then | the editor shows again and the settings are hidden |
+
+## `IF-060` Closing a dialog over the settings before the settings
+
+A dialog the settings opened, such as the License Notice, takes Esc first.
+
+| Step | Statement |
+| --- | --- |
+| Given | the License Notice open over the settings |
+| When | Esc is pressed |
+| Then | the settings still show |
+
+## `IF-061` Going back to the start screen
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings opened from the start screen, with no Project |
+| When | the back button is clicked |
+| Then | the start screen shows again |
+
+## `IF-062` Pausing playback as the settings open
+
+The settings hide the Preview, so media playing on would be heard with nothing to see.
+
+| Step | Statement |
+| --- | --- |
+| Given | the media playing |
+| When | the settings are opened |
+| Then | the media is paused |
+
+## `IF-063` Keeping the editor while the settings show
+
+The editor is hidden rather than drawn again, so where the user was is still there on return.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings opened from the editor |
+| When | the back button is clicked |
+| Then | the editor shown is the one left, not one drawn anew |
+
+## `IF-064` Showing one section of the settings at a time
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings showing the version and updates |
+| When | the Components are chosen from the section list |
+| Then | only the Components section shows |
+
+## `IF-065` Taking focus into the settings and back
+
+Focus goes where the settings begin and returns where it was, as it does for a modal, so the keyboard is never left on a hidden button.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings opened by the toolbar's button |
+| When | the back button is clicked |
+| Then | focus was on the back button while the settings showed and is on the toolbar's button again |

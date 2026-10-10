@@ -88,25 +88,37 @@ describe("Preferences", () => {
     await openSettings();
 
     expect(
-      within(screen.getByText("時間軸區段").closest("li")!)
+      within(screen.getByText("時間軸區段").closest("tr")!)
         .getAllByRole("checkbox")
         .map((toggle) => toggle.getAttribute("aria-label")),
     ).toEqual(["時間軸區段：暫停", "時間軸區段：從頭"]);
   });
 
-  it("explains when each Choice Source is chosen from beside its name", async () => {
+  // @behavior PF-007
+  it("explains each Choice Source beneath its name, describing both its switches", async () => {
     await openSettings();
 
-    const helpBySource = (source: string) =>
-      within(screen.getByText(source).closest("li")!)
-        .getByRole("button")
-        .getAttribute("aria-label");
+    /** The line beneath a Choice Source's name, and what each of its switches is described by. */
+    const explanationBySource = (source: string) => {
+      const row = screen.getByText(source).closest("tr")!;
+      const line = row.querySelector("th > div:last-child")!;
+      return [
+        line.textContent?.trim(),
+        within(row)
+          .getAllByRole("checkbox")
+          .map((toggle) => toggle.getAttribute("aria-describedby") === line.id),
+      ];
+    };
 
     expect([
-      screen.getAllByRole("listitem").slice(1).length,
-      helpBySource("文字或譯文"),
-      helpBySource("時間"),
-    ]).toEqual([7, "點另一段的原文或譯文欄位", "點另一段的開始或結束時間"]);
+      screen.getAllByRole("row").slice(1).length,
+      explanationBySource("文字或譯文"),
+      explanationBySource("時間"),
+    ]).toEqual([
+      7,
+      ["點另一段的原文或譯文欄位", [true, true]],
+      ["點另一段的開始或結束時間", [true, true]],
+    ]);
   });
 
   // @behavior PF-004

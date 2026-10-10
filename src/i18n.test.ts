@@ -90,14 +90,25 @@ describe("interface language", () => {
       (row) =>
         !(row instanceof HTMLTableRowElement) || row.cells[0]?.tagName === "TH",
     );
+    // i18next answers a key it has no text for with the key itself.
+    const isExplained = (text: string | null | undefined) =>
+      !!text?.trim() && !/^[a-z]+\.[\w.]+$/i.test(text.trim());
     const rowsWithoutHelp = rows.filter((row) => {
       const help = within(row as HTMLElement).queryByRole("button", {
         hidden: true,
         name: (name, button) =>
           name === (button as HTMLElement).dataset.tooltip,
       });
-      // i18next answers a key it has no text for with the key itself.
-      return !help || /^[a-z]+\.[\w.]+$/i.test(help.dataset.tooltip ?? "");
+      // A line beneath the name explains the row when its controls are described by it.
+      const describedBy = row.querySelector("[aria-describedby]");
+      const line = describedBy
+        ? row.querySelector(
+            `[id="${describedBy.getAttribute("aria-describedby")}"]`,
+          )
+        : null;
+      return (
+        !isExplained(help?.dataset.tooltip) && !isExplained(line?.textContent)
+      );
     });
     expect([rows.length > 0, rowsWithoutHelp.length]).toEqual([true, 0]);
   });

@@ -13,7 +13,6 @@
   import { t } from "#/i18n.ts";
   import { attempt } from "#/state/notification.svelte.ts";
   import { savedPreferences } from "#/state/context.ts";
-  import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** Each Choice Source, in the order the Preferences tab lists them. */
   const CHOICE_SOURCES = [
@@ -32,6 +31,7 @@
     ["is_from_start", "preferences.fromStart"],
   ] as const satisfies readonly [keyof ChoiceLanding, string][];
 
+  const id = $props.id();
   const preferences = savedPreferences();
   /** The Choice Landings the switches stand for, the defaults until the saved ones are read. */
   let landings = $state<ChoiceLandings>(
@@ -71,37 +71,47 @@
 
 <fieldset class="fieldset text-sm">
   <legend class="fieldset-legend">{t("preferences.choosing")}</legend>
-  <ul class="list rounded-box border border-base-300">
-    <li class="list-row items-center text-xs text-base-content/60">
-      <span class="list-col-grow">
-        <HelpButton tip="preferences.switchesHelp" class="text-inherit" />
-      </span>
-      {#each LANDING_SWITCHES as [half, column] (half)}
-        <span class="w-20 text-center">{t(column)}</span>
-      {/each}
-    </li>
-    {#each CHOICE_SOURCES as source (source)}
-      <li class="list-row items-center">
-        <span class="list-col-grow flex items-center gap-1 font-medium">
-          <span>{t(`preferences.sources.${source}`)}</span>
-          <HelpButton tip={`preferences.sourcesHelp.${source}`} />
-        </span>
-        {#each LANDING_SWITCHES as [half, column] (half)}
-          <span class="flex w-20 justify-center">
-            <input
-              type="checkbox"
-              class="toggle"
-              aria-label={t("preferences.switchLabel", {
-                source: t(`preferences.sources.${source}`),
-                column: t(column),
-              })}
-              bind:checked={landings[source][half]}
-              onchange={save}
-            />
-          </span>
+  <p class="label">{t("preferences.switchesHelp")}</p>
+  <div class="overflow-x-auto rounded-box border border-base-300">
+    <table class="table">
+      <thead>
+        <tr>
+          <th><span class="sr-only">{t("settings.choosing")}</span></th>
+          {#each LANDING_SWITCHES as [half, column] (half)}
+            <th class="w-24 text-center">{t(column)}</th>
+          {/each}
+        </tr>
+      </thead>
+      <tbody>
+        {#each CHOICE_SOURCES as source (source)}
+          <tr>
+            <th class="font-normal">
+              <div class="font-medium">
+                {t(`preferences.sources.${source}`)}
+              </div>
+              <div id="{id}-{source}" class="text-xs text-base-content/60">
+                {t(`preferences.sourcesHelp.${source}`)}
+              </div>
+            </th>
+            {#each LANDING_SWITCHES as [half, column] (half)}
+              <td class="text-center">
+                <input
+                  type="checkbox"
+                  class="toggle"
+                  aria-label={t("preferences.switchLabel", {
+                    source: t(`preferences.sources.${source}`),
+                    column: t(column),
+                  })}
+                  aria-describedby="{id}-{source}"
+                  bind:checked={landings[source][half]}
+                  onchange={save}
+                />
+              </td>
+            {/each}
+          </tr>
         {/each}
-      </li>
-    {/each}
-  </ul>
+      </tbody>
+    </table>
+  </div>
   <p class="label">{t("preferences.aloneHint")}</p>
 </fieldset>

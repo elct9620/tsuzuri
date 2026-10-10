@@ -133,13 +133,13 @@ The keyboard reaches the same explanation the pointer does, moving focus to each
 
 ## `IF-013` Explaining every setting
 
-Each setting says what it is for and how to use it, since its name alone rarely does.
+Each setting says what it is for and how to use it, since its name alone rarely does. A row with room for it writes the explanation beneath its name, where it is read without stopping on an ⓘ.
 
 | Step | Statement |
 | --- | --- |
 | Given | the settings page |
 | When | its rows are read in either Interface Language |
-| Then | every row carries a tooltip that explains it |
+| Then | every row carries a tooltip, or a line beneath its name, that explains it |
 
 ## `IF-054` Naming every button in the Interface Language
 

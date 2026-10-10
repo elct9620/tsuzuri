@@ -1177,7 +1177,8 @@ jieba 內建的詞典是簡體，所以先用 10.14 的 OpenCC 字典逐字轉�
   | Resources  | resource bar | edit tools | View v           |
   |            | editor: preview, timeline, Segment list      |
   +------------+----------------------------------------------+
-     Transcribe, Translate, Settings, Glossary, Keys --> modal, back to the editor
+     Transcribe, Translate, Glossary, Keys --> modal, back to the editor
+     Settings --> a page over the whole window, back to where it was
 ```
 
 | 畫面 | 內容 |
@@ -1187,10 +1188,10 @@ jieba 內建的詞典是簡體，所以先用 10.14 的 OpenCC 字典逐字轉�
 | 字幕編輯 | 預覽、段落與進度 |
 | 任務 modal | 選項與開始按鈕 |
 | 詞彙表 modal | 表格編輯詞彙表 |
-| 設定 modal | 專案與整體兩頁 |
+| 設定頁 | 專案、整體與偏好 |
 | 快速鍵 modal | 這個平台的快速鍵 |
 
-編輯是唯一的主畫面，任務與設定都是暫時蓋在上面的 modal。工具列放專案與 App 層級的動作，資源列放作用在目前資源的任務。設定的專案頁只影響這個目錄，整體頁放元件、模型與翻譯參數。各畫面的配置見 `docs/ui.md`。
+編輯是唯一的主畫面。任務是暫時蓋在上面的 modal；設定需要寬度，所以是蓋住整個視窗的另一頁。工具列放專案與 App 層級的動作，資源列放作用在目前資源的任務。設定的專案分區只影響這個目錄。各畫面的配置見 `docs/ui.md`。
 
 ### 11.3 多語系
 

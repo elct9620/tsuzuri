@@ -256,7 +256,7 @@ fn writes_an_edited_original_back_to_its_file() {
         .edit(0, SegmentField::Text, "大家好".to_string())
         .unwrap();
 
-    assert_eq!(file_text(&dir, "ep01.srt"), cue("大家好"));
+    assert_eq!(read(&dir, "ep01.srt"), cue("大家好"));
 }
 
 // @behavior PJ-029
@@ -272,7 +272,7 @@ fn writes_an_edited_translation_back_to_its_file() {
         .edit(0, SegmentField::Translation, "Hi".to_string())
         .unwrap();
 
-    assert_eq!(file_text(&dir, "ep01.en.srt"), cue("Hi"));
+    assert_eq!(read(&dir, "ep01.en.srt"), cue("Hi"));
 }
 
 // @behavior PJ-030
@@ -290,7 +290,7 @@ fn leaves_untranslated_segments_out_of_a_translation_file() {
         .edit(0, SegmentField::Translation, "Hi".to_string())
         .unwrap();
 
-    assert_eq!(file_text(&dir, "ep01.en.srt"), cue("Hi"));
+    assert_eq!(read(&dir, "ep01.en.srt"), cue("Hi"));
 }
 
 // @behavior PJ-012
@@ -343,7 +343,7 @@ fn writes_the_translation_beside_its_original() {
         .unwrap();
 
     assert_eq!(
-        file_text(&dir, "ep01.en.srt"),
+        read(&dir, "ep01.en.srt"),
         "1\n00:00:00,000 --> 00:00:01,000\nEN:你好\n\n2\n00:00:01,000 --> 00:00:02,000\nEN:世界\n"
     );
 }
@@ -368,7 +368,7 @@ fn writes_the_translation_of_a_resource_no_longer_current() {
         .unwrap();
 
     assert_eq!(
-        (file_text(&dir, "ep01.en.srt"), segments(&current)),
+        (read(&dir, "ep01.en.srt"), segments(&current)),
         (cue("Hello"), vec![segment("再見", None)])
     );
 }
@@ -550,7 +550,7 @@ fn keeps_the_directory_name_in_the_view_of_a_named_project() {
 // @behavior PJ-174
 #[test]
 fn names_a_project_after_its_directory_without_a_name_of_its_own() {
-    let dir = TempDir::new("pj-directory-name");
+    let dir = TempDir::new("pj-directory-name-unnamed");
     let current = lecture_in(&dir);
 
     current.set_options(options_named("   ")).unwrap();
@@ -812,6 +812,27 @@ fn splits_a_segment_at_a_point_in_its_text() {
             srt_of(&[(0, 1_000, "你好"), (1_000, 2_000, "世界")]),
             srt_of(&[(0, 1_000, "Hello world")])
         ]
+    );
+}
+
+// @behavior PJ-192
+#[test]
+fn keeps_the_translation_shown_through_a_split() {
+    let dir = TempDir::new("pj-split-shown");
+    let current = changing_project_in(
+        &dir,
+        &[(0, 2_000, "你好世界")],
+        &[(0, 2_000, "Hello world")],
+    );
+    current.show_translation(Some(Language::English)).unwrap();
+
+    current
+        .change_segments(SegmentChange::Split { index: 0, at: 2 })
+        .unwrap();
+
+    assert_eq!(
+        current.view().unwrap().shown_translation,
+        Some(Language::English)
     );
 }
 
@@ -1397,7 +1418,7 @@ fn keeps_an_edit_off_a_subtitle_changed_elsewhere() {
 
     let _ = current.edit(0, SegmentField::Text, "大家好".to_string());
 
-    assert_eq!(file_text(&dir, "ep01.srt"), cue("您好"));
+    assert_eq!(read(&dir, "ep01.srt"), cue("您好"));
 }
 
 // @behavior PJ-040
@@ -1477,7 +1498,7 @@ fn keeps_a_change_made_elsewhere_during_a_mode_before_writing_over_it() {
         .unwrap();
 
     assert_eq!(
-        (file_text(&dir, "ep01.en.srt"), kept_overwrites(&dir)),
+        (read(&dir, "ep01.en.srt"), kept_overwrites(&dir)),
         (
             two_cues("Hi", "World"),
             vec![two_cues("Hello", "World"), srt_changed_elsewhere]
@@ -1700,7 +1721,7 @@ fn writes_edit_after_edit() {
         .edit(1, SegmentField::Text, "地球".to_string())
         .unwrap();
 
-    assert_eq!(file_text(&dir, "ep01.srt"), two_cues("大家好", "地球"));
+    assert_eq!(read(&dir, "ep01.srt"), two_cues("大家好", "地球"));
 }
 
 // @behavior PJ-043
@@ -1721,7 +1742,7 @@ fn edits_a_translation_tsuzuri_just_wrote() {
         .edit(0, SegmentField::Translation, "Hi".to_string())
         .unwrap();
 
-    assert_eq!(file_text(&dir, "ep01.en.srt"), cue("Hi"));
+    assert_eq!(read(&dir, "ep01.en.srt"), cue("Hi"));
 }
 
 // @behavior PJ-071
@@ -2215,7 +2236,7 @@ fn keeps_a_translation_whole_when_edited_after_a_translation_ended_early() {
         .edit(0, SegmentField::Translation, "Hi".to_string())
         .unwrap();
 
-    assert_eq!(file_text(&dir, "ep01.en.srt"), two_cues("Hi", "World"));
+    assert_eq!(read(&dir, "ep01.en.srt"), two_cues("Hi", "World"));
 }
 
 #[test]
@@ -2241,7 +2262,7 @@ fn starts_an_edit_from_what_the_files_hold_rather_than_what_was_shown() {
         .edit(0, SegmentField::Translation, "Hi".to_string())
         .unwrap();
 
-    assert_eq!(file_text(&dir, "ep01.en.srt"), two_cues("Hi", "World"));
+    assert_eq!(read(&dir, "ep01.en.srt"), two_cues("Hi", "World"));
 }
 
 // @behavior PJ-125
@@ -2262,7 +2283,7 @@ fn translates_again_the_translation_chosen_whichever_is_shown_when_it_starts() {
         )
         .unwrap();
 
-    assert_eq!(file_text(&dir, "ep01.en.srt"), two_cues("Hi", "World"));
+    assert_eq!(read(&dir, "ep01.en.srt"), two_cues("Hi", "World"));
 }
 
 // @behavior PJ-126
@@ -2285,7 +2306,7 @@ fn keeps_an_edit_made_while_other_segments_are_translated_again() {
         )
         .unwrap();
 
-    assert_eq!(file_text(&dir, "ep01.en.srt"), two_cues("Hi", "Earth"));
+    assert_eq!(read(&dir, "ep01.en.srt"), two_cues("Hi", "Earth"));
 }
 
 // @behavior PJ-127
@@ -2299,7 +2320,7 @@ fn refuses_an_edit_of_a_segment_being_translated_again() {
     let result = current.edit(0, SegmentField::Translation, "Hi".to_string());
 
     assert_eq!(
-        (result, file_text(&dir, "ep01.en.srt")),
+        (result, read(&dir, "ep01.en.srt")),
         (Err(Failure::ModeRunning), two_cues("Hello", "World"))
     );
 }
@@ -2393,7 +2414,7 @@ fn keeps_an_original_whole_when_edited_after_a_transcription_ended_early() {
         .edit(0, SegmentField::Text, "您好".to_string())
         .unwrap();
 
-    assert_eq!(file_text(&dir, "ep01.srt"), two_cues("您好", "世界"));
+    assert_eq!(read(&dir, "ep01.srt"), two_cues("您好", "世界"));
 }
 
 // @behavior PJ-124
@@ -2459,6 +2480,18 @@ fn edits_the_original_while_it_is_translated() {
         .unwrap();
 
     assert_eq!(read(&dir, "ep01.srt"), cue("您好"));
+}
+
+// @behavior PJ-193
+#[test]
+fn refuses_an_edit_of_a_speaker_while_it_is_translated() {
+    let dir = directory_of("pj-hold-speaker", &[("ep01.srt", &cue("你好"))]);
+    let current = project_in(&dir);
+    let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
+
+    let result = current.edit(0, SegmentField::Speaker, "小明".to_string());
+
+    assert_eq!(result, Err(Failure::ModeRunning));
 }
 
 // @behavior PJ-093

@@ -13,6 +13,7 @@ pub mod commands;
 mod current;
 mod files;
 pub mod glossary;
+pub mod glossary_marks;
 mod history;
 mod mode_hold;
 mod opened_project;
@@ -21,7 +22,7 @@ mod requested_srt;
 pub mod versions;
 
 use backups::Backups;
-pub use current::{CurrentProject, ProjectView, Reload, ResourceView};
+pub use current::{CurrentProject, ProjectView, Reload, ResourceHold, ResourceView};
 #[cfg(test)]
 pub(crate) use files::HISTORY_DIR;
 use glossary::TranslationGlossary;

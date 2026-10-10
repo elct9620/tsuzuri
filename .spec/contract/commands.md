@@ -1,6 +1,6 @@
 # Commands
 
-The Tauri commands the webview invokes. The frontend depends on these names and arguments, so each is kept to one implementation, and the webview calls them through `src/backend/bindings.ts`, generated from these signatures. A command that fails answers a Failure, never text. A command that changes the Project emits `project-changed`, and the webview asks `current_project` for what it now holds.
+The Tauri commands the webview invokes. The frontend depends on these names and arguments, so each is kept to one implementation, and the webview calls them through `src/ipc/bindings.ts`, generated from these signatures. A command that fails answers a Failure, never text. A command that changes the Project emits `project-changed`, and the webview asks `current_project` for what it now holds.
 
 ## Includes
 
@@ -112,7 +112,7 @@ pub fn save_transcription_settings(app: AppHandle, settings: TranscriptionSettin
 
 ## `preferences`
 
-The Preferences: the Choice Landing of each Choice Source, the defaults where none was saved.
+The Preferences: the Choice Landing of each Choice Source and the Interface Language chosen, the defaults where none was saved.
 
 ```rust
 pub fn preferences(app: AppHandle) -> Result<Preferences, Failure> {}
@@ -216,7 +216,7 @@ pub fn set_project_options(app: AppHandle, current: State<'_, CurrentProject>, o
 
 ## `current_project`
 
-The Project's directory, Project Name, Languages, Project Options with which Preset Model each Project Model is, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments and what the Translation Glossary calls each of their Speakers in the translation shown, whether it has a change to undo and to redo, the Mode running on it and the Batch it is translating, or none before one is opened.
+The Project's directory, Project Name, Languages, Project Options with which Preset Model each Project Model is, Resources and Translation Glossary with the Speakers it names in the Primary Language, with the Current Resource's Segments, the Glossary Marks of each one's text and translation shown, and what the Translation Glossary calls each of their Speakers in the translation shown, whether it has a change to undo and to redo, the Mode running on it and the Batch it is translating, or none before one is opened.
 
 ```rust
 pub fn current_project(current: State<'_, CurrentProject>) -> Option<ProjectView> {}

@@ -1,6 +1,6 @@
 /**
- * The editor's only entry: the editing session and its types, the rules an edit follows, and the
- * fields and marks it draws. Nothing outside `editor/` reaches past this file.
+ * The editor's only entry: the editing session and its types, the rules an edit follows, the
+ * fields it reads and where it places the Cursor. Nothing outside `editor/` reaches past this file.
  */
 
 export {
@@ -12,7 +12,6 @@ export {
   type TextRange,
 } from "./cursor";
 export {
-  createField,
   fieldSelection,
   fieldValue,
   insertLineBreak,
@@ -25,8 +24,14 @@ export {
   setFieldValue,
 } from "./field";
 export { hasHighlights, markRanges, textRange } from "./highlight";
-export { CURSOR_HIGHLIGHT, drawCursor } from "./marks";
 export {
+  CURSOR_HIGHLIGHT,
+  type CaretPlace,
+  caretPlace,
+  cursorMark,
+} from "./marks";
+export {
+  areTimesHeld,
   isHeld,
   isRun,
   orderedTimes,

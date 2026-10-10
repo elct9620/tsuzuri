@@ -105,3 +105,13 @@ The Phases say how long the work took, so waiting for another Mode to end is cou
 | Given | a Mode running |
 | When | another Mode waits for its turn, then begins |
 | Then | its prepare Phase counts none of the time it waited |
+
+## `PR-012` Telling the webview once a Mode ends, however it ends
+
+A Mode may end before it holds anything, as when a Component is missing, and the editor reads the Project again either way.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Mode begun by its command |
+| When | the command ends before the Mode holds anything |
+| Then | the webview is told the Project may have changed |

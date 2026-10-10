@@ -6,7 +6,7 @@ Finding every Component the running platform needs before a Mode runs: the path 
 
 - `src-tauri/src/toolchain.rs`
 - `src-tauri/src/toolchain/*.rs`
-- `src/controllers/components_controller.test.ts`
+- `src/components/settings/general/Components.test.ts`
 
 ## `CP-005` Telling how to install a Component that cannot be found
 
@@ -90,6 +90,14 @@ Finding a Component runs it, which takes a moment on first use.
 | When | it shows |
 | Then | each status is a Placeholder |
 
+## `CP-027` Replacing the Placeholders once the Components are found
+
+| Step | Statement |
+| --- | --- |
+| Given | the components panel showing Placeholders |
+| When | the statuses are found |
+| Then | each status shows in place of its Placeholder |
+
 ## `CP-014` Reporting Bundled Variants that do not run
 
 | Step | Statement |
@@ -163,3 +171,13 @@ Finding a Component runs it, which takes a moment on first use.
 | Given | a Component run from an executable the user chose |
 | When | forgetting the choice fails |
 | Then | a Notification says the settings were not saved |
+
+## `CP-028` Copying how to install a Component
+
+The install command is meant for a terminal, so it is copied whole rather than retyped.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component not installed, with a command that installs it |
+| When | its install command is copied from the components panel |
+| Then | the clipboard holds the command and a Notification says it was copied |

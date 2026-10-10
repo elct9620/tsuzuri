@@ -1,10 +1,6 @@
-/** The actions a time field binds; a paste or cut never reaches the text as the browser would apply it. */
-export const TIME_FIELD_ACTIONS =
-  "keydown->time-field#typeKey:!composing paste->time-field#pasteTime:prevent cut->time-field#copySelection:prevent compositionstart->time-field#keepTime compositionend->time-field#restoreTime";
-
 export const MS_PER_SECOND = 1000;
 export const MS_PER_MINUTE = 60 * MS_PER_SECOND;
-export const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 
 /** `value` written with leading zeros to `width` digits, as every time the interface shows is. */
 function padDigits(value: number, width = 2): string {
@@ -81,4 +77,9 @@ export function formatClock(ms: number): string {
   const hours = Math.floor(ms / MS_PER_HOUR);
   const clock = `${padDigits(minutes)}:${padDigits(seconds)}`;
   return hours > 0 ? `${hours}:${clock}` : clock;
+}
+
+/** How long `ms` lasts, in seconds to the millisecond: `3.200s`. */
+export function formatLength(ms: number): string {
+  return `${(ms / MS_PER_SECOND).toFixed(3)}s`;
 }

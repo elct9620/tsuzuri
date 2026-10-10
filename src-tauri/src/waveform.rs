@@ -5,7 +5,7 @@ use serde::Serialize;
 use crate::conversion::{conversion_args, wav_chunks};
 use crate::failure::Failure;
 use crate::project::CurrentProject;
-use crate::steps::{run_step, Steps, WAVEFORM_STEP};
+use crate::steps::{run_step, Steps, WorkDir, WAVEFORM_STEP};
 
 pub mod commands;
 
@@ -32,9 +32,9 @@ pub async fn extract(
     work: &Path,
 ) -> Result<Waveform, Failure> {
     let media = project.current_media()?;
-    std::fs::create_dir_all(work)?;
+    let _work_dir = WorkDir::try_new(work)?;
     let wav = work.join("waveform.wav");
-    let conversion = run_step(
+    run_step(
         steps,
         WAVEFORM_STEP,
         ffmpeg,
@@ -42,13 +42,12 @@ pub async fn extract(
         |_| {},
         |_| {},
     )
-    .await;
-    let wav_bytes = conversion.and_then(|()| Ok(std::fs::read(&wav)?));
-    let _ = std::fs::remove_dir_all(work);
+    .await?;
+    let wav_bytes = std::fs::read(&wav)?;
     Ok(Waveform {
         media,
         peaks_per_second: PEAKS_PER_SECOND,
-        peaks: peaks(&pcm_samples(&wav_bytes?)),
+        peaks: peaks(&pcm_samples(&wav_bytes)),
     })
 }
 
@@ -80,18 +79,15 @@ fn peaks(samples: &[i16]) -> Vec<f32> {
 
 #[cfg(all(test, unix))]
 mod tests {
-    use crate::test_support::build_mock_app;
-    use tauri::test::{mock_builder, MockRuntime};
+    use crate::test_support::mode_app;
+    use tauri::test::MockRuntime;
     use tauri::Manager;
 
     use super::*;
     use crate::language::Language;
     use crate::processes::{AppPorts, Processes};
     use crate::project::Project;
-    use crate::test_support::{write_executable, TempDir};
-
-    const FAILING_FFMPEG: &str =
-        "#!/bin/sh\necho 'Invalid data found when processing input' >&2\nexit 1\n";
+    use crate::test_support::{write_executable, TempDir, FAILING_FFMPEG};
 
     /// A mono 16-bit WAV of `samples`, with a `LIST` chunk before `data` as ffmpeg writes one.
     fn wav_file(samples: &[i16]) -> Vec<u8> {
@@ -112,11 +108,7 @@ mod tests {
 
     impl Fixture {
         fn new(name: &str) -> Fixture {
-            let app = build_mock_app(
-                mock_builder()
-                    .plugin(tauri_plugin_shell::init())
-                    .manage(CurrentProject::default()),
-            );
+            let app = mode_app();
             Fixture {
                 dir: TempDir::new(name),
                 app,
@@ -229,6 +221,18 @@ mod tests {
         let ffmpeg = fixture.write_ffmpeg_with_audio(&[100; 10]);
 
         fixture.extract(&ffmpeg).await.unwrap();
+
+        assert!(!fixture.work().exists());
+    }
+
+    // @behavior PV-214
+    #[tokio::test]
+    async fn removes_the_converted_audio_after_a_failure() {
+        let fixture = Fixture::new("pv-cleanup-failed");
+        fixture.open_with(&["ep01.mp4"]);
+        let ffmpeg = fixture.write_ffmpeg(FAILING_FFMPEG);
+
+        let _ = fixture.extract(&ffmpeg).await;
 
         assert!(!fixture.work().exists());
     }

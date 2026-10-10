@@ -240,12 +240,16 @@ pub fn reap_strays(record: &Path) {
     let _ = std::fs::remove_file(record);
 }
 
-#[cfg(windows)]
-fn hidden_command(program: &str) -> std::process::Command {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+/// A command for `program` that opens no console window on Windows, as a GUI app's child would.
+pub(crate) fn hidden_command(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command {
+    #[cfg_attr(not(windows), allow(unused_mut))]
     let mut command = std::process::Command::new(program);
-    command.creation_flags(CREATE_NO_WINDOW);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
     command
 }
 

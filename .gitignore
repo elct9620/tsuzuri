@@ -28,11 +28,16 @@ dist-ssr
 # Vendored Components built by scripts/vendor.sh
 vendor/
 
-# The crates' licenses cargo-about lists, and the License Notice scripts/licenses.ts writes from them
+# The crates' licenses cargo-about lists, the packages vite build lists, and the License Notice
+# scripts/licenses.ts writes from them
 crate-licenses.json
+bundled-packages.json
 public/LICENSE.html
 
 # Model files scripts/breeze.sh builds; only the model cards are source
 models/.build/
 models/*/*.bin
 models/*/LICENSE
+
+# Working notes kept out of the repository
+tmp/

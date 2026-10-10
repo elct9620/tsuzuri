@@ -1,0 +1,160 @@
+<script lang="ts">
+  import { tick } from "svelte";
+  import X from "@lucide/svelte/icons/x";
+  import Modal from "#/components/Modal.svelte";
+
+  import {
+    saveTranslationGlossary,
+    translationGlossaryTable,
+    type GlossaryRow,
+    type GlossaryTable,
+  } from "#/ipc/project.ts";
+  import { t } from "#/i18n.ts";
+  import { failureMessage } from "#/ui/failure.ts";
+  import type { GlossaryTerm } from "#/state/context.ts";
+
+  let dialog: Modal;
+  /** The Language of each column. */
+  let languages = $state<string[]>([]);
+  let rows = $state<GlossaryRow[]>([]);
+  /** Whether the glossary was read from a `source,target` header, which saving writes as Language codes. */
+  let hasSourceTargetHeader = $state(false);
+  /** Why the glossary could not be read or saved, once it could not. */
+  let failure = $state<string | null>(null);
+  /** Whether the glossary was read, so a file that could not be read is never saved over. */
+  let isRead = $state(false);
+
+  let tableBody = $state<HTMLTableSectionElement>();
+
+  /**
+   * Reads the glossary afresh and opens its dialog: every Language a column and every term a row of
+   * fields with whether it names a Speaker; at the row of `term`, when given, with its first empty
+   * field in focus to fill in.
+   */
+  export async function open(term?: GlossaryTerm): Promise<void> {
+    failure = null;
+    try {
+      show(await translationGlossaryTable());
+      isRead = true;
+    } catch (error) {
+      show({ languages: [], rows: [], has_source_target_header: false });
+      isRead = false;
+      failure = failureMessage(error);
+    }
+    dialog.showModal();
+    if (term) {
+      await tick();
+      focusRow(term);
+    }
+  }
+
+  /** Brings the row holding `term` into view with its first empty field in focus, or its word's. */
+  function focusRow({ language, word }: GlossaryTerm): void {
+    const column = languages.indexOf(language);
+    const at = rows.findIndex(
+      (row) => row.words[column]?.toLowerCase() === word.toLowerCase(),
+    );
+    const inputs = [
+      ...(tableBody?.children[at]?.querySelectorAll<HTMLInputElement>(
+        'input[type="text"]',
+      ) ?? []),
+    ];
+    const input = inputs.find((each) => each.value === "") ?? inputs[column];
+    input?.scrollIntoView({ block: "nearest" });
+    input?.focus();
+  }
+
+  function show(table: GlossaryTable): void {
+    languages = table.languages;
+    rows = table.rows;
+    hasSourceTargetHeader = table.has_source_target_header;
+  }
+
+  function addRow(): void {
+    rows.push({ words: languages.map(() => ""), is_speaker: false });
+  }
+
+  function removeRow(index: number): void {
+    rows.splice(index, 1);
+  }
+
+  async function save(): Promise<void> {
+    try {
+      await saveTranslationGlossary($state.snapshot(rows));
+      dialog.close();
+    } catch (error) {
+      failure = failureMessage(error);
+    }
+  }
+</script>
+
+<Modal
+  bind:this={dialog}
+  title={t("translate.glossary")}
+  boxClass="max-w-5xl"
+  dismissLabel={t("work.cancel")}
+>
+  {#if hasSourceTargetHeader}
+    <div role="alert" class="alert alert-warning mb-2">
+      <span>{t("glossary.sourceTargetHeader")}</span>
+    </div>
+  {/if}
+  {#if failure !== null}
+    <div role="alert" class="alert alert-error mb-2">{failure}</div>
+  {/if}
+  <div class="max-h-[60vh] overflow-auto">
+    <table class="table table-sm table-pin-rows">
+      <thead>
+        <tr>
+          {#each languages as code (code)}
+            <th>{t(`languages.${code}`)}</th>
+          {/each}
+          <th>{t("glossary.speaker")}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody bind:this={tableBody}>
+        {#each rows as row, index (row)}
+          <tr>
+            {#each row.words, column}
+              <td>
+                <input
+                  type="text"
+                  class="input input-sm w-full min-w-32"
+                  bind:value={row.words[column]}
+                />
+              </td>
+            {/each}
+            <td>
+              <input
+                type="checkbox"
+                class="checkbox checkbox-sm"
+                aria-label={t("glossary.speaker")}
+                bind:checked={row.is_speaker}
+              />
+            </td>
+            <td>
+              <button
+                type="button"
+                class="btn btn-square btn-ghost btn-sm"
+                aria-label={t("glossary.removeRow")}
+                onclick={() => removeRow(index)}><X class="size-4" /></button
+              >
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+  <button type="button" class="btn btn-sm mt-2" onclick={addRow}
+    >{t("glossary.addRow")}</button
+  >
+  {#snippet actions()}
+    <button
+      type="button"
+      class="btn btn-primary"
+      disabled={!isRead}
+      onclick={save}>{t("glossary.save")}</button
+    >
+  {/snippet}
+</Modal>

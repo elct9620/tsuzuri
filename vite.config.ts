@@ -1,15 +1,24 @@
 /// <reference types="vitest/config" />
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
+import { svelteTesting } from "@testing-library/svelte/vite";
 import { defineConfig } from "vite";
-// @ts-expect-error type error without @types/node package
 import process from "node:process";
+import { listBundledPackages } from "./scripts/licenses.ts";
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(() => ({
-  plugins: [tailwindcss()],
+  plugins: [
+    tailwindcss(),
+    svelte(),
+    // Tests mount components in happy-dom, so they need Svelte's browser build and a page
+    // emptied after each.
+    svelteTesting(),
+    listBundledPackages(),
+  ],
   test: {
-    setupFiles: ["src/test_setup.ts"],
+    setupFiles: ["src/testing/setup.ts"],
     // Times show in the local time zone, so tests pin one to read the same on every machine.
     env: { TZ: "Asia/Taipei" },
   },

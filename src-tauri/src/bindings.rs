@@ -125,7 +125,7 @@ mod tests {
     #[test]
     fn keeps_the_webview_bindings_current() {
         let bindings = exported_bindings("current");
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/backend/bindings.ts");
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/ipc/bindings.ts");
         let committed = fs::read_to_string(&path).unwrap_or_default();
 
         if committed != bindings {
@@ -134,7 +134,7 @@ mod tests {
 
         assert!(
             committed == bindings,
-            "src/backend/bindings.ts was out of date and is now rewritten; commit it"
+            "src/ipc/bindings.ts was out of date and is now rewritten; commit it"
         );
     }
 

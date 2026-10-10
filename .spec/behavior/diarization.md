@@ -6,9 +6,9 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 
 - `src-tauri/src/diarization.rs`
 - `src-tauri/src/diarization/*.rs`
-- `src/controllers/diarize_controller.test.ts`
-- `src/controllers/transcribe_controller.test.ts`
-- `src/controllers/project_settings_controller.test.ts`
+- `src/components/settings/project/Project.test.ts`
+- `src/components/DiarizationDialog.test.ts`
+- `src/components/TranscriptionDialog.test.ts`
 
 ## `DZ-001` Giving a Segment the Speaker heard longest during it
 
@@ -122,12 +122,12 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 | When | it is diarized |
 | Then | it is refused as `no-subtitle` before any Step runs |
 
-## `DZ-015` Diarizing the Current Resource from the toolbar
+## `DZ-015` Diarizing the Current Resource from the transcribe menu
 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file and a subtitle |
-| When | its diarization is started from the toolbar |
+| When | its diarization is started from the transcribe menu |
 | Then | the Resource is diarized and a Notification says so, with how long it took |
 
 ## `DZ-016` Offering a diarization only with a media file and a subtitle
@@ -135,8 +135,8 @@ Speaker Diarization: telling from a media file who is heard when, and giving eac
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file and no subtitle |
-| When | the toolbar is shown |
-| Then | its diarize button cannot be pressed |
+| When | the transcribe menu is shown |
+| Then | its diarize item cannot be chosen |
 
 ## `DZ-017` Warning that a diarization replaces the Speakers given
 
@@ -198,3 +198,13 @@ A diarization gives Segments their Speakers and leaves their cues where they wer
 | Given | a Current Resource showing its `en` translation |
 | When | it is diarized |
 | Then | the `en` translation is still shown |
+
+## `DZ-024` Starting no diarization while another task runs
+
+One task runs at a time, so a diarization asked for while one runs leaves the running task as it is.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and a subtitle, while a transcription runs |
+| When | its diarization is started from the transcribe menu |
+| Then | no diarization is asked for |

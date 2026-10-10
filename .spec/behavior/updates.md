@@ -8,8 +8,7 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 - `src-tauri/src/steps.rs`
 - `src-tauri/src/about.rs`
 - `src-tauri/src/release_number.rs`
-- `src/controllers/updates_controller.test.ts`
-- `src/controllers/about_controller.test.ts`
+- `src/components/settings/general/VersionAndUpdates.test.ts`
 
 ## `UP-001` Finding a newer release
 
@@ -282,3 +281,21 @@ How Tsuzuri finds an App Update and installs it: looking for one at launch or wh
 | Given | the Stable channel chosen, and the launch check turned off afterwards |
 | When | a Preview build reads the update settings |
 | Then | their Update Channel stays Stable |
+
+## `UP-035` Naming the kind of build running
+
+A Preview build and a stable one update from different channels, so the version card says which one runs.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Preview build running |
+| When | the version card shows |
+| Then | it names the build a preview |
+
+## `UP-036` Opening the release notes from the version card
+
+| Step | Statement |
+| --- | --- |
+| Given | the version card shown |
+| When | the release notes are chosen |
+| Then | the page listing Tsuzuri's releases opens in the system's browser |

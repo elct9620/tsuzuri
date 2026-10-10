@@ -11,11 +11,17 @@ The directory Rust holds open as the single source of truth: which files make it
 - `src-tauri/src/transcription.rs`
 - `src-tauri/src/transcription/*.rs`
 - `src-tauri/src/translation.rs`
-- `src/backend/project.test.ts`
-- `src/controllers/project_controller.test.ts`
-- `src/controllers/project_settings_controller.test.ts`
-- `src/controllers/recent_projects_controller.test.ts`
-- `src/controllers/transcript_controller.test.ts`
+- `src-tauri/src/translation/tests.rs`
+- `src/ipc/project.test.ts`
+- `src/components/ExportMenu.test.ts`
+- `src/components/ResourceList.test.ts`
+- `src/state/resource-dock.test.ts`
+- `src/components/settings/SettingsPage.test.ts`
+- `src/components/StartScreen.test.ts`
+- `src/components/Toolbar.test.ts`
+- `src/components/settings/project/Project.test.ts`
+- `src/components/SegmentList.test.ts`
+- `src/page.test.ts`
 
 ## `PJ-001` Opening a directory as the Project
 
@@ -227,7 +233,7 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | --- | --- |
 | Given | the toolbar |
 | When | an SRT file whose second cue is malformed is chosen to open |
-| Then | a message says the file could not be read at its second cue |
+| Then | a Notification says the file could not be read at its second cue |
 
 ## `PJ-166` Refusing to open a Project while a Mode runs
 
@@ -243,7 +249,7 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | --- | --- |
 | Given | the toolbar, a Mode running |
 | When | a directory is chosen to open |
-| Then | a warning asks to wait for the task to finish or cancel it first |
+| Then | a warning Notification asks to wait for the task to finish or cancel it first |
 
 ## `PJ-168` Taking the SRT file among the launch arguments
 
@@ -282,14 +288,14 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | Step | Statement |
 | --- | --- |
 | Given | Tsuzuri launched to open `/talks/ep02.srt` |
-| When | the toolbar starts |
+| When | the webview starts |
 | Then | `/talks/ep02.srt` is opened as an SRT file in the Interface Language |
 
 ## `PJ-172` Opening an SRT file requested while Tsuzuri runs
 
 | Step | Statement |
 | --- | --- |
-| Given | the toolbar, with `lecture` open |
+| Given | the webview, with `lecture` open |
 | When | `/talks/ep02.srt` is requested |
 | Then | it is opened as an SRT file in the Interface Language |
 
@@ -554,7 +560,7 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | Step | Statement |
 | --- | --- |
 | Given | a Project whose translation export defaults to `/talks/lecture.en.srt` |
-| When | the translation is exported from the toolbar |
+| When | the translation is exported from the resource bar |
 | Then | the save dialog opens at `/talks/lecture.en.srt` |
 
 ## `PJ-033` Opening a directory from the toolbar
@@ -578,7 +584,7 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | Step | Statement |
 | --- | --- |
 | Given | a Segment's text being typed in and not yet written |
-| When | ⌘R or Ctrl+R is pressed |
+| When | ⌘R on macOS or Ctrl+R elsewhere is pressed |
 | Then | the text is written before the Project is reloaded |
 
 ## `PJ-117` Marking a Resource of subtitles alone
@@ -681,6 +687,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | its Project Options are set with the name ` 週會錄影 ` |
 | Then | the Project is named `週會錄影` and its Project Config records that name |
 
+## `PJ-190` Saying why the Project's settings were not saved
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project's settings |
+| When | a setting is changed and its Project Options cannot be written |
+| Then | a Notification says the settings were not saved and why |
+
 ## `PJ-174` Naming a Project after its directory without a name of its own
 
 | Step | Statement |
@@ -736,6 +750,14 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | Given | the Resource list laid over the editor of a narrow window |
 | When | the Resource `ep02` is chosen |
 | Then | `ep02` is selected and the Resource list is put away |
+
+## `PJ-191` Saying why a Resource was not selected
+
+| Step | Statement |
+| --- | --- |
+| Given | the Resource list of `lecture` |
+| When | the Resource `ep02` is chosen and cannot be selected |
+| Then | a Notification says the Resource was not selected and why |
 
 ## `PJ-184` Showing a Project to every view when one of them fails
 
@@ -852,6 +874,14 @@ With no gap to fill, the new Segment runs two seconds from the edge it is insert
 | Given | a Current Resource of one Segment `你好世界` from 0 to 2 seconds, translated as `Hello world` |
 | When | it is split after `你好` |
 | Then | `你好` runs from 0 to 1 second with the translation and `世界` from 1 to 2 seconds without one |
+
+## `PJ-192` Keeping the translation shown through a split
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of one Segment `你好世界`, showing its `en` translation `Hello world` |
+| When | it is split after `你好` |
+| Then | the Current Resource still shows its `en` translation |
 
 ## `PJ-148` Splitting a Segment another is said over
 
@@ -1040,6 +1070,14 @@ Without the Project Option a Mode keeps what it writes over as any first change 
 | Given | the settings showing only the general settings, with no Project |
 | When | a Project is opened |
 | Then | the settings show the Project's own |
+
+## `PJ-194` Keeping the settings' section as the Project changes
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings showing the general settings while a Project is open |
+| When | the Project changes, as an edit is written |
+| Then | the settings still show the general settings |
 
 ## `PJ-039` Keeping an edit off a subtitle changed elsewhere
 
@@ -1262,7 +1300,7 @@ A translation lines up with its original by time alone, so one written after the
 | Step | Statement |
 | --- | --- |
 | Given | an open Project |
-| When | the reload button above the Resource list is clicked, or ⌘R or Ctrl+R is pressed |
+| When | the reload button above the Resource list is clicked, or ⌘R on macOS or Ctrl+R elsewhere is pressed |
 | Then | the Project is reloaded |
 
 ## `PJ-042` Writing edit after edit
@@ -1467,6 +1505,16 @@ A name changed in the Translation Glossary since a translation was written leave
 | When | its text is edited to `您好` |
 | Then | `ep01.srt` reads `您好` |
 
+## `PJ-193` Refusing an edit of a Speaker while it is translated
+
+A Speaker is written into every translation as its label, so the translation being written holds it too.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en`, whose `ep01.srt` reads `你好` |
+| When | its Speaker is set to `小明` |
+| Then | the edit is refused because a Mode runs |
+
 ## `PJ-093` Refusing a Segment Change or an undo while a Mode runs
 
 | Step | Statement |
@@ -1546,3 +1594,11 @@ A name changed in the Translation Glossary since a translation was written leave
 | Given | a path chosen to export the Current Resource to |
 | When | writing the SRT fails |
 | Then | a Notification says it was not exported |
+
+## `PJ-195` Dating the Recent Projects in the Interface Language chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the start screen listing a Recent Project opened on 24 September 2026, dated in Traditional Chinese |
+| When | English is chosen as the Interface Language |
+| Then | its date reads `Sep 24, 2026` |

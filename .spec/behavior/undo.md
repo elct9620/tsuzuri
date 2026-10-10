@@ -7,7 +7,7 @@ Taking back the changes Tsuzuri made to the Current Resource's subtitles, and ma
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
 - `src-tauri/src/project/current/tests/undo_behavior.rs`
-- `src/controllers/undo_controller.test.ts`
+- `src/components/Undo.test.ts`
 
 ## `UD-001` Undoing an edit
 
@@ -32,6 +32,14 @@ Taking back the changes Tsuzuri made to the Current Resource's subtitles, and ma
 | Given | a Current Resource of two Segments in `ep01.srt` and `ep01.en.srt`, merged into one |
 | When | the change is undone |
 | Then | `ep01.srt` and `ep01.en.srt` each hold two cues again |
+
+## `UD-019` Keeping the translation shown through an undo
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing its `en` translation, with an edit of `ep01.srt` |
+| When | the change is undone |
+| Then | the Current Resource still shows its `en` translation |
 
 ## `UD-004` Undoing a translation as one change
 

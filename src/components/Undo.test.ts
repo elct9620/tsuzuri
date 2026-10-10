@@ -1,0 +1,117 @@
+// @vitest-environment happy-dom
+import { render } from "@testing-library/svelte";
+import { emit } from "@tauri-apps/api/event";
+import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { assemble } from "#/assembly.ts";
+import { pageContext } from "#/state/context.ts";
+import Undo from "#/components/Undo.svelte";
+import { settle } from "#/testing/settle.ts";
+
+describe("Undo", () => {
+  let commands: string[];
+
+  function press(target: Element, key: string, shiftKey = false): void {
+    target.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key,
+        ctrlKey: true,
+        shiftKey,
+        bubbles: true,
+      }),
+    );
+  }
+
+  beforeEach(async () => {
+    commands = [];
+    document.body.innerHTML = `
+      <div class="field text" contenteditable="plaintext-only" role="textbox" aria-multiline="true" tabindex="0"></div>
+      <button type="button">⋮</button>
+    `;
+    mockIPC(
+      (command) => {
+        commands.push(command);
+      },
+      { shouldMockEvents: true },
+    );
+    const assembly = assemble();
+    render(Undo, { context: pageContext(assembly.feed, assembly.session) });
+    await assembly.start();
+    await settle();
+  });
+
+  afterEach(() => {
+    clearMocks();
+    vi.restoreAllMocks();
+  });
+
+  const textField = () => document.querySelector<HTMLElement>(".field")!;
+  const button = () => document.querySelector("button")!;
+  const projectCommands = () =>
+    commands.filter((command) => command === "undo" || command === "redo");
+
+  // @behavior UD-013
+  it("leaves an undo inside a text field to the field", async () => {
+    textField().focus();
+
+    press(textField(), "z");
+    await settle();
+
+    expect(projectCommands()).toEqual([]);
+  });
+
+  // @behavior UD-014
+  it("undoes the Project's change outside a text field", async () => {
+    press(button(), "z");
+    await settle();
+
+    expect(projectCommands()).toEqual(["undo"]);
+  });
+
+  it("keeps an undo it sends to the Project from the page", () => {
+    const undo = new KeyboardEvent("keydown", {
+      key: "z",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+
+    button().dispatchEvent(undo);
+
+    expect(undo.defaultPrevented).toBe(true);
+  });
+
+  // @behavior UD-015
+  it("redoes with the redo shortcuts", async () => {
+    press(button(), "Z", true);
+    press(button(), "y");
+    await settle();
+
+    expect(projectCommands()).toEqual(["redo", "redo"]);
+  });
+
+  // @behavior UD-016
+  it("undoes from the Edit menu", async () => {
+    button().focus();
+
+    await emit("edit-command", "undo");
+    await settle();
+
+    expect(projectCommands()).toEqual(["undo"]);
+  });
+
+  // @behavior UD-017
+  it("undoes typing from the Edit menu", async () => {
+    const execCommand = vi.fn(() => true);
+    document.execCommand = execCommand;
+    textField().focus();
+
+    await emit("edit-command", "undo");
+    await settle();
+
+    expect([execCommand.mock.calls, projectCommands()]).toEqual([
+      [["undo"]],
+      [],
+    ]);
+  });
+});

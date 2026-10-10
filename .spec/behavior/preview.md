@@ -8,9 +8,10 @@ Hearing and watching the Current Resource's media above the editor while its sub
 - `src-tauri/src/waveform.rs`
 - `src-tauri/src/waveform/*.rs`
 - `src-tauri/src/window.rs`
-- `src/controllers/preview_controller.test.ts`
-- `src/controllers/timeline_controller.test.ts`
-- `src/controllers/current_segment.test.ts`
+- `src/components/Preview.test.ts`
+- `src/components/Timeline.test.ts`
+- `src/components/current-segment.test.ts`
+- `src/page.test.ts`
 
 ## `PV-001` Letting the webview read a media file of the Project
 
@@ -75,6 +76,14 @@ A quiet recording is stretched to its loudest Peak, so a Peak holds enough of a 
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource with a media file |
+| When | its Waveform is extracted |
+| Then | the converted audio is removed |
+
+## `PV-214` Leaving no audio behind after a failed Waveform
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media file ffmpeg cannot read |
 | When | its Waveform is extracted |
 | Then | the converted audio is removed |
 
@@ -577,7 +586,7 @@ A button clicked keeps the focus, yet Space pressed afterward is meant for the m
 | Step | Statement |
 | --- | --- |
 | Given | a paused Current Resource with a Current Segment, with playing alone turned off |
-| When | the playing alone button is clicked and Space is pressed |
+| When | the mute button is clicked and Space is pressed |
 | Then | the media plays and playing alone stays on |
 
 ## `PV-126` Leaving Space to a button reached by keyboard
@@ -585,7 +594,7 @@ A button clicked keeps the focus, yet Space pressed afterward is meant for the m
 | Step | Statement |
 | --- | --- |
 | Given | a paused Current Resource with a Current Segment |
-| When | the playing alone button is reached by keyboard and Space is pressed |
+| When | the mute button is reached by keyboard and Space is pressed |
 | Then | the media stays paused |
 
 ## `PV-032` Marking the Segment being played in the editor
@@ -669,6 +678,16 @@ Space plays and stops the media and the timeline still selects and retimes Segme
 | Given | a Current Resource with a media file and two Segments |
 | When | the second Segment's row is clicked |
 | Then | the card beside the video shows #2 with its times, text and translation |
+
+## `PV-213` Showing the Current Segment's length beside the video
+
+How long a Segment runs is what timing it checks against, so the card says so beside its times.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, its second Segment from 1 to 4.2 s |
+| When | the second Segment's row is clicked |
+| Then | the card beside the video shows `3.200s` |
 
 ## `PV-097` Naming the Current Segment's Speaker beside the video
 
@@ -885,6 +904,15 @@ The shortcut list names ⌘ on macOS where it names Ctrl elsewhere; the wheel it
 | --- | --- |
 | Given | a Current Resource with the Segment `今天` from 0 to 1 s, translated `Today` in the translation shown |
 | When | the translation is chosen over the video and the media plays to 0.5 s |
+| Then | `Today` is shown over the video |
+
+## `PV-211` Changing the language over the video while a Segment is shown
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s, translated `Today` in the translation shown |
+| Given | the media at 0.5 s, `今天` shown over the video |
+| When | the translation is chosen over the video |
 | Then | `Today` is shown over the video |
 
 ## `PV-044` Showing both languages over the video in the Bilingual Order
@@ -1176,6 +1204,15 @@ A cue is saved with its Speaker's name before the dialogue, so what is over the 
 | When | the Speaker over the video is turned off and the media plays to 0.5 s |
 | Then | `今天` alone is shown over the video |
 
+## `PV-212` Turning the Speaker off while a Segment is shown
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明` |
+| Given | the media at 0.5 s, `小明: 今天` shown over the video |
+| When | the Speaker over the video is turned off |
+| Then | `今天` alone is shown over the video |
+
 ## `PV-096` Keeping the Speaker over the video off for the next Resource
 
 | Step | Statement |
@@ -1328,6 +1365,22 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.5 to 1 s |
 | When | its end is dragged 20 pixels later with Alt held |
 | Then | the Project is asked to move the edge after the first to 0.7 s |
+
+## `PV-209` Stopping a shared edge at the next Segment's end
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.5 to 1 s |
+| When | its end is dragged 80 pixels later with Alt held |
+| Then | the Project is asked to move the edge after the first to 1 s |
+
+## `PV-210` Stopping a shared edge at the start after the next Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.5 to 1 s, and the one after it from 0.8 s |
+| When | its end is dragged 50 pixels later with Alt held |
+| Then | the Project is asked to move the edge after the first to 0.8 s |
 
 ## `PV-061` Holding the timeline while a Mode writes
 
@@ -1488,6 +1541,16 @@ A time set where the media is lands only as closely as the media can be put, so 
 | Given | a timeline at 100 pixels a second, clicked at 1 s |
 | When | → is pressed |
 | Then | the media is at 1.1 s |
+
+## `PV-208` Reading where the media is on the waveform
+
+The arrow keys move the media along the waveform, so a screen reader reads the waveform as a slider over the media's length.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline over 2 s of media |
+| When | the media plays to 1.5 s |
+| Then | the waveform reads 1.5 of 2 s, as `00:00:01.500` |
 
 ## `PV-162` Keeping the media within its length when it is moved with an arrow key
 
@@ -1735,3 +1798,19 @@ Space plays on from where the media is, so a Segment chosen is heard with the on
 | Given | a Current Resource whose media ffmpeg cannot read |
 | When | taking its Waveform fails |
 | Then | the Notification names the failed step in the Interface Language |
+
+## `PV-215` Rewriting the hint in the Interface Language chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | a hint in the video's place, written in Traditional Chinese |
+| When | English is chosen as the Interface Language |
+| Then | the hint reads in English |
+
+## `PV-216` Naming the Video Window in the Interface Language chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the Video Window open, named in Traditional Chinese |
+| When | English is chosen as the Interface Language |
+| Then | its title reads in English and its page declares English |

@@ -3,29 +3,39 @@
   "private": true,
   "version": "0.2.0",
   "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "pnpm run check && vite build",
+    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings --output human && tsc -p tsconfig.node.json",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@hotwired/stimulus": "^3.2.2",
     "@tauri-apps/api": "^2.12.0",
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tauri-apps/plugin-os": "^2.3.2",
     "i18next": "^26.4.2",
-    "lucide": "^1.48.0",
     "wavesurfer.js": "^8.0.0"
   },
   "devDependencies": {
+    "@lucide/svelte": "^1.48.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/cli": "^2.12.0",
+    "@testing-library/svelte": "^5.4.2",
+    "@types/node": "^24.19.1",
     "daisyui": "^5.7.43",
     "happy-dom": "^20.14.5",
     "prettier": "^3.9.9",
+    "prettier-plugin-svelte": "^4.1.1",
+    "rollup-plugin-license": "^3.7.1",
+    "svelte": "^5.57.1",
+    "svelte-check": "^4.7.6",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
     "vite": "^8.0.16",

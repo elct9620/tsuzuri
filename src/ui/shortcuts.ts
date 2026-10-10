@@ -1,4 +1,4 @@
-import { t } from "../i18n";
+import { t } from "#/i18n.ts";
 
 /** Where a shortcut works, which is how the shortcut list groups them, in this order. */
 export const SHORTCUT_GROUPS = [
@@ -12,8 +12,8 @@ export type ShortcutGroup = (typeof SHORTCUT_GROUPS)[number];
 
 /**
  * A key the interface binds, or a mouse action with the keys held, as each platform presses it. A
- * chord is written as a Stimulus key filter, `ctrl+alt+enter`; `click`, `dblclick`, `drag` and
- * `wheel` stand for the mouse.
+ * chord names its keys joined by `+`, modifiers first, `ctrl+alt+enter`; `click`, `dblclick`, `drag`
+ * and `wheel` stand for the mouse.
  */
 export interface Shortcut {
   id: string;
@@ -27,8 +27,8 @@ export interface Shortcut {
 }
 
 /**
- * Every shortcut, in the order the list shows them. A controller that matches a key itself reads it
- * from here with `isShortcut`; a key bound in a `data-action` is written there as well.
+ * Every shortcut, in the order the list shows them. A Svelte Component matches a key against one of
+ * them with `isShortcut`.
  */
 export const SHORTCUTS = [
   // Some keyboards type / with Shift, and ? takes it on most
@@ -235,6 +235,16 @@ export function chords(shortcut: Shortcut, isMac: boolean): readonly string[] {
   return isMac ? shortcut.mac : shortcut.other;
 }
 
+/** Which modifiers `event` holds. */
+function heldModifiers(event: KeyboardEvent | MouseEvent) {
+  return {
+    meta: event.metaKey,
+    ctrl: event.ctrlKey,
+    alt: event.altKey,
+    shift: event.shiftKey,
+  };
+}
+
 /** Whether `event` presses `chord` of `shortcut`: its modifiers and no others, and its key. */
 function isChord(
   event: KeyboardEvent,
@@ -243,12 +253,7 @@ function isChord(
 ): boolean {
   const keys = chord.split("+");
   const key = keys[keys.length - 1];
-  const isHeld = {
-    meta: event.metaKey,
-    ctrl: event.ctrlKey,
-    alt: event.altKey,
-    shift: event.shiftKey,
-  };
+  const isHeld = heldModifiers(event);
   const hasModifiers = MODIFIERS.every(
     (modifier) =>
       isHeld[modifier] === keys.includes(modifier) ||
@@ -262,8 +267,7 @@ function isChord(
 
 /**
  * Whether `event` presses the Shortcut `id` names on this platform. A key is read as it is typed
- * and with exactly the modifiers its chord names, as a Stimulus key filter reads one, unless the
- * Shortcut says otherwise.
+ * and with exactly the modifiers its chord names, unless the Shortcut says otherwise.
  */
 export function isShortcut(
   event: KeyboardEvent,
@@ -274,6 +278,31 @@ export function isShortcut(
   return chords(shortcut, isMac).some((chord) =>
     isChord(event, chord, shortcut),
   );
+}
+
+/**
+ * Whether `event` holds the modifiers a mouse Shortcut `id` names on this platform, others held
+ * too or not, as a drag with them held draws over the Segments.
+ */
+export function isShortcutHeld(
+  event: MouseEvent,
+  id: ShortcutId,
+  isMac: boolean,
+): boolean {
+  const isHeld = heldModifiers(event);
+  return chords(shortcutById(id), isMac).some((chord) =>
+    MODIFIERS.filter((modifier) => chord.split("+").includes(modifier)).every(
+      (modifier) => isHeld[modifier],
+    ),
+  );
+}
+
+/**
+ * Whether `event` is a key an input method is still composing with, so an Enter that picks a
+ * candidate stays the input method's. A key it is still processing reports `keyCode` 229.
+ */
+export function isComposingKey(event: KeyboardEvent): boolean {
+  return event.isComposing || event.keyCode === 229;
 }
 
 /** Each key of `chord` as the keyboard shows it: `⌘` `⌥` `F` on macOS, `Ctrl` `H` elsewhere. */

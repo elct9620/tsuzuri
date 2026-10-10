@@ -15,11 +15,13 @@ pub mod preference;
 pub mod processes;
 pub mod progress;
 pub mod project;
+pub mod proper_nouns;
 pub mod release_number;
 pub mod replacement;
 pub mod segment_change;
 pub mod steps;
 pub mod system_opener;
+pub mod term_search;
 pub mod timing;
 pub mod toolchain;
 pub mod transcript;
@@ -35,9 +37,10 @@ mod test_support;
 
 use std::path::Path;
 
-use tauri::{AppHandle, Manager, RunEvent, Runtime, WindowEvent};
+use tauri::{App, AppHandle, Manager, RunEvent, Runtime, WindowEvent};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 
+use failure::Failure;
 use logs::{DebugLogInUse, LogDirInUse, LogSettings};
 use processes::Processes;
 use project::{CurrentProject, RequestedSrt};
@@ -65,49 +68,7 @@ pub fn run() {
                 .skip_initial_state(window::VIDEO_WINDOW)
                 .build(),
         )
-        .setup(|app| {
-            let log_settings = LogSettings::load(&app.path().app_config_dir()?)?;
-            let log_dir = log_settings.log_dir(app.path().app_log_dir()?);
-            app.handle().plugin(
-                tauri_plugin_log::Builder::new()
-                    .level(log::LevelFilter::Info)
-                    .level_for("tsuzuri_lib", log_settings.tsuzuri_level())
-                    .timezone_strategy(TimezoneStrategy::UseLocal)
-                    // Room for several whole runs, so the slow one is still there when someone looks.
-                    .max_file_size(1_000_000)
-                    .rotation_strategy(RotationStrategy::KeepSome(5))
-                    .clear_targets()
-                    .targets([
-                        Target::new(TargetKind::Stdout),
-                        Target::new(TargetKind::Folder {
-                            path: log_dir.clone(),
-                            file_name: None,
-                        }),
-                    ])
-                    .build(),
-            )?;
-            log::info!("log written to {}", log_dir.display());
-            app.manage(LogDirInUse(log_dir));
-            app.manage(DebugLogInUse(log_settings.has_debug_log));
-            let record = app.path().app_data_dir()?.join("processes.json");
-            processes::reap_strays(&record);
-            app.manage(Processes::new(record));
-            app.manage(CurrentProject::default());
-            project::commands::request_srt_argument(
-                app.handle(),
-                std::env::args().skip(1),
-                &std::env::current_dir()?,
-            );
-            app.manage(ResidentLlama::default());
-            app.manage(ModeLock::default());
-            app.manage(FoundUpdate::default());
-            app.manage(ModelDownloads::default());
-            std::thread::spawn(cleanup::load_tables);
-            translation::commands::start_resident_llama(app.handle());
-            window::build_main_window(app)?;
-            window::size_first_window(app)?;
-            Ok(())
-        })
+        .setup(|app| set_up(app).map_err(|failure| format!("{failure:?}").into()))
         // A file may have been added or corrected in another program while the window was away
         .on_window_event(|window, event| {
             if let WindowEvent::Focused(true) = event {
@@ -131,6 +92,53 @@ pub fn run() {
         ),
         _ => {}
     });
+}
+
+/// Sets the app up before its window opens: logging, the state commands share, and the main
+/// window. Its failures are Failures like any command's, put into words once at Tauri's boundary.
+fn set_up(app: &mut App) -> Result<(), Failure> {
+    let log_settings = LogSettings::load(&json_settings::settings_dir(app.handle())?)?;
+    let log_dir = log_settings.log_dir(app.path().app_log_dir()?);
+    app.handle().plugin(
+        tauri_plugin_log::Builder::new()
+            .level(log::LevelFilter::Info)
+            .level_for("tsuzuri_lib", log_settings.tsuzuri_level())
+            .timezone_strategy(TimezoneStrategy::UseLocal)
+            // Room for several whole runs, so the slow one is still there when someone looks.
+            .max_file_size(1_000_000)
+            .rotation_strategy(RotationStrategy::KeepSome(5))
+            .clear_targets()
+            .targets([
+                Target::new(TargetKind::Stdout),
+                Target::new(TargetKind::Folder {
+                    path: log_dir.clone(),
+                    file_name: None,
+                }),
+            ])
+            .build(),
+    )?;
+    log::info!("log written to {}", log_dir.display());
+    app.manage(LogDirInUse(log_dir));
+    app.manage(DebugLogInUse(log_settings.has_debug_log));
+    let record = app.path().app_data_dir()?.join("processes.json");
+    processes::reap_strays(&record);
+    app.manage(Processes::new(record));
+    app.manage(CurrentProject::default());
+    project::commands::request_srt_argument(
+        app.handle(),
+        std::env::args().skip(1),
+        &std::env::current_dir()?,
+    );
+    app.manage(ResidentLlama::default());
+    app.manage(ModeLock::default());
+    app.manage(FoundUpdate::default());
+    app.manage(ModelDownloads::default());
+    std::thread::spawn(cleanup::load_tables);
+    std::thread::spawn(proper_nouns::load_taggers);
+    translation::commands::start_resident_llama(app.handle());
+    window::build_main_window(app)?;
+    window::size_first_window(app)?;
+    Ok(())
 }
 
 /// `builder` keeping the Requested SRT from before setup: macOS asks to open a file with

@@ -1,6 +1,16 @@
-import type en from "./en";
+import type en from "#/locales/en.ts";
 
-const zhHant: typeof en = {
+/**
+ * Every text English has, less the singular forms: Chinese counts without them, so i18next reads
+ * the text without a plural ending for every count.
+ */
+type TranslationWithoutSingulars<T> = {
+  [K in keyof T as K extends `${string}_one` ? never : K]: T[K] extends string
+    ? T[K]
+    : TranslationWithoutSingulars<T[K]>;
+};
+
+const zhHant: TranslationWithoutSingulars<typeof en> = {
   toolbar: {
     projectName: "專案名稱",
     rename: "點一下改名",
@@ -8,8 +18,9 @@ const zhHant: typeof en = {
     openDirectory: "開啟目錄",
     openSrt: "開啟 SRT",
     transcribe: "轉錄",
+    transcribeSpeech: "轉錄語音",
     translate: "翻譯",
-    diarize: "辨識",
+    diarize: "辨識說話者",
     settings: "設定",
     export: "匯出",
     original: "另存原文",
@@ -21,6 +32,8 @@ const zhHant: typeof en = {
     textSpeakers: "純文字含說話者",
     textBlankLines: "段落之間加入空行",
     notExported: "沒有匯出",
+    notOpened: "沒有開啟",
+    notRenamed: "沒有改名",
   },
   start: {
     title: "開啟放著影片或字幕的目錄開始工作",
@@ -43,6 +56,8 @@ const zhHant: typeof en = {
     noSubtitle: "還沒有字幕，可以轉錄產生",
     glossary: "詞彙表 {{count}} 筆",
     createGlossary: "建立詞彙表",
+    notSelected: "沒有切換資源",
+    notReloaded: "沒有重新載入",
   },
   glossary: {
     addRow: "新增一列",
@@ -50,6 +65,9 @@ const zhHant: typeof en = {
     speaker: "說話者",
     sourceTargetHeader: "目前的標頭是 source,target，儲存後改用語言代碼",
     save: "儲存",
+    addTerm: "加入詞彙表：{{word}}",
+    editTerm: "在詞彙表中編輯：{{word}}",
+    termNotAdded: "沒有加入詞彙表",
   },
   work: {
     into: "譯成",
@@ -111,6 +129,7 @@ const zhHant: typeof en = {
   },
   edit: {
     empty: "尚無內容",
+    segments: "段落",
     translation: "譯文",
     noTranslation: "無",
     untranslated: "尚未翻譯",
@@ -130,6 +149,7 @@ const zhHant: typeof en = {
     speakersUnnamed: "沒有說話者的段落",
     speakersNamedBefore: "說話者是",
     speakersNamedAfter: "的段落",
+    speakersRenamed: "要改名的說話者",
     speakersTo: "設為",
     speakersNone: "留空則清除",
     apply: "套用",
@@ -189,12 +209,19 @@ const zhHant: typeof en = {
     nothing: "沒有需要清理的簡體字",
     failed: "沒有清理",
   },
+  view: {
+    label: "檢視",
+    playback: "播放",
+    captions: "疊字",
+    timeline: "時間軸",
+    segments: "段落清單",
+    speakerColumn: "一律顯示說話者欄",
+  },
   preview: {
     captionLanguage: "疊字語言",
     captionOriginal: "原文",
     captionTranslation: "譯文",
     captionBilingual: "雙語",
-    captionOptions: "疊字設定",
     captionBackdrop: "疊字底色",
     captionBackdropNone: "無",
     captionBackdropTranslucent: "半透明",
@@ -221,6 +248,7 @@ const zhHant: typeof en = {
       "空白鍵從目前段落的開頭播放，播完就停，方便重聽一句。關掉後空白鍵從目前位置繼續播放。",
     zoomIn: "放大",
     zoomOut: "縮小",
+    waveform: "波形",
     noWaveform: "無法畫出波形",
     play: "播放或停止",
     unplayable: "這個格式無法在這裡預覽，仍可看波形。",
@@ -278,6 +306,10 @@ const zhHant: typeof en = {
     notRestored: "沒有還原",
   },
   preferences: {
+    language: "介面語言",
+    systemLanguage: "系統語言",
+    languageHelp:
+      "Tsuzuri 的文字使用哪種語言，選了立即換上；系統語言依作業系統的語言設定。",
     choosing: "播放中換到另一段時",
     pausing: "暫停",
     fromStart: "從頭",
@@ -304,6 +336,10 @@ const zhHant: typeof en = {
     },
   },
   settings: {
+    back: "返回",
+    sections: "設定分類",
+    language: "語言",
+    choosing: "換段",
     preferences: "偏好",
     unreadable: "讀不到設定",
     notSaved: "設定沒有儲存",
@@ -407,7 +443,7 @@ const zhHant: typeof en = {
     licenses: "授權",
     licensesMissing: "開發版沒有附上完整授權，每個釋出的版本都會附上。",
     sourceCode: "原始程式碼",
-    appBuild: "{{releaseName}}（{{commit}}）",
+    releaseNotes: "版本說明",
     copyAppBuild: "複製",
     appBuildCopied: "已複製版本資訊",
     appBuildNotCopied: "沒有複製版本資訊",
@@ -415,9 +451,7 @@ const zhHant: typeof en = {
     sponsor: "贊助",
     sponsorshipNotOpened: "沒有開啟贊助頁面",
     versionAndUpdates: "版本與更新",
-    version: "版本",
-    versionHelp: "回報問題時複製這行，對得上是哪個版本。",
-    updates: "更新",
+    versionHelp: "回報問題時複製版本，對得上是哪一版。",
     updatesHelp:
       "到 GitHub 檢查有沒有新版本；按下更新會下載、驗證簽章、安裝，並重新啟動 Tsuzuri。",
     checkForUpdates: "檢查更新",
@@ -456,11 +490,20 @@ const zhHant: typeof en = {
     detection: "偵測到",
     bundled: "內建",
     bundledVariant: "內建（{{variant}}）",
+    component: "元件",
+    status: "狀態",
+    source: "來源",
+    path: "路徑",
+    actions: "動作",
     ready: "已就緒",
-    found: "{{origin}}：{{path}}",
-    doesNotRun: "未就緒（內建的版本無法執行，可能缺少驅動程式或系統函式庫）",
-    installWith: "未就緒（可用 {{command}} 安裝）",
-    install: "未就緒（請用套件管理工具安裝）",
+    notRunning: "無法執行",
+    missing: "未安裝",
+    doesNotRun: "內建的版本無法執行，可能缺少驅動程式或系統函式庫",
+    installWith: "可用這個指令安裝",
+    install: "請用套件管理工具安裝",
+    copyInstall: "複製",
+    installCopied: "已複製安裝指令",
+    installNotCopied: "沒有複製安裝指令",
   },
   models: {
     notChosen: "尚未指定",

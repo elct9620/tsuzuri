@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -22,18 +23,41 @@ pub async fn begin_mode<'a, R: Runtime>(
     mode_lock: &'a ModeLock,
     processes: &'a Processes,
     mode: &'static str,
-) -> (ModeRun<'a, AppPorts<'a, R>>, Phases) {
+) -> (CommandRun<'a, R>, Phases) {
     let run = mode_lock.begin(AppPorts::new(app, processes)).await;
     let phases = Phases::start(mode, Phase::Preparation);
     app.report(Phase::Preparation, None);
-    (run, phases)
+    (
+        CommandRun {
+            run: Some(run),
+            app,
+        },
+        phases,
+    )
 }
 
-/// Ends `run`, so its hold, what it showed and its intermediate files end with it however it
-/// ended, and tells the webview the Project may have changed.
-pub fn end_mode<R: Runtime>(app: &AppHandle<R>, run: ModeRun<'_, AppPorts<'_, R>>) {
-    drop(run);
-    app.announce_project();
+/// A Mode Run a command began. Once dropped, however the command ended, its hold, what it showed
+/// and its intermediate files end with it, and the webview is told the Project may have changed.
+pub struct CommandRun<'a, R: Runtime> {
+    run: Option<ModeRun<'a, AppPorts<'a, R>>>,
+    app: &'a AppHandle<R>,
+}
+
+impl<'a, R: Runtime> Deref for CommandRun<'a, R> {
+    type Target = ModeRun<'a, AppPorts<'a, R>>;
+
+    fn deref(&self) -> &Self::Target {
+        self.run
+            .as_ref()
+            .expect("a CommandRun holds its run until dropped")
+    }
+}
+
+impl<R: Runtime> Drop for CommandRun<'_, R> {
+    fn drop(&mut self) {
+        drop(self.run.take());
+        self.app.announce_project();
+    }
 }
 
 /// The directory a run of `kind` keeps its intermediate files in, under the app's cache and
@@ -55,8 +79,35 @@ mod tests {
 
     use tauri::test::mock_builder;
 
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+
+    use tauri_specta::Event;
+
     use super::*;
+    use crate::progress::ProjectChanged;
     use crate::test_support::{build_mock_app, TempDir};
+
+    // @behavior PR-012
+    #[tokio::test]
+    async fn tells_the_webview_once_a_mode_ends_before_it_holds_anything() {
+        let dir = TempDir::new("pr-end-announced");
+        let app = build_mock_app(mock_builder());
+        let processes = Processes::new(dir.path().join("processes.json"));
+        let mode_lock = ModeLock::default();
+        let announcements = Arc::new(AtomicUsize::new(0));
+        ProjectChanged::listen_any(app.handle(), {
+            let announcements = Arc::clone(&announcements);
+            move |_| {
+                announcements.fetch_add(1, Ordering::SeqCst);
+            }
+        });
+        let (run, _phases) = begin_mode(app.handle(), &mode_lock, &processes, "transcribe").await;
+
+        drop(run);
+
+        assert_eq!(announcements.load(Ordering::SeqCst), 1);
+    }
 
     // @behavior PR-011
     #[tokio::test]

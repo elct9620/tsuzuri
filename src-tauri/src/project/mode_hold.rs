@@ -129,18 +129,15 @@ pub(super) fn is_always_written(_: Option<Language>, _: Language, _: Option<&[us
     true
 }
 
-/// Whether an edit of `field` writes what a translation Mode holds, given the translation shown,
-/// the Language the Mode writes and the Segments it holds, if only some: a text never, a Speaker
-/// always, and a translation when it is the one written, of a held Segment at `index`, or of any
-/// held Segment when `index` is none.
+/// Whether an edit of `field` writes what a translation Mode holds, asked with the translation
+/// shown, the Language the Mode writes and the Segments it holds, if only some: a text never, a
+/// Speaker always, and a translation when it is the one written, of a held Segment at `index`, or
+/// of any held Segment when `index` is none.
 pub(super) fn is_written_by_edit(
     field: SegmentField,
     index: Option<usize>,
-    translation_shown: Option<Language>,
-    mode_language: Language,
-    held_indexes: Option<&[usize]>,
-) -> bool {
-    match field {
+) -> impl Fn(Option<Language>, Language, Option<&[usize]>) -> bool {
+    move |translation_shown, mode_language, held_indexes| match field {
         SegmentField::Text => false,
         SegmentField::Translation => {
             translation_shown == Some(mode_language)

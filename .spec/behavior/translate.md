@@ -7,10 +7,12 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 - `src-tauri/src/translation.rs`
 - `src-tauri/src/translation/*.rs`
 - `src-tauri/src/project/glossary.rs`
-- `src/controllers/translate_controller.test.ts`
-- `src/controllers/transcribe_controller.test.ts`
-- `src/controllers/translation_settings_controller.test.ts`
-- `src/controllers/transcript_controller.test.ts`
+- `src/components/ResourceBar.test.ts`
+- `src/components/TranslationDialog.test.ts`
+- `src/components/TaskProgress.test.ts`
+- `src/components/TranscriptionDialog.test.ts`
+- `src/components/settings/general/Translation.test.ts`
+- `src/components/SegmentList.test.ts`
 
 ## `TL-001` Translating each Segment
 
@@ -89,7 +91,7 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource of a media file alone |
-| When | the toolbar shows it |
+| When | the resource bar shows it |
 | Then | translating cannot be started |
 
 ## `TL-013` Naming the target Language to the Model
@@ -532,6 +534,14 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | When | a translation asks for it |
 | Then | the translation fails without waiting for the load timeout |
 
+## `TL-104` Failing when llama-server exits before it is ready
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation on a llama-server started for it alone, which exits before it answers |
+| When | the translation waits for it to be ready |
+| Then | the translation fails as llama-server exited, without waiting for the ready timeout |
+
 ## `TL-070` Freeing the Model once the kept seconds pass
 
 | Step | Statement |
@@ -659,6 +669,16 @@ A cancelled translation writes nothing, so what it showed goes with it and the e
 | Given | a translation of three Segments with none translated, whose first Batch is shown |
 | When | it is cancelled before the next Batch is answered |
 | Then | it fails as `mode-cancelled`, no Segment shows a translation, and no translation file is written |
+
+## `TL-105` Freeing the Model when a translation on the Resident llama-server is cancelled
+
+A cancelled translation leaves the Resident llama-server running, so its Model is freed as after any other translation.
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation on the Resident llama-server, keeping the Model for no time |
+| When | it is cancelled while the Model answers |
+| Then | it fails as `mode-cancelled` and the Model is unloaded |
 
 ## `TL-084` Translating chosen Segments again with their neighbours
 
@@ -813,3 +833,23 @@ The translation settings hold whether the cleanup starts checked; each translati
 | Given | the translate dialog into `zh-TW` with the cleanup unchecked |
 | When | translating is started |
 | Then | the Project is translated without the cleanup |
+
+## `TL-103` Starting no translation while another task runs
+
+One task runs at a time, so a translation asked for while one runs leaves the running task as it is.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a subtitle, while a transcription runs |
+| When | its translation is started from the resource bar |
+| Then | no translation is asked for |
+
+## `TL-106` Accepting a glossary term written in another case
+
+A model may capitalise a name to start a sentence or for emphasis, which still uses the term.
+
+| Step | Statement |
+| --- | --- |
+| Given | a ready llama-server that translates `蝙蝠俠` as `BATMAN` and a Translation Glossary giving `Batman` |
+| When | a Transcript is translated |
+| Then | the line is not asked for again |

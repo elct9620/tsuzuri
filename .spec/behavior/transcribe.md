@@ -6,11 +6,11 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 
 - `src-tauri/src/transcription.rs`
 - `src-tauri/src/transcription/*.rs`
-- `src/controllers/transcribe_controller.test.ts`
-- `src/controllers/transcript_controller.test.ts`
-- `src/controllers/transcription_settings_controller.test.ts`
-- `src/controllers/project_controller.test.ts`
-- `src/controllers/project_settings_controller.test.ts`
+- `src/components/TranscriptionDialog.test.ts`
+- `src/components/TaskProgress.test.ts`
+- `src/components/SegmentList.test.ts`
+- `src/components/settings/general/Transcription.test.ts`
+- `src/components/settings/project/Transcription.test.ts`
 
 ## `TX-001` Transcribing a media file
 
@@ -179,7 +179,7 @@ Transcribing leads into translating, so the transcribe dialog offers the same tr
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource of an SRT file alone |
-| When | the toolbar shows it |
+| When | the resource bar shows it |
 | Then | transcribing cannot be started |
 
 ## `TX-022` Asking before overwriting a subtitle
@@ -509,3 +509,23 @@ A transcription within an Audio Window writes only that window's Segments, so th
 | Given | a transcription of 60 seconds of audio that took 30 seconds |
 | When | it finishes |
 | Then | the Notification lists a real-time factor of 0.50 |
+
+## `TX-062` Starting no transcription while another task runs
+
+One task runs at a time, so a transcription asked for while one runs leaves the running task as it is.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file, while a diarization runs |
+| When | its transcription is started from the transcribe menu |
+| Then | no transcription is asked for |
+
+## `TX-063` Keeping the translation options through unchecking translating afterwards
+
+The dialog holds the translation options until it opens again, so hiding them loses nothing chosen.
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog translating afterwards with self-review chosen |
+| When | translating afterwards is unchecked and checked again before starting |
+| Then | the translation asked for still has self-review |

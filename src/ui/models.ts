@@ -1,5 +1,6 @@
-import type { ModelSlot, ModelSource, PresetModel } from "../backend/toolchain";
-import { fileName } from "./file_name";
+import type { ModelSource, PresetModel } from "#/ipc/toolchain.ts";
+import { t } from "#/i18n.ts";
+import { fileName } from "#/ui/file-name.ts";
 
 /** How a Model Source is named to the user: a file by its path, a Repository's file by both. */
 export function sourceName(source: ModelSource): string {
@@ -9,6 +10,11 @@ export function sourceName(source: ModelSource): string {
 /** The name of a Model Source's file, without where it is kept. */
 export function sourceFileName(source: ModelSource): string {
   return fileName(source.kind === "file" ? source.path : source.file);
+}
+
+/** The file of the Model Source a task runs with, or that none is chosen. */
+export function chosenModelName(source: ModelSource | null): string {
+  return source === null ? t("models.notChosen") : sourceFileName(source);
 }
 
 /** A file's size as Hugging Face shows it, in decimal units. */
@@ -27,10 +33,4 @@ export function presetLabel(preset: PresetModel): string {
 export interface HubFile {
   repo: string;
   file: string;
-}
-
-/** What a slot's row announces as `model-slot:choose`: the Model Source it chose, or none. */
-export interface ModelChoice {
-  slot: ModelSlot;
-  source: ModelSource | null;
 }

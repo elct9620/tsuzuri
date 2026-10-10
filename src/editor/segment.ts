@@ -1,6 +1,6 @@
 /**
  * The subtitles as the editor edits them. The editor owns these types rather than taking them from
- * the backend, so it depends on nothing outside itself; `backend/editing.ts` converts to them.
+ * `ipc/`, so it depends on nothing outside itself; `ipc/editing.ts` converts to them.
  */
 
 export interface Segment {

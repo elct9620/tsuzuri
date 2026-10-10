@@ -1,6 +1,5 @@
 pub mod commands;
 
-use std::fs;
 use std::future::Future;
 use std::io;
 use std::path::Path;
@@ -83,8 +82,7 @@ impl ChosenUpdateSettings {
     }
 
     fn save(&self, dir: &Path) -> io::Result<()> {
-        fs::create_dir_all(dir)?;
-        json_settings::write(&dir.join(SETTINGS_FILE), self)
+        json_settings::save(dir, SETTINGS_FILE, self)
     }
 }
 

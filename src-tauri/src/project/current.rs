@@ -8,6 +8,7 @@ use serde::Serialize;
 use super::directory_name;
 use super::files;
 use super::glossary::{GlossaryRow, GlossaryTable, TranslationGlossary, TranslationGlossaryView};
+use super::glossary_marks::{segment_glossary_marks, SegmentGlossaryMarks};
 use super::history::UndoHistory;
 use super::mode_hold::{
     is_always_written, is_written_by_edit, ModeHold, ModeProgress, RunningMode,
@@ -113,6 +114,8 @@ pub struct ProjectView {
     current_resource: Option<String>,
     media: Option<PathBuf>,
     segments: Vec<Segment>,
+    /// The Glossary Marks of each of `segments`.
+    glossary_marks: Vec<SegmentGlossaryMarks>,
     shown_translation: Option<Language>,
     /// What the Translation Glossary calls each Speaker in the translation shown, by its name in
     /// the Primary Language, so the webview names a Speaker as the saved subtitle does.
@@ -133,20 +136,20 @@ impl ProjectView {
         self
     }
 
+    pub fn options(&self) -> &ProjectOptions {
+        &self.options
+    }
+}
+
+/// What the tests read of a view; the webview reads the whole of it as JSON.
+#[cfg(test)]
+impl ProjectView {
     pub fn pending_batch(&self) -> Option<SegmentSpan> {
         self.pending_batch
     }
 
-    pub fn media(&self) -> Option<&Path> {
-        self.media.as_deref()
-    }
-
     pub fn language(&self) -> Language {
         self.language
-    }
-
-    pub fn options(&self) -> &ProjectOptions {
-        &self.options
     }
 
     pub fn name(&self) -> &str {
@@ -163,6 +166,11 @@ impl ProjectView {
 
     pub fn segments(&self) -> &[Segment] {
         &self.segments
+    }
+
+    #[cfg(test)]
+    pub fn glossary_marks(&self) -> &[SegmentGlossaryMarks] {
+        &self.glossary_marks
     }
 
     pub fn shown_speaker_names(&self) -> &HashMap<String, String> {
@@ -425,6 +433,12 @@ impl CurrentProject {
                 media: current
                     .and_then(|current| project.resource(&current.name).ok())
                     .and_then(|resource| resource.media.clone()),
+                glossary_marks: segment_glossary_marks(
+                    &segments,
+                    project.translation_glossary.as_ref(),
+                    project.language,
+                    shown_translation,
+                ),
                 segments,
                 shown_translation,
                 shown_speaker_names: project.speaker_names(shown_translation),
@@ -456,10 +470,10 @@ impl CurrentProject {
 
     /// The Current Resource's media file.
     pub fn current_media(&self) -> Result<PathBuf, Failure> {
-        let held_project = self.lock();
-        let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
-        let resource = project.resource(&project.current()?.name)?;
-        resource.media.clone().ok_or(Failure::NoMedia)
+        self.read_project(|project| {
+            let resource = project.resource(&project.current()?.name)?;
+            resource.media.clone().ok_or(Failure::NoMedia)
+        })
     }
 
     /// Holds the Current Resource for a transcription to write, answering what it starts from:
@@ -825,18 +839,7 @@ impl CurrentProject {
     /// Makes an edit and writes it back, unless a subtitle was changed elsewhere since Tsuzuri last
     /// read or wrote it: then the Current Resource is read again instead, keeping that change.
     pub fn edit(&self, index: usize, field: SegmentField, value: String) -> Result<(), Failure> {
-        let is_written = |translation_shown: Option<Language>,
-                          mode_language: Language,
-                          held_indexes: Option<&[usize]>| {
-            is_written_by_edit(
-                field,
-                Some(index),
-                translation_shown,
-                mode_language,
-                held_indexes,
-            )
-        };
-        self.change_undoably(is_written, |project| {
+        self.change_undoably(is_written_by_edit(field, Some(index)), |project| {
             project.edit_segment(index, field, &value)
         })
     }
@@ -857,18 +860,9 @@ impl CurrentProject {
         field: SegmentField,
         replacement: &Replacement,
     ) -> Result<usize, Failure> {
-        if field == SegmentField::Speaker {
-            return Err(Failure::Internal {
-                detail: "a Speaker is not searched".to_string(),
-            });
-        }
+        refuse_speaker_search(field)?;
         let replacer = Replacer::try_new(replacement)?;
-        let is_written = |translation_shown: Option<Language>,
-                          mode_language: Language,
-                          held_indexes: Option<&[usize]>| {
-            is_written_by_edit(field, None, translation_shown, mode_language, held_indexes)
-        };
-        self.change_unless_held(is_written, |project| {
+        self.change_unless_held(is_written_by_edit(field, None), |project| {
             project.refuse_changed_elsewhere()?;
             project.replace_text(field, &replacer)
         })
@@ -881,11 +875,7 @@ impl CurrentProject {
         field: SegmentField,
         search: &Search,
     ) -> Result<Vec<TextMatch>, Failure> {
-        if field == SegmentField::Speaker {
-            return Err(Failure::Internal {
-                detail: "a Speaker is not searched".to_string(),
-            });
-        }
+        refuse_speaker_search(field)?;
         let finder = Finder::try_new(search)?;
         self.read_project(|project| project.text_matches(field, &finder))
     }
@@ -899,12 +889,7 @@ impl CurrentProject {
             CleanupScope::Range { index, .. } => Some(*index),
             CleanupScope::Segments { .. } => None,
         };
-        let is_written = |translation_shown: Option<Language>,
-                          mode_language: Language,
-                          held_indexes: Option<&[usize]>| {
-            is_written_by_edit(field, index, translation_shown, mode_language, held_indexes)
-        };
-        self.change_unless_held(is_written, |project| {
+        self.change_unless_held(is_written_by_edit(field, index), |project| {
             project.refuse_changed_elsewhere()?;
             project.clean_simplified(scope)
         })
@@ -1043,6 +1028,16 @@ impl CurrentProject {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
+}
+
+/// Refuses to search or replace in the Speakers, which the webview never offers.
+fn refuse_speaker_search(field: SegmentField) -> Result<(), Failure> {
+    if field == SegmentField::Speaker {
+        return Err(Failure::Internal {
+            detail: "a Speaker is not searched".to_string(),
+        });
+    }
+    Ok(())
 }
 
 /// The directory an SRT file is in, opened with the file's Resource current.

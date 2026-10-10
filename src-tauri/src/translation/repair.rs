@@ -5,6 +5,7 @@ use super::prompt::{BatchRequest, ReviewItem};
 use super::TranslationJob;
 use crate::failure::Failure;
 use crate::language::{Language, LanguagePair};
+use crate::term_search::has_word;
 
 /// Source lines of the preceding text a repair request shows the Model.
 const PRECEDING_LINES: usize = 2;
@@ -410,7 +411,7 @@ fn used_terms(
 ) -> Vec<(String, String)> {
     glossary_terms
         .iter()
-        .filter(|(source, _)| group.iter().any(|(_, text)| text.contains(source.as_str())))
+        .filter(|(source, _)| group.iter().any(|(_, text)| has_word(text, source, false)))
         .cloned()
         .collect()
 }
@@ -421,11 +422,10 @@ fn missing_terms(
     source: &str,
     translation: &str,
 ) -> Option<String> {
-    let translation = translation.to_lowercase();
     let missing_targets: Vec<&str> = glossary_terms
         .iter()
         .filter(|(term, target)| {
-            source.contains(term.as_str()) && !translation.contains(&target.to_lowercase())
+            has_word(source, term, false) && !has_word(translation, target, true)
         })
         .map(|(_, target)| target.as_str())
         .collect();

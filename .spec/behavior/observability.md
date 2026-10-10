@@ -8,9 +8,9 @@ What a run leaves in the log, so a slow or failed run can be diagnosed afterward
 - `src-tauri/src/processes.rs`
 - `src-tauri/src/logs.rs`
 - `src-tauri/src/translation/llama.rs`
-- `src/controllers/logs_controller.test.ts`
+- `src/components/settings/general/Logs.test.ts`
 - `src-tauri/src/about.rs`
-- `src/controllers/about_controller.test.ts`
+- `src/components/settings/general/VersionAndUpdates.test.ts`
 
 ## `OB-001` Logging how long a Phase took
 
@@ -181,6 +181,38 @@ A directory chosen earlier in this launch takes effect only at the next, so the 
 | Given | the Debug Log on in this launch and chosen for the next |
 | When | the general settings open |
 | Then | the Debug Log shows on and the settings say nothing of a restart |
+
+## `OB-024` Saying the log settings were not read
+
+| Step | Statement |
+| --- | --- |
+| Given | the Settings page opening |
+| When | reading the log settings fails |
+| Then | a Notification says the log directory was not read |
+
+## `OB-025` Saying the log directory was not changed
+
+| Step | Statement |
+| --- | --- |
+| Given | the general settings |
+| When | recording a directory chosen for the log fails |
+| Then | a Notification says the log directory was not changed |
+
+## `OB-026` Saying the Debug Log was not changed
+
+| Step | Statement |
+| --- | --- |
+| Given | the general settings |
+| When | recording the Debug Log turned on fails |
+| Then | a Notification says the Debug Log was not changed |
+
+## `OB-027` Saying the log directory was not opened
+
+| Step | Statement |
+| --- | --- |
+| Given | the general settings |
+| When | opening the log directory fails |
+| Then | a Notification says the log directory was not opened |
 
 ## `OB-022` Logging how a Component was started and how it ended
 

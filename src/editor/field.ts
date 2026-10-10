@@ -1,22 +1,12 @@
 /**
  * A text field for one text of a cue: a plain-text `contenteditable` element whose value is its
- * text, line breaks included. It knows nothing of Stimulus or Tauri, so any controller can use it.
+ * text, line breaks included. It knows nothing of the page's framework or Tauri, so the editor
+ * stays apart from both.
  */
 
 import type { TextRange } from "./cursor";
 
 const EDITABLE = "plaintext-only";
-
-/** A new field holding `value`, showing `placeholder` while it is empty. */
-export function createField(value: string, placeholder = ""): HTMLElement {
-  const field = document.createElement("div");
-  field.setAttribute("contenteditable", EDITABLE);
-  field.setAttribute("role", "textbox");
-  field.setAttribute("aria-multiline", "true");
-  if (placeholder) field.dataset.placeholder = placeholder;
-  field.textContent = value;
-  return field;
-}
 
 /** Whether `element` is a field, held or not, which keeps its own typing history. */
 export function isField(element: EventTarget | null): element is HTMLElement {

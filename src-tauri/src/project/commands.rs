@@ -133,6 +133,16 @@ fn announce_after<T, R: Runtime>(
     result
 }
 
+/// Answers `result`, telling the webview the Project changed only when it succeeded.
+fn announce_on_success<T, R: Runtime>(
+    app: &AppHandle<R>,
+    result: Result<T, Failure>,
+) -> Result<T, Failure> {
+    let value = result?;
+    app.announce_project();
+    Ok(value)
+}
+
 /// Tells the webview what a reload did: that the Project changed, and that a version of a
 /// subtitle changed elsewhere was kept, so the user knows where to find it.
 fn announce_reload<R: Runtime>(app: &AppHandle<R>, reload: Reload) {
@@ -162,9 +172,7 @@ pub fn select_resource(
     current: State<'_, CurrentProject>,
     name: String,
 ) -> Result<(), Failure> {
-    current.select(&name)?;
-    app.announce_project();
-    Ok(())
+    announce_on_success(&app, current.select(&name))
 }
 
 #[tauri::command]
@@ -174,9 +182,7 @@ pub fn show_translation(
     current: State<'_, CurrentProject>,
     language: Option<Language>,
 ) -> Result<(), Failure> {
-    current.show_translation(language)?;
-    app.announce_project();
-    Ok(())
+    announce_on_success(&app, current.show_translation(language))
 }
 
 #[tauri::command]
@@ -194,9 +200,7 @@ pub fn set_primary_language(
     current: State<'_, CurrentProject>,
     language: Language,
 ) -> Result<(), Failure> {
-    current.set_language(language)?;
-    app.announce_project();
-    Ok(())
+    announce_on_success(&app, current.set_language(language))
 }
 
 #[tauri::command]
@@ -206,9 +210,7 @@ pub fn set_project_options(
     current: State<'_, CurrentProject>,
     options: ProjectOptions,
 ) -> Result<(), Failure> {
-    current.set_options(options)?;
-    app.announce_project();
-    Ok(())
+    announce_on_success(&app, current.set_options(options))
 }
 
 #[tauri::command]
@@ -412,9 +414,7 @@ pub fn save_translation_glossary(
     current: State<'_, CurrentProject>,
     rows: Vec<GlossaryRow>,
 ) -> Result<(), Failure> {
-    current.save_translation_glossary(&rows)?;
-    app.announce_project();
-    Ok(())
+    announce_on_success(&app, current.save_translation_glossary(&rows))
 }
 
 #[cfg(test)]
@@ -668,20 +668,44 @@ mod tests {
             .is_allowed(directory.join("ep01.mp4")));
     }
 
-    #[test]
-    fn tells_the_webview_the_project_changed_even_when_a_change_is_refused() {
+    /// Whether `project-changed` is heard while `act` runs on the mock app.
+    fn is_project_changed_heard(act: impl FnOnce(&tauri::App<MockRuntime>)) -> bool {
         let app = mock_app();
         let is_heard = Arc::new(AtomicBool::new(false));
         let is_heard_by_listener = Arc::clone(&is_heard);
         ProjectChanged::listen(&app, move |_| {
             is_heard_by_listener.store(true, Ordering::SeqCst)
         });
+        act(&app);
+        is_heard.load(Ordering::SeqCst)
+    }
 
-        let result: Result<(), Failure> =
-            announce_after(app.handle(), Err(Failure::ChangedElsewhere));
+    #[test]
+    fn tells_the_webview_the_project_changed_even_when_a_change_is_refused() {
+        let mut result = Ok(());
+        let is_heard = is_project_changed_heard(|app| {
+            result = announce_after(app.handle(), Err(Failure::ChangedElsewhere));
+        });
 
-        assert_eq!(result, Err(Failure::ChangedElsewhere));
-        assert!(is_heard.load(Ordering::SeqCst));
+        assert_eq!((result, is_heard), (Err(Failure::ChangedElsewhere), true));
+    }
+
+    #[test]
+    fn tells_the_webview_the_project_changed_once_a_change_succeeds() {
+        let is_heard = is_project_changed_heard(|app| {
+            let _ = announce_on_success(app.handle(), Ok(()));
+        });
+
+        assert!(is_heard);
+    }
+
+    #[test]
+    fn tells_the_webview_nothing_when_a_change_fails() {
+        let is_heard = is_project_changed_heard(|app| {
+            let _: Result<(), Failure> = announce_on_success(app.handle(), Err(Failure::NoProject));
+        });
+
+        assert!(!is_heard);
     }
 
     // @behavior MD-049

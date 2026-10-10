@@ -1,9 +1,18 @@
 // @vitest-environment happy-dom
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { build } from "vite";
 import { describe, expect, it } from "vitest";
 import {
+  type BundledPackage,
+  listBundledPackages,
   parakeetWork,
   acceptedLicenses,
   licenseText,
@@ -15,7 +24,6 @@ import {
 
 const ABOUT_TOML = `targets = ["aarch64-apple-darwin"]
 accepted = [
-    "Apache-2.0",
     "ISC",
     "MIT",
 ]
@@ -25,7 +33,7 @@ const bundled = (license: string) => ({
   name: "some-package",
   version: "1.0.0",
   license,
-  path: "/nowhere",
+  text: "",
 });
 
 const emptyNotice = (): Notice => ({
@@ -35,6 +43,51 @@ const emptyNotice = (): Notice => ({
   crates: { licenses: [] },
   packages: [],
 });
+
+/** Installs under `root` a package exporting `name`, under MIT with its license file. */
+const installPackage = (
+  root: string,
+  name: string,
+  manifest: Record<string, string> = {},
+) => {
+  const path = join(root, "node_modules", name);
+  mkdirSync(path, { recursive: true });
+  writeFileSync(
+    join(path, "package.json"),
+    JSON.stringify({
+      name,
+      version: "1.0.0",
+      license: "MIT",
+      main: "index.js",
+      ...manifest,
+    }),
+  );
+  writeFileSync(join(path, "index.js"), `export default "${name}";`);
+  writeFileSync(join(path, "LICENSE"), `MIT License for ${name}`);
+};
+
+/** Bundles a webview under `root` importing `names`, and reads the packages the bundling listed. */
+const bundleWebview = async (root: string, names: string[]) => {
+  writeFileSync(
+    join(root, "index.html"),
+    '<script type="module" src="./main.js"></script>',
+  );
+  writeFileSync(
+    join(root, "main.js"),
+    names
+      .map((name, index) => `import p${index} from "${name}"; console.log(p${index});`)
+      .join("\n"),
+  );
+  const listingFile = join(root, "bundled-packages.json");
+  await build({
+    root,
+    configFile: false,
+    logLevel: "silent",
+    plugins: [listBundledPackages(listingFile)],
+    build: { write: false },
+  });
+  return JSON.parse(readFileSync(listingFile, "utf8")) as BundledPackage[];
+};
 
 const noticeDocument = (notice: Notice) =>
   new DOMParser().parseFromString(noticeHtml(notice), "text/html");
@@ -70,7 +123,6 @@ describe("licenses", () => {
           name: "lucide",
           version: "1.48.0",
           license: "ISC",
-          path,
           text: licenseText(path),
         },
       ],
@@ -79,6 +131,48 @@ describe("licenses", () => {
     expect(notice).toContain(
       "<h3>lucide 1.48.0</h3><p>ISC</p><pre>ISC License &lt;text&gt;</pre>",
     );
+  });
+
+  // @behavior LC-011
+  it("leaves out a package only the build uses", async () => {
+    const root = mkdtempSync(join(tmpdir(), "webview-"));
+    installPackage(root, "kept");
+    installPackage(root, "build-only");
+
+    const packages = await bundleWebview(root, ["kept"]);
+
+    expect(packages.map((each) => each.name)).toEqual(["kept"]);
+  });
+
+  // @behavior LC-012
+  it("names who wrote a package that ships no license text", async () => {
+    const root = mkdtempSync(join(tmpdir(), "webview-"));
+    installPackage(root, "is-reference", {
+      version: "3.0.3",
+      author: "Rich Harris",
+      repository: "git+https://github.com/Rich-Harris/is-reference.git",
+    });
+    rmSync(join(root, "node_modules", "is-reference", "LICENSE"));
+
+    const notice = noticeDocument({
+      ...emptyNotice(),
+      packages: await bundleWebview(root, ["is-reference"]),
+    });
+
+    const webview = notice.querySelector("#webview");
+    expect([
+      webview?.querySelector("h3")?.textContent,
+      [...(webview?.querySelectorAll("p") ?? [])].map((p) => p.textContent),
+      webview?.querySelector("pre"),
+    ]).toEqual([
+      "is-reference 3.0.3",
+      [
+        "MIT",
+        "By: Rich Harris",
+        "Repository: git+https://github.com/Rich-Harris/is-reference.git",
+      ],
+      null,
+    ]);
   });
 
   // @behavior LC-004

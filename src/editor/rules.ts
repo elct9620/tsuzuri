@@ -54,6 +54,11 @@ export function isHeld(
   );
 }
 
+/** Whether the Mode running on the Current Resource holds the times of the Segments, as every Mode holds them. */
+export function areTimesHeld(view: TranscriptView): boolean {
+  return isHeld("other", view, 0);
+}
+
 /** Where a split cuts `text` at `at` characters, or none when one side would be left empty. */
 export function splitPoint(text: string, at: number): number | null {
   return at > 0 && at < [...text].length ? at : null;

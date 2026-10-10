@@ -49,6 +49,25 @@ fn undoes_a_segment_change_across_every_subtitle() {
     );
 }
 
+// @behavior UD-019
+#[test]
+fn keeps_the_translation_shown_through_an_undo() {
+    let dir = directory_of(
+        "ud-undo-shown",
+        &[("ep01.srt", &cue("你好")), ("ep01.en.srt", &cue("Hello"))],
+    );
+    let current = project_in(&dir);
+    current.show_translation(Some(Language::English)).unwrap();
+    edit_text(&current, "您好");
+
+    current.undo().unwrap();
+
+    assert_eq!(
+        current.view().unwrap().shown_translation,
+        Some(Language::English)
+    );
+}
+
 // @behavior UD-004
 #[test]
 fn undoes_a_translation_as_one_change() {
@@ -164,7 +183,7 @@ fn forgets_the_changes_of_a_subtitle_changed_elsewhere() {
 // @behavior UD-018
 #[test]
 fn refuses_an_undo_over_a_subtitle_changed_elsewhere() {
-    let dir = directory_of("ud-elsewhere", &[("ep01.srt", &cue("你好"))]);
+    let dir = directory_of("ud-undo-elsewhere", &[("ep01.srt", &cue("你好"))]);
     let current = project_in(&dir);
     edit_text(&current, "您好");
     std::fs::write(dir.path().join("ep01.srt"), cue("外面改的")).unwrap();
@@ -174,7 +193,7 @@ fn refuses_an_undo_over_a_subtitle_changed_elsewhere() {
     assert_eq!(
         (
             result,
-            file_text(&dir, "ep01.srt"),
+            read(&dir, "ep01.srt"),
             current.view().unwrap().has_undo()
         ),
         (Err(Failure::ChangedElsewhere), cue("外面改的"), false)

@@ -171,6 +171,10 @@ An upstream executable Tsuzuri runs as a child process: ffmpeg, whisper.cpp (`wh
 
 - `Sidecar` - Tauri's sidecar is one binary per target triple; a Variant is a directory that can carry its own libraries, so it is bundled as a resource and launched by absolute path.
 
+### Svelte Component
+
+A `.svelte` file under `src/components/` that writes one part of the page, named for what the screen shows there. It is always said in full, since a bare Component is the upstream executable above. The component column of `docs/ui.md` names daisyUI's components instead.
+
 ### Detection
 
 Looking for a Component already on the computer: `vendor/` in debug builds, then the `PATH` and the directories package managers install into. The first executable that answers its version flag is taken. A macOS app does not inherit the shell's `PATH`, so those directories are listed explicitly.
@@ -247,6 +251,10 @@ The `name:` or `name：` before a line of dialogue, everything up to the line's 
 
 The terms the user gives, such as names and titles, as a CSV with one column per Language headed by its code, like `zh-TW,en,ja`, and one row per term, then a last `type` column where `speaker` marks a term that names a Speaker; a file without the column holds no Speakers. Translating uses the Primary Language column as the source term and the target Language column as the term each translation of a line using the source must contain. A `source,target` header stands for the Primary Language and the Project's translation Language, and is refused while the Project has none. It is the Project's `glossary.csv`, read when the Project opens and again before each translation, and written with Language codes when edited; without the file there is none. Unrelated to this file.
 
+### Glossary Mark
+
+A stretch of a Segment's text, or of the translation shown, that the editor underlines: a term, where a term of the Translation Glossary is written as that field's Language writes it, ignoring case in a translation; or a candidate, where the original text holds a proper noun (a person, place, organisation or other name) of two characters or more that the Translation Glossary does not have. Where two terms overlap the longer is marked, and a candidate overlapping a term is not. Candidates are found only in the original, in a Language Tsuzuri can tag word by word, Chinese for now. A stretch is counted in UTF-16 units, as the webview counts text.
+
 ### Rolling Summary
 
 A summary of the translation so far, within a word limit the user sets, that the Model rewrites after each Batch and every later Batch carries. It keeps names and tone consistent beyond the few reference lines, at the cost of one more request per Batch; it is off unless turned on.
@@ -277,7 +285,7 @@ How a transcription runs beyond the Language and the Model: whether VAD runs fir
 
 ### Preferences
 
-How Tsuzuri behaves as it is worked in, the same in every Project: for now the Choice Landing of each Choice Source. They are saved across launches in the settings' own tab, and until changed they keep the landings Tsuzuri always had: a text, a time, the row or a search pauses at the Segment's start, and a Speaker, Enter or a region plays on.
+How Tsuzuri behaves as it is worked in, the same in every Project: the Choice Landing of each Choice Source, and the Interface Language when one is chosen. They are saved across launches in the settings' own tab, and until changed they keep the landings Tsuzuri always had: a text, a time, the row or a search pauses at the Segment's start, and a Speaker, Enter or a region plays on.
 
 ### VAD
 
@@ -297,7 +305,7 @@ A language Tsuzuri transcribes from or translates into, named by its code: `zh-T
 
 ### Interface Language
 
-The language the webview's text is written in: the system's language when Tsuzuri has a translation for it, otherwise English. Only the webview writes interface text.
+The language the webview's text is written in: the one chosen in the Preferences, or else the system's language when Tsuzuri has a translation for it, otherwise English. Only the webview writes interface text.
 
 ### Failure
 
@@ -305,7 +313,7 @@ Why a command did not finish, sent to the webview as a `code` with the data it n
 
 ### Notification
 
-A short message in a corner of the window about something that has just happened: a task finished or failed, an edit was not written, or an edit was saved with something offered to do about it. Its title says what happened, marked by the icon and colour of its kind; below the title it may say why in a sentence, or list items with their values, such as how long each Phase took. Each thing that happened has a Notification of its own. It goes away on its own after a moment, except one saying a fault happened, which stays until it is closed so it cannot be missed; any of them can be closed sooner.
+A short message in a corner of the window about something that has just happened: a task finished or failed, something asked of the Project was refused or failed, an edit was not written, or an edit was saved with something offered to do about it. Its title says what happened, marked by the icon and colour of its kind; below the title it may say why in a sentence, or list items with their values, such as how long each Phase took. Each thing that happened has a Notification of its own. It goes away on its own after a moment, except one saying a fault happened, which stays until it is closed so it cannot be missed; any of them can be closed sooner.
 
 ### Save Mark
 

@@ -170,6 +170,31 @@ fn single_characters(dictionary: &str) -> impl Iterator<Item = (char, char)> + '
         })
 }
 
+/// The Simplified form of each Traditional character, Taiwan's variants included, for a reader
+/// such as a word tagger that knows only Simplified Chinese; a character keeps its place, since
+/// each maps to one.
+pub fn simplified_forms() -> HashMap<char, char> {
+    let mut forms = HashMap::new();
+    for line in CHARACTERS.lines().filter(|line| !line.starts_with('#')) {
+        let Some((key, candidates)) = line.trim_end().split_once('\t') else {
+            continue;
+        };
+        let Some(simplified_character) = sole_character(key) else {
+            continue;
+        };
+        for traditional in candidates.split(' ').filter_map(sole_character) {
+            if traditional != simplified_character {
+                forms.entry(traditional).or_insert(simplified_character);
+            }
+        }
+    }
+    for (standard, variant) in single_characters(TW_VARIANTS) {
+        let simplified_character = *forms.get(&standard).unwrap_or(&standard);
+        forms.entry(variant).or_insert(simplified_character);
+    }
+    forms
+}
+
 fn sole_character(text: &str) -> Option<char> {
     let mut characters = text.chars();
     let character = characters.next()?;

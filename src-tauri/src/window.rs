@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 use tauri::webview::NewWindowResponse;
@@ -9,6 +10,7 @@ use tauri::{
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use tauri_specta::Event;
 
+use crate::failure::Failure;
 use crate::json_settings;
 
 /// The label of the main window, as `tauri.conf.json` names it.
@@ -43,9 +45,8 @@ pub fn first_size(work_area: Option<PhysicalSize<u32>>) -> Size {
 
 /// Sizes and centres the main window when no window state was saved yet; once one is, the
 /// window-state plugin restores the size and place the window was closed at instead.
-pub fn size_first_window(app: &App) -> tauri::Result<()> {
-    let saved_state = app.path().app_config_dir()?.join(app.handle().filename());
-    if saved_state.exists() {
+pub fn size_first_window(app: &App) -> Result<(), Failure> {
+    if window_state_file(app.handle())?.exists() {
         return Ok(());
     }
     let Some(window) = app.get_webview_window(MAIN_WINDOW) else {
@@ -55,7 +56,7 @@ pub fn size_first_window(app: &App) -> tauri::Result<()> {
         .current_monitor()?
         .map(|monitor| monitor.work_area().size);
     window.set_size(first_size(work_area))?;
-    window.center()
+    Ok(window.center()?)
 }
 
 /// Shows the main window in front, as when a second launch hands its request over to it.
@@ -182,12 +183,17 @@ pub fn video_window_place(
     ))
 }
 
+/// Where the window-state plugin saves the size and place of each window.
+fn window_state_file<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, Failure> {
+    Ok(json_settings::settings_dir(app)?.join(app.filename()))
+}
+
 /// The Video Window's last place, as the window-state plugin keeps it: written out first, since
 /// the plugin holds the latest in memory until the app quits.
 fn save_and_read_video_window_place<R: Runtime>(app: &AppHandle<R>) -> Option<WindowPlace> {
     app.save_window_state(StateFlags::all()).ok()?;
-    let path = app.path().app_config_dir().ok()?.join(app.filename());
-    let places: HashMap<String, WindowPlace> = json_settings::settings_at(&path).ok()?;
+    let places: HashMap<String, WindowPlace> =
+        json_settings::settings_at(&window_state_file(app).ok()?).ok()?;
     places.get(VIDEO_WINDOW).copied()
 }
 

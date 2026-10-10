@@ -4,20 +4,24 @@ Correcting the Project in the transcript panel, where every edit is written to R
 
 ## Includes
 
-- `src/controllers/transcript_controller.test.ts`
-- `src/controllers/project_controller.test.ts`
-- `src/controllers/segment_changes_controller.test.ts`
-- `src/controllers/speakers_controller.test.ts`
-- `src/controllers/translate_controller.test.ts`
-- `src/controllers/field_controller.test.ts`
-- `src/controllers/time_field_controller.test.ts`
-- `src/controllers/timeline_controller.test.ts`
-- `src/controllers/replacement_controller.test.ts`
-- `src/controllers/cleanup_controller.test.ts`
-- `src/controllers/search_controller.test.ts`
+- `src/components/SegmentList.test.ts`
+- `src/components/ResourceBar.test.ts`
+- `src/components/ExportMenu.test.ts`
+- `src/components/ResourceList.test.ts`
+- `src/actions/segment-changes.test.ts`
+- `src/components/SpeakersDialog.test.ts`
+- `src/components/ShiftDialog.test.ts`
+- `src/components/TranslationDialog.test.ts`
+- `src/components/EditingField.test.ts`
+- `src/components/TimeField.test.ts`
+- `src/components/Timeline.test.ts`
+- `src/components/ReplacementDialog.test.ts`
+- `src/actions/cleanup.test.ts`
+- `src/components/SearchBar.test.ts`
 - `src/editor/*.test.ts`
 - `src-tauri/src/replacement.rs`
 - `src-tauri/src/project/current/tests/editing_behavior.rs`
+- `src/page.test.ts`
 
 ## `ED-001` Writing an edited text to the Project
 
@@ -82,6 +86,22 @@ Correcting the Project in the transcript panel, where every edit is written to R
 | Given | blank lines turned off for Plain Text |
 | When | the app opens again |
 | Then | the export menu still has blank lines turned off for Plain Text |
+
+## `ED-185` Offering no export for a Project without Segments
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with no Segments |
+| When | the export menu is opened |
+| Then | every export is disabled |
+
+## `ED-186` Offering only the original's exports before a translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose Segments have no translation |
+| When | the export menu is opened |
+| Then | only the original's SRT and Plain Text are enabled |
 
 ## `ED-004` Showing another translation in the editor
 
@@ -161,6 +181,40 @@ The translation being written is held from typing, and a held field is still the
 | When | that Resource is selected |
 | Then | the Project is read again, so the editor shows what it holds |
 
+## `ED-193` Leaving out the Speaker column where no Segment names a Speaker
+
+A subtitle naming no one, as most translations are, keeps its rows free of an empty column; the Speaker menus below are those of rows showing it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Segments name no Speaker |
+| When | the Segment list shows it |
+| Then | no row shows a Speaker menu |
+
+## `ED-194` Showing the Speaker column once a Segment names a Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose second Segment is said by `小明` |
+| When | the Segment list shows it |
+| Then | every row shows a Speaker menu |
+
+## `ED-195` Showing the Speaker column from the View menu
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Segments name no Speaker |
+| When | the Speaker column is turned on in the View menu |
+| Then | every row shows a Speaker menu |
+
+## `ED-196` Keeping the Speaker column on for the next time
+
+| Step | Statement |
+| --- | --- |
+| Given | the Speaker column turned on in the View menu |
+| When | the app opens again |
+| Then | the Speaker column is still turned on |
+
 ## `ED-012` Naming a new Speaker for a Segment
 
 | Step | Statement |
@@ -168,6 +222,14 @@ The translation being written is held from typing, and a held field is still the
 | Given | a Project in the panel |
 | When | `co` is typed as a new name in the first Segment's Speaker menu |
 | Then | the edit is written to the Project as its Speaker |
+
+## `ED-191` Leaving Enter to an input method in a new Speaker name
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel, an input method composing a new name in the first Segment's Speaker menu |
+| When | Enter is pressed to pick a candidate |
+| Then | no Speaker is written and the input method keeps the key |
 
 ## `ED-013` Offering every Speaker whatever a Segment names
 
@@ -244,7 +306,7 @@ A time field takes a time as Aegisub's does: each digit overwrites the one at th
 
 | Step | Statement |
 | --- | --- |
-| Given | a Segment's start reading `00:00:32.360`, all of it selected as Tab leaves it |
+| Given | a Segment's start reading `00:00:32.360`, all of it selected, as moving into it by keyboard leaves it |
 | When | `1` is typed |
 | Then | it reads `10:00:32.360` with the caret after the `1` |
 
@@ -372,6 +434,16 @@ Subtitle editors bind splitting to a modified line break, so a long cue can be s
 | When | Ctrl+Alt+Enter is pressed |
 | Then | the Project is asked to split it after two characters |
 
+## `ED-192` Leaving another platform's split shortcut alone
+
+Each platform splits by its own chord, as editors on it bind keys, so the other platform's chord types nothing and splits nothing.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel whose first Segment reads `你好世界`, with the Cursor after `你好` in its text, on Windows or Linux |
+| When | ⌘+Option+Enter is pressed |
+| Then | the Project is not asked to split |
+
 ## `ED-053` Moving to the second half after a split
 
 Editing goes on from where the text was cut, which is the start of the second half.
@@ -391,6 +463,24 @@ Chromium reports a selection change for each time field drawn, so a change keeps
 | Given | a Project in the panel with two Segments |
 | When | the first Segment is split |
 | Then | the two rows drawn before stay in the list, and one row is added after them |
+
+## `ED-189` Keeping a text being typed as the Project is shown anew
+
+A value typed and not yet written is newer than the Project read, so a change elsewhere leaves it in its field while the Segments keep their number.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with two Segments, `你好` typed into the first Segment's text and not yet written |
+| When | the Project is shown anew with the second Segment's text changed |
+| Then | the first Segment's text field still reads `你好` |
+
+## `ED-190` Keeping a time being typed as the Project is shown anew
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in the panel with two Segments, `00:00:00.300` typed into the first Segment's start and not yet written |
+| When | the Project is shown anew with the second Segment's text changed |
+| Then | the first Segment's start field still reads `00:00:00.300` |
 
 ## `ED-119` Showing the first half's text in the text left by a split
 
@@ -485,6 +575,16 @@ A sentence cut apart by transcription is joined back line by line while proofrea
 | Given | the interface on macOS, three Segments, with focus in the second Segment's text |
 | When | ⌘+Option+Down is pressed |
 | Then | the Project is asked to merge the second through the third |
+
+## `ED-197` Leaving the merge shortcut to an input method
+
+An input method still processing a key owns it, as with Enter in a text (`ED-031`).
+
+| Step | Statement |
+| --- | --- |
+| Given | the interface on Linux, three Segments, with an input method processing a key in the second Segment's text |
+| When | Ctrl+Alt+Down is pressed |
+| Then | no merge is asked for |
 
 ## `ED-182` Writing a text still being typed before merging
 
@@ -888,6 +988,22 @@ Registering a Speaker gives it a name in every Language and lets the editor offe
 | When | the panel shows its Segments |
 | Then | the second translation field is disabled and the first is not |
 
+## `ED-187` Naming the Current Resource above the editor
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Current Resource is `ep01` |
+| When | the panel shows its Segments |
+| Then | the editor's heading reads `ep01` |
+
+## `ED-188` Offering each translation of the Current Resource to show
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with an `en` translation, being translated into `ja` |
+| When | the panel shows its Segments |
+| Then | the choice of translation offers none, `en` and `ja`, with `ja` chosen |
+
 ## `ED-093` Holding the choice of translation while a Mode runs
 
 | Step | Statement |
@@ -1290,6 +1406,14 @@ Subtitle editors open replacing with Ctrl+H; macOS keeps ⌘+H to hide the app, 
 | When | Ctrl+H is pressed |
 | Then | the replace dialog opens with `，` as the text to find, and the text to find has focus |
 
+## `ED-183` Not opening the replace dialog without a Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Project open |
+| When | Ctrl+H, or ⌘⌥F on macOS, is pressed |
+| Then | the replace dialog stays closed and the key goes on to the page |
+
 ## `ED-088` Replacing from the dialog with Enter
 
 The dialog is kept to the keyboard: Enter in either box replaces, as Esc closes it.
@@ -1479,6 +1603,14 @@ What is typed to find is read as a replacement reads it: as written, or as a reg
 | Given | the first Segment's text entered with `，` selected |
 | When | Ctrl+F, or ⌘F on macOS, is pressed |
 | Then | the search bar opens with `，` to find and focus, every match is marked, and it counts `1/2` |
+
+## `ED-184` Not opening the search bar without a Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Project open |
+| When | Ctrl+F, or ⌘F on macOS, is pressed |
+| Then | the search bar stays closed and the key goes on to the page |
 
 ## `ED-139` Moving to the next match
 

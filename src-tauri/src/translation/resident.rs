@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -8,10 +8,11 @@ use serde_json::json;
 use tokio::sync::Mutex;
 
 use super::llama::{
-    base_url, free_port, wait_until_ready, CHAT_TEMPLATE_KWARGS, CONTEXT_SIZE, HOST, MODEL_NAME,
+    base_url, free_port, wait_until_ready, ServerProcess, CHAT_TEMPLATE_KWARGS, CONTEXT_SIZE, HOST,
+    MODEL_NAME,
 };
 use crate::failure::Failure;
-use crate::steps::{StepEvent, Steps, TRANSLATION_STEP};
+use crate::steps::Steps;
 
 const STATUS_POLL: Duration = Duration::from_millis(250);
 /// How long unloading may take; llama-server forces its Model's process to end after ten seconds.
@@ -32,9 +33,8 @@ pub struct ResidentLlama {
 
 /// The router process running now, and what it was started with.
 struct Router {
-    pid: u32,
+    process: ServerProcess,
     base_url: String,
-    has_exited: Arc<AtomicBool>,
     llama: PathBuf,
     model: PathBuf,
 }
@@ -87,11 +87,9 @@ impl ResidentLlama {
         self.ensure_router(&mut router, steps, llama, model, preset_dir, timeout)
             .await?;
         let running_router = router.as_ref().expect("the router was just started");
-        request_load(
-            &running_router.base_url,
-            timeout,
-            &running_router.has_exited,
-        )
+        request_load(&running_router.base_url, timeout, || {
+            running_router.process.has_exited()
+        })
         .await?;
         Ok(running_router.base_url.clone())
     }
@@ -131,7 +129,7 @@ impl ResidentLlama {
     async fn unload(&self) -> Result<(), Failure> {
         let router = self.router.lock().await;
         match router.as_ref() {
-            Some(running) if !running.has_exited.load(Ordering::SeqCst) => {
+            Some(running) if !running.process.has_exited() => {
                 request_unload(&running.base_url).await
             }
             _ => Ok(()),
@@ -141,7 +139,7 @@ impl ResidentLlama {
     /// Stops the router and the Model it holds.
     pub async fn stop(&self, steps: &impl Steps) {
         if let Some(running) = self.router.lock().await.take() {
-            steps.stop(running.pid);
+            running.process.stop(steps);
         }
     }
 
@@ -155,7 +153,7 @@ impl ResidentLlama {
         timeout: Duration,
     ) -> Result<(), Failure> {
         let is_usable = router.as_ref().is_some_and(|running_router| {
-            !running_router.has_exited.load(Ordering::SeqCst)
+            !running_router.process.has_exited()
                 && running_router.llama == llama
                 && running_router.model == model
         });
@@ -163,31 +161,21 @@ impl ResidentLlama {
             return Ok(());
         }
         if let Some(stale) = router.take() {
-            steps.stop(stale.pid);
+            stale.process.stop(steps);
         }
         let preset = preset_dir.join(PRESET_FILE);
         std::fs::create_dir_all(preset_dir)?;
         std::fs::write(&preset, preset_text(model))?;
         let port = self.port()?;
-        let (events, pid) = steps
-            .start(llama, &router_args(&preset, port))
-            .map_err(|detail| Failure::StepFailed {
-                step: TRANSLATION_STEP.to_string(),
-                detail,
-            })?;
-        let has_exited = watch_exit(events);
+        let process = ServerProcess::start(steps, llama, &router_args(&preset, port))?;
         let base_url = base_url(port);
-        let has_exited_now = Arc::clone(&has_exited);
-        if let Err(failure) =
-            wait_until_ready(&base_url, timeout, || has_exited_now.load(Ordering::SeqCst)).await
-        {
-            steps.stop(pid);
+        if let Err(failure) = wait_until_ready(&base_url, timeout, || process.has_exited()).await {
+            process.stop(steps);
             return Err(failure);
         }
         *router = Some(Router {
-            pid,
+            process,
             base_url,
-            has_exited,
             llama: llama.to_path_buf(),
             model: model.to_path_buf(),
         });
@@ -238,21 +226,6 @@ fn router_args(preset: &Path, port: u16) -> Vec<String> {
     ]
 }
 
-/// A flag set once the process behind `events` exits.
-fn watch_exit(mut events: tokio::sync::mpsc::Receiver<StepEvent>) -> Arc<AtomicBool> {
-    let has_exited = Arc::new(AtomicBool::new(false));
-    let flag = Arc::clone(&has_exited);
-    tokio::spawn(async move {
-        while let Some(event) = events.recv().await {
-            if matches!(event, StepEvent::Exit(_)) {
-                flag.store(true, Ordering::SeqCst);
-            }
-        }
-        flag.store(true, Ordering::SeqCst);
-    });
-    has_exited
-}
-
 /// The translation Model's status as the router reports it.
 async fn fetch_model_status(
     client: &reqwest::Client,
@@ -262,11 +235,9 @@ async fn fetch_model_status(
         .get(format!("{base_url}/models"))
         .send()
         .await
-        .and_then(reqwest::Response::error_for_status)
-        .map_err(request_failure)?
+        .and_then(reqwest::Response::error_for_status)?
         .json()
-        .await
-        .map_err(request_failure)?;
+        .await?;
     list.data
         .into_iter()
         .find(|entry| entry.id == MODEL_NAME)
@@ -280,7 +251,7 @@ async fn fetch_model_status(
 async fn request_load(
     base_url: &str,
     timeout: Duration,
-    has_exited: &AtomicBool,
+    has_exited: impl Fn() -> bool,
 ) -> Result<(), Failure> {
     let client = reqwest::Client::new();
     if fetch_model_status(&client, base_url).await?.value != "loaded" {
@@ -289,8 +260,7 @@ async fn request_load(
             .json(&json!({ "model": MODEL_NAME }))
             .send()
             .await
-            .and_then(reqwest::Response::error_for_status)
-            .map_err(request_failure)?;
+            .and_then(reqwest::Response::error_for_status)?;
     }
     let deadline = Instant::now() + timeout;
     loop {
@@ -300,7 +270,7 @@ async fn request_load(
             "unloaded" if status.failed => return Err(Failure::LlamaExited),
             _ => {}
         }
-        if has_exited.load(Ordering::SeqCst) {
+        if has_exited() {
             return Err(Failure::LlamaExited);
         }
         if Instant::now() >= deadline {
@@ -321,8 +291,7 @@ async fn request_unload(base_url: &str) -> Result<(), Failure> {
         .json(&json!({ "model": MODEL_NAME }))
         .send()
         .await
-        .and_then(reqwest::Response::error_for_status)
-        .map_err(request_failure)?;
+        .and_then(reqwest::Response::error_for_status)?;
     let deadline = Instant::now() + UNLOAD_TIMEOUT;
     while fetch_model_status(&client, base_url).await?.value != "unloaded" {
         if Instant::now() >= deadline {
@@ -333,12 +302,6 @@ async fn request_unload(base_url: &str) -> Result<(), Failure> {
     Ok(())
 }
 
-fn request_failure(error: reqwest::Error) -> Failure {
-    Failure::LlamaRequest {
-        detail: error.to_string(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::sync::Mutex as StdMutex;
@@ -346,6 +309,7 @@ mod tests {
     use tokio::sync::mpsc::{channel, Sender};
 
     use super::*;
+    use crate::steps::StepEvent;
     use crate::test_support::TempDir;
     use crate::translation::fake_llama::{FakeLlama, Replies};
 
@@ -417,13 +381,7 @@ mod tests {
     impl Fixture {
         fn new(name: &str, replies: Replies) -> Fixture {
             let llama = FakeLlama::serve(replies);
-            let port = llama
-                .base_url()
-                .rsplit(':')
-                .next()
-                .unwrap()
-                .parse()
-                .unwrap();
+            let port = llama.port();
             Fixture {
                 llama,
                 resident: ResidentLlama::with_port(port),
@@ -613,6 +571,25 @@ mod tests {
         fixture.resident.make_room(&fixture.steps).await;
 
         assert_eq!(*fixture.steps.stopped_pids.lock().unwrap(), vec![1]);
+    }
+
+    #[tokio::test]
+    async fn names_a_request_the_router_answers_with_an_error_as_failed() {
+        let fixture = Fixture::new(
+            "resident-request-failed",
+            Replies {
+                has_unload_failure: true,
+                ..Replies::default()
+            },
+        );
+        fixture.load_model().await.unwrap();
+
+        let result = fixture.resident.unload().await;
+
+        assert!(
+            matches!(result, Err(Failure::LlamaRequest { .. })),
+            "unloading answered {result:?}"
+        );
     }
 
     // @behavior TL-073

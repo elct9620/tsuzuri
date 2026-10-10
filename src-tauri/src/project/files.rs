@@ -471,15 +471,7 @@ mod tests {
     use super::*;
     use crate::model_source::ModelSource;
     use crate::project::{BilingualOrder, ProjectModels, ProjectOptions, TranscriptionOverrides};
-    use crate::test_support::TempDir;
-
-    fn directory_of(name: &str, files: &[(&str, &str)]) -> TempDir {
-        let dir = TempDir::new(name);
-        for (file_name, content) in files {
-            std::fs::write(dir.path().join(file_name), content).unwrap();
-        }
-        dir
-    }
+    use crate::test_support::{directory_of, TempDir};
 
     fn cue(start: &str, end: &str, text: &str) -> String {
         format!("1\n00:00:{start},000 --> 00:00:{end},000\n{text}\n")

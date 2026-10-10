@@ -1,6 +1,6 @@
 # Windows
 
-The windows Rust and the webview both reach for by label. Rust names each once, and the webview reads the name from `src/backend/bindings.ts`, generated from it, so neither side writes the label of a window the other made.
+The windows Rust and the webview both reach for by label. Rust names each once, and the webview reads the name from `src/ipc/bindings.ts`, generated from it, so neither side writes the label of a window the other made.
 
 ## Includes
 

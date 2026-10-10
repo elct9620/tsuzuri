@@ -1,4 +1,3 @@
-use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
@@ -90,8 +89,7 @@ impl RecentProjects {
     }
 
     fn save(&self, dir: &Path) -> io::Result<()> {
-        fs::create_dir_all(dir)?;
-        json_settings::write(&dir.join(SETTINGS_FILE), self)
+        json_settings::save(dir, SETTINGS_FILE, self)
     }
 
     /// Saves `directory` as the latest Recent Project, opened `at`, in place of its earlier
@@ -168,7 +166,7 @@ mod tests {
     fn lists_a_recent_project_by_its_project_name() {
         let dir = TempDir::new("pj-recent-name");
         let lecture = dir.path().join("lecture");
-        fs::create_dir_all(&lecture).unwrap();
+        std::fs::create_dir_all(&lecture).unwrap();
         ProjectConfig {
             options: ProjectOptions {
                 name: Some("週會錄影".to_string()),

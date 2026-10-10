@@ -8,11 +8,9 @@ Pointing each Model Slot at a Model Source, in the general settings or as a Proj
 - `src-tauri/src/project/files.rs`
 - `src-tauri/src/toolchain.rs`
 - `src-tauri/src/toolchain/*.rs`
-- `src/controllers/model_slot_controller.test.ts`
-- `src/controllers/models_controller.test.ts`
-- `src/controllers/project_controller.test.ts`
-- `src/controllers/project_settings_controller.test.ts`
-- `src/controllers/repository_controller.test.ts`
+- `src/components/settings/RepositoryDialog.test.ts`
+- `src/components/settings/general/Models.test.ts`
+- `src/components/settings/project/Models.test.ts`
 
 ## `MD-001` Remembering a chosen Model
 
@@ -437,3 +435,29 @@ The Hub answers a Repository that does not exist, or is private to someone else,
 | Given | a Repository holding `ggml-large-v3.bin`, `ggml-silero-v6.2.0.bin`, `qwen3.gguf`, `Nemotron-3-Diarization.q8_0.gguf` and `README.md` |
 | When | its files are listed for the diarization slot |
 | Then | only `Nemotron-3-Diarization.q8_0.gguf` is listed |
+
+## `MD-052` Picking no Model file while the settings cannot be read
+
+A Model file is offered by the extensions its slot takes, so with no settings to name them no file is offered.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Model settings cannot be read |
+| When | the user picks a file for a slot, in the general settings or as a Project Model |
+| Then | no file dialog opens and the slot keeps its Model |
+
+## `MD-053` Listing a Repository's files by Enter
+
+| Step | Statement |
+| --- | --- |
+| Given | `owner/name` typed as the Repository name |
+| When | Enter is pressed in the name |
+| Then | that Repository's files are asked for |
+
+## `MD-054` Leaving Enter to an input method in a Repository name
+
+| Step | Statement |
+| --- | --- |
+| Given | an input method processing a key in the Repository name |
+| When | Enter is pressed to pick a candidate |
+| Then | no files are asked for and the input method keeps the key |

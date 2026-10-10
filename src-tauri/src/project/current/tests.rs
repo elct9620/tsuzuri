@@ -3,7 +3,9 @@ use crate::model_source::ModelSource;
 use crate::project::{
     BilingualOrder, ProjectConfig, ProjectModels, TranscriptionOverrides, TranscriptionScope,
 };
-use crate::test_support::{backups, output_backups, overwrite_backups, project_of, TempDir};
+use crate::test_support::{
+    backups, directory_of, output_backups, overwrite_backups, project_in, project_of, TempDir,
+};
 
 fn segment(text: &str, translation: Option<&str>) -> Segment {
     Segment {
@@ -31,23 +33,9 @@ fn cue(text: &str) -> String {
     format!("1\n00:00:00,000 --> 00:00:01,000\n{text}\n")
 }
 
-fn directory_of(name: &str, files: &[(&str, &str)]) -> TempDir {
-    let dir = TempDir::new(name);
-    for (file_name, content) in files {
-        std::fs::write(dir.path().join(file_name), content).unwrap();
-    }
-    dir
-}
-
 fn current_project_of(segments: Vec<Segment>) -> CurrentProject {
     let current = CurrentProject::default();
     current.replace(project_of(segments));
-    current
-}
-
-fn project_in(dir: &TempDir) -> CurrentProject {
-    let current = CurrentProject::default();
-    current.replace(Project::open(dir.path().to_path_buf(), Language::TraditionalChinese).unwrap());
     current
 }
 
@@ -64,10 +52,6 @@ fn texts(current: &CurrentProject) -> Vec<String> {
 
 fn config_of(dir: &TempDir) -> ProjectConfig {
     ProjectConfig::load(dir.path()).unwrap()
-}
-
-fn file_text(dir: &TempDir, name: &str) -> String {
-    std::fs::read_to_string(dir.path().join(name)).unwrap()
 }
 
 /// A Project of two Segments, the first said by `阿福`.

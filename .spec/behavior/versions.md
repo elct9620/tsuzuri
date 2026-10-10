@@ -7,8 +7,9 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 - `src-tauri/src/project.rs`
 - `src-tauri/src/project/*.rs`
 - `src-tauri/src/project/current/tests/versions_behavior.rs`
-- `src/controllers/versions_controller.test.ts`
-- `src/controllers/comparison_controller.test.ts`
+- `src/state/editor-comparison.test.ts`
+- `src/components/VersionsDialog.test.ts`
+- `src/page.test.ts`
 
 ## `VR-001` Listing a subtitle's Backups newest first
 
@@ -429,6 +430,14 @@ However many Backups a subtitle has, the menu offers a few; the Versions dialog 
 | Given | the Versions dialog listing an Overwrite of the original |
 | When | it is set as the comparison |
 | Then | the editor compares the original with that Overwrite, and the menu offers it |
+
+## `VR-059` Choosing another Backup in the Versions dialog
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor showing the `en` translation |
+| When | the translation's group in the compare menu asks to choose in the Versions dialog |
+| Then | the Versions dialog opens at the `en` translation |
 
 ## `VR-044` Comparing the translation with nothing once another is shown
 

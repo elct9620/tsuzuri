@@ -10,7 +10,7 @@
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-TSC="$ROOT/node_modules/.bin/tsc"
+SVELTE_CHECK="$ROOT/node_modules/.bin/svelte-check"
 PRETTIER="$ROOT/node_modules/.bin/prettier"
 
 file="$(jq -r '.tool_response.filePath // .tool_input.file_path // empty')"
@@ -37,9 +37,9 @@ case "$file" in
 		exit 2
 	fi
 	;;
-*.ts)
+*.ts | *.svelte | "$ROOT"/svelte.config.js)
 	# Types span the whole frontend, so one file is checked through the project
-	if [ -x "$TSC" ] && ! out="$(cd "$ROOT" && "$TSC" --noEmit 2>&1)"; then
+	if [ -x "$SVELTE_CHECK" ] && ! out="$(cd "$ROOT" && pnpm run --silent check 2>&1)"; then
 		printf 'Type check failed:\n%s\n' "$out" >&2
 		exit 2
 	fi

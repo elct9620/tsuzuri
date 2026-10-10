@@ -1,11 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  createField,
-  fieldSelection,
-  fieldValue,
-  placeSelection,
-} from "./field";
+import { fieldSelection, fieldValue, placeSelection } from "./field";
+import { fieldOf } from "./test-field";
 
 describe("field", () => {
   afterEach(() => {
@@ -14,7 +10,7 @@ describe("field", () => {
 
   // @behavior ED-028
   it("takes plain text only and keeps each line break", () => {
-    const field = createField("第一行\n第二行");
+    const field = fieldOf("第一行\n第二行");
 
     expect([field.getAttribute("contenteditable"), fieldValue(field)]).toEqual([
       "plaintext-only",
@@ -33,7 +29,7 @@ describe("field", () => {
 
   // @behavior ED-030
   it("counts the characters before each end of the selection, the line break included", () => {
-    const field = createField("你好\n世界");
+    const field = fieldOf("你好\n世界");
     document.body.append(field);
 
     select(field, 1, 4);
@@ -42,7 +38,7 @@ describe("field", () => {
   });
 
   it("reads no selection while the document's is elsewhere", () => {
-    const field = createField("你好");
+    const field = fieldOf("你好");
     const menu = document.createElement("button");
     document.body.append(field, menu);
 
@@ -53,7 +49,7 @@ describe("field", () => {
 
   // @behavior ED-091
   it("places a caret at the start of the line a typed line break begins", () => {
-    const field = createField("");
+    const field = fieldOf("");
     const later = document.createTextNode("世界");
     field.append("你好", "\n", later);
     document.body.append(field);
@@ -68,7 +64,7 @@ describe("field", () => {
   });
 
   it("places a caret after the last character at the end of the text", () => {
-    const field = createField("");
+    const field = fieldOf("");
     const last = document.createTextNode("世界");
     field.append("你好", last);
     document.body.append(field);
@@ -82,7 +78,7 @@ describe("field", () => {
   });
 
   it("selects by characters, a character beyond the first plane counting as one", () => {
-    const field = createField("你😀好");
+    const field = fieldOf("你😀好");
     document.body.append(field);
 
     placeSelection(field, { start: 2, end: 2 });

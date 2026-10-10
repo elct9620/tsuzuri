@@ -1,0 +1,161 @@
+<!--
+  @component
+  The Speaker dialog, naming many Segments at once; a new name is offered to the Translation
+  Glossary. The checked bar opens it for the Checked Segments.
+-->
+<script lang="ts">
+  import { flushSync } from "svelte";
+  import Modal from "#/components/Modal.svelte";
+
+  import type { ProjectView, Segment } from "#/ipc/project.ts";
+  import { t } from "#/i18n.ts";
+  import { speakerNames } from "#/ui/speakers.ts";
+  import { editingSession, projectFeed } from "#/state/context.ts";
+  import { notifyNamed } from "#/actions/speaker.ts";
+
+  /** Which Segments the dialog names. */
+  type SpeakerScope =
+    "checked-segments" | "all-segments" | "unnamed-segments" | "named-segments";
+
+  const feed = projectFeed();
+  const session = editingSession();
+  let dialog: Modal;
+  /** The Project the editor shows, whose Segments and Translation Glossary name the Speakers. */
+  let { project }: { project: ProjectView | null } = $props();
+  /** The Checked Segments when the dialog was opened for them. */
+  let checkedIndexes = $state<number[]>([]);
+  let scope = $state<SpeakerScope>("all-segments");
+  /** The Speaker whose Segments are renamed. */
+  let renamedSpeaker = $state("");
+  /** The Speaker to set, none when left empty. */
+  let newSpeaker = $state("");
+
+  const speakers = $derived(speakerNames(project));
+
+  /** Opens the dialog for the whole transcript. */
+  export function open(): void {
+    openFor([]);
+  }
+
+  /** Opens the dialog, offering the Checked Segments `indexes` when there are any. */
+  export function openFor(indexes: number[]): void {
+    checkedIndexes = indexes;
+    scope = indexes.length > 0 ? "checked-segments" : "all-segments";
+    renamedSpeaker = speakers[0] ?? "";
+    newSpeaker = "";
+    flushSync();
+    dialog.showModal();
+  }
+
+  /** Sets the Speaker typed of every Segment the chosen scope takes in, as one change. */
+  async function apply(): Promise<void> {
+    const indexes = scopeIndexes();
+    const name = newSpeaker.trim();
+    dialog.close();
+    notifyNamed(feed, await session.setSpeakers(indexes, name), name);
+  }
+
+  /** The positions of the Segments the chosen scope takes in. */
+  function scopeIndexes(): number[] {
+    const chosenScope = scope;
+    if (chosenScope === "checked-segments") return checkedIndexes;
+    const isTaken: Record<
+      Exclude<SpeakerScope, "checked-segments">,
+      (segment: Segment) => boolean
+    > = {
+      "all-segments": () => true,
+      "unnamed-segments": (segment) => !segment.speaker,
+      "named-segments": (segment) => segment.speaker === renamedSpeaker,
+    };
+    return (project?.segments ?? []).flatMap((segment, index) =>
+      isTaken[chosenScope](segment) ? [index] : [],
+    );
+  }
+</script>
+
+<Modal
+  bind:this={dialog}
+  title={t("edit.speakersTitle")}
+  boxClass="max-w-md"
+  dismissLabel={t("work.cancel")}
+>
+  <fieldset class="fieldset gap-2 text-sm">
+    <legend class="fieldset-legend">{t("edit.speakersScope")}</legend>
+    {#if checkedIndexes.length > 0}
+      <label class="flex items-center gap-2">
+        <input
+          type="radio"
+          name="speaker-scope"
+          value="checked-segments"
+          class="radio radio-sm"
+          bind:group={scope}
+        />
+        <span>{t("edit.checkedCount", { count: checkedIndexes.length })}</span>
+      </label>
+    {/if}
+    <label class="flex items-center gap-2">
+      <input
+        type="radio"
+        name="speaker-scope"
+        value="all-segments"
+        class="radio radio-sm"
+        bind:group={scope}
+      />
+      <span>{t("edit.speakersEvery")}</span>
+    </label>
+    <label class="flex items-center gap-2">
+      <input
+        type="radio"
+        name="speaker-scope"
+        value="unnamed-segments"
+        class="radio radio-sm"
+        bind:group={scope}
+      />
+      <span>{t("edit.speakersUnnamed")}</span>
+    </label>
+    <label class="flex items-center gap-2">
+      <input
+        type="radio"
+        name="speaker-scope"
+        value="named-segments"
+        class="radio radio-sm"
+        bind:group={scope}
+      />
+      <span>{t("edit.speakersNamedBefore")}</span>
+      <select
+        class="select select-xs w-auto"
+        aria-label={t("edit.speakersRenamed")}
+        value={renamedSpeaker}
+        onchange={({ currentTarget }) => (renamedSpeaker = currentTarget.value)}
+      >
+        {#each speakers as speaker (speaker)}
+          <option value={speaker}>{speaker}</option>
+        {/each}
+      </select>
+      <span>{t("edit.speakersNamedAfter")}</span>
+    </label>
+  </fieldset>
+  <fieldset class="fieldset gap-2 text-sm">
+    <legend class="fieldset-legend">{t("edit.speakersTo")}</legend>
+    <input
+      class="input input-sm"
+      aria-label={t("edit.speakersTo")}
+      placeholder={t("edit.speakersNone")}
+      bind:value={newSpeaker}
+    />
+    <div class="flex flex-wrap gap-1">
+      {#each speakers as speaker (speaker)}
+        <button
+          type="button"
+          class="btn btn-xs"
+          onclick={() => (newSpeaker = speaker)}>{speaker}</button
+        >
+      {/each}
+    </div>
+  </fieldset>
+  {#snippet actions()}
+    <button type="button" class="btn btn-primary" onclick={apply}
+      >{t("edit.apply")}</button
+    >
+  {/snippet}
+</Modal>

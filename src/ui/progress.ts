@@ -1,5 +1,5 @@
-import type { Phase, PhaseTiming, PipelineProgress } from "../backend/progress";
-import { t } from "../i18n";
+import type { Phase, PhaseTiming, PipelineProgress } from "#/ipc/progress.ts";
+import { t } from "#/i18n.ts";
 
 /** The kind of task running, as the Mode it runs is named, which the editor shows Placeholders for. */
 export type TaskKind = "transcription" | "translation" | "diarization";
@@ -24,11 +24,16 @@ export function progressLine({
   return label;
 }
 
+/** A number of seconds as a Notification shows it, to a tenth. */
+export function secondsLabel(seconds: number): string {
+  return t("phases.seconds", { seconds: seconds.toFixed(1) });
+}
+
 /** Each Phase with its seconds, in the order it ran, as rows of a Notification. */
 export function phaseItems(phases: PhaseTiming[]): [string, string][] {
   return phases.map(({ phase, seconds }) => [
     phaseLabel(phase),
-    t("phases.seconds", { seconds: seconds.toFixed(1) }),
+    secondsLabel(seconds),
   ]);
 }
 

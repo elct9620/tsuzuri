@@ -24,6 +24,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 |---|---|---|
 | 函式、變數、欄位 | `snake_case` | `camelCase` |
 | 型別、介面 | `UpperCamelCase` | `UpperCamelCase` |
+| 檔名 | `snake_case.rs` | `kebab-case.ts` |
 | 依鍵尋找 | `path_by_name` | `statusByName` |
 | 問句 | `is_file`、`is_empty` | `isRunning`、`hasTranslation` |
 | 問號結尾 | 不用 | 不用 |
@@ -40,7 +41,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | 依鍵尋找 | 名詞＋`by`＋鍵 | `path_by_name` | `statusByName` |
 | 問句 | `is`／`has`＋形容詞或名詞 | `is_file` | `isHidden`、`isFailure` |
 | 新值或轉換 | 建構或轉換的字首，或動詞＋名詞 | `from_srt`、`to_srt`、`parse_timestamp` | `formatTime` |
-| 動作（有副作用） | 動詞開頭，後面可接狀態 | `write_translations`、`probe`、`kill_all` | `notifyFailure`、`translatePage` |
+| 動作（有副作用） | 動詞開頭，後面可接狀態 | `write_translations`、`probe`、`kill_all` | `notifyFailure`、`drawPage` |
 | 建構錯誤或訊息 | 所建構之物的名詞 | — | `failureMessage`、`phasesSummary` |
 | 畫面元素（target） | 元素的名詞，不用動作 | — | `startButton`、`emptyHint` |
 | 標記元素的 data 屬性 | 狀態用問句，身分用名詞 | — | `data-is-playing`、`data-ghost` |
@@ -68,7 +69,8 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 
 | 來源 | 名稱 |
 |---|---|
-| Stimulus | `connect`、`disconnect`、`static targets`、`*Target`、`*Targets`、action option 的 `value` |
+| Svelte | Svelte 元件以 `UpperCamelCase` 命名，例如 `Page.svelte` |
+| BCP 47 | 語言檔以語言標籤命名，例如 `zh-Hant.ts` |
 | Rust trait | `fmt`、`from`、`drop`、`enabled`、`log`、`flush` |
 | i18next、Vitest | `t`、`describe`、`it` |
 | DOM、Rust 標準函式庫 | `Event` 的 `composed`、`PoisonError` 的 `poisoned` |
@@ -81,18 +83,17 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 
 ### 1.5 加入名稱之前
 
-先照同模組同類名稱遵守的規則取名，規則不一致就先修正模組。兩個東西同名，只在同一個檔案相遇時才區分。Stimulus 為 target 產生 `xTarget`、`xTargets` 與 `hasXTarget`，會蓋掉同名的成員。
+先照同模組同類名稱遵守的規則取名，規則不一致就先修正模組。兩個東西同名，只在同一個檔案相遇時才區分。
 
 | 情境 | 做法 |
 |---|---|
 | 加入新名稱 | 照同模組的同類名稱 |
 | 規則不一致 | 先統一模組 |
 | 兩個東西同名 | 同檔才區分，否則依角色 |
-| Stimulus target | 不與產生的成員同名 |
 
 ### 1.6 依據
 
-這些規則以 Rust 與 JavaScript 標準函式庫的慣例為依據。Google TypeScript Style Guide 允許 `getFoo`，本專案不採用，以免查詢與 Rust 那一側的寫法不同。
+這些規則以 Rust 與 JavaScript 標準函式庫的慣例為依據。Google TypeScript Style Guide 允許 `getFoo`，本專案不採用，以免查詢與 Rust 那一側的寫法不同；它的 `snake_case` 檔名也不採用，TS 檔名跟著 Svelte。
 
 | 來源 | 佐證的規則 |
 |---|---|
@@ -102,6 +103,7 @@ Rust 與 TypeScript 用同一套詞性規則，只有字的接法不同。下表
 | JavaScript 標準函式庫 | 問句用 `Array.isArray`、`Number.isNaN` |
 | JavaScript 標準函式庫 | 轉換用 `Array.from`、`toISOString` |
 | Godot API | 依鍵尋找用 `_by_`，不用 `_named` |
+| Svelte 原始碼 | TS 檔名用 `media-query.js` 的 kebab-case |
 
 ## 2 文件
 

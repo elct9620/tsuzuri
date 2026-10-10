@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
 import {
+  areTimesHeld,
   isHeld,
   isRun,
   runWithNeighbour,
@@ -62,6 +63,18 @@ describe("rules", () => {
         isHeld(kind, view({ runningMode: { mode: "diarization" } }), 0),
       ),
     ).toEqual([true, true, true]);
+  });
+
+  it("holds the times while any Mode runs, a translation of chosen Segments too", () => {
+    expect([
+      areTimesHeld(view({})),
+      areTimesHeld(view({ runningMode: { mode: "transcription" } })),
+      areTimesHeld(
+        view({
+          runningMode: { mode: "translation", language: "ja", indexes: [1] },
+        }),
+      ),
+    ]).toEqual([false, true, true]);
   });
 
   it("splits only where text is left on both sides", () => {

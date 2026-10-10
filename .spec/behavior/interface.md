@@ -1,20 +1,22 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, docking the Resource list beside a window wide enough to hold it, telling what just happened in Notifications and that an edit was saved in the Save Mark, opening where Tsuzuri can be sponsored, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
+Writing the webview's text in the Interface Language: the one chosen in the Preferences, which changes the text at once, or the system's language when none is chosen. Keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, and listing the shortcuts. Showing the settings as a page over the whole window, and docking the Resource list beside a window wide enough to hold it. Telling what just happened in Notifications, and that an edit was saved in the Save Mark. Opening where Tsuzuri can be sponsored, and sizing the window the first time it opens. Afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
 - `src/i18n.test.ts`
+- `src/components/settings/preferences/InterfaceLanguage.test.ts`
 - `src/ui/menu.test.ts`
-- `src/controllers/tooltip_controller.test.ts`
-- `src/ui/notification.test.ts`
-- `src/ui/save_mark.test.ts`
-- `src/ui/icons.test.ts`
+- `src/components/Tooltip.test.ts`
+- `src/components/Notifications.test.ts`
+- `src/state/save-mark.test.ts`
 - `src/ui/shortcuts.test.ts`
-- `src/controllers/shortcuts_controller.test.ts`
+- `src/components/ShortcutsDialog.test.ts`
 - `src-tauri/src/window.rs`
-- `src/controllers/sponsorship_controller.test.ts`
-- `src/controllers/resource_list_controller.test.ts`
+- `src/components/settings/general/About.test.ts`
+- `src/components/settings/SettingsPage.test.ts`
+- `src/page.test.ts`
+- `src/state/resource-dock.test.ts`
 
 ## `IF-001` Following the system language
 
@@ -58,13 +60,13 @@ A Project's Primary Language follows the Interface Language until its directory 
 | When | the Language it stands for is asked |
 | Then | it is `en` |
 
-## `IF-006` Closing a toolbar menu once an item is chosen
+## `IF-006` Closing a bar's menu once an item is chosen
 
 A menu stays open only while focus is inside it, so clicking anywhere else closes it too.
 
 | Step | Statement |
 | --- | --- |
-| Given | an open toolbar menu |
+| Given | an open menu of the toolbar or the resource bar |
 | When | one of its items is chosen |
 | Then | focus leaves the menu |
 
@@ -104,31 +106,51 @@ The tooltip is drawn outside the element that holds it, so a list that scrolls o
 
 ## `IF-011` Showing a tooltip over an open dialog
 
-A dialog is drawn above the whole page, so the tooltip of an element inside it is drawn inside the dialog too.
+A dialog is drawn above the whole page, so the tooltip is drawn in the layer above it, laid over the dialog as each tooltip shows.
 
 | Step | Statement |
 | --- | --- |
 | Given | an element with a tooltip in an open dialog |
 | When | the pointer moves onto it |
-| Then | the tooltip is shown inside that dialog |
+| Then | the tooltip is shown above that dialog |
+
+## `IF-053` Showing a tooltip once focus reaches an element
+
+The keyboard reaches the same explanation the pointer does, moving focus to each ⓘ in the settings in turn.
+
+| Step | Statement |
+| --- | --- |
+| Given | an element with a tooltip |
+| When | focus moves onto it |
+| Then | a tooltip shows its text |
 
 ## `IF-012` Writing a tooltip in the Interface Language
 
 | Step | Statement |
 | --- | --- |
-| Given | an element whose tooltip names the text `settings.primaryLanguageHelp` |
+| Given | the help beside the Primary Language setting, naming the text `settings.primaryLanguageHelp` |
 | When | the page is written in Traditional Chinese |
 | Then | its tooltip reads that text in Traditional Chinese |
 
 ## `IF-013` Explaining every setting
 
-Each setting says what it is for and how to use it, since its name alone rarely does.
+Each setting says what it is for and how to use it, since its name alone rarely does. A row with room for it writes the explanation beneath its name, where it is read without stopping on an ⓘ.
 
 | Step | Statement |
 | --- | --- |
-| Given | the settings dialog |
+| Given | the settings page |
 | When | its rows are read in either Interface Language |
-| Then | every row carries a tooltip that explains it |
+| Then | every row carries a tooltip, or a line beneath its name, that explains it |
+
+## `IF-054` Naming every button in the Interface Language
+
+A button drawn as an icon alone is known only by its name, which a screen reader reads and a translation can leave out.
+
+| Step | Statement |
+| --- | --- |
+| Given | the page written in Traditional Chinese |
+| When | its buttons are read |
+| Then | each has a name, and none is the key of a text |
 
 ## `IF-014` Letting a Notification go on its own
 
@@ -272,14 +294,6 @@ A scrolling list does not tell its page it scrolled, so the tooltip would stay w
 | When | the list scrolls |
 | Then | no tooltip is shown |
 
-## `IF-028` Drawing every icon the page names
-
-| Step | Statement |
-| --- | --- |
-| Given | the page as `index.html` writes it |
-| When | its icons are drawn |
-| Then | no element naming an icon is left undrawn |
-
 ## `IF-029` Keeping a tooltip on screen near the right edge
 
 | Step | Statement |
@@ -314,6 +328,24 @@ Shortcuts grow faster than anyone remembers them, so one more opens the list of 
 | When | ? is pressed |
 | Then | the shortcut list stays closed and the field takes the key |
 
+## `IF-055` Closing a modal by its button
+
+Every modal is drawn the same way, so what holds for the shortcut list holds for each one a user may close.
+
+| Step | Statement |
+| --- | --- |
+| Given | the shortcut list open |
+| When | its 關閉 button is clicked |
+| Then | the shortcut list is closed |
+
+## `IF-056` Closing a modal by clicking outside it
+
+| Step | Statement |
+| --- | --- |
+| Given | the shortcut list open |
+| When | the backdrop around it is clicked |
+| Then | the shortcut list is closed |
+
 ## `IF-033` Listing only this platform's keys
 
 macOS gives some keys to the system, so each platform has keys of its own, and the list shows only the ones that work here.
@@ -346,8 +378,8 @@ A key alone does not say where it works or what it leaves alone, so each shortcu
 
 | Step | Statement |
 | --- | --- |
-| Given | the page as `index.html` writes it and the actions its controllers bind |
-| When | the keys they bind are read |
+| Given | the page as `index.html` and its Svelte Components write it, and the modules they read |
+| When | the Shortcuts they match a key against or name in a tooltip are read |
 | Then | the shortcut list has each of them |
 
 ## `IF-043` Binding every key the shortcut list names
@@ -356,9 +388,9 @@ A key the list shows and nothing answers to is a promise the interface does not 
 
 | Step | Statement |
 | --- | --- |
-| Given | the shortcut list, the actions the page and its controllers bind, and the Shortcuts the controllers read from the list |
+| Given | the shortcut list, and the Shortcuts the page's Svelte Components and modules match a key against |
 | When | each key the list names for either platform is looked for among them |
-| Then | every one is bound by an action or belongs to a Shortcut a controller reads |
+| Then | every one belongs to a Shortcut something matches a key against |
 
 ## `IF-044` Listing every key the app menu takes
 
@@ -473,3 +505,205 @@ A narrow window never docks the list, so the shortcut lays it over the editor as
 | Given | a window too narrow to dock the Resource list |
 | When | ⌘B on macOS or Ctrl+B elsewhere is pressed |
 | Then | the Resource list is laid over the editor |
+
+## `IF-057` Showing the settings over the whole window
+
+The settings hold tables and explanations that need the window's width, so they take the whole of it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project open in the editor |
+| When | the settings are opened from the toolbar |
+| Then | the settings show and the editor is hidden |
+
+## `IF-058` Going back from the settings by their button
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings opened from the editor |
+| When | the back button is clicked |
+| Then | the editor shows again and the settings are hidden |
+
+## `IF-059` Going back from the settings by Esc
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings opened from the editor |
+| When | Esc is pressed |
+| Then | the editor shows again and the settings are hidden |
+
+## `IF-060` Closing a dialog over the settings before the settings
+
+A dialog the settings opened, such as the License Notice, takes Esc first.
+
+| Step | Statement |
+| --- | --- |
+| Given | the License Notice open over the settings |
+| When | Esc is pressed |
+| Then | the settings still show |
+
+## `IF-061` Going back to the start screen
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings opened from the start screen, with no Project |
+| When | the back button is clicked |
+| Then | the start screen shows again |
+
+## `IF-062` Pausing playback as the settings open
+
+The settings hide the Preview, so media playing on would be heard with nothing to see.
+
+| Step | Statement |
+| --- | --- |
+| Given | the media playing |
+| When | the settings are opened |
+| Then | the media is paused |
+
+## `IF-063` Keeping the editor while the settings show
+
+The editor is hidden rather than drawn again, so where the user was is still there on return.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings opened from the editor |
+| When | the back button is clicked |
+| Then | the editor shown is the one left, not one drawn anew |
+
+## `IF-064` Showing one section of the settings at a time
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings showing the version and updates |
+| When | the Components are chosen from the section list |
+| Then | only the Components section shows |
+
+## `IF-065` Taking focus into the settings and back
+
+Focus goes where the settings begin and returns where it was, as a modal does. The keyboard is never left on a hidden button.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings opened by the toolbar's button |
+| When | the back button is clicked |
+| Then | focus was on the back button while the settings showed and is on the toolbar's button again |
+
+## `IF-066` Keeping the editor's keys from the Project while something covers it
+
+The editor stays drawn under the settings and under a modal, so its keys would change Segments the user is not working on.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings or a modal shown over the editor |
+| When | Ctrl/⌘+Z is pressed outside a text field |
+| Then | nothing is undone |
+
+## `IF-067` Keeping the Edit menu from the Project while the settings show
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings shown over the editor |
+| When | Undo is chosen from the Edit menu outside a text field |
+| Then | nothing is undone |
+
+## `IF-068` Keeping the play key from the media while the settings show
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings shown over the editor |
+| When | the play key is pressed outside a control |
+| Then | the media stays paused |
+
+## `IF-069` Writing the interface in the language chosen at once
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings written in Traditional Chinese |
+| When | English is chosen as the Interface Language |
+| Then | the settings' text is in English without the page being drawn again |
+
+## `IF-070` Staying where the language was chosen
+
+The settings and everything under them keep their place, since only the text changes.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings showing the Language section in Traditional Chinese |
+| When | English is chosen as the Interface Language |
+| Then | the settings still show the Language section |
+
+## `IF-071` Remembering the language chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preferences saved with a text chosen to play on |
+| When | English is chosen as the Interface Language |
+| Then | the Preferences are saved with English chosen and a text still playing on |
+
+## `IF-072` Starting in the language chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | English chosen as the Interface Language, and a system language of `zh-Hant-TW` |
+| When | the interface starts |
+| Then | its text is in English |
+
+## `IF-073` Following the system language again
+
+| Step | Statement |
+| --- | --- |
+| Given | English chosen as the Interface Language, and a system language of `zh-Hant-TW` |
+| When | the system language is chosen instead |
+| Then | the text is in Traditional Chinese and no Interface Language is saved |
+
+## `IF-074` Naming each language in its own words
+
+A language's name stays in that language, so it can be found whatever the interface is written in.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings written in English |
+| When | the Interface Languages are listed |
+| Then | Traditional Chinese reads `繁體中文` and English reads `English` |
+
+## `IF-075` Counting one in English
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in English |
+| When | a Glossary of one term is counted |
+| Then | it reads `Glossary: 1 term` |
+
+## `IF-076` Counting in Traditional Chinese, which has no singular
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in Traditional Chinese |
+| When | a Glossary of one term is counted |
+| Then | it reads `詞彙表 1 筆` |
+
+## `IF-077` Naming a Segment in English as the glossary does
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in English |
+| When | any of its text names a Segment |
+| Then | the word is capitalised, as `Segment` or `Segments` |
+
+## `IF-078` Writing no message key on an English page
+
+i18next answers a key it has no text for with the key itself, so a key on the page is a text missing.
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in English with a Project open |
+| When | the page is drawn, its settings and dialogs included |
+| Then | no text or label on it is a message key |
+
+## `IF-079` Writing no Chinese on an English page
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in English with a Project whose texts are in English |
+| When | the page is drawn, its settings and dialogs included |
+| Then | no text or label on it is in Chinese, apart from a language named in its own words |

@@ -1,0 +1,68 @@
+/**
+ * Naming Speakers, which the Speaker dialog and each Segment's Speaker menu share: a new name is
+ * offered to the Translation Glossary once it is written.
+ */
+
+import {
+  type ProjectFeed,
+  saveTranslationGlossary,
+  translationGlossaryTable,
+} from "#/ipc/project.ts";
+import type { Outcome } from "#/editor/index.ts";
+import { t } from "#/i18n.ts";
+import { rowsWithTerm } from "#/actions/glossary.ts";
+import {
+  attempt,
+  notify,
+  notifyEdit,
+  type Notification,
+} from "#/state/notification.svelte.ts";
+
+/** Marks the term `name` in the Primary Language column as a Speaker, adding the term when the glossary has none. */
+async function addSpeaker(feed: ProjectFeed, name: string): Promise<void> {
+  await attempt(t("edit.speakerNotAdded"), async () => {
+    const project = feed.project;
+    if (!project) return;
+    const rows = rowsWithTerm(
+      await translationGlossaryTable(),
+      project.language,
+      name,
+      (row) => ({ ...row, is_speaker: true }),
+    );
+    await saveTranslationGlossary(rows);
+    notify({ title: t("edit.speakerAdded", { name }), kind: "success" });
+  });
+}
+
+/** An offer to add the Speaker just named to the Translation Glossary, when it names none such. */
+function speakerOffer(
+  feed: ProjectFeed,
+  name: string,
+): Pick<Notification, "detail" | "action"> | undefined {
+  const glossarySpeakers = feed.project?.translation_glossary?.speakers ?? [];
+  if (name === "" || glossarySpeakers.includes(name)) return undefined;
+  return {
+    detail: t("edit.newSpeaker", { name }),
+    action: {
+      label: t("edit.addSpeaker"),
+      run: () => void addSpeaker(feed, name),
+    },
+  };
+}
+
+/**
+ * Says the Speaker `name` was written, offering the name to the Translation Glossary in a
+ * Notification when it names none such, or why it was not.
+ */
+export function notifyNamed(
+  feed: ProjectFeed,
+  outcome: Outcome,
+  name: string,
+): void {
+  const offer = speakerOffer(feed, name);
+  if (outcome.kind !== "written" || !offer) {
+    notifyEdit(outcome);
+    return;
+  }
+  notify({ title: t("edit.saved"), kind: "success", ...offer });
+}

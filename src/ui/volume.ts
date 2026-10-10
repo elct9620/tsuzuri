@@ -4,7 +4,7 @@
  */
 
 /** The loudest a media element plays by itself, as a percentage. */
-export const FULL_VOLUME = 100;
+const FULL_VOLUME = 100;
 
 /** The slider's length; its middle is full volume, as Aegisub's is. */
 export const SLIDER_END = 100;
@@ -32,7 +32,7 @@ export function sliderPosition(volume: number): number {
 }
 
 /** The loudest volume the Preview plays, as a percentage. */
-export const LOUDEST_VOLUME = volumeAt(SLIDER_END);
+const LOUDEST_VOLUME = volumeAt(SLIDER_END);
 
 /** The volume saved as `value`, or full volume where none was saved or it lies outside the slider. */
 export function savedVolume(value: string | null): number {

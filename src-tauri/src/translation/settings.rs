@@ -1,4 +1,3 @@
-use std::fs;
 use std::io;
 use std::path::Path;
 
@@ -54,8 +53,7 @@ impl TranslationSettings {
             retries: self.retries.max(1),
             ..self
         };
-        fs::create_dir_all(dir)?;
-        json_settings::write(&dir.join(SETTINGS_FILE), &saved_settings)?;
+        json_settings::save(dir, SETTINGS_FILE, &saved_settings)?;
         Ok(saved_settings)
     }
 }

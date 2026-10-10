@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Language, ProjectOptions, ProjectView } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
-  import HelpButton from "#/components/settings/HelpButton.svelte";
+  import SettingName from "#/components/settings/SettingName.svelte";
   import { saveOptions, setLanguage } from "#/actions/project-options.ts";
 
   interface Props {
@@ -15,10 +15,10 @@
   <legend class="fieldset-legend">{t("settings.project")}</legend>
   <ul class="list rounded-box border border-base-300">
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.projectName")}</span>
-        <HelpButton tip="settings.projectNameHelp" />
-      </span>
+      <SettingName
+        name={t("settings.projectName")}
+        tip="settings.projectNameHelp"
+      />
       <input
         type="text"
         class="input input-sm w-64"
@@ -29,10 +29,10 @@
       />
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.primaryLanguage")}</span>
-        <HelpButton tip="settings.primaryLanguageHelp" />
-      </span>
+      <SettingName
+        name={t("settings.primaryLanguage")}
+        tip="settings.primaryLanguageHelp"
+      />
       <select
         class="select select-sm w-auto"
         value={project.language}
@@ -45,10 +45,10 @@
       </select>
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.bilingualOrder")}</span>
-        <HelpButton tip="settings.bilingualOrderHelp" />
-      </span>
+      <SettingName
+        name={t("settings.bilingualOrder")}
+        tip="settings.bilingualOrderHelp"
+      />
       <select
         class="select select-sm w-auto"
         value={project.options.bilingual_order}
@@ -65,10 +65,10 @@
       </select>
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.bilingualAutosave")}</span>
-        <HelpButton tip="settings.bilingualAutosaveHelp" />
-      </span>
+      <SettingName
+        name={t("settings.bilingualAutosave")}
+        tip="settings.bilingualAutosaveHelp"
+      />
       <input
         type="checkbox"
         class="toggle"
@@ -80,10 +80,10 @@
       />
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.overwriteBackup")}</span>
-        <HelpButton tip="settings.overwriteBackupHelp" />
-      </span>
+      <SettingName
+        name={t("settings.overwriteBackup")}
+        tip="settings.overwriteBackupHelp"
+      />
       <input
         type="checkbox"
         class="toggle"
@@ -95,10 +95,10 @@
       />
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.diarizationAfterTranscription")}</span>
-        <HelpButton tip="settings.diarizationAfterTranscriptionHelp" />
-      </span>
+      <SettingName
+        name={t("settings.diarizationAfterTranscription")}
+        tip="settings.diarizationAfterTranscriptionHelp"
+      />
       <input
         type="checkbox"
         class="toggle"

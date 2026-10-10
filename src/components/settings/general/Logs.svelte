@@ -13,7 +13,7 @@
   } from "#/ipc/logs.ts";
   import { t } from "#/i18n.ts";
   import { attempt } from "#/state/notification.svelte.ts";
-  import HelpButton from "#/components/settings/HelpButton.svelte";
+  import SettingName from "#/components/settings/SettingName.svelte";
 
   /** Where the log is written in this launch and where after a restart, once read. */
   let directory = $state<LogDirectory | null>(null);
@@ -77,10 +77,10 @@
   <legend class="fieldset-legend">{t("settings.logs")}</legend>
   <ul class="list rounded-box border border-base-300">
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.logDirectory")}</span>
-        <HelpButton tip="settings.logDirectoryHelp" />
-      </span>
+      <SettingName
+        name={t("settings.logDirectory")}
+        tip="settings.logDirectoryHelp"
+      />
       <span
         class="list-col-grow truncate font-mono text-xs"
         title={directory?.in_use}>{directory?.in_use}</span
@@ -93,10 +93,7 @@
       >
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.debugLog")}</span>
-        <HelpButton tip="settings.debugLogHelp" />
-      </span>
+      <SettingName name={t("settings.debugLog")} tip="settings.debugLogHelp" />
       <input
         type="checkbox"
         class="toggle"

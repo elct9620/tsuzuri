@@ -18,6 +18,7 @@
   import { attempt, notify } from "#/state/notification.svelte.ts";
   import { updateFoundMessage } from "#/state/app-updates.svelte.ts";
   import { appUpdates } from "#/state/context.ts";
+  import SettingName from "#/components/settings/SettingName.svelte";
   import HelpButton from "#/components/settings/HelpButton.svelte";
 
   /** How much of the commit is shown, as git abbreviates it. */
@@ -159,10 +160,10 @@
   </div>
   <ul class="list mt-2 rounded-box border border-base-300">
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.launchCheck")}</span>
-        <HelpButton tip="settings.launchCheckHelp" />
-      </span>
+      <SettingName
+        name={t("settings.launchCheck")}
+        tip="settings.launchCheckHelp"
+      />
       <input
         type="checkbox"
         class="toggle"
@@ -172,10 +173,10 @@
     </li>
     {#if hasPreviewChannel}
       <li class="list-row items-center">
-        <span class="flex w-32 items-center gap-1 font-medium">
-          <span>{t("settings.updateChannel")}</span>
-          <HelpButton tip="settings.updateChannelHelp" />
-        </span>
+        <SettingName
+          name={t("settings.updateChannel")}
+          tip="settings.updateChannelHelp"
+        />
         <div class="flex items-center gap-2">
           <select
             class="select select-sm w-auto"

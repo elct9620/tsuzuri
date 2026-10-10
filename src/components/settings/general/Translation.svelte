@@ -8,7 +8,7 @@
   } from "#/ipc/translation.ts";
   import { t } from "#/i18n.ts";
   import { attempt } from "#/state/notification.svelte.ts";
-  import HelpButton from "#/components/settings/HelpButton.svelte";
+  import SettingName from "#/components/settings/SettingName.svelte";
 
   /** The general translation settings as the fields stand; a number field left empty is null. */
   let fields = $state({
@@ -51,10 +51,10 @@
   <legend class="fieldset-legend">{t("settings.translation")}</legend>
   <ul class="list rounded-box border border-base-300">
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.batchSize")}</span>
-        <HelpButton tip="settings.batchSizeHelp" />
-      </span>
+      <SettingName
+        name={t("settings.batchSize")}
+        tip="settings.batchSizeHelp"
+      />
       <input
         type="number"
         min="1"
@@ -64,10 +64,7 @@
       />
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.retries")}</span>
-        <HelpButton tip="settings.retriesHelp" />
-      </span>
+      <SettingName name={t("settings.retries")} tip="settings.retriesHelp" />
       <input
         type="number"
         min="1"
@@ -77,10 +74,10 @@
       />
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.referenceLines")}</span>
-        <HelpButton tip="settings.referenceLinesHelp" />
-      </span>
+      <SettingName
+        name={t("settings.referenceLines")}
+        tip="settings.referenceLinesHelp"
+      />
       <input
         type="number"
         min="1"
@@ -90,10 +87,10 @@
       />
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.residentLlama")}</span>
-        <HelpButton tip="settings.residentLlamaHelp" />
-      </span>
+      <SettingName
+        name={t("settings.residentLlama")}
+        tip="settings.residentLlamaHelp"
+      />
       <input
         type="checkbox"
         class="toggle"
@@ -102,10 +99,10 @@
       />
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.modelKeepSeconds")}</span>
-        <HelpButton tip="settings.modelKeepSecondsHelp" />
-      </span>
+      <SettingName
+        name={t("settings.modelKeepSeconds")}
+        tip="settings.modelKeepSecondsHelp"
+      />
       <label class="input input-sm w-24">
         <input
           type="number"
@@ -118,10 +115,10 @@
       </label>
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.simplifiedCleaned")}</span>
-        <HelpButton tip="settings.translationCleanedHelp" />
-      </span>
+      <SettingName
+        name={t("settings.simplifiedCleaned")}
+        tip="settings.translationCleanedHelp"
+      />
       <input
         type="checkbox"
         class="toggle"

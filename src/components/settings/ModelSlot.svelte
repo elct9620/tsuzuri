@@ -20,7 +20,7 @@
     type HubFile,
   } from "#/ui/models.ts";
   import { attempt } from "#/state/notification.svelte.ts";
-  import HelpButton from "#/components/settings/HelpButton.svelte";
+  import SettingName from "#/components/settings/SettingName.svelte";
 
   interface Props {
     slot: ModelSlot;
@@ -157,14 +157,12 @@
 <svelte:window onrust:model-download-progress={showProgress} />
 
 <li class="list-row items-center">
-  <span class="flex w-32 items-center gap-1 font-medium">
-    <span>{t(`slots.${slot}`)}</span>
-    <HelpButton
-      tip={isProjectSlot
-        ? "settings.projectModelHelp"
-        : `settings.${slot}ModelHelp`}
-    />
-  </span>
+  <SettingName
+    name={t(`slots.${slot}`)}
+    tip={isProjectSlot
+      ? "settings.projectModelHelp"
+      : `settings.${slot}ModelHelp`}
+  />
   <select
     class="select select-sm w-full"
     aria-label={t(`slots.${slot}`)}

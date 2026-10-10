@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ProjectView, TranscriptionOverrides } from "#/ipc/project.ts";
   import { t } from "#/i18n.ts";
-  import HelpButton from "#/components/settings/HelpButton.svelte";
+  import SettingName from "#/components/settings/SettingName.svelte";
   import { saveOptions } from "#/actions/project-options.ts";
 
   interface Props {
@@ -41,10 +41,7 @@
   <ul class="list rounded-box border border-base-300">
     {#each SETTINGS as [setting, label] (setting)}
       <li class="list-row items-center">
-        <span class="flex w-32 items-center gap-1 font-medium">
-          <span>{t(label)}</span>
-          <HelpButton tip="settings.projectTranscriptionHelp" />
-        </span>
+        <SettingName name={t(label)} tip="settings.projectTranscriptionHelp" />
         <select
           class="select select-sm w-auto"
           value={overrideChoice(project.options.transcription[setting])}

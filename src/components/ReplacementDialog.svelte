@@ -93,7 +93,7 @@
 >
   <fieldset class="fieldset gap-2 text-sm">
     <label class="flex items-center gap-2">
-      <span class="w-16">{t("replace.pattern")}</span>
+      <span class="w-24 shrink-0">{t("replace.pattern")}</span>
       <input
         class="input input-sm grow"
         bind:this={patternInput}
@@ -102,7 +102,7 @@
       />
     </label>
     <label class="flex items-center gap-2">
-      <span class="w-16">{t("replace.substitute")}</span>
+      <span class="w-24 shrink-0">{t("replace.substitute")}</span>
       <input
         class="input input-sm grow"
         placeholder={t("replace.substituteNone")}
@@ -111,7 +111,7 @@
       />
     </label>
     <div class="flex items-center gap-4">
-      <span class="w-16">{t("replace.field")}</span>
+      <span class="w-24 shrink-0">{t("replace.field")}</span>
       <label class="flex items-center gap-2">
         <input
           type="radio"

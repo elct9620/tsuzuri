@@ -696,6 +696,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 整體的 `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
 | `Components` | 元件的狀態、指定與還原 |
 | `Logs` | log 目錄與除錯紀錄 |
+| `InterfaceLanguage` | 偏好的介面語言 |
 | `Preferences` | 偏好的換段設定 |
 | `GlossaryDialog` | 詞彙表 modal |
 | `SettingsPage` | 設定頁的分區清單、返回與 Esc |

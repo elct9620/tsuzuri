@@ -8,7 +8,7 @@
   } from "#/ipc/transcription.ts";
   import { t } from "#/i18n.ts";
   import { attempt } from "#/state/notification.svelte.ts";
-  import HelpButton from "#/components/settings/HelpButton.svelte";
+  import SettingName from "#/components/settings/SettingName.svelte";
 
   /** The general Transcription Settings, the default of every Project, as the switches stand. */
   let settings = $state<TranscriptionSettings>({
@@ -35,10 +35,7 @@
   <legend class="fieldset-legend">{t("settings.transcription")}</legend>
   <ul class="list rounded-box border border-base-300">
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.vad")}</span>
-        <HelpButton tip="settings.vadHelp" />
-      </span>
+      <SettingName name={t("settings.vad")} tip="settings.vadHelp" />
       <input
         type="checkbox"
         class="toggle"
@@ -47,10 +44,10 @@
       />
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.nonSpeechSuppressed")}</span>
-        <HelpButton tip="settings.nonSpeechSuppressedHelp" />
-      </span>
+      <SettingName
+        name={t("settings.nonSpeechSuppressed")}
+        tip="settings.nonSpeechSuppressedHelp"
+      />
       <input
         type="checkbox"
         class="toggle"
@@ -59,10 +56,10 @@
       />
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.contextCarried")}</span>
-        <HelpButton tip="settings.contextCarriedHelp" />
-      </span>
+      <SettingName
+        name={t("settings.contextCarried")}
+        tip="settings.contextCarriedHelp"
+      />
       <input
         type="checkbox"
         class="toggle"
@@ -71,10 +68,10 @@
       />
     </li>
     <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.simplifiedCleaned")}</span>
-        <HelpButton tip="settings.transcriptionCleanedHelp" />
-      </span>
+      <SettingName
+        name={t("settings.simplifiedCleaned")}
+        tip="settings.transcriptionCleanedHelp"
+      />
       <input
         type="checkbox"
         class="toggle"

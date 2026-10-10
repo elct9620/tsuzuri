@@ -46,7 +46,7 @@
 <fieldset class="fieldset text-sm">
   <legend class="fieldset-legend">{t("preferences.language")}</legend>
   <select
-    class="select select-sm w-auto"
+    class="select select-sm"
     aria-label={t("preferences.language")}
     aria-describedby="{id}-help"
     value={chosenLocale}
@@ -57,5 +57,7 @@
       <option value={code} lang={code}>{name}</option>
     {/each}
   </select>
-  <p id="{id}-help" class="label">{t("preferences.languageHelp")}</p>
+  <p id="{id}-help" class="label whitespace-normal">
+    {t("preferences.languageHelp")}
+  </p>
 </fieldset>

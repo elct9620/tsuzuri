@@ -19,7 +19,7 @@ const en = {
     translationText: "Translation as plain text",
     bilingualText: "Bilingual plain text",
     textSpeakers: "Speakers in plain text",
-    textBlankLines: "Blank lines between segments",
+    textBlankLines: "Blank lines between Segments",
     notExported: "Not exported",
     notOpened: "Not opened",
     notRenamed: "Not renamed",
@@ -43,6 +43,7 @@ const en = {
     subtitleOnly: "Subtitle",
     subtitleOnlyHint: "No video or audio file; only its subtitles are edited",
     noSubtitle: "No subtitle yet; transcribe it to make one",
+    glossary_one: "Glossary: {{count}} term",
     glossary: "Glossary: {{count}} terms",
     createGlossary: "Create a glossary",
     notSelected: "Resource not selected",
@@ -107,6 +108,7 @@ const en = {
     words: "words",
     glossary: "Glossary",
     glossaryNone: "No glossary",
+    glossaryLoaded_one: "{{file}} ({{count}} term)",
     glossaryLoaded: "{{file}} ({{count}} terms)",
     start: "Translate",
     overwrite:
@@ -114,6 +116,7 @@ const en = {
     overwriteAndStart: "Overwrite and translate",
     again: "Translate again",
     scopeSegment: "Segment {{number}}",
+    scopeChecked_one: "{{count}} checked Segment",
     scopeChecked: "{{count}} checked Segments",
     continuation:
       "Segments before the range are not rewritten; when the one before already carries the whole sentence, a line translated again may read as going on from it",
@@ -139,7 +142,7 @@ const en = {
     speakersOfChecked: "Speaker…",
     speakersTitle: "Set speakers",
     speakersScope: "Segments",
-    speakersEvery: "Every segment",
+    speakersEvery: "Every Segment",
     speakersUnnamed: "Segments without a speaker",
     speakersNamedBefore: "Segments said by",
     speakersNamedAfter: "",
@@ -199,6 +202,7 @@ const en = {
   },
   cleanup: {
     action: "Clean Simplified Chinese",
+    done_one: "{{count}} Simplified character cleaned",
     done: "{{count}} Simplified characters cleaned",
     nothing: "No Simplified Chinese to clean",
     failed: "Nothing cleaned",
@@ -279,9 +283,10 @@ const en = {
     revertTimes: "Take back the times",
     notReverted: "Not taken back",
     reverted: "Taken back",
-    unmatched: "{{count}} segments no longer line up with a translation",
+    unmatched_one: "{{count}} Segment no longer lines up with a translation",
+    unmatched: "{{count}} Segments no longer line up with a translation",
     unmatchedHelp:
-      "A translation lines up by time; translate these segments again",
+      "A translation lines up by time; translate these Segments again",
   },
   versions: {
     open: "Versions",
@@ -569,9 +574,9 @@ const en = {
     noSubtitle: "This resource has no subtitle in the Primary Language",
     noBackup: "No such backup: {{backup}}",
     noRow: "The comparison has changed; compare again before taking a cue back",
-    invalidTimes: "A segment cannot end before it starts",
+    invalidTimes: "A Segment cannot end before it starts",
     unorderedTimes:
-      "A segment cannot start before the one before it or after the one after it",
+      "A Segment cannot start before the one before it or after the one after it",
     invalidPattern: "Nothing to find, or not a regular expression: {{detail}}",
     modeRunning:
       "A task running on this Resource is writing this subtitle; try again once it ends",

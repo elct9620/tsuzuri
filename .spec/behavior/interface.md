@@ -665,3 +665,27 @@ A language's name stays in that language, so it can be found whatever the interf
 | Given | the settings written in English |
 | When | the Interface Languages are listed |
 | Then | Traditional Chinese reads `繁體中文` and English reads `English` |
+
+## `IF-075` Counting one in English
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in English |
+| When | a Glossary of one term is counted |
+| Then | it reads `Glossary: 1 term` |
+
+## `IF-076` Counting in Traditional Chinese, which has no singular
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in Traditional Chinese |
+| When | a Glossary of one term is counted |
+| Then | it reads `詞彙表 1 筆` |
+
+## `IF-077` Naming a Segment in English as the glossary does
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in English |
+| When | any of its text names a Segment |
+| Then | the word is capitalised, as `Segment` or `Segments` |

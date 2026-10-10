@@ -1,6 +1,16 @@
 import type en from "#/locales/en.ts";
 
-const zhHant: typeof en = {
+/**
+ * Every text English has, less the singular forms: Chinese counts without them, so i18next reads
+ * the text without a plural ending for every count.
+ */
+type TranslationWithoutSingulars<T> = {
+  [K in keyof T as K extends `${string}_one` ? never : K]: T[K] extends string
+    ? T[K]
+    : TranslationWithoutSingulars<T[K]>;
+};
+
+const zhHant: TranslationWithoutSingulars<typeof en> = {
   toolbar: {
     projectName: "專案名稱",
     rename: "點一下改名",

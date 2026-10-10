@@ -10,6 +10,7 @@ import { EditingSession } from "#/editor/index.ts";
 import HelpButton from "#/components/settings/HelpButton.svelte";
 import { interfaceLanguageCode, setInterfaceLanguage, t } from "#/i18n.ts";
 import { drawPage } from "#/page.ts";
+import en from "#/locales/en.ts";
 import { mockPageMount } from "#/testing/page.ts";
 import { projectOf } from "#/testing/project.ts";
 
@@ -67,6 +68,33 @@ describe("interface language", () => {
     });
 
     expect(await startWith(await interfaceLocale())).toBe("Settings");
+  });
+
+  // @behavior IF-075
+  it("counts one in the singular in English", async () => {
+    await startWith("en");
+
+    expect(t("resources.glossary", { count: 1 })).toBe("Glossary: 1 term");
+  });
+
+  // @behavior IF-076
+  it("counts one as any other number in Traditional Chinese", async () => {
+    await startWith("zh-TW");
+
+    expect(t("resources.glossary", { count: 1 })).toBe("詞彙表 1 筆");
+  });
+
+  // @behavior IF-077
+  it("capitalises a Segment in every English text", () => {
+    /** Every text under `texts`, however deep it is nested. */
+    const allTexts = (texts: object): string[] =>
+      Object.values(texts).flatMap((text) =>
+        typeof text === "string" ? [text] : allTexts(text),
+      );
+
+    expect(allTexts(en).filter((text) => /\bsegments?\b/.test(text))).toEqual(
+      [],
+    );
   });
 
   // @behavior IF-012

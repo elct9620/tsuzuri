@@ -117,6 +117,7 @@
 
 <div
   role="region"
+  data-covers-editor
   aria-label={t("toolbar.settings")}
   class="flex h-dvh flex-col"
   hidden={!isShown}

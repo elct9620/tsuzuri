@@ -12,6 +12,7 @@
   import type { CursorField } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { notify, notifyFailure } from "#/state/notification.svelte.ts";
+  import { isEditorCovered } from "#/ui/editor-cover.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
   import { selectedText } from "#/ui/text-fields.ts";
   import { editingSession, projectFeed } from "#/state/context.ts";
@@ -31,7 +32,7 @@
   function openByShortcut(event: KeyboardEvent): void {
     if (
       !isShortcut(event, "replace", isMacOS()) ||
-      dialog.isOpen() ||
+      isEditorCovered() ||
       feed.project === null
     )
       return;

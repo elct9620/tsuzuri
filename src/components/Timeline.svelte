@@ -64,6 +64,7 @@
   } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { notifyEdit, notifyFailure } from "#/state/notification.svelte.ts";
+  import { isEditorCovered } from "#/ui/editor-cover.ts";
   import { isShortcut, isShortcutHeld } from "#/ui/shortcuts.ts";
   import {
     type PlayedSource,
@@ -185,7 +186,7 @@
 
   /** Takes the keys the timeline answers wherever the focus is, unless a control has it. */
   function followKeys(event: KeyboardEvent): void {
-    if (isForControl(event)) return;
+    if (isForControl(event) || isEditorCovered()) return;
     if (isShortcut(event, "play", isMac)) {
       event.preventDefault();
       playOrStop();

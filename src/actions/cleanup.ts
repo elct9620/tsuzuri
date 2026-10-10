@@ -9,6 +9,7 @@ import {
   type EditingSession,
 } from "#/editor/index.ts";
 import { t } from "#/i18n.ts";
+import { isEditorCovered } from "#/ui/editor-cover.ts";
 import { notify, notifyFailure } from "#/state/notification.svelte.ts";
 
 /** Tells how a cleanup ended: how many characters were cleaned, or why none were. */
@@ -38,11 +39,11 @@ export async function cleanSegments(
 
 /**
  * Leaves a field being typed in, so its text is written and shown cleaned, then cleans what is
- * marked; a dialog holding focus is doing something else, so nothing is cleaned.
+ * marked; while the editor is covered the user is doing something else, so nothing is cleaned.
  */
 export async function cleanMarked(session: EditingSession): Promise<void> {
   const field = document.activeElement;
-  if (field?.closest("dialog[open]")) return;
+  if (isEditorCovered()) return;
   if (field instanceof HTMLElement && isTextField(field)) field.blur();
   notifyCleanup(await session.cleanSimplified());
 }

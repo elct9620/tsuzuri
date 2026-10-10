@@ -16,6 +16,7 @@
   import { type CursorField, markRanges, rangeOf } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { failureMessage } from "#/ui/failure.ts";
+  import { isEditorCovered } from "#/ui/editor-cover.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
   import { selectedText } from "#/ui/text-fields.ts";
   import {
@@ -63,6 +64,7 @@
 
   /** Opens the bar by the search shortcut while a Project is open, and moves between matches while it is open. */
   function followShortcut(event: KeyboardEvent): void {
+    if (isEditorCovered()) return;
     if (isShortcut(event, "search", isMacOS()) && feed.project !== null) {
       event.preventDefault();
       open();

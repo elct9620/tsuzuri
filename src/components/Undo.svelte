@@ -3,6 +3,7 @@
   import { isMacOS } from "#/ipc/system.ts";
   import { isTextField } from "#/editor/index.ts";
   import { notifyEdit } from "#/state/notification.svelte.ts";
+  import { isEditorCovered } from "#/ui/editor-cover.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";
   import { editingSession } from "#/state/context.ts";
 
@@ -15,14 +16,14 @@
     if (command !== "undo" && command !== "redo") return;
     if (isTextField(document.activeElement)) {
       document.execCommand(command);
-    } else {
+    } else if (!isEditorCovered()) {
       void applyToProject(command);
     }
   }
 
   /** Undo or Redo by its keys where no menu takes them first; a text field keeps them for its own typing. */
   function applyByShortcut(event: KeyboardEvent): void {
-    if (isTextField(event.target)) return;
+    if (isTextField(event.target) || isEditorCovered()) return;
     const isMac = isMacOS();
     const command = isShortcut(event, "undo", isMac)
       ? "undo"

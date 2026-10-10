@@ -16,6 +16,7 @@
     runWithNeighbour,
   } from "#/editor/index.ts";
   import { notifyEdit } from "#/state/notification.svelte.ts";
+  import { isEditorCovered } from "#/ui/editor-cover.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
   import CheckedBar from "#/components/CheckedBar.svelte";
   import { cleanMarked } from "#/actions/cleanup.ts";
@@ -42,10 +43,10 @@
   /** A change by key is being sent. */
   let isChangingByKey = false;
 
-  /** Whether the user is working in an open dialog, a menu or a drop-down list, which a change by key leaves alone. */
+  /** Whether the user is working on what covers the editor, in a menu or in a drop-down list, which a change by key leaves alone. */
   function isWorkingElsewhere(target: EventTarget | null): boolean {
     return (
-      document.querySelector("dialog[open]") !== null ||
+      isEditorCovered() ||
       (target instanceof Element &&
         target.closest(".dropdown, select") !== null)
     );
@@ -132,7 +133,8 @@
   function checkOrClean(event: KeyboardEvent): void {
     if (
       isShortcut(event, "checkAll", isMacOS()) &&
-      !isTextField(event.target)
+      !isTextField(event.target) &&
+      !isEditorCovered()
     ) {
       event.preventDefault();
       session.checkAll();
@@ -158,7 +160,7 @@
     if (command === "clean-simplified") void cleanMarked(session);
     if (command !== "select-all") return;
     if (isTextField(document.activeElement)) document.execCommand("selectAll");
-    else session.checkAll();
+    else if (!isEditorCovered()) session.checkAll();
   }
 
   /** Opens the search bar above the Segments. */

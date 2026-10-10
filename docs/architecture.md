@@ -825,11 +825,12 @@ feed -> Preview.show    sets the player's source: media or silence
 | `ui/silence.ts` | 沒有媒體檔時播放的靜音 |
 | `ui/preview-screen.ts` | 影片視窗會移走的播放器與疊字 |
 | `ui/shortcuts.ts` | 各平台的快速鍵、比對與寫法 |
+| `ui/editor-cover.ts` | 編輯區被蓋住時不接編輯鍵 |
 | `ui/text-fields.ts` | 選取的文字 |
 | `ui/speakers.ts` | 段落與詞彙表的說話者名單 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
-Svelte 元件以 `@lucide/svelte` 畫出圖示。快速鍵以 `ui/shortcuts.ts` 為準：Svelte 元件比對的鍵用 `isShortcut` 讀它，這些鍵與 Rust 選單的鍵由測試雙向核對。
+Svelte 元件以 `@lucide/svelte` 畫出圖示。快速鍵以 `ui/shortcuts.ts` 為準：Svelte 元件比對的鍵用 `isShortcut` 讀它，這些鍵與 Rust 選單的鍵由測試雙向核對。modal 或設定頁蓋住編輯區時，編輯鍵與 Edit 選單一律以 `isEditorCovered` 略過。
 
 ### 4.9 影片視窗
 

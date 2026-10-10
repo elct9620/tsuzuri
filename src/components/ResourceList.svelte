@@ -5,6 +5,7 @@
   import { isMacOS } from "#/ipc/system.ts";
   import { t } from "#/i18n.ts";
   import { attempt } from "#/state/notification.svelte.ts";
+  import { isEditorCovered } from "#/ui/editor-cover.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";
   import { projectFeed } from "#/state/context.ts";
   import { reload } from "#/actions/project.ts";
@@ -47,6 +48,7 @@
    * as the list's buttons do.
    */
   function actByShortcut(event: KeyboardEvent): void {
+    if (isEditorCovered()) return;
     const isMac = isMacOS();
     if (isShortcut(event, "resourceList", isMac)) {
       event.preventDefault();

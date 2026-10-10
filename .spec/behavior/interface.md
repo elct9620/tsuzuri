@@ -586,3 +586,29 @@ Focus goes where the settings begin and returns where it was, as it does for a m
 | Given | the settings opened by the toolbar's button |
 | When | the back button is clicked |
 | Then | focus was on the back button while the settings showed and is on the toolbar's button again |
+
+## `IF-066` Keeping the editor's keys from the Project while something covers it
+
+The editor stays drawn under the settings and under a modal, so its keys would change Segments the user is not working on.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings or a modal shown over the editor |
+| When | Ctrl/⌘+Z is pressed outside a text field |
+| Then | nothing is undone |
+
+## `IF-067` Keeping the Edit menu from the Project while the settings show
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings shown over the editor |
+| When | Undo is chosen from the Edit menu outside a text field |
+| Then | nothing is undone |
+
+## `IF-068` Keeping the play key from the media while the settings show
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings shown over the editor |
+| When | the play key is pressed outside a control |
+| Then | the media stays paused |

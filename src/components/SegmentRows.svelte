@@ -25,6 +25,7 @@
     type TranscriptView,
   } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
+  import { isEditorCovered } from "#/ui/editor-cover.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";
   import {
     editingSession,
@@ -254,7 +255,7 @@
 
   /** Turns following playback on or off by its shortcut, wherever the focus is. */
   function followShortcut(event: KeyboardEvent): void {
-    if (!isShortcut(event, "following", isMacOS())) return;
+    if (!isShortcut(event, "following", isMacOS()) || isEditorCovered()) return;
     event.preventDefault();
     playback.toggleFollowing();
   }

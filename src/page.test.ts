@@ -29,12 +29,20 @@ describe("drawPage", () => {
     drawnPages.push(drawPage(...args));
   }
 
-  /** Draws the page with a Project open in the editor, in the document so keys reach it. */
-  async function drawEditorPage(): Promise<HTMLElement> {
+  /**
+   * Draws the page with a Project open in the editor, in the document so keys reach it, answering
+   * each command in `answers` as `mockPageMount` does.
+   */
+  async function drawEditorPage(
+    answers: Record<string, (args: unknown) => unknown> = {},
+  ): Promise<HTMLElement> {
     const page = document.createElement("div");
     document.body.append(page);
     pagesInDocument.push(page);
-    mockPageMount(projectOf());
+    mockPageMount(
+      projectOf({ resources: [resourceOf({ has_media: true })] }),
+      answers,
+    );
     const feed = new ProjectFeed();
     await feed.refresh();
     drawTestPage(feed, new EditingSession(editingPort), page);
@@ -382,6 +390,58 @@ describe("drawPage", () => {
       }),
       settingsButton,
     ]);
+  });
+
+  // @behavior IF-066
+  it.each([
+    ["the settings", t("toolbar.settings")],
+    ["the shortcut list", t("shortcuts.title")],
+  ])("keeps the undo key from the Project under %s", async (_cover, opener) => {
+    const commands: string[] = [];
+    const page = await drawEditorPage({ undo: () => commands.push("undo") });
+    within(page.querySelector<HTMLElement>("header")!)
+      .getAllByRole("button", { hidden: true, name: opener })[0]
+      .click();
+    await tick();
+
+    document.body.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true }),
+    );
+    await settle();
+
+    expect(commands).toEqual([]);
+  });
+
+  // @behavior IF-067
+  it("keeps the Edit menu's undo from the Project while the settings show", async () => {
+    const commands: string[] = [];
+    const page = await drawEditorPage({ undo: () => commands.push("undo") });
+    await openSettings(page, "header");
+
+    // As `relayEvents` hands on the Edit menu's choice.
+    window.dispatchEvent(
+      new CustomEvent("rust:edit-command", { detail: "undo" }),
+    );
+    await settle();
+
+    expect(commands).toEqual([]);
+  });
+
+  // @behavior IF-068
+  it("keeps the play key from the media while the settings show", async () => {
+    const page = await drawEditorPage();
+    await openSettings(page, "header");
+    const play = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue(undefined);
+
+    document.body.dispatchEvent(
+      new KeyboardEvent("keydown", { key: " ", bubbles: true }),
+    );
+    await settle();
+
+    expect(play).not.toHaveBeenCalled();
+    play.mockRestore();
   });
 
   // @behavior IF-061

@@ -82,7 +82,14 @@ describe("interface language", () => {
     const settingsPage = settings.querySelector(
       `[role="region"][aria-label="${t("toolbar.settings")}"]`,
     );
-    const rows = [...(settingsPage?.querySelectorAll(".list-row") ?? [])];
+    // A setting is a list row, or a table row its header cell names; a table row with no header
+    // only explains the row above it.
+    const rows = [
+      ...(settingsPage?.querySelectorAll(".list-row, tbody > tr") ?? []),
+    ].filter(
+      (row) =>
+        !(row instanceof HTMLTableRowElement) || row.cells[0]?.tagName === "TH",
+    );
     const rowsWithoutHelp = rows.filter((row) => {
       const help = within(row as HTMLElement).queryByRole("button", {
         hidden: true,

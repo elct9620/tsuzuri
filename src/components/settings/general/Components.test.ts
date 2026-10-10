@@ -1,14 +1,16 @@
 // @vitest-environment happy-dom
 import { render, screen, within } from "@testing-library/svelte";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Components from "#/components/settings/general/Components.svelte";
 import { showNotifications, notifications } from "#/testing/notifications.ts";
 import { settle } from "#/testing/settle.ts";
 
 describe("Components", () => {
   /** The row of llama.cpp, which every case here looks at. */
-  const llamaRow = () => screen.getByText("llama.cpp").closest("li")!;
+  const llamaRow = () => screen.getByText("llama.cpp").closest("tr")!;
+  /** The row under llama.cpp's that says why it is not ready and how to make it so. */
+  const llamaHint = () => llamaRow().nextElementSibling as HTMLElement | null;
 
   /** Opens the settings, which find the Components as they are written. */
   async function mountWith(
@@ -19,13 +21,16 @@ describe("Components", () => {
     await settle();
   }
 
-  /** The status the row shows, or null while none is shown. */
-  function llamaStatus(): string | null {
-    return (
-      within(llamaRow()).queryByText(/.+/, {
-        selector: "li > span",
-      })?.textContent ?? null
-    );
+  /** The status, source and path the row shows, or null while no status is shown. */
+  function llamaStatus(): string[] | null {
+    const badge = llamaRow().querySelector(".badge");
+    if (badge === null) return null;
+    const [, , source, path] = llamaRow().children;
+    return [
+      badge.textContent ?? "",
+      source.textContent?.trim() ?? "",
+      path.querySelector(".sr-only")?.textContent ?? "—",
+    ];
   }
 
   function restoreButton(): HTMLButtonElement | null {
@@ -38,6 +43,7 @@ describe("Components", () => {
 
   afterEach(() => {
     clearMocks();
+    vi.unstubAllGlobals();
   });
 
   // @behavior CP-007
@@ -56,7 +62,11 @@ describe("Components", () => {
       ],
     });
 
-    expect(llamaStatus()).toBe("內建：/components/llama/bin/llama-server");
+    expect(llamaStatus()).toEqual([
+      "已就緒",
+      "內建",
+      "/components/llama/bin/llama-server",
+    ]);
   });
 
   // @behavior CP-019
@@ -75,9 +85,11 @@ describe("Components", () => {
       ],
     });
 
-    expect(llamaStatus()).toBe(
-      "內建（vulkan）：/components/llama/vulkan/bin/llama-server",
-    );
+    expect(llamaStatus()).toEqual([
+      "已就緒",
+      "內建（vulkan）",
+      "/components/llama/vulkan/bin/llama-server",
+    ]);
   });
 
   // @behavior CP-014
@@ -96,9 +108,10 @@ describe("Components", () => {
       ],
     });
 
-    expect(llamaStatus()).toBe(
-      "未就緒（內建的版本無法執行，可能缺少驅動程式或系統函式庫）",
-    );
+    expect([llamaStatus(), llamaHint()?.textContent?.trim()]).toEqual([
+      ["無法執行", "—", "—"],
+      "內建的版本無法執行，可能缺少驅動程式或系統函式庫",
+    ]);
   });
 
   // @behavior CP-005
@@ -117,7 +130,10 @@ describe("Components", () => {
       ],
     });
 
-    expect(llamaStatus()).toBe("未就緒（可用 brew install llama.cpp 安裝）");
+    expect([
+      llamaStatus(),
+      llamaHint()?.querySelector("code")?.textContent,
+    ]).toEqual([["未安裝", "—", "—"], "brew install llama.cpp"]);
   });
 
   // @behavior CP-013
@@ -153,7 +169,11 @@ describe("Components", () => {
     within(llamaRow()).getByRole("button", { name: "指定" }).click();
     await settle();
 
-    expect(llamaStatus()).toBe("指定：/opt/llama/llama-server");
+    expect(llamaStatus()).toEqual([
+      "已就緒",
+      "指定",
+      "/opt/llama/llama-server",
+    ]);
   });
 
   // @behavior CP-021
@@ -186,7 +206,11 @@ describe("Components", () => {
     restoreButton()!.click();
     await settle();
 
-    expect(llamaStatus()).toBe("偵測到：/usr/bin/llama-server");
+    expect(llamaStatus()).toEqual([
+      "已就緒",
+      "偵測到",
+      "/usr/bin/llama-server",
+    ]);
   });
 
   // @behavior CP-022
@@ -236,7 +260,34 @@ describe("Components", () => {
 
     expect([llamaRow().querySelector(".skeleton"), llamaStatus()]).toEqual([
       null,
-      "偵測到：/usr/bin/llama-server",
+      ["已就緒", "偵測到", "/usr/bin/llama-server"],
+    ]);
+  });
+
+  // @behavior CP-028
+  it("copies the command that installs a missing component", async () => {
+    await mountWith({
+      component_statuses: () => [
+        {
+          name: "llama",
+          is_ready: false,
+          path: null,
+          origin: null,
+          variant: null,
+          problem: "not-installed",
+          install: "brew install llama.cpp",
+        },
+      ],
+    });
+    const writeText = vi.fn(async () => {});
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+
+    within(llamaHint()!).getByRole("button", { name: "複製" }).click();
+    await settle();
+
+    expect([writeText.mock.calls, notifications()]).toEqual([
+      [["brew install llama.cpp"]],
+      ["已複製安裝指令"],
     ]);
   });
 

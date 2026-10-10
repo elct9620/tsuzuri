@@ -171,3 +171,13 @@ Finding a Component runs it, which takes a moment on first use.
 | Given | a Component run from an executable the user chose |
 | When | forgetting the choice fails |
 | Then | a Notification says the settings were not saved |
+
+## `CP-028` Copying how to install a Component
+
+The install command is meant for a terminal, so it is copied whole rather than retyped.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component not installed, with a command that installs it |
+| When | its install command is copied from the components panel |
+| Then | the clipboard holds the command and a Notification says it was copied |

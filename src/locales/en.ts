@@ -305,6 +305,10 @@ const en = {
     notRestored: "Not restored",
   },
   preferences: {
+    language: "Interface language",
+    systemLanguage: "System language",
+    languageHelp:
+      "The language Tsuzuri's text is written in. The text changes at once; the system language follows the language the system is set to.",
     choosing: "Choosing another Segment while playing, from",
     pausing: "Pause",
     fromStart: "From start",
@@ -336,6 +340,7 @@ const en = {
   settings: {
     back: "Back",
     sections: "Settings sections",
+    language: "Language",
     choosing: "Choosing a Segment",
     preferences: "Preferences",
     unreadable: "Settings not read",

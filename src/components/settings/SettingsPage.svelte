@@ -10,6 +10,7 @@
   import GeneralModels from "#/components/settings/general/Models.svelte";
   import GeneralTranscription from "#/components/settings/general/Transcription.svelte";
   import Logs from "#/components/settings/general/Logs.svelte";
+  import InterfaceLanguage from "#/components/settings/preferences/InterfaceLanguage.svelte";
   import Preferences from "#/components/settings/preferences/Preferences.svelte";
   import Project from "#/components/settings/project/Project.svelte";
   import ProjectModels from "#/components/settings/project/Models.svelte";
@@ -29,6 +30,7 @@
     | "models"
     | "logs"
     | "about"
+    | "language"
     | "choosing";
 
   /** The section list's groups in order, each with its title and the sections under it. */
@@ -62,7 +64,10 @@
     {
       title: "settings.preferences",
       isProjectOwn: false,
-      sections: [{ section: "choosing", label: "settings.choosing" }],
+      sections: [
+        { section: "language", label: "settings.language" },
+        { section: "choosing", label: "settings.choosing" },
+      ],
     },
   ];
 
@@ -198,6 +203,7 @@
         <div hidden={shownSection !== "about"}>
           <About {openLicenses} />
         </div>
+        <div hidden={shownSection !== "language"}><InterfaceLanguage /></div>
         <div hidden={shownSection !== "choosing"}><Preferences /></div>
       </div>
     </div>

@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { render, screen, within } from "@testing-library/svelte";
-import { clearMocks } from "@tauri-apps/api/mocks";
+import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { tick } from "svelte";
 import { afterEach, describe, expect, it } from "vitest";
 import { editingPort } from "#/ipc/editing.ts";
+import { DEFAULT_PREFERENCES, interfaceLocale } from "#/ipc/preferences.ts";
 import { ProjectFeed } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
 import HelpButton from "#/components/settings/HelpButton.svelte";
@@ -55,6 +56,17 @@ describe("interface language", () => {
     await startWith("ja-JP");
 
     expect(interfaceLanguageCode()).toBe("en");
+  });
+
+  // @behavior IF-072
+  it("starts in the language chosen over the system's", async () => {
+    mockIPC((command) => {
+      if (command === "preferences")
+        return { ...DEFAULT_PREFERENCES, interface_language: "en" };
+      if (command === "plugin:os|locale") return "zh-Hant-TW";
+    });
+
+    expect(await startWith(await interfaceLocale())).toBe("Settings");
   });
 
   // @behavior IF-012

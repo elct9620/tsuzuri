@@ -1,10 +1,11 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens. Keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, and listing the shortcuts. Showing the settings as a page over the whole window, and docking the Resource list beside a window wide enough to hold it. Telling what just happened in Notifications, and that an edit was saved in the Save Mark. Opening where Tsuzuri can be sponsored, and sizing the window the first time it opens. Afterwards the window opens at the size and place it was closed at.
+Writing the webview's text in the Interface Language: the one chosen in the Preferences, which changes the text at once, or the system's language when none is chosen. Keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, and listing the shortcuts. Showing the settings as a page over the whole window, and docking the Resource list beside a window wide enough to hold it. Telling what just happened in Notifications, and that an edit was saved in the Save Mark. Opening where Tsuzuri can be sponsored, and sizing the window the first time it opens. Afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
 - `src/i18n.test.ts`
+- `src/components/settings/preferences/InterfaceLanguage.test.ts`
 - `src/ui/menu.test.ts`
 - `src/components/Tooltip.test.ts`
 - `src/components/Notifications.test.ts`
@@ -612,3 +613,55 @@ The editor stays drawn under the settings and under a modal, so its keys would c
 | Given | the settings shown over the editor |
 | When | the play key is pressed outside a control |
 | Then | the media stays paused |
+
+## `IF-069` Writing the interface in the language chosen at once
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings written in Traditional Chinese |
+| When | English is chosen as the Interface Language |
+| Then | the settings' text is in English without the page being drawn again |
+
+## `IF-070` Staying where the language was chosen
+
+The settings and everything under them keep their place, since only the text changes.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings showing the Language section in Traditional Chinese |
+| When | English is chosen as the Interface Language |
+| Then | the settings still show the Language section |
+
+## `IF-071` Remembering the language chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preferences saved with a text chosen to play on |
+| When | English is chosen as the Interface Language |
+| Then | the Preferences are saved with English chosen and a text still playing on |
+
+## `IF-072` Starting in the language chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | English chosen as the Interface Language, and a system language of `zh-Hant-TW` |
+| When | the interface starts |
+| Then | its text is in English |
+
+## `IF-073` Following the system language again
+
+| Step | Statement |
+| --- | --- |
+| Given | English chosen as the Interface Language, and a system language of `zh-Hant-TW` |
+| When | the system language is chosen instead |
+| Then | the text is in Traditional Chinese and no Interface Language is saved |
+
+## `IF-074` Naming each language in its own words
+
+A language's name stays in that language, so it can be found whatever the interface is written in.
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings written in English |
+| When | the Interface Languages are listed |
+| Then | Traditional Chinese reads `繁體中文` and English reads `English` |

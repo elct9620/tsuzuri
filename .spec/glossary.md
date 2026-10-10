@@ -305,7 +305,7 @@ A language Tsuzuri transcribes from or translates into, named by its code: `zh-T
 
 ### Interface Language
 
-The language the webview's text is written in: the system's language when Tsuzuri has a translation for it, otherwise English. Only the webview writes interface text.
+The language the webview's text is written in: the one chosen in the Preferences, or else the system's language when Tsuzuri has a translation for it, otherwise English. Only the webview writes interface text.
 
 ### Failure
 

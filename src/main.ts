@@ -1,5 +1,5 @@
 import { assemble } from "#/assembly.ts";
-import { locale } from "#/ipc/system.ts";
+import { interfaceLocale } from "#/ipc/preferences.ts";
 import { setInterfaceLanguage } from "#/i18n.ts";
 import { drawPage } from "#/page.ts";
 
@@ -9,7 +9,7 @@ import { drawPage } from "#/page.ts";
  * the session that reads each Project first, and only then is the Project read.
  */
 async function start(): Promise<void> {
-  await setInterfaceLanguage(await locale());
+  await setInterfaceLanguage(await interfaceLocale());
   const assembly = assemble();
   drawPage(assembly.feed, assembly.session);
   await assembly.start();

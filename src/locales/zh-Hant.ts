@@ -296,6 +296,10 @@ const zhHant: typeof en = {
     notRestored: "沒有還原",
   },
   preferences: {
+    language: "介面語言",
+    systemLanguage: "系統語言",
+    languageHelp:
+      "Tsuzuri 的文字使用哪種語言，選了立即換上；系統語言依作業系統的語言設定。",
     choosing: "播放中換到另一段時",
     pausing: "暫停",
     fromStart: "從頭",
@@ -324,6 +328,7 @@ const zhHant: typeof en = {
   settings: {
     back: "返回",
     sections: "設定分類",
+    language: "語言",
     choosing: "換段",
     preferences: "偏好",
     unreadable: "讀不到設定",

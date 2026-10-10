@@ -689,3 +689,21 @@ A language's name stays in that language, so it can be found whatever the interf
 | Given | an interface in English |
 | When | any of its text names a Segment |
 | Then | the word is capitalised, as `Segment` or `Segments` |
+
+## `IF-078` Writing no message key on an English page
+
+i18next answers a key it has no text for with the key itself, so a key on the page is a text missing.
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in English with a Project open |
+| When | the page is drawn, its settings and dialogs included |
+| Then | no text or label on it is a message key |
+
+## `IF-079` Writing no Chinese on an English page
+
+| Step | Statement |
+| --- | --- |
+| Given | an interface in English with a Project whose texts are in English |
+| When | the page is drawn, its settings and dialogs included |
+| Then | no text or label on it is in Chinese, apart from a language named in its own words |

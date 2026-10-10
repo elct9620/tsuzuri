@@ -47,9 +47,9 @@
     disabled={choices.isLanguageFixed}
     onchange={chooseLanguage}
   >
-    <option value="en">English</option>
-    <option value="ja">日本語</option>
-    <option value="zh-TW">繁體中文</option>
+    <option value="en" lang="en">English</option>
+    <option value="ja" lang="ja">日本語</option>
+    <option value="zh-TW" lang="zh-TW">繁體中文</option>
   </select>
 </p>
 <p class="flex items-center gap-2">

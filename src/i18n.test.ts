@@ -10,11 +10,16 @@ import { EditingSession } from "#/editor/index.ts";
 import HelpButton from "#/components/settings/HelpButton.svelte";
 import { interfaceLanguageCode, setInterfaceLanguage, t } from "#/i18n.ts";
 import { drawPage } from "#/page.ts";
+import { notificationStack } from "#/state/notification.svelte.ts";
 import en from "#/locales/en.ts";
 import { mockPageMount } from "#/testing/page.ts";
 import { projectOf } from "#/testing/project.ts";
 
 describe("interface language", () => {
+  /** Whether `text` is a message key, which i18next answers with when it has no text for it. */
+  const isMessageKey = (text: string) =>
+    new RegExp(`^(${Object.keys(en).join("|")})\\.[\\w.]+$`).test(text.trim());
+
   afterEach(() => {
     clearMocks();
   });
@@ -130,9 +135,8 @@ describe("interface language", () => {
       (row) =>
         !(row instanceof HTMLTableRowElement) || row.cells[0]?.tagName === "TH",
     );
-    // i18next answers a key it has no text for with the key itself.
     const isExplained = (text: string | null | undefined) =>
-      !!text?.trim() && !/^[a-z]+\.[\w.]+$/i.test(text.trim());
+      !!text?.trim() && !isMessageKey(text);
     const rowsWithoutHelp = rows.filter((row) => {
       const help = within(row as HTMLElement).queryByRole("button", {
         hidden: true,
@@ -153,22 +157,83 @@ describe("interface language", () => {
     expect([rows.length > 0, rowsWithoutHelp.length]).toEqual([true, 0]);
   });
 
-  // @behavior IF-054
-  it("names every button in the Interface Language", async () => {
-    // In the document, so a name given by `aria-labelledby` finds the element it names
+  /** Every text and label drawn under `root`, each with the element it is on. */
+  function writtenTexts(root: Element): { element: Element; text: string }[] {
+    const texts: { element: Element; text: string }[] = [];
+    for (const element of [root, ...root.querySelectorAll("*")]) {
+      if (element.tagName === "STYLE" || element.tagName === "SCRIPT") continue;
+      for (const node of element.childNodes)
+        if (node.nodeType === Node.TEXT_NODE && node.textContent!.trim())
+          texts.push({
+            element,
+            text: node.textContent!.trim(),
+          });
+      for (const name of [
+        "aria-label",
+        "title",
+        "placeholder",
+        "data-tooltip",
+      ]) {
+        const label = element.getAttribute(name);
+        if (label?.trim())
+          texts.push({
+            element,
+            text: label.trim(),
+          });
+      }
+    }
+    return texts;
+  }
+
+  /**
+   * Draws the whole page in `locale` with an English Project open, in the document, so a name
+   * given by `aria-labelledby` finds the element it names.
+   */
+  async function drawWholePage(locale: string): Promise<HTMLElement> {
     const page = document.createElement("div");
     document.body.append(page);
-    await setInterfaceLanguage("zh-TW");
-    mockPageMount(projectOf());
-
-    drawPage(new ProjectFeed(), new EditingSession(editingPort), page);
+    await setInterfaceLanguage(locale);
+    // Notifications earlier tests left were written in their own language
+    notificationStack.clear();
+    mockPageMount(projectOf({ name: "lecture", language: "en" }));
+    const feed = new ProjectFeed();
+    await feed.refresh();
+    drawPage(feed, new EditingSession(editingPort), page);
     await tick();
+    return page;
+  }
 
-    // i18next answers a key it has no text for with the key itself
+  // @behavior IF-078
+  it("writes no message key on an English page", async () => {
+    const page = await drawWholePage("en");
+
+    const keys = writtenTexts(page).filter(({ text }) => isMessageKey(text));
+    page.remove();
+    expect(keys.map(({ text }) => text)).toEqual([]);
+  });
+
+  // @behavior IF-079
+  it("writes no Chinese on an English page", async () => {
+    const page = await drawWholePage("en");
+
+    // A language named in its own words declares that language
+    const chinese = writtenTexts(page).filter(
+      ({ element, text }) =>
+        /\p{Script=Han}/u.test(text) &&
+        !element.closest("[lang]:not([lang^=en])"),
+    );
+    page.remove();
+    expect(chinese.map(({ text }) => text)).toEqual([]);
+  });
+
+  // @behavior IF-054
+  it("names every button in the Interface Language", async () => {
+    const page = await drawWholePage("zh-TW");
+
     const unnamedButtons = within(page)
       .queryAllByRole("button", {
         hidden: true,
-        name: (name) => name.trim() === "" || /^[a-z]+\.[\w.]+$/i.test(name),
+        name: (name) => name.trim() === "" || isMessageKey(name),
       })
       .map((button) => button.outerHTML.slice(0, 80));
     page.remove();

@@ -285,7 +285,7 @@ How a transcription runs beyond the Language and the Model: whether VAD runs fir
 
 ### Preferences
 
-How Tsuzuri behaves as it is worked in, the same in every Project: for now the Choice Landing of each Choice Source. They are saved across launches in the settings' own tab, and until changed they keep the landings Tsuzuri always had: a text, a time, the row or a search pauses at the Segment's start, and a Speaker, Enter or a region plays on.
+How Tsuzuri behaves as it is worked in, the same in every Project: the Choice Landing of each Choice Source, and the Interface Language when one is chosen. They are saved across launches in the settings' own tab, and until changed they keep the landings Tsuzuri always had: a text, a time, the row or a search pauses at the Segment's start, and a Speaker, Enter or a region plays on.
 
 ### VAD
 

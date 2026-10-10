@@ -8,6 +8,8 @@ export type ChoiceLandings = Required<bindings.ChoiceLandings>;
 
 export interface Preferences {
   choice_landings: ChoiceLandings;
+  /** The locale the interface is written in, or `null` to follow the system's language. */
+  interface_language: string | null;
 }
 
 export { DEFAULT_PREFERENCES };

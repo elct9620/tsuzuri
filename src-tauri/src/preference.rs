@@ -54,10 +54,13 @@ impl Default for ChoiceLandings {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(default)]
 pub struct Preferences {
     pub choice_landings: ChoiceLandings,
+    /// The locale the webview writes its text in, or `None` to follow the system's language.
+    /// Rust keeps it as given, since only the webview knows the languages it can write.
+    pub interface_language: Option<String>,
 }
 
 /// The Preferences until any are saved, which the webview follows until it has read the saved
@@ -73,6 +76,7 @@ pub const DEFAULT_PREFERENCES: Preferences = Preferences {
         region: ChoiceLanding::NO_PAUSE,
         search: ChoiceLanding::PAUSE_AT_START,
     },
+    interface_language: None,
 };
 
 impl Default for Preferences {
@@ -87,8 +91,8 @@ impl Preferences {
         json_settings::settings_at(&dir.join(PREFERENCES_FILE))
     }
 
-    pub fn save(self, dir: &Path) -> io::Result<()> {
-        json_settings::save(dir, PREFERENCES_FILE, &self)
+    pub fn save(&self, dir: &Path) -> io::Result<()> {
+        json_settings::save(dir, PREFERENCES_FILE, self)
     }
 }
 
@@ -106,6 +110,7 @@ mod tests {
                 text: ChoiceLanding::NO_PAUSE,
                 ..ChoiceLandings::default()
             },
+            ..Preferences::default()
         };
 
         preferences.save(dir.path()).unwrap();
@@ -140,5 +145,15 @@ mod tests {
                 ChoiceLanding::NO_PAUSE,
             ]
         );
+    }
+
+    // @behavior PF-009
+    #[test]
+    fn follows_the_system_language_until_one_is_chosen() {
+        let dir = TempDir::new("pf-preferences-no-language");
+
+        let preferences = Preferences::load(dir.path()).unwrap();
+
+        assert_eq!(preferences.interface_language, None);
     }
 }

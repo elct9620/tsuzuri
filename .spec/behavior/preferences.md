@@ -64,3 +64,19 @@ Each switch is saved as it turns, as the other settings are, so nothing waits on
 | Given | the Preferences section shown |
 | When | a Choice Source's row is read |
 | Then | the line beneath its name says when it is chosen, and both its switches are described by that line |
+
+## `PF-008` Keeping the Interface Language chosen when a switch is saved
+
+| Step | Statement |
+| --- | --- |
+| Given | the Preferences saved with English chosen as the Interface Language |
+| When | pausing is turned off for a text |
+| Then | the Preferences are saved with English still chosen |
+
+## `PF-009` Following the system language until one is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | no Preferences saved |
+| When | the Preferences are read |
+| Then | no Interface Language is chosen |

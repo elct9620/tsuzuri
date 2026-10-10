@@ -54,7 +54,10 @@
   async function save(): Promise<void> {
     const isSaved = await attempt(t("settings.notSaved"), async () => {
       show(
-        await savePreferences({ choice_landings: $state.snapshot(landings) }),
+        await savePreferences({
+          ...preferences.current,
+          choice_landings: $state.snapshot(landings),
+        }),
       );
     });
     if (!isSaved) await showSaved();

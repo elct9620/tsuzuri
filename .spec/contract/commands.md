@@ -112,7 +112,7 @@ pub fn save_transcription_settings(app: AppHandle, settings: TranscriptionSettin
 
 ## `preferences`
 
-The Preferences: the Choice Landing of each Choice Source, the defaults where none was saved.
+The Preferences: the Choice Landing of each Choice Source and the Interface Language chosen, the defaults where none was saved.
 
 ```rust
 pub fn preferences(app: AppHandle) -> Result<Preferences, Failure> {}

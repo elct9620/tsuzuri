@@ -131,6 +131,7 @@ describe("Preferences", () => {
     expect(savedArgs).toEqual([
       {
         preferences: {
+          ...DEFAULT_PREFERENCES,
           choice_landings: {
             ...DEFAULT_PREFERENCES.choice_landings,
             text: { is_pausing: false, is_from_start: true },
@@ -138,6 +139,17 @@ describe("Preferences", () => {
         },
       },
     ]);
+  });
+
+  // @behavior PF-008
+  it("keeps the Interface Language chosen when a switch is saved", async () => {
+    savedPreferences.interface_language = "en";
+    await openSettings();
+
+    turn(switchByName("文字或譯文：暫停"));
+    await settle();
+
+    expect(savedPreferences.interface_language).toBe("en");
   });
 
   // @behavior PF-005

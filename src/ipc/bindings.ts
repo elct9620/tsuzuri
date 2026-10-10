@@ -128,7 +128,7 @@ export const events = {
 };
 
 /* Constants */
-export const DEFAULT_PREFERENCES = {"choice_landings":{"text":{"is_pausing":true,"is_from_start":true},"time":{"is_pausing":true,"is_from_start":true},"speaker":{"is_pausing":false,"is_from_start":false},"row":{"is_pausing":true,"is_from_start":true},"next":{"is_pausing":false,"is_from_start":false},"region":{"is_pausing":false,"is_from_start":false},"search":{"is_pausing":true,"is_from_start":true}}} as const;
+export const DEFAULT_PREFERENCES = {"choice_landings":{"text":{"is_pausing":true,"is_from_start":true},"time":{"is_pausing":true,"is_from_start":true},"speaker":{"is_pausing":false,"is_from_start":false},"row":{"is_pausing":true,"is_from_start":true},"next":{"is_pausing":false,"is_from_start":false},"region":{"is_pausing":false,"is_from_start":false},"search":{"is_pausing":true,"is_from_start":true}},"interface_language":null} as const;
 
 export const VIDEO_WINDOW = "video" as const;
 
@@ -442,6 +442,11 @@ export type PipelineProgress_Serialize = {
 
 export type Preferences = {
 	choice_landings?: ChoiceLandings,
+	/**
+	 *  The locale the webview writes its text in, or `None` to follow the system's language.
+	 *  Rust keeps it as given, since only the webview knows the languages it can write.
+	 */
+	interface_language?: string | null,
 };
 
 /**  A Model Tsuzuri was verified with, offered by name so nobody has to know where to find it. */

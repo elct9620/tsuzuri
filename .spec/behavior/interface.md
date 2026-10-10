@@ -1,6 +1,6 @@
 # Interface
 
-Writing the webview's text in the Interface Language, chosen from the system's language when the window opens, keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, listing the shortcuts, showing the settings as a page over the whole window, docking the Resource list beside a window wide enough to hold it, telling what just happened in Notifications and that an edit was saved in the Save Mark, opening where Tsuzuri can be sponsored, and sizing the window the first time it opens; afterwards the window opens at the size and place it was closed at.
+Writing the webview's text in the Interface Language, chosen from the system's language when the window opens. Keeping the toolbar's menus out of the way, showing tooltips where no container cuts them off, and listing the shortcuts. Showing the settings as a page over the whole window, and docking the Resource list beside a window wide enough to hold it. Telling what just happened in Notifications, and that an edit was saved in the Save Mark. Opening where Tsuzuri can be sponsored, and sizing the window the first time it opens. Afterwards the window opens at the size and place it was closed at.
 
 ## Includes
 
@@ -579,7 +579,7 @@ The editor is hidden rather than drawn again, so where the user was is still the
 
 ## `IF-065` Taking focus into the settings and back
 
-Focus goes where the settings begin and returns where it was, as it does for a modal, so the keyboard is never left on a hidden button.
+Focus goes where the settings begin and returns where it was, as a modal does. The keyboard is never left on a hidden button.
 
 | Step | Statement |
 | --- | --- |

@@ -37,7 +37,11 @@
   } from "#/ui/silence.ts";
   import { isShortcut } from "#/ui/shortcuts.ts";
   import { MS_PER_SECOND, formatClock } from "#/ui/time.ts";
-  import { forwardKeys, openVideoWindow } from "#/ui/video-window.ts";
+  import {
+    forwardKeys,
+    nameVideoWindow,
+    openVideoWindow,
+  } from "#/ui/video-window.ts";
   import { resumeAudioGraph } from "#/ui/volume.ts";
   import { projectFeed } from "#/state/context.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
@@ -88,6 +92,14 @@
   );
   const shownLanguage = $derived(choices.shownLanguage(hasTranslation));
   const isAway = $derived(videoWindow !== null);
+
+  // The hint and the Video Window are written outside Svelte, so each is written again as the
+  // Interface Language changes.
+  $effect(() => screen.writeHint(t("preview.unplayable")));
+  $effect(() => {
+    if (videoWindow)
+      nameVideoWindow(videoWindow, t("preview.videoWindowTitle"));
+  });
 
   // Shows the caption again as its language or Speaker is chosen; each Project shows its own
   $effect(() => {
@@ -180,10 +192,7 @@
 
   function moveVideoOut(): void {
     if (videoWindow) return;
-    const newWindow = openVideoWindow(
-      VIDEO_WINDOW,
-      t("preview.videoWindowTitle"),
-    );
+    const newWindow = openVideoWindow(VIDEO_WINDOW);
     if (!newWindow) return;
     forwardKeys(newWindow);
     newWindow.addEventListener("keydown", (event) => {

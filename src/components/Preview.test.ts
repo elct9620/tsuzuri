@@ -9,7 +9,7 @@ import { assemble } from "#/assembly.ts";
 import { DEFAULT_PREFERENCES } from "#/ipc/preferences.ts";
 import type { ProjectView } from "#/ipc/project.ts";
 import type { EditingSession } from "#/editor/index.ts";
-import { t } from "#/i18n.ts";
+import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { projectOf } from "#/testing/project.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import { pageContext } from "#/state/context.ts";
@@ -388,6 +388,31 @@ describe("Preview", () => {
     media().dispatchEvent(new Event("error"));
 
     expect([media().hidden, hint().hidden]).toEqual([true, false]);
+  });
+
+  // @behavior PV-215
+  it("rewrites the hint in the Interface Language chosen", async () => {
+    await show(projectWithMedia());
+    media().dispatchEvent(new Event("error"));
+
+    await setInterfaceLanguage("en");
+    flushSync();
+
+    expect(hint().textContent).toBe(t("preview.unplayable"));
+  });
+
+  // @behavior PV-216
+  it("names the Video Window in the Interface Language chosen", async () => {
+    await show(projectWithMedia());
+    pressVideoWindowButton();
+
+    await setInterfaceLanguage("en");
+    flushSync();
+
+    expect([
+      videoWindow()?.document.title,
+      videoWindow()?.document.documentElement.lang,
+    ]).toEqual(["Tsuzuri Video", "en"]);
   });
 
   // @behavior PV-012

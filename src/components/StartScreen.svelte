@@ -13,9 +13,9 @@
 
   const id = $props.id();
   const feed = projectFeed();
-  const dateFormat = new Intl.DateTimeFormat(interfaceLanguageCode(), {
-    dateStyle: "medium",
-  });
+  const dateFormat = $derived(
+    new Intl.DateTimeFormat(interfaceLanguageCode(), { dateStyle: "medium" }),
+  );
 </script>
 
 <section class="hero flex-1" aria-labelledby="{id}-title">

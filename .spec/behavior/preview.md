@@ -1798,3 +1798,19 @@ Space plays on from where the media is, so a Segment chosen is heard with the on
 | Given | a Current Resource whose media ffmpeg cannot read |
 | When | taking its Waveform fails |
 | Then | the Notification names the failed step in the Interface Language |
+
+## `PV-215` Rewriting the hint in the Interface Language chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | a hint in the video's place, written in Traditional Chinese |
+| When | English is chosen as the Interface Language |
+| Then | the hint reads in English |
+
+## `PV-216` Naming the Video Window in the Interface Language chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the Video Window open, named in Traditional Chinese |
+| When | English is chosen as the Interface Language |
+| Then | its title reads in English and its page declares English |

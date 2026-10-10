@@ -1594,3 +1594,11 @@ A Speaker is written into every translation as its label, so the translation bei
 | Given | a path chosen to export the Current Resource to |
 | When | writing the SRT fails |
 | Then | a Notification says it was not exported |
+
+## `PJ-195` Dating the Recent Projects in the Interface Language chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the start screen listing a Recent Project opened on 24 September 2026, dated in Traditional Chinese |
+| When | English is chosen as the Interface Language |
+| Then | its date reads `Sep 24, 2026` |

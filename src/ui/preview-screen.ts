@@ -8,8 +8,6 @@
 import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 import { mount, unmount } from "svelte";
 
-import { t } from "#/i18n.ts";
-
 /** What the text over the video sits on: a shadow alone, a translucent black or an opaque one. */
 export type CaptionBackdrop = "none" | "translucent" | "opaque";
 
@@ -41,6 +39,7 @@ export class PreviewScreen {
     "alert alert-warning absolute inset-2 text-sm",
   );
   readonly #icon: Record<string, unknown>;
+  readonly #hintText = document.createElement("span");
 
   constructor(media: HTMLVideoElement) {
     this.#media = media;
@@ -58,10 +57,13 @@ export class PreviewScreen {
       target: this.#hint,
       props: { class: "size-4", "aria-hidden": "true" },
     });
-    const hintText = document.createElement("span");
-    hintText.textContent = t("preview.unplayable");
-    this.#hint.append(hintText);
+    this.#hint.append(this.#hintText);
     this.element.append(media, line, this.#hint);
+  }
+
+  /** Writes what the hint in the video's place says, in the Interface Language as it changes. */
+  writeHint(text: string): void {
+    this.#hintText.textContent = text;
   }
 
   /** Puts `text` over the video only when it changes, since the Preview follows the media each frame it plays. */

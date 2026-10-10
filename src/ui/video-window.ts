@@ -10,12 +10,10 @@ const FIRST_SIZE = "width=960,height=540";
  * Opens the Video Window under the `label` Rust knows it by, dressed as this page and empty; none
  * when the webview refuses a window.
  */
-export function openVideoWindow(label: string, title: string): Window | null {
+export function openVideoWindow(label: string): Window | null {
   const videoWindow = window.open("about:blank", label, FIRST_SIZE);
   if (!videoWindow) return null;
   const page = videoWindow.document;
-  page.title = title;
-  page.documentElement.lang = document.documentElement.lang;
   for (const sheet of document.head.querySelectorAll<
     HTMLLinkElement | HTMLStyleElement
   >('link[rel="stylesheet"], style')) {
@@ -49,4 +47,10 @@ export function forwardKeys(videoWindow: Window): void {
     window.dispatchEvent(echo);
     if (echo.defaultPrevented) event.preventDefault();
   });
+}
+
+/** Titles the Video Window `title`, its page declaring the language this page is written in. */
+export function nameVideoWindow(videoWindow: Window, title: string): void {
+  videoWindow.document.title = title;
+  videoWindow.document.documentElement.lang = document.documentElement.lang;
 }

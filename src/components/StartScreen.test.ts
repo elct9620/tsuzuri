@@ -1,13 +1,13 @@
 // @vitest-environment happy-dom
 import { screen, within } from "@testing-library/svelte";
 import { clearMocks } from "@tauri-apps/api/mocks";
-import { unmount } from "svelte";
+import { flushSync, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type RecentProjectView } from "#/ipc/project.ts";
 import { EditingSession } from "#/editor/index.ts";
-import { t } from "#/i18n.ts";
+import { setInterfaceLanguage, t } from "#/i18n.ts";
 import { notificationStack } from "#/state/notification.svelte.ts";
 import { drawPage } from "#/page.ts";
 import { mockPageMount } from "#/testing/page.ts";
@@ -101,6 +101,16 @@ describe("StartScreen", () => {
         button.parentElement!.textContent!.trim().split(/\s+/),
       ),
     ).toEqual([["lecture", "/videos/lecture", "2026年9月24日"]]);
+  });
+
+  // @behavior PJ-195
+  it("dates the Recent Projects in the Interface Language chosen", async () => {
+    await showStartScreen();
+
+    await setInterfaceLanguage("en");
+    flushSync();
+
+    expect(recentList()!.textContent).toContain("Sep 24, 2026");
   });
 
   // @behavior PJ-162

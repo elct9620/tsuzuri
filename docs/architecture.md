@@ -556,8 +556,9 @@ ipc/editing.ts                gateway: the one caller of editing commands
 |---|---|
 | markup 寫成 Svelte 元件 | 畫面能依區域拆開 |
 | 有條件的內容用 `{#if}` | `t()` 與 `@lucide/svelte` 重畫時照寫 |
+| `t()` 訂閱介面語言 | 換語言時只重寫文字 |
 
-`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。
+`Page.svelte` 組合 `components/` 下各區域的 Svelte 元件。帶行為的 Svelte 元件自己保存畫面狀態，以 `t()` 寫出文字、`@lucide/svelte` 畫出圖示。在 Svelte 之外寫的文字，例如預覽的提示，由 `$effect` 寫，換語言時跟著重寫。
 
 #### 4.1.2 Modal 層
 

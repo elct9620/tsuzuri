@@ -443,7 +443,7 @@ const en = {
     licensesMissing:
       "A development build carries no license notice; every released build does.",
     sourceCode: "Source code",
-    appBuild: "{{releaseName}} ({{commit}})",
+    releaseNotes: "Release notes",
     copyAppBuild: "Copy",
     appBuildCopied: "Version copied",
     appBuildNotCopied: "Version not copied",
@@ -451,9 +451,7 @@ const en = {
     sponsor: "Sponsor",
     sponsorshipNotOpened: "Sponsorship page not opened",
     versionAndUpdates: "Version and updates",
-    version: "Version",
-    versionHelp: "Copy this line into a report, so it names the exact build.",
-    updates: "Updates",
+    versionHelp: "Copy the version into a report, so it names the exact build.",
     updatesHelp:
       "Asks GitHub whether a newer version exists; updating downloads it, verifies its signature, installs it and restarts Tsuzuri.",
     checkForUpdates: "Check for updates",

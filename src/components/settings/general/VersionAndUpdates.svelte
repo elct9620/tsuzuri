@@ -1,7 +1,9 @@
 <script lang="ts">
+  import ExternalLink from "@lucide/svelte/icons/external-link";
+
   import { onMount } from "svelte";
 
-  import { appBuild } from "#/ipc/about.ts";
+  import { appBuild, openReleases } from "#/ipc/about.ts";
   import {
     checkForRollback,
     checkForUpdate,
@@ -23,8 +25,10 @@
 
   const updates = appUpdates();
 
-  /** The App Build atop the general settings, for a report to name and copy. */
-  let shownBuild = $state("");
+  /** The running release's name, heading the version card. */
+  let releaseName = $state("");
+  /** The commit the App Build was made from, as git abbreviates it. */
+  let shortCommit = $state("");
   /** The App Build as a report names it, in any Interface Language. */
   let buildLine = "";
   /** Whether the running Tsuzuri is a Preview build, the only one a Rollback leads back from. */
@@ -47,12 +51,9 @@
   onMount(async () => {
     await attempt(t("settings.updateNotChecked"), async () => {
       const build = await appBuild();
-      const commit = build.commit.slice(0, SHORT_COMMIT_LENGTH);
-      shownBuild = t("settings.appBuild", {
-        releaseName: build.release_name,
-        commit,
-      });
-      buildLine = `Tsuzuri ${build.release_name} (${commit})`;
+      releaseName = build.release_name;
+      shortCommit = build.commit.slice(0, SHORT_COMMIT_LENGTH);
+      buildLine = `Tsuzuri ${releaseName} (${shortCommit})`;
       isPreviewBuild = build.is_preview_build;
       hasPreviewChannel = build.has_preview_channel;
       settings = await updateSettings();
@@ -64,6 +65,12 @@
     await attempt(t("settings.appBuildNotCopied"), async () => {
       await navigator.clipboard.writeText(buildLine);
       notify({ title: t("settings.appBuildCopied"), kind: "success" });
+    });
+  }
+
+  async function openReleaseNotes(): Promise<void> {
+    await attempt(t("settings.releasesNotOpened"), async () => {
+      await openReleases();
     });
   }
 
@@ -99,35 +106,47 @@
 
 <fieldset class="fieldset text-sm">
   <legend class="fieldset-legend">{t("settings.versionAndUpdates")}</legend>
-  <ul class="list rounded-box border border-base-300">
-    <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.version")}</span>
-        <HelpButton tip="settings.versionHelp" />
-      </span>
-      <div class="flex items-center gap-2">
-        <span>{shownBuild}</span>
-        <button type="button" class="btn btn-sm" onclick={copyBuild}>
-          {t("settings.copyAppBuild")}
+  <div class="card card-border bg-base-100">
+    <div class="card-body gap-3">
+      <div class="flex flex-wrap items-start justify-between gap-2">
+        <div class="flex flex-col gap-1">
+          <h3 class="card-title">
+            <span>Tsuzuri {releaseName}</span>
+            <span class="badge badge-sm badge-neutral"
+              >{t(
+                isPreviewBuild
+                  ? "settings.channelPreview"
+                  : "settings.channelStable",
+              )}</span
+            >
+            <HelpButton tip="settings.versionHelp" />
+          </h3>
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-base-content/70">{shortCommit}</span>
+            <button type="button" class="btn btn-xs" onclick={copyBuild}>
+              {t("settings.copyAppBuild")}
+            </button>
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm" onclick={openReleaseNotes}>
+          {t("settings.releaseNotes")}
+          <ExternalLink class="size-4" aria-hidden="true" />
         </button>
       </div>
-    </li>
-    <li class="list-row items-center">
-      <span class="flex w-32 items-center gap-1 font-medium">
-        <span>{t("settings.updates")}</span>
+      <div
+        class="flex flex-wrap items-center gap-2 border-t border-base-300 pt-3"
+      >
+        <span class="flex-1">{status}</span>
         <HelpButton tip="settings.updatesHelp" />
-      </span>
-      <div class="flex items-center gap-2">
+        {#if isChecking}
+          <span class="loading loading-spinner loading-sm"></span>
+        {/if}
         <button
           type="button"
           class="btn btn-sm"
           disabled={isChecking}
           onclick={check}>{t("settings.checkForUpdates")}</button
         >
-        {#if isChecking}
-          <span class="loading loading-spinner loading-sm"></span>
-        {/if}
-        <span>{status}</span>
         {#if updates.foundUpdate}
           <button
             type="button"
@@ -136,7 +155,9 @@
           >
         {/if}
       </div>
-    </li>
+    </div>
+  </div>
+  <ul class="list mt-2 rounded-box border border-base-300">
     <li class="list-row items-center">
       <span class="flex w-32 items-center gap-1 font-medium">
         <span>{t("settings.launchCheck")}</span>

@@ -31,7 +31,16 @@ describe("VersionAndUpdates", () => {
   /** What installing answers: a refusal to throw, or never answering, as Tsuzuri restarts. */
   let installRefusal: { code: string } | null;
 
-  const shownBuild = () => screen.getByText(/（[0-9a-f]{7}）$/).textContent;
+  /** The release name heading the version card, and the short commit under it. */
+  const shownBuild = () => [
+    screen.getByRole("heading", { level: 3 }).querySelector("span")!
+      .textContent,
+    screen.getByText(/^[0-9a-f]{7}$/).textContent,
+  ];
+  /** The kind of build the version card names. */
+  const buildKind = () =>
+    screen.getByRole("heading", { level: 3 }).querySelector(".badge")!
+      .textContent;
 
   const argsByCommand = (command: string) =>
     calls.filter((call) => call.command === command).map((call) => call.args);
@@ -126,7 +135,7 @@ describe("VersionAndUpdates", () => {
   it("shows the Release Name and the short commit in the settings", async () => {
     await openSettings();
 
-    expect(shownBuild()).toBe("v0.1.0（a1b2c3d）");
+    expect(shownBuild()).toEqual(["Tsuzuri v0.1.0", "a1b2c3d"]);
   });
 
   // @behavior OB-015
@@ -158,9 +167,33 @@ describe("VersionAndUpdates", () => {
     await copyBuild();
 
     expect([shownBuild(), writeText.mock.calls]).toEqual([
-      "Build 20260928+12（a1b2c3d）",
+      ["Tsuzuri Build 20260928+12", "a1b2c3d"],
       [["Tsuzuri Build 20260928+12 (a1b2c3d)"]],
     ]);
+  });
+
+  // @behavior UP-035
+  it("names a Preview build a preview on the version card", async () => {
+    build = { ...build, is_preview_build: true };
+
+    await openSettings();
+
+    expect(buildKind()).toBe("預覽版");
+  });
+
+  it("names a stable build stable on the version card", async () => {
+    await openSettings();
+
+    expect(buildKind()).toBe("穩定版");
+  });
+
+  // @behavior UP-036
+  it("opens the release notes from the version card", async () => {
+    await openSettings();
+
+    await press("版本說明");
+
+    expect(argsByCommand("open_releases")).toHaveLength(1);
   });
 
   // @behavior UP-012
@@ -237,7 +270,8 @@ describe("VersionAndUpdates", () => {
     expect([
       argsByCommand("install_update").length,
       installWindow().open,
-      screen.getByRole("heading", { hidden: true }).textContent,
+      within(installWindow()).getByRole("heading", { hidden: true })
+        .textContent,
       screen.getByText(/^下載中/).textContent,
       progressBar().value,
       escape.defaultPrevented,
@@ -339,7 +373,8 @@ describe("VersionAndUpdates", () => {
     expect([
       argsByCommand("check_for_rollback").length,
       argsByCommand("install_update").length,
-      screen.getByRole("heading", { hidden: true }).textContent,
+      within(installWindow()).getByRole("heading", { hidden: true })
+        .textContent,
     ]).toEqual([1, 1, "正在更新到 v0.2.0"]);
   });
 

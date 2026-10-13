@@ -256,9 +256,10 @@ describe("Segment Changes", () => {
     start.dispatchEvent(new Event("change", { bubbles: true }));
     await settle();
 
-    expect(notificationDetail(0)).toBe(
+    expect([notificationDetail(0), start.value]).toEqual([
       "開始時間不能早於前一段的開始，也不能晚於後一段的開始",
-    );
+      "00:00:03.000",
+    ]);
   });
 
   // @behavior ED-016

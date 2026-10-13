@@ -25,7 +25,7 @@
   } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { closeMenu } from "#/ui/menu.ts";
-  import { notify } from "#/state/notification.svelte.ts";
+  import { notify, notifyEdit } from "#/state/notification.svelte.ts";
   import {
     isComposingKey,
     shortcutById,
@@ -47,7 +47,6 @@
   } from "#/state/editor-comparison.svelte.ts";
   import {
     type ChangeChoice,
-    change,
     checkedChoices,
     popUpChoices,
     type ResourceOffers,
@@ -157,18 +156,26 @@
     write: () => void,
   ): void {
     if (!editor) return;
-    if (isTypingKept && editor === document.activeElement) return;
+    // Read only for the input with focus, so a change to it writes no other row again
+    if (editor === document.activeElement && isTypingKept) return;
     write();
   }
 
-  $effect(() => {
+  // Each Project read brings the Segment anew, so the times are written only as they change
+  const segmentStartMs = $derived(segment.start_ms);
+  const segmentEndMs = $derived(segment.end_ms);
+
+  /** Writes the Segment's times into their inputs, but for one being typed in that keeps it. */
+  function showTimes(): void {
     const timeByInput: [HTMLInputElement | undefined, number][] = [
-      [startInput, segment.start_ms],
-      [endInput, segment.end_ms],
+      [startInput, segmentStartMs],
+      [endInput, segmentEndMs],
     ];
     for (const [input, ms] of timeByInput)
       writeUnlessTyping(input, () => (input!.value = formatTime(ms)));
-  });
+  }
+
+  $effect(showTimes);
 
   /**
    * Where in the row a press of the pointer chooses its Segment from: its text or translation, a
@@ -215,20 +222,25 @@
     session.makeCurrent(index, isSpeakerMenu ? "speaker" : undefined);
   }
 
-  /** Asks for the times typed, `edge` the one just changed; a time that cannot be read is put back. */
+  /**
+   * Asks for the times typed, `edge` the one just changed; a time that cannot be read, or that the
+   * Project refuses, is put back to the Segment's.
+   */
   async function changeTimes(edge: TimeEdge): Promise<void> {
     const startMs = parseTime(startInput?.value ?? "");
     const endMs = parseTime(endInput?.value ?? "");
     if (startMs === null || endMs === null) {
       notify({ title: t("edit.unreadableTime"), kind: "warning" });
-      await feed.refresh();
+      showTimes();
       return;
     }
-    await change(session, {
+    const outcome = await session.change({
       kind: "times",
       index,
       ...orderedTimes(edge, startMs, endMs),
     });
+    notifyEdit(outcome);
+    if (outcome.kind !== "written") showTimes();
   }
 
   /**

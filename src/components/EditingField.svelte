@@ -91,7 +91,8 @@
 
   $effect(() => {
     if (!element) return;
-    if (!isTypingKept || element !== document.activeElement)
+    // Read only for the field with focus, so a change to it writes no other field again
+    if (element !== document.activeElement || !isTypingKept)
       setFieldValue(element, value);
   });
 

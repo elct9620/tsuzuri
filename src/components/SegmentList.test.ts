@@ -3,7 +3,7 @@ import { screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "#/assembly.ts";
 import type { GlossaryTable, ProjectView } from "#/ipc/project.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
@@ -254,6 +254,41 @@ describe("SegmentList", () => {
       true,
       0,
     ]);
+  });
+
+  // @behavior ED-200
+  it("writes a row's times and texts only when they change", async () => {
+    const segments = [
+      { start_ms: 0, end_ms: 1000, text: "大家" },
+      { start_ms: 1000, end_ms: 2000, text: "今天" },
+      { start_ms: 2000, end_ms: 3000, text: "很好" },
+    ];
+    await hold(projectOf({ segments }));
+    const valueWrite = vi.spyOn(HTMLInputElement.prototype, "value", "set");
+    const textWrites: MutationRecord[] = [];
+    const observer = new MutationObserver((records) =>
+      textWrites.push(...records),
+    );
+    observer.observe(rowList(), { subtree: true, childList: true });
+
+    await hold(
+      projectOf({
+        segments: segments.map((segment, index) =>
+          index === 1 ? { ...segment, text: "明天" } : { ...segment },
+        ),
+      }),
+    );
+    textWrites.push(...observer.takeRecords());
+    observer.disconnect();
+    const timeWrites = valueWrite.mock.contexts.filter((input) =>
+      (input as HTMLInputElement).matches("[data-edge]"),
+    );
+    valueWrite.mockRestore();
+
+    const writtenFields = new Set(
+      textWrites.map((record) => (record.target as HTMLElement).dataset.index),
+    );
+    expect([timeWrites.length, [...writtenFields]]).toEqual([0, ["1"]]);
   });
 
   /** Two Segments, the second reading `text`, so a change to it leaves their number alone. */

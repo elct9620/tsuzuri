@@ -1743,3 +1743,13 @@ Each row offers its Segment Changes in a menu of its own, so drawing every menu 
 | Given | a Current Resource of three Segments |
 | When | the Segment list shows them |
 | Then | no row's change menu holds a choice until it is opened |
+
+## `ED-200` Writing a row's times and texts only when they change
+
+Each Project read brings every Segment anew, and a field being typed in keeps its value only while the Segments keep their number, so a row writing its fields on each read, or each time that number changes, would cost a long subtitle more for each Segment it holds.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of three Segments, shown in place of Placeholder rows |
+| When | the second Segment's text changes |
+| Then | only the second Segment's text is written again |

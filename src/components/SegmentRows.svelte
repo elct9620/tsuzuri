@@ -203,7 +203,7 @@
   }
 
   /** Each row element drawn, with the key of the entry it draws; the rows are drawn in entry order. */
-  function drawnRowKeys(): Map<Element, string> {
+  function drawnKeyByElement(): Map<Element, string> {
     const drawnRows = drawnEntries.filter((entry) => !("height" in entry));
     const elements = [...(list?.children ?? [])].filter(
       (element) =>
@@ -220,13 +220,13 @@
     const inside = type === "focusin" ? target : relatedTarget;
     focusedKey = null;
     if (!(inside instanceof Node)) return;
-    for (const [element, key] of drawnRowKeys())
+    for (const [element, key] of drawnKeyByElement())
       if (element.contains(inside)) focusedKey = key;
   }
 
   // Measures each row drawn, and again as its height changes
   $effect(() => {
-    const keyByElement = drawnRowKeys();
+    const keyByElement = drawnKeyByElement();
     if (typeof ResizeObserver === "undefined" || keyByElement.size === 0)
       return;
     const observer = new ResizeObserver((resized) => {

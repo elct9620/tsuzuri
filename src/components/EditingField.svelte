@@ -24,7 +24,7 @@
     insertLineBreak,
     markOwnRanges,
     setFieldValue,
-    textRange,
+    textStaticRange,
   } from "#/editor/index.ts";
   import { notifyEdit } from "#/state/notification.svelte.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
@@ -45,16 +45,16 @@
   const GLOSSARY_KINDS = Object.keys(GLOSSARY_HIGHLIGHT) as GlossaryMarkKind[];
 
   /** The ranges of `field` holding the characters a row's text gained, while the field still reads that text. */
-  function addedRanges(field: HTMLElement, row: ComparedRow): Range[] {
+  function addedRanges(field: HTMLElement, row: ComparedRow): StaticRange[] {
     const keptSpans = row.text_spans.filter((span) => span.kind !== "removal");
     if (keptSpans.map((span) => span.text).join("") !== fieldValue(field))
       return [];
-    const ranges: Range[] = [];
+    const ranges: StaticRange[] = [];
     let offset = 0;
     for (const span of keptSpans) {
       const end = offset + span.text.length;
       const range =
-        span.kind === "addition" ? textRange(field, offset, end) : null;
+        span.kind === "addition" ? textStaticRange(field, offset, end) : null;
       if (range) ranges.push(range);
       offset = end;
     }
@@ -158,7 +158,7 @@
         GLOSSARY_HIGHLIGHT[markKind],
         field,
         kindMarks.flatMap(
-          (mark) => textRange(field, mark.start, mark.end) ?? [],
+          (mark) => textStaticRange(field, mark.start, mark.end) ?? [],
         ),
       );
     }

@@ -10,7 +10,11 @@ import { projectOf } from "#/testing/project.ts";
 import { drawSegmentRows } from "#/testing/segment-rows.ts";
 import { settle } from "#/testing/settle.ts";
 import { type MenuItemSent, menuTexts } from "#/testing/system-menu.ts";
-import { type StubHighlight, stubHighlights } from "#/testing/highlights.ts";
+import {
+  type StubHighlight,
+  StubStaticRange,
+  stubHighlights,
+} from "#/testing/highlights.ts";
 
 describe("Glossary Marks", () => {
   let project: ProjectView;
@@ -117,6 +121,18 @@ describe("Glossary Marks", () => {
     field.dispatchEvent(new InputEvent("input", { bubbles: true }));
 
     expect(markedTexts("glossary-candidate")).toEqual([]);
+  });
+
+  it("keeps no live range for a field's marks, as each change of its text draws them anew", async () => {
+    await show();
+
+    const ranges = ["glossary-term", "glossary-candidate"].flatMap(
+      (name) => highlights.get(name)?.ranges ?? [],
+    );
+    expect([
+      ranges.length,
+      ranges.every((range) => range instanceof StubStaticRange),
+    ]).toEqual([3, true]);
   });
 
   // @behavior GM-022

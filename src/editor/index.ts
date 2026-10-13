@@ -27,6 +27,7 @@ export {
   markOwnRanges,
   markRanges,
   textRange,
+  textStaticRange,
 } from "./highlight";
 export {
   CURSOR_HIGHLIGHT,

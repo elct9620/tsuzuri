@@ -9,33 +9,64 @@ export function hasHighlights(): boolean {
   return typeof CSS !== "undefined" && "highlights" in CSS;
 }
 
+/** Where characters `start` to `end` of the field's text begin and end, counted in UTF-16 units. */
+function textBounds(
+  field: HTMLElement,
+  start: number,
+  end: number,
+): StaticRangeInit | null {
+  const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT);
+  let passedLength = 0;
+  let startBound: { node: Node; offset: number } | null = null;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const length = node.textContent?.length ?? 0;
+    if (!startBound && start <= passedLength + length)
+      startBound = { node, offset: start - passedLength };
+    if (startBound && end <= passedLength + length)
+      return {
+        startContainer: startBound.node,
+        startOffset: startBound.offset,
+        endContainer: node,
+        endOffset: end - passedLength,
+      };
+    passedLength += length;
+  }
+  return null;
+}
+
 /** The Range covering characters `start` to `end` of the field's text, counted in UTF-16 units. */
 export function textRange(
   field: HTMLElement,
   start: number,
   end: number,
 ): Range | null {
+  const bounds = textBounds(field, start, end);
+  if (!bounds) return null;
   const range = document.createRange();
-  const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT);
-  let passedLength = 0;
-  let hasStart = false;
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const length = node.textContent?.length ?? 0;
-    if (!hasStart && start <= passedLength + length) {
-      range.setStart(node, start - passedLength);
-      hasStart = true;
-    }
-    if (hasStart && end <= passedLength + length) {
-      range.setEnd(node, end - passedLength);
-      return range;
-    }
-    passedLength += length;
-  }
-  return null;
+  range.setStart(bounds.startContainer, bounds.startOffset);
+  range.setEnd(bounds.endContainer, bounds.endOffset);
+  return range;
+}
+
+/**
+ * The same stretch as `textRange`, as a range the page does not keep up to date as it changes: for
+ * marks drawn anew whenever their text changes, which would otherwise make every change of the page
+ * update each of them.
+ */
+export function textStaticRange(
+  field: HTMLElement,
+  start: number,
+  end: number,
+): StaticRange | null {
+  const bounds = textBounds(field, start, end);
+  return bounds && new StaticRange(bounds);
 }
 
 /** The ranges each owner marks under each highlight name, so it changes its own alone. */
-const rangesByOwnerByName = new Map<string, WeakMap<Element, Range[]>>();
+const rangesByOwnerByName = new Map<
+  string,
+  WeakMap<Element, AbstractRange[]>
+>();
 
 /**
  * Marks `ranges` under `name` in place of what `owner` marked there before, leaving every other
@@ -45,7 +76,7 @@ const rangesByOwnerByName = new Map<string, WeakMap<Element, Range[]>>();
 export function markOwnRanges(
   name: string,
   owner: Element,
-  ranges: Range[],
+  ranges: AbstractRange[],
 ): void {
   if (!hasHighlights()) return;
   let rangesByOwner = rangesByOwnerByName.get(name);

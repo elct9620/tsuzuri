@@ -424,6 +424,8 @@
           isHeld={!isFree(kind)}
           isPending={kind === "translation" && isPending}
           {isTypingKept}
+          glossaryMarks={glossaryMarks?.[kind]}
+          comparedRows={sideRows.map(({ row }) => row)}
           bind:element={fieldByKind[kind]}
           bind:this={editingFieldByKind[kind]}
         />

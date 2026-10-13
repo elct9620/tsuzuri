@@ -3,25 +3,22 @@
   The rows of the Current Resource's Segments, refreshed in place as each Project is read, since
   Chromium reports a selection change for each time field drawn; rows are drawn anew only when the
   translation is shown or hidden. Placeholders stand in while Segments are being made or read. It
-  marks the Current Segment and the rows being played, draws the Cursor, underlines the Glossary
-  Marks, and lays the editor's comparison over the rows with each removed cue in its place.
+  marks the Current Segment and the rows being played, draws the Cursor, and lays the editor's
+  comparison over the rows with each removed cue in its place; each field draws its own marks.
 -->
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
 
-  import type { GlossaryMarkKind, ProjectView } from "#/ipc/project.ts";
+  import type { ProjectView } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
-  import type { ComparedRow } from "#/ipc/project.ts";
   import {
     CURSOR_HIGHLIGHT,
     type Cursor,
     type CursorField,
-    fieldValue,
     isField,
     markRanges,
     placeSelection,
     rangeOf,
-    textRange,
     type TranscriptView,
   } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
@@ -35,31 +32,13 @@
     setSegmentFields,
     taskRun,
   } from "#/state/context.ts";
-  import {
-    comparisonLayout,
-    type Side,
-  } from "#/state/editor-comparison.svelte.ts";
+  import { comparisonLayout } from "#/state/editor-comparison.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { ViewChoices } from "#/state/view-choices.svelte.ts";
   import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import { resourceOffers } from "#/actions/segment-changes.ts";
   import RemovalRow from "#/components/RemovalRow.svelte";
   import SegmentRow from "#/components/SegmentRow.svelte";
-
-  /** The highlight marking the characters a text gained since the Backup compared. */
-  const ADDED_HIGHLIGHT = "compare-addition";
-
-  /** The highlight each kind of Glossary Mark is drawn under. */
-  const GLOSSARY_HIGHLIGHT: Record<GlossaryMarkKind, string> = {
-    term: "glossary-term",
-    candidate: "glossary-candidate",
-  };
-
-  /** The field each side's comparison marks. */
-  const FIELD_BY_SIDE: Record<Side, CursorField> = {
-    original: "text",
-    translation: "translation",
-  };
 
   let {
     playback,
@@ -141,67 +120,6 @@
   }
 
   onMount(() => feed.follow(show));
-
-  /** The ranges of `field` holding the characters a row's text gained, while the field still reads that text. */
-  function addedRanges(field: HTMLElement, row: ComparedRow): Range[] {
-    const keptSpans = row.text_spans.filter((span) => span.kind !== "removal");
-    if (keptSpans.map((span) => span.text).join("") !== fieldValue(field))
-      return [];
-    const ranges: Range[] = [];
-    let offset = 0;
-    for (const span of keptSpans) {
-      const end = offset + span.text.length;
-      const range =
-        span.kind === "addition" ? textRange(field, offset, end) : null;
-      if (range) ranges.push(range);
-      offset = end;
-    }
-    return ranges;
-  }
-
-  // Marks the characters each compared text gained, in the fields as they now read
-  $effect(() => {
-    const ranges = layout.bySegment.flatMap(({ rowsBySide }, index) =>
-      Object.values(rowsBySide)
-        .flat()
-        .flatMap(({ side, row }) => {
-          const sideField = field(index, FIELD_BY_SIDE[side]);
-          return sideField ? addedRanges(sideField, row) : [];
-        }),
-    );
-    markRanges(ADDED_HIGHLIGHT, ranges);
-  });
-
-  // Underlines the Glossary Marks of each field that still reads the text they were found in
-  $effect(() => {
-    const rangesByKind: Record<GlossaryMarkKind, Range[]> = {
-      term: [],
-      candidate: [],
-    };
-    const marksBySegment = project?.glossary_marks ?? [];
-    segments.forEach((segment, index) => {
-      const marks = marksBySegment[index];
-      if (!marks) return;
-      const fields = [
-        { kind: "text", text: segment.text, marks: marks.text },
-        {
-          kind: "translation",
-          text: segment.translation ?? "",
-          marks: marks.translation,
-        },
-      ] as const;
-      for (const { kind, text, marks: fieldMarks } of fields) {
-        const markField = field(index, kind);
-        if (!markField || fieldValue(markField) !== text) continue;
-        for (const mark of fieldMarks) {
-          const range = textRange(markField, mark.start, mark.end);
-          if (range) rangesByKind[mark.kind].push(range);
-        }
-      }
-    });
-    for (const kind of ["term", "candidate"] as const)
-      markRanges(GLOSSARY_HIGHLIGHT[kind], rangesByKind[kind]);
-  });
 
   /**
    * Brings the Current Segment's row into view as it becomes current, so the Cursor moving within

@@ -34,6 +34,35 @@ export function textRange(
   return null;
 }
 
+/** The ranges each owner marks under each highlight name, so it changes its own alone. */
+const rangesByOwnerByName = new Map<string, WeakMap<Element, Range[]>>();
+
+/**
+ * Marks `ranges` under `name` in place of what `owner` marked there before, leaving every other
+ * owner's ranges as they are, so a field redraws its own marks without the page redrawing all of
+ * them. A name is marked either this way or by `markRanges`, never both.
+ */
+export function markOwnRanges(
+  name: string,
+  owner: Element,
+  ranges: Range[],
+): void {
+  if (!hasHighlights()) return;
+  let rangesByOwner = rangesByOwnerByName.get(name);
+  if (!rangesByOwner) {
+    rangesByOwner = new WeakMap();
+    rangesByOwnerByName.set(name, rangesByOwner);
+  }
+  let highlight = CSS.highlights.get(name);
+  for (const range of rangesByOwner.get(owner) ?? []) highlight?.delete(range);
+  if (ranges.length > 0 && !highlight) {
+    highlight = new Highlight();
+    CSS.highlights.set(name, highlight);
+  }
+  for (const range of ranges) highlight?.add(range);
+  rangesByOwner.set(owner, ranges);
+}
+
 /** Marks every range under `name`, replacing what was marked under it before. */
 export function markRanges(name: string, ranges: Range[]): void {
   if (!hasHighlights()) return;

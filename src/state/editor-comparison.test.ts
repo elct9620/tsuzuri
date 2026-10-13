@@ -20,6 +20,7 @@ import {
 import { notifications, showNotifications } from "#/testing/notifications.ts";
 import { drawSegmentRows } from "#/testing/segment-rows.ts";
 import { settle } from "#/testing/settle.ts";
+import { stubHighlights } from "#/testing/highlights.ts";
 
 describe("EditorComparison", () => {
   let comparison: EditorComparison;
@@ -613,17 +614,7 @@ describe("EditorComparison", () => {
 
   // @behavior VR-045
   it("marks the characters a text gained inside its field", async () => {
-    const highlights = new Map<string, { ranges: Range[] }>();
-    vi.stubGlobal("CSS", { highlights });
-    vi.stubGlobal(
-      "Highlight",
-      class {
-        ranges: Range[];
-        constructor(...ranges: Range[]) {
-          this.ranges = ranges;
-        }
-      },
-    );
+    const highlights = stubHighlights();
     project = projectOf({
       segments: [{ start_ms: 0, end_ms: 1000, text: "資料不會上傳" }],
     });

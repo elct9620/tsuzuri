@@ -3,10 +3,16 @@
   One text or translation field of a Segment, handing the session what the user does in it:
   entering it, moving the selection, leaving it or giving up its typing, and splitting its Segment
   by shortcut; its keys also break a line and move on to the next Segment. It draws the Cursor the
-  session holds in it. Its text is written with the editor's `setFieldValue` and never bound, and only
-  while the user is not typing in it.
+  session holds in it, and its own Glossary Marks and compared additions until it is typed in, so a
+  read redraws the marks of only the fields it changed. Its text is written with the editor's
+  `setFieldValue` and never bound, and only while the user is not typing in it.
 -->
 <script lang="ts">
+  import type {
+    ComparedRow,
+    GlossaryMark,
+    GlossaryMarkKind,
+  } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
   import {
     type CaretPlace,
@@ -16,7 +22,9 @@
     fieldSelection,
     fieldValue,
     insertLineBreak,
+    markOwnRanges,
     setFieldValue,
+    textRange,
   } from "#/editor/index.ts";
   import { notifyEdit } from "#/state/notification.svelte.ts";
   import { isComposingKey, isShortcut } from "#/ui/shortcuts.ts";
@@ -26,12 +34,43 @@
     segmentFields,
   } from "#/state/context.ts";
 
+  /** The highlight marking the characters a text gained since the Backup compared. */
+  const ADDED_HIGHLIGHT = "compare-addition";
+
+  /** The highlight each kind of Glossary Mark is drawn under. */
+  const GLOSSARY_HIGHLIGHT: Record<GlossaryMarkKind, string> = {
+    term: "glossary-term",
+    candidate: "glossary-candidate",
+  };
+  const GLOSSARY_KINDS = Object.keys(GLOSSARY_HIGHLIGHT) as GlossaryMarkKind[];
+
+  /** The ranges of `field` holding the characters a row's text gained, while the field still reads that text. */
+  function addedRanges(field: HTMLElement, row: ComparedRow): Range[] {
+    const keptSpans = row.text_spans.filter((span) => span.kind !== "removal");
+    if (keptSpans.map((span) => span.text).join("") !== fieldValue(field))
+      return [];
+    const ranges: Range[] = [];
+    let offset = 0;
+    for (const span of keptSpans) {
+      const end = offset + span.text.length;
+      const range =
+        span.kind === "addition" ? textRange(field, offset, end) : null;
+      if (range) ranges.push(range);
+      offset = end;
+    }
+    return ranges;
+  }
+
   interface Props {
     index: number;
     kind: CursorField;
     /** The Segment's text or translation, written in unless the user is typing and it is kept. */
     value: string;
     placeholder?: string;
+    /** The Glossary Marks found in the field's value, underlined while the field still reads it. */
+    glossaryMarks?: GlossaryMark[];
+    /** The rows of the comparison covering the field, whose added characters it marks. */
+    comparedRows?: ComparedRow[];
     /** Whether a running Mode holds the field from typing. */
     isHeld: boolean;
     /** Whether the field waits for a translation being made. */
@@ -50,6 +89,8 @@
     isHeld,
     isPending = false,
     isTypingKept,
+    glossaryMarks = [],
+    comparedRows = [],
     element = $bindable(),
   }: Props = $props();
 
@@ -94,6 +135,53 @@
     // Read only for the field with focus, so a change to it writes no other field again
     if (element !== document.activeElement || !isTypingKept)
       setFieldValue(element, value);
+  });
+
+  /** What the field's marks were last drawn from, so a read changing none of it redraws none. */
+  let drawnMarks = "";
+
+  // Underlines the Glossary Marks while the field still reads the text they were found in, and
+  // marks the characters each compared text gained; each field draws its own marks, so a read
+  // redraws only those of the fields it changed
+  $effect(() => {
+    if (!element) return;
+    const field = element;
+    const isRead = fieldValue(field) === value;
+    const marks = JSON.stringify([value, isRead, glossaryMarks, comparedRows]);
+    if (marks === drawnMarks) return;
+    drawnMarks = marks;
+    for (const markKind of GLOSSARY_KINDS) {
+      const kindMarks = isRead
+        ? glossaryMarks.filter((mark) => mark.kind === markKind)
+        : [];
+      markOwnRanges(
+        GLOSSARY_HIGHLIGHT[markKind],
+        field,
+        kindMarks.flatMap(
+          (mark) => textRange(field, mark.start, mark.end) ?? [],
+        ),
+      );
+    }
+    markOwnRanges(
+      ADDED_HIGHLIGHT,
+      field,
+      comparedRows.flatMap((row) => addedRanges(field, row)),
+    );
+  });
+
+  /** Takes the field's marks away, as they count characters of a text it no longer reads. */
+  function forgetMarks(field: HTMLElement): void {
+    for (const name of [...Object.values(GLOSSARY_HIGHLIGHT), ADDED_HIGHLIGHT])
+      markOwnRanges(name, field, []);
+    drawnMarks = "";
+  }
+
+  // Takes the field's marks away with it
+  $effect(() => {
+    const field = element;
+    return () => {
+      if (field) forgetMarks(field);
+    };
   });
 
   /** Follows the selection while the field has focus, as the rows hand it each change. */
@@ -186,6 +274,7 @@
   oncompositionstart={() => (hasComposition = true)}
   oncompositionend={endComposing}
   onkeydown={pressKey}
+  oninput={({ currentTarget }) => forgetMarks(currentTarget)}
 ></div>
 {#if drawnCaret}
   <span

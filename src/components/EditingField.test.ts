@@ -11,6 +11,7 @@ import {
   drawSegmentRows,
 } from "#/testing/segment-rows.ts";
 import { settle } from "#/testing/settle.ts";
+import { stubHighlights } from "#/testing/highlights.ts";
 
 describe("EditingField", () => {
   let drawn: DrawnSegmentRows;
@@ -247,17 +248,7 @@ describe("EditingField", () => {
   });
 
   it("marks only the range the Cursor covers now", () => {
-    const highlights = new Map<string, { ranges: Range[] }>();
-    vi.stubGlobal("CSS", { highlights });
-    vi.stubGlobal(
-      "Highlight",
-      class {
-        ranges: Range[];
-        constructor(...ranges: Range[]) {
-          this.ranges = ranges;
-        }
-      },
-    );
+    const highlights = stubHighlights();
     session.enter(1, "text", { start: 0, end: 2 }, "今天天氣");
     flushSync();
 

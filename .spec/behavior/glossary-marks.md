@@ -133,8 +133,7 @@ A mark counts characters of the text it was found in, and would land on other wo
 | Step | Statement |
 | --- | --- |
 | Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林` |
-| Given | its text field typed in to read `小林先生` |
-| When | the Project is shown again |
+| When | its text field is typed in to read `小林先生` |
 | Then | nothing in the field is underlined as a candidate |
 
 ## `GM-014` Offering to add the candidate the caret stands in
@@ -212,3 +211,13 @@ A mark counts characters of the text it was found in, so in a text since changed
 | Given | its text field typed in to read `小林來了` |
 | When | the text field is right-clicked with the caret inside `小林` |
 | Then | the menu offers nothing of the Translation Glossary |
+
+## `GM-022` Underlining again only the fields whose marks changed
+
+Every underline is drawn over the whole page, so redrawing all of them on each read would cost a long subtitle more for each Segment it marks.
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, each with a candidate in its text |
+| When | the second Segment's text changes, and its candidate with it |
+| Then | the candidates of the first and third Segments are underlined as they were, untouched |

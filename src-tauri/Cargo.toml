@@ -1,6 +1,6 @@
 [package]
 name = "tsuzuri"
-version = "0.3.0"
+version = "0.4.0"
 description = "Local transcription, subtitle editing and translation"
 authors = ["Aotokitsuruya <contact@aotoki.me>"]
 license = "Apache-2.0"

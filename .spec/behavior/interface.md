@@ -114,16 +114,6 @@ A dialog is drawn above the whole page, so the tooltip is drawn in the layer abo
 | When | the pointer moves onto it |
 | Then | the tooltip is shown above that dialog |
 
-## `IF-053` Showing a tooltip once focus reaches an element
-
-The keyboard reaches the same explanation the pointer does, moving focus to each ⓘ in the settings in turn.
-
-| Step | Statement |
-| --- | --- |
-| Given | an element with a tooltip |
-| When | focus moves onto it |
-| Then | a tooltip shows its text |
-
 ## `IF-012` Writing a tooltip in the Interface Language
 
 | Step | Statement |
@@ -142,16 +132,6 @@ Each setting says what it is for and how to use it, since its name alone rarely 
 | When | its rows are read in either Interface Language |
 | Then | every row carries a tooltip, or a line beneath its name, that explains it |
 
-## `IF-054` Naming every button in the Interface Language
-
-A button drawn as an icon alone is known only by its name, which a screen reader reads and a translation can leave out.
-
-| Step | Statement |
-| --- | --- |
-| Given | the page written in Traditional Chinese |
-| When | its buttons are read |
-| Then | each has a name, and none is the key of a text |
-
 ## `IF-014` Letting a Notification go on its own
 
 | Step | Statement |
@@ -168,31 +148,11 @@ A button drawn as an icon alone is known only by its name, which a screen reader
 | When | a few seconds pass |
 | Then | it is still shown |
 
-## `IF-039` Letting a refusal go on its own
-
-A refusal is fixed by asking again, so it goes like any other rather than piling up.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Notification that an edit was refused as `invalid-times` |
-| When | a few seconds pass |
-| Then | it is no longer shown |
-
 ## `IF-016` Closing a Notification that stays by its close button
 
 | Step | Statement |
 | --- | --- |
 | Given | a Notification that a task failed |
-| When | its close button is clicked |
-| Then | it is no longer shown |
-
-## `IF-041` Closing a Notification before it goes
-
-Once it is read, waiting out its countdown only keeps it in the way.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Notification that a task finished |
 | When | its close button is clicked |
 | Then | it is no longer shown |
 
@@ -328,24 +288,6 @@ Shortcuts grow faster than anyone remembers them, so one more opens the list of 
 | When | ? is pressed |
 | Then | the shortcut list stays closed and the field takes the key |
 
-## `IF-055` Closing a modal by its button
-
-Every modal is drawn the same way, so what holds for the shortcut list holds for each one a user may close.
-
-| Step | Statement |
-| --- | --- |
-| Given | the shortcut list open |
-| When | its 關閉 button is clicked |
-| Then | the shortcut list is closed |
-
-## `IF-056` Closing a modal by clicking outside it
-
-| Step | Statement |
-| --- | --- |
-| Given | the shortcut list open |
-| When | the backdrop around it is clicked |
-| Then | the shortcut list is closed |
-
 ## `IF-033` Listing only this platform's keys
 
 macOS gives some keys to the system, so each platform has keys of its own, and the list shows only the ones that work here.
@@ -382,6 +324,60 @@ A key alone does not say where it works or what it leaves alone, so each shortcu
 | When | the Shortcuts they match a key against or name in a tooltip are read |
 | Then | the shortcut list has each of them |
 
+## `IF-037` Letting the Save Mark go on its own
+
+| Step | Statement |
+| --- | --- |
+| Given | the Save Mark shown after an edit was saved |
+| When | a moment passes |
+| Then | it is no longer shown |
+
+## `IF-038` Keeping the Save Mark while edits keep being saved
+
+Each edit saved is marked anew rather than stacked, so writing field after field shows one mark for as long as it goes on.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Save Mark shown after an edit was saved, most of its moment passed |
+| When | another edit is saved |
+| Then | one Save Mark is shown, for a whole moment from the latest edit |
+
+## `IF-039` Letting a refusal go on its own
+
+A refusal is fixed by asking again, so it goes like any other rather than piling up.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that an edit was refused as `invalid-times` |
+| When | a few seconds pass |
+| Then | it is no longer shown |
+
+## `IF-040` Stopping the countdown of a Notification going away
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification offering something to do, counting down |
+| When | what it offers is taken, and it fades away |
+| Then | its countdown stays where it stopped |
+
+## `IF-041` Closing a Notification before it goes
+
+Once it is read, waiting out its countdown only keeps it in the way.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Notification that a task finished |
+| When | its close button is clicked |
+| Then | it is no longer shown |
+
+## `IF-042` Opening where Tsuzuri can be sponsored
+
+| Step | Statement |
+| --- | --- |
+| Given | the About section of the settings |
+| When | sponsoring is chosen |
+| Then | Rust is asked to open the sponsorship page |
+
 ## `IF-043` Binding every key the shortcut list names
 
 A key the list shows and nothing answers to is a promise the interface does not keep, so the list is held to what is bound as what is bound is held to the list.
@@ -411,40 +407,6 @@ The Video Window is another window, so its key is bound there rather than by an 
 | Given | the shortcut list |
 | When | its row for the Video Window's full screen is read |
 | Then | its keys read a double click or `Esc` |
-
-## `IF-037` Letting the Save Mark go on its own
-
-| Step | Statement |
-| --- | --- |
-| Given | the Save Mark shown after an edit was saved |
-| When | a moment passes |
-| Then | it is no longer shown |
-
-## `IF-038` Keeping the Save Mark while edits keep being saved
-
-Each edit saved is marked anew rather than stacked, so writing field after field shows one mark for as long as it goes on.
-
-| Step | Statement |
-| --- | --- |
-| Given | the Save Mark shown after an edit was saved, most of its moment passed |
-| When | another edit is saved |
-| Then | one Save Mark is shown, for a whole moment from the latest edit |
-
-## `IF-040` Stopping the countdown of a Notification going away
-
-| Step | Statement |
-| --- | --- |
-| Given | a Notification offering something to do, counting down |
-| When | what it offers is taken, and it fades away |
-| Then | its countdown stays where it stopped |
-
-## `IF-042` Opening where Tsuzuri can be sponsored
-
-| Step | Statement |
-| --- | --- |
-| Given | the About section of the settings |
-| When | sponsoring is chosen |
-| Then | Rust is asked to open the sponsorship page |
 
 ## `IF-046` Docking the Resource list beside a landscape window
 
@@ -505,6 +467,44 @@ A narrow window never docks the list, so the shortcut lays it over the editor as
 | Given | a window too narrow to dock the Resource list |
 | When | ⌘B on macOS or Ctrl+B elsewhere is pressed |
 | Then | the Resource list is laid over the editor |
+
+## `IF-053` Showing a tooltip once focus reaches an element
+
+The keyboard reaches the same explanation the pointer does, moving focus to each ⓘ in the settings in turn.
+
+| Step | Statement |
+| --- | --- |
+| Given | an element with a tooltip |
+| When | focus moves onto it |
+| Then | a tooltip shows its text |
+
+## `IF-054` Naming every button in the Interface Language
+
+A button drawn as an icon alone is known only by its name, which a screen reader reads and a translation can leave out.
+
+| Step | Statement |
+| --- | --- |
+| Given | the page written in Traditional Chinese |
+| When | its buttons are read |
+| Then | each has a name, and none is the key of a text |
+
+## `IF-055` Closing a modal by its button
+
+Every modal is drawn the same way, so what holds for the shortcut list holds for each one a user may close.
+
+| Step | Statement |
+| --- | --- |
+| Given | the shortcut list open |
+| When | its 關閉 button is clicked |
+| Then | the shortcut list is closed |
+
+## `IF-056` Closing a modal by clicking outside it
+
+| Step | Statement |
+| --- | --- |
+| Given | the shortcut list open |
+| When | the backdrop around it is clicked |
+| Then | the shortcut list is closed |
 
 ## `IF-057` Showing the settings over the whole window
 

@@ -68,6 +68,22 @@ What a run leaves in the log, so a slow or failed run can be diagnosed afterward
 | When | a directory is chosen for the log |
 | Then | it is recorded as the log directory, and the settings say it takes effect after a restart |
 
+## `OB-008` Opening the log directory
+
+| Step | Statement |
+| --- | --- |
+| Given | the general settings |
+| When | opening the log directory is chosen |
+| Then | the directory the log is written to now is opened |
+
+## `OB-009` Falling back to the OS log directory when the chosen one cannot be made
+
+| Step | Statement |
+| --- | --- |
+| Given | log settings that choose a directory which can no longer be made, as on a drive gone |
+| When | the app starts |
+| Then | the log is written to the OS log directory of the app |
+
 ## `OB-010` Naming the directory the log moves to after a restart
 
 | Step | Statement |
@@ -93,22 +109,6 @@ A directory chosen earlier in this launch takes effect only at the next, so the 
 | Given | the log written to `/os/logs`, with `/logs` chosen for the next launch |
 | When | the general settings open |
 | Then | the settings say the log is written to `/logs` after a restart |
-
-## `OB-008` Opening the log directory
-
-| Step | Statement |
-| --- | --- |
-| Given | the general settings |
-| When | opening the log directory is chosen |
-| Then | the directory the log is written to now is opened |
-
-## `OB-009` Falling back to the OS log directory when the chosen one cannot be made
-
-| Step | Statement |
-| --- | --- |
-| Given | log settings that choose a directory which can no longer be made, as on a drive gone |
-| When | the app starts |
-| Then | the log is written to the OS log directory of the app |
 
 ## `OB-013` Naming the commit a build was made from
 
@@ -182,6 +182,22 @@ A directory chosen earlier in this launch takes effect only at the next, so the 
 | When | the general settings open |
 | Then | the Debug Log shows on and the settings say nothing of a restart |
 
+## `OB-022` Logging how a Component was started and how it ended
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component process |
+| When | it is started and then exits |
+| Then | the debug lines name its executable with the arguments it was given, and its exit code |
+
+## `OB-023` Logging what llama-server was asked and answered
+
+| Step | Statement |
+| --- | --- |
+| Given | a running llama-server |
+| When | it is asked for an answer |
+| Then | the debug lines hold the task, the message it was sent and the content it answered |
+
 ## `OB-024` Saying the log settings were not read
 
 | Step | Statement |
@@ -213,19 +229,3 @@ A directory chosen earlier in this launch takes effect only at the next, so the 
 | Given | the general settings |
 | When | opening the log directory fails |
 | Then | a Notification says the log directory was not opened |
-
-## `OB-022` Logging how a Component was started and how it ended
-
-| Step | Statement |
-| --- | --- |
-| Given | a Component process |
-| When | it is started and then exits |
-| Then | the debug lines name its executable with the arguments it was given, and its exit code |
-
-## `OB-023` Logging what llama-server was asked and answered
-
-| Step | Statement |
-| --- | --- |
-| Given | a running llama-server |
-| When | it is asked for an answer |
-| Then | the debug lines hold the task, the message it was sent and the content it answered |

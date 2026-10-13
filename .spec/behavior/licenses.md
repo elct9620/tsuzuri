@@ -31,26 +31,6 @@ Which licenses the packages the webview bundles may carry, and the License Notic
 | When | the License Notice is written |
 | Then | it names `lucide` 1.48.0 and `ISC` beside the text of that file |
 
-## `LC-011` Leaving out a package only the build uses
-
-The packages come from what the bundle carries, not from what the dependencies declare: a compiler that turns components into the bundle's code does not ship.
-
-| Step | Statement |
-| --- | --- |
-| Given | a webview importing `kept`, beside an installed `build-only` it never imports |
-| When | the webview is bundled |
-| Then | the packages listed for the License Notice name `kept` and not `build-only` |
-
-## `LC-012` Naming who wrote a package that ships no license text
-
-A package can state its license in its manifest without shipping the text. Its author and repository stand in for the copyright line the text would carry.
-
-| Step | Statement |
-| --- | --- |
-| Given | `is-reference` 3.0.3 under `MIT` by Rich Harris, from its repository, shipping no license file |
-| When | the License Notice is written |
-| Then | it names `is-reference` 3.0.3 and `MIT` beside its author and repository, without a license text |
-
 ## `LC-004` Opening the notice with Tsuzuri's own license
 
 | Step | Statement |
@@ -110,4 +90,24 @@ A development build has no License Notice, since CI writes it into each build.
 | Given | the parakeet-rs code Speaker Diarization adapts |
 | When | the License Notice is written |
 | Then | it carries the MIT License parakeet-rs is under, naming the version adapted |
+
+## `LC-011` Leaving out a package only the build uses
+
+The packages come from what the bundle carries, not from what the dependencies declare: a compiler that turns components into the bundle's code does not ship.
+
+| Step | Statement |
+| --- | --- |
+| Given | a webview importing `kept`, beside an installed `build-only` it never imports |
+| When | the webview is bundled |
+| Then | the packages listed for the License Notice name `kept` and not `build-only` |
+
+## `LC-012` Naming who wrote a package that ships no license text
+
+A package can state its license in its manifest without shipping the text. Its author and repository stand in for the copyright line the text would carry.
+
+| Step | Statement |
+| --- | --- |
+| Given | `is-reference` 3.0.3 under `MIT` by Rich Harris, from its repository, shipping no license file |
+| When | the License Notice is written |
+| Then | it names `is-reference` 3.0.3 and `MIT` beside its author and repository, without a license text |
 

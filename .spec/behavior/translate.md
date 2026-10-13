@@ -534,14 +534,6 @@ The Translate Mode: the Project's Transcript - from a transcription or an opened
 | When | a translation asks for it |
 | Then | the translation fails without waiting for the load timeout |
 
-## `TL-104` Failing when llama-server exits before it is ready
-
-| Step | Statement |
-| --- | --- |
-| Given | a translation on a llama-server started for it alone, which exits before it answers |
-| When | the translation waits for it to be ready |
-| Then | the translation fails as llama-server exited, without waiting for the ready timeout |
-
 ## `TL-070` Freeing the Model once the kept seconds pass
 
 | Step | Statement |
@@ -652,14 +644,6 @@ Translating keeps the translation it replaces as a Backup, yet saying so before 
 | When | it is translated |
 | Then | the Project names Segments 0 to 1 as the Batch being translated before the first Batch, 2 to 2 after it, and none once the last is done |
 
-## `TL-086` Warning of the Segments a translation left unmatched
-
-| Step | Statement |
-| --- | --- |
-| Given | a translation whose answer counts 2 Segments without a translation |
-| When | it finishes |
-| Then | beside the Notification that it is done, a warning says 2 Segments no longer line up with a translation |
-
 ## `TL-083` Dropping the translations shown when a translation is cancelled
 
 A cancelled translation writes nothing, so what it showed goes with it and the editor shows the files again.
@@ -669,16 +653,6 @@ A cancelled translation writes nothing, so what it showed goes with it and the e
 | Given | a translation of three Segments with none translated, whose first Batch is shown |
 | When | it is cancelled before the next Batch is answered |
 | Then | it fails as `mode-cancelled`, no Segment shows a translation, and no translation file is written |
-
-## `TL-105` Freeing the Model when a translation on the Resident llama-server is cancelled
-
-A cancelled translation leaves the Resident llama-server running, so its Model is freed as after any other translation.
-
-| Step | Statement |
-| --- | --- |
-| Given | a translation on the Resident llama-server, keeping the Model for no time |
-| When | it is cancelled while the Model answers |
-| Then | it fails as `mode-cancelled` and the Model is unloaded |
 
 ## `TL-084` Translating chosen Segments again with their neighbours
 
@@ -697,6 +671,14 @@ A line translated alone loses the context a Batch gives, so it carries the lines
 | Given | a Project whose Project Model for the translation slot differs from the general one |
 | When | its Current Resource is translated |
 | Then | llama-server loads the Project Model |
+
+## `TL-086` Warning of the Segments a translation left unmatched
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation whose answer counts 2 Segments without a translation |
+| When | it finishes |
+| Then | beside the Notification that it is done, a warning says 2 Segments no longer line up with a translation |
 
 ## `TL-087` Translating chosen Segments again in Batches
 
@@ -806,16 +788,6 @@ The lines before the chosen ones are what the user already put right, so when th
 | When | the Current Resource is translated |
 | Then | the translation file reads `你们好` |
 
-## `TL-102` Not offering Speaker Labels before Speakers are detected
-
-Keeping Speaker Labels reads as if Tsuzuri told Speakers apart, which it does not yet, so the dialog leaves the choice out and a translation keeps none.
-
-| Step | Statement |
-| --- | --- |
-| Given | the translate dialog |
-| When | translating is started |
-| Then | the dialog offers no Speaker Labels, and the Project is translated without them |
-
 ## `TL-100` Offering the cleanup when translating into `zh-TW`
 
 The translation settings hold whether the cleanup starts checked; each translation may choose otherwise.
@@ -834,6 +806,16 @@ The translation settings hold whether the cleanup starts checked; each translati
 | When | translating is started |
 | Then | the Project is translated without the cleanup |
 
+## `TL-102` Not offering Speaker Labels before Speakers are detected
+
+Keeping Speaker Labels reads as if Tsuzuri told Speakers apart, which it does not yet, so the dialog leaves the choice out and a translation keeps none.
+
+| Step | Statement |
+| --- | --- |
+| Given | the translate dialog |
+| When | translating is started |
+| Then | the dialog offers no Speaker Labels, and the Project is translated without them |
+
 ## `TL-103` Starting no translation while another task runs
 
 One task runs at a time, so a translation asked for while one runs leaves the running task as it is.
@@ -843,6 +825,24 @@ One task runs at a time, so a translation asked for while one runs leaves the ru
 | Given | a Current Resource with a subtitle, while a transcription runs |
 | When | its translation is started from the resource bar |
 | Then | no translation is asked for |
+
+## `TL-104` Failing when llama-server exits before it is ready
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation on a llama-server started for it alone, which exits before it answers |
+| When | the translation waits for it to be ready |
+| Then | the translation fails as llama-server exited, without waiting for the ready timeout |
+
+## `TL-105` Freeing the Model when a translation on the Resident llama-server is cancelled
+
+A cancelled translation leaves the Resident llama-server running, so its Model is freed as after any other translation.
+
+| Step | Statement |
+| --- | --- |
+| Given | a translation on the Resident llama-server, keeping the Model for no time |
+| When | it is cancelled while the Model answers |
+| Then | it fails as `mode-cancelled` and the Model is unloaded |
 
 ## `TL-106` Accepting a glossary term written in another case
 

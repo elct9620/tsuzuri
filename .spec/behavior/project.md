@@ -31,6 +31,87 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | it is opened |
 | Then | the Project lists the Resources `ep01` and `ep02` |
 
+## `PJ-003` Editing a Segment of the Current Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of one translated Segment |
+| When | its text and its translation are edited |
+| Then | the Project holds both edits |
+
+## `PJ-004` Exporting the Current Resource as it stands
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Segment was edited |
+| When | it is saved as SRT |
+| Then | the file carries the edited text |
+
+## `PJ-005` Refusing work without a Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Project |
+| When | it is translated, edited or saved |
+| Then | the command fails with no Project |
+
+## `PJ-006` Leaving a replaced Project untouched
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project replaced by another while it was being translated |
+| When | the translation finishes |
+| Then | the new Project carries none of the translations |
+
+## `PJ-007` Opening an SRT file opens its directory
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `interview.srt` and `talk.srt` |
+| When | `talk.srt` is opened |
+| Then | the Project is that directory and its Current Resource is `talk` |
+
+## `PJ-008` Saying why an SRT file could not be opened
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar |
+| When | an SRT file whose second cue is malformed is chosen to open |
+| Then | a Notification says the file could not be read at its second cue |
+
+## `PJ-010` Recording the Language of a translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` |
+| When | its Current Resource is translated into `en` |
+| Then | the Project records `en` as its translation Language and keeps `zh-TW` |
+
+## `PJ-011` Starting a new Project without a Translation Glossary
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project with a Translation Glossary |
+| When | a directory without `glossary.csv` is opened as the Project |
+| Then | the new Project holds no Translation Glossary |
+
+## `PJ-012` Naming an export by the Resource and its Languages
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resource `ep01` in `/talks`, in `zh-TW` and translated into `en` |
+| When | the default path of each export is asked for |
+| Then | the original is `/talks/ep01.srt`, the translation `/talks/ep01.en.srt` and the bilingual `/talks/ep01.zh-TW.en.srt` |
+
+## `PJ-014` Offering the default path when exporting
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose translation export defaults to `/talks/lecture.en.srt` |
+| When | the translation is exported from the resource bar |
+| Then | the save dialog opens at `/talks/lecture.en.srt` |
+
+
 ## `PJ-015` Selecting the first Resource of an opened directory
 
 | Step | Statement |
@@ -38,7 +119,6 @@ The directory Rust holds open as the single source of truth: which files make it
 | Given | a directory holding `ep02.srt` and `ep01.srt` |
 | When | it is opened |
 | Then | the Current Resource is `ep01` and the Project holds its Segments |
-
 ## `PJ-016` Taking a subtitle named by the Primary Language as the original
 
 | Step | Statement |
@@ -63,48 +143,6 @@ The directory Rust holds open as the single source of truth: which files make it
 | When | it is opened in `zh-TW` |
 | Then | the Project lists only `ep01`, with no translation |
 
-## `PJ-105` Pairing subtitles with a media file whose name ends like a Language code
-
-A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri writes for it are found again.
-
-| Step | Statement |
-| --- | --- |
-| Given | a directory holding `talk.hd.mp4`, `talk.hd.srt` and `talk.hd.en.srt` |
-| When | it is opened in `zh-TW` |
-| Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
-
-## `PJ-106` Naming a Resource by a subtitle whose name ends like an unknown Language code
-
-| Step | Statement |
-| --- | --- |
-| Given | a directory holding `talk.hd.srt` and `talk.hd.en.srt` |
-| When | it is opened in `zh-TW` |
-| Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
-
-## `PJ-118` Leaving out an unknown Language code after a Resource of subtitles alone
-
-| Step | Statement |
-| --- | --- |
-| Given | a directory holding `talk.hd.srt` and `talk.hd.ko.srt`, or `talk.hd.srt` and `talk.hd.vi.srt` |
-| When | it is opened in `zh-TW` |
-| Then | the Project lists only `talk.hd` |
-
-## `PJ-107` Pairing a subtitle with the Resource its whole name before the code names
-
-| Step | Statement |
-| --- | --- |
-| Given | a directory holding `lecture.mp4`, `lecture.ja.mp4` and `lecture.ja.en.srt` |
-| When | it is opened in `zh-TW` |
-| Then | `lecture.ja` has the `en` translation and `lecture` has none |
-
-## `PJ-108` Showing a translation again after showing none
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource `talk.hd` of `talk.hd.mp4` and `talk.hd.srt` just translated into `en`, with no translation shown since |
-| When | `en` is shown |
-| Then | the Segments carry the `en` translation |
-
 ## `PJ-019` Loading a translation by the times of its cues
 
 | Step | Statement |
@@ -113,16 +151,6 @@ A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri 
 | When | it is opened in `zh-TW` |
 | Then | the first Segment is translated from `ep01.en.srt` and the second is not |
 
-
-## `PJ-138` Loading a translation for Segments with the same times in their order
-
-Two people may speak at once, so Segments may share their times; their cues are matched in the order each file holds them.
-
-| Step | Statement |
-| --- | --- |
-| Given | a directory holding `ep01.srt` of `大家好` and `對啊`, both from 0 to 1 second, and `ep01.en.srt` of `Hello` and `Yeah` at the same times |
-| When | it is opened in `zh-TW` |
-| Then | `大家好` is translated as `Hello` and `對啊` as `Yeah` |
 ## `PJ-020` Showing another translation of the Current Resource
 
 | Step | Statement |
@@ -139,13 +167,13 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | `ep02` is selected |
 | Then | the Project holds the Segments of `ep02` |
 
-## `PJ-007` Opening an SRT file opens its directory
+## `PJ-022` Leaving another Resource untouched by a late transcription
 
 | Step | Statement |
 | --- | --- |
-| Given | a directory holding `interview.srt` and `talk.srt` |
-| When | `talk.srt` is opened |
-| Then | the Project is that directory and its Current Resource is `talk` |
+| Given | a transcription of `ep01` during which `ep02` was selected |
+| When | the transcription finishes |
+| Then | the Project holds the Segments of `ep02` unchanged |
 
 ## `PJ-023` Opening a translation SRT file shows that translation
 
@@ -227,301 +255,97 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | its translation into `en` is written |
 | Then | `ep01.en.srt` holds the translations and `ep02` shows none of them |
 
-## `PJ-008` Saying why an SRT file could not be opened
+## `PJ-033` Opening a directory from the toolbar
 
 | Step | Statement |
 | --- | --- |
-| Given | the toolbar |
-| When | an SRT file whose second cue is malformed is chosen to open |
-| Then | a Notification says the file could not be read at its second cue |
-
-## `PJ-166` Refusing to open a Project while a Mode runs
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` open, a Mode running on its `ep01` |
-| When | the directory `interview` is asked to open |
-| Then | it is refused as `opening-during-mode` and `lecture` is still the Project |
-
-## `PJ-167` Warning that a Project cannot open while a Mode runs
-
-| Step | Statement |
-| --- | --- |
-| Given | the toolbar, a Mode running |
+| Given | an interface in Traditional Chinese |
 | When | a directory is chosen to open |
-| Then | a warning Notification asks to wait for the task to finish or cancel it first |
+| Then | it is opened as the Project in `zh-TW` |
 
-## `PJ-168` Taking the SRT file among the launch arguments
-
-| Step | Statement |
-| --- | --- |
-| Given | Tsuzuri launched in `/talks` with `--flag`, `notes.txt` and `ep02.srt` |
-| When | its arguments are read for a Requested SRT |
-| Then | the Requested SRT is `/talks/ep02.srt` |
-
-## `PJ-169` Taking a file URL the system hands over
+## `PJ-034` Listing the Resources
 
 | Step | Statement |
 | --- | --- |
-| Given | the system asks to open `file:///talks/ep%2002.srt` |
-| When | it is read for a Requested SRT |
-| Then | the Requested SRT is `/talks/ep 02.srt` |
+| Given | a Project of `ep01` translated into `en` and `ep02` of a media file alone |
+| When | the Resource list shows it |
+| Then | it lists `ep01` with `en` and `ep02` marked as having no subtitle |
 
-## `PJ-170` Answering the Requested SRT once
-
-| Step | Statement |
-| --- | --- |
-| Given | `/talks/ep02.srt` requested |
-| When | the Requested SRT is taken twice |
-| Then | the first answers `/talks/ep02.srt` and the second none |
-
-## `PJ-180` Keeping an SRT file the system asks for before Tsuzuri has started
+## `PJ-035` Selecting a Resource from the list
 
 | Step | Statement |
 | --- | --- |
-| Given | Tsuzuri launching, not yet set up |
-| When | the system asks it to open `/talks/ep02.srt` |
-| Then | the Requested SRT is `/talks/ep02.srt` |
+| Given | the Resource list of `ep01` and `ep02` |
+| When | `ep02` is clicked |
+| Then | `ep02` is selected as the Current Resource |
 
-## `PJ-171` Opening the Requested SRT as the webview starts
-
-| Step | Statement |
-| --- | --- |
-| Given | Tsuzuri launched to open `/talks/ep02.srt` |
-| When | the webview starts |
-| Then | `/talks/ep02.srt` is opened as an SRT file in the Interface Language |
-
-## `PJ-172` Opening an SRT file requested while Tsuzuri runs
-
-| Step | Statement |
-| --- | --- |
-| Given | the webview, with `lecture` open |
-| When | `/talks/ep02.srt` is requested |
-| Then | it is opened as an SRT file in the Interface Language |
-
-## `PJ-154` Keeping an opened directory as a Recent Project
-
-| Step | Statement |
-| --- | --- |
-| Given | no Recent Projects |
-| When | the directory `lecture` is opened |
-| Then | the Recent Projects are `lecture` with the time it was opened |
-
-## `PJ-155` Keeping the directory of an opened SRT file as a Recent Project
-
-| Step | Statement |
-| --- | --- |
-| Given | no Recent Projects |
-| When | `lecture/ep01.srt` is opened |
-| Then | the Recent Projects are `lecture` |
-
-## `PJ-156` Keeping one Recent Project per directory
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` opened before `interview` |
-| When | `lecture` is opened again |
-| Then | the Recent Projects are `lecture` then `interview` |
-
-## `PJ-157` Keeping ten Recent Projects
-
-| Step | Statement |
-| --- | --- |
-| Given | ten directories opened one after another |
-| When | an eleventh is opened |
-| Then | the Recent Projects are the last ten opened, without the first |
-
-## `PJ-158` Dropping a Recent Project whose directory is gone
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` as a Recent Project, its directory since removed |
-| When | `lecture` is opened |
-| Then | it is refused as `directory-not-found` and the Recent Projects no longer hold it |
-
-## `PJ-159` Keeping a Recent Project that could not be read
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` as a Recent Project, its directory since made unreadable |
-| When | `lecture` is opened |
-| Then | the Recent Projects still hold it |
-
-## `PJ-160` Leaving the open Project out of the Recent Projects
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` opened before `interview` |
-| When | the Recent Projects are read |
-| Then | they are `lecture` alone |
-
-## `PJ-161` Listing the Recent Projects on the start screen
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` at `/videos/lecture` as a Recent Project |
-| When | the start screen is shown |
-| Then | a row shows `lecture`, `/videos/lecture` and the date it was opened |
-
-## `PJ-162` Opening a Recent Project from the start screen
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` listed on the start screen |
-| When | its row is clicked |
-| Then | the directory `/videos/lecture` is opened |
-
-## `PJ-163` Hiding the Recent Projects when there are none
-
-| Step | Statement |
-| --- | --- |
-| Given | no Recent Projects |
-| When | the start screen is shown |
-| Then | no heading for them is shown |
-
-## `PJ-164` Listing the Recent Projects in the Open menu
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` at `/videos/lecture` as a Recent Project |
-| When | the Open menu is shown |
-| Then | it lists `lecture` with `/videos/lecture` as its tooltip |
-
-## `PJ-177` Listing a Recent Project by its Project Name
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` as a Recent Project, its Project Config naming it `週會錄影` |
-| When | the Recent Projects are listed |
-| Then | `lecture` is listed as `週會錄影` |
-
-## `PJ-178` Naming a Recent Project after its directory when its Project Config does not answer
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` and `interview` as Recent Projects, the Project Config of `lecture` not answering |
-| When | the Recent Projects are listed |
-| Then | the list comes in time, `lecture` named `lecture` and `interview` by its Project Name |
-
-## `PJ-179` Showing the Project Name of a Recent Project on the start screen and in the Open menu
-
-| Step | Statement |
-| --- | --- |
-| Given | `/videos/lecture` as a Recent Project named `週會錄影` |
-| When | the start screen and the Open menu are shown |
-| Then | both list it as `週會錄影` |
-
-## `PJ-165` Listing the Recent Projects again after one could not be opened
-
-| Step | Statement |
-| --- | --- |
-| Given | `lecture` listed on the start screen, its directory since removed |
-| When | its row is clicked |
-| Then | the start screen no longer lists it |
-
-## `PJ-003` Editing a Segment of the Current Resource
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of one translated Segment |
-| When | its text and its translation are edited |
-| Then | the Project holds both edits |
-
-## `PJ-004` Exporting the Current Resource as it stands
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose Segment was edited |
-| When | it is saved as SRT |
-| Then | the file carries the edited text |
-
-## `PJ-150` Writing the Current Resource as Plain Text
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of two Segments, the first said by `阿福` |
-| When | its original is written as Plain Text |
-| Then | the text is `阿福: 少爺` and `我等等就下去`, a blank line between, with no times |
-
-## `PJ-151` Leaving the Speakers out of Plain Text
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose Segment is said by `阿福` |
-| When | it is written as Plain Text without its Speakers |
-| Then | the text carries the Segment's text alone |
-
-## `PJ-185` Leaving the blank lines out of Plain Text
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of two Segments |
-| When | its original is written as Plain Text without blank lines |
-| Then | the text is one line per Segment with nothing between |
-
-## `PJ-152` Writing a bilingual Plain Text in the Bilingual Order
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project whose Bilingual Order puts the translation first, with a Current Resource translated into `en` |
-| When | it is written as a bilingual Plain Text |
-| Then | each block carries the translation above the original |
-
-## `PJ-153` Naming a Plain Text export by the Resource and its Languages
-
-| Step | Statement |
-| --- | --- |
-| Given | a Resource `ep01` in `/talks`, in `zh-TW` and translated into `en` |
-| When | the default path of each Plain Text export is asked for |
-| Then | the original is `/talks/ep01.txt`, the translation `/talks/ep01.en.txt` and the bilingual `/talks/ep01.zh-TW.en.txt` |
-
-## `PJ-005` Refusing work without a Project
+## `PJ-036` Starting without a Project
 
 | Step | Statement |
 | --- | --- |
 | Given | no Project |
-| When | it is translated, edited or saved |
-| Then | the command fails with no Project |
+| When | the window shows |
+| Then | only the start screen is shown |
 
-## `PJ-006` Leaving a replaced Project untouched
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project replaced by another while it was being translated |
-| When | the translation finishes |
-| Then | the new Project carries none of the translations |
-
-## `PJ-022` Leaving another Resource untouched by a late transcription
+## `PJ-037` Changing the Primary Language in the settings
 
 | Step | Statement |
 | --- | --- |
-| Given | a transcription of `ep01` during which `ep02` was selected |
-| When | the transcription finishes |
-| Then | the Project holds the Segments of `ep02` unchanged |
+| Given | the settings of a Project in `zh-TW` |
+| When | `ja` is chosen as its Primary Language |
+| Then | the Project's Primary Language is set to `ja` |
 
-## `PJ-010` Recording the Language of a translation
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` |
-| When | its Current Resource is translated into `en` |
-| Then | the Project records `en` as its translation Language and keeps `zh-TW` |
-
-## `PJ-011` Starting a new Project without a Translation Glossary
+## `PJ-038` Naming a Resource in full when its name is cut short
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project with a Translation Glossary |
-| When | a directory without `glossary.csv` is opened as the Project |
-| Then | the new Project holds no Translation Glossary |
+| Given | a Project of a Resource named `[SHANA]C0220260514.zh-TW.mix` |
+| When | the Resource list shows it |
+| Then | its item's tooltip reads `[SHANA]C0220260514.zh-TW.mix` |
 
-## `PJ-012` Naming an export by the Resource and its Languages
+## `PJ-039` Keeping an edit off a subtitle changed elsewhere
+
+A subtitle is often corrected in a dedicated subtitle editor, and writing an edit back would overwrite that correction.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Resource `ep01` in `/talks`, in `zh-TW` and translated into `en` |
-| When | the default path of each export is asked for |
-| Then | the original is `/talks/ep01.srt`, the translation `/talks/ep01.en.srt` and the bilingual `/talks/ep01.zh-TW.en.srt` |
+| Given | a Current Resource `ep01` whose `ep01.srt` another program rewrote after Tsuzuri read it |
+| When | a Segment's text is edited |
+| Then | `ep01.srt` keeps what the other program wrote |
+
+## `PJ-040` Reading again a subtitle an edit found changed elsewhere
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose `ep01.srt` another program rewrote after Tsuzuri read it |
+| When | a Segment's text is edited |
+| Then | the Current Resource holds what the other program wrote |
+
+## `PJ-041` Reading again a subtitle changed elsewhere when the window regains focus
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose `ep01.srt` another program rewrote after Tsuzuri read it |
+| When | the window regains focus |
+| Then | the Current Resource holds what the other program wrote |
+
+## `PJ-042` Writing edit after edit
+
+What Tsuzuri wrote itself is never taken for a change made elsewhere.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose first Segment's text was just edited |
+| When | its second Segment's text is edited |
+| Then | `ep01.srt` holds both edits |
+
+## `PJ-043` Editing a translation Tsuzuri just wrote
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose translation into `en` Tsuzuri just wrote to `ep01.en.srt` |
+| When | a Segment's translation is edited |
+| Then | `ep01.en.srt` holds the edit |
 
 ## `PJ-044` Putting the translation first in a Bilingual SRT
 
@@ -555,79 +379,21 @@ Two people may speak at once, so Segments may share their times; their cues are 
 | When | the translation is chosen to go first |
 | Then | the Project Options are set with the translation first |
 
-## `PJ-014` Offering the default path when exporting
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project whose translation export defaults to `/talks/lecture.en.srt` |
-| When | the translation is exported from the resource bar |
-| Then | the save dialog opens at `/talks/lecture.en.srt` |
-
-## `PJ-033` Opening a directory from the toolbar
-
-| Step | Statement |
-| --- | --- |
-| Given | an interface in Traditional Chinese |
-| When | a directory is chosen to open |
-| Then | it is opened as the Project in `zh-TW` |
-
-## `PJ-034` Listing the Resources
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project of `ep01` translated into `en` and `ep02` of a media file alone |
-| When | the Resource list shows it |
-| Then | it lists `ep01` with `en` and `ep02` marked as having no subtitle |
-
-## `PJ-120` Writing the text being typed before a reload
-
-| Step | Statement |
-| --- | --- |
-| Given | a Segment's text being typed in and not yet written |
-| When | ⌘R on macOS or Ctrl+R elsewhere is pressed |
-| Then | the text is written before the Project is reloaded |
-
-## `PJ-117` Marking a Resource of subtitles alone
-
-A Resource without a media file only edits its subtitles, so the list says so before it is selected.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project of `ep01` with a media file and `notes` of `notes.srt` alone |
-| When | the Resource list shows it |
-| Then | only `notes` is marked as subtitles alone |
-
-## `PJ-038` Naming a Resource in full when its name is cut short
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project of a Resource named `[SHANA]C0220260514.zh-TW.mix` |
-| When | the Resource list shows it |
-| Then | its item's tooltip reads `[SHANA]C0220260514.zh-TW.mix` |
-
-## `PJ-035` Selecting a Resource from the list
-
-| Step | Statement |
-| --- | --- |
-| Given | the Resource list of `ep01` and `ep02` |
-| When | `ep02` is clicked |
-| Then | `ep02` is selected as the Current Resource |
-
-## `PJ-036` Starting without a Project
+## `PJ-048` Offering only the general settings without a Project
 
 | Step | Statement |
 | --- | --- |
 | Given | no Project |
-| When | the window shows |
-| Then | only the start screen is shown |
+| When | the settings show |
+| Then | only the general settings are offered |
 
-## `PJ-037` Changing the Primary Language in the settings
+## `PJ-049` Opening the settings at the Project's own once one is open
 
 | Step | Statement |
 | --- | --- |
-| Given | the settings of a Project in `zh-TW` |
-| When | `ja` is chosen as its Primary Language |
-| Then | the Project's Primary Language is set to `ja` |
+| Given | the settings showing only the general settings, with no Project |
+| When | a Project is opened |
+| Then | the settings show the Project's own |
 
 ## `PJ-050` Saving the Bilingual SRT of an edited translation
 
@@ -679,94 +445,6 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | saving them is turned on |
 | Then | the Project Options are set to save Bilingual SRTs |
 
-## `PJ-173` Naming a Project in its Project Options
-
-| Step | Statement |
-| --- | --- |
-| Given | the Project `lecture` |
-| When | its Project Options are set with the name ` 週會錄影 ` |
-| Then | the Project is named `週會錄影` and its Project Config records that name |
-
-## `PJ-190` Saying why the Project's settings were not saved
-
-| Step | Statement |
-| --- | --- |
-| Given | the Project's settings |
-| When | a setting is changed and its Project Options cannot be written |
-| Then | a Notification says the settings were not saved and why |
-
-## `PJ-174` Naming a Project after its directory without a name of its own
-
-| Step | Statement |
-| --- | --- |
-| Given | the Project `lecture` |
-| When | its Project Options are set with a name of only spaces |
-| Then | the Project is named `lecture` and its Project Config records no name |
-
-## `PJ-175` Showing the Project Name in the toolbar and the window title
-
-| Step | Statement |
-| --- | --- |
-| Given | the toolbar |
-| When | the Project named `週會錄影` is shown |
-| Then | the toolbar reads `週會錄影` and the window title `週會錄影 - Tsuzuri` |
-
-## `PJ-176` Naming the Project in the settings
-
-| Step | Statement |
-| --- | --- |
-| Given | the settings of the Project `lecture` |
-| When | `週會錄影` is typed as its name |
-| Then | the Project Options are set with the name `週會錄影` |
-
-## `PJ-186` Hinting the directory's name where the Project is named
-
-| Step | Statement |
-| --- | --- |
-| Given | the Project in `/talks` named `週會錄影` |
-| When | its settings show |
-| Then | the name field hints `talks`, the name it takes once emptied |
-
-## `PJ-181` Naming the Project in the toolbar
-
-| Step | Statement |
-| --- | --- |
-| Given | the toolbar of the Project `lecture` |
-| When | `週會錄影` is typed over its name |
-| Then | the Project Options are set with the name `週會錄影` |
-
-## `PJ-182` Leaving the Project Name in the toolbar as it was
-
-| Step | Statement |
-| --- | --- |
-| Given | the toolbar of the Project named `週會錄影` |
-| When | `lecture` is typed over its name and Esc is pressed |
-| Then | the toolbar reads `週會錄影` and the Project Options are not set |
-
-## `PJ-183` Putting the Resource list away once a Resource is chosen
-
-| Step | Statement |
-| --- | --- |
-| Given | the Resource list laid over the editor of a narrow window |
-| When | the Resource `ep02` is chosen |
-| Then | `ep02` is selected and the Resource list is put away |
-
-## `PJ-191` Saying why a Resource was not selected
-
-| Step | Statement |
-| --- | --- |
-| Given | the Resource list of `lecture` |
-| When | the Resource `ep02` is chosen and cannot be selected |
-| Then | a Notification says the Resource was not selected and why |
-
-## `PJ-184` Showing a Project to every view when one of them fails
-
-| Step | Statement |
-| --- | --- |
-| Given | two views following the Project, the first failing to show it |
-| When | the Project is read |
-| Then | the second view shows it and the first view's failure is reported |
-
 ## `PJ-056` Writing an edited Speaker back to the subtitle
 
 | Step | Statement |
@@ -783,32 +461,6 @@ With the option on, each translation keeps a Bilingual SRT beside it, written in
 | When | its times are changed to 0.5 to 1.5 seconds |
 | Then | the Segment runs from 0.5 to 1.5 seconds in both files |
 
-
-## `PJ-139` Changing a Segment's times to overlap the next
-
-Segments may overlap, as when someone cuts in, but they keep the order they start in, so a change that would start a Segment before the one before it is refused.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of Segments from 0 to 1 and from 1 to 2 seconds |
-| When | the first's times are changed to 0 to 1.5 seconds |
-| Then | the Segments run from 0 to 1.5 and from 1 to 2 seconds |
-
-## `PJ-140` Refusing a start before the previous Segment's start
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of Segments from 1 to 2 and from 3 to 4 seconds |
-| When | the second's times are changed to 0.5 to 4 seconds |
-| Then | the change is refused as `unordered-times` and the subtitle is left as it was |
-
-## `PJ-141` Refusing a start after the next Segment's start
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of Segments from 1 to 2 and from 3 to 4 seconds |
-| When | the first's times are changed to 3.5 to 5 seconds |
-| Then | the change is refused as `unordered-times` and the subtitle is left as it was |
 ## `PJ-058` Inserting a Segment into the gap after another
 
 | Step | Statement |
@@ -817,32 +469,6 @@ Segments may overlap, as when someone cuts in, but they keep the order they star
 | When | a Segment is inserted after the first |
 | Then | an empty Segment from 1 to 3 seconds stands between them |
 
-
-## `PJ-142` Inserting a Segment after one the next touches
-
-With no gap to fill, the new Segment runs two seconds from the edge it is inserted at, over its neighbour, and takes its place among the Segments by its start.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of Segments from 0 to 1 and from 1 to 2 seconds |
-| When | a Segment is inserted after the first |
-| Then | an empty Segment from 1 to 3 seconds stands between them |
-
-## `PJ-143` Inserting a Segment after one the next overlaps
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of Segments from 0 to 2 and from 1 to 3 seconds |
-| When | a Segment is inserted after the first |
-| Then | an empty Segment from 2 to 4 seconds comes after the second |
-
-## `PJ-144` Inserting a Segment before one the previous overlaps
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of Segments from 0 to 3.5 and from 3 to 5 seconds |
-| When | a Segment is inserted before the second |
-| Then | an empty Segment from 1 to 3 seconds stands between them |
 ## `PJ-059` Inserting a Segment before the first
 
 | Step | Statement |
@@ -859,14 +485,6 @@ With no gap to fill, the new Segment runs two seconds from the edge it is insert
 | When | the first is deleted |
 | Then | the original and the translation each hold only the second |
 
-## `PJ-121` Deleting Segments apart from each other as one change
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of three Segments translated into `en` |
-| When | the first and third are deleted together, then undone |
-| Then | the deletion leaves only the second in each subtitle, and one undo brings all three back |
-
 ## `PJ-061` Splitting a Segment at a point in its text
 
 | Step | Statement |
@@ -874,22 +492,6 @@ With no gap to fill, the new Segment runs two seconds from the edge it is insert
 | Given | a Current Resource of one Segment `你好世界` from 0 to 2 seconds, translated as `Hello world` |
 | When | it is split after `你好` |
 | Then | `你好` runs from 0 to 1 second with the translation and `世界` from 1 to 2 seconds without one |
-
-## `PJ-192` Keeping the translation shown through a split
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of one Segment `你好世界`, showing its `en` translation `Hello world` |
-| When | it is split after `你好` |
-| Then | the Current Resource still shows its `en` translation |
-
-## `PJ-148` Splitting a Segment another is said over
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of `大家好嗎` from 0 to 4 and `對啊` from 1 to 1.5 seconds |
-| When | the first is split after `大家` |
-| Then | `大家` runs from 0 to 2, `對啊` from 1 to 1.5 and `好嗎` from 2 to 4 seconds, in that order |
 
 ## `PJ-062` Merging a run of Segments
 
@@ -900,38 +502,6 @@ With no gap to fill, the new Segment runs two seconds from the edge it is insert
 | Then | one Segment from 0 to 2 seconds reads `你好世界`, translated as `Hello world` |
 
 A merge joins the texts on one line, as a sentence cut apart by transcription is read again. A half-width space goes between two texts where either side of the join is a half-width letter or digit, as Chinese puts one beside English and numbers; Chinese meeting Chinese joins with nothing between.
-
-## `PJ-187` Joining Chinese and English with a space
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of `這是` from 0 to 1 and `OK 的` from 1 to 2 seconds |
-| When | the two are merged |
-| Then | one Segment reads `這是 OK 的` |
-
-## `PJ-188` Joining Chinese and a number with a space
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of `一共有` from 0 to 1 and `3 集` from 1 to 2 seconds |
-| When | the two are merged |
-| Then | one Segment reads `一共有 3 集` |
-
-## `PJ-189` Joining a text already ending in a space without another
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of `Hello ` from 0 to 1 and `world` from 1 to 2 seconds |
-| When | the two are merged |
-| Then | one Segment reads `Hello world` |
-
-## `PJ-145` Merging a Segment with one it overlaps
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of `大家好` from 0 to 5 and `對啊` from 2 to 3 seconds |
-| When | the two are merged |
-| Then | one Segment from 0 to 5 seconds reads `大家好對啊` |
 
 ## `PJ-063` Shifting a run of Segments
 
@@ -949,14 +519,6 @@ A merge joins the texts on one line, as a sentence cut apart by transcription is
 | When | it is shifted back by two seconds |
 | Then | it runs from 0 to 1 second |
 
-
-## `PJ-146` Refusing a shift past the next Segment's start
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of Segments from 0 to 1 and from 2 to 3 seconds |
-| When | the first is shifted by three seconds |
-| Then | the change is refused as `unordered-times` and the subtitle is left as it was |
 ## `PJ-065` Refusing a Segment that ends before it starts
 
 | Step | Statement |
@@ -964,30 +526,6 @@ A merge joins the texts on one line, as a sentence cut apart by transcription is
 | Given | a Current Resource of one Segment from 0 to 1 second |
 | When | its times are changed to 2 to 1 seconds |
 | Then | the change is refused as `invalid-times` and the subtitle is left as it was |
-
-## `PJ-101` Moving the edge two Segments share in every subtitle
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `ep01` has Segments from 0 to 1 and from 1 to 2 seconds in `ep01.srt` and `ep01.en.srt` |
-| When | the edge after the first is moved to 1.5 seconds |
-| Then | the first runs from 0 to 1.5 and the second from 1.5 to 2 seconds in both files |
-
-## `PJ-102` Refusing to move a shared edge past either Segment
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of Segments from 0 to 1 and from 1 to 2 seconds |
-| When | the edge after the first is moved to 2.5 seconds |
-| Then | the change is refused as `invalid-times` and the subtitle is left as it was |
-
-## `PJ-103` Inserting a Segment at times of its own
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of Segments from 0 to 1 and from 3 to 4 seconds |
-| When | a Segment is inserted from 1.5 to 2.5 seconds |
-| Then | an empty Segment from 1.5 to 2.5 seconds stands between them |
 
 ## `PJ-066` Backing up the original before a transcription overwrites it
 
@@ -1015,30 +553,6 @@ Without the Project Option a Mode keeps what it writes over as any first change 
 | When | its translation into `en` is written twice |
 | Then | `.tsuzuri/history/` holds one Overwrite of `ep01.en.srt`, reading `Hello`, and an Output of each translation |
 
-## `PJ-088` Keeping what a transcription wrote as an Output
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project not keeping Backups, whose `lecture` has only a media file |
-| When | `lecture` is transcribed as `你好` |
-| Then | `.tsuzuri/history/` holds an Output of `lecture.srt` reading `你好` |
-
-## `PJ-089` Keeping what a translation wrote as an Output
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project not keeping Backups, whose `ep01.srt` has no translation |
-| When | its translation into `en` is written as `Hello` |
-| Then | `.tsuzuri/history/` holds an Output of `ep01.en.srt` reading `Hello` |
-
-## `PJ-109` Listing a translation whose Output could not be kept
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project whose `ep01.srt` has no translation, and where `.tsuzuri` is a file, so no Backup can be kept |
-| When | its translation into `en` is written |
-| Then | the writing fails, and `ep01` lists the `en` translation it wrote |
-
 ## `PJ-069` Leaving Backups out of the Resources
 
 | Step | Statement |
@@ -1055,55 +569,325 @@ Without the Project Option a Mode keeps what it writes over as any first change 
 | When | keeping them is turned on |
 | Then | the Project Options are set to keep Backups |
 
-## `PJ-048` Offering only the general settings without a Project
+## `PJ-071` Naming a Speaker in a translation as the Translation Glossary does
 
 | Step | Statement |
 | --- | --- |
-| Given | no Project |
-| When | the settings show |
-| Then | only the general settings are offered |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` with `ep01.en.srt` shown |
+| When | its translation is edited to `Hi` |
+| Then | `ep01.en.srt` reads `Xiao Ming: Hi` |
 
-## `PJ-049` Opening the settings at the Project's own once one is open
-
-| Step | Statement |
-| --- | --- |
-| Given | the settings showing only the general settings, with no Project |
-| When | a Project is opened |
-| Then | the settings show the Project's own |
-
-## `PJ-194` Keeping the settings' section as the Project changes
+## `PJ-072` Keeping a Speaker's name the Translation Glossary does not give
 
 | Step | Statement |
 | --- | --- |
-| Given | the settings showing the general settings while a Project is open |
-| When | the Project changes, as an edit is written |
-| Then | the settings still show the general settings |
+| Given | a Project in `zh-TW` without `glossary.csv` whose `ep01.srt` reads `co: 你好` with `ep01.en.srt` shown |
+| When | its translation is edited to `Hi` |
+| Then | `ep01.en.srt` reads `co: Hi` |
 
-## `PJ-039` Keeping an edit off a subtitle changed elsewhere
-
-A subtitle is often corrected in a dedicated subtitle editor, and writing an edit back would overwrite that correction.
+## `PJ-073` Naming a Speaker in each text of a Bilingual SRT
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource `ep01` whose `ep01.srt` another program rewrote after Tsuzuri read it |
-| When | a Segment's text is edited |
-| Then | `ep01.srt` keeps what the other program wrote |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好`, saving Bilingual SRTs, with `ep01.en.srt` shown |
+| When | its translation is edited to `Hi` |
+| Then | `ep01.zh-TW.en.srt` reads `小明: 你好` above `Xiao Ming: Hi` |
 
-## `PJ-040` Reading again a subtitle an edit found changed elsewhere
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource `ep01` whose `ep01.srt` another program rewrote after Tsuzuri read it |
-| When | a Segment's text is edited |
-| Then | the Current Resource holds what the other program wrote |
-
-## `PJ-041` Reading again a subtitle changed elsewhere when the window regains focus
+## `PJ-074` Naming a Speaker in a translation just made
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource `ep01` whose `ep01.srt` another program rewrote after Tsuzuri read it |
-| When | the window regains focus |
-| Then | the Current Resource holds what the other program wrote |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` |
+| When | a translation into `en` of `Hello` is written |
+| Then | `ep01.en.srt` reads `Xiao Ming: Hello` |
+
+## `PJ-075` Naming a Speaker in a translation saved elsewhere
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` with `ep01.en.srt` shown reading `Hello` |
+| When | its translation is saved as SRT |
+| Then | the file reads `Xiao Ming: Hello` |
+
+## `PJ-076` Naming a Speaker in a translation a Segment Change rewrites
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` from 0 to 1 second, with `ep01.en.srt` reading `Hello` |
+| When | its times are changed to 0.5 to 1.5 seconds |
+| Then | `ep01.en.srt` reads `Xiao Ming: Hello` from 0.5 to 1.5 seconds |
+
+## `PJ-077` Writing an edited Speaker to every translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` reads `你好`, `ep01.en.srt` `Hello` and `ep01.ja.srt` `こんにちは`, with `ep01.en.srt` shown |
+| When | the Speaker of its Segment is set to `co` |
+| Then | `ep01.en.srt` reads `co: Hello` and `ep01.ja.srt` reads `co: こんにちは` |
+
+## `PJ-078` Leaving a translation's cue without a matching Segment as it is
+
+A cue with other times belongs to no Segment, so a Speaker has nowhere to come from.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` has `你好` from 0 to 1 second, and whose `ep01.ja.srt` has `こんにちは` from 0 to 1 second and `cl: さようなら` from 2 to 3 seconds |
+| When | the Speaker of its Segment is set to `co` |
+| Then | `ep01.ja.srt` reads `co: こんにちは`, then `cl: さようなら` from 2 to 3 seconds |
+
+## `PJ-079` Naming an edited Speaker in every translation as the Translation Glossary does
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, whose `ep01.srt` reads `你好`, `ep01.en.srt` `Hello` and `ep01.ja.srt` `こんにちは`, with `ep01.ja.srt` shown |
+| When | the Speaker of its Segment is set to `小明` |
+| Then | `ep01.en.srt` reads `Xiao Ming: Hello` |
+
+## `PJ-080` Carrying the Speakers of a new transcription to each translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01` has a media file, `ep01.srt` reading `co: 你好` and `ep01.en.srt` reading `co: Hello` |
+| When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
+| Then | `ep01.en.srt` reads `Hello` |
+
+## `PJ-081` Keeping a Backup of a translation a transcription changes
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project keeping Backups whose `ep01` has a media file, `ep01.srt` reading `co: 你好` and `ep01.en.srt` reading `co: Hello` |
+| When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
+| Then | the history holds an Overwrite of `ep01.en.srt` reading `co: Hello` |
+
+## `PJ-082` Keeping no Backup of a translation a transcription leaves as it is
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project keeping Backups whose `ep01` has a media file, `ep01.srt` reading `你好` and `ep01.en.srt` reading `Hello` |
+| When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
+| Then | the history holds no Overwrite of `ep01.en.srt` |
+
+## `PJ-083` Keeping one label on a translation with a long Speaker name
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Christopher Nolan Jr.` in `en`, whose `ep01.srt` reads `小明: 你好` from 0 to 1 second and `ep01.en.srt` `Christopher Nolan Jr.: Hello` |
+| When | its times are changed to 0.5 to 1.5 seconds |
+| Then | `ep01.en.srt` reads `Christopher Nolan Jr.: Hello` from 0.5 to 1.5 seconds |
+
+## `PJ-084` Reading a translation's dialogue that opens like a label
+
+A translation's labels come from its original, so a line that only looks like one is dialogue.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` reads `你好` and `ep01.en.srt` `Note: hi` |
+| When | `ep01.en.srt` is shown |
+| Then | its Segment's translation reads `Note: hi` |
+
+## `PJ-085` Taking off only the label a translation's Speaker has
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, whose `ep01.srt` reads `小明: 你好` and `ep01.en.srt` `Xiao Ming: Note: hi` |
+| When | `ep01.en.srt` is shown |
+| Then | its Segment's translation reads `Note: hi` |
+
+## `PJ-086` Putting a new Speaker before a translation's dialogue as written
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` reads `你好`, `ep01.en.srt` `Note: hi` and `ep01.ja.srt` `メモ：やあ`, with `ep01.en.srt` shown |
+| When | the Speaker of its Segment is set to `co` |
+| Then | `ep01.ja.srt` reads `co: メモ：やあ` |
+
+## `PJ-087` Taking off a Speaker's former name in a translation
+
+A name changed in the Translation Glossary since a translation was written leaves the former one on its labels.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Ming` in `en`, whose `ep01.srt` reads `小明: 你好` and `ep01.en.srt` `Xiao Ming: Hello` |
+| When | `ep01.en.srt` is shown |
+| Then | its Segment's translation reads `Hello` |
+
+## `PJ-088` Keeping what a transcription wrote as an Output
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project not keeping Backups, whose `lecture` has only a media file |
+| When | `lecture` is transcribed as `你好` |
+| Then | `.tsuzuri/history/` holds an Output of `lecture.srt` reading `你好` |
+
+## `PJ-089` Keeping what a translation wrote as an Output
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project not keeping Backups, whose `ep01.srt` has no translation |
+| When | its translation into `en` is written as `Hello` |
+| Then | `.tsuzuri/history/` holds an Output of `ep01.en.srt` reading `Hello` |
+
+## `PJ-090` Refusing an edit while its Resource is transcribed
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being transcribed, whose `ep01.srt` reads `你好` |
+| When | its text is edited to `您好` |
+| Then | the edit is refused as `mode-running` and `ep01.srt` reads `你好` |
+
+## `PJ-091` Refusing an edit of the translation being written
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en`, showing its `en` translation |
+| When | a translation is edited |
+| Then | the edit is refused as `mode-running` |
+
+## `PJ-092` Editing the original while it is translated
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en`, whose `ep01.srt` reads `你好` |
+| When | its text is edited to `您好` |
+| Then | `ep01.srt` reads `您好` |
+
+## `PJ-093` Refusing a Segment Change or an undo while a Mode runs
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en`, with an edit to undo |
+| When | a Segment is deleted, and the edit undone |
+| Then | both are refused as `mode-running` |
+
+## `PJ-094` Freeing the subtitles once a Mode ends
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose transcription has ended, done or failed |
+| When | its text is edited |
+| Then | the edit is written to `ep01.srt` |
+
+## `PJ-095` Saying which Mode runs on the Current Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` being translated into `en` |
+| When | the Project is read |
+| Then | its Current Resource is said to be translated into `en` |
+
+## `PJ-096` Clearing a Speaker from the original and every translation
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose `ep01.srt` reads `co: 你好` and `ep01.en.srt` `co: Hello` |
+| When | the Speaker of its Segment is set to nothing |
+| Then | `ep01.srt` reads `你好` and `ep01.en.srt` reads `Hello` |
+
+## `PJ-097` Naming the Speaker of several Segments at once
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose `ep01.srt` reads `你好`, `嗨` and `再見`, translated in `ep01.en.srt` |
+| When | the Speaker of its first and third Segments is set to `co` at once |
+| Then | `ep01.srt` and `ep01.en.srt` label only their first and third cues `co` |
+
+
+## `PJ-098` Undoing Speakers named at once in one step
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose three Segments were all given the Speaker `co` at once |
+| When | the change is undone |
+| Then | no Segment names a Speaker |
+
+## `PJ-099` Writing a translation made again as one change
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments translated into `en` as `A`, `B` and `C`, shown in the editor |
+| When | the second is translated again as `B2` |
+| Then | `ep01.en.srt` reads `A`, `B2` and `C`, an Overwrite of it reads `A`, `B` and `C`, and one undo puts `B` back |
+
+## `PJ-100` Refusing to translate again with no translation shown
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource showing no translation |
+| When | a Segment is asked to be translated again |
+| Then | it is refused as `no-translation-shown` before any Model is loaded |
+## `PJ-101` Moving the edge two Segments share in every subtitle
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01` has Segments from 0 to 1 and from 1 to 2 seconds in `ep01.srt` and `ep01.en.srt` |
+| When | the edge after the first is moved to 1.5 seconds |
+| Then | the first runs from 0 to 1.5 and the second from 1.5 to 2 seconds in both files |
+
+
+## `PJ-102` Refusing to move a shared edge past either Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1 and from 1 to 2 seconds |
+| When | the edge after the first is moved to 2.5 seconds |
+| Then | the change is refused as `invalid-times` and the subtitle is left as it was |
+
+## `PJ-103` Inserting a Segment at times of its own
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1 and from 3 to 4 seconds |
+| When | a Segment is inserted from 1.5 to 2.5 seconds |
+| Then | an empty Segment from 1.5 to 2.5 seconds stands between them |
+
+## `PJ-104` Keeping the Project Models and Transcription Settings in the Project Config
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project with a transcription Project Model that sets VAD on for itself |
+| When | its directory is opened again |
+| Then | it has that Project Model and VAD on, and follows the general settings in the rest |
+## `PJ-105` Pairing subtitles with a media file whose name ends like a Language code
+
+A media file's name is a Resource's name as it stands, so the subtitles Tsuzuri writes for it are found again.
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `talk.hd.mp4`, `talk.hd.srt` and `talk.hd.en.srt` |
+| When | it is opened in `zh-TW` |
+| Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
+
+## `PJ-106` Naming a Resource by a subtitle whose name ends like an unknown Language code
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `talk.hd.srt` and `talk.hd.en.srt` |
+| When | it is opened in `zh-TW` |
+| Then | the Project lists only `talk.hd`, holding `talk.hd.srt` as its original and `talk.hd.en.srt` as its `en` translation |
+
+## `PJ-107` Pairing a subtitle with the Resource its whole name before the code names
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `lecture.mp4`, `lecture.ja.mp4` and `lecture.ja.en.srt` |
+| When | it is opened in `zh-TW` |
+| Then | `lecture.ja` has the `en` translation and `lecture` has none |
+
+## `PJ-108` Showing a translation again after showing none
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `talk.hd` of `talk.hd.mp4` and `talk.hd.srt` just translated into `en`, with no translation shown since |
+| When | `en` is shown |
+| Then | the Segments carry the `en` translation |
+
+## `PJ-109` Listing a translation whose Output could not be kept
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose `ep01.srt` has no translation, and where `.tsuzuri` is a file, so no Backup can be kept |
+| When | its translation into `en` is written |
+| Then | the writing fails, and `ep01` lists the `en` translation it wrote |
 
 ## `PJ-110` Listing files added elsewhere when the Project is reloaded
 
@@ -1120,16 +904,6 @@ A subtitle is often corrected in a dedicated subtitle editor, and writing an edi
 | Given | a Current Resource `ep01` whose first Segment's text was just edited |
 | When | the Project is reloaded |
 | Then | the edit can still be undone |
-
-## `PJ-119` Forgetting the Undo History of a Resource that gained a subtitle elsewhere
-
-Undoing puts back the subtitles a change knew of and removes the rest, so a file added since would be removed.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource `ep01` whose first Segment's text was just edited, and whose `ep01.en.srt` another program then wrote |
-| When | the Project is reloaded |
-| Then | there is nothing to undo, and `ep01.en.srt` stays |
 
 ## `PJ-112` Showing the same translation after a reload
 
@@ -1155,6 +929,66 @@ Undoing puts back the subtitles a change knew of and removes the rest, so a file
 | When | the Project is reloaded |
 | Then | the Project lists `ep02`, and `ep01` still shows the translations made so far |
 
+## `PJ-115` Listing files added elsewhere when the window regains focus
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project of `ep01.srt` whose directory gained `ep02.srt` after it was opened |
+| When | the window regains focus |
+| Then | the Project lists `ep01` and `ep02` |
+
+## `PJ-116` Reloading the Project from the Resource list
+
+| Step | Statement |
+| --- | --- |
+| Given | an open Project |
+| When | the reload button above the Resource list is clicked, or ⌘R on macOS or Ctrl+R elsewhere is pressed |
+| Then | the Project is reloaded |
+
+## `PJ-117` Marking a Resource of subtitles alone
+
+A Resource without a media file only edits its subtitles, so the list says so before it is selected.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project of `ep01` with a media file and `notes` of `notes.srt` alone |
+| When | the Resource list shows it |
+| Then | only `notes` is marked as subtitles alone |
+
+
+## `PJ-118` Leaving out an unknown Language code after a Resource of subtitles alone
+
+| Step | Statement |
+| --- | --- |
+| Given | a directory holding `talk.hd.srt` and `talk.hd.ko.srt`, or `talk.hd.srt` and `talk.hd.vi.srt` |
+| When | it is opened in `zh-TW` |
+| Then | the Project lists only `talk.hd` |
+## `PJ-119` Forgetting the Undo History of a Resource that gained a subtitle elsewhere
+
+Undoing puts back the subtitles a change knew of and removes the rest, so a file added since would be removed.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource `ep01` whose first Segment's text was just edited, and whose `ep01.en.srt` another program then wrote |
+| When | the Project is reloaded |
+| Then | there is nothing to undo, and `ep01.en.srt` stays |
+
+## `PJ-120` Writing the text being typed before a reload
+
+| Step | Statement |
+| --- | --- |
+| Given | a Segment's text being typed in and not yet written |
+| When | ⌘R on macOS or Ctrl+R elsewhere is pressed |
+| Then | the text is written before the Project is reloaded |
+
+## `PJ-121` Deleting Segments apart from each other as one change
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of three Segments translated into `en` |
+| When | the first and third are deleted together, then undone |
+| Then | the deletion leaves only the second in each subtitle, and one undo brings all three back |
+
 ## `PJ-122` Keeping a translation whole when edited after a translation ended early
 
 What a Mode shows is never written as a subtitle, so an edit after it starts from the file.
@@ -1164,6 +998,22 @@ What a Mode shows is never written as a subtitle, so an edit after it starts fro
 | Given | `ep01.en.srt` reading `Hello` and `World`, and a translation into `en` that showed its first empty Batch and was cancelled |
 | When | the translation of the first Segment is edited to `Hi` |
 | Then | `ep01.en.srt` reads `Hi` and `World` |
+
+## `PJ-123` Keeping an original whole when edited after a transcription ended early
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` reading `你好` and `世界`, and a transcription that showed only `你好` and was cancelled |
+| When | the text of the first Segment is edited to `您好` |
+| Then | `ep01.srt` reads `您好` and `世界` |
+
+## `PJ-124` Showing what the files hold once a Mode ends without writing
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.srt` reading `你好` and `世界`, being transcribed with `大家好` shown so far |
+| When | the transcription ends without writing |
+| Then | the editor shows `你好` and `世界` |
 
 ## `PJ-125` Translating again the translation chosen, whichever is shown when it starts
 
@@ -1271,171 +1121,6 @@ A translation lines up with its original by time alone, so one written after the
 | When | the translation is written |
 | Then | the answer counts 2 Segments without a translation |
 
-## `PJ-123` Keeping an original whole when edited after a transcription ended early
-
-| Step | Statement |
-| --- | --- |
-| Given | `ep01.srt` reading `你好` and `世界`, and a transcription that showed only `你好` and was cancelled |
-| When | the text of the first Segment is edited to `您好` |
-| Then | `ep01.srt` reads `您好` and `世界` |
-
-## `PJ-124` Showing what the files hold once a Mode ends without writing
-
-| Step | Statement |
-| --- | --- |
-| Given | `ep01.srt` reading `你好` and `世界`, being transcribed with `大家好` shown so far |
-| When | the transcription ends without writing |
-| Then | the editor shows `你好` and `世界` |
-
-## `PJ-115` Listing files added elsewhere when the window regains focus
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project of `ep01.srt` whose directory gained `ep02.srt` after it was opened |
-| When | the window regains focus |
-| Then | the Project lists `ep01` and `ep02` |
-
-## `PJ-116` Reloading the Project from the Resource list
-
-| Step | Statement |
-| --- | --- |
-| Given | an open Project |
-| When | the reload button above the Resource list is clicked, or ⌘R on macOS or Ctrl+R elsewhere is pressed |
-| Then | the Project is reloaded |
-
-## `PJ-042` Writing edit after edit
-
-What Tsuzuri wrote itself is never taken for a change made elsewhere.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource `ep01` whose first Segment's text was just edited |
-| When | its second Segment's text is edited |
-| Then | `ep01.srt` holds both edits |
-
-## `PJ-043` Editing a translation Tsuzuri just wrote
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource `ep01` whose translation into `en` Tsuzuri just wrote to `ep01.en.srt` |
-| When | a Segment's translation is edited |
-| Then | `ep01.en.srt` holds the edit |
-
-## `PJ-071` Naming a Speaker in a translation as the Translation Glossary does
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` with `ep01.en.srt` shown |
-| When | its translation is edited to `Hi` |
-| Then | `ep01.en.srt` reads `Xiao Ming: Hi` |
-
-## `PJ-072` Keeping a Speaker's name the Translation Glossary does not give
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` without `glossary.csv` whose `ep01.srt` reads `co: 你好` with `ep01.en.srt` shown |
-| When | its translation is edited to `Hi` |
-| Then | `ep01.en.srt` reads `co: Hi` |
-
-## `PJ-073` Naming a Speaker in each text of a Bilingual SRT
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好`, saving Bilingual SRTs, with `ep01.en.srt` shown |
-| When | its translation is edited to `Hi` |
-| Then | `ep01.zh-TW.en.srt` reads `小明: 你好` above `Xiao Ming: Hi` |
-
-## `PJ-074` Naming a Speaker in a translation just made
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` |
-| When | a translation into `en` of `Hello` is written |
-| Then | `ep01.en.srt` reads `Xiao Ming: Hello` |
-
-## `PJ-075` Naming a Speaker in a translation saved elsewhere
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` with `ep01.en.srt` shown reading `Hello` |
-| When | its translation is saved as SRT |
-| Then | the file reads `Xiao Ming: Hello` |
-
-## `PJ-076` Naming a Speaker in a translation a Segment Change rewrites
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, and whose `ep01.srt` reads `小明: 你好` from 0 to 1 second, with `ep01.en.srt` reading `Hello` |
-| When | its times are changed to 0.5 to 1.5 seconds |
-| Then | `ep01.en.srt` reads `Xiao Ming: Hello` from 0.5 to 1.5 seconds |
-
-
-## `PJ-147` Naming a Speaker in a translation for Segments with the same times in their order
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `ep01.srt` reads `大家好` and `對啊`, both from 0 to 1 second, translated in `ep01.en.srt` as `Hello` and `Yeah` |
-| When | the Speaker of `對啊` is set to `co` |
-| Then | `ep01.en.srt` reads `Hello` and `co: Yeah` |
-## `PJ-077` Writing an edited Speaker to every translation
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `ep01.srt` reads `你好`, `ep01.en.srt` `Hello` and `ep01.ja.srt` `こんにちは`, with `ep01.en.srt` shown |
-| When | the Speaker of its Segment is set to `co` |
-| Then | `ep01.en.srt` reads `co: Hello` and `ep01.ja.srt` reads `co: こんにちは` |
-
-## `PJ-078` Leaving a translation's cue without a matching Segment as it is
-
-A cue with other times belongs to no Segment, so a Speaker has nowhere to come from.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `ep01.srt` has `你好` from 0 to 1 second, and whose `ep01.ja.srt` has `こんにちは` from 0 to 1 second and `cl: さようなら` from 2 to 3 seconds |
-| When | the Speaker of its Segment is set to `co` |
-| Then | `ep01.ja.srt` reads `co: こんにちは`, then `cl: さようなら` from 2 to 3 seconds |
-
-## `PJ-079` Naming an edited Speaker in every translation as the Translation Glossary does
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, whose `ep01.srt` reads `你好`, `ep01.en.srt` `Hello` and `ep01.ja.srt` `こんにちは`, with `ep01.ja.srt` shown |
-| When | the Speaker of its Segment is set to `小明` |
-| Then | `ep01.en.srt` reads `Xiao Ming: Hello` |
-
-## `PJ-080` Carrying the Speakers of a new transcription to each translation
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `ep01` has a media file, `ep01.srt` reading `co: 你好` and `ep01.en.srt` reading `co: Hello` |
-| When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
-| Then | `ep01.en.srt` reads `Hello` |
-
-## `PJ-081` Keeping a Backup of a translation a transcription changes
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project keeping Backups whose `ep01` has a media file, `ep01.srt` reading `co: 你好` and `ep01.en.srt` reading `co: Hello` |
-| When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
-| Then | the history holds an Overwrite of `ep01.en.srt` reading `co: Hello` |
-
-
-## `PJ-082` Keeping no Backup of a translation a transcription leaves as it is
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project keeping Backups whose `ep01` has a media file, `ep01.srt` reading `你好` and `ep01.en.srt` reading `Hello` |
-| When | a transcription of `你好` with no Speaker is written over `ep01.srt` |
-| Then | the history holds no Overwrite of `ep01.en.srt` |
-
-## `PJ-083` Keeping one label on a translation with a long Speaker name
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Christopher Nolan Jr.` in `en`, whose `ep01.srt` reads `小明: 你好` from 0 to 1 second and `ep01.en.srt` `Christopher Nolan Jr.: Hello` |
-| When | its times are changed to 0.5 to 1.5 seconds |
-| Then | `ep01.en.srt` reads `Christopher Nolan Jr.: Hello` from 0.5 to 1.5 seconds |
-
 ## `PJ-137` Telling the webview what the Translation Glossary calls each Speaker in the translation shown
 
 | Step | Statement |
@@ -1444,66 +1129,453 @@ A cue with other times belongs to no Segment, so a Speaker has nowhere to come f
 | When | the Project is shown |
 | Then | it names `小明` as `Xiao Ming` in the translation shown |
 
-## `PJ-084` Reading a translation's dialogue that opens like a label
+## `PJ-138` Loading a translation for Segments with the same times in their order
 
-A translation's labels come from its original, so a line that only looks like one is dialogue.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `ep01.srt` reads `你好` and `ep01.en.srt` `Note: hi` |
-| When | `ep01.en.srt` is shown |
-| Then | its Segment's translation reads `Note: hi` |
-
-## `PJ-085` Taking off only the label a translation's Speaker has
+Two people may speak at once, so Segments may share their times; their cues are matched in the order each file holds them.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Xiao Ming` in `en`, whose `ep01.srt` reads `小明: 你好` and `ep01.en.srt` `Xiao Ming: Note: hi` |
-| When | `ep01.en.srt` is shown |
-| Then | its Segment's translation reads `Note: hi` |
+| Given | a directory holding `ep01.srt` of `大家好` and `對啊`, both from 0 to 1 second, and `ep01.en.srt` of `Hello` and `Yeah` at the same times |
+| When | it is opened in `zh-TW` |
+| Then | `大家好` is translated as `Hello` and `對啊` as `Yeah` |
 
-## `PJ-086` Putting a new Speaker before a translation's dialogue as written
+## `PJ-139` Changing a Segment's times to overlap the next
 
-| Step | Statement |
-| --- | --- |
-| Given | a Project in `zh-TW` whose `ep01.srt` reads `你好`, `ep01.en.srt` `Note: hi` and `ep01.ja.srt` `メモ：やあ`, with `ep01.en.srt` shown |
-| When | the Speaker of its Segment is set to `co` |
-| Then | `ep01.ja.srt` reads `co: メモ：やあ` |
-
-
-## `PJ-087` Taking off a Speaker's former name in a translation
-
-A name changed in the Translation Glossary since a translation was written leaves the former one on its labels.
+Segments may overlap, as when someone cuts in, but they keep the order they start in, so a change that would start a Segment before the one before it is refused.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Project in `zh-TW` whose `glossary.csv` names the Speaker `小明` as `Ming` in `en`, whose `ep01.srt` reads `小明: 你好` and `ep01.en.srt` `Xiao Ming: Hello` |
-| When | `ep01.en.srt` is shown |
-| Then | its Segment's translation reads `Hello` |
+| Given | a Current Resource of Segments from 0 to 1 and from 1 to 2 seconds |
+| When | the first's times are changed to 0 to 1.5 seconds |
+| Then | the Segments run from 0 to 1.5 and from 1 to 2 seconds |
 
-## `PJ-090` Refusing an edit while its Resource is transcribed
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource `ep01` being transcribed, whose `ep01.srt` reads `你好` |
-| When | its text is edited to `您好` |
-| Then | the edit is refused as `mode-running` and `ep01.srt` reads `你好` |
-
-## `PJ-091` Refusing an edit of the translation being written
+## `PJ-140` Refusing a start before the previous Segment's start
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource `ep01` being translated into `en`, showing its `en` translation |
-| When | a translation is edited |
-| Then | the edit is refused as `mode-running` |
+| Given | a Current Resource of Segments from 1 to 2 and from 3 to 4 seconds |
+| When | the second's times are changed to 0.5 to 4 seconds |
+| Then | the change is refused as `unordered-times` and the subtitle is left as it was |
 
-## `PJ-092` Editing the original while it is translated
+## `PJ-141` Refusing a start after the next Segment's start
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource `ep01` being translated into `en`, whose `ep01.srt` reads `你好` |
-| When | its text is edited to `您好` |
-| Then | `ep01.srt` reads `您好` |
+| Given | a Current Resource of Segments from 1 to 2 and from 3 to 4 seconds |
+| When | the first's times are changed to 3.5 to 5 seconds |
+| Then | the change is refused as `unordered-times` and the subtitle is left as it was |
+
+## `PJ-142` Inserting a Segment after one the next touches
+
+With no gap to fill, the new Segment runs two seconds from the edge it is inserted at, over its neighbour, and takes its place among the Segments by its start.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1 and from 1 to 2 seconds |
+| When | a Segment is inserted after the first |
+| Then | an empty Segment from 1 to 3 seconds stands between them |
+
+## `PJ-143` Inserting a Segment after one the next overlaps
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 2 and from 1 to 3 seconds |
+| When | a Segment is inserted after the first |
+| Then | an empty Segment from 2 to 4 seconds comes after the second |
+
+## `PJ-144` Inserting a Segment before one the previous overlaps
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 3.5 and from 3 to 5 seconds |
+| When | a Segment is inserted before the second |
+| Then | an empty Segment from 1 to 3 seconds stands between them |
+
+## `PJ-145` Merging a Segment with one it overlaps
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `大家好` from 0 to 5 and `對啊` from 2 to 3 seconds |
+| When | the two are merged |
+| Then | one Segment from 0 to 5 seconds reads `大家好對啊` |
+
+## `PJ-146` Refusing a shift past the next Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of Segments from 0 to 1 and from 2 to 3 seconds |
+| When | the first is shifted by three seconds |
+| Then | the change is refused as `unordered-times` and the subtitle is left as it was |
+
+## `PJ-147` Naming a Speaker in a translation for Segments with the same times in their order
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project in `zh-TW` whose `ep01.srt` reads `大家好` and `對啊`, both from 0 to 1 second, translated in `ep01.en.srt` as `Hello` and `Yeah` |
+| When | the Speaker of `對啊` is set to `co` |
+| Then | `ep01.en.srt` reads `Hello` and `co: Yeah` |
+
+## `PJ-148` Splitting a Segment another is said over
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `大家好嗎` from 0 to 4 and `對啊` from 1 to 1.5 seconds |
+| When | the first is split after `大家` |
+| Then | `大家` runs from 0 to 2, `對啊` from 1 to 1.5 and `好嗎` from 2 to 4 seconds, in that order |
+
+## `PJ-149` Saying an export was not written
+
+| Step | Statement |
+| --- | --- |
+| Given | a path chosen to export the Current Resource to |
+| When | writing the SRT fails |
+| Then | a Notification says it was not exported |
+
+## `PJ-150` Writing the Current Resource as Plain Text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of two Segments, the first said by `阿福` |
+| When | its original is written as Plain Text |
+| Then | the text is `阿福: 少爺` and `我等等就下去`, a blank line between, with no times |
+
+## `PJ-151` Leaving the Speakers out of Plain Text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Segment is said by `阿福` |
+| When | it is written as Plain Text without its Speakers |
+| Then | the text carries the Segment's text alone |
+
+## `PJ-152` Writing a bilingual Plain Text in the Bilingual Order
+
+| Step | Statement |
+| --- | --- |
+| Given | a Project whose Bilingual Order puts the translation first, with a Current Resource translated into `en` |
+| When | it is written as a bilingual Plain Text |
+| Then | each block carries the translation above the original |
+
+## `PJ-153` Naming a Plain Text export by the Resource and its Languages
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resource `ep01` in `/talks`, in `zh-TW` and translated into `en` |
+| When | the default path of each Plain Text export is asked for |
+| Then | the original is `/talks/ep01.txt`, the translation `/talks/ep01.en.txt` and the bilingual `/talks/ep01.zh-TW.en.txt` |
+
+## `PJ-154` Keeping an opened directory as a Recent Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Recent Projects |
+| When | the directory `lecture` is opened |
+| Then | the Recent Projects are `lecture` with the time it was opened |
+
+## `PJ-155` Keeping the directory of an opened SRT file as a Recent Project
+
+| Step | Statement |
+| --- | --- |
+| Given | no Recent Projects |
+| When | `lecture/ep01.srt` is opened |
+| Then | the Recent Projects are `lecture` |
+
+## `PJ-156` Keeping one Recent Project per directory
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` opened before `interview` |
+| When | `lecture` is opened again |
+| Then | the Recent Projects are `lecture` then `interview` |
+
+## `PJ-157` Keeping ten Recent Projects
+
+| Step | Statement |
+| --- | --- |
+| Given | ten directories opened one after another |
+| When | an eleventh is opened |
+| Then | the Recent Projects are the last ten opened, without the first |
+
+## `PJ-158` Dropping a Recent Project whose directory is gone
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` as a Recent Project, its directory since removed |
+| When | `lecture` is opened |
+| Then | it is refused as `directory-not-found` and the Recent Projects no longer hold it |
+
+## `PJ-159` Keeping a Recent Project that could not be read
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` as a Recent Project, its directory since made unreadable |
+| When | `lecture` is opened |
+| Then | the Recent Projects still hold it |
+
+## `PJ-160` Leaving the open Project out of the Recent Projects
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` opened before `interview` |
+| When | the Recent Projects are read |
+| Then | they are `lecture` alone |
+
+## `PJ-161` Listing the Recent Projects on the start screen
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` at `/videos/lecture` as a Recent Project |
+| When | the start screen is shown |
+| Then | a row shows `lecture`, `/videos/lecture` and the date it was opened |
+
+## `PJ-162` Opening a Recent Project from the start screen
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` listed on the start screen |
+| When | its row is clicked |
+| Then | the directory `/videos/lecture` is opened |
+
+## `PJ-163` Hiding the Recent Projects when there are none
+
+| Step | Statement |
+| --- | --- |
+| Given | no Recent Projects |
+| When | the start screen is shown |
+| Then | no heading for them is shown |
+
+## `PJ-164` Listing the Recent Projects in the Open menu
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` at `/videos/lecture` as a Recent Project |
+| When | the Open menu is shown |
+| Then | it lists `lecture` with `/videos/lecture` as its tooltip |
+
+## `PJ-165` Listing the Recent Projects again after one could not be opened
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` listed on the start screen, its directory since removed |
+| When | its row is clicked |
+| Then | the start screen no longer lists it |
+
+## `PJ-166` Refusing to open a Project while a Mode runs
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` open, a Mode running on its `ep01` |
+| When | the directory `interview` is asked to open |
+| Then | it is refused as `opening-during-mode` and `lecture` is still the Project |
+
+## `PJ-167` Warning that a Project cannot open while a Mode runs
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar, a Mode running |
+| When | a directory is chosen to open |
+| Then | a warning Notification asks to wait for the task to finish or cancel it first |
+
+
+## `PJ-168` Taking the SRT file among the launch arguments
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri launched in `/talks` with `--flag`, `notes.txt` and `ep02.srt` |
+| When | its arguments are read for a Requested SRT |
+| Then | the Requested SRT is `/talks/ep02.srt` |
+## `PJ-169` Taking a file URL the system hands over
+
+| Step | Statement |
+| --- | --- |
+| Given | the system asks to open `file:///talks/ep%2002.srt` |
+| When | it is read for a Requested SRT |
+| Then | the Requested SRT is `/talks/ep 02.srt` |
+
+## `PJ-170` Answering the Requested SRT once
+
+| Step | Statement |
+| --- | --- |
+| Given | `/talks/ep02.srt` requested |
+| When | the Requested SRT is taken twice |
+| Then | the first answers `/talks/ep02.srt` and the second none |
+
+## `PJ-171` Opening the Requested SRT as the webview starts
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri launched to open `/talks/ep02.srt` |
+| When | the webview starts |
+| Then | `/talks/ep02.srt` is opened as an SRT file in the Interface Language |
+
+## `PJ-172` Opening an SRT file requested while Tsuzuri runs
+
+| Step | Statement |
+| --- | --- |
+| Given | the webview, with `lecture` open |
+| When | `/talks/ep02.srt` is requested |
+| Then | it is opened as an SRT file in the Interface Language |
+
+## `PJ-173` Naming a Project in its Project Options
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project `lecture` |
+| When | its Project Options are set with the name ` 週會錄影 ` |
+| Then | the Project is named `週會錄影` and its Project Config records that name |
+
+
+## `PJ-174` Naming a Project after its directory without a name of its own
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project `lecture` |
+| When | its Project Options are set with a name of only spaces |
+| Then | the Project is named `lecture` and its Project Config records no name |
+
+## `PJ-175` Showing the Project Name in the toolbar and the window title
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar |
+| When | the Project named `週會錄影` is shown |
+| Then | the toolbar reads `週會錄影` and the window title `週會錄影 - Tsuzuri` |
+
+## `PJ-176` Naming the Project in the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the settings of the Project `lecture` |
+| When | `週會錄影` is typed as its name |
+| Then | the Project Options are set with the name `週會錄影` |
+
+## `PJ-177` Listing a Recent Project by its Project Name
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` as a Recent Project, its Project Config naming it `週會錄影` |
+| When | the Recent Projects are listed |
+| Then | `lecture` is listed as `週會錄影` |
+
+## `PJ-178` Naming a Recent Project after its directory when its Project Config does not answer
+
+| Step | Statement |
+| --- | --- |
+| Given | `lecture` and `interview` as Recent Projects, the Project Config of `lecture` not answering |
+| When | the Recent Projects are listed |
+| Then | the list comes in time, `lecture` named `lecture` and `interview` by its Project Name |
+
+## `PJ-179` Showing the Project Name of a Recent Project on the start screen and in the Open menu
+
+| Step | Statement |
+| --- | --- |
+| Given | `/videos/lecture` as a Recent Project named `週會錄影` |
+| When | the start screen and the Open menu are shown |
+| Then | both list it as `週會錄影` |
+
+
+## `PJ-180` Keeping an SRT file the system asks for before Tsuzuri has started
+
+| Step | Statement |
+| --- | --- |
+| Given | Tsuzuri launching, not yet set up |
+| When | the system asks it to open `/talks/ep02.srt` |
+| Then | the Requested SRT is `/talks/ep02.srt` |
+
+## `PJ-181` Naming the Project in the toolbar
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar of the Project `lecture` |
+| When | `週會錄影` is typed over its name |
+| Then | the Project Options are set with the name `週會錄影` |
+
+## `PJ-182` Leaving the Project Name in the toolbar as it was
+
+| Step | Statement |
+| --- | --- |
+| Given | the toolbar of the Project named `週會錄影` |
+| When | `lecture` is typed over its name and Esc is pressed |
+| Then | the toolbar reads `週會錄影` and the Project Options are not set |
+
+## `PJ-183` Putting the Resource list away once a Resource is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | the Resource list laid over the editor of a narrow window |
+| When | the Resource `ep02` is chosen |
+| Then | `ep02` is selected and the Resource list is put away |
+
+## `PJ-184` Showing a Project to every view when one of them fails
+
+| Step | Statement |
+| --- | --- |
+| Given | two views following the Project, the first failing to show it |
+| When | the Project is read |
+| Then | the second view shows it and the first view's failure is reported |
+
+## `PJ-185` Leaving the blank lines out of Plain Text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of two Segments |
+| When | its original is written as Plain Text without blank lines |
+| Then | the text is one line per Segment with nothing between |
+
+## `PJ-186` Hinting the directory's name where the Project is named
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project in `/talks` named `週會錄影` |
+| When | its settings show |
+| Then | the name field hints `talks`, the name it takes once emptied |
+
+## `PJ-187` Joining Chinese and English with a space
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `這是` from 0 to 1 and `OK 的` from 1 to 2 seconds |
+| When | the two are merged |
+| Then | one Segment reads `這是 OK 的` |
+
+## `PJ-188` Joining Chinese and a number with a space
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `一共有` from 0 to 1 and `3 集` from 1 to 2 seconds |
+| When | the two are merged |
+| Then | one Segment reads `一共有 3 集` |
+
+## `PJ-189` Joining a text already ending in a space without another
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of `Hello ` from 0 to 1 and `world` from 1 to 2 seconds |
+| When | the two are merged |
+| Then | one Segment reads `Hello world` |
+
+## `PJ-190` Saying why the Project's settings were not saved
+
+| Step | Statement |
+| --- | --- |
+| Given | the Project's settings |
+| When | a setting is changed and its Project Options cannot be written |
+| Then | a Notification says the settings were not saved and why |
+
+## `PJ-191` Saying why a Resource was not selected
+
+| Step | Statement |
+| --- | --- |
+| Given | the Resource list of `lecture` |
+| When | the Resource `ep02` is chosen and cannot be selected |
+| Then | a Notification says the Resource was not selected and why |
+
+## `PJ-192` Keeping the translation shown through a split
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of one Segment `你好世界`, showing its `en` translation `Hello world` |
+| When | it is split after `你好` |
+| Then | the Current Resource still shows its `en` translation |
 
 ## `PJ-193` Refusing an edit of a Speaker while it is translated
 
@@ -1515,85 +1587,13 @@ A Speaker is written into every translation as its label, so the translation bei
 | When | its Speaker is set to `小明` |
 | Then | the edit is refused because a Mode runs |
 
-## `PJ-093` Refusing a Segment Change or an undo while a Mode runs
+## `PJ-194` Keeping the settings' section as the Project changes
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource `ep01` being translated into `en`, with an edit to undo |
-| When | a Segment is deleted, and the edit undone |
-| Then | both are refused as `mode-running` |
-
-## `PJ-094` Freeing the subtitles once a Mode ends
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource `ep01` whose transcription has ended, done or failed |
-| When | its text is edited |
-| Then | the edit is written to `ep01.srt` |
-
-## `PJ-095` Saying which Mode runs on the Current Resource
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource `ep01` being translated into `en` |
-| When | the Project is read |
-| Then | its Current Resource is said to be translated into `en` |
-
-## `PJ-096` Clearing a Speaker from the original and every translation
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project whose `ep01.srt` reads `co: 你好` and `ep01.en.srt` `co: Hello` |
-| When | the Speaker of its Segment is set to nothing |
-| Then | `ep01.srt` reads `你好` and `ep01.en.srt` reads `Hello` |
-
-## `PJ-097` Naming the Speaker of several Segments at once
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project whose `ep01.srt` reads `你好`, `嗨` and `再見`, translated in `ep01.en.srt` |
-| When | the Speaker of its first and third Segments is set to `co` at once |
-| Then | `ep01.srt` and `ep01.en.srt` label only their first and third cues `co` |
-
-## `PJ-098` Undoing Speakers named at once in one step
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project whose three Segments were all given the Speaker `co` at once |
-| When | the change is undone |
-| Then | no Segment names a Speaker |
-
-## `PJ-099` Writing a translation made again as one change
-
-| Step | Statement |
-| --- | --- |
-| Given | three Segments translated into `en` as `A`, `B` and `C`, shown in the editor |
-| When | the second is translated again as `B2` |
-| Then | `ep01.en.srt` reads `A`, `B2` and `C`, an Overwrite of it reads `A`, `B` and `C`, and one undo puts `B` back |
-
-## `PJ-100` Refusing to translate again with no translation shown
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource showing no translation |
-| When | a Segment is asked to be translated again |
-| Then | it is refused as `no-translation-shown` before any Model is loaded |
-
-## `PJ-104` Keeping the Project Models and Transcription Settings in the Project Config
-
-| Step | Statement |
-| --- | --- |
-| Given | a Project with a transcription Project Model that sets VAD on for itself |
-| When | its directory is opened again |
-| Then | it has that Project Model and VAD on, and follows the general settings in the rest |
-
-## `PJ-149` Saying an export was not written
-
-| Step | Statement |
-| --- | --- |
-| Given | a path chosen to export the Current Resource to |
-| When | writing the SRT fails |
-| Then | a Notification says it was not exported |
+| Given | the settings showing the general settings while a Project is open |
+| When | the Project changes, as an edit is written |
+| Then | the settings still show the general settings |
 
 ## `PJ-195` Dating the Recent Projects in the Interface Language chosen
 

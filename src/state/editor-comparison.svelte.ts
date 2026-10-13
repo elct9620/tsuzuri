@@ -103,6 +103,39 @@ function takerAtTimes<T>(
 }
 
 /**
+ * What a Segment nothing is compared on shows, and the Removals before it: one of each for every
+ * such Segment and every read, so a read hands an unchanged row the same as before. Never written.
+ */
+const NOTHING_COMPARED: SegmentComparison = {
+  rowsBySide: { original: [], translation: [] },
+  references: [],
+};
+const NO_REMOVALS: SideRow[] = [];
+
+/**
+ * Finds the first of `segments` starting no earlier than a time, or their number past the last,
+ * in whatever order they run: the latest start up to each Segment only grows, and first reaches
+ * the time at that Segment, so the latest starts can be halved however the Segments run.
+ */
+function firstStartingFrom(segments: Segment[]): (ms: number) => number {
+  let latestStart = -Infinity;
+  const latestStarts = segments.map(({ start_ms }) => {
+    latestStart = Math.max(latestStart, start_ms);
+    return latestStart;
+  });
+  return (ms) => {
+    let low = 0;
+    let high = latestStarts.length;
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2);
+      if (latestStarts[middle] < ms) low = middle + 1;
+      else high = middle;
+    }
+    return low;
+  };
+}
+
+/**
  * Lays each side's rows over the Segments with the times of their cues now, and each Removal
  * before the first Segment starting no earlier than it, and finds each translation's cue for
  * each Segment.
@@ -112,11 +145,23 @@ export function comparisonLayout(
   rowsBySide: Record<Side, ComparedRow[]>,
   cuesByLanguage: [Language, ComparedCue[]][],
 ): ComparisonLayout {
-  const bySegment: SegmentComparison[] = segments.map(() => ({
-    rowsBySide: { original: [], translation: [] },
-    references: [],
-  }));
-  const removalsBefore: SideRow[][] = [...segments, null].map(() => []);
+  const bySegment = segments.map(() => NOTHING_COMPARED);
+  const removalsBefore = [...segments, null].map(() => NO_REMOVALS);
+  /** The comparison of the Segment at `index`, made its own before anything is laid on it. */
+  const comparisonAt = (index: number): SegmentComparison => {
+    if (bySegment[index] === NOTHING_COMPARED)
+      bySegment[index] = {
+        rowsBySide: { original: [], translation: [] },
+        references: [],
+      };
+    return bySegment[index];
+  };
+  /** The Removals before the Segment at `index`, made its own before one is laid there. */
+  const removalsAt = (index: number): SideRow[] => {
+    if (removalsBefore[index] === NO_REMOVALS) removalsBefore[index] = [];
+    return removalsBefore[index];
+  };
+  const firstStartingAt = firstStartingFrom(segments);
   const indexes = segments.map((_, index) => index);
   for (const side of SIDES) {
     const segmentAt = takerAtTimes(indexes, (index) => [
@@ -125,9 +170,7 @@ export function comparisonLayout(
     ]);
     rowsBySide[side].forEach((row, index) => {
       if (row.kind === "removal") {
-        const start = row.left[0].start_ms;
-        const next = segments.findIndex((each) => each.start_ms >= start);
-        removalsBefore[next === -1 ? segments.length : next].push({
+        removalsAt(firstStartingAt(row.left[0].start_ms)).push({
           side,
           row,
           index,
@@ -137,7 +180,7 @@ export function comparisonLayout(
       for (const cue of row.right) {
         const at = segmentAt(cue.start_ms, cue.end_ms);
         if (at !== undefined && markLabels(row).length > 0)
-          bySegment[at].rowsBySide[side].push({ side, row, index });
+          comparisonAt(at).rowsBySide[side].push({ side, row, index });
       }
     });
   }
@@ -145,7 +188,8 @@ export function comparisonLayout(
     const cueAt = takerAtTimes(cues, (cue) => [cue.start_ms, cue.end_ms]);
     segments.forEach((segment, index) => {
       const cue = cueAt(segment.start_ms, segment.end_ms);
-      if (cue) bySegment[index].references.push({ language, text: cue.text });
+      if (cue)
+        comparisonAt(index).references.push({ language, text: cue.text });
     });
   }
   return { bySegment, removalsBefore };

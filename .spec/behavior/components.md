@@ -56,6 +56,56 @@ Finding every Component the running platform needs before a Mode runs: the path 
 | When | an executable is chosen for a Component |
 | Then | its status shows the chosen path |
 
+## `CP-014` Reporting Bundled Variants that do not run
+
+| Step | Statement |
+| --- | --- |
+| Given | Bundled Variants whose executables all fail their version flag, as when a driver or system library they need is missing |
+| When | its status is read |
+| Then | it reads as not ready and says the executable does not run |
+
+## `CP-015` Using the Bundled Variant
+
+| Step | Statement |
+| --- | --- |
+| Given | no executable chosen, none found by Detection, and a Bundled Variant that answers its version flag |
+| When | its status is read |
+| Then | it reads as ready at the bundled path, naming its Variant |
+
+## `CP-016` Logging how long finding a Component took
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component found by Detection |
+| When | its status is found |
+| Then | the log holds a line naming the Component, where it was found and the seconds it took |
+
+## `CP-017` Passing over a Bundled Variant that does not run
+
+| Step | Statement |
+| --- | --- |
+| Given | no executable chosen and none found by Detection |
+| Given | a first Bundled Variant that fails its version flag and a second that answers it |
+| When | its status is read |
+| Then | it reads as ready at the second Variant's path |
+
+## `CP-018` Trying Bundled Variants in the Build Manifest's order
+
+| Step | Statement |
+| --- | --- |
+| Given | no executable chosen and none found by Detection |
+| Given | two Bundled Variants that both answer their version flag |
+| When | its status is read |
+| Then | it reads as ready at the Variant the Build Manifest lists first |
+
+## `CP-019` Showing the Variant Auto-Selection took
+
+| Step | Statement |
+| --- | --- |
+| Given | a Component ready as a Bundled Variant |
+| When | the components panel loads |
+| Then | its status names the Variant |
+
 ## `CP-020` Returning a Component to its default
 
 | Step | Statement |
@@ -90,64 +140,6 @@ Finding a Component runs it, which takes a moment on first use.
 | When | it shows |
 | Then | each status is a Placeholder |
 
-## `CP-027` Replacing the Placeholders once the Components are found
-
-| Step | Statement |
-| --- | --- |
-| Given | the components panel showing Placeholders |
-| When | the statuses are found |
-| Then | each status shows in place of its Placeholder |
-
-## `CP-014` Reporting Bundled Variants that do not run
-
-| Step | Statement |
-| --- | --- |
-| Given | Bundled Variants whose executables all fail their version flag, as when a driver or system library they need is missing |
-| When | its status is read |
-| Then | it reads as not ready and says the executable does not run |
-
-## `CP-015` Using the Bundled Variant
-
-| Step | Statement |
-| --- | --- |
-| Given | no executable chosen, none found by Detection, and a Bundled Variant that answers its version flag |
-| When | its status is read |
-| Then | it reads as ready at the bundled path, naming its Variant |
-
-## `CP-017` Passing over a Bundled Variant that does not run
-
-| Step | Statement |
-| --- | --- |
-| Given | no executable chosen and none found by Detection |
-| Given | a first Bundled Variant that fails its version flag and a second that answers it |
-| When | its status is read |
-| Then | it reads as ready at the second Variant's path |
-
-## `CP-018` Trying Bundled Variants in the Build Manifest's order
-
-| Step | Statement |
-| --- | --- |
-| Given | no executable chosen and none found by Detection |
-| Given | two Bundled Variants that both answer their version flag |
-| When | its status is read |
-| Then | it reads as ready at the Variant the Build Manifest lists first |
-
-## `CP-019` Showing the Variant Auto-Selection took
-
-| Step | Statement |
-| --- | --- |
-| Given | a Component ready as a Bundled Variant |
-| When | the components panel loads |
-| Then | its status names the Variant |
-
-## `CP-016` Logging how long finding a Component took
-
-| Step | Statement |
-| --- | --- |
-| Given | a Component found by Detection |
-| When | its status is found |
-| Then | the log holds a line naming the Component, where it was found and the seconds it took |
-
 ## `CP-024` Saying the Components were not read
 
 | Step | Statement |
@@ -171,6 +163,14 @@ Finding a Component runs it, which takes a moment on first use.
 | Given | a Component run from an executable the user chose |
 | When | forgetting the choice fails |
 | Then | a Notification says the settings were not saved |
+
+## `CP-027` Replacing the Placeholders once the Components are found
+
+| Step | Statement |
+| --- | --- |
+| Given | the components panel showing Placeholders |
+| When | the statuses are found |
+| Then | each status shows in place of its Placeholder |
 
 ## `CP-028` Copying how to install a Component
 

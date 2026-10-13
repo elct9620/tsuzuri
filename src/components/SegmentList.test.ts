@@ -1,13 +1,17 @@
 // @vitest-environment happy-dom
-import { screen } from "@testing-library/svelte";
+import { cleanup, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "#/assembly.ts";
 import type { GlossaryTable, ProjectView } from "#/ipc/project.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
-import { fieldValue, isFieldHeld } from "#/editor/index.ts";
+import {
+  type EditingSession,
+  fieldValue,
+  isFieldHeld,
+} from "#/editor/index.ts";
 import {
   showNotifications,
   notificationAction,
@@ -21,9 +25,20 @@ import { ViewChoices } from "#/state/view-choices.svelte.ts";
 import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 import { TaskRun } from "#/state/task-run.svelte.ts";
-import { rowList, segmentRows } from "#/testing/segment-rows.ts";
+import {
+  openChangeMenu,
+  rowList,
+  segmentRows,
+} from "#/testing/segment-rows.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
+import {
+  type LaidOutSegmentList,
+  layOutSegmentList,
+  stubResizeObserver,
+  type WatchedResizes,
+} from "#/testing/layout.ts";
 import { settle } from "#/testing/settle.ts";
+import { stubHighlights } from "#/testing/highlights.ts";
 
 describe("SegmentList", () => {
   let project: ProjectView | null;
@@ -57,6 +72,10 @@ describe("SegmentList", () => {
   }
 
   let run: TaskRun;
+  /** Draws the Segment list into the page's section, following the Projects read. */
+  let drawList: () => void;
+  let session: EditingSession;
+  let playback: Playback;
   let segmentList: SegmentList;
   let resourcePlaceholders: ResourcePlaceholders;
   /** What the View menu chooses, the Speaker column among it. */
@@ -116,18 +135,23 @@ describe("SegmentList", () => {
     );
     const assembly = assemble();
     run = new TaskRun();
+    session = assembly.session;
+    playback = new Playback();
     const context = pageContext(assembly.feed, assembly.session, run);
     resourcePlaceholders = new ResourcePlaceholders();
     viewChoices = new ViewChoices();
-    segmentList = renderFollowingProject(SegmentList, assembly.feed, {
-      target: document.querySelector("section")!,
-      props: {
-        playback: new Playback(),
-        placeholders: resourcePlaceholders,
-        viewChoices,
-      },
-      context,
-    });
+    drawList = () => {
+      segmentList = renderFollowingProject(SegmentList, assembly.feed, {
+        target: document.querySelector("section")!,
+        props: {
+          playback,
+          placeholders: resourcePlaceholders,
+          viewChoices,
+        },
+        context,
+      });
+    };
+    drawList();
     await assembly.start();
     await settle();
   });
@@ -193,6 +217,428 @@ describe("SegmentList", () => {
       rows[0] === drawnRows[0],
       rows[1] === drawnRows[1],
     ]).toEqual([3, true, true]);
+  });
+
+  // @behavior ED-198
+  it("writes whether a field takes typing only when that changes", async () => {
+    const segments = [
+      { start_ms: 0, end_ms: 1000, text: "大家" },
+      { start_ms: 1000, end_ms: 2000, text: "今天" },
+      { start_ms: 2000, end_ms: 3000, text: "很好" },
+    ];
+    await hold(projectOf({ segments }));
+    const writes: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => writes.push(...records));
+    observer.observe(document.body, {
+      subtree: true,
+      attributeFilter: ["contenteditable", "aria-disabled"],
+    });
+
+    await hold(
+      projectOf({
+        segments: [
+          segments[0],
+          { start_ms: 1000, end_ms: 3000, text: "今天很好" },
+        ],
+      }),
+    );
+    writes.push(...observer.takeRecords());
+    observer.disconnect();
+
+    expect(writes).toEqual([]);
+  });
+
+  // @behavior ED-199
+  it("draws a row's change menu only once it is opened", async () => {
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "大家" },
+          { start_ms: 1000, end_ms: 2000, text: "今天" },
+          { start_ms: 2000, end_ms: 3000, text: "很好" },
+        ],
+      }),
+    );
+    const choiceCounts = () =>
+      segmentRows().map(
+        (row) => row.querySelectorAll(".change-menu button").length,
+      );
+    const unopenedCounts = choiceCounts();
+
+    openChangeMenu(segmentRows()[1]);
+
+    const [first, second, third] = choiceCounts();
+    expect([unopenedCounts, first, second > 0, third]).toEqual([
+      [0, 0, 0],
+      0,
+      true,
+      0,
+    ]);
+  });
+
+  // @behavior ED-200
+  it("writes a row's times and texts only when they change", async () => {
+    const segments = [
+      { start_ms: 0, end_ms: 1000, text: "大家" },
+      { start_ms: 1000, end_ms: 2000, text: "今天" },
+      { start_ms: 2000, end_ms: 3000, text: "很好" },
+    ];
+    await hold(projectOf({ segments }));
+    const valueWrite = vi.spyOn(HTMLInputElement.prototype, "value", "set");
+    const textWrites: MutationRecord[] = [];
+    const observer = new MutationObserver((records) =>
+      textWrites.push(...records),
+    );
+    observer.observe(rowList(), { subtree: true, childList: true });
+
+    await hold(
+      projectOf({
+        segments: segments.map((segment, index) =>
+          index === 1 ? { ...segment, text: "明天" } : { ...segment },
+        ),
+      }),
+    );
+    textWrites.push(...observer.takeRecords());
+    observer.disconnect();
+    const timeWrites = valueWrite.mock.contexts.filter((input) =>
+      (input as HTMLInputElement).matches("[data-edge]"),
+    );
+    valueWrite.mockRestore();
+
+    const writtenFields = new Set(
+      textWrites.map((record) => (record.target as HTMLElement).dataset.index),
+    );
+    expect([timeWrites.length, [...writtenFields]]).toEqual([0, ["1"]]);
+  });
+
+  /** A Project of 200 Segments, each a second long. */
+  const longProject = () =>
+    projectOf({
+      segments: Array.from({ length: 200 }, (_, index) => ({
+        start_ms: index * 1000,
+        end_ms: index * 1000 + 1000,
+        text: `第 ${index} 段`,
+      })),
+    });
+
+  /** The rows scrolled into view while `act` runs. */
+  async function scrolledRowsWhile(act: () => void): Promise<Element[]> {
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
+    act();
+    await settle();
+    const rows = scroll.mock.contexts as Element[];
+    scroll.mockRestore();
+    return rows;
+  }
+
+  /**
+   * Scrolls the list from its first row to its last, the browser drawing each row 40 pixels tall,
+   * as `observers` report it once the rows are laid out.
+   */
+  function scrollThroughAt40(
+    layout: LaidOutSegmentList,
+    observers: WatchedResizes[],
+  ): void {
+    const measure = () => {
+      const { targets, notify } = observers[observers.length - 1];
+      notify(
+        targets.map(
+          (target) =>
+            ({
+              target,
+              borderBoxSize: [{ blockSize: 40, inlineSize: 600 }],
+            }) as unknown as ResizeObserverEntry,
+        ),
+      );
+      flushSync();
+    };
+    measure();
+    for (let top = 0; top <= 200 * 40; top += 400) {
+      layout.scrollTo(top);
+      flushSync();
+      measure();
+    }
+  }
+
+  /** The height of the space standing in for the rows before the first one drawn. */
+  const spaceBeforeDrawn = () =>
+    rowList().querySelector<HTMLElement>(":scope > li[data-gap]:first-child")
+      ?.style.height;
+
+  /** The positions of the Segments whose rows are drawn. */
+  const drawnIndexes = () =>
+    segmentRows().map((row) => Number(row.getAttribute("aria-posinset")) - 1);
+
+  // @behavior ED-202
+  it("draws only the rows near the view as the list is scrolled", async () => {
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+
+      layout.scrollTo(8000);
+      flushSync();
+
+      const drawn = drawnIndexes();
+      expect([
+        drawn.includes(100),
+        drawn.includes(0),
+        drawn.includes(199),
+      ]).toEqual([true, false, false]);
+    } finally {
+      layout.restore();
+    }
+  });
+
+  // @behavior ED-204
+  it("stands in for the rows scrolled past with the height they were drawn at", async () => {
+    const observers = stubResizeObserver();
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+
+      scrollThroughAt40(layout, observers);
+
+      expect(spaceBeforeDrawn()).toBe(`${drawnIndexes()[0] * 40}px`);
+    } finally {
+      layout.restore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  // @behavior ED-205
+  it("keeps the Current Segment's row drawn as the list scrolls away", async () => {
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+      const typed = segmentRows()[0].querySelector<HTMLElement>(".field.text")!;
+      typed.focus();
+      typed.dispatchEvent(new FocusEvent("focus"));
+      typed.textContent = "改過";
+      await settle();
+
+      layout.scrollTo(8000);
+      flushSync();
+
+      const first = segmentRows()[0];
+      expect([
+        first.getAttribute("aria-posinset"),
+        fieldValue(first.querySelector<HTMLElement>(".field.text")!),
+        drawnIndexes().includes(100),
+      ]).toEqual(["1", "改過", true]);
+    } finally {
+      layout.restore();
+    }
+  });
+
+  // @behavior ED-206
+  it("brings a Segment left out into view as it becomes current", async () => {
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+
+      const scrolled = await scrolledRowsWhile(() => session.makeCurrent(149));
+
+      expect(
+        scrolled.map((row) => row.getAttribute("aria-posinset")),
+      ).toContain("150");
+    } finally {
+      layout.restore();
+    }
+  });
+
+  // @behavior PV-217
+  it("brings a row left out into view while following playback", async () => {
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+      playback.isFollowing = true;
+
+      const scrolled = await scrolledRowsWhile(
+        () => (playback.playingIndexes = [149]),
+      );
+
+      expect(
+        scrolled.map((row) => row.getAttribute("aria-posinset")),
+      ).toContain("150");
+    } finally {
+      layout.restore();
+    }
+  });
+
+  // @behavior ED-207
+  it("enters the next Segment's text with Enter far from the view", async () => {
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+      const first = segmentRows()[0].querySelector<HTMLElement>(".field.text")!;
+      first.focus();
+      first.dispatchEvent(new FocusEvent("focus"));
+      await settle();
+      layout.scrollTo(8000);
+      flushSync();
+
+      first.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      );
+      await settle();
+
+      const entered = document.activeElement as HTMLElement;
+      expect([
+        entered.matches(".field.text"),
+        entered.closest("li")?.getAttribute("aria-posinset"),
+      ]).toEqual([true, "2"]);
+    } finally {
+      layout.restore();
+    }
+  });
+
+  // @behavior ED-208
+  it("brings a row into view below the bars above the list", async () => {
+    // The bars are measured as the list is drawn
+    cleanup();
+    const barsHeight = vi
+      .spyOn(HTMLElement.prototype, "clientHeight", "get")
+      .mockReturnValue(48);
+    try {
+      drawList();
+      await hold(
+        projectOf({
+          segments: [
+            { start_ms: 0, end_ms: 1000, text: "大家" },
+            { start_ms: 1000, end_ms: 2000, text: "今天" },
+          ],
+        }),
+      );
+
+      // The rows stop that far below the top of the list as they are scrolled into view
+      expect(rowList().style.getPropertyValue("--bars-height")).toBe("48px");
+    } finally {
+      barsHeight.mockRestore();
+    }
+  });
+
+  // @behavior ED-209
+  it("marks the matches in rows as they are drawn", async () => {
+    const highlights = stubHighlights();
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+      segmentList.openSearch();
+      flushSync();
+      const patternBox = screen.getByRole<HTMLInputElement>("searchbox", {
+        name: "搜尋文字",
+      });
+      patternBox.value = "段";
+      patternBox.dispatchEvent(new Event("input", { bubbles: true }));
+      await settle();
+
+      layout.scrollTo(8000);
+      await settle();
+
+      const markedRows = new Set(
+        highlights
+          .get("search-match")!
+          .ranges.map((range) =>
+            range.startContainer.parentElement
+              ?.closest("li")
+              ?.getAttribute("aria-posinset"),
+          ),
+      );
+      expect(markedRows.has("101")).toBe(true);
+    } finally {
+      layout.restore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  // @behavior ED-210
+  it("keeps the drawn heights of the other rows as a Segment is split", async () => {
+    const observers = stubResizeObserver();
+    const layout = layOutSegmentList();
+    try {
+      const project = longProject();
+      await hold(project);
+      scrollThroughAt40(layout, observers);
+
+      const [first, ...rest] = project.segments;
+      await hold(
+        projectOf({
+          segments: [
+            { ...first, end_ms: 500, text: "第 0" },
+            { ...first, start_ms: 500, text: "段" },
+            ...rest,
+          ],
+        }),
+      );
+
+      const firstDrawn = drawnIndexes()[0];
+      expect(spaceBeforeDrawn()).toBe(`${2 * 80 + (firstDrawn - 2) * 40}px`);
+    } finally {
+      layout.restore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  // @behavior ED-203
+  it("tells each row's place among all the Segments", async () => {
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "大家" },
+          { start_ms: 1000, end_ms: 2000, text: "今天" },
+          { start_ms: 2000, end_ms: 3000, text: "很好" },
+        ],
+      }),
+    );
+
+    const second = segmentRows()[1];
+    expect([
+      second.getAttribute("aria-posinset"),
+      second.getAttribute("aria-setsize"),
+    ]).toEqual(["2", "3"]);
+  });
+
+  // @behavior ED-201
+  it("redraws only the rows the Cursor moves between", async () => {
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "大家" },
+          { start_ms: 1000, end_ms: 2000, text: "今天" },
+          { start_ms: 2000, end_ms: 3000, text: "很好" },
+        ],
+      }),
+    );
+    const enter = (row: HTMLElement) =>
+      row
+        .querySelector<HTMLElement>(".field.text")!
+        .dispatchEvent(new FocusEvent("focus"));
+    enter(segmentRows()[0]);
+    await settle();
+    const redraws: MutationRecord[] = [];
+    const observer = new MutationObserver((records) =>
+      redraws.push(...records),
+    );
+    observer.observe(rowList(), {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+    });
+
+    enter(segmentRows()[2]);
+    await settle();
+    redraws.push(...observer.takeRecords());
+    observer.disconnect();
+
+    const rows = segmentRows();
+    // A node taken away is counted where it was taken from, not where it went
+    const redrawnRows = new Set(
+      redraws
+        .filter((record) => record.target.isConnected)
+        .map((record) => rows.findIndex((row) => row.contains(record.target))),
+    );
+    expect([...redrawnRows].sort()).toEqual([0, 2]);
   });
 
   /** Two Segments, the second reading `text`, so a change to it leaves their number alone. */
@@ -661,11 +1107,14 @@ describe("SegmentList", () => {
       running_mode: { mode: "translation", language: "en", indexes: null },
     });
 
-    const isHeld = (selector: string) =>
-      isFieldHeld(document.querySelector<HTMLElement>(selector)!);
-    expect([isHeld(".field.translation"), isHeld(".field.text")]).toEqual([
-      true,
-      false,
+    /** Whether the field `selector` names is held, and what it tells assistive technology. */
+    const holdOf = (selector: string) => {
+      const field = document.querySelector<HTMLElement>(selector)!;
+      return [isFieldHeld(field), field.getAttribute("aria-disabled")];
+    };
+    expect([holdOf(".field.translation"), holdOf(".field.text")]).toEqual([
+      [true, "true"],
+      [false, "false"],
     ]);
   });
   // @behavior ED-092
@@ -698,6 +1147,7 @@ describe("SegmentList", () => {
   // @behavior ED-096
   it("shows the split shortcut beside splitting in a Segment's menu", async () => {
     await hold(translatedProject);
+    openChangeMenu(segmentRows()[0]);
 
     expect(document.querySelector("li button.split kbd")?.textContent).toBe(
       "Ctrl+Alt+Enter",
@@ -707,6 +1157,7 @@ describe("SegmentList", () => {
   // @behavior ED-181
   it("shows the merge shortcuts beside merging in a Segment's menu", async () => {
     await hold(projectWithSecondText("今天"));
+    segmentRows().forEach(openChangeMenu);
 
     expect(
       [".mergeWithPrevious", ".mergeWithNext"].map(
@@ -719,6 +1170,7 @@ describe("SegmentList", () => {
   // @behavior ED-107
   it("shows the delete shortcut beside deleting in a Segment's menu", async () => {
     await hold(translatedProject);
+    openChangeMenu(segmentRows()[0]);
 
     expect(document.querySelector("li button.delete kbd")?.textContent).toBe(
       "Delete",

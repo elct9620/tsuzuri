@@ -712,7 +712,8 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `SearchBar` | 搜尋列與符合處標記 |
 | `SegmentList` | 段落的快速鍵與編輯選單 |
 | `CheckedBar` | 勾選工具列 |
-| `SegmentRows`、`SegmentRow` | 段落列與選單、Placeholder、Cursor、追蹤播放 |
+| `SegmentRows` | 可見附近的列、Placeholder、Cursor、追蹤播放 |
+| `SegmentRow` | 段落列與選單 |
 | `EditingField` | 欄位接上 session、畫出 Cursor |
 | `TimeField` | 時間欄覆寫輸入 |
 | `ComparisonMarks`、`EarlierText` | 列上的比較標記與舊文字 |
@@ -830,6 +831,7 @@ feed -> Preview.show    sets the player's source: media or silence
 | `ui/editor-cover.ts` | 編輯區被蓋住時不接編輯鍵 |
 | `ui/text-fields.ts` | 選取的文字 |
 | `ui/speakers.ts` | 段落與詞彙表的說話者名單 |
+| `ui/row-window.ts` | 長清單要畫的列與列高 |
 | `i18n.ts`、`locales/` | 介面語言與翻譯字串 |
 
 Svelte 元件以 `@lucide/svelte` 畫出圖示。快速鍵以 `ui/shortcuts.ts` 為準：Svelte 元件比對的鍵用 `isShortcut` 讀它，這些鍵與 Rust 選單的鍵由測試雙向核對。modal 或設定頁蓋住編輯區時，編輯鍵與 Edit 選單一律以 `isEditorCovered` 略過。

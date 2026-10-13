@@ -10,10 +10,15 @@ import { projectOf } from "#/testing/project.ts";
 import { drawSegmentRows } from "#/testing/segment-rows.ts";
 import { settle } from "#/testing/settle.ts";
 import { type MenuItemSent, menuTexts } from "#/testing/system-menu.ts";
+import {
+  type StubHighlight,
+  StubStaticRange,
+  stubHighlights,
+} from "#/testing/highlights.ts";
 
 describe("Glossary Marks", () => {
   let project: ProjectView;
-  let highlights: Map<string, { ranges: Range[] }>;
+  let highlights: Map<string, StubHighlight>;
   /** The items of each menu of the system made, in the order they were made. */
   let menus: MenuItemSent[][];
   /** The rows each save of the Translation Glossary sent. */
@@ -37,17 +42,7 @@ describe("Glossary Marks", () => {
   }
 
   beforeEach(async () => {
-    highlights = new Map();
-    vi.stubGlobal("CSS", { highlights });
-    vi.stubGlobal(
-      "Highlight",
-      class {
-        ranges: Range[];
-        constructor(...ranges: Range[]) {
-          this.ranges = ranges;
-        }
-      },
-    );
+    highlights = stubHighlights();
     project = projectOf({
       shown_translation: "en",
       segments: [
@@ -117,16 +112,116 @@ describe("Glossary Marks", () => {
   });
 
   // @behavior GM-013
-  it("leaves the marks out of a field typed in since they were found", async () => {
+  it("takes the marks out of a field once it is typed in", async () => {
+    await show();
     const field = document.querySelector<HTMLElement>(".field.text")!;
     field.focus();
-    field.textContent = "小林先生";
 
-    // Each Project read is a new one, as the Rust side answers it anew
-    project = { ...project };
-    await show();
+    field.textContent = "小林先生";
+    field.dispatchEvent(new InputEvent("input", { bubbles: true }));
 
     expect(markedTexts("glossary-candidate")).toEqual([]);
+  });
+
+  it("keeps no live range for a field's marks, as each change of its text draws them anew", async () => {
+    await show();
+
+    const ranges = ["glossary-term", "glossary-candidate"].flatMap(
+      (name) => highlights.get(name)?.ranges ?? [],
+    );
+    expect([
+      ranges.length,
+      ranges.every((range) => range instanceof StubStaticRange),
+    ]).toEqual([3, true]);
+  });
+
+  // @behavior GM-022
+  it("underlines again only the fields whose marks changed", async () => {
+    const texts = ["小林來了", "京都下雨", "東京晴天"];
+    const candidate = { start: 0, end: 2, kind: "candidate" } as const;
+    const projectReading = (lines: string[]) =>
+      projectOf({
+        segments: lines.map((text, at) => ({
+          start_ms: at * 1000,
+          end_ms: at * 1000 + 1000,
+          text,
+        })),
+        glossary_marks: lines.map((text) => ({
+          text: [{ ...candidate, word: text.slice(0, 2) }],
+          translation: [],
+        })),
+      });
+    project = projectReading(texts);
+    await show();
+    const [first, , third] = highlights.get("glossary-candidate")!.ranges;
+
+    project = projectReading([texts[0], "大阪下雨", texts[2]]);
+    await show();
+
+    const ranges = highlights.get("glossary-candidate")!.ranges;
+    expect([
+      ranges.includes(first),
+      ranges.includes(third),
+      ranges.map(String).sort(),
+    ]).toEqual([true, true, ["小林", "大阪", "東京"].sort()]);
+  });
+
+  describe("a field reading its text again", () => {
+    /** The text field, entered and typed in to read `小林先生`. */
+    async function typedField(): Promise<HTMLElement> {
+      await show();
+      const field = document.querySelector<HTMLElement>(".field.text")!;
+      field.focus();
+      typeInto(field, "小林先生");
+      return field;
+    }
+
+    /** Puts `text` into the field as typing it would. */
+    function typeInto(field: HTMLElement, text: string): void {
+      field.textContent = text;
+      field.dispatchEvent(new InputEvent("input", { bubbles: true }));
+    }
+
+    // @behavior GM-023
+    it("underlines the field again once it is typed back to its text and left", async () => {
+      const field = await typedField();
+
+      typeInto(field, "小林先生明天要去京都");
+      field.blur();
+      await settle();
+
+      expect(markedTexts("glossary-candidate")).toEqual(["小林"]);
+    });
+
+    // @behavior GM-024
+    it("underlines the field again once its typing is given up", async () => {
+      const field = await typedField();
+
+      field.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+      await settle();
+
+      expect(markedTexts("glossary-candidate")).toEqual(["小林"]);
+    });
+
+    it("underlines the field again once Esc puts back its text before anything is typed", async () => {
+      await show();
+      const field = document.querySelector<HTMLElement>(".field.text")!;
+      field.focus();
+
+      field.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+      await settle();
+
+      expect(
+        highlights
+          .get("glossary-candidate")
+          ?.ranges.filter((range) => field.contains(range.startContainer))
+          .map(String),
+      ).toEqual(["小林"]);
+    });
   });
 
   describe("the right-click menu", () => {

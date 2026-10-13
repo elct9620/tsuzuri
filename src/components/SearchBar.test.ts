@@ -13,10 +13,11 @@ import SearchBar from "#/components/SearchBar.svelte";
 import { drawSegmentRows, segmentRows } from "#/testing/segment-rows.ts";
 import { usePlatform } from "#/testing/platform.ts";
 import { settle } from "#/testing/settle.ts";
+import { type StubHighlight, stubHighlights } from "#/testing/highlights.ts";
 
 describe("SearchBar", () => {
   let project: ProjectView | null;
-  let highlights: Map<string, { ranges: Range[] }>;
+  let highlights: Map<string, StubHighlight>;
 
   const patternBox = () =>
     screen.queryByRole<HTMLInputElement>("searchbox", { name: "搜尋文字" });
@@ -51,17 +52,7 @@ describe("SearchBar", () => {
 
   beforeEach(async () => {
     project = null;
-    highlights = new Map();
-    vi.stubGlobal("CSS", { highlights });
-    vi.stubGlobal(
-      "Highlight",
-      class {
-        ranges: Range[];
-        constructor(...ranges: Range[]) {
-          this.ranges = ranges;
-        }
-      },
-    );
+    highlights = stubHighlights();
     document.body.innerHTML = `
       <section>
       </section>
@@ -92,6 +83,7 @@ describe("SearchBar", () => {
     render(SearchBar, {
       context: withSegmentFields(context, {
         field: (index, kind) => rows.field(index, kind),
+        revealField: (index, kind) => rows.revealField(index, kind),
       }),
     });
     await assembly.start();

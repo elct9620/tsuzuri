@@ -9,6 +9,7 @@ Hearing and watching the Current Resource's media above the editor while its sub
 - `src-tauri/src/waveform/*.rs`
 - `src-tauri/src/window.rs`
 - `src/components/Preview.test.ts`
+- `src/components/SegmentList.test.ts`
 - `src/components/Timeline.test.ts`
 - `src/components/current-segment.test.ts`
 - `src/page.test.ts`
@@ -45,16 +46,6 @@ Hearing and watching the Current Resource's media above the editor while its sub
 | When | its Waveform is extracted |
 | Then | the answer holds the Peaks 1 and 0 |
 
-## `PV-187` Keeping a quiet Peak
-
-A quiet recording is stretched to its loudest Peak, so a Peak holds enough of a sample to still show a murmur once stretched.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose media is loud at 0.4% of full scale in its first 10 ms |
-| When | its Waveform is extracted |
-| Then | the answer holds the Peak 0.004 |
-
 ## `PV-005` Refusing a Waveform without a media file
 
 | Step | Statement |
@@ -79,14 +70,6 @@ A quiet recording is stretched to its loudest Peak, so a Peak holds enough of a 
 | When | its Waveform is extracted |
 | Then | the converted audio is removed |
 
-## `PV-214` Leaving no audio behind after a failed Waveform
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose media file ffmpeg cannot read |
-| When | its Waveform is extracted |
-| Then | the converted audio is removed |
-
 ## `PV-008` Loading the Current Resource's media into the Preview
 
 | Step | Statement |
@@ -105,16 +88,6 @@ A subtitle alone still has timing to check and captions to see, so it takes the 
 | When | the Project is shown |
 | Then | the player and its controls are shown |
 
-## `PV-197` Playing silence a minute past the last Segment for a Resource without media
-
-The silence runs a minute past the last Segment, so that Segment can still be dragged later and a new one drawn after it.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of a subtitle alone whose last Segment ends at 10 s |
-| When | the Project is shown |
-| Then | the player reads a WAV of silence lasting 70 s |
-
 ## `PV-010` Showing the Dummy Video for media without a picture
 
 | Step | Statement |
@@ -122,44 +95,6 @@ The silence runs a minute past the last Segment, so that Segment can still be dr
 | Given | a Current Resource with a media file |
 | When | its media loads without a picture |
 | Then | the Dummy Video is shown beside the controls |
-
-## `PV-199` Lengthening the silence once a Segment reaches its end
-
-The player cannot go past the end of what it reads, so a Segment dragged or typed to the end of the silence gets another minute after it.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of a subtitle alone playing silence lasting 70 s |
-| When | a Segment's end is moved to 70 s |
-| Then | the player reads a WAV of silence lasting 130 s |
-
-## `PV-200` Staying at the same time as the silence lengthens
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of a subtitle alone, its silence at 5 s |
-| When | the silence lengthens |
-| Then | the player is still at 5 s |
-
-## `PV-202` Keeping the timeline where it was scrolled as the silence lengthens
-
-The silence lengthens while a Segment is dragged at the end of the timeline, so the view stays there to drag on.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of a subtitle alone, its timeline scrolled to 50 s |
-| When | the silence lengthens |
-| Then | the timeline is still scrolled to 50 s |
-
-## `PV-201` Keeping the silence while the Segments stay within it
-
-Making the silence anew reloads the player and the timeline, so an edit that leaves every Segment inside it keeps the one it has.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of a subtitle alone playing silence lasting 70 s |
-| When | a Segment's end is moved to 30 s |
-| Then | the player keeps reading the same silence |
 
 ## `PV-011` Telling the user a media file cannot be played
 
@@ -209,177 +144,6 @@ Making the silence anew reloads the player and the timeline, so an edit that lea
 | When | it plays to 1.5 s |
 | Then | nothing is shown over the video |
 
-## `PV-088` Showing the Segment over the video as soon as the media reaches it
-
-A player reports its time only a few times a second, so while the media plays what is shown over the video follows each frame drawn, and a caption comes with its words rather than up to a quarter second after.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments `大家好` from 0 to 1 s and `今天` from 1 to 2 s, its media playing |
-| When | the next frame is drawn at 1.05 s, before the player reports its time |
-| Then | `今天` is shown over the video |
-
-
-## `PV-103` Showing a Segment that overlaps another above it
-
-Someone cutting in speaks over the Segment already shown, so every Segment being played is shown, each one above the Segments that started before it, as players stack overlapping cues.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments `大家好` from 0 to 2 s and `對啊` from 1 to 1.5 s |
-| When | it plays to 1.2 s |
-| Then | `對啊` is shown over the video above `大家好` |
-
-## `PV-104` Keeping a Segment over the video once the one over it ends
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments `大家好` from 0 to 2 s and `對啊` from 1 to 1.5 s |
-| When | it plays to 1.8 s |
-| Then | `大家好` alone is shown over the video |
-
-## `PV-105` Stacking Segments that start together in their order
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments `大家好` and `對啊`, both from 0 to 1 s |
-| When | it plays to 0.5 s |
-| Then | `對啊` is shown over the video above `大家好` |
-## `PV-127` Moving the video into the Video Window
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video, playing at 3 s |
-| When | the Video Window button is pressed |
-| Then | the video plays on from 3 s in a window of its own |
-
-## `PV-128` Leaving only the controls above the timeline while the video is away
-
-Once the video has left, the Current Segment's card repeats the row being edited in the list, so the Preview keeps only its controls and gives the height to the editor.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video |
-| When | the Video Window button is pressed |
-| Then | the Preview shows its controls without the Current Segment's card |
-
-## `PV-139` Showing the Current Segment's card again as the video comes back
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video in the Video Window |
-| When | the Video Window button is pressed again |
-| Then | the Preview shows the Current Segment's card beside the video |
-
-## `PV-129` Showing the Segment being played over the video in the Video Window
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video and a Segment `今天` from 0 to 1 s |
-| Given | the video in the Video Window |
-| When | the media plays to 0.5 s |
-| Then | `今天` is shown over the video in the Video Window |
-
-## `PV-130` Bringing the video back as the Video Window is closed
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video in the Video Window, playing at 3 s |
-| When | the Video Window is closed |
-| Then | the video plays on from 3 s in the Preview |
-
-## `PV-131` Closing the Video Window with its button
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video in the Video Window |
-| When | the Video Window button is pressed again |
-| Then | the Video Window closes with the video back in the Preview |
-
-## `PV-167` Opening the Video Window again before the last one is gone
-
-A window closes a moment after it is asked to, and a window opened by the same name meanwhile is the closing one, which would take the video with it.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video in the Video Window |
-| When | the Video Window button is pressed twice, before the Video Window is gone |
-| Then | a new Video Window opens with the video once the last one is gone |
-
-## `PV-168` Opening the Video Window where it was last
-
-A window takes the scale of the screen it is made on, so the Video Window is made on the screen it was last on, at the size and place it had there.
-
-| Step | Statement |
-| --- | --- |
-| Given | the Video Window last at 800×450 at (-1900, 100) on a screen from (-1920, 0) to (0, 1080) |
-| When | the Video Window opens |
-| Then | it opens at 800×450 at (-1900, 100) |
-
-## `PV-169` Opening the Video Window on the main screen when its last screen is gone
-
-| Step | Statement |
-| --- | --- |
-| Given | the Video Window last at (-1900, 100), where no screen is any more |
-| When | the Video Window opens |
-| Then | it opens where the system puts a new window |
-
-## `PV-132` Hearing a key pressed in the Video Window
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video in the Video Window, paused, and a Current Segment |
-| When | Space is pressed in the Video Window |
-| Then | the media plays on as Space pressed in the editor plays it |
-
-## `PV-133` Filling the screen with the Video Window
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video in the Video Window |
-| When | the video is double-clicked |
-| Then | the Video Window fills its screen |
-
-## `PV-134` Leaving the full screen with Esc
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video in the Video Window, filling its screen |
-| When | Esc is pressed in the Video Window |
-| Then | the Video Window leaves the full screen |
-
-## `PV-135` Keeping the video in the Video Window for the next Resource
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video in the Video Window |
-| When | another Resource with a video is chosen |
-| Then | its video is shown in the Video Window |
-
-## `PV-136` Keeping the Video Window for media without a picture
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a video in the Video Window |
-| When | another Resource is chosen whose media has no picture |
-| Then | the Video Window stays open with the Dummy Video |
-
-## `PV-137` Opening no window but the Video Window from the webview
-
-| Step | Statement |
-| --- | --- |
-| Given | the main window |
-| When | its page asks to open `https://example.com` in a new window |
-| Then | no window opens |
-
-## `PV-138` Opening one Video Window at a time
-
-| Step | Statement |
-| --- | --- |
-| Given | an open Video Window |
-| When | the main window's page asks for a blank window |
-| Then | no second window opens |
-
 ## `PV-017` Drawing the Waveform of the Current Resource's media
 
 | Step | Statement |
@@ -396,24 +160,6 @@ A window takes the scale of the screen it is made on, so the Video Window is mad
 | When | a Waveform taken from `ep01.mp4` arrives |
 | Then | the timeline does not draw it |
 
-## `PV-198` Drawing a flat Waveform for a Resource without media
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource of a subtitle alone whose last Segment ends at 10 s |
-| When | the Project is shown |
-| Then | the timeline draws a flat Waveform 70 s long, taking none from Rust |
-
-## `PV-152` Drawing the Waveform in the colours of the theme turned to
-
-A canvas paints colours once and cannot follow the theme by itself, so the Waveform is painted again when the system turns light or dark, as the rest of the page follows it.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Waveform drawn in the light theme's colours |
-| When | the system turns dark |
-| Then | the Waveform is drawn in the dark theme's colours |
-
 ## `PV-019` Marking each Segment on the timeline
 
 | Step | Statement |
@@ -429,24 +175,6 @@ A canvas paints colours once and cannot follow the theme by itself, so the Wavef
 | Given | a timeline zoomed in on a Current Resource with two Segments |
 | When | a third Segment is added |
 | Then | the timeline marks three Segments at the same zoom |
-
-## `PV-144` Keeping the regions already drawn when a Segment is split
-
-Each region drawn anew costs a layout, so a change moves the regions there are and adds only those it lacks.
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline marking a Current Resource's two Segments |
-| When | the first Segment is split |
-| Then | the two regions drawn before stay on the timeline, and one region is added |
-
-## `PV-145` Dropping a drag when the Segments change under it
-
-| Step | Statement |
-| --- | --- |
-| Given | the Current Segment's region being dragged |
-| When | the Project changes its Segments |
-| Then | the dragged region is drawn anew at its Segment's times |
 
 ## `PV-021` Zooming the timeline in
 
@@ -480,6 +208,7 @@ Each region drawn anew costs a layout, so a change moves the regions there are a
 | When | the Project is shown |
 | Then | the first and third regions share one colour and the second has another |
 
+
 ## `PV-025` Making a Segment current from the editor
 
 | Step | Statement |
@@ -503,50 +232,6 @@ Each region drawn anew costs a layout, so a change moves the regions there are a
 | Given | a Current Resource with a media file and two Segments |
 | When | the second Segment's row is clicked |
 | Then | its region is coloured more strongly than the other |
-
-
-## `PV-107` Laying overlapping Segments in Lanes on the timeline
-
-Regions that overlap would hide one another, so each Segment lies in the lowest Lane free at its start, the Lanes sharing the waveform's height, and each region can be clicked and dragged on its own. The Lanes stack upward as the Segments over the video do.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a media file and Segments from 0 to 2 s and from 1 to 1.5 s |
-| When | the Project is shown |
-| Then | the first region fills the lower half of the waveform and the second the upper half |
-
-## `PV-108` Keeping a Segment that overlaps none at full height
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a media file and Segments from 0 to 2 s, from 1 to 1.5 s and from 3 to 4 s |
-| When | the Project is shown |
-| Then | the third region fills the waveform's full height |
-
-## `PV-109` Making a Segment in an upper Lane current from the timeline
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a media file and Segments from 0 to 2 s and from 1 to 1.5 s, the first current |
-| When | the second Segment's region is clicked |
-| Then | that Segment's row alone is marked as the Current Segment |
-
-## `PV-110` Drawing the Current Segment's region above the others
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a media file and two Segments |
-| When | the first Segment's row is clicked |
-| Then | its region is drawn above the second's |
-
-## `PV-146` Giving back a region's own look once another Segment is current
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a media file and two Segments, the first current |
-| When | the second Segment's row is clicked |
-| Then | the first region takes its own colour again, no longer drawn above the others |
-
 ## `PV-028` Playing the Current Segment alone with Space
 
 | Step | Statement |
@@ -579,24 +264,6 @@ Regions that overlap would hide one another, so each Segment lies in the lowest 
 | When | Space is pressed in a Segment's text field |
 | Then | the media stays paused |
 
-## `PV-125` Playing with Space after a button is clicked
-
-A button clicked keeps the focus, yet Space pressed afterward is meant for the media, not to press the button again.
-
-| Step | Statement |
-| --- | --- |
-| Given | a paused Current Resource with a Current Segment, with playing alone turned off |
-| When | the mute button is clicked and Space is pressed |
-| Then | the media plays and playing alone stays on |
-
-## `PV-126` Leaving Space to a button reached by keyboard
-
-| Step | Statement |
-| --- | --- |
-| Given | a paused Current Resource with a Current Segment |
-| When | the mute button is reached by keyboard and Space is pressed |
-| Then | the media stays paused |
-
 ## `PV-032` Marking the Segment being played in the editor
 
 | Step | Statement |
@@ -604,14 +271,6 @@ A button clicked keeps the focus, yet Space pressed afterward is meant for the m
 | Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing |
 | When | the media plays to 1.5 s |
 | Then | the second Segment's row alone is marked as playing |
-
-## `PV-111` Marking every Segment being played in the editor
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 2 s and from 1 to 1.5 s, its media playing |
-| When | the media plays to 1.2 s |
-| Then | both rows are marked as playing |
 
 ## `PV-033` Zooming the timeline with Ctrl and the wheel
 
@@ -639,38 +298,6 @@ Space plays and stops the media and the timeline still selects and retimes Segme
 | When | another Resource with a media file becomes current |
 | Then | its player and controls stay folded |
 
-## `PV-189` Folding the timeline away
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a media file, its Preview shown |
-| When | the timeline's fold button is pressed |
-| Then | the timeline is hidden and the player and its controls stay |
-
-## `PV-190` Keeping the timeline folded for the next Resource
-
-| Step | Statement |
-| --- | --- |
-| Given | the timeline folded away |
-| When | another Resource with a media file becomes current |
-| Then | its timeline stays folded |
-
-## `PV-191` Taking no room with both parts folded
-
-| Step | Statement |
-| --- | --- |
-| Given | the player and its controls folded away |
-| When | the timeline's fold button is pressed |
-| Then | the Preview takes no room above the Segment list |
-
-## `PV-192` Playing with Space while the player is folded
-
-| Step | Statement |
-| --- | --- |
-| Given | the player and its controls folded away, the media paused |
-| When | Space is pressed outside a text field |
-| Then | the media plays |
-
 ## `PV-036` Showing the Current Segment beside the video
 
 | Step | Statement |
@@ -678,32 +305,6 @@ Space plays and stops the media and the timeline still selects and retimes Segme
 | Given | a Current Resource with a media file and two Segments |
 | When | the second Segment's row is clicked |
 | Then | the card beside the video shows #2 with its times, text and translation |
-
-## `PV-213` Showing the Current Segment's length beside the video
-
-How long a Segment runs is what timing it checks against, so the card says so beside its times.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a media file, its second Segment from 1 to 4.2 s |
-| When | the second Segment's row is clicked |
-| Then | the card beside the video shows `3.200s` |
-
-## `PV-097` Naming the Current Segment's Speaker beside the video
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with a media file and two Segments, the second said by `小明` |
-| When | the second Segment's row is clicked |
-| Then | the card beside the video names `小明` |
-
-## `PV-098` Naming no one beside the video for a Segment without a Speaker
-
-| Step | Statement |
-| --- | --- |
-| Given | the second Segment current, said by `小明` |
-| When | the first Segment's row, said by no one, is clicked |
-| Then | the card beside the video names no Speaker |
 
 ## `PV-037` Following an edit of the Current Segment beside the video
 
@@ -744,142 +345,12 @@ A paused media moves to another Segment chosen, to be heard next: to its start, 
 
 Playing alone keeps to the Segment chosen, so the media never plays past a Current Segment it has left behind. Staying in the Current Segment, or a Segment Change moving it, plays on.
 
-## `PV-203` Playing on as a text is chosen where the Preferences say so
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a text to play on |
-| When | the second Segment's text is clicked |
-| Then | the media plays on from 0.5 s |
-
-## `PV-204` Playing another Segment from its start where the Preferences say so
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing the row to move to the start without pausing |
-| When | the second Segment's row is clicked |
-| Then | the media plays on from 1 s |
-
-## `PV-205` Pausing where the media is where the Preferences say so
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a Speaker to pause without moving |
-| When | the second Segment's Speaker menu is opened |
-| Then | the media pauses at 0.5 s |
-
-## `PV-206` Pausing where a region is clicked where the Preferences say so
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a region to pause without moving to the start |
-| When | the second Segment's region is clicked at 1.5 s |
-| Then | the media pauses at 1.5 s |
-
-## `PV-207` Playing alone from the start whatever the Preferences say
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on, and the Preferences choosing the row to pause |
-| When | the second Segment's row is clicked |
-| Then | the media plays on from 1 s |
-
-## `PV-075` Pausing at the start of a Segment whose row is chosen
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s |
-| When | the second Segment's row is clicked |
-| Then | the media pauses at 1 s |
-
-## `PV-076` Moving the paused media to a Segment whose row is chosen
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media paused at 0.5 s |
-| When | the second Segment's row is clicked |
-| Then | the media stays paused at 1 s |
-
-## `PV-077` Playing on from where another Segment's region is clicked
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s |
-| When | the second Segment's region is clicked at 1.5 s |
-| Then | the media plays on from 1.5 s |
-
-## `PV-147` Playing on as another Segment's Speaker menu is opened
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s |
-| When | the second Segment's Speaker menu is opened |
-| Then | the second Segment is current and the media plays on from 0.5 s |
-
-## `PV-148` Playing on as Enter moves to the next Segment's text
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the first Segment's text entered |
-| When | Enter is pressed |
-| Then | the second Segment is current and the media plays on from 0.5 s |
-
-## `PV-149` Playing another Segment from its start when its Speaker menu is opened while playing alone
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on |
-| When | the second Segment's Speaker menu is opened |
-| Then | the media plays on from 1 s |
-
-## `PV-150` Playing another Segment from its start when its row is chosen while playing alone
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on |
-| When | the second Segment's row is clicked |
-| Then | the media plays on from 1 s |
-
-## `PV-151` Playing another Segment from its start when its region is clicked while playing alone
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on |
-| When | the second Segment's region is clicked at 1.5 s |
-| Then | the media plays on from 1 s |
-
-## `PV-078` Playing on when the Current Segment's row is clicked
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose second Segment is current, its media playing |
-| When | the second Segment's row is clicked |
-| Then | the media keeps playing |
-
-## `PV-079` Playing on when a Segment Change moves the Current Segment
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose first Segment is current, its media playing |
-| When | a Segment is inserted after it from its menu |
-| Then | the media keeps playing |
-
 ## `PV-040` Zooming the timeline with Alt and the wheel
 
 | Step | Statement |
 | --- | --- |
 | Given | a timeline at 100 pixels a second |
 | When | the wheel turns up with Alt held, as far as zooming by two takes |
-| Then | the timeline shows 200 pixels a second |
-
-## `PV-188` Zooming the timeline with ⌘ and the wheel
-
-The shortcut list names ⌘ on macOS where it names Ctrl elsewhere; the wheel itself zooms under Ctrl, Alt or ⌘ on every platform, since a trackpad pinch reports itself as Ctrl wherever it is made.
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second |
-| When | the wheel turns up with ⌘ held, as far as zooming by two takes |
 | Then | the timeline shows 200 pixels a second |
 
 ## `PV-041` Showing how far the timeline is zoomed
@@ -904,15 +375,6 @@ The shortcut list names ⌘ on macOS where it names Ctrl elsewhere; the wheel it
 | --- | --- |
 | Given | a Current Resource with the Segment `今天` from 0 to 1 s, translated `Today` in the translation shown |
 | When | the translation is chosen over the video and the media plays to 0.5 s |
-| Then | `Today` is shown over the video |
-
-## `PV-211` Changing the language over the video while a Segment is shown
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with the Segment `今天` from 0 to 1 s, translated `Today` in the translation shown |
-| Given | the media at 0.5 s, `今天` shown over the video |
-| When | the translation is chosen over the video |
 | Then | `Today` is shown over the video |
 
 ## `PV-044` Showing both languages over the video in the Bilingual Order
@@ -962,6 +424,159 @@ The shortcut list names ⌘ on macOS where it names Ctrl elsewhere; the wheel it
 | Given | a Current Resource with a media file |
 | When | its media loads without a picture |
 | Then | the choice of what is shown over the video is offered |
+
+## `PV-050` Dragging the Current Segment's end on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s |
+| When | its end is dragged 20 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.7 s |
+
+## `PV-051` Moving the Current Segment on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0.5 to 1 s |
+| When | it is dragged 20 pixels later |
+| Then | the Project is asked to change its times to 0.7 to 1.2 s |
+
+## `PV-052` Leaving every other Segment in place on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline whose Current Segment is the first of two |
+| When | the second's end is dragged 20 pixels later |
+| Then | nothing is asked of the Project |
+
+## `PV-053` Overlapping the next Segment with a dragged end
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| When | its end is dragged 50 pixels later |
+| Then | the Project is asked to change its times to 0 to 1 s |
+
+## `PV-054` Snapping a dragged edge to the next Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| Given | snapping turned on |
+| When | its end is dragged 5 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.6 s |
+
+## `PV-055` Snapping a dragged edge to where the media is
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the media at 0.8 s |
+| Given | snapping turned on |
+| When | its end is dragged 25 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.8 s |
+
+## `PV-056` Not snapping while Shift is held
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| Given | snapping turned on |
+| When | its end is dragged 5 pixels later with Shift held |
+| Then | the Project is asked to change its times to 0 to 0.55 s |
+
+## `PV-057` Turning snapping off on the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| Given | snapping turned off |
+| When | its end is dragged 5 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.55 s |
+
+## `PV-058` Taking a drag back with Esc
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline whose Current Segment's end is dragged 20 pixels later |
+| Given | Esc pressed before it is let go |
+| When | it is let go |
+| Then | nothing is asked of the Project |
+
+
+## `PV-059` Writing nothing for a drag that ends where it began
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline whose Current Segment's end is dragged 20 pixels later and back |
+| When | it is let go |
+| Then | nothing is asked of the Project |
+
+## `PV-060` Moving the edge two Segments share with Alt held
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.5 to 1 s |
+| When | its end is dragged 20 pixels later with Alt held |
+| Then | the Project is asked to move the edge after the first to 0.7 s |
+
+## `PV-061` Holding the timeline while a Mode writes
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline whose Current Resource is being transcribed, its Current Segment from 0 to 0.5 s |
+| When | its end is dragged 20 pixels later |
+| Then | nothing is asked of the Project |
+
+## `PV-062` Inserting a Segment drawn on the timeline
+
+Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as Subtitle Edit does. A press on a region chooses or drags its Segment, so a range over Segments is drawn with Ctrl held, or ⌘ on macOS, where Ctrl and a click open the context menu. A range drawn roughly is then set right before it is kept: its edges are dragged, or the whole of it, and land as a dragged Segment does.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
+| When | Enter is pressed |
+| Then | the Project is asked to insert a Segment from 1 to 1.5 s |
+
+## `PV-063` Dropping a drawn range with Esc
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline with one Segment and a range drawn where no Segment is |
+| When | Esc is pressed |
+| Then | the timeline marks only the Segment |
+
+## `PV-064` Drawing a range over the next Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with Segments from 0 to 0.5 s and from 1 to 1.5 s |
+| When | a range is drawn from 0.7 to 1.2 s |
+| Then | the range runs from 0.7 to 1.2 s |
+
+## `PV-065` Setting the Current Segment's start where the media is with F11
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s, on Windows or Linux |
+| When | F11 is pressed outside a field |
+| Then | the Project is asked to change its times to 0.2 to 0.5 s |
+
+## `PV-066` Setting the Current Segment's end where the media is with F12
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0 to 0.5 s, the media at 0.8 s |
+| When | F12 is pressed outside a field |
+| Then | the Project is asked to change its times to 0 to 0.8 s |
+
+## `PV-067` Overlapping the next Segment with a time set with a key
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0 to 0.5 s, the next from 0.6 s, the media at 0.8 s |
+| When | F12 is pressed outside a field |
+| Then | the Project is asked to change its times to 0 to 0.8 s |
+
 ## `PV-068` Showing what is over the video on a translucent black by default
 
 A caption drawn with a shadow alone is lost on a bright picture, so it sits on a backdrop unless the user takes it away.
@@ -988,39 +603,790 @@ A caption drawn with a shadow alone is lost on a bright picture, so it sits on a
 | When | another Resource with a media file becomes current |
 | Then | what is shown over the video still has no backdrop |
 
-## `PV-193` Showing the Dummy Video in black by default
-
-Subtitles are most often watched over a dark picture, so the Dummy Video is black until white is chosen; a bright one shows whether a caption holds over a light scene.
+## `PV-071` Showing the time under the pointer on the timeline
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource whose media has no picture, and no colour ever chosen for the Dummy Video on this machine |
-| When | its media loads |
-| Then | the Dummy Video is black |
+| Given | a timeline at 100 pixels a second |
+| When | the pointer rests 150 pixels from its start |
+| Then | the time under it reads `00:00:01.500` |
 
-## `PV-194` Choosing white for the Dummy Video
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose media has no picture |
-| When | white is chosen for the Dummy Video |
-| Then | the Dummy Video is white |
-
-## `PV-195` Keeping the Dummy Video's colour for the next Resource
+## `PV-072` Showing where a dragged Segment lands
 
 | Step | Statement |
 | --- | --- |
-| Given | white chosen for the Dummy Video |
-| When | another Resource whose media has no picture becomes current |
-| Then | its Dummy Video is white |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
+| Given | snapping turned on |
+| When | its end is dragged 5 pixels later and not yet let go |
+| Then | the times read `00:00:00.000 → 00:00:00.600 (0.600s)` |
 
-## `PV-196` Leaving the Dummy Video's colour unchosen for media with a picture
+## `PV-073` Showing the times of a range as it is drawn
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource with a media file |
-| When | its media loads with a picture |
-| Then | no colour can be chosen for the Dummy Video |
+| Given | a timeline at 100 pixels a second |
+| When | a range is drawn from 1 to 1.5 s and not yet let go |
+| Then | the times read `00:00:01.000 → 00:00:01.500 (0.500s)` |
+
+## `PV-074` Showing the times of a drawn range until it is dropped
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline with a range drawn from 1 to 1.5 s |
+| When | Esc is pressed |
+| Then | no times are shown |
+
+### Following playback in the editor
+
+The editor scrolls to the row being played, the one started last while Segments overlap, unless the user turns that off to look through other Segments, or to keep correcting the Current Segment while the media plays on past it, as Subtitle Edit's "Select current subtitle while playing" can be. Only the scrolling stops; the row is still marked. While it follows, the list goes where the media is: only another Segment becoming current brings its row back, not the Cursor moving or typing within it.
+
+## `PV-075` Pausing at the start of a Segment whose row is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s |
+| When | the second Segment's row is clicked |
+| Then | the media pauses at 1 s |
+
+## `PV-076` Moving the paused media to a Segment whose row is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media paused at 0.5 s |
+| When | the second Segment's row is clicked |
+| Then | the media stays paused at 1 s |
+
+## `PV-077` Playing on from where another Segment's region is clicked
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s |
+| When | the second Segment's region is clicked at 1.5 s |
+| Then | the media plays on from 1.5 s |
+
+## `PV-078` Playing on when the Current Segment's row is clicked
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose second Segment is current, its media playing |
+| When | the second Segment's row is clicked |
+| Then | the media keeps playing |
+
+## `PV-079` Playing on when a Segment Change moves the Current Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose first Segment is current, its media playing |
+| When | a Segment is inserted after it from its menu |
+| Then | the media keeps playing |
+
+## `PV-080` Bringing the row being played into view
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing, and no choice about following playback ever made on this machine |
+| When | the media plays to 1.5 s |
+| Then | the second Segment's row is scrolled into view |
+
+## `PV-081` Leaving the editor where it is while not following playback
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing, and following playback turned off |
+| When | the media plays to 1.5 s |
+| Then | the second Segment's row alone is marked as playing, and no row is scrolled into view |
+
+## `PV-082` Turning following playback off with Ctrl+L while typing
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media is playing, with the Cursor in the Current Segment's text field |
+| When | Ctrl+L is pressed |
+| Then | following playback is turned off, and the field keeps the focus |
+
+## `PV-083` Bringing the row being played into view as following playback is turned on
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment's row marked as playing, with following playback turned off |
+| When | following playback is turned on |
+| Then | the second Segment's row is scrolled into view |
+
+## `PV-084` Keeping following playback off for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | following playback turned off |
+| When | another Resource with a media file becomes current |
+| Then | following playback stays off |
+
+## `PV-085` Playing on from the Current Segment with Space
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, and no choice about playing alone ever made on this machine |
+| When | the second Segment's row is clicked and Space is pressed outside a field or a control reached by keyboard |
+| Then | the media plays from 1 s, and plays on at 2 s |
+
+## `PV-086` Playing on from where the media paused
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Current Segment runs from 1 to 2 s, the media paused at 1.5 s, with playing alone turned off |
+| When | Space is pressed outside a field or a control reached by keyboard |
+| Then | the media plays from 1.5 s |
+
+## `PV-087` Keeping playing alone on for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | playing alone turned on |
+| When | another Resource with a media file becomes current |
+| Then | playing alone stays on |
+
+## `PV-088` Showing the Segment over the video as soon as the media reaches it
+
+A player reports its time only a few times a second, so while the media plays what is shown over the video follows each frame drawn, and a caption comes with its words rather than up to a quarter second after.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` from 0 to 1 s and `今天` from 1 to 2 s, its media playing |
+| When | the next frame is drawn at 1.05 s, before the player reports its time |
+| Then | `今天` is shown over the video |
+
+## `PV-089` Setting the Current Segment's start with F9 on macOS
+
+macOS takes F11 to show the desktop, so the start is set with F9 there, as Subtitle Edit binds it on macOS; F12 sets the end everywhere.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s, on macOS |
+| When | F9 is pressed outside a field |
+| Then | the Project is asked to change its times to 0.2 to 0.5 s |
+
+## `PV-090` Leaving F11 to macOS
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s, on macOS |
+| When | F11 is pressed outside a field |
+| Then | nothing is asked of the Project and the key is left to the system |
+
+## `PV-091` Naming the keys that set times for the platform
+
+| Step | Statement |
+| --- | --- |
+| Given | the preview on macOS |
+| When | it is shown |
+| Then | its hint names F9 and F12 as the keys that set the start and the end |
+
+### Reading times on the timeline
+
+A time typed into a Segment is found on the waveform first, so the timeline tells the time under the pointer in the form the field takes, as Aegisub does; and while a Segment is dragged or a range drawn, the times it will be written with and how long it runs, as Subtitle Edit shows a drawn range's length.
+
+## `PV-092` Showing the Speaker over the video by default
+
+A cue is saved with its Speaker's name before the dialogue, so what is over the video names who says it too.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明`, and the Speaker over the video never turned off on this machine |
+| When | the media plays to 0.5 s |
+| Then | `小明: 今天` is shown over the video |
+
+## `PV-093` Naming the Speaker in the translation over the video as the Translation Glossary does
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明`, translated `Today` in the translation shown, where the Translation Glossary names `小明` as `Xiao Ming` |
+| When | the translation is chosen over the video and the media plays to 0.5 s |
+| Then | `Xiao Ming: Today` is shown over the video |
+
+## `PV-094` Naming the Speaker in both languages over the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明`, translated `Today` in the translation shown, where the Translation Glossary names `小明` as `Xiao Ming` |
+| When | both languages are chosen over the video and the media plays to 0.5 s |
+| Then | `小明: 今天` is shown over the video above `Xiao Ming: Today` |
+
+## `PV-095` Turning the Speaker over the video off
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明` |
+| When | the Speaker over the video is turned off and the media plays to 0.5 s |
+| Then | `今天` alone is shown over the video |
+
+## `PV-096` Keeping the Speaker over the video off for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | the Speaker over the video turned off |
+| When | another Resource with a media file becomes current |
+| Then | the Speaker over the video stays off |
+
+### Retiming on the timeline
+
+Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragged and written once let go, snapping to what is near only while Shift is held, unless snapping is turned on, as in Aegisub. Only the Current Segment moves, so a click on a narrow region still selects it. A Segment may be dragged over its neighbours, as someone cutting in speaks over them, but its start stays between their starts, so the Segments keep the order they start in.
+
+## `PV-097` Naming the Current Segment's Speaker beside the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments, the second said by `小明` |
+| When | the second Segment's row is clicked |
+| Then | the card beside the video names `小明` |
+
+## `PV-098` Naming no one beside the video for a Segment without a Speaker
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment current, said by `小明` |
+| When | the first Segment's row, said by no one, is clicked |
+| Then | the card beside the video names no Speaker |
+
+## `PV-099` Not snapping unless it is chosen
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s, and no choice about snapping ever made on this machine |
+| When | its end is dragged 5 pixels later |
+| Then | the Project is asked to change its times to 0 to 0.55 s |
+
+## `PV-100` Snapping while Shift is held
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s, and no choice about snapping ever made on this machine |
+| When | its end is dragged 5 pixels later with Shift held |
+| Then | the Project is asked to change its times to 0 to 0.6 s |
+
+## `PV-101` Keeping snapping on for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | snapping turned on |
+| When | another Resource with a media file becomes current |
+| Then | snapping stays on |
+
+## `PV-102` Keeping a drawn range when Esc is pressed in a text field
+
+Esc in a text field gives up what was typed there, which asks nothing of the timeline.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline with one Segment, a range drawn where no Segment is, and focus in a text field |
+| When | Esc is pressed |
+| Then | the timeline marks the Segment and the range |
+
+## `PV-103` Showing a Segment that overlaps another above it
+
+Someone cutting in speaks over the Segment already shown, so every Segment being played is shown, each one above the Segments that started before it, as players stack overlapping cues.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` from 0 to 2 s and `對啊` from 1 to 1.5 s |
+| When | it plays to 1.2 s |
+| Then | `對啊` is shown over the video above `大家好` |
+
+## `PV-104` Keeping a Segment over the video once the one over it ends
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` from 0 to 2 s and `對啊` from 1 to 1.5 s |
+| When | it plays to 1.8 s |
+| Then | `大家好` alone is shown over the video |
+
+## `PV-105` Stacking Segments that start together in their order
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` and `對啊`, both from 0 to 1 s |
+| When | it plays to 0.5 s |
+| Then | `對啊` is shown over the video above `大家好` |
+
+## `PV-106` Naming the Speaker of each overlapping Segment over the video
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments `大家好` from 0 to 2 s said by `小明` and `對啊` from 1 to 1.5 s said by `小華` |
+| When | the media plays to 1.2 s |
+| Then | `小華: 對啊` is shown over the video above `小明: 大家好` |
+
+## `PV-107` Laying overlapping Segments in Lanes on the timeline
+
+Regions that overlap would hide one another, so each Segment lies in the lowest Lane free at its start, the Lanes sharing the waveform's height, and each region can be clicked and dragged on its own. The Lanes stack upward as the Segments over the video do.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and Segments from 0 to 2 s and from 1 to 1.5 s |
+| When | the Project is shown |
+| Then | the first region fills the lower half of the waveform and the second the upper half |
+
+## `PV-108` Keeping a Segment that overlaps none at full height
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and Segments from 0 to 2 s, from 1 to 1.5 s and from 3 to 4 s |
+| When | the Project is shown |
+| Then | the third region fills the waveform's full height |
+
+## `PV-109` Making a Segment in an upper Lane current from the timeline
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and Segments from 0 to 2 s and from 1 to 1.5 s, the first current |
+| When | the second Segment's region is clicked |
+| Then | that Segment's row alone is marked as the Current Segment |
+
+## `PV-110` Drawing the Current Segment's region above the others
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments |
+| When | the first Segment's row is clicked |
+| Then | its region is drawn above the second's |
+
+## `PV-111` Marking every Segment being played in the editor
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 2 s and from 1 to 1.5 s, its media playing |
+| When | the media plays to 1.2 s |
+| Then | both rows are marked as playing |
+
+## `PV-112` Stopping a dragged start at the previous Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 1 to 1.5 s, the previous from 0.5 to 1 s |
+| When | its start is dragged 80 pixels earlier |
+| Then | the Project is asked to change its times to 0.5 to 1.5 s |
+## `PV-113` Stopping a moved Segment at the next Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 to 1.2 s |
+| When | it is dragged 100 pixels later |
+| Then | the Project is asked to change its times to 0.6 to 1.1 s |
+
+## `PV-114` Laying a dragged Segment in a Lane as it overlaps the next
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 to 1.2 s |
+| When | its end is dragged 50 pixels later and not yet let go |
+| Then | the two regions lie in two Lanes |
+
+## `PV-115` Drawing a range over a Segment with Ctrl held
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s, not current, on Windows or Linux |
+| When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
+| Then | the range runs from 0.5 to 1 s and no Segment is made current |
+
+## `PV-116` Drawing a range over a Segment with ⌘ held on macOS
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s, not current, on macOS |
+| When | a range is drawn from 0.5 to 1 s on its region with ⌘ held |
+| Then | the range runs from 0.5 to 1 s and no Segment is made current |
+
+## `PV-117` Drawing a range over the Current Segment without moving it
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 2 s, on Windows or Linux |
+| When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
+| Then | the range runs from 0.5 to 1 s and nothing is asked of the Project |
+
+## `PV-118` Drawing no range over a Segment without the key
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s, not current |
+| When | the pointer is dragged from 0.5 to 1 s on its region |
+| Then | no range is drawn |
+
+## `PV-119` Keeping a start set with a key from before the previous Segment's start
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Segment from 0.6 to 1 s, the previous from 0.3 to 0.5 s, the media at 0.2 s, on Windows or Linux |
+| When | F11 is pressed outside a field |
+| Then | the Project is asked to change its times to 0.3 to 1 s |
+
+## `PV-120` Bringing the row of the Segment started last into view
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 2 s and from 1 to 1.5 s, its media playing, and following playback on |
+| When | the media plays to 1.2 s |
+| Then | the second Segment's row is scrolled into view |
+
+## `PV-121` Following playback while typing in the Current Segment
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing, following playback turned on, and the Cursor in the first Segment's text field |
+| When | the media plays to 1.5 s and a character is typed in the field |
+| Then | the second Segment's row is scrolled into view, and the first Segment's row is not scrolled back into view |
+
+### Playing the Current Segment alone
+
+Space plays on from where the media is, so a Segment chosen is heard with the ones after it, and Space pauses it again when a line needs correcting. Playing only the Current Segment from its start, stopping at its end, is turned on when one line is heard over and over. Where it stops is read from the choice and the Current Segment as the media plays, not fixed as it starts, so turning playing alone on or off, or retiming the Current Segment, takes effect on the media already playing.
+
+## `PV-122` Stopping at the Current Segment's end once playing alone is turned on while playing
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Current Segment runs from 1 to 2 s, its media playing at 1.5 s, with playing alone turned off |
+| When | playing alone is turned on and the media reaches 2 s |
+| Then | the media pauses |
+
+## `PV-123` Playing on once playing alone is turned off while playing
+
+| Step | Statement |
+| --- | --- |
+| Given | the Current Segment from 1 to 2 s playing after Space, with playing alone turned on |
+| When | playing alone is turned off and the media reaches 2 s |
+| Then | the media plays on |
+
+## `PV-124` Stopping at the Current Segment's new end while playing alone
+
+| Step | Statement |
+| --- | --- |
+| Given | the Current Segment from 1 to 2 s playing after Space, with playing alone turned on |
+| When | its end is changed to 3 s and the media reaches 2 s |
+| Then | the media plays on, and pauses as it reaches 3 s |
+
+## `PV-125` Playing with Space after a button is clicked
+
+A button clicked keeps the focus, yet Space pressed afterward is meant for the media, not to press the button again.
+
+| Step | Statement |
+| --- | --- |
+| Given | a paused Current Resource with a Current Segment, with playing alone turned off |
+| When | the mute button is clicked and Space is pressed |
+| Then | the media plays and playing alone stays on |
+
+## `PV-126` Leaving Space to a button reached by keyboard
+
+| Step | Statement |
+| --- | --- |
+| Given | a paused Current Resource with a Current Segment |
+| When | the mute button is reached by keyboard and Space is pressed |
+| Then | the media stays paused |
+
+## `PV-127` Moving the video into the Video Window
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video, playing at 3 s |
+| When | the Video Window button is pressed |
+| Then | the video plays on from 3 s in a window of its own |
+
+## `PV-128` Leaving only the controls above the timeline while the video is away
+
+Once the video has left, the Current Segment's card repeats the row being edited in the list, so the Preview keeps only its controls and gives the height to the editor.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video |
+| When | the Video Window button is pressed |
+| Then | the Preview shows its controls without the Current Segment's card |
+
+## `PV-129` Showing the Segment being played over the video in the Video Window
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video and a Segment `今天` from 0 to 1 s |
+| Given | the video in the Video Window |
+| When | the media plays to 0.5 s |
+| Then | `今天` is shown over the video in the Video Window |
+
+## `PV-130` Bringing the video back as the Video Window is closed
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window, playing at 3 s |
+| When | the Video Window is closed |
+| Then | the video plays on from 3 s in the Preview |
+
+## `PV-131` Closing the Video Window with its button
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window |
+| When | the Video Window button is pressed again |
+| Then | the Video Window closes with the video back in the Preview |
+
+## `PV-132` Hearing a key pressed in the Video Window
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window, paused, and a Current Segment |
+| When | Space is pressed in the Video Window |
+| Then | the media plays on as Space pressed in the editor plays it |
+
+## `PV-133` Filling the screen with the Video Window
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window |
+| When | the video is double-clicked |
+| Then | the Video Window fills its screen |
+
+## `PV-134` Leaving the full screen with Esc
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window, filling its screen |
+| When | Esc is pressed in the Video Window |
+| Then | the Video Window leaves the full screen |
+
+## `PV-135` Keeping the video in the Video Window for the next Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window |
+| When | another Resource with a video is chosen |
+| Then | its video is shown in the Video Window |
+
+## `PV-136` Keeping the Video Window for media without a picture
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window |
+| When | another Resource is chosen whose media has no picture |
+| Then | the Video Window stays open with the Dummy Video |
+
+## `PV-137` Opening no window but the Video Window from the webview
+
+| Step | Statement |
+| --- | --- |
+| Given | the main window |
+| When | its page asks to open `https://example.com` in a new window |
+| Then | no window opens |
+
+
+## `PV-138` Opening one Video Window at a time
+
+| Step | Statement |
+| --- | --- |
+| Given | an open Video Window |
+| When | the main window's page asks for a blank window |
+| Then | no second window opens |
+## `PV-139` Showing the Current Segment's card again as the video comes back
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window |
+| When | the Video Window button is pressed again |
+| Then | the Preview shows the Current Segment's card beside the video |
+
+## `PV-140` Inserting a Segment drawn over another with Enter
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s and a range drawn from 0.5 to 1 s on its region with Ctrl held |
+| When | Enter is pressed |
+| Then | the Project is asked to insert a Segment from 0.5 to 1 s |
+
+## `PV-141` Drawing one Waveform when the media comes back before the first arrives
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.mp4` current, its Waveform still being taken |
+| When | `ep02.mp4` and then `ep01.mp4` become current before it arrives |
+| Then | the timeline draws one Waveform, from the last request |
+
+## `PV-142` Staying quiet about a Waveform no longer asked for
+
+| Step | Statement |
+| --- | --- |
+| Given | `ep01.mp4` current, its Waveform still being taken |
+| When | a Resource without media becomes current and taking it fails |
+| Then | no Notification is shown |
+
+## `PV-143` Naming the step that failed to take a Waveform
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose media ffmpeg cannot read |
+| When | taking its Waveform fails |
+| Then | the Notification names the failed step in the Interface Language |
+
+## `PV-144` Keeping the regions already drawn when a Segment is split
+
+Each region drawn anew costs a layout, so a change moves the regions there are and adds only those it lacks.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline marking a Current Resource's two Segments |
+| When | the first Segment is split |
+| Then | the two regions drawn before stay on the timeline, and one region is added |
+
+## `PV-145` Dropping a drag when the Segments change under it
+
+| Step | Statement |
+| --- | --- |
+| Given | the Current Segment's region being dragged |
+| When | the Project changes its Segments |
+| Then | the dragged region is drawn anew at its Segment's times |
+
+## `PV-146` Giving back a region's own look once another Segment is current
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a media file and two Segments, the first current |
+| When | the second Segment's row is clicked |
+| Then | the first region takes its own colour again, no longer drawn above the others |
+
+## `PV-147` Playing on as another Segment's Speaker menu is opened
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s |
+| When | the second Segment's Speaker menu is opened |
+| Then | the second Segment is current and the media plays on from 0.5 s |
+
+## `PV-148` Playing on as Enter moves to the next Segment's text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the first Segment's text entered |
+| When | Enter is pressed |
+| Then | the second Segment is current and the media plays on from 0.5 s |
+
+## `PV-149` Playing another Segment from its start when its Speaker menu is opened while playing alone
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on |
+| When | the second Segment's Speaker menu is opened |
+| Then | the media plays on from 1 s |
+
+## `PV-150` Playing another Segment from its start when its row is chosen while playing alone
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on |
+| When | the second Segment's row is clicked |
+| Then | the media plays on from 1 s |
+
+## `PV-151` Playing another Segment from its start when its region is clicked while playing alone
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on |
+| When | the second Segment's region is clicked at 1.5 s |
+| Then | the media plays on from 1 s |
+
+## `PV-152` Drawing the Waveform in the colours of the theme turned to
+
+A canvas paints colours once and cannot follow the theme by itself, so the Waveform is painted again when the system turns light or dark, as the rest of the page follows it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Waveform drawn in the light theme's colours |
+| When | the system turns dark |
+| Then | the Waveform is drawn in the dark theme's colours |
+
+## `PV-153` Stretching a drawn range by its end
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
+| When | its end is dragged 20 pixels later and Enter is pressed |
+| Then | the Project is asked to insert a Segment from 1 to 1.7 s |
+
+## `PV-154` Moving a drawn range
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
+| When | the range is dragged 30 pixels later and Enter is pressed |
+| Then | the Project is asked to insert a Segment from 1.3 to 1.8 s |
+
+## `PV-155` Snapping a dragged edge of a drawn range
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with one Segment from 1.8 to 2 s and a range drawn from 1 to 1.5 s, snapping turned on |
+| When | the range's end is dragged 27 pixels later and Enter is pressed |
+| Then | the Project is asked to insert a Segment from 1 to 1.8 s |
+
+## `PV-156` Showing the times of a drawn range as its edge is dragged
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s |
+| When | its end is dragged 20 pixels later and not yet let go |
+| Then | the times read `00:00:01.000 → 00:00:01.700 (0.700s)` |
+
+## `PV-157` Keeping a drawn range when it is clicked
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
+| When | the range is clicked and Enter is pressed |
+| Then | the Project is asked to insert a Segment from 1 to 1.5 s |
+
+## `PV-158` Stretching a range drawn over the Current Segment without moving it
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 2 s, with a range drawn from 0.5 to 1 s on its region |
+| When | the range's end is dragged 20 pixels later and Enter is pressed |
+| Then | the Project is asked only to insert a Segment from 0.5 to 1.2 s |
+
+## `PV-159` Drawing a range above the Current Segment's region
+
+The Current Segment's region is drawn above the others, so a range drawn over it is drawn higher still, where its edges can be taken.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 2 s |
+| When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
+| Then | the range is drawn above the Current Segment's region |
+
+## `PV-160` Moving the media 0.1 s earlier with ← once the waveform is clicked
+
+A time set where the media is lands only as closely as the media can be put, so after a click on the waveform the arrow keys move it a tenth of a second at a time. They are left to the fields and the lists elsewhere, where they move the caret or the choice.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second, clicked at 1 s |
+| When | ← is pressed |
+| Then | the media is at 0.9 s |
+
+## `PV-161` Moving the media 0.1 s later with → once the waveform is clicked
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second, clicked at 1 s |
+| When | → is pressed |
+| Then | the media is at 1.1 s |
+
+## `PV-162` Keeping the media within its length when it is moved with an arrow key
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline at 100 pixels a second, clicked at 0.05 s |
+| When | ← is pressed |
+| Then | the media is at 0 s |
+
+## `PV-163` Leaving the media where it is when an arrow key is pressed with no Waveform
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose Waveform could not be taken, its media at 1 s, and the timeline focused |
+| When | ← is pressed |
+| Then | the media stays at 1 s |
 
 ## `PV-164` Playing at full volume until a volume is chosen
 
@@ -1049,6 +1415,34 @@ The slider follows Aegisub's curve, the cube of its position against its middle,
 | Given | the volume set to 12.5% |
 | When | the Preview opens again |
 | Then | the volume slider sits at a quarter of its length and the media plays at 12.5% of its volume |
+
+## `PV-167` Opening the Video Window again before the last one is gone
+
+A window closes a moment after it is asked to, and a window opened by the same name meanwhile is the closing one, which would take the video with it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with a video in the Video Window |
+| When | the Video Window button is pressed twice, before the Video Window is gone |
+| Then | a new Video Window opens with the video once the last one is gone |
+
+## `PV-168` Opening the Video Window where it was last
+
+A window takes the scale of the screen it is made on, so the Video Window is made on the screen it was last on, at the size and place it had there.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Video Window last at 800×450 at (-1900, 100) on a screen from (-1920, 0) to (0, 1080) |
+| When | the Video Window opens |
+| Then | it opens at 800×450 at (-1900, 100) |
+
+## `PV-169` Opening the Video Window on the main screen when its last screen is gone
+
+| Step | Statement |
+| --- | --- |
+| Given | the Video Window last at (-1900, 100), where no screen is any more |
+| When | the Video Window opens |
+| Then | it opens where the system puts a new window |
 
 ## `PV-171` Playing up to eight times the media's volume
 
@@ -1162,209 +1556,197 @@ Where someone speaks and where a cut belongs has to show however quietly the med
 | When | the volume slider is moved to its end |
 | Then | the Waveform keeps its height |
 
-## `PV-092` Showing the Speaker over the video by default
+## `PV-187` Keeping a quiet Peak
 
-A cue is saved with its Speaker's name before the dialogue, so what is over the video names who says it too.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明`, and the Speaker over the video never turned off on this machine |
-| When | the media plays to 0.5 s |
-| Then | `小明: 今天` is shown over the video |
-
-## `PV-093` Naming the Speaker in the translation over the video as the Translation Glossary does
+A quiet recording is stretched to its loudest Peak, so a Peak holds enough of a sample to still show a murmur once stretched.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明`, translated `Today` in the translation shown, where the Translation Glossary names `小明` as `Xiao Ming` |
-| When | the translation is chosen over the video and the media plays to 0.5 s |
-| Then | `Xiao Ming: Today` is shown over the video |
+| Given | a Current Resource whose media is loud at 0.4% of full scale in its first 10 ms |
+| When | its Waveform is extracted |
+| Then | the answer holds the Peak 0.004 |
 
-## `PV-094` Naming the Speaker in both languages over the video
+## `PV-188` Zooming the timeline with ⌘ and the wheel
 
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明`, translated `Today` in the translation shown, where the Translation Glossary names `小明` as `Xiao Ming` |
-| When | both languages are chosen over the video and the media plays to 0.5 s |
-| Then | `小明: 今天` is shown over the video above `Xiao Ming: Today` |
-
-
-## `PV-106` Naming the Speaker of each overlapping Segment over the video
+The shortcut list names ⌘ on macOS where it names Ctrl elsewhere; the wheel itself zooms under Ctrl, Alt or ⌘ on every platform, since a trackpad pinch reports itself as Ctrl wherever it is made.
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource with Segments `大家好` from 0 to 2 s said by `小明` and `對啊` from 1 to 1.5 s said by `小華` |
-| When | the media plays to 1.2 s |
-| Then | `小華: 對啊` is shown over the video above `小明: 大家好` |
-## `PV-095` Turning the Speaker over the video off
+| Given | a timeline at 100 pixels a second |
+| When | the wheel turns up with ⌘ held, as far as zooming by two takes |
+| Then | the timeline shows 200 pixels a second |
+
+## `PV-189` Folding the timeline away
 
 | Step | Statement |
 | --- | --- |
-| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明` |
-| When | the Speaker over the video is turned off and the media plays to 0.5 s |
-| Then | `今天` alone is shown over the video |
+| Given | a Current Resource with a media file, its Preview shown |
+| When | the timeline's fold button is pressed |
+| Then | the timeline is hidden and the player and its controls stay |
 
-## `PV-212` Turning the Speaker off while a Segment is shown
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明` |
-| Given | the media at 0.5 s, `小明: 今天` shown over the video |
-| When | the Speaker over the video is turned off |
-| Then | `今天` alone is shown over the video |
-
-## `PV-096` Keeping the Speaker over the video off for the next Resource
+## `PV-190` Keeping the timeline folded for the next Resource
 
 | Step | Statement |
 | --- | --- |
-| Given | the Speaker over the video turned off |
+| Given | the timeline folded away |
 | When | another Resource with a media file becomes current |
-| Then | the Speaker over the video stays off |
+| Then | its timeline stays folded |
 
-### Retiming on the timeline
-
-Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragged and written once let go, snapping to what is near only while Shift is held, unless snapping is turned on, as in Aegisub. Only the Current Segment moves, so a click on a narrow region still selects it. A Segment may be dragged over its neighbours, as someone cutting in speaks over them, but its start stays between their starts, so the Segments keep the order they start in.
-
-## `PV-050` Dragging the Current Segment's end on the timeline
+## `PV-191` Taking no room with both parts folded
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s |
-| When | its end is dragged 20 pixels later |
-| Then | the Project is asked to change its times to 0 to 0.7 s |
+| Given | the player and its controls folded away |
+| When | the timeline's fold button is pressed |
+| Then | the Preview takes no room above the Segment list |
 
-## `PV-051` Moving the Current Segment on the timeline
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0.5 to 1 s |
-| When | it is dragged 20 pixels later |
-| Then | the Project is asked to change its times to 0.7 to 1.2 s |
-
-## `PV-052` Leaving every other Segment in place on the timeline
+## `PV-192` Playing with Space while the player is folded
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline whose Current Segment is the first of two |
-| When | the second's end is dragged 20 pixels later |
-| Then | nothing is asked of the Project |
+| Given | the player and its controls folded away, the media paused |
+| When | Space is pressed outside a text field |
+| Then | the media plays |
 
-## `PV-053` Overlapping the next Segment with a dragged end
+## `PV-193` Showing the Dummy Video in black by default
 
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
-| When | its end is dragged 50 pixels later |
-| Then | the Project is asked to change its times to 0 to 1 s |
-
-## `PV-112` Stopping a dragged start at the previous Segment's start
+Subtitles are most often watched over a dark picture, so the Dummy Video is black until white is chosen; a bright one shows whether a caption holds over a light scene.
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 1 to 1.5 s, the previous from 0.5 to 1 s |
-| When | its start is dragged 80 pixels earlier |
-| Then | the Project is asked to change its times to 0.5 to 1.5 s |
+| Given | a Current Resource whose media has no picture, and no colour ever chosen for the Dummy Video on this machine |
+| When | its media loads |
+| Then | the Dummy Video is black |
 
-## `PV-113` Stopping a moved Segment at the next Segment's start
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 to 1.2 s |
-| When | it is dragged 100 pixels later |
-| Then | the Project is asked to change its times to 0.6 to 1.1 s |
-
-## `PV-114` Laying a dragged Segment in a Lane as it overlaps the next
+## `PV-194` Choosing white for the Dummy Video
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 to 1.2 s |
-| When | its end is dragged 50 pixels later and not yet let go |
-| Then | the two regions lie in two Lanes |
+| Given | a Current Resource whose media has no picture |
+| When | white is chosen for the Dummy Video |
+| Then | the Dummy Video is white |
 
-## `PV-054` Snapping a dragged edge to the next Segment
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
-| Given | snapping turned on |
-| When | its end is dragged 5 pixels later |
-| Then | the Project is asked to change its times to 0 to 0.6 s |
-
-## `PV-055` Snapping a dragged edge to where the media is
+## `PV-195` Keeping the Dummy Video's colour for the next Resource
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the media at 0.8 s |
-| Given | snapping turned on |
-| When | its end is dragged 25 pixels later |
-| Then | the Project is asked to change its times to 0 to 0.8 s |
+| Given | white chosen for the Dummy Video |
+| When | another Resource whose media has no picture becomes current |
+| Then | its Dummy Video is white |
 
-## `PV-056` Not snapping while Shift is held
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
-| Given | snapping turned on |
-| When | its end is dragged 5 pixels later with Shift held |
-| Then | the Project is asked to change its times to 0 to 0.55 s |
-
-## `PV-057` Turning snapping off on the timeline
+## `PV-196` Leaving the Dummy Video's colour unchosen for media with a picture
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
-| Given | snapping turned off |
-| When | its end is dragged 5 pixels later |
-| Then | the Project is asked to change its times to 0 to 0.55 s |
+| Given | a Current Resource with a media file |
+| When | its media loads with a picture |
+| Then | no colour can be chosen for the Dummy Video |
 
-## `PV-099` Not snapping unless it is chosen
+## `PV-197` Playing silence a minute past the last Segment for a Resource without media
 
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s, and no choice about snapping ever made on this machine |
-| When | its end is dragged 5 pixels later |
-| Then | the Project is asked to change its times to 0 to 0.55 s |
-
-## `PV-100` Snapping while Shift is held
+The silence runs a minute past the last Segment, so that Segment can still be dragged later and a new one drawn after it.
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s, and no choice about snapping ever made on this machine |
-| When | its end is dragged 5 pixels later with Shift held |
-| Then | the Project is asked to change its times to 0 to 0.6 s |
+| Given | a Current Resource of a subtitle alone whose last Segment ends at 10 s |
+| When | the Project is shown |
+| Then | the player reads a WAV of silence lasting 70 s |
 
-## `PV-101` Keeping snapping on for the next Resource
-
-| Step | Statement |
-| --- | --- |
-| Given | snapping turned on |
-| When | another Resource with a media file becomes current |
-| Then | snapping stays on |
-
-## `PV-058` Taking a drag back with Esc
+## `PV-198` Drawing a flat Waveform for a Resource without media
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline whose Current Segment's end is dragged 20 pixels later |
-| Given | Esc pressed before it is let go |
-| When | it is let go |
-| Then | nothing is asked of the Project |
+| Given | a Current Resource of a subtitle alone whose last Segment ends at 10 s |
+| When | the Project is shown |
+| Then | the timeline draws a flat Waveform 70 s long, taking none from Rust |
 
-## `PV-059` Writing nothing for a drag that ends where it began
+## `PV-199` Lengthening the silence once a Segment reaches its end
 
-| Step | Statement |
-| --- | --- |
-| Given | a timeline whose Current Segment's end is dragged 20 pixels later and back |
-| When | it is let go |
-| Then | nothing is asked of the Project |
-
-## `PV-060` Moving the edge two Segments share with Alt held
+The player cannot go past the end of what it reads, so a Segment dragged or typed to the end of the silence gets another minute after it.
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.5 to 1 s |
-| When | its end is dragged 20 pixels later with Alt held |
-| Then | the Project is asked to move the edge after the first to 0.7 s |
+| Given | a Current Resource of a subtitle alone playing silence lasting 70 s |
+| When | a Segment's end is moved to 70 s |
+| Then | the player reads a WAV of silence lasting 130 s |
+
+
+## `PV-200` Staying at the same time as the silence lengthens
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone, its silence at 5 s |
+| When | the silence lengthens |
+| Then | the player is still at 5 s |
+## `PV-201` Keeping the silence while the Segments stay within it
+
+Making the silence anew reloads the player and the timeline, so an edit that leaves every Segment inside it keeps the one it has.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone playing silence lasting 70 s |
+| When | a Segment's end is moved to 30 s |
+| Then | the player keeps reading the same silence |
+
+## `PV-202` Keeping the timeline where it was scrolled as the silence lengthens
+
+The silence lengthens while a Segment is dragged at the end of the timeline, so the view stays there to drag on.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of a subtitle alone, its timeline scrolled to 50 s |
+| When | the silence lengthens |
+| Then | the timeline is still scrolled to 50 s |
+
+## `PV-203` Playing on as a text is chosen where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a text to play on |
+| When | the second Segment's text is clicked |
+| Then | the media plays on from 0.5 s |
+
+## `PV-204` Playing another Segment from its start where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing the row to move to the start without pausing |
+| When | the second Segment's row is clicked |
+| Then | the media plays on from 1 s |
+
+## `PV-205` Pausing where the media is where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a Speaker to pause without moving |
+| When | the second Segment's Speaker menu is opened |
+| Then | the media pauses at 0.5 s |
+
+## `PV-206` Pausing where a region is clicked where the Preferences say so
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing at 0.5 s, and the Preferences choosing a region to pause without moving to the start |
+| When | the second Segment's region is clicked at 1.5 s |
+| Then | the media pauses at 1.5 s |
+
+## `PV-207` Playing alone from the start whatever the Preferences say
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its first Segment current and playing at 0.5 s with playing alone turned on, and the Preferences choosing the row to pause |
+| When | the second Segment's row is clicked |
+| Then | the media plays on from 1 s |
+
+## `PV-208` Reading where the media is on the waveform
+
+The arrow keys move the media along the waveform, so a screen reader reads the waveform as a slider over the media's length.
+
+| Step | Statement |
+| --- | --- |
+| Given | a timeline over 2 s of media |
+| When | the media plays to 1.5 s |
+| Then | the waveform reads 1.5 of 2 s, as `00:00:01.500` |
 
 ## `PV-209` Stopping a shared edge at the next Segment's end
 
@@ -1382,422 +1764,41 @@ Subtitle editors retime a cue on its waveform: an edge or the whole cue is dragg
 | When | its end is dragged 50 pixels later with Alt held |
 | Then | the Project is asked to move the edge after the first to 0.8 s |
 
-## `PV-061` Holding the timeline while a Mode writes
+## `PV-211` Changing the language over the video while a Segment is shown
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline whose Current Resource is being transcribed, its Current Segment from 0 to 0.5 s |
-| When | its end is dragged 20 pixels later |
-| Then | nothing is asked of the Project |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s, translated `Today` in the translation shown |
+| Given | the media at 0.5 s, `今天` shown over the video |
+| When | the translation is chosen over the video |
+| Then | `Today` is shown over the video |
 
-## `PV-062` Inserting a Segment drawn on the timeline
-
-Drawing on the waveform leaves a range to keep with Enter or drop with Esc, as Subtitle Edit does. A press on a region chooses or drags its Segment, so a range over Segments is drawn with Ctrl held, or ⌘ on macOS, where Ctrl and a click open the context menu. A range drawn roughly is then set right before it is kept: its edges are dragged, or the whole of it, and land as a dragged Segment does.
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
-| When | Enter is pressed |
-| Then | the Project is asked to insert a Segment from 1 to 1.5 s |
-
-## `PV-063` Dropping a drawn range with Esc
+## `PV-212` Turning the Speaker off while a Segment is shown
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline with one Segment and a range drawn where no Segment is |
-| When | Esc is pressed |
-| Then | the timeline marks only the Segment |
+| Given | a Current Resource with the Segment `今天` from 0 to 1 s said by `小明` |
+| Given | the media at 0.5 s, `小明: 今天` shown over the video |
+| When | the Speaker over the video is turned off |
+| Then | `今天` alone is shown over the video |
 
-## `PV-102` Keeping a drawn range when Esc is pressed in a text field
+## `PV-213` Showing the Current Segment's length beside the video
 
-Esc in a text field gives up what was typed there, which asks nothing of the timeline.
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline with one Segment, a range drawn where no Segment is, and focus in a text field |
-| When | Esc is pressed |
-| Then | the timeline marks the Segment and the range |
-
-## `PV-064` Drawing a range over the next Segment
+How long a Segment runs is what timing it checks against, so the card says so beside its times.
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline at 100 pixels a second with Segments from 0 to 0.5 s and from 1 to 1.5 s |
-| When | a range is drawn from 0.7 to 1.2 s |
-| Then | the range runs from 0.7 to 1.2 s |
+| Given | a Current Resource with a media file, its second Segment from 1 to 4.2 s |
+| When | the second Segment's row is clicked |
+| Then | the card beside the video shows `3.200s` |
 
-## `PV-115` Drawing a range over a Segment with Ctrl held
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s, not current, on Windows or Linux |
-| When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
-| Then | the range runs from 0.5 to 1 s and no Segment is made current |
-
-## `PV-116` Drawing a range over a Segment with ⌘ held on macOS
+## `PV-214` Leaving no audio behind after a failed Waveform
 
 | Step | Statement |
 | --- | --- |
-| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s, not current, on macOS |
-| When | a range is drawn from 0.5 to 1 s on its region with ⌘ held |
-| Then | the range runs from 0.5 to 1 s and no Segment is made current |
-
-## `PV-117` Drawing a range over the Current Segment without moving it
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 2 s, on Windows or Linux |
-| When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
-| Then | the range runs from 0.5 to 1 s and nothing is asked of the Project |
-
-## `PV-118` Drawing no range over a Segment without the key
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s, not current |
-| When | the pointer is dragged from 0.5 to 1 s on its region |
-| Then | no range is drawn |
-
-## `PV-140` Inserting a Segment drawn over another with Enter
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second with one Segment from 0 to 2 s and a range drawn from 0.5 to 1 s on its region with Ctrl held |
-| When | Enter is pressed |
-| Then | the Project is asked to insert a Segment from 0.5 to 1 s |
-
-## `PV-153` Stretching a drawn range by its end
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
-| When | its end is dragged 20 pixels later and Enter is pressed |
-| Then | the Project is asked to insert a Segment from 1 to 1.7 s |
-
-## `PV-154` Moving a drawn range
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
-| When | the range is dragged 30 pixels later and Enter is pressed |
-| Then | the Project is asked to insert a Segment from 1.3 to 1.8 s |
-
-## `PV-155` Snapping a dragged edge of a drawn range
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second with one Segment from 1.8 to 2 s and a range drawn from 1 to 1.5 s, snapping turned on |
-| When | the range's end is dragged 27 pixels later and Enter is pressed |
-| Then | the Project is asked to insert a Segment from 1 to 1.8 s |
-
-## `PV-156` Showing the times of a drawn range as its edge is dragged
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s |
-| When | its end is dragged 20 pixels later and not yet let go |
-| Then | the times read `00:00:01.000 → 00:00:01.700 (0.700s)` |
-
-## `PV-157` Keeping a drawn range when it is clicked
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second with a range drawn from 1 to 1.5 s where no Segment is |
-| When | the range is clicked and Enter is pressed |
-| Then | the Project is asked to insert a Segment from 1 to 1.5 s |
-
-## `PV-158` Stretching a range drawn over the Current Segment without moving it
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 2 s, with a range drawn from 0.5 to 1 s on its region |
-| When | the range's end is dragged 20 pixels later and Enter is pressed |
-| Then | the Project is asked only to insert a Segment from 0.5 to 1.2 s |
-
-## `PV-159` Drawing a range above the Current Segment's region
-
-The Current Segment's region is drawn above the others, so a range drawn over it is drawn higher still, where its edges can be taken.
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 2 s |
-| When | a range is drawn from 0.5 to 1 s on its region with Ctrl held |
-| Then | the range is drawn above the Current Segment's region |
-
-## `PV-160` Moving the media 0.1 s earlier with ← once the waveform is clicked
-
-A time set where the media is lands only as closely as the media can be put, so after a click on the waveform the arrow keys move it a tenth of a second at a time. They are left to the fields and the lists elsewhere, where they move the caret or the choice.
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second, clicked at 1 s |
-| When | ← is pressed |
-| Then | the media is at 0.9 s |
-
-## `PV-161` Moving the media 0.1 s later with → once the waveform is clicked
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second, clicked at 1 s |
-| When | → is pressed |
-| Then | the media is at 1.1 s |
-
-## `PV-208` Reading where the media is on the waveform
-
-The arrow keys move the media along the waveform, so a screen reader reads the waveform as a slider over the media's length.
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline over 2 s of media |
-| When | the media plays to 1.5 s |
-| Then | the waveform reads 1.5 of 2 s, as `00:00:01.500` |
-
-## `PV-162` Keeping the media within its length when it is moved with an arrow key
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second, clicked at 0.05 s |
-| When | ← is pressed |
-| Then | the media is at 0 s |
-
-## `PV-163` Leaving the media where it is when an arrow key is pressed with no Waveform
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose Waveform could not be taken, its media at 1 s, and the timeline focused |
-| When | ← is pressed |
-| Then | the media stays at 1 s |
-
-## `PV-065` Setting the Current Segment's start where the media is with F11
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s, on Windows or Linux |
-| When | F11 is pressed outside a field |
-| Then | the Project is asked to change its times to 0.2 to 0.5 s |
-
-## `PV-066` Setting the Current Segment's end where the media is with F12
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Segment from 0 to 0.5 s, the media at 0.8 s |
-| When | F12 is pressed outside a field |
-| Then | the Project is asked to change its times to 0 to 0.8 s |
-
-## `PV-067` Overlapping the next Segment with a time set with a key
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Segment from 0 to 0.5 s, the next from 0.6 s, the media at 0.8 s |
-| When | F12 is pressed outside a field |
-| Then | the Project is asked to change its times to 0 to 0.8 s |
-
-## `PV-119` Keeping a start set with a key from before the previous Segment's start
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Segment from 0.6 to 1 s, the previous from 0.3 to 0.5 s, the media at 0.2 s, on Windows or Linux |
-| When | F11 is pressed outside a field |
-| Then | the Project is asked to change its times to 0.3 to 1 s |
-
-## `PV-089` Setting the Current Segment's start with F9 on macOS
-
-macOS takes F11 to show the desktop, so the start is set with F9 there, as Subtitle Edit binds it on macOS; F12 sets the end everywhere.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s, on macOS |
-| When | F9 is pressed outside a field |
-| Then | the Project is asked to change its times to 0.2 to 0.5 s |
-
-## `PV-090` Leaving F11 to macOS
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Segment from 0 to 0.5 s, the media at 0.2 s, on macOS |
-| When | F11 is pressed outside a field |
-| Then | nothing is asked of the Project and the key is left to the system |
-
-## `PV-091` Naming the keys that set times for the platform
-
-| Step | Statement |
-| --- | --- |
-| Given | the preview on macOS |
-| When | it is shown |
-| Then | its hint names F9 and F12 as the keys that set the start and the end |
-
-### Reading times on the timeline
-
-A time typed into a Segment is found on the waveform first, so the timeline tells the time under the pointer in the form the field takes, as Aegisub does; and while a Segment is dragged or a range drawn, the times it will be written with and how long it runs, as Subtitle Edit shows a drawn range's length.
-
-## `PV-071` Showing the time under the pointer on the timeline
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second |
-| When | the pointer rests 150 pixels from its start |
-| Then | the time under it reads `00:00:01.500` |
-
-## `PV-072` Showing where a dragged Segment lands
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second whose Current Segment runs from 0 to 0.5 s, the next from 0.6 s |
-| Given | snapping turned on |
-| When | its end is dragged 5 pixels later and not yet let go |
-| Then | the times read `00:00:00.000 → 00:00:00.600 (0.600s)` |
-
-## `PV-073` Showing the times of a range as it is drawn
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline at 100 pixels a second |
-| When | a range is drawn from 1 to 1.5 s and not yet let go |
-| Then | the times read `00:00:01.000 → 00:00:01.500 (0.500s)` |
-
-## `PV-074` Showing the times of a drawn range until it is dropped
-
-| Step | Statement |
-| --- | --- |
-| Given | a timeline with a range drawn from 1 to 1.5 s |
-| When | Esc is pressed |
-| Then | no times are shown |
-
-### Following playback in the editor
-
-The editor scrolls to the row being played, the one started last while Segments overlap, unless the user turns that off to look through other Segments, or to keep correcting the Current Segment while the media plays on past it, as Subtitle Edit's "Select current subtitle while playing" can be. Only the scrolling stops; the row is still marked. While it follows, the list goes where the media is: only another Segment becoming current brings its row back, not the Cursor moving or typing within it.
-
-## `PV-080` Bringing the row being played into view
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing, and no choice about following playback ever made on this machine |
-| When | the media plays to 1.5 s |
-| Then | the second Segment's row is scrolled into view |
-
-
-## `PV-120` Bringing the row of the Segment started last into view
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 2 s and from 1 to 1.5 s, its media playing, and following playback on |
-| When | the media plays to 1.2 s |
-| Then | the second Segment's row is scrolled into view |
-## `PV-081` Leaving the editor where it is while not following playback
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing, and following playback turned off |
-| When | the media plays to 1.5 s |
-| Then | the second Segment's row alone is marked as playing, and no row is scrolled into view |
-
-## `PV-082` Turning following playback off with Ctrl+L while typing
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose media is playing, with the Cursor in the Current Segment's text field |
-| When | Ctrl+L is pressed |
-| Then | following playback is turned off, and the field keeps the focus |
-
-## `PV-083` Bringing the row being played into view as following playback is turned on
-
-| Step | Statement |
-| --- | --- |
-| Given | the second Segment's row marked as playing, with following playback turned off |
-| When | following playback is turned on |
-| Then | the second Segment's row is scrolled into view |
-
-## `PV-084` Keeping following playback off for the next Resource
-
-| Step | Statement |
-| --- | --- |
-| Given | following playback turned off |
-| When | another Resource with a media file becomes current |
-| Then | following playback stays off |
-
-## `PV-121` Following playback while typing in the Current Segment
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, its media playing, following playback turned on, and the Cursor in the first Segment's text field |
-| When | the media plays to 1.5 s and a character is typed in the field |
-| Then | the second Segment's row is scrolled into view, and the first Segment's row is not scrolled back into view |
-
-### Playing the Current Segment alone
-
-Space plays on from where the media is, so a Segment chosen is heard with the ones after it, and Space pauses it again when a line needs correcting. Playing only the Current Segment from its start, stopping at its end, is turned on when one line is heard over and over. Where it stops is read from the choice and the Current Segment as the media plays, not fixed as it starts, so turning playing alone on or off, or retiming the Current Segment, takes effect on the media already playing.
-
-## `PV-085` Playing on from the Current Segment with Space
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource with Segments from 0 to 1 s and from 1 to 2 s, and no choice about playing alone ever made on this machine |
-| When | the second Segment's row is clicked and Space is pressed outside a field or a control reached by keyboard |
-| Then | the media plays from 1 s, and plays on at 2 s |
-
-## `PV-086` Playing on from where the media paused
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose Current Segment runs from 1 to 2 s, the media paused at 1.5 s, with playing alone turned off |
-| When | Space is pressed outside a field or a control reached by keyboard |
-| Then | the media plays from 1.5 s |
-
-## `PV-087` Keeping playing alone on for the next Resource
-
-| Step | Statement |
-| --- | --- |
-| Given | playing alone turned on |
-| When | another Resource with a media file becomes current |
-| Then | playing alone stays on |
-
-## `PV-122` Stopping at the Current Segment's end once playing alone is turned on while playing
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose Current Segment runs from 1 to 2 s, its media playing at 1.5 s, with playing alone turned off |
-| When | playing alone is turned on and the media reaches 2 s |
-| Then | the media pauses |
-
-## `PV-123` Playing on once playing alone is turned off while playing
-
-| Step | Statement |
-| --- | --- |
-| Given | the Current Segment from 1 to 2 s playing after Space, with playing alone turned on |
-| When | playing alone is turned off and the media reaches 2 s |
-| Then | the media plays on |
-
-## `PV-124` Stopping at the Current Segment's new end while playing alone
-
-| Step | Statement |
-| --- | --- |
-| Given | the Current Segment from 1 to 2 s playing after Space, with playing alone turned on |
-| When | its end is changed to 3 s and the media reaches 2 s |
-| Then | the media plays on, and pauses as it reaches 3 s |
-
-## `PV-141` Drawing one Waveform when the media comes back before the first arrives
-
-| Step | Statement |
-| --- | --- |
-| Given | `ep01.mp4` current, its Waveform still being taken |
-| When | `ep02.mp4` and then `ep01.mp4` become current before it arrives |
-| Then | the timeline draws one Waveform, from the last request |
-
-## `PV-142` Staying quiet about a Waveform no longer asked for
-
-| Step | Statement |
-| --- | --- |
-| Given | `ep01.mp4` current, its Waveform still being taken |
-| When | a Resource without media becomes current and taking it fails |
-| Then | no Notification is shown |
-
-## `PV-143` Naming the step that failed to take a Waveform
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose media ffmpeg cannot read |
-| When | taking its Waveform fails |
-| Then | the Notification names the failed step in the Interface Language |
+| Given | a Current Resource whose media file ffmpeg cannot read |
+| When | its Waveform is extracted |
+| Then | the converted audio is removed |
 
 ## `PV-215` Rewriting the hint in the Interface Language chosen
 
@@ -1814,3 +1815,17 @@ Space plays on from where the media is, so a Segment chosen is heard with the on
 | Given | the Video Window open, named in Traditional Chinese |
 | When | English is chosen as the Interface Language |
 | Then | its title reads in English and its page declares English |
+
+## `PV-217` Bringing a row left out into view while following playback
+
+The row of a Segment played far from the view has no row drawn yet. While playback is followed, its row is drawn where it stands, then scrolled into view.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `PV-080`, `ED-202` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of 200 Segments in a list laid out on a screen, scrolled to its first row, and playback followed |
+| When | the 150th Segment starts playing |
+| Then | its row is drawn and scrolled into view |

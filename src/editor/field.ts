@@ -6,8 +6,6 @@
 
 import type { TextRange } from "./cursor";
 
-const EDITABLE = "plaintext-only";
-
 /** Whether `element` is a field, held or not, which keeps its own typing history. */
 export function isField(element: EventTarget | null): element is HTMLElement {
   return (
@@ -45,13 +43,7 @@ export function setFieldValue(field: HTMLElement, value: string): void {
   field.textContent = value;
 }
 
-/** Stops or lets the user type into the field, as `disabled` does for a form control. */
-export function setFieldHeld(field: HTMLElement, isHeld: boolean): void {
-  field.setAttribute("contenteditable", isHeld ? "false" : EDITABLE);
-  field.setAttribute("aria-disabled", String(isHeld));
-}
-
-/** Whether the field is held from typing. */
+/** Whether the field is held from typing, as its `contenteditable` of `false` says. */
 export function isFieldHeld(field: HTMLElement): boolean {
   return field.getAttribute("contenteditable") === "false";
 }

@@ -31,6 +31,7 @@ import {
   checkedBarButton,
   drawSegmentList,
   rowList,
+  openChangeMenu,
   segmentDialogsOf,
 } from "#/testing/segment-rows.ts";
 import { settle } from "#/testing/settle.ts";
@@ -319,7 +320,7 @@ describe("TranslationDialog, translating chosen Segments again", () => {
   let project: ProjectView | null;
   let retranslateArgs: unknown;
 
-  const rows = () => [...rowList().children];
+  const rows = () => [...rowList().children] as HTMLElement[];
   const isProgressShown = () => progressSteps().length > 0;
 
   async function hold(next: ProjectView): Promise<void> {
@@ -389,7 +390,9 @@ describe("TranslationDialog, translating chosen Segments again", () => {
   it("translates a Segment again from its menu", async () => {
     await hold(projectShowingEnglish);
 
-    rows()[1].querySelector<HTMLButtonElement>("button.retranslate")!.click();
+    openChangeMenu(rows()[1])
+      .querySelector<HTMLButtonElement>("button.retranslate")!
+      .click();
     await settle();
     await startFromDialog();
 
@@ -439,7 +442,7 @@ describe("TranslationDialog, translating chosen Segments again", () => {
     await settle();
 
     expect([
-      rows()[0].querySelector("button.retranslate"),
+      openChangeMenu(rows()[0]).querySelector("button.retranslate"),
       checkedBarButton("重新翻譯"),
     ]).toEqual([null, null]);
   });
@@ -448,7 +451,9 @@ describe("TranslationDialog, translating chosen Segments again", () => {
   it("warns that a line translated again may read as going on from the one before", async () => {
     await hold(projectShowingEnglish);
 
-    rows()[1].querySelector<HTMLButtonElement>("button.retranslate")!.click();
+    openChangeMenu(rows()[1])
+      .querySelector<HTMLButtonElement>("button.retranslate")!
+      .click();
     await settle();
 
     expect([

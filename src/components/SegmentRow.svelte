@@ -25,7 +25,7 @@
   } from "#/editor/index.ts";
   import { t } from "#/i18n.ts";
   import { closeMenu } from "#/ui/menu.ts";
-  import { notify } from "#/state/notification.svelte.ts";
+  import { notify, notifyEdit } from "#/state/notification.svelte.ts";
   import {
     isComposingKey,
     shortcutById,
@@ -47,7 +47,6 @@
   } from "#/state/editor-comparison.svelte.ts";
   import {
     type ChangeChoice,
-    change,
     checkedChoices,
     popUpChoices,
     type ResourceOffers,
@@ -110,6 +109,8 @@
   let newSpeakerInput = $state<HTMLInputElement>();
   /** The Speakers the Speaker menu offers, read from the Project each time it opens. */
   let offeredSpeakers = $state<string[]>([]);
+  /** Whether the change menu has been opened; every row has one, so its choices wait until then. */
+  let isChangeMenuDrawn = $state(false);
   let fieldByKind = $state<Partial<Record<CursorField, HTMLElement>>>({});
   let editingFieldByKind = $state<Partial<Record<CursorField, EditingField>>>(
     {},
@@ -155,18 +156,26 @@
     write: () => void,
   ): void {
     if (!editor) return;
-    if (isTypingKept && editor === document.activeElement) return;
+    // Read only for the input with focus, so a change to it writes no other row again
+    if (editor === document.activeElement && isTypingKept) return;
     write();
   }
 
-  $effect(() => {
+  // Each Project read brings the Segment anew, so the times are written only as they change
+  const segmentStartMs = $derived(segment.start_ms);
+  const segmentEndMs = $derived(segment.end_ms);
+
+  /** Writes the Segment's times into their inputs, but for one being typed in that keeps it. */
+  function showTimes(): void {
     const timeByInput: [HTMLInputElement | undefined, number][] = [
-      [startInput, segment.start_ms],
-      [endInput, segment.end_ms],
+      [startInput, segmentStartMs],
+      [endInput, segmentEndMs],
     ];
     for (const [input, ms] of timeByInput)
       writeUnlessTyping(input, () => (input!.value = formatTime(ms)));
-  });
+  }
+
+  $effect(showTimes);
 
   /**
    * Where in the row a press of the pointer chooses its Segment from: its text or translation, a
@@ -213,20 +222,25 @@
     session.makeCurrent(index, isSpeakerMenu ? "speaker" : undefined);
   }
 
-  /** Asks for the times typed, `edge` the one just changed; a time that cannot be read is put back. */
+  /**
+   * Asks for the times typed, `edge` the one just changed; a time that cannot be read, or that the
+   * Project refuses, is put back to the Segment's.
+   */
   async function changeTimes(edge: TimeEdge): Promise<void> {
     const startMs = parseTime(startInput?.value ?? "");
     const endMs = parseTime(endInput?.value ?? "");
     if (startMs === null || endMs === null) {
       notify({ title: t("edit.unreadableTime"), kind: "warning" });
-      await feed.refresh();
+      showTimes();
       return;
     }
-    await change(session, {
+    const outcome = await session.change({
       kind: "times",
       index,
       ...orderedTimes(edge, startMs, endMs),
     });
+    notifyEdit(outcome);
+    if (outcome.kind !== "written") showTimes();
   }
 
   /**
@@ -303,6 +317,8 @@
 <li
   class="@max-4xl:grid-cols-[auto_1fr_auto]"
   aria-current={isCurrent ? "true" : undefined}
+  aria-posinset={index + 1}
+  aria-setsize={count}
   data-is-playing={isPlaying ? "" : undefined}
   onpointerdown={(event) => session.pointAt(pressedSource(event))}
   onmousedown={checkThrough}
@@ -410,6 +426,8 @@
           isHeld={!isFree(kind)}
           isPending={kind === "translation" && isPending}
           {isTypingKept}
+          glossaryMarks={glossaryMarks?.[kind]}
+          comparedRows={sideRows.map(({ row }) => row)}
           bind:element={fieldByKind[kind]}
           bind:this={editingFieldByKind[kind]}
         />
@@ -436,6 +454,7 @@
       role="button"
       class={["btn btn-square btn-ghost btn-xs", isOtherHeld && "btn-disabled"]}
       aria-label={t("edit.changes")}
+      onfocus={() => (isChangeMenuDrawn = true)}
     >
       <EllipsisVertical class="size-4" aria-hidden="true" />
     </div>
@@ -443,22 +462,24 @@
       tabindex="-1"
       class="change-menu menu dropdown-content z-10 w-60 rounded-box bg-base-100 shadow-md"
     >
-      {#each choices as choice (choice.id)}
-        <li>
-          <button
-            type="button"
-            class={choice.id}
-            data-shortcut={choice.shortcut}
-            disabled={!choice.isEnabled}
-            onclick={({ currentTarget }) => {
-              closeMenu(currentTarget);
-              void choice.run();
-            }}
-          >
-            {@render choiceLabel(choice.label, choice.shortcut)}
-          </button>
-        </li>
-      {/each}
+      {#if isChangeMenuDrawn}
+        {#each choices as choice (choice.id)}
+          <li>
+            <button
+              type="button"
+              class={choice.id}
+              data-shortcut={choice.shortcut}
+              disabled={!choice.isEnabled}
+              onclick={({ currentTarget }) => {
+                closeMenu(currentTarget);
+                void choice.run();
+              }}
+            >
+              {@render choiceLabel(choice.label, choice.shortcut)}
+            </button>
+          </li>
+        {/each}
+      {/if}
     </ul>
   </div>
 </li>

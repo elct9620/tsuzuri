@@ -11,6 +11,8 @@ import {
   drawSegmentRows,
 } from "#/testing/segment-rows.ts";
 import { settle } from "#/testing/settle.ts";
+import { stubHighlights } from "#/testing/highlights.ts";
+import { stubResizeObserver } from "#/testing/layout.ts";
 
 describe("EditingField", () => {
   let drawn: DrawnSegmentRows;
@@ -247,17 +249,7 @@ describe("EditingField", () => {
   });
 
   it("marks only the range the Cursor covers now", () => {
-    const highlights = new Map<string, { ranges: Range[] }>();
-    vi.stubGlobal("CSS", { highlights });
-    vi.stubGlobal(
-      "Highlight",
-      class {
-        ranges: Range[];
-        constructor(...ranges: Range[]) {
-          this.ranges = ranges;
-        }
-      },
-    );
+    const highlights = stubHighlights();
     session.enter(1, "text", { start: 0, end: 2 }, "今天天氣");
     flushSync();
 
@@ -287,21 +279,7 @@ describe("EditingField", () => {
 
   // @behavior ED-122
   it("keeps the caret on its character as marks drawn above move the text", () => {
-    const observers: { targets: Element[]; notify: () => void }[] = [];
-    vi.stubGlobal(
-      "ResizeObserver",
-      class {
-        private readonly watched: { targets: Element[]; notify: () => void };
-        constructor(notify: () => void) {
-          this.watched = { targets: [], notify };
-          observers.push(this.watched);
-        }
-        observe(target: Element) {
-          this.watched.targets.push(target);
-        }
-        disconnect() {}
-      },
-    );
+    const observers = stubResizeObserver();
     let textTop = 0;
     vi.spyOn(Range.prototype, "getBoundingClientRect").mockImplementation(() =>
       DOMRect.fromRect({ x: 0, y: textTop, width: 0, height: 20 }),
@@ -311,7 +289,7 @@ describe("EditingField", () => {
 
     textTop = 24;
     for (const { targets, notify } of observers)
-      if (targets.includes(field().parentElement!)) notify();
+      if (targets.includes(field().parentElement!)) notify([]);
     flushSync();
 
     expect(caretMarks()[0].style.top).toBe("24px");

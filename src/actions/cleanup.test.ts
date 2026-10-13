@@ -13,6 +13,7 @@ import {
   segmentDialogsOf,
   segmentRows,
 } from "#/testing/segment-rows.ts";
+import { openChangeMenu } from "#/testing/segment-rows.ts";
 import { settle } from "#/testing/settle.ts";
 
 describe("cleanup", () => {
@@ -98,10 +99,11 @@ describe("cleanup", () => {
   const checkedBarCleanup = () =>
     screen.queryByRole("button", { name: "清理簡體", hidden: true });
 
-  function segmentMenuCleanup(index: number): HTMLButtonElement {
-    return document.querySelectorAll<HTMLButtonElement>("button.cleanup")[
-      index
-    ];
+  function segmentMenuCleanup(index: number): HTMLButtonElement | null {
+    const row = document.querySelectorAll<HTMLElement>("ol > li")[index];
+    return openChangeMenu(row).querySelector<HTMLButtonElement>(
+      "button.cleanup",
+    );
   }
 
   // @behavior ED-128
@@ -190,7 +192,7 @@ describe("cleanup", () => {
   it("cleans a Segment from its menu", async () => {
     await hold(projectInTraditionalChinese);
 
-    segmentMenuCleanup(1).click();
+    segmentMenuCleanup(1)!.click();
     await settle();
 
     expect(cleanups()).toEqual([{ kind: "segments", indexes: [1] }]);
@@ -218,10 +220,7 @@ describe("cleanup", () => {
     );
     await check(0);
 
-    expect([segmentMenuCleanup(0), checkedBarCleanup()]).toEqual([
-      undefined,
-      null,
-    ]);
+    expect([segmentMenuCleanup(0), checkedBarCleanup()]).toEqual([null, null]);
   });
 
   // @behavior ED-133
@@ -234,7 +233,7 @@ describe("cleanup", () => {
       }),
     );
 
-    expect(segmentMenuCleanup(0)).toBeDefined();
+    expect(segmentMenuCleanup(0)).not.toBeNull();
   });
 
   // @behavior ED-134
@@ -242,7 +241,7 @@ describe("cleanup", () => {
     count = 0;
     await hold(projectInTraditionalChinese);
 
-    segmentMenuCleanup(0).click();
+    segmentMenuCleanup(0)!.click();
     await settle();
 
     expect(notifications()).toEqual(["沒有需要清理的簡體字"]);

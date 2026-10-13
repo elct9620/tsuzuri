@@ -133,8 +133,7 @@ A mark counts characters of the text it was found in, and would land on other wo
 | Step | Statement |
 | --- | --- |
 | Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林` |
-| Given | its text field typed in to read `小林先生` |
-| When | the Project is shown again |
+| When | its text field is typed in to read `小林先生` |
 | Then | nothing in the field is underlined as a candidate |
 
 ## `GM-014` Offering to add the candidate the caret stands in
@@ -212,3 +211,49 @@ A mark counts characters of the text it was found in, so in a text since changed
 | Given | its text field typed in to read `小林來了` |
 | When | the text field is right-clicked with the caret inside `小林` |
 | Then | the menu offers nothing of the Translation Glossary |
+
+## `GM-022` Underlining again only the fields whose marks changed
+
+Every underline is drawn over the whole page. A field redraws only its own, so a read costs only the fields it changed.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `GM-012` |
+
+| Step | Statement |
+| --- | --- |
+| Given | three Segments, each with a candidate in its text |
+| When | the second Segment's text changes, and its candidate with it |
+| Then | the candidates of the first and third Segments are underlined as they were, untouched |
+
+## `GM-023` Underlining a field again once it is typed back to its text
+
+A field left reading its text draws its marks itself, since leaving it unchanged writes nothing and no read follows.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `GM-012` |
+| relates | `GM-013` |
+
+| Step | Statement |
+| --- | --- |
+| Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林` |
+| Given | its text field typed in to read `小林先生` |
+| When | the text field is typed back to `小林先生明天要去京都` and left |
+| Then | `小林` is underlined as a candidate |
+
+## `GM-024` Underlining a field again once its typing is given up
+
+Esc puts back the text the field was entered with, which the marks were found in.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `GM-012` |
+| relates | `ED-077` |
+
+| Step | Statement |
+| --- | --- |
+| Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林` |
+| Given | its text field typed in to read `小林先生` |
+| When | Esc is pressed in the text field |
+| Then | `小林` is underlined as a candidate |

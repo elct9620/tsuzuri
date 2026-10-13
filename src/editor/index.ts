@@ -20,10 +20,15 @@ export {
   isTextField,
   placeSelection,
   rangeOf,
-  setFieldHeld,
   setFieldValue,
 } from "./field";
-export { hasHighlights, markRanges, textRange } from "./highlight";
+export {
+  hasHighlights,
+  markOwnRanges,
+  markRanges,
+  textRange,
+  textStaticRange,
+} from "./highlight";
 export {
   CURSOR_HIGHLIGHT,
   type CaretPlace,

@@ -108,24 +108,6 @@ The Transcribe Mode: a video or audio file becomes a Transcript by two Steps, ff
 | When | transcribing is started |
 | Then | the Current Resource is translated into `ja` once transcribed |
 
-## `TX-023` Translating once transcribed with the dialog's options
-
-Transcribing leads into translating, so the transcribe dialog offers the same translation options as the translate dialog.
-
-| Step | Statement |
-| --- | --- |
-| Given | the transcribe dialog with translating afterwards and Self-Review chosen |
-| When | transcribing is started |
-| Then | the Current Resource is translated with Self-Review once transcribed |
-
-## `TX-024` Showing the translation options only when translating afterwards
-
-| Step | Statement |
-| --- | --- |
-| Given | the transcribe dialog |
-| When | translating afterwards is chosen |
-| Then | the translation options are shown |
-
 ## `TX-014` Saying why a transcription failed
 
 | Step | Statement |
@@ -190,23 +172,23 @@ Transcribing leads into translating, so the transcribe dialog offers the same tr
 | When | the transcribe dialog is started |
 | Then | it warns the subtitle will be overwritten and transcribes asking to overwrite |
 
-## `TX-030` Warning once of all a transcription overwrites
+## `TX-023` Translating once transcribed with the dialog's options
 
-Translating afterwards shares the translate dialog's options, yet the dialog warns once, below them, of everything starting overwrites.
-
-| Step | Statement |
-| --- | --- |
-| Given | the transcribe dialog for a Current Resource with an original subtitle and translated into `en` |
-| When | translating afterwards into `en` is chosen |
-| Then | one warning says the subtitle and the translation will be overwritten, and its start button reads 覆蓋並開始 |
-
-## `TX-031` Warning only of a translation it will make
+Transcribing leads into translating, so the transcribe dialog offers the same translation options as the translate dialog.
 
 | Step | Statement |
 | --- | --- |
-| Given | the transcribe dialog for a Current Resource translated into `en` alone, translating afterwards into `en` |
-| When | translating afterwards is no longer chosen |
-| Then | no overwrite is warned of, and its start button reads 開始轉錄 |
+| Given | the transcribe dialog with translating afterwards and Self-Review chosen |
+| When | transcribing is started |
+| Then | the Current Resource is translated with Self-Review once transcribed |
+
+## `TX-024` Showing the translation options only when translating afterwards
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog |
+| When | translating afterwards is chosen |
+| Then | the translation options are shown |
 
 ## `TX-025` Clearing the progress once a transcription ends
 
@@ -251,6 +233,24 @@ The whole run is laid out ahead, so how far along it is reads at a glance.
 | Given | the progress of a transcription running |
 | When | cancelling is chosen |
 | Then | the Project is asked to cancel the running task, and once it stops a Notification says it was cancelled |
+
+## `TX-030` Warning once of all a transcription overwrites
+
+Translating afterwards shares the translate dialog's options, yet the dialog warns once, below them, of everything starting overwrites.
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog for a Current Resource with an original subtitle and translated into `en` |
+| When | translating afterwards into `en` is chosen |
+| Then | one warning says the subtitle and the translation will be overwritten, and its start button reads 覆蓋並開始 |
+
+## `TX-031` Warning only of a translation it will make
+
+| Step | Statement |
+| --- | --- |
+| Given | the transcribe dialog for a Current Resource translated into `en` alone, translating afterwards into `en` |
+| When | translating afterwards is no longer chosen |
+| Then | no overwrite is warned of, and its start button reads 開始轉錄 |
 
 ## `TX-032` Leaving whisper-cli as it behaves on its own
 

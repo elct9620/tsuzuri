@@ -35,100 +35,6 @@ Listing the Backups of each subtitle of the Current Resource, comparing two Vers
 | When | the Backup is compared with the subtitle now |
 | Then | the rows are a Pair from `你好` to `您好` with its text changed, a Removal of `世界`, and an Addition of `再見` |
 
-## `VR-011` Pairing a retimed cue by its overlap
-
-| Step | Statement |
-| --- | --- |
-| Given | a Backup reading `你好` from 0 to 1 second, and the subtitle now reading `你好` from 0 to 1.2 seconds |
-| When | the two are compared |
-| Then | the one row is a Pair with its times changed and its text not |
-
-
-## `VR-056` Pairing retimed cues written out of time order
-
-A subtitle changed elsewhere may list its cues in any order, so pairs are found by time rather than by position.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Backup reading `你好` from 0 to 1 second and `世界` from 1 to 2 seconds, and the subtitle now listing `世間` from 1.1 to 2 seconds before `您好` from 0 to 0.9 seconds |
-| When | the two are compared |
-| Then | the rows are two Pairs, `你好` with `您好` then `世界` with `世間` |
-
-## `VR-058` Taking the marks away at once when the Segments change in number
-
-The editor keeps its rows when Segments are split or merged, so marks left on them would name another Segment's changes.
-
-| Step | Statement |
-| --- | --- |
-| Given | the editor marking what changed on each of its two rows against a Backup |
-| When | the first Segment is split, before the comparison of the three is answered |
-| Then | no row shows a mark |
-
-## `VR-057` Pairing a moved cue with the first cue reading the same
-
-| Step | Statement |
-| --- | --- |
-| Given | a Backup reading `你好` from 0 to 1 second, and the subtitle now reading `你好` from 5 to 6 seconds and again from 8 to 9 seconds |
-| When | the two are compared |
-| Then | the Backup's `你好` is paired with the one from 5 to 6 seconds |
-
-## `VR-051` Pairing a cue someone cuts in with its own cue
-
-A cue that cuts in overlaps the cue it cuts into, so cues with the same times are paired first, and only the cues left are paired by overlap.
-
-| Step | Statement |
-| --- | --- |
-| Given | a Backup reading `大家好` from 0 to 5 and `對啊` from 2 to 3 seconds, and the subtitle now the same but with `對呀` in place of `對啊` |
-| When | the two are compared |
-| Then | there are two rows, each a Pair, and only the second has its text changed |
-
-## `VR-052` Pairing cues with the same times in their order
-
-| Step | Statement |
-| --- | --- |
-| Given | a Backup reading `大家好` and `對啊`, both from 0 to 1 second, and the subtitle now reading `大家好` and `對呀` at the same times |
-| When | the two are compared |
-| Then | there are two rows, each a Pair, and only the second has its text changed |
-## `VR-012` Keeping apart cues that only touch
-
-| Step | Statement |
-| --- | --- |
-| Given | a Backup reading `一` from 0 to 1 and `二` from 1 to 2 seconds, and the subtitle now `一` from 0 to 1.05 and `二` from 1.05 to 2 seconds |
-| When | the two are compared |
-| Then | the rows are two Pairs, each with its times changed |
-
-## `VR-013` Lining up a split cue with its parts
-
-| Step | Statement |
-| --- | --- |
-| Given | a Backup reading `你好世界` from 0 to 2 seconds, and the subtitle now `你好` from 0 to 1 and `世界` from 1 to 2 seconds |
-| When | the two are compared |
-| Then | the one row is a Split of the one cue into the two, with neither its text nor its times changed |
-
-## `VR-014` Lining up merged cues with their whole
-
-| Step | Statement |
-| --- | --- |
-| Given | a Backup reading `你好` from 0 to 1 and `世界` from 1 to 2 seconds, and the subtitle now `你好世界` from 0 to 2 seconds |
-| When | the two are compared |
-| Then | the one row is a Merge of the two cues into the one |
-
-## `VR-015` Pairing a cue moved in time by its text
-
-| Step | Statement |
-| --- | --- |
-| Given | a Backup reading `你好` from 0 to 1 second, and the subtitle now `你好` from 5 to 6 seconds |
-| When | the two are compared |
-| Then | the one row is a Pair with its times changed |
-
-## `VR-010` Telling an Output from an Overwrite
-
-| Step | Statement |
-| --- | --- |
-| Given | an Output of `ep01.srt` taken at 02:30 and an Overwrite of it taken at 03:00 |
-| When | the Versions of the Current Resource `ep01` are read |
-| Then | its original lists the 03:00 Backup as an Overwrite and the 02:30 one as an Output |
-
 ## `VR-004` Restoring a Backup
 
 | Step | Statement |
@@ -137,13 +43,6 @@ A cue that cuts in overlaps the cue it cuts into, so cues with the same times ar
 | When | the Backup is restored |
 | Then | `ep01.srt` and the editor read `舊的` |
 
-## `VR-050` Refusing a restore over a subtitle changed elsewhere
-
-| Step | Statement |
-| --- | --- |
-| Given | a Current Resource whose `ep01.srt` read `新的` and was changed elsewhere to `外面改的`, and a Backup of it reading `舊的` |
-| When | the Backup is restored |
-| Then | it is refused as `changed-elsewhere`, and `ep01.srt` and the editor read `外面改的` |
 
 ## `VR-005` Keeping the subtitle a restore replaces
 
@@ -186,6 +85,53 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | Given | the Versions dialog listing a Backup of the `en` translation |
 | When | restoring it is chosen |
 | Then | the Project is asked to restore that Backup of `en`, and a Notification says it was restored |
+## `VR-010` Telling an Output from an Overwrite
+
+| Step | Statement |
+| --- | --- |
+| Given | an Output of `ep01.srt` taken at 02:30 and an Overwrite of it taken at 03:00 |
+| When | the Versions of the Current Resource `ep01` are read |
+| Then | its original lists the 03:00 Backup as an Overwrite and the 02:30 one as an Output |
+
+## `VR-011` Pairing a retimed cue by its overlap
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好` from 0 to 1 second, and the subtitle now reading `你好` from 0 to 1.2 seconds |
+| When | the two are compared |
+| Then | the one row is a Pair with its times changed and its text not |
+
+## `VR-012` Keeping apart cues that only touch
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `一` from 0 to 1 and `二` from 1 to 2 seconds, and the subtitle now `一` from 0 to 1.05 and `二` from 1.05 to 2 seconds |
+| When | the two are compared |
+| Then | the rows are two Pairs, each with its times changed |
+
+## `VR-013` Lining up a split cue with its parts
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好世界` from 0 to 2 seconds, and the subtitle now `你好` from 0 to 1 and `世界` from 1 to 2 seconds |
+| When | the two are compared |
+| Then | the one row is a Split of the one cue into the two, with neither its text nor its times changed |
+
+## `VR-014` Lining up merged cues with their whole
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好` from 0 to 1 and `世界` from 1 to 2 seconds, and the subtitle now `你好世界` from 0 to 2 seconds |
+| When | the two are compared |
+| Then | the one row is a Merge of the two cues into the one |
+
+## `VR-015` Pairing a cue moved in time by its text
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好` from 0 to 1 second, and the subtitle now `你好` from 5 to 6 seconds |
+| When | the two are compared |
+| Then | the one row is a Pair with its times changed |
 
 ## `VR-016` Taking back the text of one cue
 
@@ -299,16 +245,6 @@ A restore names its Backup by file name, so only a name the subtitle's own list 
 | When | a transcription keeps a newer Output of the original |
 | Then | its comparison is of the newer Output |
 
-## `VR-049` Keeping the comparison with nothing once chosen
-
-Nothing chosen to compare is the user's choice, so writing the subtitle keeps it until the user chooses again or another Resource is shown.
-
-| Step | Statement |
-| --- | --- |
-| Given | the editor comparing the original with nothing, though it has an Output |
-| When | an edit is written, or a transcription keeps a newer Output of the original |
-| Then | the original is still compared with nothing |
-
 ## `VR-030` Offering the Backups of the translation shown
 
 | Step | Statement |
@@ -389,14 +325,6 @@ Nothing chosen to compare is the user's choice, so writing the subtitle keeps it
 | When | the Segments are shown |
 | Then | the Segment from 0 to 1 second shows `こんにちは` beneath its texts, named `ja` |
 
-
-## `VR-053` Showing a translation beside cues with the same times in their order
-
-| Step | Statement |
-| --- | --- |
-| Given | the editor reading `en` beside the cues, whose cues from 0 to 1 second read `Hello` and `Yeah` |
-| When | two Segments from 0 to 1 second are shown |
-| Then | the first shows `Hello` beneath its texts and the second `Yeah` |
 ## `VR-040` Comparing the original and the translation at once
 
 | Step | Statement |
@@ -431,14 +359,6 @@ However many Backups a subtitle has, the menu offers a few; the Versions dialog 
 | When | it is set as the comparison |
 | Then | the editor compares the original with that Overwrite, and the menu offers it |
 
-## `VR-059` Choosing another Backup in the Versions dialog
-
-| Step | Statement |
-| --- | --- |
-| Given | the editor showing the `en` translation |
-| When | the translation's group in the compare menu asks to choose in the Versions dialog |
-| Then | the Versions dialog opens at the `en` translation |
-
 ## `VR-044` Comparing the translation with nothing once another is shown
 
 A Backup of one translation says nothing about another, so its comparison ends with the translation shown.
@@ -465,6 +385,7 @@ A Backup of one translation says nothing about another, so its comparison ends w
 | When | the Segments are shown |
 | Then | the removed row says it was removed from `en` |
 
+
 ## `VR-047` Counting the Segments a restore leaves without a translation
 
 A translation lines up with its original by time alone, so a restore that splits a merged Segment again leaves its parts with none; saying so points at translating them again.
@@ -474,7 +395,6 @@ A translation lines up with its original by time alone, so a restore that splits
 | Given | a Current Resource whose `ep01.srt` reads `你好世界` from 0 to 2 seconds, translated in `ep01.en.srt`, and a Backup of `ep01.srt` reading `你好` from 0 to 1 and `世界` from 1 to 2 seconds |
 | When | the Backup is restored, or its row is taken back |
 | Then | the answer counts 2 Segments without a translation |
-
 ## `VR-048` Pointing at the Segments a restore leaves without a translation
 
 | Step | Statement |
@@ -482,6 +402,50 @@ A translation lines up with its original by time alone, so a restore that splits
 | Given | the editor comparing a Backup of the original |
 | When | a row taken back leaves 2 Segments without a translation |
 | Then | beside the Notification that it was taken back, a warning says 2 Segments no longer line up with a translation and can be translated again |
+
+## `VR-049` Keeping the comparison with nothing once chosen
+
+Nothing chosen to compare is the user's choice, so writing the subtitle keeps it until the user chooses again or another Resource is shown.
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor comparing the original with nothing, though it has an Output |
+| When | an edit is written, or a transcription keeps a newer Output of the original |
+| Then | the original is still compared with nothing |
+
+## `VR-050` Refusing a restore over a subtitle changed elsewhere
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource whose `ep01.srt` read `新的` and was changed elsewhere to `外面改的`, and a Backup of it reading `舊的` |
+| When | the Backup is restored |
+| Then | it is refused as `changed-elsewhere`, and `ep01.srt` and the editor read `外面改的` |
+
+## `VR-051` Pairing a cue someone cuts in with its own cue
+
+A cue that cuts in overlaps the cue it cuts into, so cues with the same times are paired first, and only the cues left are paired by overlap.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `大家好` from 0 to 5 and `對啊` from 2 to 3 seconds, and the subtitle now the same but with `對呀` in place of `對啊` |
+| When | the two are compared |
+| Then | there are two rows, each a Pair, and only the second has its text changed |
+
+## `VR-052` Pairing cues with the same times in their order
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `大家好` and `對啊`, both from 0 to 1 second, and the subtitle now reading `大家好` and `對呀` at the same times |
+| When | the two are compared |
+| Then | there are two rows, each a Pair, and only the second has its text changed |
+
+## `VR-053` Showing a translation beside cues with the same times in their order
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor reading `en` beside the cues, whose cues from 0 to 1 second read `Hello` and `Yeah` |
+| When | two Segments from 0 to 1 second are shown |
+| Then | the first shows `Hello` beneath its texts and the second `Yeah` |
 
 ## `VR-054` Marking the rows of the comparison asked for last
 
@@ -498,3 +462,53 @@ A translation lines up with its original by time alone, so a restore that splits
 | Given | the Versions dialog comparing one Backup, its answer still coming |
 | When | another Backup is compared and its answer comes first |
 | Then | the dialog shows the rows of the Backup chosen last |
+
+## `VR-056` Pairing retimed cues written out of time order
+
+A subtitle changed elsewhere may list its cues in any order, so pairs are found by time rather than by position.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好` from 0 to 1 second and `世界` from 1 to 2 seconds, and the subtitle now listing `世間` from 1.1 to 2 seconds before `您好` from 0 to 0.9 seconds |
+| When | the two are compared |
+| Then | the rows are two Pairs, `你好` with `您好` then `世界` with `世間` |
+
+## `VR-057` Pairing a moved cue with the first cue reading the same
+
+| Step | Statement |
+| --- | --- |
+| Given | a Backup reading `你好` from 0 to 1 second, and the subtitle now reading `你好` from 5 to 6 seconds and again from 8 to 9 seconds |
+| When | the two are compared |
+| Then | the Backup's `你好` is paired with the one from 5 to 6 seconds |
+
+## `VR-058` Taking the marks away at once when the Segments change in number
+
+The editor keeps its rows when Segments are split or merged, so marks left on them would name another Segment's changes.
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor marking what changed on each of its two rows against a Backup |
+| When | the first Segment is split, before the comparison of the three is answered |
+| Then | no row shows a mark |
+
+## `VR-059` Choosing another Backup in the Versions dialog
+
+| Step | Statement |
+| --- | --- |
+| Given | the editor showing the `en` translation |
+| When | the translation's group in the compare menu asks to choose in the Versions dialog |
+| Then | the Versions dialog opens at the `en` translation |
+
+## `VR-060` Keeping a removed cue's row drawn while its menu has focus
+
+A row left out takes its open menu with it. The row with focus inside stays drawn wherever the list is scrolled.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `VR-026`, `ED-202` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a comparison with a Removal of `世界` between two Segments, the menu of its row with focus |
+| When | the list is scrolled past that row |
+| Then | the row saying `世界` was removed is still drawn |

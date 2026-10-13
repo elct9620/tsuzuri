@@ -29,6 +29,7 @@ import {
   checkedBarButton,
   drawSegmentList,
   rowList,
+  openChangeMenu,
   segmentDialogsOf,
 } from "#/testing/segment-rows.ts";
 import { settle } from "#/testing/settle.ts";
@@ -457,7 +458,7 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
   let retranslateArgs: unknown;
   let commandsSent: string[];
 
-  const rows = () => [...rowList().children];
+  const rows = () => [...rowList().children] as HTMLElement[];
 
   async function hold(next: ProjectView): Promise<void> {
     project = next;
@@ -494,8 +495,8 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
   }
 
   async function openFromMenu(index: number): Promise<void> {
-    rows()
-      [index].querySelector<HTMLButtonElement>("button.retranscribe")!
+    openChangeMenu(rows()[index])
+      .querySelector<HTMLButtonElement>("button.retranscribe")!
       .click();
     await settle();
   }
@@ -610,7 +611,7 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
     await settle();
 
     expect([
-      rows()[0].querySelector("button.retranscribe"),
+      openChangeMenu(rows()[0]).querySelector("button.retranscribe"),
       checkedBarButton("重新轉錄"),
     ]).toEqual([null, null]);
   });

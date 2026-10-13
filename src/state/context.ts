@@ -117,6 +117,8 @@ export function segmentDialogs(): SegmentDialogs {
 export interface SegmentFields {
   /** The field of `kind` in the row of the Segment at `index`, or none while that row is not drawn. */
   field(index: number, kind: CursorField): HTMLElement | null;
+  /** Draws the row of the Segment at `index` and brings it into view, answering its field of `kind`. */
+  revealField(index: number, kind: CursorField): HTMLElement | null;
 }
 
 /** Hands the Svelte Components below the fields of the Segment rows; called while SegmentRows initialises. */

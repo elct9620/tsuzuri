@@ -1831,3 +1831,41 @@ A row left out is taken away with what is typed in it and what an input method i
 | Given | a Current Resource of 200 Segments in a list laid out on a screen, the first one's text being typed in |
 | When | the list is scrolled to its middle |
 | Then | the first row is still drawn with what is typed in it |
+
+## `ED-206` Bringing a Segment left out into view as it becomes current
+
+A Segment made current far from the view, as from the timeline or a search, has no row drawn yet. Its row is drawn where it stands, then scrolled into view.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `ED-202` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of 200 Segments in a list laid out on a screen, scrolled to its first row |
+| When | the 150th Segment is made current |
+| Then | its row is drawn and scrolled into view |
+
+## `ED-207` Entering the next Segment's text with Enter far from the view
+
+The row being typed in stays drawn wherever the list is scrolled, while the next one may be left out. Enter draws the next row and brings it into view before entering its text.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `ED-074`, `ED-205` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of 200 Segments in a list laid out on a screen, the first one's text entered and the list scrolled to its middle |
+| When | Enter is pressed |
+| Then | the second Segment's text is entered |
+
+## `ED-208` Bringing a row into view below the bars above the list
+
+The search and checked bars stay at the top of the list as it scrolls. A row brought into view stops below them rather than behind them.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of three Segments, the bars above the list 48 pixels tall |
+| When | a row is brought into view |
+| Then | it keeps 48 pixels clear above it |

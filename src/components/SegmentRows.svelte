@@ -5,9 +5,9 @@
   translation is shown or hidden. Placeholders stand in while Segments are being made or read. It
   marks the Current Segment and the rows being played, draws the Cursor, and lays the editor's
   comparison over the rows with each removed cue in its place; each field draws its own marks. Only
-  the rows near what shows of the list are drawn, with the Current Segment's and the one with focus
-  wherever they are, space as tall as they were drawn standing in for the rest, and every row while
-  the page has not laid the list out.
+  the rows near what shows of the list are drawn, with the Current Segment's, the one with focus and
+  one being brought into view wherever they are, space as tall as they were drawn standing in for
+  the rest, and every row while the page has not laid the list out.
 -->
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
@@ -53,6 +53,7 @@
     viewChoices,
     onshown,
     children,
+    barsHeight = 0,
   }: {
     playback: Playback;
     placeholders: ResourcePlaceholders;
@@ -61,6 +62,8 @@
     onshown?: (project: ProjectView | null) => void;
     /** What stands between the empty hint and the rows, as the search and checked bars do. */
     children?: Snippet;
+    /** How tall what stands above the rows is, which a row brought into view stops below. */
+    barsHeight?: number;
   } = $props();
 
   const feed = projectFeed();
@@ -78,7 +81,7 @@
 
   let list = $state<HTMLOListElement>();
   const rows: SegmentRow[] = $state([]);
-  setSegmentFields({ field });
+  setSegmentFields({ field, revealField });
   let project = $state.raw<ProjectView | null>(null);
   /** The transcript as the session read it with the Project, whose running Mode holds fields. */
   let view = $state.raw<TranscriptView | null>(null);
@@ -138,14 +141,26 @@
   );
   /** The key of the row with focus inside, which stays drawn with what its focus opened. */
   let focusedKey = $state<string | null>(null);
-  /** The rows kept drawn wherever the list is scrolled: the Current Segment's, which may be typed in, and the one with focus. */
-  const keptRowIndexes = $derived(
-    listRows.flatMap((row, at) =>
-      ("index" in row && row.index === currentIndex) || row.key === focusedKey
+  /** The Segment last brought into view by its position, whose row may not have been drawn. */
+  let revealedIndex = $state<number | null>(null);
+  /** The Segment started last while playback is followed, whose row is brought into view. */
+  const followedIndex = $derived(
+    playback.isFollowing
+      ? (playback.playingIndexes[playback.playingIndexes.length - 1] ?? null)
+      : null,
+  );
+  /**
+   * The rows kept drawn wherever the list is scrolled: the Current Segment's, which may be typed
+   * in, the one with focus, and those being brought into view.
+   */
+  const keptRowIndexes = $derived.by(() => {
+    const keptIndexes = new Set([currentIndex, revealedIndex, followedIndex]);
+    return listRows.flatMap((row, at) =>
+      ("index" in row && keptIndexes.has(row.index)) || row.key === focusedKey
         ? [at]
         : [],
-    ),
-  );
+    );
+  });
   const drawnEntries: ListEntry[] = $derived.by(() => {
     const entries: ListEntry[] = [];
     let drawnTo = 0;
@@ -236,6 +251,20 @@
     return rows[index]?.field(kind) ?? null;
   }
 
+  /**
+   * Draws the row of the Segment at `index` and brings it into view, answering its field of
+   * `kind`, or none for a translation not shown.
+   */
+  export function revealField(
+    index: number,
+    kind: CursorField,
+  ): HTMLElement | null {
+    revealedIndex = index;
+    flushSync();
+    rows[index]?.bringIntoView();
+    return field(index, kind);
+  }
+
   function show(next: ProjectView | null): void {
     const drawnCount = placeholders.isShown ? 0 : segments.length;
     isTypingKept = (next?.segments.length ?? 0) === drawnCount;
@@ -309,10 +338,8 @@
   // Keeps the row of the Segment started last in view while following playback, and catches up
   // with it as following playback comes on
   $effect(() => {
-    const indexes = playback.playingIndexes;
-    const index = indexes[indexes.length - 1];
-    if (playback.isFollowing && index !== undefined)
-      untrack(() => rows[index]?.bringIntoView());
+    const index = followedIndex;
+    if (index !== null) untrack(() => rows[index]?.bringIntoView());
   });
 </script>
 
@@ -331,7 +358,8 @@
 {/if}
 {@render children?.()}
 <ol
-  class="list @container text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_.field::highlight(search-match)]:bg-warning/30 [&_.field::highlight(search-current)]:bg-warning/70 [&_.field::highlight(glossary-term)]:underline [&_.field::highlight(glossary-term)]:decoration-primary [&_.field::highlight(glossary-candidate)]:underline [&_.field::highlight(glossary-candidate)]:decoration-dashed [&_.field::highlight(glossary-candidate)]:decoration-base-content/40 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li:not([data-gap])]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
+  class="list @container text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_.field::highlight(search-match)]:bg-warning/30 [&_.field::highlight(search-current)]:bg-warning/70 [&_.field::highlight(glossary-term)]:underline [&_.field::highlight(glossary-term)]:decoration-primary [&_.field::highlight(glossary-candidate)]:underline [&_.field::highlight(glossary-candidate)]:decoration-dashed [&_.field::highlight(glossary-candidate)]:decoration-base-content/40 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li:not([data-gap])]:list-row [&>li]:scroll-mt-(--bars-height) [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
+  style:--bars-height="{barsHeight}px"
   aria-label={t("edit.segments")}
   onfocusin={followFocus}
   onfocusout={followFocus}

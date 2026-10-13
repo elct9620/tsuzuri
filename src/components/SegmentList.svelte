@@ -40,6 +40,8 @@
   } = $props();
   const session = editingSession();
   let searchBar: SearchBar;
+  /** How tall the search and checked bars above the rows are. */
+  let barsHeight = $state(0);
   /** A change by key is being sent. */
   let isChangingByKey = false;
 
@@ -176,8 +178,12 @@
   {placeholders}
   {viewChoices}
   onshown={() => searchBar.searchAgain()}
+  {barsHeight}
 >
-  <div class="sticky -top-4 z-10 mb-2 flex flex-col gap-2">
+  <div
+    class="sticky -top-4 z-10 mb-2 flex flex-col gap-2"
+    bind:clientHeight={barsHeight}
+  >
     <SearchBar bind:this={searchBar} />
     <CheckedBar {project} />
   </div>

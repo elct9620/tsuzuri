@@ -9,6 +9,7 @@ Hearing and watching the Current Resource's media above the editor while its sub
 - `src-tauri/src/waveform/*.rs`
 - `src-tauri/src/window.rs`
 - `src/components/Preview.test.ts`
+- `src/components/SegmentList.test.ts`
 - `src/components/Timeline.test.ts`
 - `src/components/current-segment.test.ts`
 - `src/page.test.ts`
@@ -1814,3 +1815,17 @@ How long a Segment runs is what timing it checks against, so the card says so be
 | Given | the Video Window open, named in Traditional Chinese |
 | When | English is chosen as the Interface Language |
 | Then | its title reads in English and its page declares English |
+
+## `PV-217` Bringing a row left out into view while following playback
+
+The row of a Segment played far from the view has no row drawn yet. While playback is followed, its row is drawn where it stands, then scrolled into view.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `PV-080`, `ED-202` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of 200 Segments in a list laid out on a screen, scrolled to its first row, and playback followed |
+| When | the 150th Segment starts playing |
+| Then | its row is drawn and scrolled into view |

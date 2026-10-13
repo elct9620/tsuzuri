@@ -83,6 +83,7 @@ describe("SearchBar", () => {
     render(SearchBar, {
       context: withSegmentFields(context, {
         field: (index, kind) => rows.field(index, kind),
+        revealField: (index, kind) => rows.revealField(index, kind),
       }),
     });
     await assembly.start();

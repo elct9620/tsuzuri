@@ -235,7 +235,7 @@
    * the text as a click elsewhere does.
    */
   function enterNext(): void {
-    const next = fields.field(index + 1, kind);
+    const next = fields.revealField(index + 1, kind);
     if (next) session.chooseFrom("next", () => next.focus());
     else element!.blur();
   }

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { screen } from "@testing-library/svelte";
+import { cleanup, screen } from "@testing-library/svelte";
 import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { flushSync } from "svelte";
@@ -7,7 +7,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assemble } from "#/assembly.ts";
 import type { GlossaryTable, ProjectView } from "#/ipc/project.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
-import { fieldValue, isFieldHeld } from "#/editor/index.ts";
+import {
+  type EditingSession,
+  fieldValue,
+  isFieldHeld,
+} from "#/editor/index.ts";
 import {
   showNotifications,
   notificationAction,
@@ -62,6 +66,10 @@ describe("SegmentList", () => {
   }
 
   let run: TaskRun;
+  /** Draws the Segment list into the page's section, following the Projects read. */
+  let drawList: () => void;
+  let session: EditingSession;
+  let playback: Playback;
   let segmentList: SegmentList;
   let resourcePlaceholders: ResourcePlaceholders;
   /** What the View menu chooses, the Speaker column among it. */
@@ -121,18 +129,23 @@ describe("SegmentList", () => {
     );
     const assembly = assemble();
     run = new TaskRun();
+    session = assembly.session;
+    playback = new Playback();
     const context = pageContext(assembly.feed, assembly.session, run);
     resourcePlaceholders = new ResourcePlaceholders();
     viewChoices = new ViewChoices();
-    segmentList = renderFollowingProject(SegmentList, assembly.feed, {
-      target: document.querySelector("section")!,
-      props: {
-        playback: new Playback(),
-        placeholders: resourcePlaceholders,
-        viewChoices,
-      },
-      context,
-    });
+    drawList = () => {
+      segmentList = renderFollowingProject(SegmentList, assembly.feed, {
+        target: document.querySelector("section")!,
+        props: {
+          playback,
+          placeholders: resourcePlaceholders,
+          viewChoices,
+        },
+        context,
+      });
+    };
+    drawList();
     await assembly.start();
     await settle();
   });
@@ -292,6 +305,26 @@ describe("SegmentList", () => {
     expect([timeWrites.length, [...writtenFields]]).toEqual([0, ["1"]]);
   });
 
+  /** A Project of 200 Segments, each a second long. */
+  const longProject = () =>
+    projectOf({
+      segments: Array.from({ length: 200 }, (_, index) => ({
+        start_ms: index * 1000,
+        end_ms: index * 1000 + 1000,
+        text: `第 ${index} 段`,
+      })),
+    });
+
+  /** The rows scrolled into view while `act` runs. */
+  async function scrolledRowsWhile(act: () => void): Promise<Element[]> {
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
+    act();
+    await settle();
+    const rows = scroll.mock.contexts as Element[];
+    scroll.mockRestore();
+    return rows;
+  }
+
   /** The positions of the Segments whose rows are drawn. */
   const drawnIndexes = () =>
     segmentRows().map((row) => Number(row.getAttribute("aria-posinset")) - 1);
@@ -300,15 +333,7 @@ describe("SegmentList", () => {
   it("draws only the rows near the view as the list is scrolled", async () => {
     const layout = layOutSegmentList();
     try {
-      await hold(
-        projectOf({
-          segments: Array.from({ length: 200 }, (_, index) => ({
-            start_ms: index * 1000,
-            end_ms: index * 1000 + 1000,
-            text: `第 ${index} 段`,
-          })),
-        }),
-      );
+      await hold(longProject());
 
       layout.scrollTo(8000);
       flushSync();
@@ -329,15 +354,7 @@ describe("SegmentList", () => {
     const observers = stubResizeObserver();
     const layout = layOutSegmentList();
     try {
-      await hold(
-        projectOf({
-          segments: Array.from({ length: 200 }, (_, index) => ({
-            start_ms: index * 1000,
-            end_ms: index * 1000 + 1000,
-            text: `第 ${index} 段`,
-          })),
-        }),
-      );
+      await hold(longProject());
 
       /** Reports the rows drawn now as 40 pixels tall, as the browser does once it lays them out. */
       const measure = () => {
@@ -376,15 +393,7 @@ describe("SegmentList", () => {
   it("keeps the Current Segment's row drawn as the list scrolls away", async () => {
     const layout = layOutSegmentList();
     try {
-      await hold(
-        projectOf({
-          segments: Array.from({ length: 200 }, (_, index) => ({
-            start_ms: index * 1000,
-            end_ms: index * 1000 + 1000,
-            text: `第 ${index} 段`,
-          })),
-        }),
-      );
+      await hold(longProject());
       const typed = segmentRows()[0].querySelector<HTMLElement>(".field.text")!;
       typed.focus();
       typed.dispatchEvent(new FocusEvent("focus"));
@@ -402,6 +411,93 @@ describe("SegmentList", () => {
       ]).toEqual(["1", "改過", true]);
     } finally {
       layout.restore();
+    }
+  });
+
+  // @behavior ED-206
+  it("brings a Segment left out into view as it becomes current", async () => {
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+
+      const scrolled = await scrolledRowsWhile(() => session.makeCurrent(149));
+
+      expect(
+        scrolled.map((row) => row.getAttribute("aria-posinset")),
+      ).toContain("150");
+    } finally {
+      layout.restore();
+    }
+  });
+
+  // @behavior PV-217
+  it("brings a row left out into view while following playback", async () => {
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+      playback.isFollowing = true;
+
+      const scrolled = await scrolledRowsWhile(
+        () => (playback.playingIndexes = [149]),
+      );
+
+      expect(
+        scrolled.map((row) => row.getAttribute("aria-posinset")),
+      ).toContain("150");
+    } finally {
+      layout.restore();
+    }
+  });
+
+  // @behavior ED-207
+  it("enters the next Segment's text with Enter far from the view", async () => {
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+      const first = segmentRows()[0].querySelector<HTMLElement>(".field.text")!;
+      first.focus();
+      first.dispatchEvent(new FocusEvent("focus"));
+      await settle();
+      layout.scrollTo(8000);
+      flushSync();
+
+      first.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      );
+      await settle();
+
+      const entered = document.activeElement as HTMLElement;
+      expect([
+        entered.matches(".field.text"),
+        entered.closest("li")?.getAttribute("aria-posinset"),
+      ]).toEqual([true, "2"]);
+    } finally {
+      layout.restore();
+    }
+  });
+
+  // @behavior ED-208
+  it("brings a row into view below the bars above the list", async () => {
+    // The bars are measured as the list is drawn
+    cleanup();
+    const barsHeight = vi
+      .spyOn(HTMLElement.prototype, "clientHeight", "get")
+      .mockReturnValue(48);
+    try {
+      drawList();
+      await hold(
+        projectOf({
+          segments: [
+            { start_ms: 0, end_ms: 1000, text: "大家" },
+            { start_ms: 1000, end_ms: 2000, text: "今天" },
+          ],
+        }),
+      );
+
+      // The rows stop that far below the top of the list as they are scrolled into view
+      expect(rowList().style.getPropertyValue("--bars-height")).toBe("48px");
+    } finally {
+      barsHeight.mockRestore();
     }
   });
 

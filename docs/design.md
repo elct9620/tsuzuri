@@ -1329,11 +1329,11 @@ CUDA 不內建，要更快的使用者自己下載上游版本。上游檔名與
 | 項目 | 內容 |
 |---|---|
 | 標題 | `Preview Build <日期>+<編號>` |
-| 說明 | 建置時間、commit |
+| 說明 | 建置時間、commit、上一版之後的 commit |
 | tag | `v<預覽版號>`，只建立 |
 | 保留 | 最新 5 版 |
 
-標題用 Release Name，與設定頁同名，回報時對得上；版號只用來排序，不列在說明。workflow 的 token 不能把 tag 移到 workflow 檔案不同的 commit，所以每版一個 tag，舊版連同 tag 刪除。
+標題用 Release Name，與設定頁同名，回報時對得上；版號只用來排序，不列在說明。上一版是建置時間較早、commit 不同的最新預覽版，問題出在這版而不在上一版時，就在列出的 commit 之中。workflow 的 token 不能把 tag 移到 workflow 檔案不同的 commit，所以每版一個 tag，舊版連同 tag 刪除。
 
 #### 13.3.2 版號只在 stable
 

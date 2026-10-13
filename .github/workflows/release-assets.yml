@@ -191,6 +191,29 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.target.outputs.tag }}
         run: gh release edit "$TAG" --draft=false -R "$GITHUB_REPOSITORY"
+      # The commits since the previous Preview build, so a problem found in this build and not that
+      # one lies among them; a comparison that fails leaves the notes without the list.
+      - name: List the changes since the previous Preview build
+        if: needs.target.outputs.channel == 'preview'
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          SHA: ${{ needs.target.outputs.sha }}
+        with:
+          script: |
+            const { readFileSync, writeFileSync } = await import("node:fs");
+            const { previewChanges } = await import(
+              `${process.env.GITHUB_WORKSPACE}/scripts/preview_version.ts`
+            );
+            const { version } = JSON.parse(readFileSync("assets/latest.json", "utf8"));
+            const changes = await previewChanges(
+              github,
+              process.env.GITHUB_REPOSITORY,
+              version,
+              process.env.SHA,
+            );
+            if (changes)
+              writeFileSync(`${process.env.RUNNER_TEMP}/changes.json`, JSON.stringify(changes));
       # Each Preview build gets its own tag and Prerelease, created and never moved: the job's token
       # may not move a tag onto a commit whose workflows differ. It stays a draft until its assets are
       # attached, and a Prerelease never becomes the latest release, so the stable channel never
@@ -204,7 +227,9 @@ jobs:
         run: |
           version="$(jq -er .version assets/latest.json)"
           tag="$(node scripts/preview_version.ts tag "$version")"
-          page="$(node scripts/preview_version.ts release "$version" "$SHA")"
+          changes=()
+          if [ -s "$RUNNER_TEMP/changes.json" ]; then changes=("$RUNNER_TEMP/changes.json"); fi
+          page="$(node scripts/preview_version.ts release "$version" "$SHA" "${changes[@]}")"
           title="$(jq -r .title <<<"$page")"
           notes="$(jq -r .notes <<<"$page")"
           if gh release view "$tag" -R "$GITHUB_REPOSITORY" --json tagName --silent 2>/dev/null; then

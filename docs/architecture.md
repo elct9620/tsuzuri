@@ -50,7 +50,7 @@
 | `src-tauri/tauri.updater.conf.json` | CI 打包時寫出更新套件的簽章 |
 | `scripts/signatures.ts` | 以公鑰與版號檢查簽章 |
 | `scripts/manifest.ts` | 寫出 Release 的 `latest.json` |
-| `scripts/preview_version.ts` | 算出並寫入預覽版號 |
+| `scripts/preview_version.ts` | 預覽版號與 Release 說明 |
 | `scripts/site.ts` | 組出更新網站 |
 | CI 的 cargo-about | 列出 Rust 套件的授權 |
 | `vite build` | 列出 webview 套件的授權 |
@@ -88,7 +88,7 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 ├─ scripts/licenses.ts    license checks and page
 ├─ scripts/signatures.ts  checks update signatures
 ├─ scripts/manifest.ts    writes latest.json
-├─ scripts/preview_version.ts  preview version number
+├─ scripts/preview_version.ts  preview version and notes
 ├─ scripts/site.ts        update site layout
 ├─ site/                  update site pages
 └─ .spec/                 glossary, behavior, contract

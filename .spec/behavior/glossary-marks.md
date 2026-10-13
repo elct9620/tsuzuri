@@ -214,7 +214,7 @@ A mark counts characters of the text it was found in, so in a text since changed
 
 ## `GM-022` Underlining again only the fields whose marks changed
 
-Every underline is drawn over the whole page, so redrawing all of them on each read would cost a long subtitle more for each Segment it marks.
+Every underline is drawn over the whole page. A field redraws only its own, so a read costs only the fields it changed.
 
 | Step | Statement |
 | --- | --- |

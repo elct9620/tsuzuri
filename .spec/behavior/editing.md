@@ -1726,7 +1726,7 @@ An input method still processing a key owns it, as with Enter in a text (`ED-031
 
 ## `ED-198` Writing whether a field takes typing only when that changes
 
-Writing it makes the browser look over the whole page again, so a list rewriting it on every read slows with each Segment it holds, until a merge in a long subtitle stalls for seconds.
+Each write makes the browser look over the whole page again. Writing it only on a change keeps a merge in a long subtitle quick.
 
 | Step | Statement |
 | --- | --- |
@@ -1736,7 +1736,7 @@ Writing it makes the browser look over the whole page again, so a list rewriting
 
 ## `ED-199` Drawing a row's change menu once it opens
 
-Each row offers its Segment Changes in a menu of its own, so drawing every menu on every read would cost a long subtitle more for each Segment it holds.
+Every row has a menu of Segment Changes. Drawing only the menus opened keeps a read from costing more for each Segment.
 
 | Step | Statement |
 | --- | --- |
@@ -1746,7 +1746,7 @@ Each row offers its Segment Changes in a menu of its own, so drawing every menu 
 
 ## `ED-200` Writing a row's times and texts only when they change
 
-Each Project read brings every Segment anew, and a field being typed in keeps its value only while the Segments keep their number, so a row writing its fields on each read, or each time that number changes, would cost a long subtitle more for each Segment it holds.
+Each Project read brings every Segment anew. A row writes its fields only when they change, as the Segments change in number too. A read then costs only the rows it changed.
 
 | Step | Statement |
 | --- | --- |
@@ -1756,7 +1756,7 @@ Each Project read brings every Segment anew, and a field being typed in keeps it
 
 ## `ED-201` Redrawing only the rows the Cursor moves between
 
-A Cursor moves with every key, so a move that redrew every row would cost a long subtitle more for each Segment it holds.
+A Cursor moves with every key. A move redraws only the rows it leaves and enters.
 
 | Step | Statement |
 | --- | --- |

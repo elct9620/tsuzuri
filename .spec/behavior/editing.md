@@ -1883,3 +1883,17 @@ A search finds matches in every Segment, while only some rows are drawn. A row d
 | Given | a Current Resource of 200 Segments in a list laid out on a screen, scrolled to its first row, and a search matching every Segment |
 | When | the list is scrolled to its middle |
 | Then | the matches in the rows around the middle are marked |
+
+## `ED-210` Keeping the drawn heights of the other rows as a Segment is split
+
+A split, merge or deletion moves every row after it by one or more places. Each row keeps the height it was drawn at, and only the rows the change made wait to be drawn.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `ED-204` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of 200 Segments in a list laid out on a screen, each row drawn 40 pixels tall, scrolled to its last row |
+| When | the first Segment is split in two |
+| Then | the space before the drawn rows counts the two new rows as not yet drawn and every other row at 40 pixels |

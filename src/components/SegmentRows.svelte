@@ -12,7 +12,7 @@
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
 
-  import type { ProjectView } from "#/ipc/project.ts";
+  import type { ProjectView, Segment } from "#/ipc/project.ts";
   import { isMacOS } from "#/ipc/system.ts";
   import {
     CURSOR_HIGHLIGHT,
@@ -43,7 +43,12 @@
   import type { ViewChoices } from "#/state/view-choices.svelte.ts";
   import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import { resourceOffers } from "#/actions/segment-changes.ts";
-  import { drawnRanges, type ListView, rowOffsets } from "#/ui/row-window.ts";
+  import {
+    drawnRanges,
+    type ListView,
+    rowOffsets,
+    shiftedHeights,
+  } from "#/ui/row-window.ts";
   import RemovalRow from "#/components/RemovalRow.svelte";
   import SegmentRow from "#/components/SegmentRow.svelte";
 
@@ -265,7 +270,42 @@
     return field(index, kind);
   }
 
+  /** Whether two Segments read alike, so the row drawn for one stands as tall for the other. */
+  const isAlike = (a: Segment, b: Segment) =>
+    a.start_ms === b.start_ms &&
+    a.end_ms === b.end_ms &&
+    a.text === b.text &&
+    a.translation === b.translation &&
+    a.speaker === b.speaker;
+
+  /**
+   * Moves the heights the Segments' rows were drawn at along with them as `next` gains or loses
+   * Segments, so the rows after a split, merge or deletion keep theirs.
+   */
+  function shiftHeights(next: Segment[]): void {
+    if (next.length === segments.length) return;
+    const shifted = shiftedHeights(
+      segments.map((_, index) => heightByKey.get(`${index}`)),
+      segments,
+      next,
+      isAlike,
+    );
+    const nextHeightByKey = new Map(
+      listRows.flatMap((row) => {
+        const height = heightByKey.get(row.key);
+        return "sideRow" in row && height !== undefined
+          ? [[row.key, height] as const]
+          : [];
+      }),
+    );
+    shifted.forEach((height, index) => {
+      if (height !== undefined) nextHeightByKey.set(`${index}`, height);
+    });
+    heightByKey = nextHeightByKey;
+  }
+
   function show(next: ProjectView | null): void {
+    shiftHeights(next?.segments ?? []);
     const drawnCount = placeholders.isShown ? 0 : segments.length;
     isTypingKept = (next?.segments.length ?? 0) === drawnCount;
     project = next;
@@ -358,7 +398,7 @@
 {/if}
 {@render children?.()}
 <ol
-  class="list @container text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_.field::highlight(search-match)]:bg-warning/30 [&_.field::highlight(search-current)]:bg-warning/70 [&_.field::highlight(glossary-term)]:underline [&_.field::highlight(glossary-term)]:decoration-primary [&_.field::highlight(glossary-candidate)]:underline [&_.field::highlight(glossary-candidate)]:decoration-dashed [&_.field::highlight(glossary-candidate)]:decoration-base-content/40 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li:not([data-gap])]:list-row [&>li]:scroll-mt-(--bars-height) [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
+  class="list @container text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_.field::highlight(search-match)]:bg-warning/30 [&_.field::highlight(search-current)]:bg-warning/70 [&_.field::highlight(glossary-term)]:underline [&_.field::highlight(glossary-term)]:decoration-primary [&_.field::highlight(glossary-candidate)]:underline [&_.field::highlight(glossary-candidate)]:decoration-dashed [&_.field::highlight(glossary-candidate)]:decoration-base-content/40 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li:not([data-gap])]:list-row [&>li[data-gap]]:[overflow-anchor:none] [&>li]:scroll-mt-(--bars-height) [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
   style:--bars-height="{barsHeight}px"
   aria-label={t("edit.segments")}
   onfocusin={followFocus}

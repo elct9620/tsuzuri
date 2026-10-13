@@ -31,7 +31,12 @@ import {
   segmentRows,
 } from "#/testing/segment-rows.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
-import { layOutSegmentList, stubResizeObserver } from "#/testing/layout.ts";
+import {
+  type LaidOutSegmentList,
+  layOutSegmentList,
+  stubResizeObserver,
+  type WatchedResizes,
+} from "#/testing/layout.ts";
 import { settle } from "#/testing/settle.ts";
 import { stubHighlights } from "#/testing/highlights.ts";
 
@@ -326,6 +331,40 @@ describe("SegmentList", () => {
     return rows;
   }
 
+  /**
+   * Scrolls the list from its first row to its last, the browser drawing each row 40 pixels tall,
+   * as `observers` report it once the rows are laid out.
+   */
+  function scrollThroughAt40(
+    layout: LaidOutSegmentList,
+    observers: WatchedResizes[],
+  ): void {
+    const measure = () => {
+      const { targets, notify } = observers[observers.length - 1];
+      notify(
+        targets.map(
+          (target) =>
+            ({
+              target,
+              borderBoxSize: [{ blockSize: 40, inlineSize: 600 }],
+            }) as unknown as ResizeObserverEntry,
+        ),
+      );
+      flushSync();
+    };
+    measure();
+    for (let top = 0; top <= 200 * 40; top += 400) {
+      layout.scrollTo(top);
+      flushSync();
+      measure();
+    }
+  }
+
+  /** The height of the space standing in for the rows before the first one drawn. */
+  const spaceBeforeDrawn = () =>
+    rowList().querySelector<HTMLElement>(":scope > li[data-gap]:first-child")
+      ?.style.height;
+
   /** The positions of the Segments whose rows are drawn. */
   const drawnIndexes = () =>
     segmentRows().map((row) => Number(row.getAttribute("aria-posinset")) - 1);
@@ -357,33 +396,9 @@ describe("SegmentList", () => {
     try {
       await hold(longProject());
 
-      /** Reports the rows drawn now as 40 pixels tall, as the browser does once it lays them out. */
-      const measure = () => {
-        const { targets, notify } = observers[observers.length - 1];
-        notify(
-          targets.map(
-            (target) =>
-              ({
-                target,
-                borderBoxSize: [{ blockSize: 40, inlineSize: 600 }],
-              }) as unknown as ResizeObserverEntry,
-          ),
-        );
-        flushSync();
-      };
+      scrollThroughAt40(layout, observers);
 
-      measure();
-      for (let top = 0; top <= 200 * 40; top += 400) {
-        layout.scrollTo(top);
-        flushSync();
-        measure();
-      }
-
-      const firstDrawn = drawnIndexes()[0];
-      const space = rowList().querySelector<HTMLElement>(
-        ":scope > li[data-gap]:first-child",
-      );
-      expect(space?.style.height).toBe(`${firstDrawn * 40}px`);
+      expect(spaceBeforeDrawn()).toBe(`${drawnIndexes()[0] * 40}px`);
     } finally {
       layout.restore();
       vi.unstubAllGlobals();
@@ -530,6 +545,34 @@ describe("SegmentList", () => {
           ),
       );
       expect(markedRows.has("101")).toBe(true);
+    } finally {
+      layout.restore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  // @behavior ED-210
+  it("keeps the drawn heights of the other rows as a Segment is split", async () => {
+    const observers = stubResizeObserver();
+    const layout = layOutSegmentList();
+    try {
+      const project = longProject();
+      await hold(project);
+      scrollThroughAt40(layout, observers);
+
+      const [first, ...rest] = project.segments;
+      await hold(
+        projectOf({
+          segments: [
+            { ...first, end_ms: 500, text: "第 0" },
+            { ...first, start_ms: 500, text: "段" },
+            ...rest,
+          ],
+        }),
+      );
+
+      const firstDrawn = drawnIndexes()[0];
+      expect(spaceBeforeDrawn()).toBe(`${2 * 80 + (firstDrawn - 2) * 40}px`);
     } finally {
       layout.restore();
       vi.unstubAllGlobals();

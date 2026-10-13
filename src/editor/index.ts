@@ -20,7 +20,6 @@ export {
   isTextField,
   placeSelection,
   rangeOf,
-  setFieldHeld,
   setFieldValue,
 } from "./field";
 export { hasHighlights, markRanges, textRange } from "./highlight";

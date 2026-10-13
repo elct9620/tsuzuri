@@ -16,7 +16,6 @@
     fieldSelection,
     fieldValue,
     insertLineBreak,
-    setFieldHeld,
     setFieldValue,
   } from "#/editor/index.ts";
   import { notifyEdit } from "#/state/notification.svelte.ts";
@@ -94,7 +93,6 @@
     if (!element) return;
     if (!isTypingKept || element !== document.activeElement)
       setFieldValue(element, value);
-    setFieldHeld(element, isHeld);
   });
 
   /** Follows the selection while the field has focus, as the rows hand it each change. */
@@ -173,9 +171,10 @@
 <div
   bind:this={element}
   class={["field", kind, isPending && "skeleton"]}
-  contenteditable="plaintext-only"
+  contenteditable={isHeld ? "false" : "plaintext-only"}
   role="textbox"
   aria-multiline="true"
+  aria-disabled={isHeld}
   data-index={index}
   data-field={kind}
   data-placeholder={placeholder}

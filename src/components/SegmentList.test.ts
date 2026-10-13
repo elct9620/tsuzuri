@@ -195,6 +195,35 @@ describe("SegmentList", () => {
     ]).toEqual([3, true, true]);
   });
 
+  // @behavior ED-198
+  it("writes whether a field takes typing only when that changes", async () => {
+    const segments = [
+      { start_ms: 0, end_ms: 1000, text: "大家" },
+      { start_ms: 1000, end_ms: 2000, text: "今天" },
+      { start_ms: 2000, end_ms: 3000, text: "很好" },
+    ];
+    await hold(projectOf({ segments }));
+    const writes: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => writes.push(...records));
+    observer.observe(document.body, {
+      subtree: true,
+      attributeFilter: ["contenteditable", "aria-disabled"],
+    });
+
+    await hold(
+      projectOf({
+        segments: [
+          segments[0],
+          { start_ms: 1000, end_ms: 3000, text: "今天很好" },
+        ],
+      }),
+    );
+    writes.push(...observer.takeRecords());
+    observer.disconnect();
+
+    expect(writes).toEqual([]);
+  });
+
   /** Two Segments, the second reading `text`, so a change to it leaves their number alone. */
   const projectWithSecondText = (text: string) =>
     projectOf({
@@ -661,11 +690,14 @@ describe("SegmentList", () => {
       running_mode: { mode: "translation", language: "en", indexes: null },
     });
 
-    const isHeld = (selector: string) =>
-      isFieldHeld(document.querySelector<HTMLElement>(selector)!);
-    expect([isHeld(".field.translation"), isHeld(".field.text")]).toEqual([
-      true,
-      false,
+    /** Whether the field `selector` names is held, and what it tells assistive technology. */
+    const holdOf = (selector: string) => {
+      const field = document.querySelector<HTMLElement>(selector)!;
+      return [isFieldHeld(field), field.getAttribute("aria-disabled")];
+    };
+    expect([holdOf(".field.translation"), holdOf(".field.text")]).toEqual([
+      [true, "true"],
+      [false, "false"],
     ]);
   });
   // @behavior ED-092

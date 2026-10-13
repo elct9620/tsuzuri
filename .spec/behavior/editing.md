@@ -1723,3 +1723,13 @@ An input method still processing a key owns it, as with Enter in a text (`ED-031
 | Given | the interface on Linux, three Segments, with an input method processing a key in the second Segment's text |
 | When | Ctrl+Alt+Down is pressed |
 | Then | no merge is asked for |
+
+## `ED-198` Writing whether a field takes typing only when that changes
+
+Writing it makes the browser look over the whole page again, so a list rewriting it on every read slows with each Segment it holds, until a merge in a long subtitle stalls for seconds.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of three Segments, none held from typing |
+| When | the second and third Segments are merged |
+| Then | no field is written whether it takes typing |

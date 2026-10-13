@@ -1728,6 +1728,10 @@ An input method still processing a key owns it, as with Enter in a text (`ED-031
 
 Each write makes the browser look over the whole page again. Writing it only on a change keeps a merge in a long subtitle quick.
 
+| Attribute | Value |
+| --- | --- |
+| refines | `ED-027` |
+
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource of three Segments, none held from typing |
@@ -1737,6 +1741,10 @@ Each write makes the browser look over the whole page again. Writing it only on 
 ## `ED-199` Drawing a row's change menu once it opens
 
 Every row has a menu of Segment Changes. Drawing only the menus opened keeps a read from costing more for each Segment.
+
+| Attribute | Value |
+| --- | --- |
+| relates | `ED-016`, `ED-096` |
 
 | Step | Statement |
 | --- | --- |
@@ -1748,6 +1756,10 @@ Every row has a menu of Segment Changes. Drawing only the menus opened keeps a r
 
 Each Project read brings every Segment anew. A row writes its fields only when they change, as the Segments change in number too. A read then costs only the rows it changed.
 
+| Attribute | Value |
+| --- | --- |
+| refines | `ED-189`, `ED-190` |
+
 | Step | Statement |
 | --- | --- |
 | Given | a Current Resource of three Segments, shown in place of Placeholder rows |
@@ -1757,6 +1769,10 @@ Each Project read brings every Segment anew. A row writes its fields only when t
 ## `ED-201` Redrawing only the rows the Cursor moves between
 
 A Cursor moves with every key. A move redraws only the rows it leaves and enters.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `ED-049` |
 
 | Step | Statement |
 | --- | --- |

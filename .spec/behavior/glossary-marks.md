@@ -216,6 +216,10 @@ A mark counts characters of the text it was found in, so in a text since changed
 
 Every underline is drawn over the whole page. A field redraws only its own, so a read costs only the fields it changed.
 
+| Attribute | Value |
+| --- | --- |
+| refines | `GM-012` |
+
 | Step | Statement |
 | --- | --- |
 | Given | three Segments, each with a candidate in its text |

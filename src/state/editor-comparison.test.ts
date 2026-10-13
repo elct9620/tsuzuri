@@ -13,7 +13,10 @@ import { t } from "#/i18n.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
 import CompareMenu from "#/components/CompareMenu.svelte";
 import { pageContext } from "#/state/context.ts";
-import { EditorComparison } from "#/state/editor-comparison.svelte.ts";
+import {
+  comparisonLayout,
+  EditorComparison,
+} from "#/state/editor-comparison.svelte.ts";
 import { notifications, showNotifications } from "#/testing/notifications.ts";
 import { drawSegmentRows } from "#/testing/segment-rows.ts";
 import { settle } from "#/testing/settle.ts";
@@ -663,5 +666,75 @@ describe("EditorComparison", () => {
     expect(
       document.querySelector('[data-ghost="translation"]')?.textContent,
     ).toContain("已刪除（English）：World");
+  });
+});
+
+describe("comparisonLayout", () => {
+  const segments = [
+    { start_ms: 0, end_ms: 1000, text: "大家" },
+    { start_ms: 1000, end_ms: 2000, text: "今天" },
+  ];
+  const nothingCompared = { original: [], translation: [] };
+
+  it("lays the same comparison on each Segment nothing is compared on, read after read", () => {
+    const first = comparisonLayout(segments, nothingCompared, []);
+    const next = comparisonLayout(
+      segments.map((segment) => ({ ...segment })),
+      nothingCompared,
+      [],
+    );
+
+    expect([
+      next.bySegment[0] === first.bySegment[0],
+      next.bySegment[1] === first.bySegment[0],
+      next.removalsBefore[2] === first.removalsBefore[0],
+    ]).toEqual([true, true, true]);
+  });
+
+  it("lays a removed cue before the first Segment starting no earlier than it", () => {
+    const removal: ComparedRow = {
+      kind: "removal",
+      left: [{ start_ms: 500, end_ms: 900, text: "嗨" }],
+      right: [],
+      is_text_changed: false,
+      is_time_changed: false,
+      text_spans: [],
+    };
+
+    const layout = comparisonLayout(
+      segments,
+      { original: [removal], translation: [] },
+      [],
+    );
+
+    expect(layout.removalsBefore.map((sideRows) => sideRows.length)).toEqual([
+      0, 1, 0,
+    ]);
+  });
+
+  it("lays a removed cue before the first Segment starting no earlier than it among Segments out of order", () => {
+    const removal: ComparedRow = {
+      kind: "removal",
+      left: [{ start_ms: 2000, end_ms: 2500, text: "嗨" }],
+      right: [],
+      is_text_changed: false,
+      is_time_changed: false,
+      text_spans: [],
+    };
+    const unordered = [0, 3000, 1000, 4000].map((start_ms) => ({
+      start_ms,
+      end_ms: start_ms + 500,
+      text: "一",
+    }));
+
+    const layout = comparisonLayout(
+      unordered,
+      { original: [removal], translation: [] },
+      [],
+    );
+
+    expect(layout.removalsBefore.map((sideRows) => sideRows.length)).toEqual([
+      0, 1, 0, 0, 0,
+    ]);
   });
 });

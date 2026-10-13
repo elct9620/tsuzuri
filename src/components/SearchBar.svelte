@@ -1,15 +1,16 @@
 <!--
   @component
   The search bar: finds what is typed in the Current Resource's original or the translation it
-  shows, as Rust reads it, marks every match and moves from one to the next, making its Segment
-  current. The Segment list has it search again whenever the Segments are shown anew.
+  shows, as Rust reads it, marks the matches in the rows drawn and moves from one to the next,
+  making its Segment current. The Segment list has it search again whenever the Segments are shown
+  anew.
 -->
 <script lang="ts">
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import ChevronUp from "@lucide/svelte/icons/chevron-up";
   import Search from "@lucide/svelte/icons/search";
   import X from "@lucide/svelte/icons/x";
-  import { flushSync, onDestroy } from "svelte";
+  import { flushSync } from "svelte";
 
   import { findText, type TextMatch } from "#/ipc/editing.ts";
   import { isMacOS } from "#/ipc/system.ts";
@@ -89,11 +90,10 @@
     void search();
   }
 
-  /** Closes the bar and takes its marks away. */
+  /** Closes the bar, which takes its marks away. */
   function close(): void {
     isOpen = false;
     matches = [];
-    unmark();
   }
 
   /** Looks for what is typed from the first match on. */
@@ -122,7 +122,6 @@
     const total = matches.length;
     currentPosition = (currentPosition + step + total) % total;
     session.makeCurrent(matches[currentPosition].index, "search");
-    mark();
   }
 
   async function findMatches(): Promise<void> {
@@ -130,7 +129,6 @@
     failure = null;
     if (pattern === "") {
       matches = [];
-      mark();
       return;
     }
     try {
@@ -141,16 +139,14 @@
         currentPosition,
         Math.max(answer.length - 1, 0),
       );
-      mark();
     } catch (error) {
       if (number !== searchNumber) return;
       matches = [];
-      unmark();
       failure = failureMessage(error);
     }
   }
 
-  /** Marks every match and the current one. */
+  /** Marks every match and the current one in the rows drawn. */
   function mark(): void {
     const ranges = matches.map((match) => matchRange(match));
     markRanges(
@@ -172,7 +168,13 @@
     return element ? rangeOf(element, { start, end }) : null;
   }
 
-  onDestroy(unmark);
+  // Marks the matches while the bar is open, again as they change, the current one moves, or rows
+  // are drawn or taken away
+  $effect(() => {
+    if (!isOpen) return;
+    mark();
+    return unmark;
+  });
 </script>
 
 <svelte:window onkeydown={followShortcut} />

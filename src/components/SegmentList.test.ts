@@ -33,6 +33,7 @@ import {
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import { layOutSegmentList, stubResizeObserver } from "#/testing/layout.ts";
 import { settle } from "#/testing/settle.ts";
+import { stubHighlights } from "#/testing/highlights.ts";
 
 describe("SegmentList", () => {
   let project: ProjectView | null;
@@ -498,6 +499,40 @@ describe("SegmentList", () => {
       expect(rowList().style.getPropertyValue("--bars-height")).toBe("48px");
     } finally {
       barsHeight.mockRestore();
+    }
+  });
+
+  // @behavior ED-209
+  it("marks the matches in rows as they are drawn", async () => {
+    const highlights = stubHighlights();
+    const layout = layOutSegmentList();
+    try {
+      await hold(longProject());
+      segmentList.openSearch();
+      flushSync();
+      const patternBox = screen.getByRole<HTMLInputElement>("searchbox", {
+        name: "搜尋文字",
+      });
+      patternBox.value = "段";
+      patternBox.dispatchEvent(new Event("input", { bubbles: true }));
+      await settle();
+
+      layout.scrollTo(8000);
+      await settle();
+
+      const markedRows = new Set(
+        highlights
+          .get("search-match")!
+          .ranges.map((range) =>
+            range.startContainer.parentElement
+              ?.closest("li")
+              ?.getAttribute("aria-posinset"),
+          ),
+      );
+      expect(markedRows.has("101")).toBe(true);
+    } finally {
+      layout.restore();
+      vi.unstubAllGlobals();
     }
   });
 

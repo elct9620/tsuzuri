@@ -1869,3 +1869,17 @@ The search and checked bars stay at the top of the list as it scrolls. A row bro
 | Given | a Current Resource of three Segments, the bars above the list 48 pixels tall |
 | When | a row is brought into view |
 | Then | it keeps 48 pixels clear above it |
+
+## `ED-209` Marking the matches in rows as they are drawn
+
+A search finds matches in every Segment, while only some rows are drawn. A row drawn as the list scrolls shows the marks of the matches in it.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `ED-202` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of 200 Segments in a list laid out on a screen, scrolled to its first row, and a search matching every Segment |
+| When | the list is scrolled to its middle |
+| Then | the matches in the rows around the middle are marked |

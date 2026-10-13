@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.4.0](https://github.com/elct9620/tsuzuri/compare/v0.3.0...v0.4.0) (2026-10-13)
+
+
+### Features
+
+* **ui:** work out which rows of a long list to draw ([83344fe](https://github.com/elct9620/tsuzuri/commit/83344fe81643e57b090ec87bcdccb75f8a20497b))
+
+
+### Bug Fixes
+
+* **editor:** draw a row left out before bringing it into view ([f89564d](https://github.com/elct9620/tsuzuri/commit/f89564d7c4295345782d0367ff68cbd7d89734d4))
+* **editor:** keep each row's drawn height as Segments are split or merged ([d2769bb](https://github.com/elct9620/tsuzuri/commit/d2769bb46e0772ecc4516ca35e7a94259b42bc9b))
+* **editor:** keep the row being typed in drawn as the list scrolls away ([ef6a2db](https://github.com/elct9620/tsuzuri/commit/ef6a2db9463d8d33d7cfd0570dd40244f0d97a33))
+* **editor:** underline a field again once it reads its text again ([201bb7f](https://github.com/elct9620/tsuzuri/commit/201bb7f358fac3926eb4274005504e710bd4ffbb))
+* **search:** mark the matches in rows as the list draws them ([0566b32](https://github.com/elct9620/tsuzuri/commit/0566b325f84cf77509ea38bae99ae6ec2133b966))
+* **view-menu:** stop the closed View menu from taking clicks near its button ([ce2a896](https://github.com/elct9620/tsuzuri/commit/ce2a89633331f8dc7bde8eda568f5d19cbdaa1f8))
+
+
+### Performance Improvements
+
+* **compare:** hand an unchanged row the same comparison on every read ([2fdd27d](https://github.com/elct9620/tsuzuri/commit/2fdd27d7cd586f5c1f949774a03f560ef35ea918))
+* **editor:** draw a field's marks with ranges the page need not keep up ([14ecefb](https://github.com/elct9620/tsuzuri/commit/14ecefbf4e5601b92f800838bd353d948c420407))
+* **editor:** draw a row's change menu only once it is opened ([a6bee4d](https://github.com/elct9620/tsuzuri/commit/a6bee4d1f1ed4bfe4fa5aae41eb00ea3d6e04776))
+* **editor:** draw only the Segment rows near the view ([9c4df99](https://github.com/elct9620/tsuzuri/commit/9c4df99a04d1e0abba6a7d25e981591ce6b3d84e))
+* **editor:** let each field redraw only its own marks ([d691ab4](https://github.com/elct9620/tsuzuri/commit/d691ab47d24110126928f039a72e44ce2e94e0f7))
+* **editor:** skip laying out and painting the rows off screen ([c3e4232](https://github.com/elct9620/tsuzuri/commit/c3e423204b994fa282beb88070f1ee0aefda2694))
+* **editor:** write a row's times and texts only when they change ([6a73969](https://github.com/elct9620/tsuzuri/commit/6a73969329fa1e0c47b691c63e56df5e7ba1ac41))
+* **editor:** write whether a field takes typing only when that changes ([3891038](https://github.com/elct9620/tsuzuri/commit/38910382864c4525c20ddb1c0ab6b4bcc713b9d6))
+
 ## [0.3.0](https://github.com/elct9620/tsuzuri/compare/v0.2.0...v0.3.0) (2026-10-10)
 
 

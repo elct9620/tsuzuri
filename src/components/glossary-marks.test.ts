@@ -166,6 +166,64 @@ describe("Glossary Marks", () => {
     ]).toEqual([true, true, ["小林", "大阪", "東京"].sort()]);
   });
 
+  describe("a field reading its text again", () => {
+    /** The text field, entered and typed in to read `小林先生`. */
+    async function typedField(): Promise<HTMLElement> {
+      await show();
+      const field = document.querySelector<HTMLElement>(".field.text")!;
+      field.focus();
+      typeInto(field, "小林先生");
+      return field;
+    }
+
+    /** Puts `text` into the field as typing it would. */
+    function typeInto(field: HTMLElement, text: string): void {
+      field.textContent = text;
+      field.dispatchEvent(new InputEvent("input", { bubbles: true }));
+    }
+
+    // @behavior GM-023
+    it("underlines the field again once it is typed back to its text and left", async () => {
+      const field = await typedField();
+
+      typeInto(field, "小林先生明天要去京都");
+      field.blur();
+      await settle();
+
+      expect(markedTexts("glossary-candidate")).toEqual(["小林"]);
+    });
+
+    // @behavior GM-024
+    it("underlines the field again once its typing is given up", async () => {
+      const field = await typedField();
+
+      field.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+      await settle();
+
+      expect(markedTexts("glossary-candidate")).toEqual(["小林"]);
+    });
+
+    it("underlines the field again once Esc puts back its text before anything is typed", async () => {
+      await show();
+      const field = document.querySelector<HTMLElement>(".field.text")!;
+      field.focus();
+
+      field.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+      await settle();
+
+      expect(
+        highlights
+          .get("glossary-candidate")
+          ?.ranges.filter((range) => field.contains(range.startContainer))
+          .map(String),
+      ).toEqual(["小林"]);
+    });
+  });
+
   describe("the right-click menu", () => {
     /** Puts the caret of the field of `kind` at `offset`, then right-clicks the field. */
     async function rightClickAt(kind: string, offset: number): Promise<void> {

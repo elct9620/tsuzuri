@@ -3,8 +3,8 @@
   One text or translation field of a Segment, handing the session what the user does in it:
   entering it, moving the selection, leaving it or giving up its typing, and splitting its Segment
   by shortcut; its keys also break a line and move on to the next Segment. It draws the Cursor the
-  session holds in it, and its own Glossary Marks and compared additions until it is typed in, so a
-  read redraws the marks of only the fields it changed. Its text is written with the editor's
+  session holds in it, and its own Glossary Marks and compared additions while it reads the text
+  they were found in, so a read redraws the marks of only the fields it changed. Its text is written with the editor's
   `setFieldValue` and never bound, and only while the user is not typing in it.
 -->
 <script lang="ts">
@@ -140,12 +140,11 @@
   /** What the field's marks were last drawn from, so a read changing none of it redraws none. */
   let drawnMarks = "";
 
-  // Underlines the Glossary Marks while the field still reads the text they were found in, and
-  // marks the characters each compared text gained; each field draws its own marks, so a read
-  // redraws only those of the fields it changed
-  $effect(() => {
-    if (!element) return;
-    const field = element;
+  /**
+   * Underlines the Glossary Marks while the field still reads the text they were found in, and
+   * marks the characters each compared text gained, unless they are drawn from the same already.
+   */
+  function drawMarks(field: HTMLElement): void {
     const isRead = fieldValue(field) === value;
     const marks = JSON.stringify([value, isRead, glossaryMarks, comparedRows]);
     if (marks === drawnMarks) return;
@@ -167,6 +166,11 @@
       field,
       comparedRows.flatMap((row) => addedRanges(field, row)),
     );
+  }
+
+  // Each field draws its own marks, so a read redraws only those of the fields it changed
+  $effect(() => {
+    if (element) drawMarks(element);
   });
 
   /** Takes the field's marks away, as they count characters of a text it no longer reads. */
@@ -195,8 +199,12 @@
     session.enter(index, kind, fieldSelection(element!), fieldValue(element!));
   }
 
-  /** Hands over where the Cursor was left and the text. */
+  /**
+   * Hands over where the Cursor was left and the text, drawing the marks again first: a text left
+   * as it was is not written, so no read draws them.
+   */
   async function leave(): Promise<void> {
+    drawMarks(element!);
     notifyEdit(
       await session.leave(
         index,
@@ -245,6 +253,7 @@
     const text = session.revert(index, kind);
     if (text === null) return;
     setFieldValue(element!, text);
+    forgetMarks(element!);
     element!.blur();
   }
 

@@ -225,3 +225,31 @@ Every underline is drawn over the whole page. A field redraws only its own, so a
 | Given | three Segments, each with a candidate in its text |
 | When | the second Segment's text changes, and its candidate with it |
 | Then | the candidates of the first and third Segments are underlined as they were, untouched |
+
+## `GM-023` Underlining a field again once it is typed back to its text
+
+Typing takes a field's marks away, and leaving it writes nothing when its text reads as before, so no read draws them again.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `GM-012` |
+| relates | `GM-013` |
+
+| Step | Statement |
+| --- | --- |
+| Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林`, its text field typed in to read `小林先生` |
+| When | the text field is typed back to `小林先生明天要去京都` and left |
+| Then | `小林` is underlined as a candidate |
+
+## `GM-024` Underlining a field again once its typing is given up
+
+| Attribute | Value |
+| --- | --- |
+| refines | `GM-012` |
+| relates | `ED-077` |
+
+| Step | Statement |
+| --- | --- |
+| Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林`, its text field typed in to read `小林先生` |
+| When | Esc is pressed in the text field |
+| Then | `小林` is underlined as a candidate |

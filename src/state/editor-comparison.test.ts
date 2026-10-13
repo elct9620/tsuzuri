@@ -19,6 +19,7 @@ import {
 } from "#/state/editor-comparison.svelte.ts";
 import { notifications, showNotifications } from "#/testing/notifications.ts";
 import { drawSegmentRows } from "#/testing/segment-rows.ts";
+import { layOutSegmentList } from "#/testing/layout.ts";
 import { settle } from "#/testing/settle.ts";
 import { stubHighlights } from "#/testing/highlights.ts";
 
@@ -347,6 +348,27 @@ describe("EditorComparison", () => {
       items[1].hasAttribute("data-ghost"),
       items[1].textContent,
     ]).toEqual([3, true, expect.stringContaining("已刪除（原文）：世界")]);
+  });
+
+  // @behavior VR-060
+  it("keeps a removed cue's row drawn while its menu has focus", async () => {
+    // A window short enough that the list scrolls past each row
+    const layout = layOutSegmentList(100);
+    try {
+      await show();
+      document
+        .querySelector<HTMLElement>('li[data-ghost] [role="button"]')!
+        .focus();
+
+      layout.scrollTo(1000);
+      await settle();
+
+      expect(document.querySelector("li[data-ghost]")?.textContent).toEqual(
+        expect.stringContaining("已刪除（原文）：世界"),
+      );
+    } finally {
+      layout.restore();
+    }
   });
 
   // @behavior VR-027

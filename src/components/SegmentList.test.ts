@@ -372,6 +372,39 @@ describe("SegmentList", () => {
     }
   });
 
+  // @behavior ED-205
+  it("keeps the Current Segment's row drawn as the list scrolls away", async () => {
+    const layout = layOutSegmentList();
+    try {
+      await hold(
+        projectOf({
+          segments: Array.from({ length: 200 }, (_, index) => ({
+            start_ms: index * 1000,
+            end_ms: index * 1000 + 1000,
+            text: `第 ${index} 段`,
+          })),
+        }),
+      );
+      const typed = segmentRows()[0].querySelector<HTMLElement>(".field.text")!;
+      typed.focus();
+      typed.dispatchEvent(new FocusEvent("focus"));
+      typed.textContent = "改過";
+      await settle();
+
+      layout.scrollTo(8000);
+      flushSync();
+
+      const first = segmentRows()[0];
+      expect([
+        first.getAttribute("aria-posinset"),
+        fieldValue(first.querySelector<HTMLElement>(".field.text")!),
+        drawnIndexes().includes(100),
+      ]).toEqual(["1", "改過", true]);
+    } finally {
+      layout.restore();
+    }
+  });
+
   // @behavior ED-203
   it("tells each row's place among all the Segments", async () => {
     await hold(

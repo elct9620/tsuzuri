@@ -5,8 +5,9 @@
   translation is shown or hidden. Placeholders stand in while Segments are being made or read. It
   marks the Current Segment and the rows being played, draws the Cursor, and lays the editor's
   comparison over the rows with each removed cue in its place; each field draws its own marks. Only
-  the rows near what shows of the list are drawn, space as tall as they were drawn standing in for
-  the rest, and every row while the page has not laid the list out.
+  the rows near what shows of the list are drawn, with the Current Segment's and the one with focus
+  wherever they are, space as tall as they were drawn standing in for the rest, and every row while
+  the page has not laid the list out.
 -->
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
@@ -135,10 +136,24 @@
       listRows.map((row) => heightByKey.get(row.key) ?? ROW_HEIGHT_ESTIMATE),
     ),
   );
+  /** The key of the row with focus inside, which stays drawn with what its focus opened. */
+  let focusedKey = $state<string | null>(null);
+  /** The rows kept drawn wherever the list is scrolled: the Current Segment's, which may be typed in, and the one with focus. */
+  const keptRowIndexes = $derived(
+    listRows.flatMap((row, at) =>
+      ("index" in row && row.index === currentIndex) || row.key === focusedKey
+        ? [at]
+        : [],
+    ),
+  );
   const drawnEntries: ListEntry[] = $derived.by(() => {
     const entries: ListEntry[] = [];
     let drawnTo = 0;
-    for (const { start, end } of drawnRanges(offsets, listView, [])) {
+    for (const { start, end } of drawnRanges(
+      offsets,
+      listView,
+      keptRowIndexes,
+    )) {
       if (start > drawnTo)
         entries.push({
           key: `gap ${drawnTo}`,
@@ -167,20 +182,33 @@
       listView = next;
   }
 
-  // Measures each row drawn, and again as its height changes, matching the rows to the entries
-  // they draw in order
-  $effect(() => {
+  /** Each row element drawn, with the key of the entry it draws; the rows are drawn in entry order. */
+  function drawnRowKeys(): Map<Element, string> {
     const drawnRows = drawnEntries.filter((entry) => !("height" in entry));
-    if (!list || typeof ResizeObserver === "undefined") return;
-    const elements = [...list.children].filter(
+    const elements = [...(list?.children ?? [])].filter(
       (element) =>
         !element.hasAttribute("data-gap") &&
         !element.hasAttribute("data-placeholder"),
     );
-    if (elements.length !== drawnRows.length) return;
-    const keyByElement = new Map(
-      elements.map((element, at) => [element, drawnRows[at].key]),
-    );
+    return elements.length === drawnRows.length
+      ? new Map(elements.map((element, at) => [element, drawnRows[at].key]))
+      : new Map();
+  }
+
+  /** Notes the row focus moves into, or that it left the rows. */
+  function followFocus({ type, target, relatedTarget }: FocusEvent): void {
+    const inside = type === "focusin" ? target : relatedTarget;
+    focusedKey = null;
+    if (!(inside instanceof Node)) return;
+    for (const [element, key] of drawnRowKeys())
+      if (element.contains(inside)) focusedKey = key;
+  }
+
+  // Measures each row drawn, and again as its height changes
+  $effect(() => {
+    const keyByElement = drawnRowKeys();
+    if (typeof ResizeObserver === "undefined" || keyByElement.size === 0)
+      return;
     const observer = new ResizeObserver((resized) => {
       const next = new Map(heightByKey);
       let isChanged = false;
@@ -193,7 +221,7 @@
       if (isChanged) heightByKey = next;
       measureView();
     });
-    for (const element of elements) observer.observe(element);
+    for (const element of keyByElement.keys()) observer.observe(element);
     return () => observer.disconnect();
   });
 
@@ -305,6 +333,8 @@
 <ol
   class="list @container text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_.field::highlight(search-match)]:bg-warning/30 [&_.field::highlight(search-current)]:bg-warning/70 [&_.field::highlight(glossary-term)]:underline [&_.field::highlight(glossary-term)]:decoration-primary [&_.field::highlight(glossary-candidate)]:underline [&_.field::highlight(glossary-candidate)]:decoration-dashed [&_.field::highlight(glossary-candidate)]:decoration-base-content/40 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li:not([data-gap])]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
   aria-label={t("edit.segments")}
+  onfocusin={followFocus}
+  onfocusout={followFocus}
   bind:this={list}
 >
   {#if !placeholders.isShown}

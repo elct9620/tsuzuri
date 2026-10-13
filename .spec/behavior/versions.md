@@ -498,3 +498,17 @@ The editor keeps its rows when Segments are split or merged, so marks left on th
 | Given | the editor showing the `en` translation |
 | When | the translation's group in the compare menu asks to choose in the Versions dialog |
 | Then | the Versions dialog opens at the `en` translation |
+
+## `VR-060` Keeping a removed cue's row drawn while its menu has focus
+
+A row left out takes its open menu with it. The row with focus inside stays drawn wherever the list is scrolled.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `VR-026`, `ED-202` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a comparison with a Removal of `世界` between two Segments, the menu of its row with focus |
+| When | the list is scrolled past that row |
+| Then | the row saying `世界` was removed is still drawn |

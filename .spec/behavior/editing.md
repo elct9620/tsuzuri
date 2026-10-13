@@ -1817,3 +1817,17 @@ A row's height is known once it is drawn. The space for rows left out takes the 
 | Given | a Current Resource of 200 Segments in a list laid out on a screen, each row drawn 40 pixels tall |
 | When | the list is scrolled from its first row to its last |
 | Then | the space before the drawn rows is 40 pixels for each row it stands for |
+
+## `ED-205` Keeping the Current Segment's row drawn as the list scrolls away
+
+A row left out is taken away with what is typed in it and what an input method is composing. The Current Segment's row stays drawn wherever the list is scrolled.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `ED-189`, `ED-202` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of 200 Segments in a list laid out on a screen, the first one's text being typed in |
+| When | the list is scrolled to its middle |
+| Then | the first row is still drawn with what is typed in it |

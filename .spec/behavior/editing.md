@@ -1753,3 +1753,13 @@ Each Project read brings every Segment anew, and a field being typed in keeps it
 | Given | a Current Resource of three Segments, shown in place of Placeholder rows |
 | When | the second Segment's text changes |
 | Then | only the second Segment's text is written again |
+
+## `ED-201` Redrawing only the rows the Cursor moves between
+
+A Cursor moves with every key, so a move that redrew every row would cost a long subtitle more for each Segment it holds.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of three Segments, the Cursor in the first one's text |
+| When | the third Segment's text is entered |
+| Then | the second Segment's row is not redrawn |

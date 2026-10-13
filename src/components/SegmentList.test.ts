@@ -291,6 +291,49 @@ describe("SegmentList", () => {
     expect([timeWrites.length, [...writtenFields]]).toEqual([0, ["1"]]);
   });
 
+  // @behavior ED-201
+  it("redraws only the rows the Cursor moves between", async () => {
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "大家" },
+          { start_ms: 1000, end_ms: 2000, text: "今天" },
+          { start_ms: 2000, end_ms: 3000, text: "很好" },
+        ],
+      }),
+    );
+    const enter = (row: HTMLElement) =>
+      row
+        .querySelector<HTMLElement>(".field.text")!
+        .dispatchEvent(new FocusEvent("focus"));
+    enter(segmentRows()[0]);
+    await settle();
+    const redraws: MutationRecord[] = [];
+    const observer = new MutationObserver((records) =>
+      redraws.push(...records),
+    );
+    observer.observe(rowList(), {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+    });
+
+    enter(segmentRows()[2]);
+    await settle();
+    redraws.push(...observer.takeRecords());
+    observer.disconnect();
+
+    const rows = segmentRows();
+    // A node taken away is counted where it was taken from, not where it went
+    const redrawnRows = new Set(
+      redraws
+        .filter((record) => record.target.isConnected)
+        .map((record) => rows.findIndex((row) => row.contains(record.target))),
+    );
+    expect([...redrawnRows].sort()).toEqual([0, 2]);
+  });
+
   /** Two Segments, the second reading `text`, so a change to it leaves their number alone. */
   const projectWithSecondText = (text: string) =>
     projectOf({

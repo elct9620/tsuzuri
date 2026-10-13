@@ -53,11 +53,11 @@ export function rowList(): HTMLOListElement {
   return document.querySelector<HTMLOListElement>('ol[aria-label="段落"]')!;
 }
 
-/** The rows standing for Segments, Placeholders and removed cues left out. */
+/** The rows standing for Segments, Placeholders, removed cues and the space between rows left out. */
 export function segmentRows(): HTMLLIElement[] {
   return [
     ...rowList().querySelectorAll<HTMLLIElement>(
-      ":scope > li:not([data-placeholder]):not([data-ghost])",
+      ":scope > li:not([data-placeholder]):not([data-ghost]):not([data-gap])",
     ),
   ];
 }

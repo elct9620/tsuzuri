@@ -1779,3 +1779,41 @@ A Cursor moves with every key. A move redraws only the rows it leaves and enters
 | Given | a Current Resource of three Segments, the Cursor in the first one's text |
 | When | the third Segment's text is entered |
 | Then | the second Segment's row is not redrawn |
+
+## `ED-202` Drawing only the rows near the view
+
+The browser lays out every row it holds, so a long subtitle drawn whole slows each change. Rows a screen or more away from the view are left out, and space stands in for them.
+
+| Attribute | Value |
+| --- | --- |
+| relates | `ED-200`, `ED-201` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of 200 Segments in a list laid out on a screen |
+| When | the list is scrolled to its middle |
+| Then | the rows around the middle are drawn, and the first and last rows are not |
+
+## `ED-203` Telling each row's place among all the Segments
+
+Only some rows are drawn, so a row tells assistive technology its place and how many Segments there are.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of three Segments |
+| When | the rows are drawn |
+| Then | the second row says it is the second of three |
+
+## `ED-204` Standing in for the rows left out with their drawn height
+
+A row's height is known once it is drawn. The space for rows left out takes the heights they were drawn at, so the list keeps its length as rows come and go.
+
+| Attribute | Value |
+| --- | --- |
+| refines | `ED-202` |
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of 200 Segments in a list laid out on a screen, each row drawn 40 pixels tall |
+| When | the list is scrolled from its first row to its last |
+| Then | the space before the drawn rows is 40 pixels for each row it stands for |

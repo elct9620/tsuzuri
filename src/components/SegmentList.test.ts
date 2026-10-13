@@ -27,6 +27,7 @@ import {
   segmentRows,
 } from "#/testing/segment-rows.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
+import { layOutSegmentList, stubResizeObserver } from "#/testing/layout.ts";
 import { settle } from "#/testing/settle.ts";
 
 describe("SegmentList", () => {
@@ -289,6 +290,105 @@ describe("SegmentList", () => {
       textWrites.map((record) => (record.target as HTMLElement).dataset.index),
     );
     expect([timeWrites.length, [...writtenFields]]).toEqual([0, ["1"]]);
+  });
+
+  /** The positions of the Segments whose rows are drawn. */
+  const drawnIndexes = () =>
+    segmentRows().map((row) => Number(row.getAttribute("aria-posinset")) - 1);
+
+  // @behavior ED-202
+  it("draws only the rows near the view as the list is scrolled", async () => {
+    const layout = layOutSegmentList();
+    try {
+      await hold(
+        projectOf({
+          segments: Array.from({ length: 200 }, (_, index) => ({
+            start_ms: index * 1000,
+            end_ms: index * 1000 + 1000,
+            text: `第 ${index} 段`,
+          })),
+        }),
+      );
+
+      layout.scrollTo(8000);
+      flushSync();
+
+      const drawn = drawnIndexes();
+      expect([
+        drawn.includes(100),
+        drawn.includes(0),
+        drawn.includes(199),
+      ]).toEqual([true, false, false]);
+    } finally {
+      layout.restore();
+    }
+  });
+
+  // @behavior ED-204
+  it("stands in for the rows scrolled past with the height they were drawn at", async () => {
+    const observers = stubResizeObserver();
+    const layout = layOutSegmentList();
+    try {
+      await hold(
+        projectOf({
+          segments: Array.from({ length: 200 }, (_, index) => ({
+            start_ms: index * 1000,
+            end_ms: index * 1000 + 1000,
+            text: `第 ${index} 段`,
+          })),
+        }),
+      );
+
+      /** Reports the rows drawn now as 40 pixels tall, as the browser does once it lays them out. */
+      const measure = () => {
+        const { targets, notify } = observers[observers.length - 1];
+        notify(
+          targets.map(
+            (target) =>
+              ({
+                target,
+                borderBoxSize: [{ blockSize: 40, inlineSize: 600 }],
+              }) as unknown as ResizeObserverEntry,
+          ),
+        );
+        flushSync();
+      };
+
+      measure();
+      for (let top = 0; top <= 200 * 40; top += 400) {
+        layout.scrollTo(top);
+        flushSync();
+        measure();
+      }
+
+      const firstDrawn = drawnIndexes()[0];
+      const space = rowList().querySelector<HTMLElement>(
+        ":scope > li[data-gap]:first-child",
+      );
+      expect(space?.style.height).toBe(`${firstDrawn * 40}px`);
+    } finally {
+      layout.restore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  // @behavior ED-203
+  it("tells each row's place among all the Segments", async () => {
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "大家" },
+          { start_ms: 1000, end_ms: 2000, text: "今天" },
+          { start_ms: 2000, end_ms: 3000, text: "很好" },
+        ],
+      }),
+    );
+
+    const second = segmentRows()[1];
+    expect([
+      second.getAttribute("aria-posinset"),
+      second.getAttribute("aria-setsize"),
+    ]).toEqual(["2", "3"]);
   });
 
   // @behavior ED-201

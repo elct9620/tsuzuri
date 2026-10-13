@@ -317,6 +317,8 @@
 <li
   class="@max-4xl:grid-cols-[auto_1fr_auto]"
   aria-current={isCurrent ? "true" : undefined}
+  aria-posinset={index + 1}
+  aria-setsize={count}
   data-is-playing={isPlaying ? "" : undefined}
   onpointerdown={(event) => session.pointAt(pressedSource(event))}
   onmousedown={checkThrough}

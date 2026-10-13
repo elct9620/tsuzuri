@@ -4,7 +4,9 @@
   Chromium reports a selection change for each time field drawn; rows are drawn anew only when the
   translation is shown or hidden. Placeholders stand in while Segments are being made or read. It
   marks the Current Segment and the rows being played, draws the Cursor, and lays the editor's
-  comparison over the rows with each removed cue in its place; each field draws its own marks.
+  comparison over the rows with each removed cue in its place; each field draws its own marks. Only
+  the rows near what shows of the list are drawn, space as tall as they were drawn standing in for
+  the rest, and every row while the page has not laid the list out.
 -->
 <script lang="ts">
   import { flushSync, onMount, type Snippet, untrack } from "svelte";
@@ -32,11 +34,15 @@
     setSegmentFields,
     taskRun,
   } from "#/state/context.ts";
-  import { comparisonLayout } from "#/state/editor-comparison.svelte.ts";
+  import {
+    comparisonLayout,
+    type SideRow,
+  } from "#/state/editor-comparison.svelte.ts";
   import type { Playback } from "#/state/playback.svelte.ts";
   import type { ViewChoices } from "#/state/view-choices.svelte.ts";
   import type { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
   import { resourceOffers } from "#/actions/segment-changes.ts";
+  import { drawnRanges, type ListView, rowOffsets } from "#/ui/row-window.ts";
   import RemovalRow from "#/components/RemovalRow.svelte";
   import SegmentRow from "#/components/SegmentRow.svelte";
 
@@ -61,6 +67,14 @@
   const editing = editingState();
   const run = taskRun();
   const comparison = editorComparison();
+  /** How tall a row is taken to be until it is drawn and measured, in pixels. */
+  const ROW_HEIGHT_ESTIMATE = 80;
+
+  /** A row of the list: a Segment's, or a removed cue's before it. */
+  type ListRow = { key: string } & ({ index: number } | { sideRow: SideRow });
+  /** What the list draws in order: its rows, and the space standing in for those left out. */
+  type ListEntry = ListRow | { key: string; height: number };
+
   let list = $state<HTMLOListElement>();
   const rows: SegmentRow[] = $state([]);
   setSegmentFields({ field });
@@ -98,6 +112,91 @@
         : 0,
   );
 
+  const sideRowKey = (sideRow: SideRow) => `${sideRow.side} ${sideRow.index}`;
+  const listRows: ListRow[] = $derived([
+    ...segments.flatMap((_, index) => [
+      ...layout.removalsBefore[index].map((sideRow) => ({
+        key: sideRowKey(sideRow),
+        sideRow,
+      })),
+      { key: `${index}`, index },
+    ]),
+    ...(layout.removalsBefore[segments.length] ?? []).map((sideRow) => ({
+      key: sideRowKey(sideRow),
+      sideRow,
+    })),
+  ]);
+  /** The height each row was drawn at, by its key. */
+  let heightByKey = $state.raw(new Map<string, number>());
+  /** What of the list shows, with no height while the page has not laid it out. */
+  let listView = $state.raw<ListView>({ top: 0, height: 0 });
+  const offsets = $derived(
+    rowOffsets(
+      listRows.map((row) => heightByKey.get(row.key) ?? ROW_HEIGHT_ESTIMATE),
+    ),
+  );
+  const drawnEntries: ListEntry[] = $derived.by(() => {
+    const entries: ListEntry[] = [];
+    let drawnTo = 0;
+    for (const { start, end } of drawnRanges(offsets, listView, [])) {
+      if (start > drawnTo)
+        entries.push({
+          key: `gap ${drawnTo}`,
+          height: offsets[start] - offsets[drawnTo],
+        });
+      entries.push(...listRows.slice(start, end));
+      drawnTo = end;
+    }
+    if (drawnTo < listRows.length)
+      entries.push({
+        key: `gap ${drawnTo}`,
+        height: offsets[listRows.length] - offsets[drawnTo],
+      });
+    return entries;
+  });
+
+  /** Reads what of the list shows: from where the window starts, as tall as the window. */
+  function measureView(): void {
+    if (!list) return;
+    const box = list.getBoundingClientRect();
+    const next =
+      box.width > 0
+        ? { top: -box.top, height: window.innerHeight }
+        : { top: 0, height: 0 };
+    if (next.top !== listView.top || next.height !== listView.height)
+      listView = next;
+  }
+
+  // Measures each row drawn, and again as its height changes, matching the rows to the entries
+  // they draw in order
+  $effect(() => {
+    const drawnRows = drawnEntries.filter((entry) => !("height" in entry));
+    if (!list || typeof ResizeObserver === "undefined") return;
+    const elements = [...list.children].filter(
+      (element) =>
+        !element.hasAttribute("data-gap") &&
+        !element.hasAttribute("data-placeholder"),
+    );
+    if (elements.length !== drawnRows.length) return;
+    const keyByElement = new Map(
+      elements.map((element, at) => [element, drawnRows[at].key]),
+    );
+    const observer = new ResizeObserver((resized) => {
+      const next = new Map(heightByKey);
+      let isChanged = false;
+      for (const { target, borderBoxSize } of resized) {
+        const key = keyByElement.get(target)!;
+        const height = borderBoxSize[0].blockSize;
+        isChanged ||= next.get(key) !== height;
+        next.set(key, height);
+      }
+      if (isChanged) heightByKey = next;
+      measureView();
+    });
+    for (const element of elements) observer.observe(element);
+    return () => observer.disconnect();
+  });
+
   /** Whether the translation at `index` is of the Batch being translated, where the next ones land. */
   function isPendingAt(index: number): boolean {
     const batch = project?.pending_batch ?? null;
@@ -115,6 +214,7 @@
     project = next;
     view = session.transcript;
     placeholders.hide();
+    measureView();
     flushSync();
     onshown?.(next);
   }
@@ -190,45 +290,49 @@
 
 <svelte:window
   onkeydown={followShortcut}
+  onresize={measureView}
   onpointerup={() => session.releasePointer()}
 />
-<svelte:document onselectionchange={followSelection} />
+<svelte:document
+  onselectionchange={followSelection}
+  onscrollcapture={measureView}
+/>
 
 {#if segments.length === 0 && placeholderCount === 0}
   <p class="text-base-content/60">{t("edit.empty")}</p>
 {/if}
 {@render children?.()}
-<!-- Rows off screen skip their layout and painting; a row with focus inside shows whole, as its menus open past its edge -->
 <ol
-  class="list @container text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_.field::highlight(search-match)]:bg-warning/30 [&_.field::highlight(search-current)]:bg-warning/70 [&_.field::highlight(glossary-term)]:underline [&_.field::highlight(glossary-term)]:decoration-primary [&_.field::highlight(glossary-candidate)]:underline [&_.field::highlight(glossary-candidate)]:decoration-dashed [&_.field::highlight(glossary-candidate)]:decoration-base-content/40 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li]:list-row [&>li]:[content-visibility:auto] [&>li]:[contain-intrinsic-size:auto_5rem] [&>li:focus-within]:[content-visibility:visible] [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
+  class="list @container text-[15px] [&_.field]:block [&_.field]:min-h-8 [&_.field]:w-full [&_.field]:whitespace-pre-wrap [&_.field]:rounded-field [&_.field]:border [&_.field]:border-transparent [&_.field]:px-1.5 [&_.field]:py-1 [&_.field]:hover:border-base-300 [&_.field]:focus:border-base-content/40 [&_.field]:focus:outline-none [&_.field]:caret-transparent [&_.field]:selection:bg-transparent [&_.field::highlight(cursor)]:bg-primary/30 [&_.field:empty]:before:pointer-events-none [&_.field:empty]:before:text-base-content/40 [&_.field:empty]:before:content-[attr(data-placeholder)] [&_.field.translation]:text-[color-mix(in_oklab,var(--color-info)_60%,var(--color-base-content))] [&_.field::highlight(compare-addition)]:bg-success/30 [&_.field::highlight(search-match)]:bg-warning/30 [&_.field::highlight(search-current)]:bg-warning/70 [&_.field::highlight(glossary-term)]:underline [&_.field::highlight(glossary-term)]:decoration-primary [&_.field::highlight(glossary-candidate)]:underline [&_.field::highlight(glossary-candidate)]:decoration-dashed [&_.field::highlight(glossary-candidate)]:decoration-base-content/40 [&_time]:pt-1.5 [&_time]:text-xs [&_time]:text-base-content/60 [&_time]:tabular-nums [&>li:not([data-gap])]:list-row [&>li]:cursor-default [&>li[aria-current]]:bg-primary/10 [&>li[data-is-playing]]:shadow-[inset_3px_0_0_var(--color-primary)]"
   aria-label={t("edit.segments")}
   bind:this={list}
 >
   {#if !placeholders.isShown}
     {#key offers.isTranslationShown}
-      {#each segments as segment, index (index)}
-        {#each layout.removalsBefore[index] as sideRow (`${sideRow.side} ${sideRow.index}`)}
-          <RemovalRow {sideRow} />
-        {/each}
-        <SegmentRow
-          bind:this={rows[index]}
-          {segment}
-          {index}
-          count={segments.length}
-          {view}
-          {offers}
-          isPending={isPendingAt(index)}
-          isChecked={checkedIndexes.has(index)}
-          isCurrent={currentIndex === index}
-          isPlaying={playback.playingIndexes.includes(index)}
-          {isTypingKept}
-          {isSpeakerColumnShown}
-          comparison={layout.bySegment[index]}
-          glossaryMarks={project?.glossary_marks[index]}
-        />
-      {/each}
-      {#each layout.removalsBefore[segments.length] as sideRow (`${sideRow.side} ${sideRow.index}`)}
-        <RemovalRow {sideRow} />
+      {#each drawnEntries as entry (entry.key)}
+        {#if "height" in entry}
+          <li data-gap aria-hidden="true" style:height="{entry.height}px"></li>
+        {:else if "sideRow" in entry}
+          <RemovalRow sideRow={entry.sideRow} />
+        {:else}
+          {@const index = entry.index}
+          <SegmentRow
+            bind:this={rows[index]}
+            segment={segments[index]}
+            {index}
+            count={segments.length}
+            {view}
+            {offers}
+            isPending={isPendingAt(index)}
+            isChecked={checkedIndexes.has(index)}
+            isCurrent={currentIndex === index}
+            isPlaying={playback.playingIndexes.includes(index)}
+            {isTypingKept}
+            {isSpeakerColumnShown}
+            comparison={layout.bySegment[index]}
+            glossaryMarks={project?.glossary_marks[index]}
+          />
+        {/if}
       {/each}
     {/key}
   {/if}

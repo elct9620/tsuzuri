@@ -228,7 +228,7 @@ Every underline is drawn over the whole page. A field redraws only its own, so a
 
 ## `GM-023` Underlining a field again once it is typed back to its text
 
-Typing takes a field's marks away, and leaving it writes nothing when its text reads as before, so no read draws them again.
+A field left reading its text draws its marks itself, since leaving it unchanged writes nothing and no read follows.
 
 | Attribute | Value |
 | --- | --- |
@@ -237,11 +237,14 @@ Typing takes a field's marks away, and leaving it writes nothing when its text r
 
 | Step | Statement |
 | --- | --- |
-| Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林`, its text field typed in to read `小林先生` |
+| Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林` |
+| Given | its text field typed in to read `小林先生` |
 | When | the text field is typed back to `小林先生明天要去京都` and left |
 | Then | `小林` is underlined as a candidate |
 
 ## `GM-024` Underlining a field again once its typing is given up
+
+Esc puts back the text the field was entered with, which the marks were found in.
 
 | Attribute | Value |
 | --- | --- |
@@ -250,6 +253,7 @@ Typing takes a field's marks away, and leaving it writes nothing when its text r
 
 | Step | Statement |
 | --- | --- |
-| Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林`, its text field typed in to read `小林先生` |
+| Given | the row of a Segment reading `小林先生明天要去京都` with the candidate `小林` |
+| Given | its text field typed in to read `小林先生` |
 | When | Esc is pressed in the text field |
 | Then | `小林` is underlined as a candidate |

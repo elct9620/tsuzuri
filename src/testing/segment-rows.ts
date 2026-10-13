@@ -4,6 +4,7 @@
  */
 
 import { render, screen, within } from "@testing-library/svelte";
+import { flushSync } from "svelte";
 
 import type { ProjectFeed } from "#/ipc/project.ts";
 import { type SegmentDialogs, withSegmentDialogs } from "#/state/context.ts";
@@ -59,6 +60,15 @@ export function segmentRows(): HTMLLIElement[] {
       ":scope > li:not([data-placeholder]):not([data-ghost])",
     ),
   ];
+}
+
+/** Opens `row`'s change menu as the user does, by focusing its button, and answers the menu. */
+export function openChangeMenu(row: HTMLElement): HTMLElement {
+  within(row)
+    .getByRole("button", { name: "段落操作" })
+    .dispatchEvent(new FocusEvent("focus"));
+  flushSync();
+  return row.querySelector<HTMLElement>(".change-menu")!;
 }
 
 /** The dialogs a test drew, opened as Page opens them; one it did not draw cannot be opened. */

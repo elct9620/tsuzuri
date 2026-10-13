@@ -21,7 +21,11 @@ import { ViewChoices } from "#/state/view-choices.svelte.ts";
 import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 import { TaskRun } from "#/state/task-run.svelte.ts";
-import { rowList, segmentRows } from "#/testing/segment-rows.ts";
+import {
+  openChangeMenu,
+  rowList,
+  segmentRows,
+} from "#/testing/segment-rows.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import { settle } from "#/testing/settle.ts";
 
@@ -222,6 +226,34 @@ describe("SegmentList", () => {
     observer.disconnect();
 
     expect(writes).toEqual([]);
+  });
+
+  // @behavior ED-199
+  it("draws a row's change menu only once it is opened", async () => {
+    await hold(
+      projectOf({
+        segments: [
+          { start_ms: 0, end_ms: 1000, text: "大家" },
+          { start_ms: 1000, end_ms: 2000, text: "今天" },
+          { start_ms: 2000, end_ms: 3000, text: "很好" },
+        ],
+      }),
+    );
+    const choiceCounts = () =>
+      segmentRows().map(
+        (row) => row.querySelectorAll(".change-menu button").length,
+      );
+    const unopenedCounts = choiceCounts();
+
+    openChangeMenu(segmentRows()[1]);
+
+    const [first, second, third] = choiceCounts();
+    expect([unopenedCounts, first, second > 0, third]).toEqual([
+      [0, 0, 0],
+      0,
+      true,
+      0,
+    ]);
   });
 
   /** Two Segments, the second reading `text`, so a change to it leaves their number alone. */
@@ -730,6 +762,7 @@ describe("SegmentList", () => {
   // @behavior ED-096
   it("shows the split shortcut beside splitting in a Segment's menu", async () => {
     await hold(translatedProject);
+    openChangeMenu(segmentRows()[0]);
 
     expect(document.querySelector("li button.split kbd")?.textContent).toBe(
       "Ctrl+Alt+Enter",
@@ -739,6 +772,7 @@ describe("SegmentList", () => {
   // @behavior ED-181
   it("shows the merge shortcuts beside merging in a Segment's menu", async () => {
     await hold(projectWithSecondText("今天"));
+    segmentRows().forEach(openChangeMenu);
 
     expect(
       [".mergeWithPrevious", ".mergeWithNext"].map(
@@ -751,6 +785,7 @@ describe("SegmentList", () => {
   // @behavior ED-107
   it("shows the delete shortcut beside deleting in a Segment's menu", async () => {
     await hold(translatedProject);
+    openChangeMenu(segmentRows()[0]);
 
     expect(document.querySelector("li button.delete kbd")?.textContent).toBe(
       "Delete",

@@ -24,6 +24,7 @@ import { ResourcePlaceholders } from "#/state/resource-placeholders.svelte.ts";
 import SegmentList from "#/components/SegmentList.svelte";
 import { renderFollowingProject } from "#/testing/following-project.ts";
 import { usePlatform } from "#/testing/platform.ts";
+import { openChangeMenu } from "#/testing/segment-rows.ts";
 import { settle } from "#/testing/settle.ts";
 import { type MenuItemSent, menuTexts } from "#/testing/system-menu.ts";
 
@@ -60,7 +61,9 @@ describe("Segment Changes", () => {
   const isBarShown = () => screen.queryByText(/^已勾選 \d+ 段$/) !== null;
 
   async function choose(index: number, action: string): Promise<void> {
-    row(index).querySelector<HTMLButtonElement>(`button.${action}`)!.click();
+    openChangeMenu(row(index))
+      .querySelector<HTMLButtonElement>(`button.${action}`)!
+      .click();
     await settle();
   }
 
@@ -1255,7 +1258,7 @@ describe("Segment Changes", () => {
 
   describe("merging from a Segment's menu", () => {
     const isChoiceHidden = (index: number, action: string) =>
-      row(index).querySelector(`button.${action}`) === null;
+      openChangeMenu(row(index)).querySelector(`button.${action}`) === null;
 
     // @behavior ED-178
     it("merges a Segment with the one before", async () => {
@@ -1326,7 +1329,7 @@ describe("Segment Changes", () => {
       expect([isTaken, popupCount, menuTexts(lastMenu())]).toEqual([
         true,
         1,
-        buttonTexts(row(0).querySelector(".change-menu")!),
+        buttonTexts(openChangeMenu(row(0))),
       ]);
     });
 
@@ -1343,7 +1346,9 @@ describe("Segment Changes", () => {
     it("changes the Segment as the choice in its right-click menu says", async () => {
       await hold(threeSegments);
       await rightClick(row(0));
-      const insertBelowButton = row(0).querySelector("button.insertAfter")!;
+      const insertBelowButton = openChangeMenu(row(0)).querySelector(
+        "button.insertAfter",
+      )!;
 
       const choice = lastMenu().find(
         (item) => item.text === insertBelowButton.firstChild!.textContent,
@@ -1390,7 +1395,7 @@ describe("Segment Changes", () => {
     it("carries a choice's shortcut into the right-click menu", async () => {
       await hold(threeSegments);
       await rightClick(row(0));
-      const splitButton = row(0).querySelector("button.split")!;
+      const splitButton = openChangeMenu(row(0)).querySelector("button.split")!;
 
       const choice = lastMenu().find(
         (item) => item.text === splitButton.firstChild!.textContent,

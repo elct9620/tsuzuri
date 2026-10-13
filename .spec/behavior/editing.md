@@ -1733,3 +1733,13 @@ Writing it makes the browser look over the whole page again, so a list rewriting
 | Given | a Current Resource of three Segments, none held from typing |
 | When | the second and third Segments are merged |
 | Then | no field is written whether it takes typing |
+
+## `ED-199` Drawing a row's change menu once it opens
+
+Each row offers its Segment Changes in a menu of its own, so drawing every menu on every read would cost a long subtitle more for each Segment it holds.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Current Resource of three Segments |
+| When | the Segment list shows them |
+| Then | no row's change menu holds a choice until it is opened |

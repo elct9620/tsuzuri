@@ -110,6 +110,8 @@
   let newSpeakerInput = $state<HTMLInputElement>();
   /** The Speakers the Speaker menu offers, read from the Project each time it opens. */
   let offeredSpeakers = $state<string[]>([]);
+  /** Whether the change menu has been opened; every row has one, so its choices wait until then. */
+  let isChangeMenuDrawn = $state(false);
   let fieldByKind = $state<Partial<Record<CursorField, HTMLElement>>>({});
   let editingFieldByKind = $state<Partial<Record<CursorField, EditingField>>>(
     {},
@@ -436,6 +438,7 @@
       role="button"
       class={["btn btn-square btn-ghost btn-xs", isOtherHeld && "btn-disabled"]}
       aria-label={t("edit.changes")}
+      onfocus={() => (isChangeMenuDrawn = true)}
     >
       <EllipsisVertical class="size-4" aria-hidden="true" />
     </div>
@@ -443,22 +446,24 @@
       tabindex="-1"
       class="change-menu menu dropdown-content z-10 w-60 rounded-box bg-base-100 shadow-md"
     >
-      {#each choices as choice (choice.id)}
-        <li>
-          <button
-            type="button"
-            class={choice.id}
-            data-shortcut={choice.shortcut}
-            disabled={!choice.isEnabled}
-            onclick={({ currentTarget }) => {
-              closeMenu(currentTarget);
-              void choice.run();
-            }}
-          >
-            {@render choiceLabel(choice.label, choice.shortcut)}
-          </button>
-        </li>
-      {/each}
+      {#if isChangeMenuDrawn}
+        {#each choices as choice (choice.id)}
+          <li>
+            <button
+              type="button"
+              class={choice.id}
+              data-shortcut={choice.shortcut}
+              disabled={!choice.isEnabled}
+              onclick={({ currentTarget }) => {
+                closeMenu(currentTarget);
+                void choice.run();
+              }}
+            >
+              {@render choiceLabel(choice.label, choice.shortcut)}
+            </button>
+          </li>
+        {/each}
+      {/if}
     </ul>
   </div>
 </li>

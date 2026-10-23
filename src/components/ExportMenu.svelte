@@ -10,7 +10,7 @@
 
   import { save, SRT_FILTERS, TEXT_FILTERS } from "#/ipc/dialog.ts";
   import {
-    type ExportFormat,
+    type ExportKind,
     exportPath,
     type ProjectView,
     saveSrt,
@@ -30,7 +30,7 @@
 
   interface ExportChoice {
     content: WrittenText;
-    format: ExportFormat;
+    format: ExportKind;
     label: string;
   }
 

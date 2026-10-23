@@ -11,7 +11,7 @@ use super::recent::{project_views, RecentProjectView, RecentProjects};
 use super::requested_srt::{srt_argument, RequestedSrt};
 use super::versions::{compare, ComparedCue, ComparedRow, RevertPart, SubtitleVersions};
 use super::{
-    CleanupScope, CurrentProject, ExportFormat, Project, ProjectModelPresets, ProjectModels,
+    CleanupScope, CurrentProject, ExportKind, Project, ProjectModelPresets, ProjectModels,
     ProjectOptions, ProjectView, Reload, Restoration, SegmentField, TextMatch,
 };
 use crate::failure::Failure;
@@ -339,7 +339,7 @@ pub fn redo(app: AppHandle, current: State<'_, CurrentProject>) -> Result<(), Fa
 pub fn export_path(
     current: State<'_, CurrentProject>,
     content: WrittenText,
-    format: ExportFormat,
+    format: ExportKind,
 ) -> Result<PathBuf, Failure> {
     current.export_path(content, format)
 }

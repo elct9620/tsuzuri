@@ -10,9 +10,9 @@ use super::trimmed_name;
 use super::versions::{self, RevertPart, SubtitleVersions};
 use super::{
     translation_srt, translation_with_speakers, BackupKind, CleanupScope, CurrentResource,
-    DiarizationTarget, ExportFormat, KnownSubtitle, Project, ProjectConfig, ProjectOptions,
-    Resource, Restoration, SegmentField, SegmentSpan, TextMatch, TranscriptionRequest,
-    TranscriptionTarget, TranslationSource,
+    DiarizationTarget, ExportKind, KnownSubtitle, Project, ProjectConfig, ProjectOptions, Resource,
+    Restoration, SegmentField, SegmentSpan, TextMatch, TranscriptionRequest, TranscriptionTarget,
+    TranslationSource,
 };
 use crate::cleanup::{clean_range, clean_text};
 use crate::failure::Failure;
@@ -390,7 +390,7 @@ impl Project {
         };
         let path = match path {
             Some(path) => path,
-            None => self.export_path(content, ExportFormat::Srt)?,
+            None => self.export_path(content, ExportKind::Srt)?,
         };
         self.back_up_first_change(&path)?;
         files::write_text(&path, srt)
@@ -884,7 +884,7 @@ impl Project {
                 return Err(Failure::SubtitleExists { path: path.clone() })
             }
             Some(path) => path.clone(),
-            None => self.export_path(WrittenText::Original, ExportFormat::Srt)?,
+            None => self.export_path(WrittenText::Original, ExportKind::Srt)?,
         };
         Ok(TranscriptionTarget {
             directory: self.directory.clone(),

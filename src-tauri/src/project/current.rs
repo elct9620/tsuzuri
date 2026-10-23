@@ -16,7 +16,7 @@ use super::mode_hold::{
 use super::opened_project::missing_segment;
 use super::versions::{ComparedCue, RevertPart, SubtitleVersions};
 use super::{
-    translation_only, translation_srt, BackupKind, CleanupScope, DiarizationTarget, ExportFormat,
+    translation_only, translation_srt, BackupKind, CleanupScope, DiarizationTarget, ExportKind,
     Project, ProjectModelPresets, ProjectOptions, Resource, Restoration, SegmentField, SegmentSpan,
     TextMatch, TranscriptionRequest, TranscriptionTarget, TranslationSource,
 };
@@ -964,7 +964,7 @@ impl CurrentProject {
     pub fn export_path(
         &self,
         content: WrittenText,
-        format: ExportFormat,
+        format: ExportKind,
     ) -> Result<PathBuf, Failure> {
         self.read_project(|project| project.export_path(content, format))
     }

@@ -308,7 +308,7 @@ fn names_an_export_by_the_resource_and_its_languages() {
         WrittenText::Translation,
         WrittenText::Bilingual,
     ]
-    .map(|content| current.export_path(content, ExportFormat::Srt).unwrap());
+    .map(|content| current.export_path(content, ExportKind::Srt).unwrap());
 
     assert_eq!(
         paths,
@@ -462,11 +462,7 @@ fn names_a_plain_text_export_by_the_resource_and_its_languages() {
         WrittenText::Translation,
         WrittenText::Bilingual,
     ]
-    .map(|content| {
-        current
-            .export_path(content, ExportFormat::PlainText)
-            .unwrap()
-    });
+    .map(|content| current.export_path(content, ExportKind::PlainText).unwrap());
 
     assert_eq!(
         paths,
@@ -496,7 +492,7 @@ fn names_a_bilingual_srt_in_its_bilingual_order() {
     let current = translation_first_project_in(&dir);
 
     let path = current
-        .export_path(WrittenText::Bilingual, ExportFormat::Srt)
+        .export_path(WrittenText::Bilingual, ExportKind::Srt)
         .unwrap();
 
     assert_eq!(path, dir.path().join("ep01.en.zh-TW.srt"));

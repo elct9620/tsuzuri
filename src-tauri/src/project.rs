@@ -557,16 +557,16 @@ pub struct TranscriptionOverrides {
 /// The form an export of the Current Resource is written in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
-pub enum ExportFormat {
+pub enum ExportKind {
     Srt,
     PlainText,
 }
 
-impl ExportFormat {
+impl ExportKind {
     fn extension(self) -> &'static str {
         match self {
-            ExportFormat::Srt => "srt",
-            ExportFormat::PlainText => "txt",
+            ExportKind::Srt => "srt",
+            ExportKind::PlainText => "txt",
         }
     }
 }

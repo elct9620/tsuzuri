@@ -6,8 +6,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use super::history::SubtitleSnapshot;
 use super::{
-    segments_at_times, translated_dialogue, Backup, BackupKind, ExportFormat, KnownSubtitle,
-    Project, ProjectConfig, Resource,
+    segments_at_times, translated_dialogue, Backup, BackupKind, ExportKind, KnownSubtitle, Project,
+    ProjectConfig, Resource,
 };
 use crate::failure::Failure;
 use crate::json_settings;
@@ -112,7 +112,7 @@ impl Project {
     pub(super) fn export_path(
         &self,
         content: WrittenText,
-        format: ExportFormat,
+        format: ExportKind,
     ) -> Result<PathBuf, Failure> {
         let current = self.current()?;
         let languages = match content {

@@ -184,11 +184,11 @@ export async function showTranslation(
 
 export type WrittenText = bindings.WrittenText;
 
-export type ExportFormat = bindings.ExportFormat;
+export type ExportKind = bindings.ExportKind;
 
 export function exportPath(
   content: WrittenText,
-  format: ExportFormat,
+  format: ExportKind,
 ): Promise<string> {
   return commands.exportPath(content, format);
 }

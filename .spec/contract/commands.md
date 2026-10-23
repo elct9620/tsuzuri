@@ -371,7 +371,7 @@ pub fn revert_row(app: AppHandle, current: State<'_, CurrentProject>, language: 
 Where an export of the Current Resource is saved by default: in the Project's directory, named after the Resource with the Language codes of the text it carries beyond the Primary Language alone, a bilingual one's in its Bilingual Order, and ending `.srt` for the `srt` format or `.txt` for `plain_text`.
 
 ```rust
-pub fn export_path(current: State<'_, CurrentProject>, content: WrittenText, format: ExportFormat) -> Result<PathBuf, Failure> {}
+pub fn export_path(current: State<'_, CurrentProject>, content: WrittenText, format: ExportKind) -> Result<PathBuf, Failure> {}
 ```
 
 ## `translation_settings`

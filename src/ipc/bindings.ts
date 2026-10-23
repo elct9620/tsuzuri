@@ -95,7 +95,7 @@ export const commands = {
 	subtitleVersions: () => __TAURI_INVOKE<SubtitleVersions[]>("subtitle_versions"),
 	compareVersions: (language: "zh-TW" | "en" | "ja" | null, left: string | null, right: string | null) => __TAURI_INVOKE<ComparedRow[]>("compare_versions", { language, left, right }),
 	restoreVersion: (language: "zh-TW" | "en" | "ja" | null, backup: string) => __TAURI_INVOKE<Restoration>("restore_version", { language, backup }),
-	exportPath: (content: WrittenText, format: ExportFormat) => __TAURI_INVOKE<string>("export_path", { content, format }),
+	exportPath: (content: WrittenText, format: ExportKind) => __TAURI_INVOKE<string>("export_path", { content, format }),
 	openProject: (path: string, language: Language) => __TAURI_INVOKE<null>("open_project", { path, language }),
 	openSrt: (path: string, language: Language) => __TAURI_INVOKE<null>("open_srt", { path, language }),
 	recentProjects: () => __TAURI_INVOKE<RecentProjectView[]>("recent_projects"),
@@ -272,7 +272,7 @@ export type DownloadProgress = {
 export type EditCommand = "undo" | "redo" | "select-all" | "clean-simplified";
 
 /**  The form an export of the Current Resource is written in. */
-export type ExportFormat = "srt" | "plain_text";
+export type ExportKind = "srt" | "plain_text";
 
 /**
  *  Why a command did not finish. The webview words each code in the interface language,

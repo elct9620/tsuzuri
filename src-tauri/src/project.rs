@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::language::{Language, LanguagePair};
 use crate::model_source::{parse_saved_source, ModelSource};
+use crate::script::snapshot::Snapshot;
 use crate::transcript::{split_label, AudioWindow, Segment, SpeakerNames, Transcript, WrittenText};
 
 mod backups;
@@ -445,6 +446,16 @@ impl TranscriptionScope {
 pub struct TranscriptionRequest {
     pub is_overwrite_allowed: bool,
     pub scope: TranscriptionScope,
+}
+
+/// What a Macro runs on.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MacroTarget {
+    pub directory: PathBuf,
+    /// The Resource the Macro runs on.
+    pub name: String,
+    /// What the Macro reads of it as it starts.
+    pub snapshot: Snapshot,
 }
 
 /// What a diarization needs from the Project when it starts.

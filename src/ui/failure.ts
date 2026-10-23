@@ -160,6 +160,12 @@ export function scriptFailureMessage(failure: ScriptFailure): string {
       return t("failures.scriptApiVersionUnreadable", {
         declaration: failure.declaration,
       });
+    case "unsupported-api-version":
+      return t("failures.scriptApiVersionUnsupported", {
+        declared: `${failure.declared.major}.${failure.declared.minor}`,
+      });
+    case "timed-out":
+      return t("failures.scriptTimedOut");
     case "raised":
       return t("failures.scriptRaised", { message: failure.message });
     case "invalid-times":

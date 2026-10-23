@@ -33,6 +33,10 @@ pub enum Registration {
 pub enum ScriptFailure {
     /// A `tsuzuri-api` declaration that is not two numbers.
     UnreadableApiVersion { declaration: String },
+    /// A Script written for a script API this app does not offer.
+    UnsupportedApiVersion { declared: ApiVersion },
+    /// Loading the Script to read what it registers took longer than a scan allows.
+    TimedOut,
     /// The Script did not parse, raised, or returned what its kind does not allow.
     Raised { message: String },
     /// A returned Segment, counted from 1, ends before it starts.

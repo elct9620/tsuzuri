@@ -26,6 +26,7 @@ pub const TRANSCRIPTION_STEP: &str = "transcribe";
 pub const DIARIZATION_STEP: &str = "diarize";
 pub const WAVEFORM_STEP: &str = "waveform";
 pub const TRANSLATION_STEP: &str = "translate";
+pub const SCRIPT_STEP: &str = "script";
 
 /// What a started Component does: each line it writes, without its line ending, and last how it ended.
 #[derive(Debug, Clone, PartialEq, Eq)]

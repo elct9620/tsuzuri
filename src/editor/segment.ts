@@ -53,6 +53,7 @@ export type SegmentChange =
 export type RunningMode =
   | { mode: "transcription" }
   | { mode: "diarization" }
+  | { mode: "macro" }
   | { mode: "translation"; language: string; indexes: number[] | null };
 
 /** The Current Resource's Transcript as the editor edits it. */

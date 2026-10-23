@@ -21,6 +21,8 @@ pub enum Phase {
     Detection,
     #[serde(rename = "translate")]
     Translation,
+    #[serde(rename = "script")]
+    Script,
 }
 
 /// Written in the log as the webview is sent it.

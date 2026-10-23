@@ -45,6 +45,7 @@ use failure::Failure;
 use logs::{DebugLogInUse, LogDirInUse, LogSettings};
 use processes::Processes;
 use project::{CurrentProject, RequestedSrt};
+use script::ScriptRegistry;
 use steps::ModeLock;
 use toolchain::hub::ModelDownloads;
 use translation::ResidentLlama;
@@ -132,6 +133,7 @@ fn set_up(app: &mut App) -> Result<(), Failure> {
     );
     app.manage(ResidentLlama::default());
     app.manage(ModeLock::default());
+    app.manage(ScriptRegistry::default());
     app.manage(FoundUpdate::default());
     app.manage(ModelDownloads::default());
     std::thread::spawn(cleanup::load_tables);

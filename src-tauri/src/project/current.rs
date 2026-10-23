@@ -17,13 +17,13 @@ use super::opened_project::missing_segment;
 use super::versions::{ComparedCue, RevertPart, SubtitleVersions};
 use super::{
     translation_only, translation_srt, BackupKind, CleanupScope, DiarizationTarget, ExportKind,
-    Project, ProjectModelPresets, ProjectOptions, Resource, Restoration, SegmentField, SegmentSpan,
-    TextMatch, TranscriptionRequest, TranscriptionTarget, TranslationSource,
+    MacroTarget, Project, ProjectModelPresets, ProjectOptions, Resource, Restoration, SegmentField,
+    SegmentSpan, TextMatch, TranscriptionRequest, TranscriptionTarget, TranslationSource,
 };
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::replacement::{Finder, Replacement, Replacer, Search};
-use crate::script::snapshot::{Snapshot, SnapshotSegment};
+use crate::script::snapshot::{ExportInput, Snapshot, SnapshotSegment};
 use crate::segment_change::SegmentChange;
 use crate::transcript::{Segment, Transcript, WrittenText};
 
@@ -494,6 +494,47 @@ impl CurrentProject {
             RunningMode::Transcription,
         ));
         Ok((target, ResourceHold(self)))
+    }
+
+    /// Holds every subtitle of the Current Resource for a Macro to edit, answering the Snapshot it
+    /// reads, with the Checked Segments at `checked_segments`.
+    pub fn hold_for_macro(
+        &self,
+        checked_segments: Vec<usize>,
+    ) -> Result<(MacroTarget, ResourceHold<'_>), Failure> {
+        let mut held_project = self.lock();
+        let project = held_project.project.as_mut().ok_or(Failure::NoProject)?;
+        let target = MacroTarget {
+            directory: project.directory.clone(),
+            name: project.current()?.name.clone(),
+            snapshot: project.script_snapshot(checked_segments)?,
+        };
+        held_project.mode_hold = Some(ModeHold::new(
+            &target.directory,
+            &target.name,
+            RunningMode::Macro,
+        ));
+        Ok((target, ResourceHold(self)))
+    }
+
+    /// Writes the Segments one edit of the Macro running on `target` returned, as one step of the
+    /// Undo History; refused once the Resource is no longer current, as the edit replaces what
+    /// the editor shows.
+    pub fn write_macro_edit(
+        &self,
+        target: &MacroTarget,
+        segments: &[SnapshotSegment],
+    ) -> Result<(), Failure> {
+        let mut held_project = self.lock();
+        let project = held_project
+            .project
+            .as_mut()
+            .filter(|project| {
+                project.directory == target.directory && project.is_current(&target.name)
+            })
+            .ok_or(Failure::NoResource)?;
+        project.refuse_changed_elsewhere()?;
+        project.make_undoable_change(|project| project.replace_segments(segments))
     }
 
     /// Holds the Current Resource for a diarization to write, answering its media file and the
@@ -968,11 +1009,17 @@ impl CurrentProject {
         self.update_project(|project| project.script_snapshot(checked_segments))
     }
 
-    /// Writes the Segments an edit of a Script returned, as one step of the Undo History.
-    pub fn replace_segments(&self, segments: &[SnapshotSegment]) -> Result<(), Failure> {
-        self.change_undoably(is_always_written, |project| {
-            project.replace_segments(segments)
-        })
+    /// What an Export Format is handed of the Current Resource, with the export options.
+    pub fn export_input(
+        &self,
+        has_speakers: bool,
+        has_blank_lines: bool,
+    ) -> Result<ExportInput, Failure> {
+        self.update_project(|project| project.export_input(has_speakers, has_blank_lines))
+    }
+
+    pub fn export_format_path(&self, extension: &str) -> Result<PathBuf, Failure> {
+        self.read_project(|project| project.export_format_path(extension))
     }
 
     pub fn export_path(

@@ -543,6 +543,7 @@ const en = {
     transcribe: "Transcribing",
     diarize: "Telling speakers apart",
     translate: "Translating",
+    script: "Running the script",
     waveform: "Taking the waveform",
     firstLoad: "{{phase}} (slower the first time)",
     percent: "{{phase}} {{percent}}%",
@@ -580,6 +581,9 @@ const en = {
     invalidPattern: "Nothing to find, or not a regular expression: {{detail}}",
     scriptApiVersionUnreadable:
       "The script declares a tsuzuri-api version that is not two numbers: {{declaration}}",
+    scriptApiVersionUnsupported:
+      "The script is written for tsuzuri-api {{declared}}, which this version of Tsuzuri does not offer",
+    scriptTimedOut: "The script took longer than a second to load",
     scriptRaised: "The script failed: {{message}}",
     scriptInvalidTimes:
       "Segment {{position}} the script returned ends before it starts; nothing was written",

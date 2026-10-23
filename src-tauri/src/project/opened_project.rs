@@ -18,7 +18,7 @@ use crate::cleanup::{clean_range, clean_text};
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::replacement::{Finder, Replacer};
-use crate::script::snapshot::{Snapshot, SnapshotSegment};
+use crate::script::snapshot::{ExportInput, ExportOptions, Snapshot, SnapshotSegment};
 use crate::segment_change::SegmentChange;
 use crate::transcript::{Segment, SpeakerNames, Transcript, WrittenText};
 
@@ -723,6 +723,31 @@ impl Project {
             translations,
             checked_segments,
         ))
+    }
+
+    /// What an Export Format is handed: the Snapshot of the Current Resource, and the export
+    /// options with what each Speaker is called in the translation shown.
+    pub(super) fn export_input(
+        &mut self,
+        has_speakers: bool,
+        has_blank_lines: bool,
+    ) -> Result<ExportInput, Failure> {
+        let snapshot = self.script_snapshot(vec![])?;
+        let speaker_names = self.speaker_names(self.current()?.translation);
+        Ok(ExportInput {
+            snapshot,
+            options: ExportOptions {
+                has_speakers,
+                has_blank_lines,
+                speaker_names: speaker_names.into_iter().collect(),
+            },
+        })
+    }
+
+    /// In the directory, named after the Current Resource, ending in `extension`.
+    pub(super) fn export_format_path(&self, extension: &str) -> Result<PathBuf, Failure> {
+        let name = &self.current()?.name;
+        Ok(self.directory.join(format!("{name}.{extension}")))
     }
 
     /// Writes `segments`, which a Script returned, over the Current Resource's original and each

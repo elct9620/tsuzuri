@@ -94,6 +94,46 @@ Run the Diarize Mode on the Current Resource: convert its whole media file, run 
 pub async fn diarize(app: AppHandle, current: State<'_, CurrentProject>, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, resident: State<'_, ResidentLlama>) -> Result<Diarization, Failure> {}
 ```
 
+## `scan_scripts`
+
+What each Script in the `scripts` folder of the app's settings registers, by file name, or why it does not load: a declaration it cannot read, a script API it was not written for, a load longer than a second, or what it raised. A Script is loaded again only once its source changes, or every one when `is_forced`; each loads in its own script Step.
+
+```rust
+pub async fn scan_scripts(app: AppHandle, processes: State<'_, Processes>, registry: State<'_, ScriptRegistry>, is_forced: bool) -> Result<Vec<ScannedScript>, Failure> {}
+```
+
+## `run_macro`
+
+Run the Macro `id` of the Script file `script` as a Mode on the Current Resource, holding every subtitle of it and handing the Script its Snapshot with the Checked Segments at `checked_segments`, then write each edit it returns in turn as one step of the Undo History. It emits `pipeline-progress` as the script Phase starts. A Script that fails, or an edit breaking the rules of a Segment Change, fails as `script`.
+
+```rust
+pub async fn run_macro(app: AppHandle, current: State<'_, CurrentProject>, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, script: String, id: String, checked_segments: Vec<usize>) -> Result<(), Failure> {}
+```
+
+## `run_export_format`
+
+Write to `path` the text the Export Format `request` names, by its Script file `script` and its `id`, makes of the Current Resource, handed the export options `has_speakers` and `has_blank_lines` and what each Speaker is called in the translation shown. It takes its turn among the Modes, so it can be cancelled, and holds no subtitle.
+
+```rust
+pub async fn run_export_format(app: AppHandle, current: State<'_, CurrentProject>, mode_lock: State<'_, ModeLock>, processes: State<'_, Processes>, request: ExportFormatRequest, path: PathBuf) -> Result<(), Failure> {}
+```
+
+## `export_format_path`
+
+Where an Export Format saves the Current Resource unless the user picks elsewhere: in the Project directory, named after the Resource and ending in `extension`.
+
+```rust
+pub fn export_format_path(current: State<'_, CurrentProject>, extension: String) -> Result<PathBuf, Failure> {}
+```
+
+## `open_scripts_directory`
+
+Open the `scripts` folder of the app's settings in the system's file manager, making it first when it is not there.
+
+```rust
+pub fn open_scripts_directory(app: AppHandle) -> Result<(), Failure> {}
+```
+
 ## `transcription_settings`
 
 The general Transcription Settings: whether VAD runs, whether non-speech tokens are suppressed, whether each window carries the text before it as context, and whether a Simplified Cleanup follows a transcription in `zh-TW`.

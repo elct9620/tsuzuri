@@ -18,6 +18,25 @@ export const commands = {
 	cancelModelDownload: (repo: string, file: string) => __TAURI_INVOKE<void>("cancel_model_download", { repo, file }),
 	transcribe: (overwrite: boolean, scope: TranscriptionScope) => __TAURI_INVOKE<Transcription>("transcribe", { overwrite, scope }),
 	diarize: () => __TAURI_INVOKE<Diarization>("diarize"),
+	/**
+	 *  What each of this machine's Scripts registers, loading again those changed since the last
+	 *  scan, or every one when `is_forced`.
+	 */
+	scanScripts: (isForced: boolean) => __TAURI_INVOKE<ScannedScript[]>("scan_scripts", { isForced }),
+	/**
+	 *  Runs the Macro `id` of the Script `script` on the Current Resource, handing it the Checked
+	 *  Segments at `checked_segments`.
+	 */
+	runMacro: (script: string, id: string, checkedSegments: number[]) => __TAURI_INVOKE<null>("run_macro", { script, id, checkedSegments }),
+	/**  Writes to `path` the text the Export Format `request` names makes of the Current Resource. */
+	runExportFormat: (request: ExportFormatRequest, path: string) => __TAURI_INVOKE<null>("run_export_format", { request, path }),
+	/**
+	 *  Where an Export Format saves the Current Resource unless the user picks elsewhere: its name,
+	 *  ending in `extension`.
+	 */
+	exportFormatPath: (extension: string) => __TAURI_INVOKE<string>("export_format_path", { extension }),
+	/**  Opens this machine's Scripts folder, made first when it is not there yet. */
+	openScriptsDirectory: () => __TAURI_INVOKE<null>("open_scripts_directory"),
 	transcriptionSettings: () => __TAURI_INVOKE<TranscriptionSettings>("transcription_settings"),
 	saveTranscriptionSettings: (settings: TranscriptionSettings) => __TAURI_INVOKE<TranscriptionSettings>("save_transcription_settings", { settings }),
 	preferences: () => __TAURI_INVOKE<Preferences>("preferences"),
@@ -133,6 +152,12 @@ export const DEFAULT_PREFERENCES = {"choice_landings":{"text":{"is_pausing":true
 export const VIDEO_WINDOW = "video" as const;
 
 /* Types */
+/**  The script API a Script is written for, declared by `# tsuzuri-api: <major>.<minor>`. */
+export type ApiVersion = {
+	major: number,
+	minor: number,
+};
+
 /**
  *  The App Build: the release number of the running Tsuzuri with its Release Name, whether it is a
  *  Preview build, whether its install offers the Preview channel, and the commit it was built from.
@@ -270,6 +295,17 @@ export type DownloadProgress = {
  *  shortcuts before the webview sees them; the webview knows what each applies to.
  */
 export type EditCommand = "undo" | "redo" | "select-all" | "clean-simplified";
+
+/**
+ *  Which Export Format to run, by the Script file it is in and its id, with the Export menu's
+ *  choices of Speakers and blank lines.
+ */
+export type ExportFormatRequest = {
+	script: string,
+	id: string,
+	has_speakers: boolean,
+	has_blank_lines: boolean,
+};
 
 /**  The form an export of the Current Resource is written in. */
 export type ExportKind = "srt" | "plain_text";
@@ -418,7 +454,7 @@ export type ModelSource = { kind: "file"; path: string } |
 export type Origin = "choice" | "detection" | "bundled-variant";
 
 /**  One timed part of a Mode's run, named in `pipeline-progress`, in the seconds each took and in the log. */
-export type Phase = "prepare" | "convert" | "load" | "transcribe" | "diarize" | "detect" | "translate";
+export type Phase = "prepare" | "convert" | "load" | "transcribe" | "diarize" | "detect" | "translate" | "script";
 
 export type PhaseTiming = {
 	phase: Phase,
@@ -598,6 +634,11 @@ export type RecentProjectView = {
 	opened_at_ms: number,
 };
 
+/**  What a Script offers in Tsuzuri's menus, by the id it registers and the label menus show. */
+export type Registration = { kind: "macro"; id: string; label: string } | { kind: "export-format"; id: string; label: string; 
+/**  The extension of the file it is saved to, without the dot. */
+extension: string };
+
 /**
  *  What to look for in a text and what to put in its place. Rust reads the pattern, so a regular
  *  expression means the same whatever the webview's engine would make of it.
@@ -644,16 +685,30 @@ export type RunningMode =
 { mode: "transcription" } | 
 /**  Holds every subtitle of the Resource, as it gives each its Speakers. */
 { mode: "diarization" } | 
+/**  Holds every subtitle of the Resource, as a Macro's edits replace them. */
+{ mode: "macro" } | 
 /**
  *  Holds only the translation into `language`, or only its Segments at `indexes` while they
  *  are translated again.
  */
 { mode: "translation"; language: Language; indexes: number[] | null };
 
+/**  One Script found among this machine's, with what it registers or why it does not load. */
+export type ScannedScript = {
+	/**  Its file name, which names it in the menus and to the commands. */
+	name: string,
+	registrations: Registration[],
+	failure: ScriptFailure | null,
+};
+
 /**  Why a Script does not load or run. */
 export type ScriptFailure = 
 /**  A `tsuzuri-api` declaration that is not two numbers. */
 { kind: "unreadable-api-version"; declaration: string } | 
+/**  A Script written for a script API this app does not offer. */
+{ kind: "unsupported-api-version"; declared: ApiVersion } | 
+/**  Loading the Script to read what it registers took longer than a scan allows. */
+{ kind: "timed-out" } | 
 /**  The Script did not parse, raised, or returned what its kind does not allow. */
 { kind: "raised"; message: string } | 
 /**  A returned Segment, counted from 1, ends before it starts. */

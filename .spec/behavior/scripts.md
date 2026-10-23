@@ -222,3 +222,71 @@ A Script's author fixes the Script, so the message points at the Segment by its 
 | Given | an edit refused because its second Segment starts before the first |
 | When | the failure is shown |
 | Then | it names Segment 2 and says nothing was written |
+
+## `SR-025` Listing what each Script on this machine registers
+
+| Step | Statement |
+| --- | --- |
+| Given | `a.rb` registering the Macro `merge_runs` and `b.rb` raising `boom` in the Scripts folder |
+| When | the Scripts are scanned |
+| Then | `a.rb` offers `merge_runs`, and `b.rb` offers nothing and fails with `boom` |
+
+## `SR-026` Loading a Script again only once it changes
+
+Menus scan as they open, so an unchanged Script is not run again each time.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Script already scanned |
+| When | the Scripts are scanned again without a change to it |
+| Then | no script Step starts |
+
+## `SR-027` Leaving a Script written for a newer API unrun
+
+| Step | Statement |
+| --- | --- |
+| Given | a Script opening with `# tsuzuri-api: 2.0` |
+| When | the Scripts are scanned |
+| Then | it fails naming `2.0`, and no script Step starts |
+
+## `SR-028` Stopping a Script that takes over a second to load
+
+Nobody waits on a scan to cancel it, so a Script that hangs is stopped and marked instead.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Script whose script Step does not end |
+| When | the Scripts are scanned |
+| Then | after a second its Step is stopped and the Script fails as timed out |
+
+## `SR-029` Holding every subtitle while a Macro runs
+
+| Step | Statement |
+| --- | --- |
+| Given | a Macro running on the Current Resource |
+| When | a Segment Change is asked for |
+| Then | it is refused as `mode-running` |
+
+## `SR-030` Running a Macro on the Current Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resource with Segments `你好` and `世界` of one Speaker, and a Macro merging a Speaker's run with `，` |
+| When | the Macro runs |
+| Then | the subtitle holds one Segment `你好，世界` |
+
+## `SR-031` Writing the text of an Export Format
+
+| Step | Statement |
+| --- | --- |
+| Given | an Export Format writing each Segment's text on its own line |
+| When | it runs on a Resource with Segments `你好` and `世界` |
+| Then | the text is `你好` and `世界` on two lines |
+
+## `SR-032` Refusing a Script name that reaches outside the Scripts folder
+
+| Step | Statement |
+| --- | --- |
+| Given | the Script name `../settings.json` |
+| When | a Macro of it is asked to run |
+| Then | it is refused before anything runs |

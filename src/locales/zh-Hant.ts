@@ -530,6 +530,7 @@ const zhHant: TranslationWithoutSingulars<typeof en> = {
     transcribe: "轉錄",
     diarize: "辨識說話者",
     translate: "翻譯",
+    script: "執行腳本",
     waveform: "擷取波形",
     firstLoad: "{{phase}}（第一次使用會比較久）",
     percent: "{{phase}} {{percent}}%",
@@ -564,6 +565,9 @@ const zhHant: TranslationWithoutSingulars<typeof en> = {
     invalidPattern: "沒有要找的文字，或不是正規表示式：{{detail}}",
     scriptApiVersionUnreadable:
       "腳本宣告的 tsuzuri-api 版本不是兩個數字：{{declaration}}",
+    scriptApiVersionUnsupported:
+      "腳本是為 tsuzuri-api {{declared}} 寫的，這個版本的 Tsuzuri 不支援",
+    scriptTimedOut: "腳本載入超過一秒",
     scriptRaised: "腳本執行失敗：{{message}}",
     scriptInvalidTimes: "腳本回傳的第 {{position}} 段結束早於開始，沒有寫入",
     scriptUnorderedTimes:

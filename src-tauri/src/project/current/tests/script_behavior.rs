@@ -16,6 +16,12 @@ fn returned(start_ms: u64, end_ms: u64, texts: &[(Language, &str)]) -> SnapshotS
     }
 }
 
+/// Writes `segments` as one edit of a Macro run on the Current Resource of `current`.
+fn write_edit(current: &CurrentProject, segments: &[SnapshotSegment]) -> Result<(), Failure> {
+    let (target, _hold) = current.hold_for_macro(vec![]).unwrap();
+    current.write_macro_edit(&target, segments)
+}
+
 fn greeting_project_in(dir: &TempDir) -> CurrentProject {
     changing_project_in(
         dir,
@@ -74,9 +80,7 @@ fn writes_back_the_segments_an_edit_returns() {
     let dir = TempDir::new("sr-replace");
     let current = greeting_project_in(&dir);
 
-    current
-        .replace_segments(&[returned(0, 2_000, &MERGED)])
-        .unwrap();
+    write_edit(&current, &[returned(0, 2_000, &MERGED)]).unwrap();
 
     assert_eq!(
         [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")],
@@ -92,9 +96,7 @@ fn writes_back_the_segments_an_edit_returns() {
 fn undoes_an_edit_in_one_step() {
     let dir = TempDir::new("sr-replace-undo");
     let current = greeting_project_in(&dir);
-    current
-        .replace_segments(&[returned(0, 2_000, &MERGED)])
-        .unwrap();
+    write_edit(&current, &[returned(0, 2_000, &MERGED)]).unwrap();
 
     current.undo().unwrap();
 
@@ -113,13 +115,15 @@ fn drops_the_translation_of_a_segment_returned_without_one() {
     let dir = TempDir::new("sr-replace-drop");
     let current = changing_project_in(&dir, &[(0, 1_000, "你好")], &[(0, 1_000, "Hello")]);
 
-    current
-        .replace_segments(&[returned(
+    write_edit(
+        &current,
+        &[returned(
             0,
             1_000,
             &[(Language::TraditionalChinese, "你好")],
-        )])
-        .unwrap();
+        )],
+    )
+    .unwrap();
 
     assert_eq!(read(&dir, "ep01.en.srt"), srt_of(&[]));
 }
@@ -127,7 +131,7 @@ fn drops_the_translation_of_a_segment_returned_without_one() {
 fn refusal_of(name: &str, segments: &[SnapshotSegment]) -> (Failure, [String; 2]) {
     let dir = TempDir::new(name);
     let current = greeting_project_in(&dir);
-    let failure = current.replace_segments(segments).unwrap_err();
+    let failure = write_edit(&current, segments).unwrap_err();
     (failure, [read(&dir, "ep01.srt"), read(&dir, "ep01.en.srt")])
 }
 
@@ -201,7 +205,7 @@ fn reads_a_blank_original_as_an_empty_text() {
     let dir = TempDir::new("sr-replace-blank");
     let current = greeting_project_in(&dir);
 
-    current.replace_segments(&[snapshot]).unwrap();
+    write_edit(&current, &[snapshot]).unwrap();
 
     assert_eq!(times_and_texts(&current), owned(&[(0, 1_000, "")]));
 }

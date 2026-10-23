@@ -1,7 +1,8 @@
 name: Build mruby
 description: >-
   Leaves mruby/.build holding the mruby archive the beni crate links, built by `rake beni:build`
-  and restored from the cache while the pin and the build config are unchanged.
+  and restored from the cache while the pin and the build config are unchanged. On Windows the
+  later steps of the job stay in the MSVC environment, which the beni crate's build needs.
 
 runs:
   using: composite
@@ -19,15 +20,34 @@ runs:
       if: runner.os != 'Windows'
       shell: bash
       run: bundle exec rake beni:build
-    # Rust links the MSVC archive, so mruby builds inside vcvars64, which makes it pick visualcpp.
-    # Only this step enters it: a later bash step would find MSVC's link.exe behind GNU's link.
+    # The archive and the beni crate's own C build with MSVC, which Rust links, so later steps keep
+    # what vcvars64 sets: mruby then picks visualcpp and cc finds cl.exe. VCINSTALLDIR is left out,
+    # since with it rustc takes the first link.exe on PATH, which in a bash step is GNU's.
     # cmd.exe is reached through ComSpec, since RubyInstaller's MSYS2 ships another `cmd`.
-    - name: Build on Windows
+    - name: Enter MSVC
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
         $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
         $install = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
         $vcvars = Join-Path $install "VC\Auxiliary\Build\vcvars64.bat"
-        & $env:ComSpec /c "`"$vcvars`" >nul && bundle exec rake beni:build"
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        $before = @{}
+        Get-ChildItem env: | ForEach-Object { $before[$_.Name] = $_.Value }
+        $delimiter = "MSVC_$([guid]::NewGuid().ToString('N'))"
+        & $env:ComSpec /c "`"$vcvars`" >nul && set" | ForEach-Object {
+          $name, $value = $_ -split '=', 2
+          if (-not $name -or $name -eq 'VCINSTALLDIR' -or $before[$name] -eq $value) { return }
+          if ($name -eq 'Path') {
+            # GITHUB_PATH prepends each line, so the new entries go in reverse.
+            $known = $before['Path'] -split ';'
+            $added = @($value -split ';' | Where-Object { $_ -and ($known -notcontains $_) })
+            [array]::Reverse($added)
+            $added | ForEach-Object { Add-Content -Path $env:GITHUB_PATH -Value $_ }
+          } else {
+            Add-Content -Path $env:GITHUB_ENV -Value "$name<<$delimiter`n$value`n$delimiter"
+          }
+        }
+    - name: Build on Windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: bundle exec rake beni:build

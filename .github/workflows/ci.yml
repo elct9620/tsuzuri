@@ -150,6 +150,7 @@ jobs:
             src-tauri/target
           key: rust-${{ runner.os }}-${{ steps.rust.outputs.version }}-${{ hashFiles('src-tauri/Cargo.lock') }}
           restore-keys: rust-${{ runner.os }}-${{ steps.rust.outputs.version }}-
+      - uses: ./.github/actions/build-mruby
       # generate_context! embeds the frontend, which only has to exist for these checks.
       - name: Provide an empty frontend
         run: mkdir -p ../dist

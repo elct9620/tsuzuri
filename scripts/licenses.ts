@@ -149,6 +149,16 @@ export function parakeetWork(): LicensedWork {
   };
 }
 
+/** The mruby interpreter scripts run in, named by the release the `Rakefile` pins. */
+export function mrubyWork(): LicensedWork {
+  const rakefile = readFileSync("Rakefile", "utf8");
+  const release = /^\s*version "([^"]+)"/m.exec(rakefile)?.[1] ?? "";
+  return {
+    name: `mruby ${release}`,
+    text: readFileSync("mruby/LICENSE", "utf8"),
+  };
+}
+
 function escapeHtml(text: string): string {
   return text
     .replaceAll("&", "&amp;")
@@ -303,7 +313,7 @@ if (import.meta.main) {
     noticeHtml({
       tsuzuri: readFileSync("LICENSE", "utf8"),
       variants: variantLicenses("vendor"),
-      data: [openccWork(), parakeetWork()],
+      data: [openccWork(), parakeetWork(), mrubyWork()],
       crates: JSON.parse(readFileSync(crateJson, "utf8")) as CrateLicenses,
       packages,
     }),

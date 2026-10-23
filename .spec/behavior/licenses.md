@@ -111,3 +111,11 @@ A package can state its license in its manifest without shipping the text. Its a
 | When | the License Notice is written |
 | Then | it names `is-reference` 3.0.3 and `MIT` beside its author and repository, without a license text |
 
+## `LC-013` Carrying the license of the interpreter scripts run in
+
+| Step | Statement |
+| --- | --- |
+| Given | the mruby release the `Rakefile` pins, with its license kept in `mruby/LICENSE` |
+| When | the License Notice is written |
+| Then | it carries the MIT License mruby is under, naming the release |
+

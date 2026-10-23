@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest";
 import {
   type BundledPackage,
   listBundledPackages,
+  mrubyWork,
   parakeetWork,
   acceptedLicenses,
   licenseText,
@@ -241,5 +242,15 @@ describe("licenses", () => {
       work.text.startsWith("MIT License"),
       work.text.includes("Copyright (c) 2025 Enes Altun"),
     ]).toEqual([true, true, true]);
+  });
+
+  // @behavior LC-013
+  it("carries the license of the interpreter scripts run in", () => {
+    const work = mrubyWork();
+
+    expect([
+      work.name,
+      work.text.includes("Copyright (c) 2010- mruby developers"),
+    ]).toEqual(["mruby 4.0.0", true]);
   });
 });

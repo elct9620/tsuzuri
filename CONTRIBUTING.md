@@ -4,9 +4,11 @@
 
 ## Development
 
-Requires Rust, Node.js and pnpm. The architecture is in [docs/architecture.md](docs/architecture.md) and the design in [docs/design.md](docs/design.md).
+Requires Rust, Ruby, Node.js and pnpm. The architecture is in [docs/architecture.md](docs/architecture.md) and the design in [docs/design.md](docs/design.md).
 
 ```bash
+bundle install
+bundle exec rake beni:build   # the mruby archive Rust links, into mruby/.build/
 pnpm install
 pnpm tauri dev      # run the app
 pnpm test           # frontend tests (Vitest)

@@ -1,0 +1,33 @@
+name: Build mruby
+description: >-
+  Leaves mruby/.build holding the mruby archive the beni crate links, built by `rake beni:build`
+  and restored from the cache while the pin and the build config are unchanged.
+
+runs:
+  using: composite
+  steps:
+    - uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1.328.0
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+    # A hit still runs the build, which only rebuilds what changed and checks the archive is there.
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: mruby/.build
+        key: mruby-${{ runner.os }}-${{ hashFiles('Gemfile.lock', 'Rakefile', 'mruby/build_config.rb') }}
+    - name: Build
+      if: runner.os != 'Windows'
+      shell: bash
+      run: bundle exec rake beni:build
+    # Rust links the MSVC archive, so mruby builds inside vcvars64, which makes it pick visualcpp.
+    # Only this step enters it: a later bash step would find MSVC's link.exe behind GNU's link.
+    # cmd.exe is reached through ComSpec, since RubyInstaller's MSYS2 ships another `cmd`.
+    - name: Build on Windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $install = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        $vcvars = Join-Path $install "VC\Auxiliary\Build\vcvars64.bat"
+        & $env:ComSpec /c "`"$vcvars`" >nul && bundle exec rake beni:build"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

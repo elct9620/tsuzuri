@@ -1,0 +1,3 @@
+[env]
+# The mruby archive `rake beni:build` stages, which the beni crate links.
+BENI_VENDOR_DIR = { value = "../mruby/.build", relative = true }

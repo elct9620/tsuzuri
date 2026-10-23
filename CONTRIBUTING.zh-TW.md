@@ -4,9 +4,11 @@
 
 ## 開發
 
-需要 Rust、Node.js 與 pnpm。架構見 [docs/architecture.md](docs/architecture.md)，設計見 [docs/design.md](docs/design.md)。
+需要 Rust、Ruby、Node.js 與 pnpm。架構見 [docs/architecture.md](docs/architecture.md)，設計見 [docs/design.md](docs/design.md)。
 
 ```bash
+bundle install
+bundle exec rake beni:build   # Rust 連結的 mruby archive，建在 mruby/.build/
 pnpm install
 pnpm tauri dev      # 啟動 App
 pnpm test           # 前端測試（Vitest）

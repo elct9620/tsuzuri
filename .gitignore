@@ -34,6 +34,9 @@ crate-licenses.json
 bundled-packages.json
 public/LICENSE.html
 
+# The mruby tree `rake beni:build` downloads and builds
+mruby/.build/
+
 # Model files scripts/breeze.sh builds; only the model cards are source
 models/.build/
 models/*/*.bin

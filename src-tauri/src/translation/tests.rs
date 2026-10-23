@@ -956,7 +956,7 @@ async fn shows_each_batch_as_it_is_translated() {
     project.directory = dir.path().to_path_buf();
     let current = app.state::<CurrentProject>();
     current.replace(project);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     let _hold = current.hold_resource(
         &source.directory,
         &source.name,
@@ -997,7 +997,7 @@ async fn names_the_batch_being_translated() {
     project.directory = dir.path().to_path_buf();
     let current = app.state::<CurrentProject>();
     current.replace(project);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     let _hold = current.hold_resource(
         &source.directory,
         &source.name,
@@ -1245,7 +1245,7 @@ async fn drops_the_translations_shown_when_cancelled() {
     project.directory = dir.path().to_path_buf();
     let current = app.state::<CurrentProject>();
     current.replace(project);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     let processes = Processes::new(dir.path().join("processes.json"));
     let lock = ModeLock::default();
     let run = lock.begin(AppPorts::new(app.handle(), &processes)).await;
@@ -1411,7 +1411,7 @@ async fn translation_file_into_traditional_chinese(name: &str, is_cleaned: bool)
     .unwrap();
     let project = CurrentProject::default();
     project.replace(Project::open(dir.path().to_path_buf(), Language::Japanese).unwrap());
-    let source = project.snapshot().unwrap();
+    let source = project.translation_source().unwrap();
     let translated_segments = translate_segments(
         &llama.model(),
         &job(&source.transcript.segments),
@@ -1466,7 +1466,7 @@ fn shows_a_batch_into_traditional_chinese_cleaned() {
     let app = mode_app();
     let current = app.state::<CurrentProject>();
     current.replace(project_of(vec![segment(0, 1_000, "こんにちは")]));
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     let _hold = current.hold_resource(
         &source.directory,
         &source.name,
@@ -1509,7 +1509,7 @@ async fn translates_the_project_as_edited() {
     project
         .edit(0, SegmentField::Text, "逐字稿".to_string())
         .unwrap();
-    let source = project.snapshot().unwrap();
+    let source = project.translation_source().unwrap();
 
     let translated_segments = translate_segments(
         &llama.model(),

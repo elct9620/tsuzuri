@@ -18,6 +18,7 @@ pub mod project;
 pub mod proper_nouns;
 pub mod release_number;
 pub mod replacement;
+pub mod script;
 pub mod segment_change;
 pub mod steps;
 pub mod system_opener;

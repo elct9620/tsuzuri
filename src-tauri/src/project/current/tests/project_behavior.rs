@@ -72,7 +72,7 @@ fn shows_a_translation_again_after_showing_none() {
         &[("talk.hd.mp4", ""), ("talk.hd.srt", &cue("你好"))],
     );
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     current
         .write_translations(
             &source,
@@ -230,7 +230,7 @@ fn pairs_subtitles_again_under_a_new_primary_language() {
 fn records_the_translation_language_in_the_project_config() {
     let dir = directory_of("pj-config-translation", &[("ep01.srt", &cue("你好"))]);
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
 
     current
         .write_translations(
@@ -327,7 +327,7 @@ fn writes_the_translation_beside_its_original() {
         "1\n00:00:00,000 --> 00:00:01,000\n你好\n\n2\n00:00:01,000 --> 00:00:02,000\n世界\n";
     let dir = directory_of("tl-write-file", &[("ep01.srt", original)]);
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     let translation: Vec<Segment> = source
         .transcript
         .segments
@@ -356,7 +356,7 @@ fn writes_the_translation_of_a_resource_no_longer_current() {
         &[("ep01.srt", &cue("你好")), ("ep02.srt", &cue("再見"))],
     );
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     current.select("ep02").unwrap();
 
     current
@@ -628,7 +628,7 @@ fn saves_every_bilingual_srt_when_the_original_is_edited() {
 fn saves_the_bilingual_srt_once_translated() {
     let dir = TempDir::new("pj-bilingual-translated");
     let current = bilingual_project_in(&dir, &[], true);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
 
     current
         .write_translations(
@@ -1180,7 +1180,7 @@ fn refuses_a_shift_past_the_next_segments_start() {
 fn backs_up_a_translation_before_it_is_written_again() {
     let dir = TempDir::new("pj-backup-translation");
     let current = backup_project_in(&dir, true);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
 
     current
         .write_translations(
@@ -1202,7 +1202,7 @@ fn backs_up_a_translation_before_it_is_written_again() {
 fn keeps_one_overwrite_each_opening_unless_asked_for_more() {
     let dir = TempDir::new("pj-backup-off");
     let current = backup_project_in(&dir, false);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
 
     for translation in ["Hi", "Hey"] {
         current
@@ -1241,7 +1241,7 @@ fn keeps_what_a_transcription_wrote_as_an_output() {
 fn keeps_what_a_translation_wrote_as_an_output() {
     let dir = directory_of("pj-output-translated", &[("ep01.srt", &cue("大家好"))]);
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
 
     current
         .write_translations(
@@ -1264,7 +1264,7 @@ fn lists_a_translation_whose_output_could_not_be_kept() {
         &[("ep01.srt", &cue("大家好")), (".tsuzuri", "")],
     );
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
 
     let result = current.write_translations(
         &source,
@@ -1334,7 +1334,7 @@ fn refuses_work_without_a_project() {
     let current = CurrentProject::default();
 
     let failures = [
-        current.snapshot().map(|_| ()).unwrap_err(),
+        current.translation_source().map(|_| ()).unwrap_err(),
         current
             .edit(0, SegmentField::Text, "x".to_string())
             .unwrap_err(),
@@ -1370,7 +1370,7 @@ fn refuses_to_transcribe_a_resource_without_media() {
 fn leaves_a_replaced_project_untouched_by_a_late_translation() {
     let dir = directory_of("pj-replaced", &[("ep01.srt", &cue("大家好"))]);
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     current.replace(project_of(vec![segment("另一份", None)]));
 
     current
@@ -1392,7 +1392,7 @@ fn records_the_language_of_a_translation() {
         &[("ep01.srt", &cue("こんにちは"))],
     );
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
 
     current
         .write_translations(
@@ -1671,7 +1671,7 @@ fn selects_no_resource_once_none_is_left() {
 fn keeps_what_a_mode_shows_when_the_project_is_reloaded() {
     let dir = directory_of("pj-reload-held", &[("ep01.srt", &cue("你好"))]);
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
     current.show_translations(&source, &[segment("你好", Some("Hello"))]);
     std::fs::write(dir.path().join("ep02.srt"), cue("再見")).unwrap();
@@ -1729,7 +1729,7 @@ fn writes_edit_after_edit() {
 fn edits_a_translation_tsuzuri_just_wrote() {
     let dir = directory_of("pj-edit-written", &[("ep01.srt", &cue("你好"))]);
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     let translation = vec![Segment {
         translation: Some("Hello".to_string()),
         ..source.transcript.segments[0].clone()
@@ -1804,7 +1804,7 @@ fn names_a_speaker_in_each_text_of_a_bilingual_srt() {
 fn names_a_speaker_in_a_translation_just_made() {
     let dir = TempDir::new("pj-speaker-translated");
     let current = xiao_ming_project_in(&dir, &[]);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     let translated_segment = Segment {
         speaker: Some("小明".to_string()),
         ..segment("你好", Some("Hello"))
@@ -1930,7 +1930,7 @@ fn writes_a_translation_made_again_as_one_change() {
         ],
     );
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     let mut segments = source.transcript.segments.clone();
     segments[1].translation = Some("B2".to_string());
 
@@ -2226,7 +2226,7 @@ fn keeps_a_translation_whole_when_edited_after_a_translation_ended_early() {
         ],
     );
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     {
         let _hold = hold_ep01(&current, &dir, ENGLISH_TRANSLATION);
         current.show_translations(&source, &[]);
@@ -2358,7 +2358,7 @@ fn keeps_a_subtitle_once_before_its_first_change_since_opening() {
 fn keeps_no_overwrite_of_what_a_mode_kept_as_an_output_since_opening() {
     let dir = directory_of("pj-first-change-output", &[("ep01.srt", &cue("你好"))]);
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     current
         .write_translations(
             &source,

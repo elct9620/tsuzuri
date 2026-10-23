@@ -455,7 +455,7 @@ impl CurrentProject {
     /// [`CurrentProject::show_translations`] and [`CurrentProject::write_translations`] without
     /// the hold a translation takes through [`CurrentProject::hold_for_translation`].
     #[cfg(test)]
-    pub fn snapshot(&self) -> Result<TranslationSource, Failure> {
+    pub fn translation_source(&self) -> Result<TranslationSource, Failure> {
         let held_project = self.lock();
         let project = held_project.project.as_ref().ok_or(Failure::NoProject)?;
         let current = project.current()?;

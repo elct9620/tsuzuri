@@ -73,7 +73,7 @@ fn keeps_the_translation_shown_through_an_undo() {
 fn undoes_a_translation_as_one_change() {
     let dir = directory_of("ud-translation", &[("ep01.srt", &cue("大家好"))]);
     let current = project_in(&dir);
-    let source = current.snapshot().unwrap();
+    let source = current.translation_source().unwrap();
     current
         .write_translations(
             &source,

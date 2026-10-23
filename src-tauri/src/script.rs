@@ -374,7 +374,7 @@ mod tests {
     const TWO_CUES: &str = "1\n00:00:00,000 --> 00:00:01,000\nSpeaker 1: 你好\n\n\
         2\n00:00:01,000 --> 00:00:02,000\nSpeaker 1: 世界\n";
 
-    async fn scanned(
+    async fn scan_dir(
         dir: &TempDir,
         registry: &ScriptRegistry,
         steps: &InProcessSteps,
@@ -412,7 +412,7 @@ mod tests {
             ],
         );
 
-        let scripts = scanned(&dir, &ScriptRegistry::default(), &InProcessSteps::default()).await;
+        let scripts = scan_dir(&dir, &ScriptRegistry::default(), &InProcessSteps::default()).await;
 
         assert_eq!(
             scripts,
@@ -441,16 +441,16 @@ mod tests {
     async fn loads_a_script_again_only_once_it_changes() {
         let dir = scripts_in("sr-scan-again", &[("a.rb", "Tsuzuri.macro(:a) {}")]);
         let (registry, steps) = (ScriptRegistry::default(), InProcessSteps::default());
-        scanned(&dir, &registry, &steps).await;
+        scan_dir(&dir, &registry, &steps).await;
 
-        scanned(&dir, &registry, &steps).await;
+        scan_dir(&dir, &registry, &steps).await;
         let unchanged = steps.started.load(Ordering::SeqCst);
         std::fs::write(
             dir.path().join(SCRIPTS_DIR).join("a.rb"),
             "Tsuzuri.macro(:b) {}",
         )
         .unwrap();
-        scanned(&dir, &registry, &steps).await;
+        scan_dir(&dir, &registry, &steps).await;
 
         assert_eq!((unchanged, steps.started.load(Ordering::SeqCst)), (1, 2));
     }
@@ -461,7 +461,7 @@ mod tests {
         let dir = scripts_in("sr-scan-newer", &[("a.rb", "# tsuzuri-api: 2.0\n")]);
         let steps = InProcessSteps::default();
 
-        let scripts = scanned(&dir, &ScriptRegistry::default(), &steps).await;
+        let scripts = scan_dir(&dir, &ScriptRegistry::default(), &steps).await;
 
         assert_eq!(
             (
@@ -486,7 +486,7 @@ mod tests {
             ..InProcessSteps::default()
         };
 
-        let scripts = scanned(&dir, &ScriptRegistry::default(), &steps).await;
+        let scripts = scan_dir(&dir, &ScriptRegistry::default(), &steps).await;
 
         assert_eq!(
             (

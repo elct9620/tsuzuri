@@ -33,6 +33,7 @@ Audio and text never leave the machine, and the transcription and translation en
 | Proofreading | Waveform, comparison, versions |
 | Speakers | Told apart or named, carried into exports |
 | Export | SRT or plain text, bilingual too |
+| Scripts | Your own Macros and export formats |
 
 ## Installation
 
@@ -143,6 +144,17 @@ Choose models in Settings; a preset below downloads the first time it is used.
 | One project | Its own transcription and translation models |
 
 The Hugging Face cache is shared with other Hugging Face tools, so a file already there is not downloaded again. A project's own models suit its language, such as a Japanese model for a Japanese project.
+
+## Scripts
+
+Ruby scripts add your own Macros and export formats, such as an interview transcript's layout. Put a `.rb` file in the folder **Settings** → **General** → **Scripts** → **Open folder** opens.
+
+| Example | Adds |
+|---|---|
+| [`merge_runs.rb`](examples/scripts/merge_runs.rb) | A Macro merging a Speaker's runs |
+| [`tsv_numbered.rb`](examples/scripts/tsv_numbered.rb) | A TSV export numbering each Speaker's lines |
+
+A script reads a copy of the subtitles and returns new Segments or text, which Tsuzuri checks and writes as one undo step. It reaches no file or network. The script API is in [docs/design.md](docs/design.md) chapter 14.
 
 ## Contributing
 

@@ -574,6 +574,125 @@ mod tests {
         assert_eq!(text, Ok("你好\n世界".to_string()));
     }
 
+    /// An example Script as `examples/scripts/` keeps it.
+    fn example(name: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../examples/scripts")
+            .join(name)
+    }
+
+    /// The Segments `subtitle` holds, by times, Speaker and text.
+    fn cues_of(subtitle: &Path) -> Vec<(u64, u64, Option<String>, String)> {
+        Transcript::from_srt(&std::fs::read_to_string(subtitle).unwrap())
+            .unwrap()
+            .segments
+            .into_iter()
+            .map(|segment| {
+                (
+                    segment.start_ms,
+                    segment.end_ms,
+                    segment.speaker,
+                    segment.text,
+                )
+            })
+            .collect()
+    }
+
+    const THREE_TURNS: &str = "1\n00:00:00,000 --> 00:00:01,000\nSpeaker 1: 內容A\n\n\
+        2\n00:00:01,000 --> 00:00:02,000\nSpeaker 1: 內容B\n\n\
+        3\n00:00:02,000 --> 00:00:03,000\nSpeaker 2: 內容C\n";
+
+    // @behavior SR-039
+    #[tokio::test]
+    async fn merges_a_speakers_runs_with_the_example_macro() {
+        let dir = directory_of("sr-example-merge", &[("ep01.srt", THREE_TURNS)]);
+        let current = project_in(&dir);
+        let script = example("merge_runs.rb");
+        let lock = ModeLock::default();
+        let run = lock.begin(InProcessSteps::default()).await;
+        let mode = MacroMode {
+            tsuzuri: Path::new("tsuzuri"),
+            script: &script,
+            id: "merge_runs",
+            checked_segments: vec![],
+            work: &dir.path().join("work"),
+        };
+
+        crate::steps::run_mode(
+            &mode,
+            &run,
+            &current,
+            Phases::start("macro", Phase::Preparation),
+        )
+        .await
+        .unwrap();
+
+        let speaker = |name: &str| Some(name.to_string());
+        assert_eq!(
+            cues_of(&dir.path().join("ep01.srt")),
+            [
+                (0, 2_000, speaker("Speaker 1"), "內容A，內容B".to_string()),
+                (2_000, 3_000, speaker("Speaker 2"), "內容C".to_string()),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn merges_only_among_the_checked_segments_with_the_example_macro() {
+        let dir = directory_of("sr-example-merge-checked", &[("ep01.srt", THREE_TURNS)]);
+        let current = project_in(&dir);
+        let script = example("merge_runs.rb");
+        let lock = ModeLock::default();
+        let run = lock.begin(InProcessSteps::default()).await;
+        let mode = MacroMode {
+            tsuzuri: Path::new("tsuzuri"),
+            script: &script,
+            id: "merge_runs",
+            checked_segments: vec![0],
+            work: &dir.path().join("work"),
+        };
+
+        crate::steps::run_mode(
+            &mode,
+            &run,
+            &current,
+            Phases::start("macro", Phase::Preparation),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(cues_of(&dir.path().join("ep01.srt")).len(), 3);
+    }
+
+    // @behavior SR-040
+    #[tokio::test]
+    async fn numbers_each_speakers_segments_with_the_example_export_format() {
+        let turns = "1\n00:00:00,000 --> 00:00:01,000\nSpeaker 1: 內容A\n\n\
+            2\n00:00:01,000 --> 00:00:02,000\nSpeaker 2: 內容B\n\n\
+            3\n00:00:02,000 --> 00:00:03,000\nSpeaker 1: 內容C\n";
+        let dir = directory_of("sr-example-tsv", &[("ep01.srt", turns)]);
+        let current = project_in(&dir);
+        let input = current.export_input(true, true).unwrap();
+
+        let text = make_export_text(
+            &InProcessSteps::default(),
+            Path::new("tsuzuri"),
+            &example("tsv_numbered.rb"),
+            "tsv_numbered",
+            &input,
+            &dir.path().join("work"),
+        )
+        .await;
+
+        assert_eq!(
+            text,
+            Ok(
+                "#\tzh-TW\nSpeaker 1-001\t內容A\nSpeaker 2-001\t內容B\nSpeaker 1-002\t內容C\n"
+                    .to_string()
+            )
+        );
+    }
+
     // @behavior SR-032
     #[test]
     fn refuses_a_script_name_reaching_outside_the_folder() {

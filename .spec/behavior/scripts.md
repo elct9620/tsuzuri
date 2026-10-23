@@ -8,6 +8,7 @@ What a Script reads of the Current Resource and which Scripts Tsuzuri loads, so 
 - `src-tauri/src/script/*.rs`
 - `src-tauri/src/project/current/tests/script_behavior.rs`
 - `src/ui/failure.test.ts`
+- `examples/scripts/*.rb`
 - `src/components/MacroMenu.test.ts`
 - `src/components/ExportMenu.test.ts`
 - `src/components/settings/general/Scripts.test.ts`
@@ -345,3 +346,21 @@ A Script that does not load says why, so its author can fix it.
 | Given | the Scripts section open |
 | When | the scan is asked for again |
 | Then | every Script is loaded again, changed or not |
+
+## `SR-039` Merging a Speaker's runs with the example Macro
+
+The examples answer the requests the script API was made for, so they are run as a user would run them.
+
+| Step | Statement |
+| --- | --- |
+| Given | `examples/scripts/merge_runs.rb`, and Segments `內容A` and `內容B` of `Speaker 1` then `內容C` of `Speaker 2` |
+| When | its Macro runs |
+| Then | the subtitle holds `內容A，內容B` of `Speaker 1` then `內容C` of `Speaker 2` |
+
+## `SR-040` Numbering each Speaker's Segments with the example Export Format
+
+| Step | Statement |
+| --- | --- |
+| Given | `examples/scripts/tsv_numbered.rb`, and Segments of `Speaker 1`, `Speaker 2`, then `Speaker 1` |
+| When | its Export Format writes them with Speakers |
+| Then | the rows after the header start `Speaker 1-001`, `Speaker 2-001` and `Speaker 1-002`, each followed by a tab and its text |

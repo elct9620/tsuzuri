@@ -89,6 +89,7 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 ├─ vendor/                built Components, not versioned
 ├─ mruby/                 build config; .build/ not versioned
 ├─ Gemfile, Rakefile      beni builds mruby into mruby/.build/
+├─ examples/scripts/      example Scripts, run by the tests too
 ├─ scripts/vendor.sh      builds Components by components.json
 ├─ scripts/licenses.ts    license checks and page
 ├─ scripts/signatures.ts  checks update signatures

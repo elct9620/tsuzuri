@@ -33,6 +33,7 @@
 | 校對 | 波形、對照、版本 |
 | 說話者 | 自動辨識或命名，一併匯出 |
 | 匯出 | SRT 或純文字，可雙語 |
+| 腳本 | 自己的巨集與匯出格式 |
 
 ## 安裝
 
@@ -143,6 +144,17 @@ sudo dnf install ./Tsuzuri-<version>-1.x86_64.rpm   # Fedora
 | 單一專案 | 另外指定轉錄與翻譯模型 |
 
 Hugging Face 快取和其他 Hugging Face 工具共用，已經在裡面的檔案不會再下載。專案可以依語言選自己的模型，例如日文專案用日文模型。
+
+## 腳本
+
+用 Ruby 腳本加上自己的巨集與匯出格式，例如訪談逐字稿的版面。把 `.rb` 檔放進 **設定** → **整體** → **腳本** → **開啟資料夾** 打開的資料夾。
+
+| 範例 | 加上 |
+|---|---|
+| [`merge_runs.rb`](examples/scripts/merge_runs.rb) | 合併說話者連續段落的巨集 |
+| [`tsv_numbered.rb`](examples/scripts/tsv_numbered.rb) | 依說話者編號的 TSV 匯出 |
+
+腳本讀到字幕的複本，回傳新的段落或文字，由 Tsuzuri 檢查後寫入，算一步復原。腳本碰不到檔案與網路。腳本 API 見 [docs/design.md](docs/design.md) 第 14 章。
 
 ## 參與開發
 

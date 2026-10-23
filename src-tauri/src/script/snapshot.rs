@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+use super::registry::ScriptFailure;
 use crate::language::Language;
 use crate::transcript::Segment;
 
@@ -78,6 +79,66 @@ impl Snapshot {
             segments,
             checked_segments,
         }
+    }
+}
+
+/// What a Script's Segments write over a Resource: its original, and each translation as the
+/// original's Segments carrying that Language's text as their translation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WrittenSubtitles {
+    pub original: Vec<Segment>,
+    pub translations: Vec<(Language, Vec<Segment>)>,
+}
+
+impl Snapshot {
+    /// The subtitles `segments` write over the Resource this Snapshot is of, refused as a whole
+    /// when a Segment ends before it starts, starts before the one before it, or has a text in a
+    /// Language the Snapshot does not hold.
+    pub fn written_subtitles(
+        &self,
+        segments: &[SnapshotSegment],
+    ) -> Result<WrittenSubtitles, ScriptFailure> {
+        for (index, segment) in segments.iter().enumerate() {
+            if segment.end_ms < segment.start_ms {
+                return Err(ScriptFailure::InvalidTimes { number: index + 1 });
+            }
+            if index > 0 && segment.start_ms < segments[index - 1].start_ms {
+                return Err(ScriptFailure::UnorderedTimes { number: index + 1 });
+            }
+            if let Some(language) = segment
+                .texts
+                .keys()
+                .find(|language| !self.languages.contains(language))
+            {
+                return Err(ScriptFailure::UnheldLanguage {
+                    language: *language,
+                });
+            }
+        }
+        let carrying = |translation: Option<Language>| -> Vec<Segment> {
+            segments
+                .iter()
+                .map(|segment| Segment {
+                    start_ms: segment.start_ms,
+                    end_ms: segment.end_ms,
+                    speaker: segment.speaker.clone(),
+                    text: segment
+                        .texts
+                        .get(&self.primary)
+                        .cloned()
+                        .unwrap_or_default(),
+                    translation: translation
+                        .and_then(|language| segment.texts.get(&language).cloned()),
+                })
+                .collect()
+        };
+        Ok(WrittenSubtitles {
+            original: carrying(None),
+            translations: self.languages[1..]
+                .iter()
+                .map(|language| (*language, carrying(Some(*language))))
+                .collect(),
+        })
     }
 }
 

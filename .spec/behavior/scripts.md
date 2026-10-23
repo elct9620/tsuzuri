@@ -6,6 +6,8 @@ What a Script reads of the Current Resource and which Scripts Tsuzuri loads, so 
 
 - `src-tauri/src/script.rs`
 - `src-tauri/src/script/*.rs`
+- `src-tauri/src/project/current/tests/script_behavior.rs`
+- `src/ui/failure.test.ts`
 
 ## `SR-001` Giving a Script each Segment's text in every Language
 
@@ -148,3 +150,75 @@ A Script that hangs or crashes ends only its own process, and leaves its result 
 | Given | a Script raising `boom` at its top level |
 | When | the app starts itself as `script scan` on it |
 | Then | it exits with 1 and writes `boom` to its error output |
+
+## `SR-017` Making the Snapshot of the Current Resource
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resource whose `zh-TW` Segments `你好` and `世界` have the `en` translations `Hello` and `world` |
+| When | the Snapshot of the Current Resource is made |
+| Then | it lists `zh-TW` then `en`, and each Segment holds its text in both |
+
+## `SR-018` Writing back the Segments an edit returns
+
+An edit returns the whole list, so it may merge, split or reorder Segments without tracking positions; each translation follows as it does for a Segment Change.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resource with `zh-TW` Segments `你好` and `世界` translated `Hello` and `world` |
+| When | an edit returns one Segment over both, with `你好，世界` in `zh-TW` and `Hello, world` in `en` |
+| Then | the original and the translation each hold that one Segment |
+
+## `SR-019` Undoing an edit in one step
+
+| Step | Statement |
+| --- | --- |
+| Given | an edit written back over a Resource and its translation |
+| When | the change is undone once |
+| Then | the original and the translation are as they were before the edit |
+
+## `SR-020` Dropping a translation of a Segment the edit leaves without one
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resource with a `zh-TW` Segment translated `Hello` |
+| When | an edit returns that Segment with only its `zh-TW` text |
+| Then | the translation file holds no cue for it |
+
+## `SR-021` Refusing a Segment that ends before it starts
+
+Nothing is written when any Segment breaks a rule, so no edit is left half done.
+
+| Step | Statement |
+| --- | --- |
+| Given | an edit returning a Segment from 2 s to 1 s |
+| When | it is written back |
+| Then | it fails naming the first Segment, and the subtitles stay as they were |
+
+## `SR-022` Refusing Segments out of the order they start in
+
+| Step | Statement |
+| --- | --- |
+| Given | an edit returning a Segment starting at 2 s before one starting at 1 s |
+| When | it is written back |
+| Then | it fails naming the second Segment, and the subtitles stay as they were |
+
+## `SR-023` Refusing a text in a Language the Resource has no subtitle in
+
+A Script cannot start a translation; that stays the Translate Mode's.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Resource with only a `zh-TW` subtitle |
+| When | an edit returns a Segment with a `ja` text |
+| Then | it fails naming `ja`, and the subtitles stay as they were |
+
+## `SR-024` Naming the Segment a Script returned that breaks a rule
+
+A Script's author fixes the Script, so the message points at the Segment by its place in what the Script returned.
+
+| Step | Statement |
+| --- | --- |
+| Given | an edit refused because its second Segment starts before the first |
+| When | the failure is shown |
+| Then | it names Segment 2 and says nothing was written |

@@ -331,6 +331,8 @@ export type Failure =
  *  after it.
  */
 { code: "unordered-times" } | 
+/**  A Script that did not load, run, or return what Tsuzuri can write. */
+{ code: "script"; failure: ScriptFailure } | 
 /**  A Replacement with nothing to find, or a regular expression the `regex` crate cannot read. */
 { code: "invalid-pattern"; detail: string } | 
 /**  A restore that named no Backup of the subtitle it was asked for. */
@@ -647,6 +649,19 @@ export type RunningMode =
  *  are translated again.
  */
 { mode: "translation"; language: Language; indexes: number[] | null };
+
+/**  Why a Script does not load or run. */
+export type ScriptFailure = 
+/**  A `tsuzuri-api` declaration that is not two numbers. */
+{ kind: "unreadable-api-version"; declaration: string } | 
+/**  The Script did not parse, raised, or returned what its kind does not allow. */
+{ kind: "raised"; message: string } | 
+/**  A returned Segment, counted from 1, ends before it starts. */
+{ kind: "invalid-times"; number: number } | 
+/**  A returned Segment, counted from 1, starts before the one before it. */
+{ kind: "unordered-times"; number: number } | 
+/**  A returned text in a Language the Resource has no subtitle in. */
+{ kind: "unheld-language"; language: Language };
 
 /**  What to look for in the texts, read as a Replacement's `pattern` is. */
 export type Search = {

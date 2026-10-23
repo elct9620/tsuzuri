@@ -85,12 +85,12 @@ fn write_json(path: &str, value: &impl serde::Serialize) -> Result<(), String> {
     std::fs::write(path, json).map_err(|error| error.to_string())
 }
 
+/// The message the app reads from the script Step's error output; a Script only raises here, as
+/// its declaration and its Segments are checked by the app.
 fn failure_message(failure: ScriptFailure) -> String {
     match failure {
         ScriptFailure::Raised { message } => message,
-        ScriptFailure::UnreadableApiVersion { declaration } => {
-            format!("cannot read the tsuzuri-api declaration `{declaration}`")
-        }
+        other => format!("{other:?}"),
     }
 }
 

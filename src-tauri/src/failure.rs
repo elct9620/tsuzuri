@@ -5,6 +5,7 @@ use serde::Serialize;
 use crate::project::glossary::GlossaryError;
 use crate::project::ProjectError;
 use crate::replacement::ReplacementError;
+use crate::script::registry::ScriptFailure;
 use crate::segment_change::SegmentChangeError;
 use crate::toolchain::{ModelError, ModelSlot};
 use crate::transcript::SrtError;
@@ -83,6 +84,10 @@ pub enum Failure {
     /// A Segment Change that would start a Segment before the Segment before it or after the one
     /// after it.
     UnorderedTimes,
+    /// A Script that did not load, run, or return what Tsuzuri can write.
+    Script {
+        failure: ScriptFailure,
+    },
     /// A Replacement with nothing to find, or a regular expression the `regex` crate cannot read.
     InvalidPattern {
         detail: String,
@@ -158,6 +163,12 @@ impl From<GlossaryError> for Failure {
             GlossaryError::MalformedCsv { detail } => Failure::MalformedGlossary { detail },
             GlossaryError::Io { detail } => Failure::Io { detail },
         }
+    }
+}
+
+impl From<ScriptFailure> for Failure {
+    fn from(failure: ScriptFailure) -> Self {
+        Failure::Script { failure }
     }
 }
 

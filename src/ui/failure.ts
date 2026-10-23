@@ -1,4 +1,4 @@
-import type { Failure } from "#/ipc/failure.ts";
+import type { Failure, ScriptFailure } from "#/ipc/failure.ts";
 import { t } from "#/i18n.ts";
 import type { NotificationKind } from "#/state/notification.svelte.ts";
 
@@ -31,6 +31,7 @@ const KIND_BY_CODE: Record<Failure["code"], NotificationKind> = {
   "no-traditional-chinese": "warning",
   "invalid-times": "warning",
   "unordered-times": "warning",
+  script: "error",
   "invalid-pattern": "warning",
   "no-backup": "error",
   "no-row": "warning",
@@ -116,6 +117,8 @@ export function failureMessage(error: unknown): string {
       return t("failures.invalidTimes");
     case "unordered-times":
       return t("failures.unorderedTimes");
+    case "script":
+      return scriptFailureMessage(error.failure);
     case "invalid-pattern":
       return t("failures.invalidPattern", { detail: error.detail });
     case "no-backup":
@@ -147,5 +150,23 @@ export function failureMessage(error: unknown): string {
       return t("failures.llamaRequest", { detail: error.detail });
     case "internal":
       return t("failures.internal", { detail: error.detail });
+  }
+}
+
+/** A sentence for why a Script did not load, run, or have its Segments written. */
+export function scriptFailureMessage(failure: ScriptFailure): string {
+  switch (failure.kind) {
+    case "unreadable-api-version":
+      return t("failures.scriptApiVersionUnreadable", {
+        declaration: failure.declaration,
+      });
+    case "raised":
+      return t("failures.scriptRaised", { message: failure.message });
+    case "invalid-times":
+      return t("failures.scriptInvalidTimes", { position: failure.number });
+    case "unordered-times":
+      return t("failures.scriptUnorderedTimes", { position: failure.number });
+    case "unheld-language":
+      return t("failures.scriptUnheldLanguage", { language: failure.language });
   }
 }

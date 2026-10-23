@@ -23,6 +23,7 @@ use super::{
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::replacement::{Finder, Replacement, Replacer, Search};
+use crate::script::snapshot::{Snapshot, SnapshotSegment};
 use crate::segment_change::SegmentChange;
 use crate::transcript::{Segment, Transcript, WrittenText};
 
@@ -959,6 +960,19 @@ impl CurrentProject {
 
     pub fn change_segments(&self, change: SegmentChange) -> Result<(), Failure> {
         self.change_undoably(is_always_written, |project| project.change_segments(change))
+    }
+
+    /// The Snapshot a Script reads of the Current Resource, with the Checked Segments at
+    /// `checked_segments`.
+    pub fn script_snapshot(&self, checked_segments: Vec<usize>) -> Result<Snapshot, Failure> {
+        self.update_project(|project| project.script_snapshot(checked_segments))
+    }
+
+    /// Writes the Segments an edit of a Script returned, as one step of the Undo History.
+    pub fn replace_segments(&self, segments: &[SnapshotSegment]) -> Result<(), Failure> {
+        self.change_undoably(is_always_written, |project| {
+            project.replace_segments(segments)
+        })
     }
 
     pub fn export_path(

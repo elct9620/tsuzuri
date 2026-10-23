@@ -578,6 +578,15 @@ const en = {
     unorderedTimes:
       "A Segment cannot start before the one before it or after the one after it",
     invalidPattern: "Nothing to find, or not a regular expression: {{detail}}",
+    scriptApiVersionUnreadable:
+      "The script declares a tsuzuri-api version that is not two numbers: {{declaration}}",
+    scriptRaised: "The script failed: {{message}}",
+    scriptInvalidTimes:
+      "Segment {{position}} the script returned ends before it starts; nothing was written",
+    scriptUnorderedTimes:
+      "Segment {{position}} the script returned starts before the one before it; nothing was written",
+    scriptUnheldLanguage:
+      "The script returned text in {{language}}, which this resource has no subtitle in; nothing was written",
     modeRunning:
       "A task running on this Resource is writing this subtitle; try again once it ends",
     cancelled: "The task was cancelled",

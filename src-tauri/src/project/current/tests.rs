@@ -370,5 +370,6 @@ fn merged_project_in(dir: &TempDir) -> CurrentProject {
 
 mod editing_behavior;
 mod project_behavior;
+mod script_behavior;
 mod undo_behavior;
 mod versions_behavior;

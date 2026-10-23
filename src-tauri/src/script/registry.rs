@@ -2,6 +2,8 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
+use crate::language::Language;
+
 /// The script API a Script is written for, declared by `# tsuzuri-api: <major>.<minor>`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 pub struct ApiVersion {
@@ -33,6 +35,12 @@ pub enum ScriptFailure {
     UnreadableApiVersion { declaration: String },
     /// The Script did not parse, raised, or returned what its kind does not allow.
     Raised { message: String },
+    /// A returned Segment, counted from 1, ends before it starts.
+    InvalidTimes { number: usize },
+    /// A returned Segment, counted from 1, starts before the one before it.
+    UnorderedTimes { number: usize },
+    /// A returned text in a Language the Resource has no subtitle in.
+    UnheldLanguage { language: Language },
 }
 
 const API_DECLARATION: &str = "tsuzuri-api:";

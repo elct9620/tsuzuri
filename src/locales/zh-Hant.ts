@@ -562,6 +562,14 @@ const zhHant: TranslationWithoutSingulars<typeof en> = {
     invalidTimes: "結束時間不能早於開始時間",
     unorderedTimes: "開始時間不能早於前一段的開始，也不能晚於後一段的開始",
     invalidPattern: "沒有要找的文字，或不是正規表示式：{{detail}}",
+    scriptApiVersionUnreadable:
+      "腳本宣告的 tsuzuri-api 版本不是兩個數字：{{declaration}}",
+    scriptRaised: "腳本執行失敗：{{message}}",
+    scriptInvalidTimes: "腳本回傳的第 {{position}} 段結束早於開始，沒有寫入",
+    scriptUnorderedTimes:
+      "腳本回傳的第 {{position}} 段開始早於前一段，沒有寫入",
+    scriptUnheldLanguage:
+      "腳本回傳了 {{language}} 的文字，但這個資源沒有這個語言的字幕，沒有寫入",
     modeRunning: "這個資源的任務正在寫入這份字幕，請等任務結束再改",
     cancelled: "任務已取消",
     noTranslationShown: "請先顯示要譯成的譯文",

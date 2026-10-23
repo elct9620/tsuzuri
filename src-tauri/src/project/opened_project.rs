@@ -18,6 +18,7 @@ use crate::cleanup::{clean_range, clean_text};
 use crate::failure::Failure;
 use crate::language::Language;
 use crate::replacement::{Finder, Replacer};
+use crate::script::snapshot::{Snapshot, SnapshotSegment};
 use crate::segment_change::SegmentChange;
 use crate::transcript::{Segment, SpeakerNames, Transcript, WrittenText};
 
@@ -693,6 +694,65 @@ impl Project {
             change.clone().apply(&mut translation.segments)?;
             translations.push((path.clone(), translation_srt(&translation, speaker_names)));
         }
+        self.write_original_and_translations(&name, original, translations)
+    }
+
+    /// The Snapshot a Script reads of the Current Resource, with the Checked Segments at
+    /// `checked_segments`.
+    pub(super) fn script_snapshot(
+        &mut self,
+        checked_segments: Vec<usize>,
+    ) -> Result<Snapshot, Failure> {
+        self.read_current_transcript()?;
+        let current = self.current()?;
+        let original = current.transcript.segments.clone();
+        let resource = self.resource(&current.name)?;
+        let mut translations = Vec::new();
+        for (language, _) in &resource.translations {
+            let speaker_names = self.speaker_names(Some(*language));
+            let translation = resource.transcript(Some(*language), &speaker_names)?;
+            let texts = translation
+                .segments
+                .into_iter()
+                .map(|segment| segment.translation);
+            translations.push((*language, texts.collect()));
+        }
+        Ok(Snapshot::new(
+            self.language,
+            &original,
+            translations,
+            checked_segments,
+        ))
+    }
+
+    /// Writes `segments`, which a Script returned, over the Current Resource's original and each
+    /// of its translations, once they keep the rules of a Segment Change.
+    pub(super) fn replace_segments(&mut self, segments: &[SnapshotSegment]) -> Result<(), Failure> {
+        let written = self.script_snapshot(vec![])?.written_subtitles(segments)?;
+        let name = self.current()?.name.clone();
+        let resource = self.resource(&name)?;
+        let mut translations = Vec::new();
+        for (language, segments) in written.translations {
+            let path = resource
+                .translation_path(language)
+                .ok_or(Failure::NoSubtitle)?;
+            let srt = translation_srt(&Transcript { segments }, self.speaker_names(Some(language)));
+            translations.push((path.to_path_buf(), srt));
+        }
+        let original = Transcript {
+            segments: written.original,
+        };
+        self.write_original_and_translations(&name, original, translations)
+    }
+
+    /// Writes `original` as the Current Resource's original and each SRT of `translations` to its
+    /// path, backing each translation up first, then the Bilingual SRTs that pair them.
+    fn write_original_and_translations(
+        &mut self,
+        name: &str,
+        original: Transcript,
+        translations: Vec<(PathBuf, String)>,
+    ) -> Result<(), Failure> {
         self.current_mut()?.transcript = original;
         self.write_subtitle(WrittenText::Original)?;
         for (path, srt) in translations {
@@ -700,7 +760,7 @@ impl Project {
             files::write_text(&path, srt)?;
         }
         self.read_current_again()?;
-        self.write_bilingual_subtitles(&name, None)
+        self.write_bilingual_subtitles(name, None)
     }
 
     pub(super) fn subtitle_versions(&self) -> Result<Vec<SubtitleVersions>, Failure> {

@@ -159,15 +159,17 @@ jobs:
       - run: cargo test
       # Kept even when a check fails, so dependencies are not rebuilt on the next run.
       # Tsuzuri's own artifacts and bundles are rebuilt every run, so they are left out.
+      # A pull request only restores: what it saves serves that pull request alone, yet counts
+      # toward the repository's cache limit and pushes out what main saved.
       - name: Prune what the next run rebuilds anyway
-        if: ${{ !cancelled() && steps.cache.outputs.cache-hit != 'true' }}
+        if: ${{ !cancelled() && github.event_name != 'pull_request' && steps.cache.outputs.cache-hit != 'true' }}
         shell: bash
         working-directory: src-tauri
         run: |
           rm -rf target/*/incremental target/*/bundle
           find target -maxdepth 3 \( -name 'tsuzuri*' -o -name 'libtsuzuri*' \) -prune -exec rm -rf {} +
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: ${{ !cancelled() && steps.cache.outputs.cache-hit != 'true' }}
+        if: ${{ !cancelled() && github.event_name != 'pull_request' && steps.cache.outputs.cache-hit != 'true' }}
         with:
           path: |
             ~/.cargo/registry/index

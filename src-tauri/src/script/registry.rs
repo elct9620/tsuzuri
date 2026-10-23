@@ -1,6 +1,6 @@
 use std::fmt;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// The script API a Script is written for, declared by `# tsuzuri-api: <major>.<minor>`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
@@ -9,12 +9,30 @@ pub struct ApiVersion {
     pub minor: u32,
 }
 
-/// Why a Script does not load.
+/// What a Script offers in Tsuzuri's menus, by the id it registers and the label menus show.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum Registration {
+    Macro {
+        id: String,
+        label: String,
+    },
+    ExportFormat {
+        id: String,
+        label: String,
+        /// The extension of the file it is saved to, without the dot.
+        extension: String,
+    },
+}
+
+/// Why a Script does not load or run.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum ScriptFailure {
     /// A `tsuzuri-api` declaration that is not two numbers.
     UnreadableApiVersion { declaration: String },
+    /// The Script did not parse, raised, or returned what its kind does not allow.
+    Raised { message: String },
 }
 
 const API_DECLARATION: &str = "tsuzuri-api:";

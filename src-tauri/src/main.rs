@@ -8,5 +8,10 @@ fn main() {
     {
         std::process::exit(code);
     }
+    if let Some(code) =
+        tsuzuri_lib::script::subcommand::run_script_subcommand(&args, &mut std::io::stderr())
+    {
+        std::process::exit(code);
+    }
     tsuzuri_lib::run()
 }

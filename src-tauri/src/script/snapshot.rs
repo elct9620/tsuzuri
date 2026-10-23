@@ -26,6 +26,22 @@ pub struct SnapshotSegment {
     pub texts: BTreeMap<Language, String>,
 }
 
+/// The export options an Export Format is handed, as the Export menu holds them.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExportOptions {
+    pub has_speakers: bool,
+    pub has_blank_lines: bool,
+    /// What each Speaker Label is called, for the Speakers the Project names otherwise.
+    pub speaker_names: BTreeMap<String, String>,
+}
+
+/// What an Export Format is handed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExportInput {
+    pub snapshot: Snapshot,
+    pub options: ExportOptions,
+}
+
 impl Snapshot {
     /// The Snapshot of `original`, the Primary Language Segments, with each of `translations`
     /// holding the text lined up with each Segment, none where no cue does.

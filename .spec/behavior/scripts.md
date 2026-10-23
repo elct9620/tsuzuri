@@ -78,3 +78,73 @@ The declaration is read before the Script runs, so only the comments it opens wi
 | Given | a Script opening with `# tsuzuri-api: one` |
 | When | its API version is read |
 | Then | it fails naming the declaration it could not read |
+
+## `SR-009` Offering what a Script registers
+
+| Step | Statement |
+| --- | --- |
+| Given | a Script registering the Macro `merge_runs` labelled `合併連續發言` and the Export Format `tsv_numbered` saved as `tsv` |
+| When | it is loaded |
+| Then | it offers the Macro and the Export Format under their labels, in that order |
+
+## `SR-010` Writing the text an Export Format makes
+
+An Export Format takes over the whole output, so what it returns is what is saved, character for character.
+
+| Step | Statement |
+| --- | --- |
+| Given | an Export Format writing each Segment's `zh-TW` text after its number counted as `%03d` and its length in characters |
+| When | it writes a Snapshot holding `你好` |
+| Then | the text is `001 你好 2` |
+
+## `SR-011` Handing back the Segments each edit of a Macro returns
+
+| Step | Statement |
+| --- | --- |
+| Given | a Macro whose edit merges two Segments of one Speaker into one, joining their texts with `，` |
+| When | it runs on those two Segments |
+| Then | its one edit holds one Segment from the first start to the last end with the joined text |
+
+## `SR-012` Refusing an edit that returns something other than Segments
+
+| Step | Statement |
+| --- | --- |
+| Given | a Macro whose edit returns a String |
+| When | it runs |
+| Then | it fails saying an edit returns an Array of `Tsuzuri::Segment` or `nil` |
+
+## `SR-013` Naming the error a Script raises
+
+| Step | Statement |
+| --- | --- |
+| Given | a Script raising `boom` at its top level |
+| When | it is loaded |
+| Then | it fails with the message `boom` |
+
+## `SR-014` Reaching no file from a Script
+
+The interpreter holds no I/O, so a Script reading a file cannot run, whoever wrote it.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Script reading a file with `File.read` |
+| When | it is loaded |
+| Then | it fails, `File` being unknown |
+
+## `SR-015` Running a Script apart from the app
+
+A Script that hangs or crashes ends only its own process, and leaves its result in a file the app reads.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Script registering one Macro |
+| When | the app starts itself as `script scan <script.rb> <registrations.json>` |
+| Then | it exits with 0 and the file lists the Macro |
+
+## `SR-016` Reporting a Script that fails as a child of the app
+
+| Step | Statement |
+| --- | --- |
+| Given | a Script raising `boom` at its top level |
+| When | the app starts itself as `script scan` on it |
+| Then | it exits with 1 and writes `boom` to its error output |

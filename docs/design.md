@@ -1686,7 +1686,7 @@ context.run(:merge_runs)                  # another macro
 | `stdlib-io` | 全部不編 |
 | `metaprog` | 只留 `compiler` |
 
-`sprintf` 寫得出 `001`，`compiler` 讓 App 能讀 `.rb` 原始程式碼。`MRB_UTF8_STRING` 讓中文逐字處理。
+`sprintf` 寫得出 `001`，`compiler` 讓 App 能讀 `.rb` 原始程式碼。`MRB_UTF8_STRING` 讓中文逐字處理。mruby 沒有 Regexp，字串以 `String` 的方法處理。
 
 ## 15 風險與待驗證
 

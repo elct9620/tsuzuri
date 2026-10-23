@@ -48,3 +48,15 @@ impl Snapshot {
     pub fn new(primary: Language, original: &[Segment], translations: Vec<(Language, Vec<Option<String>>)>, checked_segments: Vec<usize>) -> Snapshot {}
 }
 ```
+
+## `run_script_subcommand`
+
+Run a Script as a child process of the app when the first argument is `script`: `script scan <script.rb> <registrations.json>` writes what the Script registers, `script format <script.rb> <id> <input.json> <text>` writes the text the Export Format `id` makes of the Snapshot and export options `input.json` holds, and `script macro <script.rb> <id> <snapshot.json> <edits.json>` writes the Segments of each edit the Macro `id` makes. It answers exit code 0, or 1 with the reason on `stderr`. Any other arguments answer none, and the app starts as usual.
+
+| Attribute | Value |
+| --- | --- |
+| internal | yes |
+
+```rust
+pub fn run_script_subcommand(args: &[String], stderr: &mut impl Write) -> Option<i32> {}
+```

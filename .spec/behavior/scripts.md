@@ -364,3 +364,13 @@ The examples answer the requests the script API was made for, so they are run as
 | Given | `examples/scripts/tsv_numbered.rb`, and Segments of `Speaker 1`, `Speaker 2`, then `Speaker 1` |
 | When | its Export Format writes them with Speakers |
 | Then | the rows after the header start `Speaker 1-001`, `Speaker 2-001` and `Speaker 1-002`, each followed by a tab and its text |
+
+## `SR-041` Showing a Macro added while the app is open
+
+The Macros menu is not drawn while no Script registers a Macro, so it cannot be opened to read the Scripts again; coming back to the window from the file manager does.
+
+| Step | Statement |
+| --- | --- |
+| Given | the app open with no Script registering a Macro |
+| When | a Script registering one is added and the window comes back into focus |
+| Then | the Macros menu appears |

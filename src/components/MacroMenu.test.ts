@@ -109,6 +109,18 @@ describe("MacroMenu", () => {
     ]);
   });
 
+  // @behavior SR-041
+  it("shows a Macro added while the app was open once the window is back in focus", async () => {
+    scripts = [];
+    await show();
+    scripts = [interview];
+
+    window.dispatchEvent(new FocusEvent("focus"));
+    await settle();
+
+    expect(macrosButton()).not.toBeNull();
+  });
+
   it("names a running Macro by its label on the task's badge", async () => {
     run.begin("script", "合併連續發言");
 

@@ -12,6 +12,7 @@ const en = {
     diarize: "Diarize speakers",
     settings: "Settings",
     export: "Export",
+    macros: "Macros",
     original: "Save original as",
     translation: "Save translation as",
     bilingual: "Bilingual SRT",
@@ -88,6 +89,11 @@ const en = {
     factor: "Real-time factor (RTF)",
     failed: "Transcription failed",
     cancelled: "Transcription cancelled",
+  },
+  script: {
+    failed: "The script did not finish",
+    cancelled: "The script was cancelled",
+    unscanned: "Scripts not read",
   },
   diarize: {
     title: "Tell speakers apart",
@@ -352,6 +358,16 @@ const en = {
     notSaved: "Settings not saved",
     project: "Project",
     logs: "Log",
+    scripts: "Scripts",
+    scriptsHelp:
+      "Ruby files in this folder add Macros and Export Formats; a script that does not load is marked red with the reason",
+    script: "Script",
+    scriptProvides: "Provides",
+    scriptRegistrations: "{{macros}} macros, {{formats}} export formats",
+    noScripts: "No scripts in the folder yet",
+    openScripts: "Open folder",
+    scanScripts: "Scan again",
+    scriptsNotOpened: "Scripts folder not opened",
     logDirectory: "Directory",
     logDirectoryHelp:
       "Each run writes what its components print and how long each phase took here, worth attaching to a report; a new directory takes effect after a restart",

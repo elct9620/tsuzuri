@@ -18,6 +18,7 @@ const MESSAGES_BY_TASK: Record<TaskKind, string> = {
   transcription: "transcribe",
   translation: "translate",
   diarization: "diarize",
+  script: "script",
 };
 
 /** The task running and how far it has come, from its first Phase reported to its end. */
@@ -34,23 +35,30 @@ export class TaskRun {
   percent = $state<number | null>(null);
   /** Whether a Phase has been reported since the run began, so a bar has something to show. */
   hasBar = $state(false);
+  /** What the badge names the task by before its Phase, as a Macro by its label; none for a built-in task. */
+  label = $state<string | null>(null);
 
   /** Whether a task is running, so no second one starts. */
   get isBusy(): boolean {
     return this.task !== null;
   }
 
-  /** Starts showing `task`, or moves on to it within the same run. */
-  begin(task: TaskKind): void {
+  /** Starts showing `task`, or moves on to it within the same run, its badge naming it `label` when given. */
+  begin(task: TaskKind, label: string | null = null): void {
     this.task = task;
+    this.label = label;
     this.status = t("work.preparing");
     this.summary = t("work.preparing");
     this.reachedPhase = null;
   }
 
   /** Runs `body` as `task`, ending the run once it has, or saying why it failed. */
-  async perform(task: TaskKind, body: () => Promise<void>): Promise<void> {
-    this.begin(task);
+  async perform(
+    task: TaskKind,
+    body: () => Promise<void>,
+    label: string | null = null,
+  ): Promise<void> {
+    this.begin(task, label);
     try {
       await body();
       this.#end();
@@ -77,7 +85,8 @@ export class TaskRun {
   show(progress: PipelineProgress): void {
     if (!this.isBusy) return;
     this.status = progressLine(progress);
-    this.summary = progressSummary(progress);
+    const summary = progressSummary(progress);
+    this.summary = this.label === null ? summary : `${this.label} · ${summary}`;
     this.reachedPhase = progress.phase;
     this.percent = progress.percent;
     this.hasBar = true;
@@ -85,6 +94,7 @@ export class TaskRun {
 
   #end(): void {
     this.task = null;
+    this.label = null;
     this.hasBar = false;
   }
 }

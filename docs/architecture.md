@@ -707,6 +707,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | 整體的 `Transcription`、`Translation` | 整體的轉錄、翻譯設定 |
 | `Components` | 元件的狀態、指定與還原 |
 | `Logs` | log 目錄與除錯紀錄 |
+| `Scripts` | 腳本清單與載入失敗的原因 |
 | `InterfaceLanguage` | 偏好的介面語言 |
 | `Preferences` | 偏好的換段設定 |
 | `GlossaryDialog` | 詞彙表 modal |
@@ -715,7 +716,9 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `Models`、`ModelSlot` | 整體的模型來源與下載 |
 | `RepositoryDialog` | Hugging Face 的檔案清單 |
 | `Toolbar` | 名稱、開啟選單、設定與清單按鈕 |
-| `ExportMenu` | 匯出選單與純文字的兩個開關 |
+| `ExportMenu` | 匯出選單、純文字開關、匯出格式 |
+| `MacroMenu` | 巨集選單 |
+| `ScriptMenuItem` | 腳本加進選單的一項 |
 | `ResourceBar` | 資源名稱、譯文、資源的任務 |
 | `EditTools` | 搜尋、取代、說話者、版本、收起鈕 |
 | `ViewMenu` | 播放、疊字、吸附、說話者欄、對照 |
@@ -809,6 +812,7 @@ feed -> Preview.show    sets the player's source: media or silence
 | `transcription.ts`、`translation.ts`、`diarization.ts` | 任務與設定的指令、型別 |
 | `toolchain.ts` | 元件與模型的指令與型別 |
 | `logs.ts` | log 目錄、除錯紀錄的指令 |
+| `scripts.ts` | 掃描腳本、巨集與匯出格式的指令 |
 | `preferences.ts` | 偏好設定的指令與預設值 |
 | `about.ts` | App Build、開啟釋出與贊助頁面 |
 | `updates.ts` | 檢查與安裝更新、更新設定 |

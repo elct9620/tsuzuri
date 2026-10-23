@@ -89,6 +89,7 @@ describe("TranslationDialog", () => {
     showNotifications();
     mockIPC((command, args) => {
       if (command === "current_project") return project;
+      if (command === "scan_scripts") return [];
       if (command === "translation_settings")
         return { is_simplified_cleaned: isCleanupSaved };
       if (command === "translate") {
@@ -355,6 +356,7 @@ describe("TranslationDialog, translating chosen Segments again", () => {
     mockIPC(
       (command, args) => {
         if (command === "current_project") return project;
+        if (command === "scan_scripts") return [];
         if (command === "retranslate") {
           retranslateArgs = args;
           return new Promise(() => {});

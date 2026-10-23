@@ -12,6 +12,7 @@
     transcription: ["prepare", "convert", "load", "transcribe"],
     translation: ["prepare", "load", "detect", "translate"],
     diarization: ["prepare", "convert", "load", "diarize"],
+    script: ["prepare", "script"],
   };
 
   const run = taskRun();

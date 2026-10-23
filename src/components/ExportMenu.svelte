@@ -1,10 +1,12 @@
 <!--
   @component
   The export menu: saves the Current Resource as SRT or Plain Text, offering only the exports the
-  Project has text for, and keeps on this machine whether Plain Text names its Speakers and leaves
-  blank lines between blocks.
+  Project has text for, or in an Export Format a Script registers, and keeps on this machine whether
+  Plain Text names its Speakers and leaves blank lines between blocks, which Export Formats are
+  handed too.
 -->
 <script lang="ts">
+  import { onMount } from "svelte";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import Download from "@lucide/svelte/icons/download";
 
@@ -17,10 +19,19 @@
     saveText,
     type WrittenText,
   } from "#/ipc/project.ts";
+  import {
+    exportFormatPath,
+    runExportFormat,
+    scanScripts,
+    scriptExportFormats,
+    type ScriptExportFormat,
+  } from "#/ipc/scripts.ts";
   import { t } from "#/i18n.ts";
   import { rememberedFlag, rememberFlag } from "#/ui/choices.ts";
   import { closeMenu } from "#/ui/menu.ts";
   import { attempt } from "#/state/notification.svelte.ts";
+  import { taskRun } from "#/state/context.ts";
+  import ScriptMenuItem from "#/components/ScriptMenuItem.svelte";
 
   /** Where the webview remembers whether a Plain Text export names its Speakers. */
   const TEXT_SPEAKERS_KEY = "tsuzuri.plain-text-speakers";
@@ -59,6 +70,8 @@
   ];
 
   let { project }: { project: ProjectView | null } = $props();
+  const run = taskRun();
+  let exportFormats = $state.raw<ScriptExportFormat[]>([]);
   let hasTextSpeakers = $state(rememberedFlag(TEXT_SPEAKERS_KEY, true));
   let hasTextBlankLines = $state(rememberedFlag(TEXT_BLANK_LINES_KEY, true));
 
@@ -71,6 +84,45 @@
   function isOffered(content: WrittenText): boolean {
     if (segments.length === 0) return false;
     return content === "original" || hasTranslation;
+  }
+
+  async function readExportFormats(): Promise<void> {
+    await attempt(t("script.unscanned"), async () => {
+      exportFormats = scriptExportFormats(await scanScripts(false));
+    });
+  }
+
+  onMount(readExportFormats);
+
+  async function saveExportFormat(
+    format: ScriptExportFormat,
+    item: EventTarget | null,
+  ): Promise<void> {
+    closeMenu(item);
+    if (run.isBusy) return;
+    let path = null as string | null;
+    const isChosen = await attempt(t("toolbar.notExported"), async () => {
+      path = await save({
+        defaultPath: await exportFormatPath(format.extension),
+        filters: [{ name: format.label, extensions: [format.extension] }],
+      });
+    });
+    if (!isChosen || path === null) return;
+    const chosenPath: string = path;
+    await run.perform(
+      "script",
+      () =>
+        runExportFormat(
+          {
+            script: format.script,
+            id: format.id,
+            has_speakers: hasTextSpeakers,
+            has_blank_lines: hasTextBlankLines,
+          },
+          chosenPath,
+        ),
+      format.label,
+    );
   }
 
   async function saveExport(
@@ -108,6 +160,7 @@
     tabindex="0"
     role="button"
     class="btn btn-sm"
+    onfocus={readExportFormats}
     aria-label={t("toolbar.export")}
     data-tooltip={t("toolbar.export")}
   >
@@ -149,5 +202,16 @@
         />
       </label>
     </li>
+    {#if exportFormats.length > 0}
+      <li></li>
+      {#each exportFormats as format (`${format.script}:${format.id}`)}
+        <ScriptMenuItem
+          label={format.label}
+          script={format.script}
+          disabled={segments.length === 0 || run.isBusy}
+          choose={(item) => saveExportFormat(format, item)}
+        />
+      {/each}
+    {/if}
   </ul>
 </div>

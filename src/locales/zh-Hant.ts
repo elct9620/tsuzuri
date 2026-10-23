@@ -23,6 +23,7 @@ const zhHant: TranslationWithoutSingulars<typeof en> = {
     diarize: "辨識說話者",
     settings: "設定",
     export: "匯出",
+    macros: "巨集",
     original: "另存原文",
     translation: "另存譯文",
     bilingual: "雙語 SRT",
@@ -95,6 +96,11 @@ const zhHant: TranslationWithoutSingulars<typeof en> = {
     factor: "即時倍率（RTF）",
     failed: "轉錄失敗",
     cancelled: "已取消轉錄",
+  },
+  script: {
+    failed: "腳本沒有完成",
+    cancelled: "腳本已取消",
+    unscanned: "沒有讀到腳本",
   },
   diarize: {
     title: "辨識說話者",
@@ -345,6 +351,16 @@ const zhHant: TranslationWithoutSingulars<typeof en> = {
     notSaved: "設定沒有儲存",
     project: "專案",
     logs: "日誌",
+    scripts: "腳本",
+    scriptsHelp:
+      "這個資料夾裡的 Ruby 檔會加上巨集與匯出格式；載入失敗的腳本以紅字標出原因",
+    script: "腳本",
+    scriptProvides: "提供",
+    scriptRegistrations: "{{macros}} 個巨集、{{formats}} 個匯出格式",
+    noScripts: "資料夾裡還沒有腳本",
+    openScripts: "開啟資料夾",
+    scanScripts: "重新掃描",
+    scriptsNotOpened: "沒有開啟腳本資料夾",
     logDirectory: "目錄",
     logDirectoryHelp:
       "每次執行的元件輸出與各階段耗時都寫在這裡，回報問題時可以附上；換了目錄要重新啟動才會生效",

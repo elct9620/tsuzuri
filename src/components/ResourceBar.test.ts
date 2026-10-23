@@ -75,6 +75,7 @@ describe("ResourceBar", () => {
         if (command === failingCommand)
           return Promise.reject({ code: "io", detail: "denied" });
         if (command === "current_project") return project;
+        if (command === "scan_scripts") return [];
       },
       { shouldMockEvents: true },
     );

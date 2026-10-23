@@ -61,6 +61,7 @@ describe("DiarizationDialog", () => {
     mockIPC((command) => {
       commandsSent.push(command);
       if (command === "current_project") return project;
+      if (command === "scan_scripts") return [];
       if (command === "model_settings")
         return {
           diarization: {

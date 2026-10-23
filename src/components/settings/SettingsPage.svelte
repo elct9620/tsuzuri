@@ -10,6 +10,7 @@
   import GeneralModels from "#/components/settings/general/Models.svelte";
   import GeneralTranscription from "#/components/settings/general/Transcription.svelte";
   import Logs from "#/components/settings/general/Logs.svelte";
+  import Scripts from "#/components/settings/general/Scripts.svelte";
   import InterfaceLanguage from "#/components/settings/preferences/InterfaceLanguage.svelte";
   import Preferences from "#/components/settings/preferences/Preferences.svelte";
   import Project from "#/components/settings/project/Project.svelte";
@@ -29,6 +30,7 @@
     | "transcription"
     | "models"
     | "logs"
+    | "scripts"
     | "about"
     | "language"
     | "choosing";
@@ -58,6 +60,7 @@
         { section: "transcription", label: "settings.transcription" },
         { section: "models", label: "settings.models" },
         { section: "logs", label: "settings.logs" },
+        { section: "scripts", label: "settings.scripts" },
         { section: "about", label: "settings.about" },
       ],
     },
@@ -200,6 +203,7 @@
           <GeneralModels {pick} />
         </div>
         <div hidden={shownSection !== "logs"}><Logs /></div>
+        <div hidden={shownSection !== "scripts"}><Scripts /></div>
         <div hidden={shownSection !== "about"}>
           <About {openLicenses} />
         </div>

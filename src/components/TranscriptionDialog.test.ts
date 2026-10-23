@@ -102,6 +102,7 @@ describe("TranscriptionDialog", () => {
     mockIPC((command, args) => {
       commandsSent.push(command);
       if (command === "current_project") return project;
+      if (command === "scan_scripts") return [];
       if (command === "diarize")
         return { audio_seconds: 60, diarize_seconds: 4, phases: [] };
       if (command === "model_settings")
@@ -515,6 +516,7 @@ describe("TranscriptionDialog, transcribing again from the editor", () => {
       (command, args) => {
         commandsSent.push(command);
         if (command === "current_project") return project;
+        if (command === "scan_scripts") return [];
         if (command === "model_settings")
           return { transcription: { path: "/models/breeze.bin" } };
         if (command === "transcribe") {

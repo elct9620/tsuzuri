@@ -1,7 +1,8 @@
 <!--
   @component
   The resource bar: the Current Resource's name and Save Mark, the translation shown, and the tasks
-  that act on the Current Resource — transcribing and diarizing, translating, exporting — with the
+  that act on the Current Resource — transcribing and diarizing, translating, exporting, running a
+  Macro — with the
   progress of a task under way.
 -->
 <script lang="ts">
@@ -21,6 +22,7 @@
   import { attempt } from "#/state/notification.svelte.ts";
   import { saveMark } from "#/state/save-mark.svelte.ts";
   import ExportMenu from "#/components/ExportMenu.svelte";
+  import MacroMenu from "#/components/MacroMenu.svelte";
   import TaskProgress from "#/components/TaskProgress.svelte";
 
   interface Props {
@@ -137,5 +139,6 @@
     >
   </button>
   <ExportMenu {project} />
+  <MacroMenu {project} />
   <TaskProgress />
 </div>

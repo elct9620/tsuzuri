@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { editingPort } from "#/ipc/editing.ts";
 import { ProjectFeed, type ProjectView } from "#/ipc/project.ts";
+import type { ScannedScript } from "#/ipc/scripts.ts";
 import { EditingSession } from "#/editor/index.ts";
 import { projectOf, resourceOf } from "#/testing/project.ts";
 import { renderFollowingProject } from "#/testing/following-project.ts";
@@ -21,6 +22,7 @@ describe("ExportMenu", () => {
   /** The command that answers with a failure, if any. */
   let failingCommand: string | null;
   let unfollow: () => void;
+  let scripts: ScannedScript[];
 
   const sent = (command: string) =>
     calls.find((call) => call.command === command)?.args;
@@ -65,6 +67,7 @@ describe("ExportMenu", () => {
 
   beforeEach(async () => {
     project = null;
+    scripts = [];
     calls = [];
     failingCommand = null;
     localStorage.clear();
@@ -75,6 +78,8 @@ describe("ExportMenu", () => {
         if (command === failingCommand)
           return Promise.reject({ code: "io", detail: "denied" });
         if (command === "current_project") return project;
+        if (command === "scan_scripts") return scripts;
+        if (command === "export_format_path") return "/talks/lecture.tsv";
         if (command === "export_path")
           return (args as { format: string }).format === "plain_text"
             ? "/talks/lecture.en.txt"
@@ -90,6 +95,50 @@ describe("ExportMenu", () => {
   afterEach(() => {
     unfollow();
     clearMocks();
+  });
+
+  // @behavior SR-036
+  it("saves the text of an Export Format with the Plain Text choices", async () => {
+    scripts = [
+      {
+        name: "interview.rb",
+        registrations: [
+          {
+            kind: "export-format",
+            id: "tsv_numbered",
+            label: "TSV（編號）",
+            extension: "tsv",
+          },
+        ],
+        failure: null,
+      },
+    ];
+    await show(translatedProject);
+    turnOff("段落之間加入空行");
+
+    screen.getByRole("button", { hidden: true, name: /TSV（編號）/ }).click();
+    await settle();
+
+    expect([
+      sent("plugin:dialog|save"),
+      sent("run_export_format"),
+    ]).toMatchObject([
+      {
+        options: {
+          defaultPath: "/talks/lecture.tsv",
+          filters: [{ name: "TSV（編號）", extensions: ["tsv"] }],
+        },
+      },
+      {
+        request: {
+          script: "interview.rb",
+          id: "tsv_numbered",
+          has_speakers: true,
+          has_blank_lines: false,
+        },
+        path: "/subtitles/out.srt",
+      },
+    ]);
   });
 
   // @behavior ED-003

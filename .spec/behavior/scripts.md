@@ -8,6 +8,9 @@ What a Script reads of the Current Resource and which Scripts Tsuzuri loads, so 
 - `src-tauri/src/script/*.rs`
 - `src-tauri/src/project/current/tests/script_behavior.rs`
 - `src/ui/failure.test.ts`
+- `src/components/MacroMenu.test.ts`
+- `src/components/ExportMenu.test.ts`
+- `src/components/settings/general/Scripts.test.ts`
 
 ## `SR-001` Giving a Script each Segment's text in every Language
 
@@ -290,3 +293,55 @@ Nobody waits on a scan to cancel it, so a Script that hangs is stopped and marke
 | Given | the Script name `../settings.json` |
 | When | a Macro of it is asked to run |
 | Then | it is refused before anything runs |
+
+## `SR-033` Listing each Macro beside the Script it is in
+
+| Step | Statement |
+| --- | --- |
+| Given | `interview.rb` registering the Macro labelled `合併連續發言` |
+| When | the Macros menu is drawn |
+| Then | it lists `合併連續發言` beside `interview.rb` |
+
+## `SR-034` Leaving the Macros menu out while no Script registers a Macro
+
+| Step | Statement |
+| --- | --- |
+| Given | Scripts registering only Export Formats |
+| When | the resource bar is drawn |
+| Then | it has no Macros menu |
+
+## `SR-035` Running a Macro with the Checked Segments
+
+The Segments a Macro writes move, so the positions checked no longer point at them afterwards.
+
+| Step | Statement |
+| --- | --- |
+| Given | the second Segment checked |
+| When | a Macro is chosen from the Macros menu |
+| Then | it runs with that Segment's position, and no Segment stays checked |
+
+## `SR-036` Saving the text of an Export Format
+
+| Step | Statement |
+| --- | --- |
+| Given | an Export Format labelled `TSV（編號）` saved as `tsv`, and blank lines between blocks turned off |
+| When | it is chosen from the Export menu |
+| Then | the save dialog opens at the Resource's name ending in `.tsv`, and the format runs without blank lines |
+
+## `SR-037` Listing the Scripts in the settings
+
+A Script that does not load says why, so its author can fix it.
+
+| Step | Statement |
+| --- | --- |
+| Given | `interview.rb` registering one Macro and one Export Format, and `broken.rb` written for `tsuzuri-api 2.0` |
+| When | the Scripts section opens |
+| Then | `interview.rb` shows what it registers, and `broken.rb` shows in red that this version does not offer `2.0` |
+
+## `SR-038` Scanning every Script again from the settings
+
+| Step | Statement |
+| --- | --- |
+| Given | the Scripts section open |
+| When | the scan is asked for again |
+| Then | every Script is loaded again, changed or not |

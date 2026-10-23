@@ -59,7 +59,7 @@ fn write_mode_result(
     }
     let before = project
         .as_deref()
-        .map(|project| project.subtitle_snapshot(name))
+        .map(|project| project.subtitle_files(name))
         .transpose()?;
     files::write_text(subtitle, srt)?;
     if let Some(project) = project.as_deref_mut() {

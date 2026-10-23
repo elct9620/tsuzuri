@@ -5,7 +5,7 @@ use std::time::SystemTime;
 use super::backups::BackupPolicy;
 use super::files;
 use super::glossary::TranslationGlossary;
-use super::history::{SubtitleSnapshot, UndoHistory};
+use super::history::{SubtitleFiles, UndoHistory};
 use super::trimmed_name;
 use super::versions::{self, RevertPart, SubtitleVersions};
 use super::{
@@ -269,17 +269,17 @@ impl Project {
         Ok(())
     }
 
-    pub(super) fn subtitle_snapshot(&self, name: &str) -> Result<SubtitleSnapshot, Failure> {
-        files::subtitle_snapshot(self.resource(name)?)
+    pub(super) fn subtitle_files(&self, name: &str) -> Result<SubtitleFiles, Failure> {
+        files::subtitle_files(self.resource(name)?)
     }
 
     /// Keeps `before` in the named Resource's Undo History when its subtitles no longer hold it.
     pub(super) fn record_change(
         &mut self,
         name: &str,
-        before: SubtitleSnapshot,
+        before: SubtitleFiles,
     ) -> Result<(), Failure> {
-        if self.subtitle_snapshot(name)? != before {
+        if self.subtitle_files(name)? != before {
             self.undo_histories
                 .entry(name.to_string())
                 .or_default()
@@ -294,7 +294,7 @@ impl Project {
         change: impl FnOnce(&mut Project) -> Result<T, Failure>,
     ) -> Result<T, Failure> {
         let name = self.current()?.name.clone();
-        let before = self.subtitle_snapshot(&name)?;
+        let before = self.subtitle_files(&name)?;
         let result = change(self)?;
         self.record_change(&name, before)?;
         Ok(result)
@@ -313,17 +313,17 @@ impl Project {
     /// is still there.
     fn put_back_from_history(
         &mut self,
-        take: impl FnOnce(&mut UndoHistory, SubtitleSnapshot) -> Option<SubtitleSnapshot>,
+        take: impl FnOnce(&mut UndoHistory, SubtitleFiles) -> Option<SubtitleFiles>,
     ) -> Result<(), Failure> {
         let name = self.current()?.name.clone();
-        let now = self.subtitle_snapshot(&name)?;
+        let now = self.subtitle_files(&name)?;
         let Some(history) = self.undo_histories.get_mut(&name) else {
             return Ok(());
         };
-        let Some(snapshot) = take(history, now.clone()) else {
+        let Some(kept) = take(history, now.clone()) else {
             return Ok(());
         };
-        files::put_back(&now, &snapshot)?;
+        files::put_back(&now, &kept)?;
         self.read_current_again()?;
         self.write_bilingual_subtitles(&name, None)
     }

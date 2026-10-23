@@ -4,7 +4,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use super::history::SubtitleSnapshot;
+use super::history::SubtitleFiles;
 use super::{
     segments_at_times, translated_dialogue, Backup, BackupKind, ExportKind, KnownSubtitle, Project,
     ProjectConfig, Resource,
@@ -42,24 +42,24 @@ pub fn write_text(path: &Path, text: String) -> Result<(), Failure> {
 }
 
 /// What the original and each translation of `resource` hold now.
-pub fn subtitle_snapshot(resource: &Resource) -> Result<SubtitleSnapshot, Failure> {
+pub fn subtitle_files(resource: &Resource) -> Result<SubtitleFiles, Failure> {
     resource
         .subtitle
         .iter()
         .chain(resource.translations.iter().map(|(_, path)| path))
         .map(|path| Ok((path.clone(), fs::read_to_string(path)?)))
         .collect::<Result<_, Failure>>()
-        .map(SubtitleSnapshot)
+        .map(SubtitleFiles)
 }
 
-/// Makes the subtitles of `now` hold what `snapshot` does, removing those it has none of.
-pub fn put_back(now: &SubtitleSnapshot, snapshot: &SubtitleSnapshot) -> Result<(), Failure> {
+/// Makes the subtitles of `now` hold what `kept` does, removing those it has none of.
+pub fn put_back(now: &SubtitleFiles, kept: &SubtitleFiles) -> Result<(), Failure> {
     for (path, _) in &now.0 {
-        if !snapshot.0.iter().any(|(kept_path, _)| kept_path == path) {
+        if !kept.0.iter().any(|(kept_path, _)| kept_path == path) {
             fs::remove_file(path)?;
         }
     }
-    for (path, content) in &snapshot.0 {
+    for (path, content) in &kept.0 {
         fs::write(path, content)?;
     }
     Ok(())

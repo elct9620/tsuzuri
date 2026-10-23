@@ -50,6 +50,7 @@ Webview 顯示的資料都向 Rust 查詢，變更也都寫進 Rust，自己只�
 | 11 介面 | ✅ | — |
 | 12 首次設定引導 | 📋 | 全部 |
 | 13 建置與釋出 | 🚧 | Metal shader |
+| 14 腳本 | 📋 | 全部 |
 
 ✅ 完成、🚧 進行中、📋 未開始。已有的功能寫在各章，行為列在各章開頭指向的 `.spec/behavior/`。章節依實作的相依關係排列。
 
@@ -441,7 +442,7 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
                                                   Transcript（含譯文）
 ```
 
-模組以 Transcript 為輸入或輸出，任務依固定的順序串起它們。流程依序執行，前一個模組的行程全部結束後，下一個才開始。
+模組以 Transcript 為輸入或輸出，對話方塊的任務依固定的順序串起它們，自訂的順序交給巨集（14.11）。流程依序執行，前一個模組的行程全部結束後，下一個才開始。
 
 ### 6.2 任務
 
@@ -461,7 +462,7 @@ App 不在執行時下載元件。內建變體放在 `components/<元件>/<變�
 | 辨識說話者 | 說話者辨識模組 | 有媒體檔與主語言字幕 |
 | 轉錄後辨識 | 轉錄 → 辨識，可接翻譯 | 有媒體檔 |
 
-編輯畫面是基本狀態，任務從 modal 開始，一次一個。任務寫入的字幕進行中不能改，結果算一步復原（2.5）。轉錄後接著翻譯時，轉錄的 modal 也列出翻譯選項。任務的組合是固定的，各模組寫入的內容互不衝突，不需要自訂流程。
+編輯畫面是基本狀態，任務從 modal 開始，一次一個。任務寫入的字幕進行中不能改，結果算一步復原（2.5）。轉錄後接著翻譯時，轉錄的 modal 也列出翻譯選項。對話方塊的組合是固定的，各模組寫入的內容互不衝突；自訂的組合交給巨集（14.11）。
 
 ### 6.3 進度與取消
 
@@ -883,7 +884,7 @@ whisper 的切段常需手動修正，調整時間戳與段落是校對重點。
 | 原文純文字 | 同另存原文，無時間 | 可用 | `ep01.txt` |
 | 譯文純文字 | 同另存譯文，無時間 | 停用 | `ep01.en.txt` |
 
-原文與譯文已經自動寫回專案目錄（2.4），匯出只負責目錄裡沒有的雙語 SRT，以及存到其他地方。對話方塊預設開在專案目錄，檔名是資源名稱加上語言代碼。
+原文與譯文已經自動寫回專案目錄（2.4），匯出只負責目錄裡沒有的雙語 SRT，以及存到其他地方。對話方塊預設開在專案目錄，檔名是資源名稱加上語言代碼。腳本的匯出格式列在這些項目之後（14.12）。
 
 #### 10.5.1 純文字
 
@@ -1453,17 +1454,251 @@ SemVer 沒有「某版之後」的寫法，預覽版號因此只用來排序，�
 
 App 內寫死的網址指向自有網域，安裝檔之後搬家也不必更新 App。網站只複製 Release 上的清單，重跑就能重建。Pages 需在設定啟用 Actions 來源與自訂網域，DNS 加上指向 GitHub 的 CNAME。
 
-## 14 風險與待驗證
+## 14 腳本
+
+使用者以 Ruby 腳本加上自己的匯出格式與巨集，Tsuzuri 不必為每種逐字稿樣式加選項。
+
+| 項目 | 指向 |
+|---|---|
+| 相依 | 第 2、6、10 章 |
+| 行為 | `scripts.md` |
+
+### 14.1 種類
+
+腳本提供的東西都由使用者叫用，各自出現在對應的選單。
+
+| 種類 | 何時執行 | 進出 | 入口 |
+|---|---|---|---|
+| 匯出格式 | 選匯出項目 | 快照進，整份文字出 | 匯出 ▾ |
+| 巨集 | 選巨集項目 | 呼叫 Tsuzuri 的動作 | 巨集 ▾ |
+| 事件 | Tsuzuri 自動呼叫 | — | 之後才做，見 14.13 |
+
+一個腳本可以同時註冊兩種。合併連續發言是只有一個編輯步驟的巨集，編號與 Tab 分隔是匯出格式。
+
+### 14.2 動作分層
+
+腳本加進來後，動作依「誰提供、誰觸發」分層，內建的動作仍是普通功能。
+
+```
+  Built-in actions (Rust)   Modes, Segment Changes, edits, exports
+       ▲            ▲              ▲
+  dialogs, menus   composite      macros, export formats (scripts)
+  fixed combos     commands       events (later)
+  (built-in UI)    (webview, keys)
+```
+
+| 層 | 誰提供 | 誰觸發 |
+|---|---|---|
+| 對話方塊與選單 | Tsuzuri | 使用者 |
+| 複合指令 | Tsuzuri | 使用者按鍵 |
+| 巨集、匯出格式 | 腳本 | 使用者選單 |
+| 事件 | 腳本 | Tsuzuri |
+
+巨集取代不了複合指令：快照沒有播放位置、目前段落與 Cursor，每次執行也要開新的子行程。
+
+### 14.3 權限邊界
+
+腳本只拿到一份快照（Snapshot），回傳新的段落或文字；檢查、寫入與復原都由 Rust 負責。
+
+```
+  CurrentProject ──Snapshot copy──▶ script ──Segments / text──▶ Rust checks ──▶ write
+                                     no IO                     refuse all on any error
+```
+
+整份換回讓腳本不必處理合併後的位置位移。有一處不合規則就整份拒絕，不留半套結果。先例 Blender 與 Aegisub 都讓腳本直接改資料，Tsuzuri 不讓。
+
+### 14.4 快照
+
+快照與段落都是 `mruby-data` 的 `Data`，唯讀。`with` 由 Tsuzuri 的 prelude 提供，回傳改了部分欄位的複本，因為 mruby 的 `Data` 沒有這個方法。
+
+```ruby
+Tsuzuri::Snapshot = Data.define(:primary, :languages, :segments, :checked)
+Tsuzuri::Segment  = Data.define(:start_ms, :end_ms, :speaker, :texts)
+
+snapshot.languages      # => ["zh-TW", "en"]   primary first
+segment.texts           # => {"zh-TW" => "你好", "en" => "Hello"}
+segment.with(end_ms: 9000)
+```
+
+| 欄位 | 內容 |
+|---|---|
+| `speaker` | 說話者標籤，可為 `nil` |
+| `texts` | 語言代碼對文字，無譯文無鍵 |
+| `checked` | 勾選段落在 `segments` 的位置 |
+
+空白譯文當成沒有譯文，同 `cue_text`。勾選用位置而非物件，因為內容相同的兩段以值比較會相等。
+
+### 14.5 譯文對齊
+
+快照沿用段落改動對譯文的配對，不另訂規則。
+
+```
+  translation cues ──same start and end──▶ Segment.texts[lang]
+                    same times: file order
+  cue at other times ──▶ not in Snapshot ──▶ dropped when written back
+```
+
+對不上任何段的 cue 不屬於任何段，沒有位置可放，所以寫回時消失。依據是 `files.rs` 的 `carry_translations`。
+
+### 14.6 寫回
+
+Rust 收到新的段落後，以段落改動的規則檢查，通過才整份寫入。
+
+| 規則 | 不合時 |
+|---|---|
+| 結束不早於開始 | 整份拒絕 |
+| 開始時間依序 | 整份拒絕 |
+| 語言與快照相同 | 整份拒絕 |
+| 回傳 `nil` | 不寫入，不留復原 |
+| 回傳其他型別 | 拒絕，通知型別錯誤 |
+
+寫入算一步復原，復原紀錄本來就存整份字幕。寫入後清除勾選，因為段落的位置都變了。之後以快照的輔助方法打磨編輯，例如 `snapshot.merge_runs(joiner: "，")`。
+
+### 14.7 腳本來源
+
+腳本可放在這台電腦或 Project 裡；Project 的腳本可能來自別人，所以先在這台電腦信任才能用。
+
+```
+  <app config dir>/scripts/
+  ├─ interview.rb           one file
+  └─ lab-tools/main.rb      directory, later
+  <project>/.tsuzuri/scripts/
+  └─ lab.rb                 trusted on this machine first
+```
+
+| 來源 | 可用前 |
+|---|---|
+| 這台電腦 | 不需動作 |
+| Project | 依內容 hash 信任，改了要再信任 |
+
+信任只記在這台電腦，不寫進專案，同 `direnv allow`。目錄形式以 `main.rb` 為入口，由 Rust 讀同目錄的檔提供 `require_relative`。
+
+### 14.8 註冊
+
+腳本在最上層以 DSL 註冊，區塊等使用者叫用時才執行。
+
+```ruby
+# tsuzuri-api: 1.0
+
+Tsuzuri.format :tsv_numbered, label: "TSV（編號）", extension: "tsv" do |snapshot, options|
+  ...
+end
+
+Tsuzuri.macro :merge_runs, label: "合併連續發言" do |context|
+  context.edit { |snapshot| ... }
+end
+```
+
+| 規則 | 做法 |
+|---|---|
+| 進入點 | `Tsuzuri.format`、`Tsuzuri.macro`、之後的 `Tsuzuri.on` |
+| 識別 | Symbol，`label:` 只給選單看 |
+| 動作 | 只在區塊參數 `context` 上 |
+| 關鍵字參數 | 在 prelude 的 Ruby 端處理 |
+
+註冊用名詞、動作用動詞，兩者不同名；有接收者也不影響腳本自己的 `format`。
+
+### 14.9 API 版本
+
+入口檔開頭以魔術註解宣告 API 版本，Rust 執行前就讀得到，不相容的腳本一行都不會跑。
+
+| 宣告 | 結果 |
+|---|---|
+| 主版本相同、次版本不大於 App | 載入 |
+| 主版本不同或次版本較新 | 不載入，標紅並寫出所需版本 |
+| 沒有宣告 | 當成 App 目前的版本 |
+
+寫法同 Ruby 的 `# frozen_string_literal:`，先例是 VS Code 擴充套件的 `engines.vscode`。
+
+### 14.10 執行
+
+掃描與叫用都開新的子行程與直譯器，兩次執行之間不留狀態；App 以 `script` 參數啟動自己，同說話者辨識。
+
+```
+  scan:   file changed ─▶ child: load, record registrations ─▶ cached by hash ─▶ menus
+  invoke: menu item    ─▶ child: load again, run that block  ─▶ Segments / text ─▶ Rust
+```
+
+| 執行 | 限制 |
+|---|---|
+| 掃描 | 1 秒逾時，超過標為載入失敗 |
+| 叫用 | 進度加取消，沒有逾時 |
+| 巨集 | 是一種 Mode，鎖住整份字幕 |
+
+掃描在開啟 App 與打開選單時比對 hash，只重掃有變的檔，不常駐監看。每個腳本各用一個直譯器，最上層的 `def` 才不會互相蓋掉。
+
+### 14.11 巨集
+
+巨集依序呼叫 Tsuzuri 的動作，每個呼叫等任務結束才返回，回傳它寫了什麼。
+
+```ruby
+context.snapshot                          # current Snapshot
+written = context.transcribe(segments: [12, 13])   # dialog defaults, ui 5
+context.diarize
+context.translate(to: "en", segments: written)
+context.edit { |snapshot| ... }           # 14.6
+context.export(:tsv_numbered)             # save dialog, no path
+context.run(:merge_runs)                  # another macro
+```
+
+| 情況 | 結果 |
+|---|---|
+| 對話方塊停用的條件 | 丟出 `Tsuzuri::Error` |
+| 任務失敗 | 丟出 `Tsuzuri::Error`，帶原因 |
+| 使用者取消 | 結束子行程，已完成的步驟留著 |
+| 沒接住的錯誤 | 結束巨集，以通知告知 |
+
+參數對應對話方塊可改的項目，唯讀的沿用專案設定。巨集呼叫的任務在巨集自己的輪次裡執行，中途不再確認覆蓋，每步各算一步復原。
+
+### 14.12 匯出格式
+
+匯出格式接管整份輸出，現有的匯出選項當輸入傳入。
+
+```
+  Snapshot + options + Speaker names ─▶ script ─▶ text ─▶ save dialog
+```
+
+| 比較過的形狀 | 不採用的原因 |
+|---|---|
+| 每段一行 | 編號要跨段計數 |
+| 前處理再交內建格式 | 分隔符仍寫死 |
+
+入口先在匯出 ▾ 多一項（Blender 的做法），格式變多再改成 Subtitle Edit 式的對話方塊。
+
+### 14.13 事件
+
+事件讓任務完成後自動接續，例如轉錄完自動合併再翻譯。它只負責觸發一個巨集，所以等巨集穩定後再做。
+
+| 待解問題 | 原因 |
+|---|---|
+| 由誰觸發 | 使用者沒按就改了字幕 |
+| 連鎖觸發 | 腳本的寫入再觸發事件 |
+| 選用 | 要在專案設定逐一開啟 |
+
+### 14.14 gem 集合
+
+嵌入式 mruby 沒有沙箱，能做的事由編進去的 gem 決定，build config 在 `mruby/build_config.rb`。
+
+| gembox | 處置 |
+|---|---|
+| `stdlib` | 全部保留 |
+| `stdlib-ext` | 只留 `sprintf`、`data` |
+| `stdlib-io` | 全部不編 |
+| `metaprog` | 只留 `compiler` |
+
+`sprintf` 寫得出 `001`，`compiler` 讓 App 能讀 `.rb` 原始程式碼。`MRB_UTF8_STRING` 讓中文逐字處理。
+
+## 15 風險與待驗證
 
 | 小節 | 範圍 |
 |---|---|
-| 14.1 平台 | 系統、驅動與打包 |
-| 14.2 安全與行程 | 防護與行程紀錄 |
-| 14.3 功能 | 字幕格式與模組 |
+| 15.1 平台 | 系統、驅動與打包 |
+| 15.2 安全與行程 | 防護與行程紀錄 |
+| 15.3 功能 | 字幕格式與模組 |
 
 這些風險不阻擋目前的開發，但正式釋出前要逐一處理或接受。
 
-### 14.1 平台
+### 15.1 平台
 
 | 風險 | 影響 | 驗證方式 |
 |---|---|---|
@@ -1476,7 +1711,7 @@ App 內寫死的網址指向自有網域，安裝檔之後搬家也不必更新 
 
 變體指 Vulkan 與 OpenBLAS。沒有驅動程式時先顯示無法執行，自動選擇上線後改為自動退回。macOS 產物以 `signingIdentity: "-"` 完整 ad-hoc 簽章，應能從隱私權設定強制打開；下載後實際確認前，README 仍保留 `xattr` 移除隔離的做法。
 
-### 14.2 安全與行程
+### 15.2 安全與行程
 
 | 風險 | 影響 | 驗證方式 |
 |---|---|---|
@@ -1486,11 +1721,12 @@ App 內寫死的網址指向自有網域，安裝檔之後搬家也不必更新 
 
 殘留行程以執行檔名稱比對，PID 被系統重用時可能誤殺同名行程。私鑰只存在 CI 時，一旦遺失，已安裝的版本就無法再自動更新。
 
-### 14.3 功能
+### 15.3 功能
 
 | 風險 | 影響 | 驗證方式 |
 |---|---|---|
 | 說話者取到第一個冒號 | 一般句子被當說話者 | 收集實際字幕 |
 | 辨識工具未定 | VRAM 或授權不合 | 依 8.2 評估 |
+| beni 為 0.x | 升級時 API 變動 | 釘版，升級時跑腳本測試 |
 
 Netflix 繁中指南的 `我問：「…」`、`日期：…`、`導演：…` 也會被當成說話者，寫出時冒號統一為 `: `。長度限制擋不住這些短句，故不採用。辨識工具可能超出 4GB VRAM，或授權不允許散布。

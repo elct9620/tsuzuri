@@ -149,7 +149,7 @@ The loudest sample within one 10 ms slice of a Waveform, from 0 for silence to 1
 
 ### Mode
 
-What the user starts on the Current Resource from a task dialog: Transcribe (its media file to its Primary Language subtitle, whole or within an Audio Window), Translate (its Primary Language subtitle into another Language), Diarize (giving the Segments of its Primary Language subtitle and every translation their Speakers, by Speaker Diarization of its media file), or Transcribe followed by Diarize, Translate or both, in that order. Its results appear in the editor as they arrive. While a Mode runs on a Resource, nothing else changes the subtitles it writes: a transcription or a diarization holds every subtitle of the Resource, a translation only the one it writes. One Mode runs at a time; another started meanwhile waits for it to end.
+What the user starts on the Current Resource from a task dialog: Transcribe (its media file to its Primary Language subtitle, whole or within an Audio Window), Translate (its Primary Language subtitle into another Language), Diarize (giving the Segments of its Primary Language subtitle and every translation their Speakers, by Speaker Diarization of its media file), or Transcribe followed by Diarize, Translate or both, in that order; a Macro started from the Macros menu is a Mode too. Its results appear in the editor as they arrive. While a Mode runs on a Resource, nothing else changes the subtitles it writes: a transcription, a diarization or a Macro holds every subtitle of the Resource, a translation only the one it writes. One Mode runs at a time; another started meanwhile waits for it to end.
 
 #### Rejected
 
@@ -358,6 +358,30 @@ One place where two Versions of a subtitle are lined up: the cues of each that c
 ### Undo History
 
 What can be undone and redone for one Resource since the Project was opened: its subtitles as they were before each change Tsuzuri made to them - an edit, a Segment Change, a restore, or what a transcription or translation wrote - at most 100 back. It is kept only while the Project stays open, and forgotten once a subtitle of the Resource is changed elsewhere; undoing and redoing write the subtitles back without a Backup.
+
+### Script
+
+A Ruby file in the `scripts` folder of the app's settings that registers Export Formats and Macros, which Tsuzuri offers in its menus. Each run starts a new child process and interpreter that loads the file alone; it reads only a Snapshot and reaches no file, network or process, and Tsuzuri checks and writes what it returns. A comment `# tsuzuri-api: <major>.<minor>` at its top states the version of Tsuzuri's script API it was written for.
+
+### Export Format
+
+A way of writing out the Current Resource that a Script registers with an id, a label and a file extension: it gets a Snapshot with the export options and returns the whole text, which is saved where the user chooses. Export Formats follow the built-in items in the Export menu.
+
+#### Rejected
+
+- `Hook` - a hook is something Tsuzuri calls on its own; an Export Format runs only when the user picks it.
+
+### Macro
+
+A named sequence a Script registers, run from the Macros menu on the Current Resource. Its steps call Tsuzuri's actions; an edit step returns new Segments from a Snapshot, which are checked and written as one step of the Undo History. A Macro runs as a Mode, and cancelling it ends its process while the steps already done stay.
+
+#### Rejected
+
+- `Composite Action` - a composite command is a keyboard command the webview runs with the playback position and Cursor; a Macro has neither.
+
+### Snapshot
+
+A copy of the Current Resource a Script reads: its Primary Language and translation Languages, each Segment's times, Speaker and its text in every Language, and the positions of the Checked Segments. A translation cue matching no Segment by start and end is not in it, and is dropped when an edit is written back.
 
 ### Stray Process
 

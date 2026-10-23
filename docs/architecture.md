@@ -25,14 +25,15 @@
  │ Ports (Progress, Steps)                │ impl │ processes, conversion,       │
  └───────────────┬────────────────────────┘ Port │ whisper, llama, diarization/ │
                  ▼                               │ {sortformer,streaming,       │
- ┌────────────────────────────────────────┐      │ features}, toolchain/        │
- │ Domain: transcript, project rules,     │◄─────┴──────────────────────────────┘
- │ translation rules, Version comparison, │
- │ Speaker Turns, Component order         │
+ ┌────────────────────────────────────────┐      │ features}, toolchain/,       │
+ │ Domain: transcript, project rules,     │      │ script/interpreter           │
+ │ translation rules, Version comparison, │◄─────┴──────────────────────────────┘
+ │ Speaker Turns, Component order,        │
+ │ Snapshot, Script registrations         │
  └────────────────────────────────────────┘
 ```
 
-依賴一律往內：介面呼叫應用，應用與轉接都使用領域。所有運算都在元件的子行程裡，GPU 或記憶體出錯只會結束那個行程。說話者辨識沒有外部元件，由 App 以 `diarize` 參數啟動自己當子行程。
+依賴一律往內：介面呼叫應用，應用與轉接都使用領域。所有運算都在元件的子行程裡，GPU 或記憶體出錯只會結束那個行程。說話者辨識與腳本沒有外部元件，由 App 以 `diarize`、`script` 參數啟動自己當子行程。
 
 ### 1.2 安裝檔內容
 
@@ -55,6 +56,7 @@
 | CI 的 cargo-about | 列出 Rust 套件的授權 |
 | `vite build` | 列出 webview 套件的授權 |
 | `scripts/licenses.ts` | 檢查授權並寫出授權頁 |
+| `Rakefile` | 以 beni 建出腳本用的 mruby，連結進執行檔 |
 | `src-tauri/build.rs` | 把建置的 commit 寫進執行檔 |
 
 App 依 `components.json` 列出的順序，使用第一個能執行的內建變體。
@@ -82,8 +84,11 @@ App 依 `components.json` 列出的順序，使用第一個能執行的內建變
 │  ├─ translation/        translation rules, adapters and commands
 │  ├─ toolchain/          Component and Model adapters and commands
 │  ├─ steps/              Mode commands' skeleton and cancelling
+│  ├─ script/             Script interpreter, subcommand and commands
 │  └─ <module>/           commands of the other modules
 ├─ vendor/                built Components, not versioned
+├─ mruby/                 build config; .build/ not versioned
+├─ Gemfile, Rakefile      beni builds mruby into mruby/.build/
 ├─ scripts/vendor.sh      builds Components by components.json
 ├─ scripts/licenses.ts    license checks and page
 ├─ scripts/signatures.ts  checks update signatures
@@ -237,6 +242,7 @@ Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直
   轉錄（transcription）是「工具鏈 → 字幕」的用例，沒有自己的規則
   波形（waveform）是「工具鏈 → 預覽」的用例，只有取峰值的規則
   說話者辨識（diarization）是「工具鏈 → 字幕」的用例，只有指派說話者的規則
+  腳本（script）是「字幕 → 腳本 → 字幕」的用例，規則是快照與註冊
 ```
 
 情境之間只經由共用核心的型別與 `CurrentProject` 往來，翻譯與轉錄都不直接讀寫專案目錄。
@@ -300,6 +306,11 @@ Svelte 元件 ─▶ ipc/project.ts mediaUrl(media) ─▶ <video>／<audio> 直
 | `toolchain/` | `presets` | 應用 | 預設模型清單與比對 |
 | `toolchain/` | `settings` | 轉接 | 元件設定檔 |
 | — | `progress` | 應用 | 回報進度的 Port |
+| — | `script` | 應用 | 掃描、巨集與匯出格式的用例 |
+| `script/` | `snapshot` | 領域 | 快照與段落的轉換 |
+| `script/` | `registry` | 領域 | 註冊的項目、API 版本 |
+| `script/` | `interpreter` | 轉接 | mruby 與 prelude |
+| `script/` | `subcommand` | 介面 | `script` 子行程的入口 |
 | — | `steps` | 應用 | Step、`Mode`、`ModeRun`、轉成語音 |
 | — | `timing` | 應用 | Phase 計時 |
 | — | `transfer_report` | 領域 | 傳輸進度的回報間隔 |
@@ -526,7 +537,7 @@ command ── begin_mode ──▶ CommandRun: ModeRun + Phases
 | 注入 State | 指令取得依賴 | `project/commands.rs` |
 | Mode Run | 任務範圍的狀態 | `transcription/commands.rs` |
 
-任務範圍的東西（取消、它啟動的行程、資源的 hold）由 `ModeRun` 擁有，不寄放在 app 範圍的物件上。Phases 與 `ModeRun` 一起由 `begin_mode` 開始，`CommandRun` 被丟下時結束。任務的組合固定，不另寫狀態機。
+任務範圍的東西（取消、它啟動的行程、資源的 hold）由 `ModeRun` 擁有，不寄放在 app 範圍的物件上。Phases 與 `ModeRun` 一起由 `begin_mode` 開始，`CommandRun` 被丟下時結束。對話方塊的任務組合固定，不另寫狀態機；巨集也是一種 Mode，自訂的順序寫在腳本裡。
 
 ## 4 Webview
 

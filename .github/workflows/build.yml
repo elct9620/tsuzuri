@@ -35,11 +35,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # One apt run for the bundle and every Component: building them, and the smoke test of a
+      # Variant restored from the cache, which loads OpenBLAS and Vulkan.
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev \
+            cmake jq nasm pkg-config libopenblas-dev libvulkan-dev glslc spirv-headers
       - name: Install Rust
         id: rust
         shell: bash

@@ -1,7 +1,8 @@
 name: Build a Component
 description: >-
   Leaves vendor/<component>/<variant> holding one Variant built by scripts/vendor.sh, restored
-  from the cache when its pin and the build script are unchanged, and proven to run.
+  from the cache when its pin and the build script are unchanged, and proven to run. On Linux the
+  job installs the build dependencies first, once for every Component.
 
 inputs:
   component:
@@ -47,13 +48,6 @@ runs:
         path: vendor/${{ inputs.component }}/${{ inputs.variant }}
         key: ${{ steps.key.outputs.key }}
 
-    # The smoke test needs the shared libraries OpenBLAS and Vulkan builds load, even on a cache hit.
-    - name: Install Linux build dependencies
-      if: inputs.platform == 'linux'
-      shell: bash
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake jq nasm pkg-config libopenblas-dev libvulkan-dev glslc spirv-headers
     - name: Build
       if: inputs.platform != 'windows' && steps.cache.outputs.cache-hit != 'true'
       shell: bash

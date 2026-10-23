@@ -24,7 +24,8 @@ pub async fn scan_scripts(
     is_forced: bool,
 ) -> Result<Vec<ScannedScript>, Failure> {
     let ports = AppPorts::new(&app, &processes);
-    super::scan(
+    super::scan_and_announce(
+        &app,
         &scripts_dir(&app)?,
         &registry,
         &ports,

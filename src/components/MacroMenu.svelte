@@ -1,9 +1,10 @@
 <!--
   @component
   The Macros menu: each Macro this machine's Scripts register, run on the Current Resource with the
-  Checked Segments. It reads the Scripts as it appears, as it opens, and as the window comes back
-  into focus, as after adding a Script in the file manager, so a Script added or edited since shows
-  as it is now; it stays out of the way while no Script registers a Macro, and so cannot be opened.
+  Checked Segments. It reads the Scripts as it appears, as it opens, as the window comes back into
+  focus, as after adding a Script in the file manager, and as a scan elsewhere finds them changed,
+  so a Script added or edited since shows as it is now; it stays out of the way while no Script
+  registers a Macro, and so cannot be opened.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
@@ -58,7 +59,7 @@
   }
 </script>
 
-<svelte:window onfocus={readMacros} />
+<svelte:window onfocus={readMacros} onrust:scripts-changed={readMacros} />
 
 {#if macros.length > 0}
   <div class="dropdown dropdown-end">

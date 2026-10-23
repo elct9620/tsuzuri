@@ -13,6 +13,7 @@ const RELAYED_EVENTS = [
   "editCommand",
   "changedElsewhereKept",
   "srtRequested",
+  "scriptsChanged",
   "videoWindowClosing",
   "updateProgress",
   "modelDownloadProgress",

@@ -121,6 +121,18 @@ describe("MacroMenu", () => {
     expect(macrosButton()).not.toBeNull();
   });
 
+  // @behavior SR-042
+  it("shows a Macro a scan elsewhere found", async () => {
+    scripts = [];
+    await show();
+    scripts = [interview];
+
+    window.dispatchEvent(new CustomEvent("rust:scripts-changed"));
+    await settle();
+
+    expect(macrosButton()).not.toBeNull();
+  });
+
   it("names a running Macro by its label on the task's badge", async () => {
     run.begin("script", "合併連續發言");
 

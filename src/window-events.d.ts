@@ -17,6 +17,7 @@ declare module "svelte/elements" {
       event: CustomEvent<DownloadProgress>,
     ) => void;
     "onrust:pipeline-progress"?: (event: CustomEvent<PipelineProgress>) => void;
+    "onrust:scripts-changed"?: (event: CustomEvent) => void;
     "onrust:srt-requested"?: (event: CustomEvent) => void;
     "onrust:update-progress"?: (event: CustomEvent<UpdateProgress>) => void;
     "onrust:video-window-closing"?: (event: CustomEvent) => void;

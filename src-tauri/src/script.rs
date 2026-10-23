@@ -7,6 +7,8 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Runtime};
+use tauri_specta::Event;
 
 use crate::failure::Failure;
 use crate::progress::{enter, Progress};
@@ -54,6 +56,44 @@ pub struct ExportFormatRequest {
 /// Script is loaded again only once it changes.
 #[derive(Default)]
 pub struct ScriptRegistry(Mutex<HashMap<PathBuf, (u64, ScannedScript)>>);
+
+impl ScriptRegistry {
+    /// What the last scan found, in the order of the files' paths.
+    fn found_scripts(&self) -> Vec<ScannedScript> {
+        let found = self.0.lock().unwrap();
+        let mut paths: Vec<&PathBuf> = found.keys().collect();
+        paths.sort();
+        paths
+            .into_iter()
+            .map(|path| found[path].1.clone())
+            .collect()
+    }
+}
+
+// @event scripts-changed
+/// A scan found the Scripts other than the scan before did, wherever it was asked from.
+#[derive(Clone, Serialize, Deserialize, specta::Type, Event)]
+#[tauri_specta(event_name = "scripts-changed")]
+pub struct ScriptsChanged;
+
+/// Scans as `scan` does, then tells the webview through `app` when what it found differs from the
+/// scan before, so every menu reading the Scripts shows the same.
+pub async fn scan_and_announce<R: Runtime>(
+    app: &AppHandle<R>,
+    dir: &Path,
+    registry: &ScriptRegistry,
+    steps: &impl Steps,
+    tsuzuri: &Path,
+    work: &Path,
+    is_forced: bool,
+) -> Result<Vec<ScannedScript>, Failure> {
+    let before = registry.found_scripts();
+    let scripts = scan(dir, registry, steps, tsuzuri, work, is_forced).await?;
+    if scripts != before {
+        let _ = ScriptsChanged.emit(app);
+    }
+    Ok(scripts)
+}
 
 /// Where the Script `name` is among the Scripts in `dir`, refused when the name reaches outside.
 pub fn script_path(dir: &Path, name: &str) -> Result<PathBuf, Failure> {
@@ -296,6 +336,7 @@ fn internal_failure(error: serde_json::Error) -> Failure {
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
 
     use tokio::sync::mpsc::{channel, Receiver, Sender};
 
@@ -453,6 +494,47 @@ mod tests {
         scan_dir(&dir, &registry, &steps).await;
 
         assert_eq!((unchanged, steps.started.load(Ordering::SeqCst)), (1, 2));
+    }
+
+    // @behavior SR-043
+    #[tokio::test]
+    async fn announces_a_scan_only_when_it_finds_something_else() {
+        let dir = scripts_in("sr-scan-announce", &[("a.rb", "Tsuzuri.macro(:a) {}")]);
+        let app = crate::test_support::mode_app();
+        let announced = Arc::new(AtomicUsize::new(0));
+        let count = Arc::clone(&announced);
+        ScriptsChanged::listen_any(&app, move |_| {
+            count.fetch_add(1, Ordering::SeqCst);
+        });
+        let (registry, steps) = (ScriptRegistry::default(), InProcessSteps::default());
+        let (scripts_dir, work) = (dir.path().join(SCRIPTS_DIR), dir.path().join("work"));
+        let scan_again = || {
+            scan_and_announce(
+                app.handle(),
+                &scripts_dir,
+                &registry,
+                &steps,
+                Path::new("tsuzuri"),
+                &work,
+                false,
+            )
+        };
+        scan_again().await.unwrap();
+        let first = announced.load(Ordering::SeqCst);
+
+        scan_again().await.unwrap();
+        let unchanged = announced.load(Ordering::SeqCst);
+        std::fs::write(
+            dir.path().join(SCRIPTS_DIR).join("a.rb"),
+            "Tsuzuri.macro(:b) {}",
+        )
+        .unwrap();
+        scan_again().await.unwrap();
+
+        assert_eq!(
+            (first, unchanged, announced.load(Ordering::SeqCst)),
+            (1, 1, 2)
+        );
     }
 
     // @behavior SR-027

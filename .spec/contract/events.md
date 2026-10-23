@@ -18,6 +18,10 @@ The Phase a running Mode has entered, with its percentage once it has one and, w
 
 The Project changed; the webview asks `current_project` for what it now holds.
 
+## `scripts-changed`
+
+A scan found the Scripts other than the scan before did, registering or failing otherwise, wherever it was asked from; the webview asks `scan_scripts` for them, which loads nothing again while they stay unchanged.
+
 ## `srt-requested`
 
 The system asked Tsuzuri to open an SRT file while it runs; the webview asks `take_requested_srt` for it.

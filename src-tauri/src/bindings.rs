@@ -95,6 +95,7 @@ pub fn builder() -> Builder<tauri::Wry> {
 pub fn events() -> Events {
     collect_events![
         progress::ProjectChanged,
+        script::ScriptsChanged,
         progress::PipelineProgress,
         EditCommand,
         project::commands::ChangedElsewhereKept,

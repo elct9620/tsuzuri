@@ -141,6 +141,7 @@ export const events = {
 	modelDownloadProgress: makeEvent<ModelDownloadProgress>("model-download-progress"),
 	pipelineProgress: makeEvent<PipelineProgress_Deserialize>("pipeline-progress"),
 	projectChanged: makeEvent<ProjectChanged>("project-changed"),
+	scriptsChanged: makeEvent<ScriptsChanged>("scripts-changed"),
 	srtRequested: makeEvent<SrtRequested>("srt-requested"),
 	updateProgress: makeEvent<AppUpdateProgress>("update-progress"),
 	videoWindowClosing: makeEvent<VideoWindowClosing>("video-window-closing"),
@@ -717,6 +718,9 @@ export type ScriptFailure =
 { kind: "unordered-times"; number: number } | 
 /**  A returned text in a Language the Resource has no subtitle in. */
 { kind: "unheld-language"; language: Language };
+
+/**  A scan found the Scripts other than the scan before did, wherever it was asked from. */
+export type ScriptsChanged = null;
 
 /**  What to look for in the texts, read as a Replacement's `pattern` is. */
 export type Search = {

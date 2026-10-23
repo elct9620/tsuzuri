@@ -144,6 +144,8 @@
   }
 </script>
 
+<svelte:window onrust:scripts-changed={readExportFormats} />
+
 {#snippet exportItem(item: ExportChoice)}
   <li>
     <button

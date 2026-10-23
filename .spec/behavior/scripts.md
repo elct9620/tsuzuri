@@ -374,3 +374,24 @@ The Macros menu is not drawn while no Script registers a Macro, so it cannot be 
 | Given | the app open with no Script registering a Macro |
 | When | a Script registering one is added and the window comes back into focus |
 | Then | the Macros menu appears |
+
+## `SR-042` Telling every menu of what a scan found
+
+The settings, the Macros menu and the Export menu each read the Scripts, so a scan asked from one shows in all of them.
+
+| Step | Statement |
+| --- | --- |
+| Given | the Macros menu hidden, as no Script registered a Macro |
+| When | the Scripts section scans again and finds a Script registering one |
+| Then | the Macros menu appears |
+
+## `SR-043` Announcing a scan only when it finds something else
+
+A menu reads the Scripts again when told, so an announcement for an unchanged scan would only repeat the reading.
+
+| Step | Statement |
+| --- | --- |
+| Given | a Script already scanned |
+| When | the Scripts are scanned again, unchanged and then changed |
+| Then | only the second scan announces `scripts-changed` |
+

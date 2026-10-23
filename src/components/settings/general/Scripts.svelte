@@ -40,6 +40,8 @@
   }
 </script>
 
+<svelte:window onrust:scripts-changed={() => scan(false)} />
+
 <fieldset class="fieldset text-sm">
   <legend class="fieldset-legend">{t("settings.scripts")}</legend>
   <ul class="list rounded-box border border-base-300">

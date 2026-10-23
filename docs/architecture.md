@@ -159,6 +159,7 @@ Svelte 元件 ─▶ ipc/<情境>.ts ─▶ bindings.ts ─▶ <情境>/commands
 | `edit-command` | macOS 編輯選單 | `Undo`、`SegmentList` |
 | `changed-elsewhere-kept` | 重新載入 | `Page` |
 | `srt-requested` | 第二次啟動、macOS 開檔 | `Page` |
+| `scripts-changed` | 掃描結果有變 | 兩個選單、`Scripts` |
 | `video-window-closing` | 關閉影片視窗 | `preview` |
 | `update-progress` | `install_update` | `UpdatesDialog` |
 | `model-download-progress` | `download_model` | 設定頁 |
@@ -688,6 +689,7 @@ feed 與 session 建好後，頁面才以 `mount` 的 context 拿到兩者。`Ed
 | `rust:edit-command` | Rust，經 `relayEvents` | `Undo`、`SegmentList` |
 | `rust:changed-elsewhere-kept` | Rust，經 `relayEvents` | `Page` 顯示通知 |
 | `rust:srt-requested` | Rust，經 `relayEvents` | `Page` 開啟系統要開的 SRT |
+| `rust:scripts-changed` | Rust，經 `relayEvents` | 選單與 `Scripts` 重讀腳本 |
 | `rust:model-download-progress` | Rust，經 `relayEvents` | `ModelSlot` 顯示下載進度 |
 | `rust:video-window-closing` | Rust，經 `relayEvents` | `Preview` 移回影片 |
 | `system:color-scheme` | 系統，經 `assembly.ts` | `Timeline` 重畫波形 |

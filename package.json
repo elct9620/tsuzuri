@@ -30,7 +30,7 @@
     "@testing-library/svelte": "^5.4.2",
     "@types/node": "^24.19.1",
     "daisyui": "^5.7.43",
-    "happy-dom": "^20.14.5",
+    "happy-dom": "^21.0.4",
     "prettier": "^3.9.9",
     "prettier-plugin-svelte": "^4.1.1",
     "rollup-plugin-license": "^3.7.1",
